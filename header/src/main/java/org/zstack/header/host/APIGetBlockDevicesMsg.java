@@ -14,12 +14,23 @@ public class APIGetBlockDevicesMsg extends APIMessage implements HostMessage {
     @APIParam(nonempty = true, resourceType = HostVO.class)
     private String uuid;
 
+    @APIParam(required = false)
+    private boolean includeInUse;
+
     public String getUuid() {
         return uuid;
     }
 
     public void setUuid(String uuid) {
         this.uuid = uuid;
+    }
+
+    public boolean isIncludeInUse() {
+        return includeInUse;
+    }
+
+    public void setIncludeInUse(boolean includeInUse) {
+        this.includeInUse = includeInUse;
     }
 
     @Override

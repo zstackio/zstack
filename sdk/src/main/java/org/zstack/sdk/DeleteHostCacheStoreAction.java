@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetBlockDevicesAction extends AbstractAction {
+public class DeleteHostCacheStoreAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetBlockDevicesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetBlockDevicesResult value;
+        public org.zstack.sdk.DeleteHostCacheStoreResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class GetBlockDevicesAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean includeInUse = false;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +63,8 @@ public class GetBlockDevicesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetBlockDevicesResult value = res.getResult(org.zstack.sdk.GetBlockDevicesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetBlockDevicesResult() : value; 
+        org.zstack.sdk.DeleteHostCacheStoreResult value = res.getResult(org.zstack.sdk.DeleteHostCacheStoreResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteHostCacheStoreResult() : value; 
 
         return ret;
     }
@@ -93,8 +93,8 @@ public class GetBlockDevicesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/hosts/{uuid}/block-devices";
+        info.httpMethod = "DELETE";
+        info.path = "/hosts/{hostUuid}/local-volume-cache-pools/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";

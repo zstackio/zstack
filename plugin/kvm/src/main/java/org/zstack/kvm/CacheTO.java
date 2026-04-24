@@ -1,6 +1,6 @@
 package org.zstack.kvm;
 
-import org.zstack.header.localVolumeCache.VmLocalVolumeCacheInventory;
+import org.zstack.header.volumeCache.VolumeCacheInventory;
 
 public class CacheTO extends BaseVirtualDeviceTO {
     private String cacheUuid;
@@ -40,7 +40,7 @@ public class CacheTO extends BaseVirtualDeviceTO {
         this.cacheMode = cacheMode;
     }
 
-    public static CacheTO valueOf(VmLocalVolumeCacheInventory inv) {
+    public static CacheTO valueOf(VolumeCacheInventory inv) {
         CacheTO to = new CacheTO();
         to.setCacheUuid(inv.getUuid());
         to.setPoolUuid(inv.getPoolUuid());

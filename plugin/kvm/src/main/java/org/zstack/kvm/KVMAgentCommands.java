@@ -11,7 +11,6 @@ import org.zstack.header.core.validation.Validation;
 import org.zstack.header.host.HostBlockDeviceStruct;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
-import org.zstack.header.localVolumeCache.CachePoolMetadata;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
@@ -5188,14 +5187,14 @@ public class KVMAgentCommands {
     }
 
     // ========================================================================
-    // Local Volume Cache — Command Definitions
+    // Volume Cache — Command Definitions
     // ========================================================================
 
     public static class InitPoolCmd extends AgentCommand {
         public String poolUuid;
         public String mountPoint;
         public boolean force;
-        public List<String> pvs;
+        public List<String> devices;
     }
 
     public static class ConnectPoolCmd extends AgentCommand {
@@ -5208,7 +5207,7 @@ public class KVMAgentCommands {
         public String poolUuid;
         public String mountPoint;
         public boolean force;
-        public List<String> pvs;
+        public List<String> devices;
     }
 
     public static class DeletePoolCmd extends AgentCommand {
@@ -5267,97 +5266,17 @@ public class KVMAgentCommands {
     }
 
     // ========================================================================
-    // Local Volume Cache — Ref Structures
-    // ========================================================================
-
-    public static class PVRef {
-        public String pvUuid;
-        public String pvName;
-        public String pvDevicePath;
-    }
-
-    public static class PVHealthRef extends PVRef {
-        public Boolean healthy;
-    }
-
-    public static class VGRef {
-        public String vgUuid;
-        public String vgName;
-    }
-
-    public static class LVRef {
-        public String lvUuid;
-        public String lvName;
-        public String lvPath;
-    }
-
-    public static class FileSystemRef {
-        public String fsUuid;
-        public String fsType;
-    }
-
-    public static class VolumeRef {
-        public String volumeUuid;
-        public String installPath;
-        public String deviceType;
-        public String format;
-        public Long size;
-    }
-
-    // ========================================================================
-    // Local Volume Cache — Response Definitions
+    // Volume Cache — Response Definitions
     // ========================================================================
 
     public static class PoolRsp extends AgentResponse {
         public String poolUuid;
         public String mountPoint;
-        public List<PVRef> pvs;
-        public VGRef vg;
-        public LVRef lv;
-        public FileSystemRef filesystem;
-
-        public CachePoolMetadata toCachePoolMetadata() {
-            CachePoolMetadata metadata = new CachePoolMetadata();
-            metadata.setMountPoint(mountPoint);
-            if (pvs != null) {
-                List<CachePoolMetadata.PVRef> pvRefs = pvs.stream().map(pv -> {
-                    CachePoolMetadata.PVRef ref = new CachePoolMetadata.PVRef();
-                    ref.setPvUuid(pv.pvUuid);
-                    ref.setPvName(pv.pvName);
-                    ref.setPvDevicePath(pv.pvDevicePath);
-                    return ref;
-                }).collect(Collectors.toList());
-                metadata.setPvs(pvRefs);
-            }
-            if (vg != null) {
-                CachePoolMetadata.VGRef vgRef = new CachePoolMetadata.VGRef();
-                vgRef.setVgUuid(vg.vgUuid);
-                vgRef.setVgName(vg.vgName);
-                metadata.setVg(vgRef);
-            }
-            if (lv != null) {
-                CachePoolMetadata.LVRef lvRef = new CachePoolMetadata.LVRef();
-                lvRef.setLvUuid(lv.lvUuid);
-                lvRef.setLvName(lv.lvName);
-                lvRef.setLvPath(lv.lvPath);
-                metadata.setLv(lvRef);
-            }
-            if (filesystem != null) {
-                CachePoolMetadata.FileSystemRef fsRef = new CachePoolMetadata.FileSystemRef();
-                fsRef.setFsUuid(filesystem.fsUuid);
-                fsRef.setFsType(filesystem.fsType);
-                metadata.setFilesystem(fsRef);
-            }
-            return metadata;
-        }
     }
 
     public static class PoolHealthRsp extends AgentResponse {
         public Boolean healthy;
-        public List<PVHealthRef> pvs;
-        public Boolean vg;
-        public Boolean lv;
-        public Boolean filesystem;
+        public String reason;
     }
 
     public static class PoolCapacityRsp extends AgentResponse {
@@ -5386,6 +5305,15 @@ public class KVMAgentCommands {
     }
 
     public static class GetBlockDevicesCmd extends AgentCommand {
+        private boolean includeInUse;
+
+        public boolean isIncludeInUse() {
+            return includeInUse;
+        }
+
+        public void setIncludeInUse(boolean includeInUse) {
+            this.includeInUse = includeInUse;
+        }
     }
 
     public static class GetBlockDevicesRsp extends AgentResponse {
