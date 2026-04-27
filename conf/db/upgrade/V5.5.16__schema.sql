@@ -365,3 +365,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmModelMountVO` (
         FOREIGN KEY (`modelUuid`) REFERENCES `zstack`.`ModelVO`(`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- ZSTAC-80103: Record K8s resources.requests.cpu/memory on PodVO so ZQL can return them
+CALL ADD_COLUMN('PodVO', 'requestCpu', 'INT', 1, NULL);
+CALL ADD_COLUMN('PodVO', 'requestMemory', 'BIGINT', 1, NULL);
+
+-- Backfill legacy pods: before this change request was implicitly equal to limit
+UPDATE `zstack`.`PodVO` p
+    INNER JOIN `zstack`.`VmInstanceVO` v ON p.uuid = v.uuid
+SET p.requestCpu = COALESCE(p.requestCpu, v.cpuNum), p.requestMemory = COALESCE(p.requestMemory, v.memorySize)
+WHERE p.requestCpu IS NULL OR p.requestMemory IS NULL;
+

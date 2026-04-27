@@ -28,4 +28,20 @@ public class PodInventory extends org.zstack.sdk.VmInstanceInventory {
         return this.clusterId;
     }
 
+    public java.lang.Integer requestCpu;
+    public void setRequestCpu(java.lang.Integer requestCpu) {
+        this.requestCpu = requestCpu;
+    }
+    public java.lang.Integer getRequestCpu() {
+        return this.requestCpu;
+    }
+
+    public java.lang.Long requestMemory;
+    public void setRequestMemory(java.lang.Long requestMemory) {
+        this.requestMemory = requestMemory;
+    }
+    public java.lang.Long getRequestMemory() {
+        return this.requestMemory;
+    }
+
 }
