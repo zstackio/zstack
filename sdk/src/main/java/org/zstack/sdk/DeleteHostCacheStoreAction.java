@@ -94,7 +94,7 @@ public class DeleteHostCacheStoreAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "DELETE";
-        info.path = "/hosts/{hostUuid}/local-volume-cache-pools/{uuid}";
+        info.path = "/hosts/{hostUuid}/host-cache-stores/{uuid}";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "";
