@@ -97,7 +97,7 @@ public class EnableVolumeCacheAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/volumes/{volumeUuid}/local-volume-cache/actions";
+        info.path = "/volumes/{volumeUuid}/volume-cache/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "enableVolumeCache";

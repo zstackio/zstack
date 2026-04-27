@@ -65,7 +65,7 @@ public class QueryHostCacheStoreAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/hosts/local-volume-cache-pools";
+        info.path = "/hosts/host-cache-stores";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

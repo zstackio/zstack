@@ -94,7 +94,7 @@ public class ReconnectHostCacheStoreAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/hosts/{hostUuid}/local-volume-cache-pools/{uuid}/actions";
+        info.path = "/hosts/{hostUuid}/host-cache-stores/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "reconnectHostCacheStore";
