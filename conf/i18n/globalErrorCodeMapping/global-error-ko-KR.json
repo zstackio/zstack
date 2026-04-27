@@ -4716,5 +4716,18 @@
   "ORG_ZSTACK_COMPUTE_VM_10129": "메시지 %s에서 vmUuid를 검색할 수 없습니다",
   "ORG_ZSTACK_COMPUTE_VM_10127": "실행 중인 VM[uuid:%s]의 CPU를 줄일 수 없습니다",
   "ORG_ZSTACK_IAM2_ATTRIBUTE_PROJECT_10007": "잘못된 날짜 또는 시간[%s]으로, 현재 타임스탬프[%s]보다 이전일 수 없습니다.",
-  "ORG_ZSTACK_NETWORK_SERVICE_LB_10077": "세션 쿠키 이름 [%s]이(가) 잘못되었습니다. [%d]자 미만이어야 합니다"
+  "ORG_ZSTACK_NETWORK_SERVICE_LB_10077": "세션 쿠키 이름 [%s]이(가) 잘못되었습니다. [%d]자 미만이어야 합니다",
+  "ORG_ZSTACK_AI_10159": "모델 서비스 인스턴스[UUID: %s]가 %s초 내에 시작되지 못했습니다. 원인: %s",
+  "ORG_ZSTACK_AI_10138": "요청한 CPU 수[%s]가 CPU 한계[%s]를 초과했습니다",
+  "ORG_ZSTACK_AI_10139": "요청한 메모리 크기[%s]가 메모리 한계[%s]를 초과했습니다",
+  "ORG_ZSTACK_AI_10140": "요청한 CPU 수[%s]는 최소 보장값 이상이어야 합니다. 설정 최소값: %s, 실제 최소값: %s (max(cpuNum × 20%%, 설정 최소값))",
+  "ORG_ZSTACK_AI_10141": "요청한 메모리 크기[%s]는 최소 보장값 이상이어야 합니다. 설정 최소값: %s, 실제 최소값: %s (max(memorySize × 20%%, 설정 최소값))",
+  "ORG_ZSTACK_AI_10142": "cpuNum은 양수여야 합니다",
+  "ORG_ZSTACK_AI_10143": "requestCpuNum / requestMemorySize는 Container 유형의 추론 서비스에만 적용됩니다",
+  "ORG_ZSTACK_AI_10160": "VM[uuid:%s]을(를) 찾을 수 없습니다",
+  "ORG_ZSTACK_AI_10161": "모델[uuid:%s]을(를) 찾을 수 없습니다",
+  "ORG_ZSTACK_AI_10162": "VM「%s」(UUID: %s)는 모델을 마운트/언마운트하려면 실행 중 상태여야 합니다. 현재 상태: %s",
+  "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s)는 어떤 호스트에서도 실행되고 있지 않습니다",
+  "ORG_ZSTACK_AI_10164": "모델「%s」(UUID: %s)이(가) 이 VM이 속한 계정에 공유되어 있지 않습니다(또는 공개되지 않음). 마운트하려면 동일한 공유 규칙을 따르세요.",
+  "ORG_ZSTACK_AI_10165": "모델 센터 (UUID: %s)를 찾을 수 없습니다 (관련 모델: 「%s」UUID: %s)"
 }

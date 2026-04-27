@@ -4716,5 +4716,18 @@
   "ORG_ZSTACK_PCIDEVICE_10063": "PCIデバイス[%s]がすべて使用可能ではありません",
   "ORG_ZSTACK_PCIDEVICE_10058": "ホスト [%s] のメンテナンスモードへの移行に失敗しました。PCIデバイスの存在により、VM [%s] は自動移行できません。",
   "ORG_ZSTACK_PCIDEVICE_10052": "VM[%s]の他のPCIデバイスを取り外してから、再試行してください",
-  "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_INFOSEC_10024": "大規模ファイルのHMAC暗号化に失敗しました、コード: %s、詳細: %s"
+  "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_INFOSEC_10024": "大規模ファイルのHMAC暗号化に失敗しました、コード: %s、詳細: %s",
+  "ORG_ZSTACK_AI_10159": "モデルサービスインスタンス[UUID: %s] が %s 秒以内に起動できませんでした。理由: %s",
+  "ORG_ZSTACK_AI_10138": "要求 CPU 数[%s] が CPU 上限[%s] を超えています",
+  "ORG_ZSTACK_AI_10139": "要求メモリサイズ[%s] がメモリ上限[%s] を超えています",
+  "ORG_ZSTACK_AI_10140": "要求 CPU 数[%s] は最小保証値以上である必要があります。設定最小値: %s、実効最小値: %s（max(cpuNum × 20%%, 設定最小値)）",
+  "ORG_ZSTACK_AI_10141": "要求メモリサイズ[%s] は最小保証値以上である必要があります。設定最小値: %s、実効最小値: %s（max(memorySize × 20%%, 設定最小値)）",
+  "ORG_ZSTACK_AI_10142": "cpuNum は正の数である必要があります",
+  "ORG_ZSTACK_AI_10143": "requestCpuNum / requestMemorySize は Container 型の推論サービスにのみ適用されます",
+  "ORG_ZSTACK_AI_10160": "VM[uuid:%s] が見つかりません",
+  "ORG_ZSTACK_AI_10161": "モデル[uuid:%s] が見つかりません",
+  "ORG_ZSTACK_AI_10162": "VM「%s」(UUID: %s) はモデルのマウント/アンマウントには Running 状態である必要があります。現在の状態: %s",
+  "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s) はどのホストでも実行されていません",
+  "ORG_ZSTACK_AI_10164": "モデル「%s」(UUID: %s) は VM の所属アカウントに共有されていない（または公開されていない）ため、マウントできません。",
+  "ORG_ZSTACK_AI_10165": "モデルセンター (UUID: %s) が見つかりません（関連モデル: 「%s」UUID: %s）"
 }

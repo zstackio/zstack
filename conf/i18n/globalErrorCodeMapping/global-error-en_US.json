@@ -4721,5 +4721,18 @@
   "ORG_ZSTACK_VPCFIREWALL_10035": "could not add firewall rule[%d] because of a %s error",
   "ORG_ZSTACK_DGPU_10010": "Available License not found, please apply addon license for product dGPU.",
   "ORG_ZSTACK_DGPU_10011": "Addon license for product dGPU has expired, please renew it.",
-  "ORG_ZSTACK_DGPU_10012": "Insufficient dGPU GPU number licensed. Your license permits %d GPU, there are %d GPU used, shared: %d, need: %d."
+  "ORG_ZSTACK_DGPU_10012": "Insufficient dGPU GPU number licensed. Your license permits %d GPU, there are %d GPU used, shared: %d, need: %d.",
+  "ORG_ZSTACK_AI_10159": "Model service instance[UUID: %s] failed to start within %s seconds. Reason: %s",
+  "ORG_ZSTACK_AI_10138": "Requested CPU count[%s] exceeds the CPU limit[%s]",
+  "ORG_ZSTACK_AI_10139": "Requested memory size[%s] exceeds the memory limit[%s]",
+  "ORG_ZSTACK_AI_10140": "Requested CPU count[%s] must be >= max(cpuNum*20%%, %s); current minimum is %s",
+  "ORG_ZSTACK_AI_10141": "Requested memory size[%s] must be >= max(memorySize*20%%, %s); current minimum is %s",
+  "ORG_ZSTACK_AI_10142": "cpuNum must be positive",
+  "ORG_ZSTACK_AI_10143": "requestCpuNum/requestMemorySize only apply to Container model service",
+  "ORG_ZSTACK_AI_10160": "VM[uuid:%s] not found",
+  "ORG_ZSTACK_AI_10161": "Model[uuid:%s] not found",
+  "ORG_ZSTACK_AI_10162": "VM[name:%s, uuid:%s] must be running to mount/unmount model. Current state: %s",
+  "ORG_ZSTACK_AI_10163": "VM[name:%s, uuid:%s] is not running on any host",
+  "ORG_ZSTACK_AI_10164": "Model[name:%s, uuid:%s] is not shared to the account that owns this VM (or to public). Mount requires the model to be accessible under the same sharing rules as the VM.",
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] not found for Model[name:%s, uuid:%s]"
 }

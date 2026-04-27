@@ -4716,5 +4716,18 @@
   "ORG_ZSTACK_ZWATCH_FUNCTION_10013": "Arguments inconnus détectés. Veuillez vous assurer que tous les paramètres de ligne de commande sont valides et consulter la documentation pour obtenir la liste des arguments acceptés.",
   "ORG_ZSTACK_VPCFIREWALL_10034": "impossible d'ajouter la règle de pare-feu[%d] car seul le protocole TCP prend en charge les drapeaux TCP dans cet environnement",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10007": "impossible d'arrêter le serveur DHCP sur l'instance de routeur virtuel [uuid:%s] car %s",
-  "ORG_ZSTACK_VPCFIREWALL_10035": "impossible d'ajouter la règle de pare-feu[%d] en raison d'une erreur %s"
+  "ORG_ZSTACK_VPCFIREWALL_10035": "impossible d'ajouter la règle de pare-feu[%d] en raison d'une erreur %s",
+  "ORG_ZSTACK_AI_10159": "L'instance du service de modèle[UUID : %s] n'a pas démarré dans le délai de %s secondes. Raison : %s",
+  "ORG_ZSTACK_AI_10138": "Le nombre de CPU demandé[%s] dépasse la limite CPU[%s]",
+  "ORG_ZSTACK_AI_10139": "La taille de mémoire demandée[%s] dépasse la limite de mémoire[%s]",
+  "ORG_ZSTACK_AI_10140": "Le nombre de CPU demandé[%s] doit être >= max(cpuNum*20%%, %s) ; minimum actuel : %s",
+  "ORG_ZSTACK_AI_10141": "La taille de mémoire demandée[%s] doit être >= max(memorySize*20%%, %s) ; minimum actuel : %s",
+  "ORG_ZSTACK_AI_10142": "cpuNum doit être positif",
+  "ORG_ZSTACK_AI_10143": "requestCpuNum/requestMemorySize ne s'appliquent qu'aux services de modèle de type Container",
+  "ORG_ZSTACK_AI_10160": "VM[uuid:%s] introuvable",
+  "ORG_ZSTACK_AI_10161": "Modèle[uuid:%s] introuvable",
+  "ORG_ZSTACK_AI_10162": "La VM[nom:%s, uuid:%s] doit être en cours d'exécution pour monter/démonter le modèle. État actuel : %s",
+  "ORG_ZSTACK_AI_10163": "La VM[nom:%s, uuid:%s] ne s'exécute sur aucun hôte",
+  "ORG_ZSTACK_AI_10164": "Le modèle[nom:%s, uuid:%s] n'est pas partagé avec le compte propriétaire de cette VM (ni public). Le montage exige que le modèle soit accessible selon les mêmes règles de partage.",
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] introuvable pour le modèle[nom:%s, uuid:%s]"
 }

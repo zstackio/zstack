@@ -4716,5 +4716,18 @@
   "ORG_ZSTACK_ZWATCH_FUNCTION_10013": "Terdeteksi argumen yang tidak diketahui. Harap pastikan semua parameter baris perintah valid dan lihat dokumentasi untuk daftar argumen yang diterima.",
   "ORG_ZSTACK_VPCFIREWALL_10034": "tidak dapat menambahkan aturan firewall[%d] karena hanya protokol TCP yang mendukung flag TCP di lingkungan ini",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_VYOS_10007": "tidak dapat menghentikan server DHCP pada instance router virtual [uuid:%s] karena %s",
-  "ORG_ZSTACK_VPCFIREWALL_10035": "tidak dapat menambahkan aturan firewall[%d] karena error %s"
+  "ORG_ZSTACK_VPCFIREWALL_10035": "tidak dapat menambahkan aturan firewall[%d] karena error %s",
+  "ORG_ZSTACK_AI_10159": "Instansi layanan model[UUID: %s] gagal dimulai dalam %s detik. Alasan: %s",
+  "ORG_ZSTACK_AI_10138": "Jumlah CPU yang diminta[%s] melebihi batas CPU[%s]",
+  "ORG_ZSTACK_AI_10139": "Ukuran memori yang diminta[%s] melebihi batas memori[%s]",
+  "ORG_ZSTACK_AI_10140": "Jumlah CPU yang diminta[%s] harus >= max(cpuNum*20%%, %s); minimum saat ini: %s",
+  "ORG_ZSTACK_AI_10141": "Ukuran memori yang diminta[%s] harus >= max(memorySize*20%%, %s); minimum saat ini: %s",
+  "ORG_ZSTACK_AI_10142": "cpuNum harus bernilai positif",
+  "ORG_ZSTACK_AI_10143": "requestCpuNum/requestMemorySize hanya berlaku untuk layanan model bertipe Container",
+  "ORG_ZSTACK_AI_10160": "VM[uuid:%s] tidak ditemukan",
+  "ORG_ZSTACK_AI_10161": "Model[uuid:%s] tidak ditemukan",
+  "ORG_ZSTACK_AI_10162": "VM[nama:%s, uuid:%s] harus dalam status running untuk mount/unmount model. Status saat ini: %s",
+  "ORG_ZSTACK_AI_10163": "VM[nama:%s, uuid:%s] tidak berjalan pada host manapun",
+  "ORG_ZSTACK_AI_10164": "Model[nama:%s, uuid:%s] tidak dibagikan ke akun pemilik VM ini (atau ke publik). Mount membutuhkan model yang dapat diakses dengan aturan berbagi yang sama dengan VM.",
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] tidak ditemukan untuk Model[nama:%s, uuid:%s]"
 }
