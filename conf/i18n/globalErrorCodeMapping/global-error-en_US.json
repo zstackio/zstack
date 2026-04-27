@@ -1116,6 +1116,7 @@
   "ORG_ZSTACK_CORE_PROGRESS_10000": "parameter apiId[%s] is not a valid UUID for cloud service configuration.",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10029": "failed to delete convert volume to chassis local disk configurations in gateway[uuid:%s] for baremetal instance[uuid:%s]",
   "ORG_ZSTACK_CONTAINER_10056": "Cannot find Container Backup Storage with UUID: %s",
+  "ORG_ZSTACK_CONTAINER_10057": "Failed to pull container image: the image does not exist or the image name/tag is incorrect. Underlying error: %s",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10024": "provisioned_ip %s is unavailable as it cannot connect to the gateway %s; detailed error:%s",
   "ORG_ZSTACK_CONTAINER_10047": "Failed to retrieve service status bundle for service[%s]",
   "ORG_ZSTACK_CONTAINER_10049": "Cannot find cluster by specified cluster id: %s",

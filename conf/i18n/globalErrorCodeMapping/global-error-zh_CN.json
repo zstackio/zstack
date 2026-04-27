@@ -1116,6 +1116,7 @@
   "ORG_ZSTACK_CORE_PROGRESS_10000": "参数 apiId[%s] 不是一个有效的UUID。",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10029": "删除转换卷到机箱本地磁盘配置在网关[uuid:%s]中失败，针对裸金属2实例[uuid:%s]",
   "ORG_ZSTACK_CONTAINER_10056": "无法找到容器备份存储对象[uuid:%s]",
+  "ORG_ZSTACK_CONTAINER_10057": "容器镜像拉取失败：镜像不存在或填错，请检查镜像名称或 tag。底层报错：%s",
   "ORG_ZSTACK_BAREMETAL2_GATEWAY_10024": "分配的 IP %s 不可用，它无法连接到网关 %s，详情：%s",
   "ORG_ZSTACK_CONTAINER_10047": "获取服务[%s]的状态包失败",
   "ORG_ZSTACK_CONTAINER_10049": "无法找到集群：%s",
