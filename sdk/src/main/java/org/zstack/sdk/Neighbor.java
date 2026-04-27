@@ -4,12 +4,28 @@ package org.zstack.sdk;
 
 public class Neighbor  {
 
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
     public java.lang.String id;
     public void setId(java.lang.String id) {
         this.id = id;
     }
     public java.lang.String getId() {
         return this.id;
+    }
+
+    public java.lang.String neighborRouterId;
+    public void setNeighborRouterId(java.lang.String neighborRouterId) {
+        this.neighborRouterId = neighborRouterId;
+    }
+    public java.lang.String getNeighborRouterId() {
+        return this.neighborRouterId;
     }
 
     public java.lang.String priority;
@@ -50,6 +66,14 @@ public class Neighbor  {
     }
     public java.lang.String getDevice() {
         return this.device;
+    }
+
+    public java.lang.String localInterface;
+    public void setLocalInterface(java.lang.String localInterface) {
+        this.localInterface = localInterface;
+    }
+    public java.lang.String getLocalInterface() {
+        return this.localInterface;
     }
 
 }
