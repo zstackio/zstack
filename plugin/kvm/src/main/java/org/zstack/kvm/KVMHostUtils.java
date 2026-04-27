@@ -131,6 +131,21 @@ public class KVMHostUtils {
         return collectHostIps(newSsh(managementIp, username, password, sshPort), hostUuid, managementIp);
     }
 
+    /**
+     * ZSTAC-84446: force ansible re-run + libvirtd restart only when operator
+     * opted in (RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE) or it's a fresh add
+     * (full-deploy will start libvirtd anyway). Skipping on plain reconnect
+     * keeps kvmagent PID stable.
+     */
+    public static boolean shouldForceTlsRedeploy(boolean needDeployTlsCert,
+                                                 boolean allowRestartLibvirtd,
+                                                 boolean isNewAdded) {
+        if (!needDeployTlsCert) {
+            return false;
+        }
+        return allowRestartLibvirtd || isNewAdded;
+    }
+
     private static SshShell newSsh(String host, String user, String pwd, int port) {
         SshShell s = new SshShell();
         s.setHostname(host);

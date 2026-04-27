@@ -5716,54 +5716,61 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public boolean skip(Map data) {
+                        // ZSTAC-84446: run detection whenever TLS is enabled so check
+                        // and first-deploy share the same IP source.
                         return CoreGlobalProperty.UNIT_TEST_ON
-                                || !KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class)
-                                || !rcf.getResourceConfigValue(
-                                        KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE,
-                                        self.getUuid(), Boolean.class);
+                                || !KVMGlobalConfig.LIBVIRT_TLS_ENABLED.value(Boolean.class);
                     }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        String managementIp = getSelf().getManagementIp();
+                        // ZSTAC-84446: detection is best-effort. SSH failures must NOT
+                        // break reconnect; on error we skip and let the deploy step
+                        // fall back to mgmtIp + EXTRA_IPS.
+                        try {
+                            String managementIp = getSelf().getManagementIp();
 
-                        SshShell sshShell = new SshShell();
-                        sshShell.setHostname(managementIp);
-                        sshShell.setUsername(getSelf().getUsername());
-                        sshShell.setPassword(getSelf().getPassword());
-                        sshShell.setPort(getSelf().getPort());
+                            SshShell sshShell = new SshShell();
+                            sshShell.setHostname(managementIp);
+                            sshShell.setUsername(getSelf().getUsername());
+                            sshShell.setPassword(getSelf().getPassword());
+                            sshShell.setPort(getSelf().getPort());
 
-                        // Use the same logic as zstack-utility host_plugin.fact() so MN's
-                        // expectation matches what the host itself reports.
-                        String certIpList = KVMHostUtils.collectHostIps(
-                                sshShell, self.getUuid(), managementIp);
-                        List<String> allIps = new ArrayList<>(Arrays.asList(certIpList.split(",")));
-                        // Save detected IPs so apply-ansible-playbook can union with EXTRA_IPS
-                        // without running a second SSH.
-                        data.put("TLS_DETECTED_IPS", certIpList);
+                            // Same logic as zstack-utility host_plugin.fact() so MN's
+                            // expectation matches what the host itself reports.
+                            String certIpList = KVMHostUtils.collectHostIps(
+                                    sshShell, self.getUuid(), managementIp);
+                            List<String> allIps = new ArrayList<>(Arrays.asList(certIpList.split(",")));
+                            // Save detected IPs so apply-ansible-playbook can union with
+                            // EXTRA_IPS without running a second SSH.
+                            data.put("TLS_DETECTED_IPS", certIpList);
 
-                        SshResult sanResult = sshShell.runCommand(
-                                "openssl x509 -in /etc/pki/libvirt/servercert.pem -noout -ext subjectAltName 2>/dev/null");
+                            SshResult sanResult = sshShell.runCommand(
+                                    "openssl x509 -in /etc/pki/libvirt/servercert.pem -noout -ext subjectAltName 2>/dev/null");
 
-                        boolean needDeploy = false;
-                        if (sanResult.isSshFailure() || sanResult.getReturnCode() != 0
-                                || sanResult.getStdout() == null || sanResult.getStdout().trim().isEmpty()) {
-                            // cert doesn't exist or can't be read
-                            logger.info(String.format("TLS cert not found or unreadable on host[uuid:%s], need deploy", self.getUuid()));
-                            needDeploy = true;
-                        } else {
-                            Set<String> sanIps = parseSanIps(sanResult.getStdout());
-                            for (String ip : allIps) {
-                                if (!sanIps.contains(ip)) {
-                                    logger.info(String.format("TLS cert SAN missing IP %s on host[uuid:%s], need deploy", ip, self.getUuid()));
-                                    needDeploy = true;
-                                    break;
+                            boolean needDeploy = false;
+                            if (sanResult.isSshFailure() || sanResult.getReturnCode() != 0
+                                    || sanResult.getStdout() == null || sanResult.getStdout().trim().isEmpty()) {
+                                logger.info(String.format("TLS cert not found or unreadable on host[uuid:%s], need deploy", self.getUuid()));
+                                needDeploy = true;
+                            } else {
+                                Set<String> sanIps = parseSanIps(sanResult.getStdout());
+                                for (String ip : allIps) {
+                                    if (!sanIps.contains(ip)) {
+                                        logger.info(String.format("TLS cert SAN missing IP %s on host[uuid:%s], need deploy", ip, self.getUuid()));
+                                        needDeploy = true;
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        if (needDeploy) {
-                            data.put("NEED_DEPLOY_TLS_CERT", true);
+                            if (needDeploy) {
+                                data.put("NEED_DEPLOY_TLS_CERT", true);
+                            }
+                        } catch (Exception e) {
+                            logger.warn(String.format(
+                                    "TLS cert detection failed on host[uuid:%s], continue connect flow: %s",
+                                    self.getUuid(), e.getMessage()), e);
                         }
 
                         trigger.next();
@@ -5910,11 +5917,19 @@ public class KVMHost extends HostBase implements Host {
                                 self.getUuid(), managementIp, detectedIps);
                         deployArguments.setTlsCertIps(tlsCertIps);
 
-                        // Force ansible deploy when TLS cert needs update (detected by check-tls-certs flow)
+                        // ZSTAC-84446: force ansible re-run only when policy allows;
+                        // see KVMHostUtils#shouldForceTlsRedeploy.
                         Boolean needDeployTlsCert = (Boolean) data.get("NEED_DEPLOY_TLS_CERT");
-                        if (Boolean.TRUE.equals(needDeployTlsCert)) {
+                        boolean allowRestart = rcf.getResourceConfigValue(
+                                KVMGlobalConfig.RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE,
+                                self.getUuid(), Boolean.class);
+                        if (KVMHostUtils.shouldForceTlsRedeploy(
+                                Boolean.TRUE.equals(needDeployTlsCert), allowRestart, info.isNewAdded())) {
                             runner.setForceRun(true);
                             deployArguments.setRestartLibvirtd("true");
+                        } else if (Boolean.TRUE.equals(needDeployTlsCert)) {
+                            logger.info(String.format("TLS cert needs deploy on host[uuid:%s], skip " +
+                                    "force-run to keep kvmagent PID stable", self.getUuid()));
                         }
 
                         if (deployArguments.isForceRun()) {
