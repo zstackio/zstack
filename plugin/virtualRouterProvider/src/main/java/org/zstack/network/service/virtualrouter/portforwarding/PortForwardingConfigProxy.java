@@ -35,6 +35,9 @@ public class PortForwardingConfigProxy extends VirtualRouterConfigProxy implemen
 
     @Override
     protected void detachNetworkServiceFromNoHaVirtualRouter(String vrUuid, String type, List<String> serviceUuids) {
+        if (serviceUuids == null || serviceUuids.isEmpty()) {
+            return;
+        }
         SQL.New(VirtualRouterPortForwardingRuleRefVO.class).eq(VirtualRouterPortForwardingRuleRefVO_.virtualRouterVmUuid, vrUuid)
                 .in(VirtualRouterPortForwardingRuleRefVO_.uuid, serviceUuids).delete();
     }
