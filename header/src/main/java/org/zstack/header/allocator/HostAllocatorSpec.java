@@ -38,6 +38,15 @@ public class HostAllocatorSpec {
     private AllocationScene allocationScene;
     private String architecture;
     private String accountUuid;
+    /**
+     * Allocation purpose. Defaults to ALLOCATE so existing call sites keep
+     * their current behavior. Filters may relax some checks (e.g. PCI device
+     * owner-RBAC) when this is LIST_CANDIDATES.
+     *
+     * Permission gating is the caller's responsibility; filters trust this
+     * value as-is.
+     */
+    private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -229,6 +238,14 @@ public class HostAllocatorSpec {
         this.architecture = architecture;
     }
 
+    public HostAllocationPurpose getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(HostAllocationPurpose purpose) {
+        this.purpose = purpose == null ? HostAllocationPurpose.ALLOCATE : purpose;
+    }
+
     public static HostAllocatorSpec fromAllocationMsg(AllocateHostMsg msg) {
         HostAllocatorSpec spec = new HostAllocatorSpec();
         spec.setAllocatorStrategy(msg.getAllocatorStrategy());
@@ -258,6 +275,7 @@ public class HostAllocatorSpec {
         spec.setAllocationScene(msg.getAllocationScene());
         spec.setArchitecture(msg.getArchitecture());
         spec.setAccountUuid(msg.getAccountUuid());
+        spec.setPurpose(msg.getPurpose());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
         }

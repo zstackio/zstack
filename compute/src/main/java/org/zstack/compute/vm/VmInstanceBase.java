@@ -917,6 +917,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
+        if (msg instanceof GetVmStartingCandidateClustersHostsMsg) {
+            // propagate allocation purpose so downstream filters know this is a
+            // candidate-listing call rather than a real allocation
+            amsg.setPurpose(((GetVmStartingCandidateClustersHostsMsg) msg).getPurpose());
+        }
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
         amsg.setVmInstance(VmInstanceInventory.valueOf(self));
