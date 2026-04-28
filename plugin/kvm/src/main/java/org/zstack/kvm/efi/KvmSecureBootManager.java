@@ -1,6 +1,7 @@
 package org.zstack.kvm.efi;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
@@ -88,9 +89,7 @@ import static org.zstack.header.vm.additions.VmHostFileSyncReason.VmShutdown;
 import static org.zstack.kvm.KVMAgentCommands.*;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
-import static org.zstack.utils.CollectionUtils.findOneOrNull;
-import static org.zstack.utils.CollectionUtils.toMap;
-import static org.zstack.utils.CollectionUtils.transform;
+import static org.zstack.utils.CollectionUtils.*;
 
 public class KvmSecureBootManager extends AbstractService implements VmHostFileManager {
     private static final CLogger logger = Utils.getLogger(KvmSecureBootManager.class);
@@ -109,6 +108,8 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
     private TimeHelper timeHelper;
     @Autowired
     private ResourceDestinationMaker resourceDestinationMaker;
+    @Autowired
+    private TpmEncryptedResourceKeyBackend resourceKeyBackend;
 
     @Override
     public boolean start() {
@@ -502,10 +503,20 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         new SQLBatch() {
             @Override
             protected void scripts() {
+                Set<String> backupUuidSet = new HashSet<>();
                 for (VmHostBackupFileVO bf : backupFilesToPersist) {
-                    sql(VmHostBackupFileVO.class)
+                    backupUuidSet.addAll(q(VmHostBackupFileVO.class)
                             .eq(VmHostBackupFileVO_.resourceUuid, bf.getResourceUuid())
                             .eq(VmHostBackupFileVO_.type, bf.getType())
+                            .select(VmHostBackupFileVO_.uuid)
+                            .listValues());
+                }
+
+                if (!backupUuidSet.isEmpty()) {
+                    // TODO: need refactor -> use VmHostBackupFileDeletionMsg
+                    safeForEach(backupUuidSet, resourceKeyBackend::cleanEncryptedResourceKey);
+                    sql(VmHostBackupFileVO.class)
+                            .in(VmHostBackupFileVO_.uuid, backupUuidSet)
                             .delete();
                 }
 
@@ -797,11 +808,20 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         new SQLBatch() {
             @Override
             protected void scripts() {
-                for (VmHostBackupFileVO backupFile : filesNeedPersists) {
-                    // resourceUuid + type must be unique in DB
+                Set<String> backupUuidSet = new HashSet<>();
+                for (VmHostBackupFileVO bf : filesNeedPersists) {
+                    backupUuidSet.addAll(q(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.resourceUuid, bf.getResourceUuid())
+                            .eq(VmHostBackupFileVO_.type, bf.getType())
+                            .select(VmHostBackupFileVO_.uuid)
+                            .listValues());
+                }
+
+                if (!backupUuidSet.isEmpty()) {
+                    // TODO: need refactor -> use VmHostBackupFileDeletionMsg
+                    safeForEach(backupUuidSet, resourceKeyBackend::cleanEncryptedResourceKey);
                     sql(VmHostBackupFileVO.class)
-                            .eq(VmHostBackupFileVO_.resourceUuid, backupFile.getResourceUuid())
-                            .eq(VmHostBackupFileVO_.type, backupFile.getType())
+                            .in(VmHostBackupFileVO_.uuid, backupUuidSet)
                             .delete();
                 }
 
