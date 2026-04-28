@@ -19,28 +19,28 @@ public class GetZMigrateInfosResult {
         return this.version;
     }
 
-    public long platforms;
-    public void setPlatforms(long platforms) {
-        this.platforms = platforms;
+    public long platformsCount;
+    public void setPlatformsCount(long platformsCount) {
+        this.platformsCount = platformsCount;
     }
-    public long getPlatforms() {
-        return this.platforms;
-    }
-
-    public long gateways;
-    public void setGateways(long gateways) {
-        this.gateways = gateways;
-    }
-    public long getGateways() {
-        return this.gateways;
+    public long getPlatformsCount() {
+        return this.platformsCount;
     }
 
-    public long migrateJobs;
-    public void setMigrateJobs(long migrateJobs) {
-        this.migrateJobs = migrateJobs;
+    public long gatewaysCount;
+    public void setGatewaysCount(long gatewaysCount) {
+        this.gatewaysCount = gatewaysCount;
     }
-    public long getMigrateJobs() {
-        return this.migrateJobs;
+    public long getGatewaysCount() {
+        return this.gatewaysCount;
+    }
+
+    public long migrateJobsCount;
+    public void setMigrateJobsCount(long migrateJobsCount) {
+        this.migrateJobsCount = migrateJobsCount;
+    }
+    public long getMigrateJobsCount() {
+        return this.migrateJobsCount;
     }
 
     public long zmigrateStartTime;
