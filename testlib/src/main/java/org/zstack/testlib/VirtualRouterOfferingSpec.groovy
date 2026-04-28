@@ -141,6 +141,10 @@ class VirtualRouterOfferingSpec extends InstanceOfferingSpec {
                 return new VirtualRouterCommands.SetSNATRsp()
             }
 
+            simulator(VirtualRouterConstant.VR_REMOVE_SNAT_PATH) {
+                return new VirtualRouterCommands.RemoveSNATRsp()
+            }
+
             simulator(VirtualRouterCentralizedDnsBackend.SET_DNS_FORWARD_PATH) {
                 return new VirtualRouterCommands.SetForwardDnsRsp()
             }
