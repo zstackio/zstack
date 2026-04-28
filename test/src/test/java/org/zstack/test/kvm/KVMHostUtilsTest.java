@@ -169,4 +169,33 @@ public class KVMHostUtilsTest {
         }
         Assert.assertTrue("deploy must include extra", deployIps.contains("10.0.0.7"));
     }
+
+    // ----- shouldForceTlsRedeploy coverage (ZSTAC-84446) -----
+
+    /** needDeployTlsCert=false short-circuits regardless of other flags. */
+    @Test
+    public void shouldForceTlsRedeploy_noNeedNeverForces() {
+        Assert.assertFalse(KVMHostUtils.shouldForceTlsRedeploy(false, true, true));
+        Assert.assertFalse(KVMHostUtils.shouldForceTlsRedeploy(false, true, false));
+        Assert.assertFalse(KVMHostUtils.shouldForceTlsRedeploy(false, false, true));
+        Assert.assertFalse(KVMHostUtils.shouldForceTlsRedeploy(false, false, false));
+    }
+
+    /** Operator opted in: force-run allowed on reconnect. */
+    @Test
+    public void shouldForceTlsRedeploy_allowRestartForces() {
+        Assert.assertTrue(KVMHostUtils.shouldForceTlsRedeploy(true, true, false));
+    }
+
+    /** First-add: full-deploy will start libvirtd, so force-run is safe. */
+    @Test
+    public void shouldForceTlsRedeploy_newAddedForces() {
+        Assert.assertTrue(KVMHostUtils.shouldForceTlsRedeploy(true, false, true));
+    }
+
+    /** Reconnect + toggle off: must NOT force-run (would change kvmagent PID). */
+    @Test
+    public void shouldForceTlsRedeploy_reconnectWithoutRestartSkips() {
+        Assert.assertFalse(KVMHostUtils.shouldForceTlsRedeploy(true, false, false));
+    }
 }
