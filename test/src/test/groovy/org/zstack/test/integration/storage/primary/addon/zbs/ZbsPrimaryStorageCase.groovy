@@ -9,11 +9,13 @@ import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO_
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.storage.zbs.MdsStatus
 import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
@@ -179,6 +181,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsPing()
             testCheckHostStorageConnection()
             testNegativeScenario()
+            testAddExternalPrimaryStorageWithMalformedJsonRejectedByInterceptor()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
             testMdsReconnectAfterMaximumPingFailures()
@@ -723,6 +726,43 @@ class ZbsPrimaryStorageCase extends SubCase {
                 url = ""
             }
         }
+    }
+
+    void testAddExternalPrimaryStorageWithMalformedJsonRejectedByInterceptor() {
+        long extPsCountBefore = Q.New(ExternalPrimaryStorageVO.class).count()
+        long primaryStorageCountBefore = Q.New(PrimaryStorageVO.class).count()
+        long protocolRefCountBefore = Q.New(PrimaryStorageOutputProtocolRefVO.class).count()
+
+        expect(AssertionError.class) {
+            addExternalPrimaryStorage {
+                zoneUuid = zone.uuid
+                name = "zbs-bad-json"
+                identity = "zbs"
+                defaultOutputProtocol = "CBD"
+                config = "{this is not valid json"
+                url = ""
+            }
+        }
+
+        long extPsCountAfter = Q.New(ExternalPrimaryStorageVO.class).count()
+        long primaryStorageCountAfter = Q.New(PrimaryStorageVO.class).count()
+        long protocolRefCountAfter = Q.New(PrimaryStorageOutputProtocolRefVO.class).count()
+        assert extPsCountAfter == extPsCountBefore : \
+                "ExternalPrimaryStorageVO leaked despite marshal-time JSON rejection: " +
+                "before=${extPsCountBefore} after=${extPsCountAfter}"
+        assert primaryStorageCountAfter == primaryStorageCountBefore : \
+                "PrimaryStorageVO leaked despite marshal-time JSON rejection: " +
+                "before=${primaryStorageCountBefore} after=${primaryStorageCountAfter}"
+        assert protocolRefCountAfter == protocolRefCountBefore : \
+                "PrimaryStorageOutputProtocolRefVO leaked despite marshal-time JSON rejection: " +
+                "before=${protocolRefCountBefore} after=${protocolRefCountAfter}"
+        boolean stalePsByName = Q.New(ExternalPrimaryStorageVO.class)
+                .eq(ExternalPrimaryStorageVO_.name, "zbs-bad-json")
+                .isExists()
+        assert !stalePsByName : "stale ExternalPrimaryStorageVO[name=zbs-bad-json] reached DB despite interceptor rejection"
+
+        def psList = queryPrimaryStorage {} as List
+        assert psList != null : "queryPrimaryStorage threw / returned null after attempted bad-JSON Add"
     }
 
     void testDataVolumeNegativeScenario() {
