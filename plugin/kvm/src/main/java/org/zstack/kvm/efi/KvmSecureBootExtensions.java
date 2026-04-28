@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
@@ -35,7 +34,6 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
-import org.zstack.header.vm.VmJustBeforeDeleteFromDbExtensionPoint;
 import org.zstack.header.vm.VmMigrationType;
 import org.zstack.header.vm.VmPreMigrationExtensionPoint;
 import org.zstack.header.vm.VmReleaseResourceExtensionPoint;
@@ -91,7 +89,6 @@ import static org.zstack.utils.CollectionDSL.list;
 
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
-        VmJustBeforeDeleteFromDbExtensionPoint,
         VmPreMigrationExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
         VmReleaseResourceExtensionPoint,
@@ -593,22 +590,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmInstanceSpec spec;
 
         VolumeInventory inventory;
-    }
-
-    @Override
-    public void vmJustBeforeDeleteFromDb(VmInstanceInventory inv) {
-        String vmUuid = inv.getUuid();
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                sql(VmHostFileVO.class)
-                        .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                        .delete();
-                sql(VmHostBackupFileVO.class)
-                        .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                        .delete();
-            }
-        }.execute();
     }
 
     @Override
