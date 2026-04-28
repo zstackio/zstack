@@ -13,9 +13,12 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.addon.primary.APIAddExternalPrimaryStorageMsg;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.header.storage.primary.*;
@@ -77,10 +80,25 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateVolumeSnapshotGroupMsg) msg);
         } else if (msg instanceof APIAddStorageProtocolMsg) {
             validate((APIAddStorageProtocolMsg) msg);
+        } else if (msg instanceof APIAddExternalPrimaryStorageMsg) {
+            validate((APIAddExternalPrimaryStorageMsg) msg);
         }
 
         setServiceId(msg);
         return msg;
+    }
+
+    private void validate(APIAddExternalPrimaryStorageMsg msg) {
+        String config = msg.getConfig();
+        if (config == null || config.trim().isEmpty()) {
+            return;
+        }
+        try {
+            new JSONObject(config);
+        } catch (JSONException e) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10053,
+                    "config is not a valid JSON object: %s", e.getMessage()));
+        }
     }
 
     private void validate(APIAddStorageProtocolMsg msg) {
