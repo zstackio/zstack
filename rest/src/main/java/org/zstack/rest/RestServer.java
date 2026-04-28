@@ -1273,7 +1273,7 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             asyncStore.save(d);
-            UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
+            UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getReplyLocationBaseUrl());
             ub.path(RestConstants.API_VERSION);
             ub.path(RestConstants.ASYNC_JOB_PATH);
             ub.path("/" + msg.getId());
