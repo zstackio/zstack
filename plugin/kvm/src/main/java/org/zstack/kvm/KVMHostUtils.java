@@ -8,6 +8,7 @@ import org.zstack.header.network.l2.*;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.tag.TagType;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
@@ -26,16 +27,18 @@ import java.util.Set;
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
 
-    /**
-     * Collect host IPv4 addresses, mirroring zstack-utility host_plugin.fact()
-     * (only filter: ifname endswith "zs", drop 127.0.0.1 / MN VIP).
-     */
+    // ZSTAC-84446: br_conn_all_ns is host-internal; exclude from TLS cert SAN
+    // to keep check-flow and deploy-flow IP lists identical.
+    public static final Set<String> EXCLUDED_INTERNAL_IPS = Collections.unmodifiableSet(
+            new LinkedHashSet<>(Collections.singletonList("169.254.64.1")));
+
+    // Collect host IPv4 addresses; mirrors host_plugin.fact() filters and
+    // applies EXCLUDED_INTERNAL_IPS so check and deploy share one source.
     public static String collectHostIps(SshShell sshShell, String hostUuid, String managementIp) {
         if (sshShell == null) {
             return managementIp;
         }
-        // Run a quote-free command; parse on the MN side to avoid nested-quote
-        // mangling when SshShell wraps the command with single quotes.
+        // Quote-free command; parsed on MN side to avoid SshShell quote mangling.
         SshResult r = sshShell.runCommand("ip -4 -o addr show");
         if (r.isSshFailure() || r.getReturnCode() != 0
                 || r.getStdout() == null || r.getStdout().trim().isEmpty()) {
@@ -47,19 +50,18 @@ public class KVMHostUtils {
         return buildIpList(managementIp, r.getStdout(), CoreGlobalProperty.MN_VIP);
     }
 
-    /**
-     * TLS cert IP list for ansible deploy: detectedIps ∪ EXTRA_IPS tag.
-     * detectedIps comes from the prior check-tls-certs flow (no second SSH).
-     * If detectedIps is null/empty, fall back to managementIp + EXTRA_IPS.
-     */
+    // TLS cert IPs for ansible deploy: detectedIps ∪ EXTRA_IPS − EXCLUDED_INTERNAL_IPS,
+    // falls back to managementIp when detectedIps is empty. Shares filter with collectHostIps.
     public static String unionTlsCertIps(String hostUuid, String managementIp, String detectedIpsCsv) {
         String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(
                 hostUuid, HostSystemTags.EXTRA_IPS_TOKEN);
-        return unionIps(detectedIpsCsv, managementIp, extraIps, CoreGlobalProperty.MN_VIP);
+        return unionIps(detectedIpsCsv, managementIp, extraIps,
+                CoreGlobalProperty.MN_VIP, EXCLUDED_INTERNAL_IPS);
     }
 
-    /** Pure function for unit tests: detectedIps ∪ extraIps, fall back to mgmtIp when detected empty. */
-    public static String unionIps(String detectedIpsCsv, String managementIp, String extraIpsCsv, String mnVip) {
+    public static String unionIps(String detectedIpsCsv, String managementIp,
+                                  String extraIpsCsv, String mnVip,
+                                  Set<String> excludedInternalIps) {
         Set<String> ips = new LinkedHashSet<>();
         if (detectedIpsCsv != null && !detectedIpsCsv.trim().isEmpty()) {
             for (String ip : detectedIpsCsv.split(",")) {
@@ -81,20 +83,25 @@ public class KVMHostUtils {
             }
         }
 
+        return String.join(",", filterIps(ips, mnVip, excludedInternalIps));
+    }
+
+    // Single source of truth for TLS cert SAN IPs; shared by buildIpList (check)
+    // and unionIps (deploy) so the two flows can never diverge.
+    private static Set<String> filterIps(Set<String> ips, String mnVip,
+                                         Set<String> excludedInternalIps) {
         ips.remove("127.0.0.1");
         if (mnVip != null) {
             ips.remove(mnVip);
         }
-        return String.join(",", ips);
+        if (!CollectionUtils.isEmpty(excludedInternalIps)) {
+            ips.removeAll(excludedInternalIps);
+        }
+        return ips;
     }
 
-    /**
-     * Parse the raw output of "ip -4 -o addr show" and build the IP list,
-     * mirroring zstack-utility host_plugin.fact() (filter ifname endswith "zs",
-     * drop 127.0.0.1 / MN VIP). Each line looks like:
-     *   "5: zsn0.2000    inet 12.1.251.206/16 brd ... scope global zsn0.2000\..."
-     * Pure function for unit tests.
-     */
+    // Parse "ip -4 -o addr show" output and build the IP list, mirroring
+    // host_plugin.fact() (drop ifname *zs, 127.0.0.1, MN VIP, EXCLUDED_INTERNAL_IPS).
     public static String buildIpList(String managementIp, String ipAddrOutput, String mnVip) {
         Set<String> ips = new LinkedHashSet<>();
         ips.add(managementIp);
@@ -119,11 +126,7 @@ public class KVMHostUtils {
             }
         }
 
-        ips.remove("127.0.0.1");
-        if (mnVip != null) {
-            ips.remove(mnVip);
-        }
-        return String.join(",", ips);
+        return String.join(",", filterIps(ips, mnVip, EXCLUDED_INTERNAL_IPS));
     }
 
     public static String collectHostIps(String hostUuid, String managementIp,
@@ -131,12 +134,8 @@ public class KVMHostUtils {
         return collectHostIps(newSsh(managementIp, username, password, sshPort), hostUuid, managementIp);
     }
 
-    /**
-     * ZSTAC-84446: force ansible re-run + libvirtd restart only when operator
-     * opted in (RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE) or it's a fresh add
-     * (full-deploy will start libvirtd anyway). Skipping on plain reconnect
-     * keeps kvmagent PID stable.
-     */
+    // ZSTAC-84446: force ansible re-run + libvirtd restart only when operator opted in
+    // or it's a fresh add; skip on plain reconnect to keep kvmagent PID stable.
     public static boolean shouldForceTlsRedeploy(boolean needDeployTlsCert,
                                                  boolean allowRestartLibvirtd,
                                                  boolean isNewAdded) {
