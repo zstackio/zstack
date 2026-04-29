@@ -109,7 +109,7 @@ public class CreateHostCacheStoreAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/hosts/{hostUuid}/local-volume-cache-pools";
+        info.path = "/hosts/{hostUuid}/host-cache-stores";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
