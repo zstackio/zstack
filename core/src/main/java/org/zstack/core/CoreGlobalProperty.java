@@ -95,4 +95,12 @@ public class CoreGlobalProperty {
     public static int REST_API_RESULT_MAX_LENGTH;
     @GlobalProperty(name = "pending.queue.minimum.threshold", defaultValue = "50")
     public static int PENDING_QUEUE_MINIMUM_THRESHOLD;
+
+    @GlobalProperty(name = "core.reply.location.url.protocol", defaultValue = "http")
+    public static String REPLY_LOCATION_URL_PROTOCOL;
+    @GlobalProperty(name = "core.reply.location.url.ip", defaultValue = "") // Note: null -> use callbackHostName
+    public static String REPLY_LOCATION_URL_IP;
+    @GlobalProperty(name = "core.reply.location.url.port", defaultValue = "0")
+    @NumberRange({0, 65535}) // Note: 0 -> use default value (management node service port)
+    public static int REPLY_LOCATION_URL_PORT;
 }

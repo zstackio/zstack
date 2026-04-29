@@ -1,5 +1,6 @@
 package org.zstack.core.rest;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpStatus;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
@@ -68,6 +69,7 @@ public class RESTFacadeImpl extends AbstractRESTFacade {
     private String baseUrl;
     private String sendCommandUrl;
     private String callbackHostName;
+    private String replyLocationBaseUrl;
 
     private final int notifiedFailureHttpTasksSize = 128;
 
@@ -149,6 +151,22 @@ public class RESTFacadeImpl extends AbstractRESTFacade {
         ub = UriComponentsBuilder.fromHttpUrl(url);
         ub.path(RESTConstant.COMMAND_CHANNEL_PATH);
         sendCommandUrl = ub.build().toUriString();
+
+        String normalizedPath = "";
+        if (StringUtils.isNotBlank(path)) {
+            normalizedPath = "/" + StringUtils.strip(path, "/");
+        }
+        replyLocationBaseUrl = String.format("%s://%s:%s%s",
+                CoreGlobalProperty.REPLY_LOCATION_URL_PROTOCOL,
+                StringUtils.isBlank(CoreGlobalProperty.REPLY_LOCATION_URL_IP) ? callbackHostName : CoreGlobalProperty.REPLY_LOCATION_URL_IP,
+                CoreGlobalProperty.REPLY_LOCATION_URL_PORT == 0 ? port : CoreGlobalProperty.REPLY_LOCATION_URL_PORT,
+                normalizedPath);
+
+        try {
+            UriComponentsBuilder.fromHttpUrl(replyLocationBaseUrl).build();
+        } catch (Exception e) {
+            throw new CloudRuntimeException("invalid core.reply.location.url.* configuration: " + replyLocationBaseUrl, e);
+        }
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
@@ -728,6 +746,11 @@ public class RESTFacadeImpl extends AbstractRESTFacade {
     @Override
     public String getHostName() {
         return callbackHostName;
+    }
+
+    @Override
+    public String getReplyLocationBaseUrl() {
+        return replyLocationBaseUrl;
     }
 
     @Override

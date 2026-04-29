@@ -80,6 +80,11 @@ public interface RESTFacade {
 
     <T> void registerSyncHttpCallHandler(String path, Class<T> objectType, SyncHttpCallHandler<T> handler);
 
+    /**
+     * in location of API message reply body
+     */
+    String getReplyLocationBaseUrl();
+
     String getBaseUrl();
 
     String getSendCommandUrl();
