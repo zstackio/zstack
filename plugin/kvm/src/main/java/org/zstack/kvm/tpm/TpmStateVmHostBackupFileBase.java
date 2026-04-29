@@ -88,6 +88,7 @@ public class TpmStateVmHostBackupFileBase extends AbstractVmHostBackupFileBase {
 
     @Override
     public void clean() {
+        logger.debug(String.format("clean TpmState VmBackupFileVO[uuid=%s]", self.getUuid()));
         resourceKeyBackend.cleanEncryptedResourceKey(self.getUuid());
         super.clean();
     }
