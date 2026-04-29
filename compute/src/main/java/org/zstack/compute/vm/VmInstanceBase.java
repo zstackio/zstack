@@ -1281,24 +1281,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         chain.done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterExpungeExtensionPoint.class),
-                        arg -> arg.vmAfterExpunge(inv));
-
-                final String tpmUuidForEncryptedKeyRef = VmTpmManager.findTpmUuidForVmOrNull(self.getUuid());
-
-                callVmJustBeforeDeleteFromDbExtensionPoint();
-
-                dbf.reload(self);
-                dbf.removeCollection(self.getVmNics(), VmNicVO.class);
-                dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
-                dbf.remove(self);
-                logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
-                dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
-                if (inv.getRootVolumeUuid() != null) {
-                    dbf.eoCleanup(VolumeVO.class, inv.getRootVolumeUuid());
-                }
-                detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
-                completion.success();
+                final String tpmUuidForEncryptedKeyRef =
+                        (String) data.get(VmExpungeVmResourceCascadeFlow.EXPUNGE_CASCADE_TPM_UUID_KEY);
+                finishExpungeAfterVmResourceCascade(inv, tpmUuidForEncryptedKeyRef, completion);
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
@@ -1306,6 +1291,23 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private void finishExpungeAfterVmResourceCascade(VmInstanceInventory inv, String tpmUuidForEncryptedKeyRef,
+            Completion completion) {
+        callVmJustBeforeDeleteFromDbExtensionPoint();
+
+        self = dbf.reload(self);
+        dbf.removeCollection(self.getVmNics(), VmNicVO.class);
+        dbf.removeCollection(self.getVmCdRoms(), VmCdRomVO.class);
+        dbf.remove(self);
+        logger.debug(String.format("successfully expunged the vm[uuid:%s]", self.getUuid()));
+        dbf.eoCleanup(VmInstanceVO.class, self.getUuid());
+        if (inv.getRootVolumeUuid() != null) {
+            dbf.eoCleanup(VolumeVO.class, inv.getRootVolumeUuid());
+        }
+        detachTpmKeyProviderBestEffort(tpmUuidForEncryptedKeyRef);
+        completion.success();
     }
 
     private void handle(final VmCheckOwnStateMsg msg) {

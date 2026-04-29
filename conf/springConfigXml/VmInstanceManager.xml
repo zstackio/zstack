@@ -119,6 +119,7 @@
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMetadataFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeVmResourceCascadeFlow</value>
             </list>
         </property>
         <property name="pauseVmWorkFlowElements">
