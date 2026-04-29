@@ -17,6 +17,7 @@ import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.vm.VmDeletionStruct;
+import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -43,13 +44,45 @@ public class TpmCascadeExtension extends AbstractAsyncCascadeExtension {
     public void asyncCascade(CascadeAction action, Completion completion) {
         if (action.isActionCode(CascadeConstant.DELETION_CHECK_CODE)) {
             handleDeletionCheck(action, completion);
-        } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
+        } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)
+                || action.isActionCode(CascadeConstant.VM_INSTANCE_EXPUNGE_CODE)) {
+            if (shouldDeferVmAssociatedDeletion(action)) {
+                completion.success();
+                return;
+            }
             handleDeletion(action, completion);
         } else if (action.isActionCode(CascadeConstant.DELETION_CLEANUP_CODE)) {
             handleDeletionCleanup(action, completion);
         } else {
             completion.success();
         }
+    }
+
+    /**
+     * When VM deletion policy keeps the VM row (recycle bin), defer TPM removal until {@link CascadeConstant#VM_INSTANCE_EXPUNGE_CODE}.
+     */
+    private boolean shouldDeferVmAssociatedDeletion(CascadeAction action) {
+        if (CascadeConstant.VM_INSTANCE_EXPUNGE_CODE.equals(action.getActionCode())) {
+            return false;
+        }
+        if (!VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
+            return false;
+        }
+        Object raw = action.getParentIssuerContext();
+        if (!(raw instanceof List)) {
+            return false;
+        }
+        for (Object o : (List<?>) raw) {
+            if (!(o instanceof VmDeletionStruct)) {
+                continue;
+            }
+            VmDeletionStruct s = (VmDeletionStruct) o;
+            VmInstanceDeletionPolicy p = s.getDeletionPolicy();
+            if (p == VmInstanceDeletionPolicy.Delay || p == VmInstanceDeletionPolicy.Never) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private List<TpmVO> tpmFromAction(CascadeAction action) {
@@ -130,7 +163,8 @@ public class TpmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public CascadeAction createActionForChildResource(CascadeAction action) {
-        if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
+        if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())
+                || CascadeConstant.VM_INSTANCE_EXPUNGE_CODE.equals(action.getActionCode())) {
             List<TpmVO> ctx = tpmFromAction(action);
             if (ctx != null) {
                 return action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
