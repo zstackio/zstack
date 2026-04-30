@@ -42,12 +42,15 @@ import org.zstack.header.tpm.message.AddTpmMsg;
 import org.zstack.header.tpm.message.AddTpmReply;
 import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.tpm.message.TpmDeletionReply;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.ResetVmTpmMsg;
 import org.zstack.header.vm.additions.ResetVmTpmReply;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
+import org.zstack.header.vm.additions.VmHostFileDeletionMsg;
 import org.zstack.header.vm.additions.VmHostFileInventory;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
@@ -85,6 +88,7 @@ import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION;
 import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION_TOKEN;
 import static org.zstack.kvm.KVMSystemTags.VM_EDK;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.isEmpty;
 import static org.zstack.utils.CollectionUtils.transform;
 
 public class KvmTpmManager extends AbstractService {
@@ -467,6 +471,14 @@ public class KvmTpmManager extends AbstractService {
             .then(Flow.of("detach-resource-key")
                 .handle(trigger -> {
                     tpmKeyBackend.detachKeyProviderFromTpm(context.tpmUuid);
+                    List<String> backupUuidList = Q.New(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.resourceUuid, context.vmInstanceUuid)
+                            .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                            .select(VmHostBackupFileVO_.uuid)
+                            .listValues();
+                    for (String backupUuid : backupUuidList) {
+                        tpmKeyBackend.cleanEncryptedResourceKey(backupUuid);
+                    }
                     trigger.next();
                 })
                 .build())
@@ -775,22 +787,62 @@ public class KvmTpmManager extends AbstractService {
                     });
                 })
                 .build())
-            .then(Flow.of("remove-db-records-for-remains")
+            .then(Flow.of("remove-host-file-db-records-for-remains")
                 .skipIf(data -> context.hostFileToDeleteLast == null)
                 .handle(trigger -> {
-                    new SQLBatch() {
+                    VmHostFileDeletionMsg deletionMsg = new VmHostFileDeletionMsg();
+                    deletionMsg.setUuid(context.hostFileToDeleteLast.getUuid());
+                    deletionMsg.setForceDelete(false);
+                    bus.makeLocalServiceId(deletionMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                    bus.send(deletionMsg, new CloudBusCallBack(trigger) {
                         @Override
-                        protected void scripts() {
-                            sql(VmHostFileVO.class)
-                                    .eq(VmHostFileVO_.uuid, context.hostFileToDeleteLast.getUuid())
-                                    .delete();
-                            sql(VmHostBackupFileVO.class)
-                                    .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
-                                    .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
-                                    .delete();
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(reply.getError());
+                            }
                         }
-                    }.execute();
-                    trigger.next();
+                    });
+                })
+                .build())
+            .then(Flow.of("remove-backups-db-records-for-remains")
+                .handle(trigger -> {
+                    List<String> backupUuidList = Q.New(VmHostBackupFileVO.class)
+                            .eq(VmHostBackupFileVO_.resourceUuid, vmUuid)
+                            .eq(VmHostBackupFileVO_.type, VmHostFileType.TpmState)
+                            .select(VmHostBackupFileVO_.uuid)
+                            .listValues();
+                    if (isEmpty(backupUuidList)) {
+                        trigger.next();
+                        return;
+                    }
+
+                    new While<>(backupUuidList).each((uuid, whileCompletion) -> {
+                        VmHostBackupFileDeletionMsg deletionMsg = new VmHostBackupFileDeletionMsg();
+                        deletionMsg.setUuid(uuid);
+                        // VmHostFileVO has been deleted in the previous step, so force delete here is safe
+                        deletionMsg.setForceDelete(true);
+                        bus.makeLocalServiceId(deletionMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                        bus.send(deletionMsg, new CloudBusCallBack(whileCompletion) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    whileCompletion.addError(reply.getError());
+                                }
+                                whileCompletion.done();
+                            }
+                        });
+                    }).run(new WhileDoneCompletion(trigger) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            if (errorCodeList.hasError()) {
+                                String details = String.join("\n", transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails));
+                                logger.warn("failed to clean backup files but still continue:\n" + details);
+                            }
+                            trigger.next();
+                        }
+                    });
                 })
                 .build())
             .then(Flow.of("delete-host-secret")
