@@ -48,9 +48,13 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStatus.StatusEvent;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTree.SnapshotLeaf;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceVO;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
 import org.zstack.longjob.LongJobUtils;
@@ -72,6 +76,8 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.multiErr;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
+import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.CollectionUtils.transform;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
 
 /**
@@ -1426,6 +1432,7 @@ public class VolumeSnapshotTreeBase {
                 .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, volumeSnapshotInv.getGroupUuid())
                 .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false).count();
         if (count == 0) {
+            cleanVmHostBackupFilesForGroup(list(volumeSnapshotInv.getGroupUuid()));
             dbf.removeByPrimaryKey(volumeSnapshotInv.getGroupUuid(), VolumeSnapshotGroupVO.class);
             logger.debug(String.format("snapshot group[uuid:%s] all volume snapshot has been deleted, " +
                     "delete snapshot group", volumeSnapshotInv.getGroupUuid()));
@@ -2153,7 +2160,48 @@ public class VolumeSnapshotTreeBase {
             }
 
             groupUuids.forEach(groupUuid -> vidm.deleteArchiveVmInstanceResourceMetadataGroup(groupUuid));
+            cleanVmHostBackupFilesForGroup(groupUuids);
             dbf.removeByPrimaryKeys(groupUuids, VolumeSnapshotGroupVO.class);
+        }
+    }
+
+    private void cleanVmHostBackupFilesForGroup(List<String> groupUuids) {
+        // TODO: refactor this: VolumeSnapshotGroupVO should has its own cascade extensions!
+        //       VolumeSnapshotGroupVO -> VmHostBackupFileVO
+        if (groupUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> backupUuidList = Q.New(VmHostBackupFileVO.class)
+                .in(VmHostBackupFileVO_.resourceUuid, groupUuids)
+                .select(VmHostBackupFileVO_.uuid)
+                .listValues();
+        if (!backupUuidList.isEmpty()) {
+            new While<>(backupUuidList).each((fileUuid, whileCompletion) -> {
+                VmHostBackupFileDeletionMsg deletionMsg = new VmHostBackupFileDeletionMsg();
+                deletionMsg.setUuid(fileUuid);
+                deletionMsg.setForceDelete(true);
+                bus.makeLocalServiceId(deletionMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                bus.send(deletionMsg, new CloudBusCallBack(whileCompletion) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (reply.isSuccess()) {
+                            whileCompletion.done();
+                            return;
+                        }
+                        whileCompletion.addError(reply.getError());
+                        whileCompletion.done();
+                    }
+                });
+            }).run(new WhileDoneCompletion(null) {
+                @Override
+                public void done(ErrorCodeList errorCodeList) {
+                    if (errorCodeList.hasError()) {
+                        logger.warn("failed to delete some VmHostBackupFiles:\n" + String.join("\n",
+                                transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails)));
+                    }
+                }
+            });
         }
     }
 
