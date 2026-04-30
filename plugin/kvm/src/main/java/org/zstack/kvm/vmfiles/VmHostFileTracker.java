@@ -9,10 +9,8 @@ import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.db.SQLBatch;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.TimeHelper;
@@ -23,7 +21,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceAO_;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -31,7 +28,16 @@ import org.zstack.header.vm.VmInstanceEO;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.vm.additions.*;
+import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostFileContentVO;
+import org.zstack.header.vm.additions.VmHostFileContentVO_;
+import org.zstack.header.vm.additions.VmHostFileDeletionMsg;
+import org.zstack.header.vm.additions.VmHostFileOperation;
+import org.zstack.header.vm.additions.VmHostFileSyncReason;
+import org.zstack.header.vm.additions.VmHostFileType;
+import org.zstack.header.vm.additions.VmHostFileVO;
+import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
 import org.zstack.kvm.KVMAgentCommands;
@@ -52,7 +58,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.CollectionUtils.toMap;
 import static org.zstack.utils.CollectionUtils.transformToSet;
 
 public class VmHostFileTracker implements Component {
@@ -70,8 +75,6 @@ public class VmHostFileTracker implements Component {
     private CloudBus bus;
     @Autowired
     private ResourceDestinationMaker destinationMaker;
-    @Autowired
-    private DatabaseFacade dbf;
     @Autowired
     private TimeHelper timeHelper;
     @Autowired
@@ -465,30 +468,19 @@ public class VmHostFileTracker implements Component {
     }
 
     /**
-     * lastOpDate <= 7d:            do not delete
      * resourceVO no longer exists: delete
-     * -> VolumeSnapshotGroupVO:    do not delete
-     * -> VmInstanceEO (deleted):   delete if VM has deleted >= 90d
-     * -> Other:                    do not delete
+     * Other:                       do not delete
      */
     private void cleanupExpiredVmHostBackupFiles() {
-        long now = timeHelper.getCurrentTimeMillis();
-        Timestamp daysBefore = new Timestamp(now - SEVEN_DAYS_MS);
-
-        List<VmHostBackupFileVO> allBackupFiles = Q.New(VmHostBackupFileVO.class)
-                .lt(VmHostBackupFileVO_.lastOpDate, daysBefore)
-                .list();
+        List<VmHostBackupFileVO> allBackupFiles = Q.New(VmHostBackupFileVO.class).list();
         if (allBackupFiles.isEmpty()) {
             return;
         }
 
-        List<Tuple> resourceTypeTuples = Q.New(ResourceVO.class)
+        Set<String> existingResourceUuids = new HashSet<>(Q.New(ResourceVO.class)
                 .in(ResourceVO_.uuid, transformToSet(allBackupFiles, VmHostBackupFileVO::getResourceUuid))
-                .select(ResourceVO_.uuid, ResourceVO_.resourceType)
-                .listTuple();
-        Map<String, String> uuidTypeMap = toMap(resourceTypeTuples,
-                tuple -> tuple.get(0, String.class),
-                tuple -> tuple.get(1, String.class));
+                .select(ResourceVO_.uuid)
+                .listValues());
 
         CollectionUtils.safeForEach(allBackupFiles, backupFile -> {
             String resourceUuid = backupFile.getResourceUuid();
@@ -496,43 +488,14 @@ public class VmHostFileTracker implements Component {
                 return;
             }
 
-            String resourceType = uuidTypeMap.get(resourceUuid);
-            if (resourceType == null) {
-                logger.info(String.format(
-                        "deleting VmHostBackupFileVO[uuid=%s] -> referenced resource[uuid=%s] no longer exists",
-                        backupFile.getUuid(), resourceUuid));
-                deleteVmHostBackupFileFromDb(backupFile.getUuid());
+            if (existingResourceUuids.contains(resourceUuid)) {
                 return;
             }
 
-            if (VolumeSnapshotGroupVO.class.getSimpleName().equals(resourceType)) {
-                return;
-            }
-
-            if (VmInstanceVO.class.getSimpleName().equals(resourceType)) {
-                VmInstanceEO eo = dbf.findByUuid(resourceUuid, VmInstanceEO.class);
-                if (eo != null && eo.getDeleted() != null) {
-                    long deletedAge;
-                    try {
-                        Timestamp deletedTime = Timestamp.valueOf(eo.getDeleted());
-                        deletedAge = now - deletedTime.getTime();
-                    } catch (IllegalArgumentException e) {
-                        deletedAge = now - eo.getLastOpDate().getTime();
-                    }
-
-                    try {
-                        if (deletedAge > NINETY_DAYS_MS) {
-                            logger.info(String.format(
-                                    "deleting VmHostBackupFileVO[uuid=%s] -> referenced VM[uuid=%s] was deleted %d days ago",
-                                    backupFile.getUuid(), resourceUuid, TimeUnit.MILLISECONDS.toDays(deletedAge)));
-                            deleteVmHostBackupFileFromDb(backupFile.getUuid());
-                        }
-                    } catch (Exception e) {
-                        logger.warn(String.format("failed to parse deleted timestamp[%s] for VM[uuid=%s]",
-                                eo.getDeleted(), resourceUuid), e);
-                    }
-                }
-            }
+            logger.info(String.format(
+                    "deleting VmHostBackupFileVO[uuid=%s] -> referenced resource[uuid=%s] no longer exists",
+                    backupFile.getUuid(), resourceUuid));
+            deleteVmHostBackupFileFromDb(backupFile.getUuid());
         });
     }
 
@@ -572,22 +535,32 @@ public class VmHostFileTracker implements Component {
     }
 
     private void deleteVmHostFileFromDb(String fileUuid) {
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                sql(VmHostFileContentVO.class).eq(VmHostFileContentVO_.uuid, fileUuid).delete();
-                sql(VmHostFileVO.class).eq(VmHostFileVO_.uuid, fileUuid).delete();
-            }
-        }.execute();
+        VmHostFileDeletionMsg msg = new VmHostFileDeletionMsg();
+        msg.setUuid(fileUuid);
+        msg.setForceDelete(false);
+        bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            logger.warn(String.format("failed to delete VmHostFileVO[uuid=%s] via VmHostFileDeletionMsg: %s",
+                    fileUuid, reply.getError().getReadableDetails()));
+        }
     }
 
+    /**
+     * Deletes a {@link VmHostBackupFileVO} only through {@link VmHostBackupFileDeletionMsg} so related rows
+     * are cleaned in the handler/factory order. If the message fails, do not issue a second direct SQL delete:
+     * removing {@code VmHostBackupFileVO} alone could orphan ref tables that would then never be cleaned up.
+     */
     private void deleteVmHostBackupFileFromDb(String fileUuid) {
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                sql(VmHostFileContentVO.class).eq(VmHostFileContentVO_.uuid, fileUuid).delete();
-                sql(VmHostBackupFileVO.class).eq(VmHostBackupFileVO_.uuid, fileUuid).delete();
-            }
-        }.execute();
+        VmHostBackupFileDeletionMsg msg = new VmHostBackupFileDeletionMsg();
+        msg.setUuid(fileUuid);
+        msg.setForceDelete(true);
+        bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            // No fallback DB delete: keep the row until a successful deletion message runs the full cleanup path.
+            logger.warn(String.format("failed to delete VmHostBackupFileVO[uuid=%s] via VmHostBackupFileDeletionMsg: %s",
+                    fileUuid, reply.getError().getReadableDetails()));
+        }
     }
 }
