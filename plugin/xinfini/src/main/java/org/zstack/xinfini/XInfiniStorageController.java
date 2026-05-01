@@ -276,8 +276,9 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
-        // todo
-        comp.success();
+        throw new OperationFailureException(operr("xinfini does not support volume path isolation yet, " +
+                        "abort starting VM on host[uuid:%s, ip:%s] to prevent split-brain on volume[path:%s, protocol:%s]",
+                h.getUuid(), h.getManagementIp(), installPath, protocol));
     }
 
     @Override
