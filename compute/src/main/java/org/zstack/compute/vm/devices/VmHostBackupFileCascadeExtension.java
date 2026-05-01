@@ -16,7 +16,10 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmDeletionStruct;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.VmHostBackupFileDeletionMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
@@ -24,7 +27,10 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -44,8 +50,9 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
     public void asyncCascade(CascadeAction action, Completion completion) {
         if (action.isActionCode(CascadeConstant.DELETION_CHECK_CODE)) {
             handleDeletionCheck(action, completion);
-        } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)
-                || action.isActionCode(CascadeConstant.VM_INSTANCE_EXPUNGE_CODE)) {
+        } else if (action.isActionCode(CascadeConstant.VM_INSTANCE_EXPUNGE_CODE)) {
+            handleDeletion(action, completion);
+        } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             if (shouldDeferVmAssociatedDeletion(action)) {
                 completion.success();
                 return;
@@ -65,6 +72,13 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
         if (!VmInstanceVO.class.getSimpleName().equals(action.getParentIssuer())) {
             return false;
         }
+        if (hasCreatedVmInDeletionContext(action)) {
+            logger.info(String.format(
+                    "VmHostBackupFileCascadeExtension: skip deferring backup-file deletion for Created VM(s): %s; "
+                            + "destroy uses DBOnly hard-delete without expunge, backup rows must be removed in this cascade",
+                    formatCreatedVmUuidsFromContext(action)));
+            return false;
+        }
         Object raw = action.getParentIssuerContext();
         if (!(raw instanceof List)) {
             return false;
@@ -80,6 +94,37 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
             }
         }
         return false;
+    }
+
+    private boolean hasCreatedVmInDeletionContext(CascadeAction action) {
+        Object raw = action.getParentIssuerContext();
+        if (!(raw instanceof List)) {
+            return false;
+        }
+        for (Object o : (List<?>) raw) {
+            if (!(o instanceof VmDeletionStruct)) {
+                continue;
+            }
+            VmInstanceInventory inv = ((VmDeletionStruct) o).getInventory();
+            if (inv != null && VmInstanceState.Created.toString().equals(inv.getState())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String formatCreatedVmUuidsFromContext(CascadeAction action) {
+        Object raw = action.getParentIssuerContext();
+        if (!(raw instanceof List)) {
+            return "[]";
+        }
+        return ((List<?>) raw).stream()
+                .filter(VmDeletionStruct.class::isInstance)
+                .map(VmDeletionStruct.class::cast)
+                .map(VmDeletionStruct::getInventory)
+                .filter(inv -> inv != null && VmInstanceState.Created.toString().equals(inv.getState()))
+                .map(VmInstanceInventory::getUuid)
+                .collect(Collectors.joining(", "));
     }
 
     private List<VmHostBackupFileVO> voFromAction(CascadeAction action) {
@@ -114,11 +159,22 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
             return;
         }
 
+        Set<String> createdVmUuidsAsResource = findVmUuidsInCreatedState(
+                voList.stream().map(VmHostBackupFileVO::getResourceUuid).collect(Collectors.toSet()));
+        if (!createdVmUuidsAsResource.isEmpty()) {
+            logger.info(String.format(
+                    "VmHostBackupFileCascadeExtension: deleting VmHostBackupFile row(s) tied to Created VM(s) %s with forceDelete=true "
+                            + "(same as expunge path; avoids leftovers when VM row is hard-deleted)",
+                    String.join(", ", createdVmUuidsAsResource)));
+        }
+
         new While<>(voList).each((vo, whileCompletion) -> {
             VmHostBackupFileDeletionMsg msg = new VmHostBackupFileDeletionMsg();
             msg.setUuid(vo.getUuid());
-            msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)
-                    || CascadeConstant.VM_INSTANCE_EXPUNGE_CODE.equals(action.getActionCode()));
+            boolean force = action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)
+                    || CascadeConstant.VM_INSTANCE_EXPUNGE_CODE.equals(action.getActionCode())
+                    || createdVmUuidsAsResource.contains(vo.getResourceUuid());
+            msg.setForceDelete(force);
             bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
             bus.send(msg, new CloudBusCallBack(whileCompletion) {
                 @Override
@@ -144,6 +200,17 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
                 completion.success();
             }
         });
+    }
+
+    private Set<String> findVmUuidsInCreatedState(Set<String> candidateVmUuids) {
+        if (candidateVmUuids.isEmpty()) {
+            return new HashSet<>();
+        }
+        return new HashSet<>(Q.New(VmInstanceVO.class)
+                .in(VmInstanceVO_.uuid, candidateVmUuids)
+                .eq(VmInstanceVO_.state, VmInstanceState.Created)
+                .select(VmInstanceVO_.uuid)
+                .listValues());
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
