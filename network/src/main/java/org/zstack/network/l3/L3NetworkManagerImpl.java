@@ -553,6 +553,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo.setIpVersion(IPv6Constants.IPv4);
         }
         vo.setInternalId((int)dbf.generateSequenceNumber(L3NetworkSequenceNumberVO.class));
+        vo.setType(msg.getType() != null ? msg.getType() : L3NetworkConstant.L3_BASIC_NETWORK_TYPE);
 
         FlowChain fchain = new SimpleFlowChain();
         fchain.setName(String.format("create-l3-network-%s", vo.getUuid()));

@@ -1,6 +1,7 @@
 package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.search.Inventory;
 
 import java.io.Serializable;
@@ -19,6 +20,7 @@ public class SdnControllerInventory implements Serializable {
     private String description;
     private String ip;
     private String username;
+    @NoLogging
     private String password;
     private SdnControllerStatus status;
     private List<SdnControllerHostRefInventory> hostRefs;
