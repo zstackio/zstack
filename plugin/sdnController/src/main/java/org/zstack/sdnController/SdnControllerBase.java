@@ -154,6 +154,8 @@ public class SdnControllerBase {
                 flowChain.getData().put(SDN_CONTROLLER_UUID, self.getUuid());
                 flowChain.setName(String.format("sync-sdn-controller-data-%s-%s", self.getUuid(), self.getName()));
 
+                // allowEmptyFlow: vendors may not provide sync flows; treat empty chain as success
+                flowChain.allowEmptyFlow();
                 // Start the chain; flows in factory-provided chain should perform data sync operations
                 flowChain.done(new FlowDoneHandler(msg) {
                     @Override

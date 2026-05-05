@@ -12033,8 +12033,8 @@ public class CloudOperationsErrorCode {
 
     // ZNS DHCP
     // 10020 ZNS DHCP enable/check failed due to invalid L3/segment state
-    // 10021 reserved
-    // 10022 reserved
+    // 10021 ZNS compute manager not found on controller
+    // 10022 ZNS reconnect: compute manager UUID missing
     // 10023 reserved
     // 10024 unsupported legacy SdnControllerDhcp path for ZNS L3
     public static final String ORG_ZSTACK_NETWORK_ZNS_10020 = "ORG_ZSTACK_NETWORK_ZNS_10020";
@@ -12042,6 +12042,28 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10022 = "ORG_ZSTACK_NETWORK_ZNS_10022";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10023 = "ORG_ZSTACK_NETWORK_ZNS_10023";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10024 = "ORG_ZSTACK_NETWORK_ZNS_10024";
+
+    // ZNS Wave 4 operation error codes
+    // 10025 ZNS create segment failed
+    // 10026 ZNS patch segment failed (e.g. CIDR/gateway sync)
+    // 10027 ZNS attach router to segment failed
+    // 10028 ZNS detach router from segment failed
+    // 10029 ZNS patch DHCP config on segment failed
+    // 10030 ZNS patch segment MTU failed
+    // 10031 duplicate IpRange ip_version on same ZNS L3 network
+    // 10032 ZNS L2 has sub-resources, cannot delete
+    // 10033 ZNS VPC L3 missing znsTenantRouterUuid system tag
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10025 = "ORG_ZSTACK_NETWORK_ZNS_10025";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10026 = "ORG_ZSTACK_NETWORK_ZNS_10026";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10027 = "ORG_ZSTACK_NETWORK_ZNS_10027";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10028 = "ORG_ZSTACK_NETWORK_ZNS_10028";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10029 = "ORG_ZSTACK_NETWORK_ZNS_10029";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10030 = "ORG_ZSTACK_NETWORK_ZNS_10030";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10031 = "ORG_ZSTACK_NETWORK_ZNS_10031";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10032 = "ORG_ZSTACK_NETWORK_ZNS_10032";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10033 = "ORG_ZSTACK_NETWORK_ZNS_10033";
+    // 10034 ZNS API returned HTTP 409 Conflict (sub-resources still exist)
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10034 = "ORG_ZSTACK_NETWORK_ZNS_10034";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
