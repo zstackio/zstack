@@ -18,6 +18,7 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.SdnControllerDeleteExtensionPoint;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerStatus;
+import org.zstack.header.network.sdncontroller.SdnControllerStatusEvent;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.sdnController.header.*;
@@ -101,7 +102,7 @@ public class SdnControllerPingTracker extends PingTracker implements
 
         if (!reply.isSuccess()) {
             logger.warn(String.format("[SDN Ping Tracker]: unable to ping the sdn controller[uuid: %s], %s", resourceUuid, reply.getError()));
-            new SdnControllerBase(vo).changeSdnControllerStatus(SdnControllerStatus.Disconnected);
+            sdnMgr.getSdnControllerFactory(vo.getVendorType()).changeSdnControllerStatus(vo, SdnControllerStatusEvent.PING_FAILED);
             return;
         }
 
