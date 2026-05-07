@@ -28,4 +28,12 @@ public class ModelServiceRefInventory  {
         return this.modelServiceUuid;
     }
 
+    public java.lang.Boolean isDefault;
+    public void setIsDefault(java.lang.Boolean isDefault) {
+        this.isDefault = isDefault;
+    }
+    public java.lang.Boolean getIsDefault() {
+        return this.isDefault;
+    }
+
 }

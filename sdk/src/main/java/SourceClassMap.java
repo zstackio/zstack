@@ -29,6 +29,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.VmModelMountStatus", "org.zstack.sdk.VmModelMountStatus");
 			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
+			put("org.zstack.ai.message.MatchEvidence", "org.zstack.sdk.MatchEvidence");
+			put("org.zstack.ai.message.MatchedStep", "org.zstack.sdk.MatchedStep");
 			put("org.zstack.ai.message.ModelCenterServiceInventory", "org.zstack.sdk.ModelCenterServiceInventory");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService", "org.zstack.sdk.MetaServerService");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus", "org.zstack.sdk.ServiceStatus");
@@ -1241,6 +1243,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LunInventory", "org.zstack.header.storageDevice.LunInventory");
 			put("org.zstack.sdk.MaaSUsage", "org.zstack.ai.message.MaaSUsage");
 			put("org.zstack.sdk.ManagementNodeInventory", "org.zstack.header.managementnode.ManagementNodeInventory");
+			put("org.zstack.sdk.MatchEvidence", "org.zstack.ai.message.MatchEvidence");
+			put("org.zstack.sdk.MatchedStep", "org.zstack.ai.message.MatchedStep");
 			put("org.zstack.sdk.MdevDeviceChooser", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceChooser");
 			put("org.zstack.sdk.MdevDeviceInventory", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceInventory");
 			put("org.zstack.sdk.MdevDeviceSpecInventory", "org.zstack.pciDevice.specification.mdev.MdevDeviceSpecInventory");
