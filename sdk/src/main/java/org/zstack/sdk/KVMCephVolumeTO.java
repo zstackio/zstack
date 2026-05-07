@@ -20,4 +20,20 @@ public class KVMCephVolumeTO extends org.zstack.sdk.VolumeTO {
         return this.secretUuid;
     }
 
+    public java.lang.String encryptSecretUuid;
+    public void setEncryptSecretUuid(java.lang.String encryptSecretUuid) {
+        this.encryptSecretUuid = encryptSecretUuid;
+    }
+    public java.lang.String getEncryptSecretUuid() {
+        return this.encryptSecretUuid;
+    }
+
+    public java.lang.String encryptFormat;
+    public void setEncryptFormat(java.lang.String encryptFormat) {
+        this.encryptFormat = encryptFormat;
+    }
+    public java.lang.String getEncryptFormat() {
+        return this.encryptFormat;
+    }
+
 }

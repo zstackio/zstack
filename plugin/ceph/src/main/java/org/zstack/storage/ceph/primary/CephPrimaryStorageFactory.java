@@ -383,6 +383,36 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         return cto;
     }
 
+    private void appendVolumeLuksLibvirtSecretsAddon(Map<String, Object> addons, VolumeInventory vol) {
+        if (vol == null) {
+            return;
+        }
+        String uuid = KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID.getTokenByResourceUuid(vol.getUuid(), KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID_TOKEN);
+        if (uuid == null) {
+            return;
+        }
+        String b64 = KVMSystemTags.VOLUME_ENCRYPT_PASSPHRASE_BASE64.getTokenByResourceUuid(vol.getUuid(), KVMSystemTags.VOLUME_ENCRYPT_PASSPHRASE_BASE64_TOKEN);
+        if (b64 == null) {
+            throw new OperationFailureException(operr(
+                    "volume[uuid:%s] has LUKS libvirt secret uuid tag but no kvm::volume::encryptPassphraseBase64 tag; cannot define secret on hypervisor",
+                    vol.getUuid()));
+        }
+        @SuppressWarnings("unchecked")
+        List<VolumeLuksLibvirtSecretSpec> list = (List<VolumeLuksLibvirtSecretSpec>) addons.computeIfAbsent(KVMConstant.VOLUME_LUKS_SECRETS, k -> new ArrayList<>());
+        for (VolumeLuksLibvirtSecretSpec existing : list) {
+            if (uuid.equals(existing.getUuid())) {
+                if (!b64.equals(existing.getPassphraseBase64())) {
+                    throw new OperationFailureException(operr("conflicting LUKS passphrase for libvirt secret[uuid:%s]", uuid));
+                }
+                return;
+            }
+        }
+        VolumeLuksLibvirtSecretSpec spec = new VolumeLuksLibvirtSecretSpec();
+        spec.setUuid(uuid);
+        spec.setPassphraseBase64(b64);
+        list.add(spec);
+    }
+
     private VolumeTO convertVolumeToCephIfNeeded(VolumeInventory vol, VolumeTO to) {
         if (!vol.getInstallPath().startsWith(VolumeTO.CEPH)) {
             return to;
@@ -415,6 +445,12 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
         cto.setSecretUuid(getCephSecretUuid(vol.getPrimaryStorageUuid()));
         cto.setMonInfo(monInfos);
         cto.setDeviceType(VolumeTO.CEPH);
+        String encSecret = KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID.getTokenByResourceUuid(
+                vol.getUuid(), KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID_TOKEN);
+        if (encSecret != null) {
+            cto.setEncryptSecretUuid(encSecret);
+            cto.setEncryptFormat("luks");
+        }
         return cto;
     }
 
@@ -439,6 +475,7 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, AttachDataVolumeCmd cmd, Map data) {
         cmd.setVolume(convertVolumeToCephIfNeeded(volume, cmd.getVolume()));
+        appendVolumeLuksLibvirtSecretsAddon(cmd.getAddons(), volume);
     }
 
     @Override
@@ -487,6 +524,16 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
 
         List<CdRomTO> cdRomTOS = transformAndRemoveNull(cmd.getCdRoms(), this::convertCdRomToCephIfNeeded);
         cmd.setCdRoms(cdRomTOS);
+
+        appendVolumeLuksLibvirtSecretsAddon(cmd.getAddons(), spec.getDestRootVolume());
+        for (VolumeInventory dvol : spec.getDestDataVolumes()) {
+            appendVolumeLuksLibvirtSecretsAddon(cmd.getAddons(), dvol);
+        }
+        if (spec.getDestCacheVolumes() != null) {
+            for (VolumeInventory cvol : spec.getDestCacheVolumes()) {
+                appendVolumeLuksLibvirtSecretsAddon(cmd.getAddons(), cvol);
+            }
+        }
 
         CephPrimaryStorageVO cephPrimaryStorageVO = dbf.findByUuid(spec.getDestRootVolume().getPrimaryStorageUuid(), CephPrimaryStorageVO.class);
         if (cephPrimaryStorageVO != null && !CephSystemTags.NO_CEPHX.hasTag(cephPrimaryStorageVO.getUuid())) {

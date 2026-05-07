@@ -34,10 +34,19 @@ public class KVMCephVolumeTO extends VolumeTO {
 
     public KVMCephVolumeTO(VolumeTO other) {
         super(other);
+        if (other instanceof KVMCephVolumeTO) {
+            KVMCephVolumeTO o = (KVMCephVolumeTO) other;
+            this.encryptSecretUuid = o.encryptSecretUuid;
+            this.encryptFormat = o.encryptFormat;
+        }
     }
 
     private List<MonInfo> monInfo;
     private String secretUuid;
+    /** Libvirt passphrase secret for LUKS (or other driver encryption), not Ceph cephx. */
+    private String encryptSecretUuid;
+    /** e.g. {@code luks}; agent defaults to luks when null. */
+    private String encryptFormat;
 
     public String getSecretUuid() {
         return secretUuid;
@@ -45,6 +54,22 @@ public class KVMCephVolumeTO extends VolumeTO {
 
     public void setSecretUuid(String secretUuid) {
         this.secretUuid = secretUuid;
+    }
+
+    public String getEncryptSecretUuid() {
+        return encryptSecretUuid;
+    }
+
+    public void setEncryptSecretUuid(String encryptSecretUuid) {
+        this.encryptSecretUuid = encryptSecretUuid;
+    }
+
+    public String getEncryptFormat() {
+        return encryptFormat;
+    }
+
+    public void setEncryptFormat(String encryptFormat) {
+        this.encryptFormat = encryptFormat;
     }
 
     public List<MonInfo> getMonInfo() {

@@ -3111,6 +3111,27 @@ public class KVMHost extends HostBase implements Host {
         }).start();
     }
 
+    private List<VolumeLuksLibvirtSecretSpec> buildVolumeLuksSecretSpecs(Collection<String> volumeUuids) {
+        Map<String, VolumeLuksLibvirtSecretSpec> bySecretUuid = new LinkedHashMap<>();
+        for (String volUuid : new LinkedHashSet<>(volumeUuids)) {
+            String secUuid = KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID.getTokenByResourceUuid(volUuid, KVMSystemTags.VOLUME_ENCRYPT_SECRET_UUID_TOKEN);
+            if (secUuid == null) {
+                continue;
+            }
+            String b64 = KVMSystemTags.VOLUME_ENCRYPT_PASSPHRASE_BASE64.getTokenByResourceUuid(volUuid, KVMSystemTags.VOLUME_ENCRYPT_PASSPHRASE_BASE64_TOKEN);
+            if (b64 == null) {
+                throw new OperationFailureException(operr(
+                        "volume[uuid:%s] has LUKS libvirt secret uuid tag but no kvm::volume::encryptPassphraseBase64 tag; cannot prepare target hypervisor",
+                        volUuid));
+            }
+            VolumeLuksLibvirtSecretSpec spec = new VolumeLuksLibvirtSecretSpec();
+            spec.setUuid(secUuid);
+            spec.setPassphraseBase64(b64);
+            bySecretUuid.put(secUuid, spec);
+        }
+        return new ArrayList<>(bySecretUuid.values());
+    }
+
     private void migrateVm(final MigrateStruct s, final Completion completion) {
         final String dstHostMigrateIp, dstHostMnIp, dstHostUuid;
         final String vmUuid;
@@ -3143,6 +3164,48 @@ public class KVMHost extends HostBase implements Host {
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "ensure-volume-luks-secrets-on-target-hypervisor";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        if (s.diskMigrationMap == null || s.diskMigrationMap.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        List<VolumeLuksLibvirtSecretSpec> specs = buildVolumeLuksSecretSpecs(s.diskMigrationMap.values());
+                        if (specs.isEmpty()) {
+                            trigger.next();
+                            return;
+                        }
+                        String prepareHostUuid = s.migrateFromDestition ? s.srcHostUuid : s.dstHostUuid;
+                        EnsureVolumeLuksSecretsCmd ec = new EnsureVolumeLuksSecretsCmd();
+                        ec.setSecrets(specs);
+                        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+                        kmsg.setCommand(ec);
+                        kmsg.setPath(KVMConstant.KVM_ENSURE_VOLUME_LUKS_SECRETS_PATH);
+                        kmsg.setNoStatusCheck(true);
+                        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, prepareHostUuid);
+                        bus.send(kmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+                                KVMHostAsyncHttpCallReply kr = reply.castReply();
+                                LinkedHashMap rsp = kr.getResponse();
+                                if (rsp == null || !Boolean.TRUE.equals(rsp.get("success"))) {
+                                    Object err = rsp == null ? "empty agent response" : rsp.get("error");
+                                    trigger.fail(operr("failed to ensure LUKS libvirt secrets on host[uuid:%s]: %s", prepareHostUuid, err));
+                                    return;
+                                }
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
                 flow(new NoRollbackFlow() {
                     String __name__ = "clean-firmware-flash-before-migrate";
 
@@ -3204,13 +3267,15 @@ public class KVMHost extends HostBase implements Host {
 
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
+                            /* Destination hypervisor runs the VM after migration; VolumeTO extensions (e.g. storage network) must match dst. */
+                            KVMHostInventory volumeContextHost = KVMHostInventory.valueOf(dbf.findByUuid(dstHostUuid, KVMHostVO.class));
                             new SQLBatch() {
                                 @Override
                                 protected void scripts() {
                                     s.diskMigrationMap.forEach((oldVolumeInstallPath, newVolumeUuid) -> {
                                         VolumeVO vo = findByUuid(newVolumeUuid, VolumeVO.class);
                                         diskMigrationMap.put(oldVolumeInstallPath,
-                                                VolumeTO.valueOf(VolumeInventory.valueOf(vo), (KVMHostInventory) getSelfInventory()));
+                                                VolumeTO.valueOf(VolumeInventory.valueOf(vo), volumeContextHost));
                                     });
                                 }
                             }.execute();

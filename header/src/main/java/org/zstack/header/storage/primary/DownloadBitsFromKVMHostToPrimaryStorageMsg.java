@@ -1,5 +1,6 @@
 package org.zstack.header.storage.primary;
 
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
@@ -13,6 +14,11 @@ public class DownloadBitsFromKVMHostToPrimaryStorageMsg extends NeedReplyMessage
     private String destHostUuid;
     private Long bandWidth;
     private String longJobUuid;
+    @NoLogging
+    private String srcQcow2EncryptSecret;
+    @NoLogging
+    private String dstRbdEncryptSecret;
+    private String dstRbdEncryptFormat;
 
     public String getDestHostUuid() {
         return destHostUuid;
@@ -69,5 +75,29 @@ public class DownloadBitsFromKVMHostToPrimaryStorageMsg extends NeedReplyMessage
 
     public void setLongJobUuid(String longJobUuid) {
         this.longJobUuid = longJobUuid;
+    }
+
+    public String getSrcQcow2EncryptSecret() {
+        return srcQcow2EncryptSecret;
+    }
+
+    public void setSrcQcow2EncryptSecret(String srcQcow2EncryptSecret) {
+        this.srcQcow2EncryptSecret = srcQcow2EncryptSecret;
+    }
+
+    public String getDstRbdEncryptSecret() {
+        return dstRbdEncryptSecret;
+    }
+
+    public void setDstRbdEncryptSecret(String dstRbdEncryptSecret) {
+        this.dstRbdEncryptSecret = dstRbdEncryptSecret;
+    }
+
+    public String getDstRbdEncryptFormat() {
+        return dstRbdEncryptFormat;
+    }
+
+    public void setDstRbdEncryptFormat(String dstRbdEncryptFormat) {
+        this.dstRbdEncryptFormat = dstRbdEncryptFormat;
     }
 }

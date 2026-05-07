@@ -54,6 +54,22 @@ public class KVMSystemTags {
     public static final String VOLUME_WWN_TOKEN = "wwn";
     public static PatternedSystemTag VOLUME_WWN = new PatternedSystemTag(String.format("kvm::volume::{%s}", VOLUME_WWN_TOKEN), VolumeVO.class);
 
+    /**
+     * Libvirt secret UUID (type=passphrase) for volume encryption (e.g. LUKS on RBD).
+     * Distinct from Ceph cephx auth secret on ceph volume TO {@code secretUuid}.
+     */
+    public static final String VOLUME_ENCRYPT_SECRET_UUID_TOKEN = "secretUuid";
+    public static PatternedSystemTag VOLUME_ENCRYPT_SECRET_UUID = new PatternedSystemTag(
+            String.format("kvm::volume::encryptSecretUuid::{%s}", VOLUME_ENCRYPT_SECRET_UUID_TOKEN), VolumeVO.class);
+
+    /**
+     * Base64-encoded LUKS passphrase bytes for {@link #VOLUME_ENCRYPT_SECRET_UUID} (same resource).
+     * Prefer KMS / {@link org.zstack.header.keyprovider.EncryptedResourceKeyManager} long-term; this tag wires the hypervisor.
+     */
+    public static final String VOLUME_ENCRYPT_PASSPHRASE_BASE64_TOKEN = "passphraseBase64";
+    public static PatternedSystemTag VOLUME_ENCRYPT_PASSPHRASE_BASE64 = new PatternedSystemTag(
+            String.format("kvm::volume::encryptPassphraseBase64::{%s}", VOLUME_ENCRYPT_PASSPHRASE_BASE64_TOKEN), VolumeVO.class);
+
     public static final String VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN = "number";
     public static PatternedSystemTag VM_PREDEFINED_PCI_BRIDGE_NUM = new PatternedSystemTag(
             String.format("vm::pci::bridge::num::{%s}",

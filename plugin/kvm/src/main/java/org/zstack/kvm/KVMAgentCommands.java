@@ -1730,6 +1730,41 @@ public class KVMAgentCommands {
         }
     }
 
+    /** Libvirt secret (type=passphrase) for volume encryption; UUID matches disk XML encryption/secret@uuid. */
+    public static class VolumeLuksLibvirtSecretSpec implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private String uuid;
+        private String passphraseBase64;
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public void setUuid(String uuid) {
+            this.uuid = uuid;
+        }
+
+        public String getPassphraseBase64() {
+            return passphraseBase64;
+        }
+
+        public void setPassphraseBase64(String passphraseBase64) {
+            this.passphraseBase64 = passphraseBase64;
+        }
+    }
+
+    public static class EnsureVolumeLuksSecretsCmd extends AgentCommand {
+        private List<VolumeLuksLibvirtSecretSpec> secrets;
+
+        public List<VolumeLuksLibvirtSecretSpec> getSecrets() {
+            return secrets;
+        }
+
+        public void setSecrets(List<VolumeLuksLibvirtSecretSpec> secrets) {
+            this.secrets = secrets;
+        }
+    }
+
     public static class IsoTO extends BaseVirtualDeviceTO {
         protected String path;
         protected String imageUuid;

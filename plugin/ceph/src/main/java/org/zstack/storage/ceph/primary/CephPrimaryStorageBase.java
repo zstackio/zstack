@@ -1235,6 +1235,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         private String primaryStorageInstallPath;
         private Long bandWidth;
         private String identificationCode;
+        @NoLogging
+        private String srcQcow2EncryptSecret;
+        @NoLogging
+        private String dstRbdEncryptSecret;
+        private String dstRbdEncryptFormat;
 
         public String getHostname() {
             return hostname;
@@ -1290,6 +1295,30 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         public void setBandWidth(Long bandWidth) {
             this.bandWidth = bandWidth;
+        }
+
+        public String getSrcQcow2EncryptSecret() {
+            return srcQcow2EncryptSecret;
+        }
+
+        public void setSrcQcow2EncryptSecret(String srcQcow2EncryptSecret) {
+            this.srcQcow2EncryptSecret = srcQcow2EncryptSecret;
+        }
+
+        public String getDstRbdEncryptSecret() {
+            return dstRbdEncryptSecret;
+        }
+
+        public void setDstRbdEncryptSecret(String dstRbdEncryptSecret) {
+            this.dstRbdEncryptSecret = dstRbdEncryptSecret;
+        }
+
+        public String getDstRbdEncryptFormat() {
+            return dstRbdEncryptFormat;
+        }
+
+        public void setDstRbdEncryptFormat(String dstRbdEncryptFormat) {
+            this.dstRbdEncryptFormat = dstRbdEncryptFormat;
         }
 
         @Override
@@ -4385,6 +4414,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             handle((GetVolumeSnapshotInfoMsg) msg);
         } else if (msg instanceof DownloadBitsFromKVMHostToPrimaryStorageMsg) {
             handle((DownloadBitsFromKVMHostToPrimaryStorageMsg) msg);
+        } else if (msg instanceof SftpExportCephVolumeToKvmHostMsg) {
+            handle((SftpExportCephVolumeToKvmHostMsg) msg);
         } else if (msg instanceof DownloadBitsFromNbdToPrimaryStorageMsg) {
             handle((DownloadBitsFromNbdToPrimaryStorageMsg) msg);
         } else if (msg instanceof DownloadBitsFromRemoteTargetOnPrimaryStorageMsg) {
@@ -4465,6 +4496,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 cmd.setBackupStorageInstallPath(msg.getHostInstallPath());
                 cmd.setPrimaryStorageInstallPath(msg.getPrimaryStorageInstallPath());
                 cmd.setBandWidth(msg.getBandWidth());
+                cmd.setSrcQcow2EncryptSecret(msg.getSrcQcow2EncryptSecret());
+                cmd.setDstRbdEncryptSecret(msg.getDstRbdEncryptSecret());
+                cmd.setDstRbdEncryptFormat(msg.getDstRbdEncryptFormat());
                 cmd.setIdentificationCode(msg.getLongJobUuid() + msg.getPrimaryStorageInstallPath());
                 String randomFactor = msg.getLongJobUuid();
 
@@ -4490,6 +4524,66 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         completion.done();
                     }
                 }).specifyOrder(randomFactor).call();
+            }
+        });
+    }
+
+    private void handle(SftpExportCephVolumeToKvmHostMsg msg) {
+        inQueue().name(String.format("sftp-export-ceph-volume-to-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(chain -> sftpExportCephVolumeToKvmHost(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                }));
+    }
+
+    private void sftpExportCephVolumeToKvmHost(SftpExportCephVolumeToKvmHostMsg msg, final NoErrorCompletion completion) {
+        SftpExportCephVolumeToKvmHostReply reply = new SftpExportCephVolumeToKvmHostReply();
+
+        GetKVMHostDownloadCredentialMsg gmsg = new GetKVMHostDownloadCredentialMsg();
+        gmsg.setHostUuid(msg.getDstHostUuid());
+
+        if (PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.hasTag(self.getUuid())) {
+            gmsg.setDataNetworkCidr(PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY.getTokenByResourceUuid(self.getUuid(), PrimaryStorageSystemTags.PRIMARY_STORAGE_GATEWAY_TOKEN));
+        }
+
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getDstHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(reply) {
+            @Override
+            public void run(MessageReply rly) {
+                if (!rly.isSuccess()) {
+                    reply.setError(rly.getError());
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
+                GetKVMHostDownloadCredentialReply grly = rly.castReply();
+                SftpUpLoadCmd cmd = new SftpUpLoadCmd();
+                cmd.setSendCommandUrl(restf.getSendCommandUrl());
+                cmd.setPrimaryStorageInstallPath(msg.getCephVolumeInstallPath());
+                cmd.setBackupStorageInstallPath(msg.getDstAbsolutePathOnHost());
+                cmd.setHostname(grly.getHostname());
+                cmd.setUsername(grly.getUsername());
+                cmd.setSshKey(grly.getSshKey());
+                cmd.setSshPort(grly.getSshPort());
+
+                httpCall(SFTP_UPLOAD_PATH, cmd, SftpUploadRsp.class, new ReturnValueCompletion<SftpUploadRsp>(reply) {
+                    @Override
+                    public void success(SftpUploadRsp returnValue) {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
             }
         });
     }

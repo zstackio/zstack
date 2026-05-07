@@ -110,7 +110,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         // so for Windows, use virtio as well
 
         if (platform == null && vol.getVmInstanceUuid() != null) {
-            platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vol.getUuid()).select(VmInstanceVO_.platform).findValue();
+            platform = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid()).select(VmInstanceVO_.platform).findValue();
         }
 
         if (KVMSystemTags.VOLUME_SCSI.hasTag(vol.getUuid())) {
