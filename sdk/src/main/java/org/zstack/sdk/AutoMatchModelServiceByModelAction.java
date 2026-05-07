@@ -17,10 +17,10 @@ public class AutoMatchModelServiceByModelAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -46,12 +46,6 @@ public class AutoMatchModelServiceByModelAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -59,9 +53,9 @@ public class AutoMatchModelServiceByModelAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.AutoMatchModelServiceByModelResult value = res.getResult(org.zstack.sdk.AutoMatchModelServiceByModelResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AutoMatchModelServiceByModelResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.AutoMatchModelServiceByModelResult() : value; 
 
         return ret;
     }

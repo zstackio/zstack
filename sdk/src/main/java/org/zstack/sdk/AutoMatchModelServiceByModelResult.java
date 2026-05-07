@@ -1,10 +1,9 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.MatchedStep;
+import org.zstack.sdk.MatchEvidence;
+
 public class AutoMatchModelServiceByModelResult {
-    /**
-     * UUID of the recommended ModelServiceVO. May be null if FALLBACK step
-     * found no Transformers candidate.
-     */
     public java.lang.String recommendedServiceUuid;
     public void setRecommendedServiceUuid(java.lang.String recommendedServiceUuid) {
         this.recommendedServiceUuid = recommendedServiceUuid;
@@ -13,26 +12,19 @@ public class AutoMatchModelServiceByModelResult {
         return this.recommendedServiceUuid;
     }
 
-    /**
-     * Which matching step produced this recommendation:
-     * USER_PRESET | FILE_FORMAT | PIPELINE_TAG | FALLBACK
-     */
-    public java.lang.String matchedByStep;
-    public void setMatchedByStep(java.lang.String matchedByStep) {
+    public MatchedStep matchedByStep;
+    public void setMatchedByStep(MatchedStep matchedByStep) {
         this.matchedByStep = matchedByStep;
     }
-    public java.lang.String getMatchedByStep() {
+    public MatchedStep getMatchedByStep() {
         return this.matchedByStep;
     }
 
-    /**
-     * Diagnostic evidence for the match decision.
-     */
-    public java.util.LinkedHashMap evidence;
-    public void setEvidence(java.util.LinkedHashMap evidence) {
+    public MatchEvidence evidence;
+    public void setEvidence(MatchEvidence evidence) {
         this.evidence = evidence;
     }
-    public java.util.LinkedHashMap getEvidence() {
+    public MatchEvidence getEvidence() {
         return this.evidence;
     }
 
