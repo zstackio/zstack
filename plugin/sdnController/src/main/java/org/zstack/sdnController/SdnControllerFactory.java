@@ -18,7 +18,7 @@ public interface SdnControllerFactory {
             case RECONNECT_SUCCESS:   return SdnControllerStatus.Connected;
             case RECONNECT_FAILED:    return SdnControllerStatus.Disconnected;
             case PING_FAILED:         return SdnControllerStatus.Disconnected;
-            case INIT_SYNC_STARTED:   return SdnControllerStatus.Syncing;
+            case INIT_SYNC_STARTED:   return SdnControllerStatus.Connecting;
             case INIT_SYNC_SUCCESS:   return SdnControllerStatus.Connected;
             case INIT_SYNC_FAILED:    return SdnControllerStatus.Disconnected;
             default:                  return vo.getStatus();
