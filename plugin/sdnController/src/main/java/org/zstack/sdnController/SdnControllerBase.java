@@ -11,7 +11,6 @@ import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -68,8 +67,6 @@ public class SdnControllerBase {
     private CascadeFacade casf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private EventFacade evtf;
     @Autowired
     SdnControllerManager sdnMgr;
     @Autowired
@@ -181,26 +178,6 @@ public class SdnControllerBase {
         });
     }
 
-    public void changeSdnControllerStatus(SdnControllerStatus status) {
-        if (status == self.getStatus()) {
-            return;
-        }
-
-        SdnControllerStatus oldStatus = self.getStatus();
-        logger.debug(String.format("sdn controller [%s] changed status, old status: [%s], new status: [%s]",
-                self.getUuid(), oldStatus, status.toString()));
-        self.setStatus(status);
-        self = dbf.updateAndRefresh(self);
-
-        SdnControllerCanonicalEvents.SdnControllerStatusChangedData d = new SdnControllerCanonicalEvents.SdnControllerStatusChangedData();
-        d.setSdnControllerUuid(self.getUuid());
-        d.setSdnControllerType(self.getVendorType());
-        d.setOldStatus(oldStatus.toString());
-        d.setNewStatus(status.toString());
-        d.setInv(SdnControllerInventory.valueOf(self));
-        evtf.fire(SdnControllerCanonicalEvents.SDNCONTROLLER_STATUS_CHANGED_PATH, d);
-    }
-
     private void doChangeSdnController(APIChangeSdnControllerMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("change-sdn-controller-%s-%s", self.getUuid(), self.getName()));
@@ -226,6 +203,11 @@ public class SdnControllerBase {
                 }
 
                 if (changed) {
+                    String newUsername = self.getUsername();
+                    String newPassword = self.getPassword();
+                    self = dbf.reload(self);
+                    self.setUsername(newUsername);
+                    self.setPassword(newPassword);
                     self = dbf.updateAndRefresh(self);
                     chain.getData().put(SDN_CONTROLLER_CHANGED, changed);
                 }
@@ -259,6 +241,11 @@ public class SdnControllerBase {
                     self.setUsername(username);
                 }
                 if (password != null || username != null) {
+                    String rollbackUsername = self.getUsername();
+                    String rollbackPassword = self.getPassword();
+                    self = dbf.reload(self);
+                    self.setUsername(rollbackUsername);
+                    self.setPassword(rollbackPassword);
                     self = dbf.updateAndRefresh(self);
                 }
 
@@ -424,13 +411,13 @@ public class SdnControllerBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                changeSdnControllerStatus(SdnControllerStatus.Connecting);
+                sdnMgr.getSdnControllerFactory(self.getVendorType()).changeSdnControllerStatus(self, SdnControllerStatusEvent.RECONNECT_STARTED);
                 trigger.next();
             }
 
             @Override
             public void rollback(FlowRollback trigger, Map data) {
-                changeSdnControllerStatus(SdnControllerStatus.Disconnected);
+                sdnMgr.getSdnControllerFactory(self.getVendorType()).changeSdnControllerStatus(self, SdnControllerStatusEvent.RECONNECT_FAILED);
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
@@ -456,7 +443,7 @@ public class SdnControllerBase {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                changeSdnControllerStatus(SdnControllerStatus.Connected);
+                sdnMgr.getSdnControllerFactory(self.getVendorType()).changeSdnControllerStatus(self, SdnControllerStatusEvent.RECONNECT_SUCCESS);
                 trigger.next();
             }
         }).done(new FlowDoneHandler(completion) {

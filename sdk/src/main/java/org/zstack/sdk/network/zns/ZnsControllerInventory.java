@@ -12,4 +12,20 @@ public class ZnsControllerInventory extends org.zstack.sdk.SdnControllerInventor
         return this.transportZones;
     }
 
+    public java.util.List tenants;
+    public void setTenants(java.util.List tenants) {
+        this.tenants = tenants;
+    }
+    public java.util.List getTenants() {
+        return this.tenants;
+    }
+
+    public java.util.List tenantRouters;
+    public void setTenantRouters(java.util.List tenantRouters) {
+        this.tenantRouters = tenantRouters;
+    }
+    public java.util.List getTenantRouters() {
+        return this.tenantRouters;
+    }
+
 }
