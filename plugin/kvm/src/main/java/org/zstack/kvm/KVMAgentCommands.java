@@ -484,6 +484,30 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class SecretHostEnsureLuksSecretFileCmd extends AgentCommand {
+        private String encryptedDek;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
+    }
+
+    public static class SecretHostEnsureLuksSecretFileResponse extends AgentResponse {
+        private String secFilePath;
+
+        public String getSecFilePath() {
+            return secFilePath;
+        }
+
+        public void setSecFilePath(String secFilePath) {
+            this.secFilePath = secFilePath;
+        }
+    }
+
     public static class SecretHostGetCmd extends AgentCommand {
         private String vmUuid;
         private String purpose;
@@ -4300,6 +4324,8 @@ public class KVMAgentCommands {
         private String volumeInstallPath;
         private String newVolumeUuid;
         private String newVolumeInstallPath;
+        private String encryptLuksSecretMaterialFilePath;
+        private String fullSnapshotLuksSecretMaterialFilePath;
         private boolean online;
         private long timeout;
 
@@ -4368,6 +4394,22 @@ public class KVMAgentCommands {
 
         public void setNewVolumeUuid(String newVolumeUuid) {
             this.newVolumeUuid = newVolumeUuid;
+        }
+
+        public String getEncryptLuksSecretMaterialFilePath() {
+            return encryptLuksSecretMaterialFilePath;
+        }
+
+        public void setEncryptLuksSecretMaterialFilePath(String encryptLuksSecretMaterialFilePath) {
+            this.encryptLuksSecretMaterialFilePath = encryptLuksSecretMaterialFilePath;
+        }
+
+        public String getFullSnapshotLuksSecretMaterialFilePath() {
+            return fullSnapshotLuksSecretMaterialFilePath;
+        }
+
+        public void setFullSnapshotLuksSecretMaterialFilePath(String fullSnapshotLuksSecretMaterialFilePath) {
+            this.fullSnapshotLuksSecretMaterialFilePath = fullSnapshotLuksSecretMaterialFilePath;
         }
 
         public VolumeTO getVolume() {

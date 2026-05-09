@@ -9,4 +9,8 @@ public interface CreateDataVolumeExtensionPoint {
     void beforeCreateVolume(VolumeInventory volume);
 
     void afterCreateVolume(VolumeVO volume);
+
+    default void afterCreateVolume(VolumeVO volume, String snapshotUuid) {
+        afterCreateVolume(volume);
+    }
 }

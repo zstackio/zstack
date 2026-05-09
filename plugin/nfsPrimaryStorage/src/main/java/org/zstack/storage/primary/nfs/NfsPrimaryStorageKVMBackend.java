@@ -50,6 +50,8 @@ import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 import org.zstack.storage.primary.*;
 import org.zstack.storage.primary.PrimaryStorageBase.PhysicalCapacityUsage;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
+import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
+import org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper;
 import org.zstack.storage.volume.VolumeErrors;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.CollectionUtils;
@@ -98,6 +100,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     private StorageTrash trash;
     @Autowired
     protected ApiTimeoutManager timeoutManager;
+    @Autowired
+    private VolumeSnapshotEncryptionHelper snapshotEncryptionHelper;
+    @Autowired
+    private VolumeEncryptedSecretHelper volumeEncryptedSecretHelper;
 
     public static final String MOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/mount";
     public static final String UNMOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/unmount";
@@ -132,6 +138,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CANCEL_DOWNLOAD_BITS_FROM_KVM_HOST_PATH = "/nfsprimarystorage/kvmhost/download/cancel";
     public static final String GET_DOWNLOAD_BITS_FROM_KVM_HOST_PROGRESS_PATH = "/nfsprimarystorage/kvmhost/download/progress";
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
+    public static final String ENCRYPT_VOLUME_BITS_PATH = "/nfsprimarystorage/volume/encryptinplace";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/nfsprimarystorage/getqcow2hash";
     public static final String WRITE_VM_METADATA_PATH = "/nfsprimarystorage/vm/metadata/write";
 
@@ -643,6 +650,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setWorkspaceInstallPath(volPath);
         cmd.setUuid(inv.getUuid());
         cmd.setVolumeUuid(sp.getVolumeUuid());
+        VolumeLuksAgentSpec luksSpec = snapshotEncryptionHelper.prepareVolumeSecretMaterial(host.getUuid(), volumeUuid);
+        if (luksSpec != null && luksSpec.isComplete()) {
+            cmd.setEncryptLuksSecretMaterialFilePath(luksSpec.getEncryptLuksSecretMaterialFilePath());
+        }
 
         new KvmCommandSender(host.getUuid()).send(cmd, MERGE_SNAPSHOT_PATH, new KvmCommandFailureChecker() {
             @Override
@@ -684,6 +695,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         Long volumeSize = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volumeUuid).select(VolumeVO_.size).findValue();
         if (volumeSize != null && volumeSize != 0) {
             cmd.setVirtualSize(volumeSize);
+        }
+        VolumeLuksAgentSpec luksSpec = snapshotEncryptionHelper.prepareVolumeSecretMaterial(host.getUuid(), volumeUuid);
+        if (luksSpec != null && luksSpec.isComplete()) {
+            cmd.setEncryptLuksSecretMaterialFilePath(luksSpec.getEncryptLuksSecretMaterialFilePath());
         }
 
         new KvmCommandSender(host.getUuid()).send(cmd, CREATE_VOLUME_WITH_BACKING_PATH, wrapper -> {
@@ -1098,7 +1113,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void instantiateVolume(final PrimaryStorageInventory pinv, HostInventory hostInventory, final VolumeInventory volume, final ReturnValueCompletion<VolumeInventory> complete) {
+    public void instantiateVolume(final PrimaryStorageInventory pinv, HostInventory hostInventory, final VolumeInventory volume,
+                                  VolumeLuksAgentSpec volumeLuksAgentSpec, final ReturnValueCompletion<VolumeInventory> complete) {
         String accounUuid = acntMgr.getOwnerAccountUuidOfResource(volume.getUuid());
 
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
@@ -1118,6 +1134,10 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
             cmd.setInstallUrl(NfsPrimaryStorageKvmHelper.makeDataVolumeInstallUrl(pinv, volume.getUuid()));
         } else {
             throw new CloudRuntimeException(String.format("unknown volume type %s", volume.getType()));
+        }
+
+        if (volumeLuksAgentSpec != null && volumeLuksAgentSpec.isComplete()) {
+            cmd.setEncryptLuksSecretMaterialFilePath(volumeLuksAgentSpec.getEncryptLuksSecretMaterialFilePath());
         }
 
         if (volume.getType().equals(VolumeType.Memory.toString())) {
@@ -1364,7 +1384,8 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
     @Override
     public void createVolumeFromImageCache(final PrimaryStorageInventory primaryStorage, final ImageInventory image, final ImageCacheInventory imageCache,
-                                           final VolumeInventory volume, final ReturnValueCompletion<VolumeStats> completion) {
+                                           final VolumeInventory volume, VolumeLuksAgentSpec volumeLuksAgentSpec,
+                                           final ReturnValueCompletion<VolumeStats> completion) {
         HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         final String installPath = StringUtils.isNotEmpty(volume.getInstallPath()) ? volume.getInstallPath() :
@@ -1379,6 +1400,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(primaryStorage.getUuid());
         if (image.getSize() < volume.getSize()) {
             cmd.setVirtualSize(volume.getSize());
+        }
+        if (volumeLuksAgentSpec != null && volumeLuksAgentSpec.isComplete()) {
+            cmd.setEncryptLuksSecretMaterialFilePath(volumeLuksAgentSpec.getEncryptLuksSecretMaterialFilePath());
         }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -1410,24 +1434,36 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     }
 
     @Override
-    public void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource, ImageInventory image, ReturnValueCompletion<BitsInfo> completion) {
+    public void createImageCacheFromVolumeResource(PrimaryStorageInventory primaryStorage, String volumeResource,
+                                                   ImageInventory image, String snapshotUuid, Boolean encrypted,
+                                                   ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeCachedImageInstallUrl(primaryStorage, image);
-        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, completion);
+        HostInventory host = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
+        VolumeLuksAgentSpec volumeLuksAgentSpec = snapshotEncryptionHelper.prepareTemporarySnapshotImageSecretMaterial(
+                host.getUuid(), snapshotUuid, image.getUuid(), encrypted);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volumeResource, image, volumeLuksAgentSpec, host, completion);
     }
 
     @Override
     public void createTemplateFromVolume(final PrimaryStorageInventory primaryStorage, final VolumeInventory volume, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
         final String installPath = NfsPrimaryStorageKvmHelper.makeTemplateFromVolumeInWorkspacePath(primaryStorage, image.getUuid());
-        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, completion);
+        doCreateTemplateFromVolume(installPath, primaryStorage, volume.getInstallPath(), image, null, null, completion);
     }
 
-    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage, final String volumeResourceInstallPath, final ImageInventory image, final ReturnValueCompletion<BitsInfo> completion) {
-        final HostInventory destHost = nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
+    private void doCreateTemplateFromVolume(final String installPath, final PrimaryStorageInventory primaryStorage,
+                                            final String volumeResourceInstallPath, final ImageInventory image,
+                                            VolumeLuksAgentSpec volumeLuksAgentSpec, HostInventory selectedHost,
+                                            final ReturnValueCompletion<BitsInfo> completion) {
+        final HostInventory destHost = selectedHost != null ? selectedHost :
+                nfsFactory.getConnectedHostForOperation(primaryStorage).get(0);
 
         CreateTemplateFromVolumeCmd cmd = new CreateTemplateFromVolumeCmd();
         cmd.setInstallPath(installPath);
         cmd.setVolumePath(volumeResourceInstallPath);
         cmd.setUuid(primaryStorage.getUuid());
+        if (volumeLuksAgentSpec != null && volumeLuksAgentSpec.isComplete()) {
+            cmd.setEncryptLuksSecretMaterialFilePath(volumeLuksAgentSpec.getEncryptLuksSecretMaterialFilePath());
+        }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1918,6 +1954,25 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         scmd.setVolumeUuid(cmd.getVolumeUuid());
         scmd.setInstallUrl(cmd.getInstallPath());
         scmd.setBackingFile(cmd.getVolumeInstallPath());
+        String secretMaterialFilePath = cmd.getEncryptLuksSecretMaterialFilePath();
+        VolumeVO volume = dbf.findByUuid(msg.getVolume().getUuid(), VolumeVO.class);
+        if (volume != null && volume.isEncrypted()) {
+            if (StringUtils.isBlank(secretMaterialFilePath)) {
+                VolumeLuksAgentSpec luksSpec = snapshotEncryptionHelper.prepareVolumeSecretMaterial(
+                        host.getUuid(), volume.getUuid());
+                if (luksSpec != null && luksSpec.isComplete()) {
+                    secretMaterialFilePath = luksSpec.getEncryptLuksSecretMaterialFilePath();
+                }
+            }
+            if (cmd.getVolume() != null) {
+                cmd.getVolume().setLuksSecretUuid(volumeEncryptedSecretHelper.resolveOrDefineSecretForVolume(
+                        host.getUuid(), volume.getVmInstanceUuid(), volume.getUuid()));
+            }
+        }
+        if (StringUtils.isNotBlank(secretMaterialFilePath)) {
+            scmd.setEncryptLuksSecretMaterialFilePath(secretMaterialFilePath);
+            scmd.setVirtualSize(msg.getVolume().getSize());
+        }
 
         KVMHostAsyncHttpCallMsg smsg = new KVMHostAsyncHttpCallMsg();
         smsg.setCommand(scmd);
@@ -2227,6 +2282,38 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 RebaseVolumeBackingFileOnPrimaryStorageReply r = new RebaseVolumeBackingFileOnPrimaryStorageReply();
                 r.setRebasedCount(rsp.rebasedCount);
                 completion.success(r);
+            }
+        });
+    }
+
+    @Override
+    public void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply> completion) {
+        EncryptVolumeBitsCmd cmd = new EncryptVolumeBitsCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.installPath = msg.getInstallPath();
+        cmd.encryptLuksSecretMaterialFilePath = msg.getEncryptLuksSecretMaterialFilePath();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(ENCRYPT_VOLUME_BITS_PATH);
+        hmsg.setHostUuid(msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                EncryptVolumeBitsRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(EncryptVolumeBitsRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to encrypt volume[uuid:%s] bits at path[%s] on host[uuid:%s]: %s",
+                            msg.getVolumeUuid(), msg.getInstallPath(), msg.getHostUuid(), rsp.getError()));
+                    return;
+                }
+
+                completion.success(new EncryptVolumeBitsOnPrimaryStorageReply());
             }
         });
     }

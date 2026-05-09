@@ -1,5 +1,6 @@
 package org.zstack.storage.volume;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -103,6 +104,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private VmInstanceResourceMetadataManager vidm;
     @Autowired
     private StorageTrash trash;
+    @Autowired
+    private VolumeInPlaceEncryptor volumeInPlaceEncryptor;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -170,6 +173,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
             handle((FlattenVolumeMsg) msg);
         } else if (msg instanceof CancelFlattenVolumeMsg) {
             handle((CancelFlattenVolumeMsg) msg);
+        } else if (msg instanceof EncryptVolumeMsg) {
+            handle((EncryptVolumeMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -609,6 +614,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         imsg.setSystemTags(msg.getSystemTags());
                         imsg.setSkipIfExisting(msg.isSkipIfExisting());
                         imsg.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
+                        imsg.setVolumeLuksAgentSpec(msg.getVolumeLuksAgentSpec());
                         if (msg.getHostUuid() != null) {
                             imsg.setDestHost(HostInventory.valueOf(dbf.findByUuid(msg.getHostUuid(), HostVO.class)));
                         }
@@ -3299,6 +3305,45 @@ public class VolumeBase extends AbstractVolume implements Volume {
         } else {
             cancelVolumeTaskOnline(hostUuid, msg.getCancellationApiId(), completion);
         }
+    }
+
+    /**
+     * Converts this volume's bits to LUKS-encrypted form in place. The heavy lifting
+     * (key materialization, host secret staging, PS-side LUKS conversion, DB update)
+     * is delegated to {@link VolumeInPlaceEncryptor} so both this message handler and
+     * {@code VolumeManagerImpl}'s create-data-volume-from-template flow share a single
+     * implementation.
+     */
+    private void handle(EncryptVolumeMsg msg) {
+        EncryptVolumeReply reply = new EncryptVolumeReply();
+        refreshVO();
+
+        if (self == null) {
+            reply.setError(operr("volume[uuid:%s] has been deleted", msg.getVolumeUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        VolumeInPlaceEncryptor.Context ctx = new VolumeInPlaceEncryptor.Context()
+                .setHostUuid(msg.getHostUuid())
+                .setPrimaryStorageUuid(msg.getPrimaryStorageUuid())
+                .setInstallPath(msg.getInstallPath())
+                .setPurpose(msg.getPurpose());
+
+        volumeInPlaceEncryptor.encryptInPlace(self, ctx, new ReturnValueCompletion<VolumeVO>(msg) {
+            @Override
+            public void success(VolumeVO latest) {
+                self = latest;
+                reply.setInventory(getSelfInventory());
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     @VmAttachVolumeValidatorMethod

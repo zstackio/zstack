@@ -133,6 +133,7 @@ public interface KVMConstant {
     String KVM_VERIFY_ENVELOPE_KEY_PATH = "/host/key/envelope/checkEnvelopeKey";
     String KVM_GET_SECRET_PATH = "/host/key/envelope/getSecret";
     String KVM_ENSURE_SECRET_PATH = "/host/key/envelope/ensureSecret";
+    String KVM_WRITE_SECRET_MATERIAL_FILE_PATH = "/host/key/envelope/writeSecretMaterialFile";
     String KVM_DELETE_SECRET_PATH = "/host/key/envelope/deleteSecret";
 
     /** HTTP timeout in seconds for envelope key sync (verify/create/rotate/get) to agent. */
@@ -141,6 +142,16 @@ public interface KVMConstant {
     /** Max size in bytes for DEK payload in SecretHostDefine (decoded from dekBase64). */
     int MAX_DEK_BYTES = 1024;
     String HOST_SECRET_USAGE_INSTANCE_VTPM = "tpm0";
+    /**
+     * Per-volume usage instance string for the libvirt LUKS secret. Returned
+     * value is what we feed key-agent in {@code SecretHostDefineMsg} /
+     * {@code SecretHostGetMsg}; key-agent splices it into the libvirt usage
+     * name as {@code vm-<vmUuid>-<usageInstance>-version-<keyVersion>}, so the
+     * resulting libvirt secret usage name is unique per (vm, volume, version).
+     */
+    static String volumeSecretUsageInstance(String volumeUuid) {
+        return "volume-" + volumeUuid;
+    }
 
     String KVM_HOST_FILE_DOWNLOAD_PATH = "/host/file/download";
     String KVM_HOST_FILE_UPLOAD_PATH = "/host/file/upload";

@@ -92,6 +92,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private PluginRegistry pluginRgty;
     @Autowired
     private VmInstanceResourceMetadataManager vidm;
+    @Autowired
+    private VolumeInPlaceEncryptor volumeInPlaceEncryptor;
 
     private Future<Void> volumeExpungeTask;
 
@@ -239,6 +241,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+        // Do not pre-mark encrypted here. The template bits we are about to download
+        // are plain; if we set encrypted=true now, encryptInPlace's idempotent
+        // short-circuit (volume.isEncrypted() => no-op) would skip the actual
+        // qemu-img convert and we'd be left with a row claiming encryption while
+        // the file is plain. encryptInPlace itself sets encrypted=true once the
+        // conversion actually succeeds.
+        vol.setEncrypted(false);
 
         if (msg.getSystemTags() != null) {
             Iterator<String> iterators = msg.getSystemTags().iterator();
@@ -462,6 +471,41 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = String.format("encrypt data volume %s in place if needed", vol.getUuid());
+
+                    @Override
+                    public boolean skip(Map data) {
+                        // Only run when the volume is marked encrypted on the message.
+                        // The downstream helper (VolumeInPlaceEncryptor) lazily attaches the
+                        // default key provider when this volume isn't yet bound.
+                        return !Boolean.TRUE.equals(msg.getEncrypted());
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // The VolumeVO row was persisted with encrypted=false above; the bits
+                        // we just downloaded are still plain. encryptInPlace flips encrypted
+                        // to true atomically after a successful qemu-img convert.
+                        VolumeInPlaceEncryptor.Context ctx = new VolumeInPlaceEncryptor.Context()
+                                .setHostUuid(msg.getHostUuid())
+                                .setPrimaryStorageUuid(targetPrimaryStorage.getUuid())
+                                .setInstallPath(primaryStorageInstallPath)
+                                .setPurpose("create-data-volume-from-template");
+                        volumeInPlaceEncryptor.encryptInPlace(vol, ctx, new ReturnValueCompletion<VolumeVO>(trigger) {
+                            @Override
+                            public void success(VolumeVO latest) {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = String.format("sync volume %s size", vol.getUuid());
 
                     @Override
@@ -586,6 +630,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.NotInstantiated);
         vo.setType(VolumeType.valueOf(msg.getVolumeType()));
         vo.setDiskOfferingUuid(msg.getDiskOfferingUuid());
+        vo.setEncrypted(isRootVolumeFromEncryptedSnapshot(vo) || Boolean.TRUE.equals(msg.getEncrypted()));
         if (vo.getType() == VolumeType.Root) {
             vo.setDeviceId(0);
         }
@@ -636,6 +681,27 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         logger.debug(String.format("successfully created volume[uuid:%s, name:%s, type:%s, vm uuid:%s",
                 inv.getUuid(), inv.getName(), inv.getType(), inv.getVmInstanceUuid()));
         return inv;
+    }
+
+    private boolean isRootVolumeFromEncryptedSnapshot(VolumeVO volume) {
+        if (volume.getType() != VolumeType.Root || StringUtils.isBlank(volume.getRootImageUuid())) {
+            return false;
+        }
+
+        String imageUrl = Q.New(ImageVO.class)
+                .eq(ImageVO_.uuid, volume.getRootImageUuid())
+                .select(ImageVO_.url)
+                .findValue();
+        if (StringUtils.isBlank(imageUrl) || !imageUrl.startsWith(ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA)) {
+            return false;
+        }
+
+        String snapshotUuid = imageUrl.substring(ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA.length());
+        snapshotUuid = snapshotUuid.length() >= 32 ? snapshotUuid.substring(0, 32) : snapshotUuid;
+        return Boolean.TRUE.equals(Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.uuid, snapshotUuid)
+                .select(VolumeSnapshotVO_.encrypted)
+                .findValue());
     }
 
     private void handle(CreateVolumeMsg msg) {
@@ -827,6 +893,11 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setStatus(VolumeStatus.Creating);
         vo.setType(VolumeType.Data);
         vo.setSize(msg.getSize() != null ? msg.getSize() : 0);
+        Boolean snapshotEncrypted = Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.uuid, msg.getVolumeSnapshotUuid())
+                .select(VolumeSnapshotVO_.encrypted)
+                .findValue();
+        vo.setEncrypted(Boolean.TRUE.equals(msg.getEncrypted()) || Boolean.TRUE.equals(snapshotEncrypted));
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         VolumeVO vvo = new SQLBatchWithReturn<VolumeVO>() {
             @Override
@@ -848,6 +919,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         }.execute();
 
         new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(null, VolumeInventory.valueOf(vvo));
+        for (CreateDataVolumeExtensionPoint ext : pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class)) {
+            ext.afterCreateVolume(vvo, msg.getVolumeSnapshotUuid());
+        }
+        vvo = dbf.reload(vvo);
 
         instantiateDataVolumeFromSnapshot(vo, msg.getVolumeSnapshotUuid(), msg.getSystemTags(), new ReturnValueCompletion<VolumeInventory>(msg) {
             @Override
@@ -908,7 +983,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vvo));
                     completion.success(VolumeInventory.valueOf(vvo));
                 } else {
-                    dbf.removeByPrimaryKey(vo.getUuid(), VolumeVO.class);
+                    vvo = dbf.reload(vo);
+                    if (vvo != null) {
+                        VolumeInventory inventory = VolumeInventory.valueOf(vvo);
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class),
+                                ext -> ext.volumeJustBeforeDeleteFromDb(inventory));
+                        dbf.remove(vvo);
+                    }
                     completion.fail(reply.getError());
                 }
             }

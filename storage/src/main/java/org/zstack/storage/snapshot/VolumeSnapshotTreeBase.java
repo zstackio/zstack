@@ -1842,6 +1842,7 @@ public class VolumeSnapshotTreeBase {
         CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg cmsg = new CreateImageCacheFromVolumeSnapshotOnPrimaryStorageMsg();
         cmsg.setImageInventory(image);
         cmsg.setVolumeSnapshot(VolumeSnapshotInventory.valueOf(currentRoot));
+        cmsg.setEncrypted(msg.getEncrypted());
         cmsg.setSystemTags(msg.getSystemTags());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, cmsg.getPrimaryStorageUuid());
         bus.send(cmsg, new CloudBusCallBack(msg, completion) {

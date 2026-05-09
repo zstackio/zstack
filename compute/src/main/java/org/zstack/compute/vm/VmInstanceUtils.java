@@ -143,7 +143,69 @@ public class VmInstanceUtils {
             }
         }
 
+        applyForceEncryptEnvOverride(cmsg);
         return cmsg;
+    }
+
+    /**
+     * Temporary debug switch. Priority (first match wins):
+     * <ol>
+     *   <li>{@link #FORCE_ENCRYPT_VOLUME_HARDCODED} — flip in code, rebuild, deploy.
+     *       Use this when the deployment regenerates setenv.sh / systemd unit and
+     *       JVM properties can't be reliably injected.</li>
+     *   <li>System property {@code zstack.force.encrypt.volume} —
+     *       pass via {@code -Dzstack.force.encrypt.volume=true}.</li>
+     *   <li>Environment variable {@code ZSTACK_FORCE_ENCRYPT_VOLUME}.</li>
+     * </ol>
+     * When the switch is on, every {@link DiskAO} on the {@link CreateVmInstanceMsg}
+     * is force-marked encrypted=true; when off, encrypted=false. Covers all five
+     * disk sources funneled into this msg by {@link #fromAPICreateVmInstanceMsg}:
+     * <ul>
+     *   <li>root disk (empty / from-image)</li>
+     *   <li>data disks from {@code APICreateVmInstanceMsg.diskAOs}
+     *       (from-image / from-existing-volume)</li>
+     *   <li>data disks from the legacy {@code dataDiskOfferingUuids /
+     *       dataDiskSizes} path (deprecatedDataVolumeSpecs)</li>
+     * </ul>
+     */
+    private static final Boolean FORCE_ENCRYPT_VOLUME_HARDCODED = false;
+    static final String FORCE_ENCRYPT_VOLUME_ENV = "ZSTACK_FORCE_ENCRYPT_VOLUME";
+    private static final String FORCE_ENCRYPT_VOLUME_PROPERTY = "zstack.force.encrypt.volume";
+
+    private static boolean isForceEncryptVolume() {
+        if (FORCE_ENCRYPT_VOLUME_HARDCODED != null) {
+            return FORCE_ENCRYPT_VOLUME_HARDCODED;
+        }
+        String v = System.getProperty(FORCE_ENCRYPT_VOLUME_PROPERTY);
+        if (v == null || v.isEmpty()) {
+            v = System.getenv(FORCE_ENCRYPT_VOLUME_ENV);
+        }
+        if (v == null || v.isEmpty()) {
+            return false;
+        }
+        v = v.trim().toLowerCase();
+        return v.equals("1") || v.equals("true") || v.equals("yes") || v.equals("on");
+    }
+
+    private static void applyForceEncryptEnvOverride(CreateVmInstanceMsg cmsg) {
+        boolean forceOn = isForceEncryptVolume();
+        if (cmsg.getRootDisk() != null) {
+            cmsg.getRootDisk().setEncrypted(forceOn);
+        }
+        if (cmsg.getDataDisks() != null) {
+            for (DiskAO d : cmsg.getDataDisks()) {
+                if (d != null) {
+                    d.setEncrypted(forceOn);
+                }
+            }
+        }
+        if (cmsg.getDeprecatedDataVolumeSpecs() != null) {
+            for (DiskAO d : cmsg.getDeprecatedDataVolumeSpecs()) {
+                if (d != null) {
+                    d.setEncrypted(forceOn);
+                }
+            }
+        }
     }
 
     private static String getPSUuidForDataVolume(List<String> systemTags){

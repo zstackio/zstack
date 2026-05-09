@@ -326,7 +326,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         }
 
                         ErrorCode errorCode = reply.getError();
-                        if (errorCode != null && isVtpmSecretNotFoundOnHost(errorCode)) {
+                        if (SecretHostGetReply.isSecretNotFound(errorCode)) {
                             trigger.next();
                             return;
                         }
@@ -849,14 +849,6 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                 .eq(VmInstanceVO_.uuid, vmUuid)
                 .findValue();
         return expectedHostUuid.equals(currentHostUuid);
-    }
-
-    private static boolean isVtpmSecretNotFoundOnHost(ErrorCode errorCode) {
-        if (SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(errorCode.getCode())) {
-            return true;
-        }
-        String details = errorCode.getDetails();
-        return details != null && details.contains(SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND);
     }
 
     private void deleteHostSecretBestEffort(String hostUuid, String vmUuid, Integer keyVersion, String reason) {
