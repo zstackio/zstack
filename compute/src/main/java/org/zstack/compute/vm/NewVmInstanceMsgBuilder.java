@@ -126,6 +126,7 @@ public class NewVmInstanceMsgBuilder {
         cmsg.setHeaders(api.getHeaders());
         cmsg.setSystemTags(api.getSystemTags());
         cmsg.setUserTags(api.getUserTags());
+        cmsg.setEncrypted(msg.getEncrypted());
 
         return cmsg;
     }

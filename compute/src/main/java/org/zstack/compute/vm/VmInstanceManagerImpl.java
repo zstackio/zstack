@@ -1178,6 +1178,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         vo.setPlatform(msg.getPlatform() != null ? msg.getPlatform() : image.getPlatform().toString());
         vo.setGuestOsType(msg.getGuestOsType() != null ? msg.getGuestOsType() : image.getGuestOsType());
         vo.setArchitecture(msg.getArchitecture() != null ? msg.getArchitecture() : image.getArchitecture());
+        vo.setEncrypted(Boolean.TRUE.equals(msg.getEncrypted()));
         String vmType = msg.getType() == null ? VmInstanceConstant.USER_VM_TYPE : msg.getType();
         VmInstanceType type = VmInstanceType.valueOf(vmType);
         VmInstanceFactory factory = getVmInstanceFactory(type);

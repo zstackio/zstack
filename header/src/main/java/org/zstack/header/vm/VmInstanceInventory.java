@@ -232,6 +232,19 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      */
     private Timestamp lastOpDate;
     /**
+     * @desc whether the vm itself is marked encrypted
+     */
+    private Boolean encrypted;
+    /**
+     * @desc whether the vm itself, any attached volume, or its TPM has encrypted resource
+     */
+    private Boolean hasEncryptionResource;
+    /**
+     * @desc latest key update time of attached encrypted volumes or TPM; falls back to vm create date when only vm itself is encrypted
+     * @nullable
+     */
+    private Timestamp keyLastOpDate;
+    /**
      * @desc - Created: the vm is just created in database, having not been started
      * - Starting: the vm is starting, having not run on host
      * - Running: the vm is running on host
@@ -300,6 +313,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setPlatform(vo.getPlatform());
         this.setArchitecture(vo.getArchitecture());
         this.setGuestOsType(vo.getGuestOsType());
+        this.setEncrypted(vo.isEncrypted());
     }
 
     public static VmInstanceInventory valueOf(VmInstanceVO vo) {
@@ -378,6 +392,9 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
         this.setArchitecture(inv.getArchitecture());
         this.setGuestOsType(inv.getGuestOsType());
+        this.setEncrypted(inv.getEncrypted());
+        this.setHasEncryptionResource(inv.getHasEncryptionResource());
+        this.setKeyLastOpDate(inv.getKeyLastOpDate());
     }
 
     public VolumeInventory getRootVolume() {
@@ -590,6 +607,30 @@ public class VmInstanceInventory implements Serializable, Cloneable {
 
     public void setLastOpDate(Timestamp lastOpDate) {
         this.lastOpDate = lastOpDate;
+    }
+
+    public Boolean getEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(Boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+
+    public Boolean getHasEncryptionResource() {
+        return hasEncryptionResource;
+    }
+
+    public void setHasEncryptionResource(Boolean hasEncryptionResource) {
+        this.hasEncryptionResource = hasEncryptionResource;
+    }
+
+    public Timestamp getKeyLastOpDate() {
+        return keyLastOpDate;
+    }
+
+    public void setKeyLastOpDate(Timestamp keyLastOpDate) {
+        this.keyLastOpDate = keyLastOpDate;
     }
 
     public List<VmCdRomInventory> getVmCdRoms() {
