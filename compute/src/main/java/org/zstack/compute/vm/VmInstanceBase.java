@@ -326,6 +326,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable) {
+        return changeVmStateInDb(stateEvent, runnable, null);
+    }
+
+    protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable, String stateChangeSource) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
@@ -374,6 +378,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             data.setVmUuid(self.getUuid());
             data.setOldState(bs.toString());
             data.setNewState(state.toString());
+            data.setStateChangeSource(stateChangeSource);
             data.setInventory(getSelfInventory());
             evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
 
@@ -1004,16 +1009,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                         logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
                                 judger.getClass(), self.getUuid(), self.getName()));
-                        UpdateQuery sql = SQL.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.uuid, self.getUuid())
-                                .set(VmInstanceVO_.state, VmInstanceState.Stopped)
-                                .set(VmInstanceVO_.hostUuid, null);
-
-                        if (self.getHostUuid() != null) {
-                            sql.set(VmInstanceVO_.lastHostUuid, self.getHostUuid());
-                        }
-
-                        sql.update();
+                        changeVmStateInDb(VmInstanceStateEvent.stopped, null, HaStartVmInstanceMsg.class.getName());
 
                         startVm(msg, new Completion(msg, chain) {
                             @Override
@@ -8984,4 +8980,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-
