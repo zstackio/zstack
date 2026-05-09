@@ -552,50 +552,49 @@ class GoApiTemplate implements SdkTemplate {
 
     private String generateCreateMethod(String apiPath, String viewStructName, boolean unwrap, String responseStructName, String fieldName) {
         boolean hasParams = hasApiParams()
-        
-        if (!hasParams) {
-            // No params: don't require user to pass params, use empty map internally
-            if (unwrap) {
-                return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
-\tvar resp view.${responseStructName}
-\tif err := cli.Post(ctx, "${apiPath}", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp.${fieldName}, nil
-}
-"""
-            } else {
-                return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
-\tresp := view.${viewStructName}{}
-\tif err := cli.Post(ctx, "${apiPath}", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp, nil
-}
-"""
-            }
+        def placeholders = extractUrlPlaceholders(apiPath)
+        String pathExpr = placeholders.isEmpty() ? "\"${apiPath}\"" : buildFullPath(placeholders)
+        String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
+        String methodParams = "ctx context.Context"
+        if (!placeholderParams.isEmpty()) {
+            methodParams = "${methodParams}, ${placeholderParams}"
         }
-        
-        // Has params: require user to pass params
+        if (hasParams) {
+            methodParams = "${methodParams}, params param.${clzName}Param"
+        }
+
+        String bodyExpr = hasParams ? "params" : "map[string]interface{}{}"
+        String responseKey = getPostResponseKey(viewStructName, responseStructName)
+
+        String retViewStructName = viewStructName
+        String respDecl
+        String returnStmt
         if (unwrap) {
-            return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
-\tvar resp view.${responseStructName}
-\tif err := cli.Post(ctx, "${apiPath}", params, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp.${fieldName}, nil
-}
-"""
+            respDecl = "var resp view.${responseStructName}"
+            returnStmt = "return &resp.${fieldName}, nil"
         } else {
-            return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
-\tresp := view.${viewStructName}{}
-\tif err := cli.Post(ctx, "${apiPath}", params, &resp); err != nil {
+            respDecl = "resp := view.${viewStructName}{}"
+            returnStmt = "return &resp, nil"
+        }
+
+        return """func (cli *ZSClient) ${clzName}(${methodParams}) (*view.${retViewStructName}, error) {
+\t${respDecl}
+\tif err := cli.PostWithRespKey(ctx, ${pathExpr}, "${responseKey}", ${bodyExpr}, &resp); err != nil {
 \t\treturn nil, err
 \t}
-\treturn &resp, nil
+\t${returnStmt}
 }
 """
+    }
+
+    private String getPostResponseKey(String viewStructName, String responseStructName) {
+        if (allTo != null && !allTo.isEmpty()) {
+            return allTo
         }
+        if (inventoryFieldName != null && !inventoryFieldName.isEmpty() && viewStructName != responseStructName) {
+            return inventoryFieldName
+        }
+        return ""
     }
 
     private String generateQueryMethod(String apiPath, String viewStructName) {
@@ -1001,50 +1000,20 @@ func (cli *ZSClient) ${getMethodName}(ctx context.Context, uuid string) (*view.$
     private String generateDeleteViaPostMethod(String apiPath, String responseStructName) {
         boolean hasParams = hasApiParams()
         def placeholders = extractUrlPlaceholders(apiPath)
-        String cleanPath = removePlaceholders(apiPath)
-
-        if (placeholders.size() >= 1) {
-            // Path has URL placeholders (e.g. /cdp-task/{uuid}/data)
-            // Build full URL with fmt.Sprintf and add placeholders as function parameters
-            String fullPath = buildFullPath(placeholders)
-            String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
-
-            if (!hasParams) {
-                return """func (cli *ZSClient) ${clzName}(${placeholderParams}) (*view.${responseStructName}, error) {
-\tresp := view.${responseStructName}{}
-\tif err := cli.PostWithRespKey(${fullPath}, "", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp, nil
-}
-"""
-            }
-
-            return """func (cli *ZSClient) ${clzName}(${placeholderParams}, params param.${clzName}Param) (*view.${responseStructName}, error) {
-\tresp := view.${responseStructName}{}
-\tif err := cli.PostWithRespKey(${fullPath}, "", params, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp, nil
-}
-"""
+        String pathExpr = placeholders.isEmpty() ? "\"${removePlaceholders(apiPath)}\"" : buildFullPath(placeholders)
+        String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
+        String methodParams = "ctx context.Context"
+        if (!placeholderParams.isEmpty()) {
+            methodParams = "${methodParams}, ${placeholderParams}"
         }
-
-        // No placeholders (e.g. /delete/sso/client)
-        if (!hasParams) {
-            return """func (cli *ZSClient) ${clzName}() (*view.${responseStructName}, error) {
-\tresp := view.${responseStructName}{}
-\tif err := cli.PostWithRespKey("${cleanPath}", "", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp, nil
-}
-"""
+        if (hasParams) {
+            methodParams = "${methodParams}, params param.${clzName}Param"
         }
+        String bodyExpr = hasParams ? "params" : "map[string]interface{}{}"
 
-        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${responseStructName}, error) {
+        return """func (cli *ZSClient) ${clzName}(${methodParams}) (*view.${responseStructName}, error) {
 \tresp := view.${responseStructName}{}
-\tif err := cli.PostWithRespKey("${cleanPath}", "", params, &resp); err != nil {
+\tif err := cli.PostWithRespKey(ctx, ${pathExpr}, "", ${bodyExpr}, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
