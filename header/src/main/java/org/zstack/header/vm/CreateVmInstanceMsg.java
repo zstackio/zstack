@@ -37,6 +37,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String guestOsType;
     private String architecture;
     private Boolean virtio;
+    private Boolean encrypted;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private List<String> disableL3Networks;
@@ -217,6 +218,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
+    }
+
+    public Boolean getEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(Boolean encrypted) {
+        this.encrypted = encrypted;
     }
 
     @Override
