@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.getComponentLoader;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;/**
  * Created by miao on 16-10-9.
  */
@@ -47,6 +48,18 @@ public class QuotaUtil {
     @Autowired
     private AccountManager acntMgr;
 
+    void ensureDependencies() {
+        if (errf == null) {
+            errf = getComponentLoader().getComponent(ErrorFacade.class);
+        }
+        if (dbf == null) {
+            dbf = getComponentLoader().getComponent(DatabaseFacade.class);
+        }
+        if (acntMgr == null) {
+            acntMgr = getComponentLoader().getComponent(AccountManager.class);
+        }
+    }
+
     public static class QuotaCompareInfo {
         public String currentAccountUuid;
         public String resourceTargetOwnerAccountUuid;
@@ -58,6 +71,7 @@ public class QuotaUtil {
 
     @Transactional(readOnly = true)
     public String getResourceOwnerAccountUuid(String resourceUuid) {
+        ensureDependencies();
         SimpleQuery<AccountResourceRefVO> q;
         q = dbf.createQuery(AccountResourceRefVO.class);
         q.select(AccountResourceRefVO_.ownerAccountUuid);
@@ -73,6 +87,7 @@ public class QuotaUtil {
 
     @Transactional(readOnly = true)
     public ErrorCode checkQuotaAndReturn(QuotaCompareInfo quotaCompareInfo) {
+        ensureDependencies();
         logger.trace(String.format("dump quota QuotaCompareInfo: \n %s",
                 JSONObjectUtil.toJsonString(quotaCompareInfo)));
         String accountName = Q.New(AccountVO.class)
@@ -101,6 +116,7 @@ public class QuotaUtil {
     }
 
     public Map<String, Quota.QuotaPair> makeQuotaPairs(String accountUuid) {
+        ensureDependencies();
         SimpleQuery<QuotaVO> q = dbf.createQuery(QuotaVO.class);
         q.select(QuotaVO_.name, QuotaVO_.value);
         q.add(QuotaVO_.identityType, SimpleQuery.Op.EQ, AccountVO.class.getSimpleName());
@@ -121,6 +137,7 @@ public class QuotaUtil {
     }
 
     public AccountType getAccountType(String accountUuid) {
+        ensureDependencies();
         SimpleQuery<AccountVO> q = dbf.createQuery(AccountVO.class);
         q.select(AccountVO_.type);
         q.add(AccountVO_.uuid, SimpleQuery.Op.EQ, accountUuid);
@@ -132,6 +149,7 @@ public class QuotaUtil {
     }
 
     public String getResourceType(String resourceUuid) {
+        ensureDependencies();
         SimpleQuery<AccountResourceRefVO> q = dbf.createQuery(AccountResourceRefVO.class);
         q.add(AccountResourceRefVO_.resourceUuid, SimpleQuery.Op.EQ, resourceUuid);
         AccountResourceRefVO accResRefVO = q.find();
@@ -159,6 +177,7 @@ public class QuotaUtil {
 
     @Transactional(readOnly = true)
     public void checkQuota(Message msg, String currentAccountUuid, String targetAccountUuid) {
+        ensureDependencies();
         if (!(msg instanceof APIMessage) && !(msg instanceof NeedQuotaCheckMessage)) {
             return;
         }

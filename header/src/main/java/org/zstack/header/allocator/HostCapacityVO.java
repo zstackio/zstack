@@ -14,6 +14,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table
+@org.hibernate.annotations.Immutable
 @EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = HostVO.class, myField = "uuid", targetField = "uuid")

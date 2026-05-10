@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <category>unifiedHardware</category>
+        <name>hardware.discovery.concurrency</name>
+        <description>Number of concurrent hardware discovery threads for physical servers.</description>
+        <defaultValue>8</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>hardware.discovery.timeoutSec</name>
+        <description>Timeout in seconds for a single hardware discovery attempt on a physical server.</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>hardware.discovery.retryMax</name>
+        <description>Maximum number of hardware discovery retry attempts before giving up on a physical server.</description>
+        <defaultValue>3</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>serverPool.defaultCreationPolicy</name>
+        <description>Controls when the system creates the default ServerPool for a Zone. Valid values: OnClusterCreate, OnZoneCreate, Manual.</description>
+        <defaultValue>OnClusterCreate</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>provision.timeout</name>
+        <description>Maximum seconds to wait for OS install completion (ping target IP via gateway).</description>
+        <defaultValue>1800</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>provision.pingInterval</name>
+        <description>Interval seconds between gateway-agent ping attempts during OS install monitoring.</description>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>power.pingInterval</name>
+        <description>Interval seconds between out-of-band power-status checks for tracked PhysicalServers.</description>
+        <defaultValue>60</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <category>unifiedHardware</category>
+        <name>power.pingParallelismDegree</name>
+        <description>Maximum number of concurrent out-of-band power-status checks per ping cycle.</description>
+        <defaultValue>8</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+</globalConfig>

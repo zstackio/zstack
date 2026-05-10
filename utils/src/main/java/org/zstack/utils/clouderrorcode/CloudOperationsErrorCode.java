@@ -2678,6 +2678,16 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_KVM_10162 = "ORG_ZSTACK_KVM_10162";
 
+    public static final String ORG_ZSTACK_KVM_10163 = "ORG_ZSTACK_KVM_10163";
+
+    public static final String ORG_ZSTACK_KVM_10164 = "ORG_ZSTACK_KVM_10164";
+
+    // roleConfig missing required key 'username' for KVM host creation
+    public static final String ORG_ZSTACK_KVM_10165 = "ORG_ZSTACK_KVM_10165";
+
+    // roleConfig missing required key 'clusterUuid' or 'managementIp' for KVM host creation
+    public static final String ORG_ZSTACK_KVM_10166 = "ORG_ZSTACK_KVM_10166";
+
     public static final String ORG_ZSTACK_ZSV_10000 = "ORG_ZSTACK_ZSV_10000";
 
     public static final String ORG_ZSTACK_ZSV_10001 = "ORG_ZSTACK_ZSV_10001";
@@ -8420,7 +8430,20 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CONTAINER_10056 = "ORG_ZSTACK_CONTAINER_10056";
 
+    // Container role does not support API-attach; sync-driven only
     public static final String ORG_ZSTACK_CONTAINER_10057 = "ORG_ZSTACK_CONTAINER_10057";
+
+    // U7 cordon-service: NativeHostVO not found for the requested cordon op
+    public static final String ORG_ZSTACK_CONTAINER_10058 = "ORG_ZSTACK_CONTAINER_10058";
+
+    // U7 cordon-service: K8s patchNode failed after retry exhaustion
+    public static final String ORG_ZSTACK_CONTAINER_10059 = "ORG_ZSTACK_CONTAINER_10059";
+
+    // U7 cordon-service: SelfSubjectAccessReview denied cordon RBAC -> endpoint flagged ReadOnly
+    public static final String ORG_ZSTACK_CONTAINER_10060 = "ORG_ZSTACK_CONTAINER_10060";
+
+    // U7 cordon-service: K8s API client unavailable for the endpoint's cluster
+    public static final String ORG_ZSTACK_CONTAINER_10061 = "ORG_ZSTACK_CONTAINER_10061";
 
     public static final String ORG_ZSTACK_ZWATCH_ALARM_SNS_TEMPLATE_HTTP_10000 = "ORG_ZSTACK_ZWATCH_ALARM_SNS_TEMPLATE_HTTP_10000";
 
@@ -13037,6 +13060,15 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_COMPUTE_ALLOCATOR_10037 = "ORG_ZSTACK_COMPUTE_ALLOCATOR_10037";
 
+    // Phase 3 Wave 1 U4 — PhysicalServerCapacityUpdater fail-loud error codes.
+    public static final String ORG_ZSTACK_COMPUTE_ALLOCATOR_10038 = "ORG_ZSTACK_COMPUTE_ALLOCATOR_10038";
+
+    public static final String ORG_ZSTACK_COMPUTE_ALLOCATOR_10039 = "ORG_ZSTACK_COMPUTE_ALLOCATOR_10039";
+
+    public static final String ORG_ZSTACK_COMPUTE_ALLOCATOR_10040 = "ORG_ZSTACK_COMPUTE_ALLOCATOR_10040";
+
+    public static final String ORG_ZSTACK_COMPUTE_ALLOCATOR_10041 = "ORG_ZSTACK_COMPUTE_ALLOCATOR_10041";
+
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_FLUENTBIT_OUTPUT_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_FLUENTBIT_OUTPUT_10000";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_FLUENTBIT_OUTPUT_10001 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_FLUENTBIT_OUTPUT_10001";
@@ -13828,6 +13860,17 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_BAREMETAL2_CHASSIS_10025 = "ORG_ZSTACK_BAREMETAL2_CHASSIS_10025";
 
     public static final String ORG_ZSTACK_BAREMETAL2_CHASSIS_10026 = "ORG_ZSTACK_BAREMETAL2_CHASSIS_10026";
+
+    // Allocated for Bm2RoleProvider (U9, Phase 2C, FR-022 / FR-025, 2026-04-23):
+    // 10027 — missing required IPMI credential (ipmiAddress / ipmiUsername / ipmiPassword)
+    //         or missing required DPU field (url / vendorType) in roleConfig
+    public static final String ORG_ZSTACK_BAREMETAL2_CHASSIS_10027 = "ORG_ZSTACK_BAREMETAL2_CHASSIS_10027";
+
+    // 10028 — unknown chassisType value in roleConfig (accepted: "ipmi", "dpu")
+    public static final String ORG_ZSTACK_BAREMETAL2_CHASSIS_10028 = "ORG_ZSTACK_BAREMETAL2_CHASSIS_10028";
+
+    // 10029 — invalid ipmiPort format (not a parsable integer in 1..65535)
+    public static final String ORG_ZSTACK_BAREMETAL2_CHASSIS_10029 = "ORG_ZSTACK_BAREMETAL2_CHASSIS_10029";
 
     public static final String ORG_ZSTACK_BAREMETAL2_CLUSTER_10000 = "ORG_ZSTACK_BAREMETAL2_CLUSTER_10000";
 

@@ -53,7 +53,20 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
     @Autowired
     private TagManager tagMgr;
 
+    private void ensureDependencies() {
+        if (dbf == null) {
+            dbf = getComponentLoader().getComponent(DatabaseFacade.class);
+        }
+        if (bus == null) {
+            bus = getComponentLoader().getComponent(CloudBus.class);
+        }
+        if (tagMgr == null) {
+            tagMgr = getComponentLoader().getComponent(TagManager.class);
+        }
+    }
+
     public Map<String, List<String>> getStaticIpbyVmUuid(String vmUuid) {
+        ensureDependencies();
         Map<String, List<String>> ret = new HashMap<String, List<String>>();
 
         List<Map<String, String>> tokenList = VmSystemTags.STATIC_IP.getTokensOfTagsByResourceUuid(vmUuid);
@@ -685,6 +698,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
     }
 
     public void validateSystemTagInApiMessage(APIMessage msg) {
+        ensureDependencies();
         Map<String, NicIpAddressInfo> staticIps = getNicNetworkInfoBySystemTag(msg.getSystemTags());
         validateIpAvailability(staticIps);
         List<String> newSystags = fillUpStaticIpInfoToVmNics(staticIps);
@@ -701,6 +715,7 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
 
     @Override
     public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+        ensureDependencies();
         if (VmSystemTags.STATIC_IP.isMatch(systemTag)) {
             Map<String, String> token = TagUtils.parse(VmSystemTags.STATIC_IP.getTagFormat(), systemTag);
             String l3Uuid = token.get(VmSystemTags.STATIC_IP_L3_UUID_TOKEN);
@@ -710,7 +725,9 @@ public class StaticIpOperator implements SystemTagCreateMessageValidator, System
     }
 
     public void installStaticIpValidator() {
+        ensureDependencies();
         StaticIpOperator staticIpValidator = new StaticIpOperator();
+        staticIpValidator.ensureDependencies();
         tagMgr.installCreateMessageValidator(VmInstanceVO.class.getSimpleName(), staticIpValidator);
         //VmSystemTags.STATIC_IP.installValidator(staticIpValidator);
     }

@@ -6,17 +6,51 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DeadlockAutoRestart;
+import org.zstack.core.db.Q;
 import org.zstack.header.allocator.HostCapacityVO;
+import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.server.PhysicalServerCapacityVO;
+import org.zstack.header.server.PhysicalServerRoleVO;
+import org.zstack.header.server.PhysicalServerRoleVO_;
+import org.zstack.header.server.ServerRoleType;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.LockModeType;
-import javax.persistence.TypedQuery;
-import java.util.List;
 
 /**
  * Created by frank on 11/2/2015.
+ *
+ * <p>Only the {@code (hostUuid)} constructor is supported. The former
+ * {@code (TypedQuery<HostCapacityVO>)} constructor was removed in v5.5.18 (2026-04-20) because it
+ * exposed a {@code SELECT ... FOR UPDATE} path over the {@code HostCapacityVO} entity — once that
+ * entity becomes a VIEW (capacity PRD §2.1), MariaDB/MySQL rejects row-level locks against
+ * non-updatable views.
+ *
+ * <p>Phase 2 (2026-04-22, U4) internals rewrite per capacity PRD §2.1 W3 / NB-22 / NB-24 / NB-30:
+ * <ul>
+ *   <li>{@link #lockCapacity()} resolves {@code serverUuid} from {@code hostUuid} via
+ *       {@link #resolveServerUuidOrThrow(String)} (NB-24 fail-loud) and locks the
+ *       {@code PhysicalServerCapacityVO} truth table with {@link LockModeType#PESSIMISTIC_WRITE}
+ *       keyed by {@code serverUuid} (NB-30 single lock key invariant).</li>
+ *   <li>Ten authoritative fields are copied from {@code PhysicalServerCapacityVO} into a transient
+ *       {@link HostCapacityVO} POJO (NB-22 in-method exception to the "no {@code new HostCapacityVO()}"
+ *       invariant; the POJO never escapes this class and is never {@code em.merge}ed).</li>
+ *   <li>{@code HostCapacityUpdaterRunnable#call(HostCapacityVO)} interface signature is unchanged —
+ *       the 4 call sites (HostAllocatorManagerImpl:247/809, HostCapacityReserveManagerImpl:253/289)
+ *       see the POJO and mutate it in place, unaware of the backing table switch.</li>
+ *   <li>{@link #merge()} flushes exactly 3 runnable-authored fields
+ *       ({@code availableCpu / availableMemory / availablePhysicalMemory}) back to the
+ *       {@code PhysicalServerCapacityVO} row. Mutations to {@code totalCpu} etc. on the POJO are
+ *       intentionally dropped — ratio-driven {@code totalCpu} is authoritative via
+ *       {@code HostCpuOverProvisioningManager} (U5) JPQL updates against the same truth table.</li>
+ * </ul>
+ *
+ * @deprecated Retained for {@code HostCapacityAllocatorFlow} / {@code ReturnHostCapacityMsg} VM
+ *             allocator incremental write paths only. New call sites must use
+ *             {@link PhysicalServerCapacityUpdater#recalculate(String)} instead (U-B, 2026-05-08).
  */
+@Deprecated
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostCapacityUpdater {
     private static final CLogger logger = Utils.getLogger(HostCapacityUpdater.class);
@@ -25,16 +59,40 @@ public class HostCapacityUpdater {
     private DatabaseFacade dbf;
 
     private String hostUuid;
-    private TypedQuery<HostCapacityVO> query;
     private HostCapacityVO capacityVO;
     private HostCapacityVO originalCopy;
+    private PhysicalServerCapacityVO physCapacityVO;
 
     public HostCapacityUpdater(String hostUuid) {
         this.hostUuid = hostUuid;
     }
 
-    public HostCapacityUpdater(TypedQuery<HostCapacityVO> query) {
-        this.query = query;
+    /**
+     * Resolve PhysicalServer UUID from a KVM host UUID via PhysicalServerRoleVO mapping.
+     *
+     * <p>Throws {@link CloudRuntimeException} when no KVM_HOST role mapping is found (NB-24,
+     * 2026-04-22). Previous NB-22 "log null + boolean" silent-drop was reverted — fail-loud
+     * surfaces FlowChain timing bugs / orphan windows instead of masking them as silent capacity
+     * update losses. The existing "host deleted naturally" semantic is still carried by
+     * {@link #lockCapacity()} returning {@code false} when the capacity row itself is absent.
+     *
+     * <p>NB-30: Phase 2 lock key invariant. All PESSIMISTIC_WRITE paths on PhysicalServerCapacityVO
+     * use {@code serverUuid} as the single lock key; callers MUST NOT mix {@code hostUuid} and
+     * {@code serverUuid}.
+     */
+    public static String resolveServerUuidOrThrow(String hostUuid) {
+        String serverUuid = Q.New(PhysicalServerRoleVO.class)
+                .eq(PhysicalServerRoleVO_.roleUuid, hostUuid)
+                .eq(PhysicalServerRoleVO_.roleType, ServerRoleType.KVM_HOST.toString())
+                .select(PhysicalServerRoleVO_.serverUuid)
+                .findValue();
+        if (serverUuid == null) {
+            throw new CloudRuntimeException(String.format(
+                    "cannot resolve PhysicalServer UUID for host[uuid:%s]: no KVM_HOST "
+                            + "PhysicalServerRoleVO found. FlowChain timing bug or orphan "
+                            + "PhysicalServerVO — capacity PRD NB-24.", hostUuid));
+        }
+        return serverUuid;
     }
 
     private void logDeletedHost() {
@@ -71,29 +129,46 @@ public class HostCapacityUpdater {
     }
 
     private boolean lockCapacity() {
-        if (hostUuid != null) {
-            capacityVO = dbf.getEntityManager().find(HostCapacityVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
-        } else if (query != null) {
-            query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
-            List<HostCapacityVO> caps = query.getResultList();
-            capacityVO = caps.isEmpty() ? null : caps.get(0);
+        String serverUuid = resolveServerUuidOrThrow(hostUuid);
+        physCapacityVO = dbf.getEntityManager()
+                .find(PhysicalServerCapacityVO.class, serverUuid, LockModeType.PESSIMISTIC_WRITE);
+        if (physCapacityVO == null) {
+            return false;
         }
 
-        if (capacityVO != null) {
-            originalCopy = new HostCapacityVO();
-            originalCopy.setTotalCpu(capacityVO.getTotalCpu());
-            originalCopy.setAvailableCpu(capacityVO.getAvailableCpu());
-            originalCopy.setTotalMemory(capacityVO.getTotalMemory());
-            originalCopy.setAvailableMemory(capacityVO.getAvailableMemory());
-            originalCopy.setTotalPhysicalMemory(capacityVO.getTotalPhysicalMemory());
-            originalCopy.setAvailablePhysicalMemory(capacityVO.getAvailablePhysicalMemory());
-        }
+        // NB-22 in-method POJO exception: capacityVO is a transient HostCapacityVO that never
+        // escapes this class and is never em.merge()'d. 10 authoritative fields copied
+        // physCapacity → HCV POJO; runnable sees stable HostCapacityVO contract.
+        capacityVO = new HostCapacityVO();
+        capacityVO.setUuid(hostUuid);
+        capacityVO.setTotalMemory(physCapacityVO.getTotalMemory());
+        capacityVO.setTotalCpu(physCapacityVO.getTotalCpu());
+        capacityVO.setCpuNum((int) physCapacityVO.getCpuNum());
+        capacityVO.setCpuSockets(physCapacityVO.getCpuSockets());
+        capacityVO.setCpuCoreNum(physCapacityVO.getCpuCoreNum());
+        capacityVO.setAvailableMemory(physCapacityVO.getAvailableMemory());
+        capacityVO.setAvailableCpu(physCapacityVO.getAvailableCpu());
+        capacityVO.setTotalPhysicalMemory(physCapacityVO.getTotalPhysicalMemory());
+        capacityVO.setAvailablePhysicalMemory(physCapacityVO.getAvailablePhysicalMemory());
 
-        return capacityVO != null;
+        originalCopy = new HostCapacityVO();
+        originalCopy.setTotalCpu(capacityVO.getTotalCpu());
+        originalCopy.setAvailableCpu(capacityVO.getAvailableCpu());
+        originalCopy.setTotalMemory(capacityVO.getTotalMemory());
+        originalCopy.setAvailableMemory(capacityVO.getAvailableMemory());
+        originalCopy.setTotalPhysicalMemory(capacityVO.getTotalPhysicalMemory());
+        originalCopy.setAvailablePhysicalMemory(capacityVO.getAvailablePhysicalMemory());
+        return true;
     }
 
     private void merge() {
-        capacityVO = dbf.getEntityManager().merge(capacityVO);
+        // NB-22 3-field writeback: only runnable-authored fields flush back to PSC truth table.
+        // Mutations to totalCpu / totalMemory / totalPhysicalMemory on the POJO are intentionally
+        // dropped; ratio-driven totalCpu is authoritative via HostCpuOverProvisioningManager (U5).
+        physCapacityVO.setAvailableCpu(capacityVO.getAvailableCpu());
+        physCapacityVO.setAvailableMemory(capacityVO.getAvailableMemory());
+        physCapacityVO.setAvailablePhysicalMemory(capacityVO.getAvailablePhysicalMemory());
+        physCapacityVO = dbf.getEntityManager().merge(physCapacityVO);
         logCapacityChange();
     }
 

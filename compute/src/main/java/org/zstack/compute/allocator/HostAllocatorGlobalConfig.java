@@ -30,4 +30,9 @@ public class HostAllocatorGlobalConfig {
     public static GlobalConfig HOST_ALLOCATOR_MAX_MEMORY = new GlobalConfig(CATEGORY, "hostAllocator.checkHostMem");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig MIGRATION_BETWEEN_DIFFERENT_OS = new GlobalConfig(CATEGORY, "migration.differentOs");
+
+    @GlobalConfigValidation(numberGreaterThan = -1, numberLessThan = 100)
+    public static GlobalConfig PHYSICAL_SERVER_CPU_SAFETY_BUFFER_PERCENT = new GlobalConfig(CATEGORY, "physicalServer.cpu.safetyBuffer.percent");
+    @GlobalConfigValidation(numberGreaterThan = -1, numberLessThan = 100)
+    public static GlobalConfig PHYSICAL_SERVER_MEMORY_SAFETY_BUFFER_PERCENT = new GlobalConfig(CATEGORY, "physicalServer.memory.safetyBuffer.percent");
 }

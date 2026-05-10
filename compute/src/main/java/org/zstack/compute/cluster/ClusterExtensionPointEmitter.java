@@ -24,6 +24,16 @@ class ClusterExtensionPointEmitter implements Component {
     private List<ClusterDeleteExtensionPoint> deleteExts;
     private List<ClusterChangeStateExtensionPoint> changeExts;
     private List<ClusterUpdateOSExtensionPoint> updateOSExts;
+    private List<ClusterCreateExtensionPoint> createExts;
+
+    void afterCreate(final ClusterVO cluster) {
+        CollectionUtils.safeForEach(createExts, new ForEachFunction<ClusterCreateExtensionPoint>() {
+            @Override
+            public void run(ClusterCreateExtensionPoint extp) {
+                extp.afterCreateCluster(cluster);
+            }
+        });
+    }
 
 	void preDelete(ClusterInventory cinv) throws ClusterException {
 		for (ClusterDeleteExtensionPoint extp : deleteExts) {
@@ -137,6 +147,7 @@ class ClusterExtensionPointEmitter implements Component {
         deleteExts = pluginRgty.getExtensionList(ClusterDeleteExtensionPoint.class);
         changeExts = pluginRgty.getExtensionList(ClusterChangeStateExtensionPoint.class);
         updateOSExts = pluginRgty.getExtensionList(ClusterUpdateOSExtensionPoint.class);
+        createExts = pluginRgty.getExtensionList(ClusterCreateExtensionPoint.class);
     }
 
     @Override

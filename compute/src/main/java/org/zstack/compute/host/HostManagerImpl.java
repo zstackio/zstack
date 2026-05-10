@@ -34,6 +34,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.server.PhysicalServerPathTwoExtensionPoint;
 import org.zstack.header.storage.primary.PrimaryStorageCanonicalEvent;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
@@ -421,6 +422,17 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         HostInventory inv = HostInventory.valueOf(vo);
         chain.setName(String.format("add-host-%s", vo.getUuid()));
+
+        // U1a path 2: let physicalServer plugin append AutoAssociate / CreatePhysicalServerRole
+        // / InitPhysicalServerCapacity flows ahead of the existing add-host chain, so any
+        // hypervisor that opted into unified PhysicalServer management persists its RoleVO and
+        // PSC row before the connect flow runs (NB-24 fail-loud, ADR-012). No-op when no
+        // PhysicalServerPathTwoExtensionPoint is registered, or when the impl returns without
+        // mutating the chain (current implementation skips non-KVM hypervisors).
+        for (PhysicalServerPathTwoExtensionPoint ext : pluginRgty.getExtensionList(PhysicalServerPathTwoExtensionPoint.class)) {
+            ext.contributeAddHostFlows(chain, msg, vo, cluster);
+        }
+
         chain.then(new NoRollbackFlow() {
             String __name__ = "call-before-add-host-extension";
 
@@ -893,10 +905,55 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         });
 
         ResourceConfig cpuConfig = rcf.getResourceConfig(HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO.getIdentity());
-        cpuConfig.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->
-                recalculateHostCapacity(resourceUuid, resourceType));
-        cpuConfig.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) ->
-                recalculateHostCapacity(resourceUuid, resourceType));
+        cpuConfig.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) -> {
+            // ResourceConfig hierarchy change → resolve effective ratio per affected host and
+            // refresh PSC.totalCpu via JPQL. Without this, the subsequent recalculate reads stale
+            // totalCpu and availableCpu does not reflect the new ratio. Uses the cache-free
+            // refresh path so getRatio() continues to walk the ResourceConfig stack.
+            for (String huuid : resolveAffectedHostUuids(resourceUuid, resourceType)) {
+                try {
+                    int effective = rcf.getResourceConfigValue(
+                            HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO, huuid, Integer.class);
+                    cpuRatioMgr.refreshHostCpuCapacity(huuid, effective);
+                } catch (Throwable t) {
+                    logger.warn(String.format(
+                            "[HostManagerImpl] failed to refresh host[uuid:%s] cpu capacity on "
+                                    + "ResourceConfig change: %s", huuid, t.getMessage()));
+                }
+            }
+            recalculateHostCapacity(resourceUuid, resourceType);
+        });
+        cpuConfig.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> {
+            // On delete the host inherits from the next-level ResourceConfig. Re-resolve and
+            // refresh PSC.totalCpu so availableCpu rebases without polluting the per-host cache.
+            for (String huuid : resolveAffectedHostUuids(resourceUuid, resourceType)) {
+                try {
+                    int effective = rcf.getResourceConfigValue(
+                            HostGlobalConfig.HOST_CPU_OVER_PROVISIONING_RATIO, huuid, Integer.class);
+                    cpuRatioMgr.refreshHostCpuCapacity(huuid, effective);
+                } catch (Throwable t) {
+                    logger.warn(String.format(
+                            "[HostManagerImpl] failed to refresh host[uuid:%s] cpu capacity on "
+                                    + "ResourceConfig delete: %s", huuid, t.getMessage()));
+                }
+            }
+            recalculateHostCapacity(resourceUuid, resourceType);
+        });
+    }
+
+    private List<String> resolveAffectedHostUuids(String resourceUuid, String resourceType) {
+        if (HostVO.class.getSimpleName().equals(resourceType)) {
+            return Collections.singletonList(resourceUuid);
+        }
+        if (ClusterVO.class.getSimpleName().equals(resourceType)) {
+            return Q.New(HostVO.class).select(HostVO_.uuid)
+                    .eq(HostVO_.clusterUuid, resourceUuid).listValues();
+        }
+        if (ZoneVO.class.getSimpleName().equals(resourceType)) {
+            return Q.New(HostVO.class).select(HostVO_.uuid)
+                    .eq(HostVO_.zoneUuid, resourceUuid).listValues();
+        }
+        return Collections.emptyList();
     }
 
     private void recalculateHostCapacity(String resourceUuid, String resourceType) {

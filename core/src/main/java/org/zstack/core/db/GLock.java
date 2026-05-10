@@ -3,6 +3,7 @@ package org.zstack.core.db;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
@@ -50,6 +51,9 @@ public class GLock {
     public GLock(String name, long timeout) {
         this.name = name;
         this.timeout = timeout;
+        if (dbf == null) {
+            dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
+        }
         dataSource = dbf.getDataSource();
     }
 

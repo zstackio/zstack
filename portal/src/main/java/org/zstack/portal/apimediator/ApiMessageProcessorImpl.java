@@ -69,6 +69,22 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
     private List<String> configFolders;
     List<String> supportApis;
 
+    private void ensureDependencies() {
+        ComponentLoader loader = Platform.getComponentLoader();
+        if (pluginRgty == null) {
+            pluginRgty = loader.getComponent(PluginRegistry.class);
+        }
+        if (errf == null) {
+            errf = loader.getComponent(ErrorFacade.class);
+        }
+        if (dbf == null) {
+            dbf = loader.getComponent(DatabaseFacade.class);
+        }
+        if (bus == null) {
+            bus = loader.getComponent(CloudBus.class);
+        }
+    }
+
     private void dump() {
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<Class, ApiMessageDescriptor> e : descriptors.entrySet()) {
@@ -94,6 +110,7 @@ public class ApiMessageProcessorImpl implements ApiMessageProcessor {
         this.configFolders = (List<String>) config.get("serviceConfigFolders");
         this.supportApis = new ArrayList<>();
 
+        ensureDependencies();
         populateGlobalInterceptors();
 
         try {

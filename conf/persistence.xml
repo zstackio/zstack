@@ -224,5 +224,14 @@
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchVO</class>
         <class>org.zstack.network.hostNetworkInterface.PhysicalSwitchPortVO</class>
         <class>org.zstack.header.core.external.service.ExternalServiceConfigurationVO</class>
+        <class>org.zstack.header.server.PhysicalServerVO</class>
+        <class>org.zstack.header.server.PhysicalServerCapacityVO</class>
+        <class>org.zstack.header.server.PhysicalServerHardwareInfoVO</class>
+        <class>org.zstack.header.server.PhysicalServerHardwareDetailVO</class>
+        <class>org.zstack.header.server.PhysicalServerProvisionNetworkVO</class>
+        <class>org.zstack.header.server.PhysicalServerProvisionNetworkClusterRefVO</class>
+        <class>org.zstack.header.server.PhysicalServerProvisionNetworkPoolRefVO</class>
+        <class>org.zstack.header.server.PhysicalServerRoleVO</class>
+        <class>org.zstack.header.server.ServerPoolVO</class>
     </persistence-unit>
 </persistence>

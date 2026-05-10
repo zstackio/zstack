@@ -64,4 +64,20 @@
         <type>java.lang.Boolean</type>
     </config>
 
+    <config>
+        <name>physicalServer.cpu.safetyBuffer.percent</name>
+        <description>percentage of total cpu reserved as safety buffer on each PhysicalServer. Subtracted from PhysicalServerCapacityVO.availableCpu only on mixed-deployment hosts (>1 role); also used by ContainerNodeCordonService.evaluate as the cordon hysteresis cushion. Effective buffer = max(4, totalCpu * percent / 100).</description>
+        <category>hostAllocator</category>
+        <defaultValue>5</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
+    <config>
+        <name>physicalServer.memory.safetyBuffer.percent</name>
+        <description>percentage of total memory reserved as safety buffer on each PhysicalServer. Subtracted from PhysicalServerCapacityVO.availableMemory only on mixed-deployment hosts (>1 role); also used by ContainerNodeCordonService.evaluate as the cordon hysteresis cushion. Effective buffer = max(4GiB, totalMemory * percent / 100).</description>
+        <category>hostAllocator</category>
+        <defaultValue>10</defaultValue>
+        <type>java.lang.Integer</type>
+    </config>
+
 </globalConfig>

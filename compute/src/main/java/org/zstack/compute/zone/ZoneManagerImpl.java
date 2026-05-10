@@ -51,6 +51,8 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     private TagManager tagMgr;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ZoneExtensionPointEmitter extpEmitter;
 
     private Map<String, ZoneFactory> zoneFactories = Collections.synchronizedMap(new HashMap<String, ZoneFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -157,7 +159,9 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
 
         tagMgr.createTagsFromAPICreateMessage(msg, finalVO.getUuid(), ZoneVO.class.getSimpleName());
 
-        return ZoneInventory.valueOf(finalVO);
+        ZoneInventory inventory = ZoneInventory.valueOf(finalVO);
+        extpEmitter.afterCreate(inventory);
+        return inventory;
     }
 
     private void createZone(APICreateZoneMsg msg, ReturnValueCompletion<ZoneInventory> completion) {

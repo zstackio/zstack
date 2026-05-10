@@ -66,6 +66,7 @@
     <import resource="springConfigXml/resourceConfig.xml"/>
     <import resource="springConfigXml/HostAllocatorManager.xml"/>
     <import resource="springConfigXml/HostManager.xml"/>
+    <import resource="springConfigXml/PhysicalServerManager.xml"/>
     <import resource="springConfigXml/identity.xml"/>
     <import resource="springConfigXml/ImageManager.xml"/>
     <import resource="springConfigXml/jmx.xml"/>

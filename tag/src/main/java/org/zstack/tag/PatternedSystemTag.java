@@ -45,29 +45,35 @@ public class PatternedSystemTag extends SystemTag {
 
     @Override
     public void delete(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     public void delete(String resourceUuid, String tagFormat) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     @Override
     public void delete(String resourceUuid) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     @Override
     public void deleteInherentTag(String resourceUuid) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
     }
 
     public void deleteInherentTag(String resourceUuid, String tagFormat) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
     @Override
     public void deleteInherentTag(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);
     }
 
@@ -140,6 +146,7 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public SystemTagInventory getTagInventory(String resourceUuid) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
         q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());
@@ -149,6 +156,7 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public List<SystemTagInventory> getTagInventories(List<String> resourceUuids) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceUuid, Op.IN, resourceUuids);
         q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());
@@ -157,11 +165,13 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public List<SystemTagInventory> getTagInventories(String resourceUuid) {
+        ensureDependencies();
         return SystemTagInventory.valueOf(Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceType, getResourceClass().getSimpleName()).
                 eq(SystemTagVO_.resourceUuid, resourceUuid).like(SystemTagVO_.tag, useTagFormat()).list());
     }
 
     public void copyTagInventories(String srcUuid, Class srcResourceClass, String dstUuid, Class dstResourceClass, boolean inherent) {
+        ensureDependencies();
         if (getTag(srcUuid, srcResourceClass) == null) {
             return;
         }
@@ -179,6 +189,7 @@ public class PatternedSystemTag extends SystemTag {
     }
 
     public boolean updateTagByToken(String resourceUuid, String tokenName, String newTag) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
         q.add(SystemTagVO_.resourceType, Op.EQ, getResourceClass().getSimpleName());

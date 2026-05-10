@@ -20,6 +20,11 @@
     <bean id="HostCapacityOverProvisioningManager"
           class="org.zstack.compute.allocator.HostCapacityOverProvisioningManagerImpl"/>
 
+    <!-- Phase 3 Wave 1 U4 — unified path 2/3 server-level capacity recalculator. Distinct from
+         HostCapacityUpdater (path 1 / W1-W6 backward-compat) which is constructed by callers. -->
+    <bean id="physicalServerCapacityUpdater"
+          class="org.zstack.compute.allocator.PhysicalServerCapacityUpdater"/>
+
     <util:list id="SimulatorBackupStorageMetric">
         <value>SimulatorPrimaryStorage</value>
     </util:list>

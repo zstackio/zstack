@@ -39,11 +39,9 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    protected final List<PrimaryStorageTagAllocatorExtensionPoint> tagExtensions = pluginRgty.getExtensionList(PrimaryStorageTagAllocatorExtensionPoint.class);;
-
-
     @Override
     public void run(FlowTrigger trigger, Map data) {
+        List<PrimaryStorageTagAllocatorExtensionPoint> tagExtensions = pluginRgty.getExtensionList(PrimaryStorageTagAllocatorExtensionPoint.class);
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(AllocatorParams.SPEC);
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(AllocatorParams.CANDIDATES);
         DebugUtils.Assert(candidates != null && !candidates.isEmpty(), "PrimaryStorageTagAllocatorFlow cannot be the first element in allocator chain");
@@ -62,14 +60,14 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
         }
 
         if (tvos != null && !tvos.isEmpty()) {
-            candidates = callTagExtensions(SystemTagInventory.valueOf(tvos), candidates);
+            candidates = callTagExtensions(tagExtensions, SystemTagInventory.valueOf(tvos), candidates);
             data.put(AllocatorParams.CANDIDATES, candidates);
         }
 
         trigger.next();
     }
 
-    protected List<PrimaryStorageVO> callTagExtensions(List<SystemTagInventory> tags, List<PrimaryStorageVO> candidates) {
+    protected List<PrimaryStorageVO> callTagExtensions(List<PrimaryStorageTagAllocatorExtensionPoint> tagExtensions, List<SystemTagInventory> tags, List<PrimaryStorageVO> candidates) {
         List<PrimaryStorageVO> ret;
         for (PrimaryStorageTagAllocatorExtensionPoint extp : tagExtensions) {
             ret = extp.allocatePrimaryStorage(tags, candidates);

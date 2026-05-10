@@ -31,6 +31,7 @@ import org.zstack.header.image.APIGetCandidateBackupStorageForCreatingImageReply
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.server.PhysicalServerCapacityVO;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.storage.primary.PrimaryStorageType;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
@@ -79,6 +80,8 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     private ErrorFacade errf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private PhysicalServerCapacityUpdater psCapacityUpdater;
 
     @Override
     @MessageSafe
@@ -152,196 +155,82 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     private void handle(RecalculateHostCapacityMsg msg) {
-        final List<String> hostUuids = new ArrayList<>();
+        // U-B: delegate to PhysicalServerCapacityUpdater.recalculate — the single Layer 2 writer.
+        // All upstreams (HostBase connect flow / ratio change / KvmHostReserveExtension) remain
+        // unchanged; only this handler body is replaced (backward-compat: msg fields, reply fields,
+        // and service id are all unchanged).
         if (msg.getHostUuid() != null) {
-            hostUuids.add(msg.getHostUuid());
+            String serverUuid = HostCapacityUpdater.resolveServerUuidOrThrow(msg.getHostUuid());
+            psCapacityUpdater.recalculate(serverUuid);
         } else if (msg.getClusterUuid() != null) {
-            hostUuids.addAll(Q.New(HostVO.class).select(HostVO_.uuid)
+            List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
                     .eq(HostVO_.clusterUuid, msg.getClusterUuid())
-                    .listValues());
+                    .listValues();
+            for (String huuid : hostUuids) {
+                String serverUuid = HostCapacityUpdater.resolveServerUuidOrThrow(huuid);
+                psCapacityUpdater.recalculate(serverUuid);
+            }
         } else {
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.select(HostVO_.uuid);
             q.add(HostVO_.zoneUuid, Op.EQ, msg.getZoneUuid());
-            hostUuids.addAll(q.listValue());
-        }
-
-        if (hostUuids.isEmpty()) {
-            return;
-        }
-
-        class HostUsedCpuMem {
-            String hostUuid;
-            Long usedMemory;
-            Long usedCpu;
-        }
-
-        List<HostUsedCpuMem> hostUsedCpuMemList = new Callable<List<HostUsedCpuMem>>() {
-            @Override
-            @Transactional(readOnly = true)
-            public List<HostUsedCpuMem> call() {
-                String sql = "select sum(vm.memorySize), vm.hostUuid, sum(vm.cpuNum)" +
-                        " from VmInstanceVO vm" +
-                        " where vm.hostUuid in (:hostUuids)" +
-                        " and vm.state not in (:vmStates)";
-
-                if (!unsupportedVmTypeForCapacityCalculation.isEmpty()) {
-                    sql += " and vm.type not in (:vmTypes)";
-                }
-
-                sql += " group by vm.hostUuid";
-                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
-                q.setParameter("hostUuids", hostUuids);
-                q.setParameter("vmStates", list(
-                        VmInstanceState.Destroyed,
-                        VmInstanceState.Created,
-                        VmInstanceState.Destroying,
-                        VmInstanceState.Stopped));
-
-                if (!unsupportedVmTypeForCapacityCalculation.isEmpty()) {
-                    q.setParameter("vmTypes", unsupportedVmTypeForCapacityCalculation);
-                }
-
-                List<Tuple> ts = q.getResultList();
-
-                List<HostUsedCpuMem> ret = new ArrayList<>();
-                for (Tuple t : ts) {
-                    HostUsedCpuMem s = new HostUsedCpuMem();
-                    s.hostUuid = t.get(1, String.class);
-
-                    if (t.get(0, Long.class) == null) {
-                        continue;
-                    }
-
-                    s.usedMemory = ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
-                    long usedMemBySysCom = 0L;
-                    final List<SysComponentMemUsageExtensionPoint> extps =
-                            pluginRgty.getExtensionList(SysComponentMemUsageExtensionPoint.class);
-                    for (SysComponentMemUsageExtensionPoint extp : extps) {
-                        long hugePageMemUsage = Math.max(0L, extp.getHugePageMemoryUsage(s.hostUuid));
-                        long normalMemUsage = Math.max(0L, extp.getNormalMemoryUsage(s.hostUuid));
-                        usedMemBySysCom += hugePageMemUsage + normalMemUsage;
-                    }
-                    s.usedMemory = usedMemBySysCom + ratioMgr.calculateMemoryByRatio(s.hostUuid, t.get(0, Long.class));
-                    s.usedCpu = t.get(2, Long.class);
-                    ret.add(s);
-                }
-                return ret;
+            List<String> hostUuids = q.listValue();
+            for (String huuid : hostUuids) {
+                String serverUuid = HostCapacityUpdater.resolveServerUuidOrThrow(huuid);
+                psCapacityUpdater.recalculate(serverUuid);
             }
-        }.call();
-
-        List<String> hostHasVms = CollectionUtils.transformToList(hostUsedCpuMemList, new Function<String, HostUsedCpuMem>() {
-            @Override
-            public String call(HostUsedCpuMem arg) {
-                return arg.hostUuid;
-            }
-        });
-
-        hostUuids.stream().filter(huuid -> !hostHasVms.contains(huuid)).forEach(huuid -> {
-            HostUsedCpuMem s = new HostUsedCpuMem();
-            s.hostUuid = huuid;
-            hostUsedCpuMemList.add(s);
-        });
-
-        for (final HostUsedCpuMem s : hostUsedCpuMemList) {
-            new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
-                @Override
-                public HostCapacityVO call(HostCapacityVO cap) {
-                    long before = cap.getAvailableMemory();
-                    long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
-                    cap.setAvailableMemory(avail);
-
-                    long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(s.hostUuid, cap.getCpuNum());
-                    long totalCpuBefore = cap.getTotalCpu();
-                    cap.setTotalCpu(totalCpu);
-
-                    long beforeCpu = cap.getAvailableCpu();
-                    long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
-                    cap.setAvailableCpu(availCpu);
-
-                    logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
-                                    "\n[available memory] before: %s, now: %s" +
-                                    "\n[total cpu] before: %s, now: %s" +
-                                    "\n[available cpu] before: %s, now :%s",
-                            s.hostUuid,
-                            before, avail,
-                            totalCpuBefore, totalCpu,
-                            beforeCpu, availCpu));
-                    return cap;
-                }
-            });
         }
+
+        bus.reply(msg, new MessageReply());
     }
 
     private void handle(ReturnHostCapacityMsg msg) {
         returnComputeResourceCapacity(msg.getHostUuid(), msg.getCpuCapacity(), msg.getMemoryCapacity());
     }
 
+    @Transactional
     private void handle(ReportHostCapacityMessage msg) {
         long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(msg.getHostUuid(), msg.getCpuNum());
-        long availMem = msg.getTotalMemory() - msg.getUsedMemory();
-        availMem = availMem > 0 ? availMem : 0;
-        long availCpu = totalCpu - msg.getUsedCpu();
-        availCpu = availCpu > 0 ? availCpu : 0;
+        long availPhysMem = msg.getTotalMemory() - msg.getUsedMemory();
+        availPhysMem = availPhysMem > 0 ? availPhysMem : 0;
 
-        HostCapacityVO vo = dbf.findByUuid(msg.getHostUuid(), HostCapacityVO.class);
+        // U-A (NB-30): physical fields written here under PESSIMISTIC_WRITE lock; available*
+        // fields are the sole responsibility of psCapacityUpdater.recalculate() below.
+        String serverUuid = HostCapacityUpdater.resolveServerUuidOrThrow(msg.getHostUuid());
+        PhysicalServerCapacityVO vo = dbf.getEntityManager()
+                .find(PhysicalServerCapacityVO.class, serverUuid, javax.persistence.LockModeType.PESSIMISTIC_WRITE);
         if (vo == null) {
-            vo = new HostCapacityVO();
-            vo.setUuid(msg.getHostUuid());
+            vo = new PhysicalServerCapacityVO();
+            vo.setUuid(serverUuid);
             vo.setTotalCpu(totalCpu);
-            vo.setAvailableCpu(availCpu);
             vo.setTotalMemory(msg.getTotalMemory());
-            vo.setAvailableMemory(availMem);
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
-            vo.setAvailablePhysicalMemory(availMem);
+            vo.setAvailablePhysicalMemory(availPhysMem);
             vo.setCpuNum(msg.getCpuNum());
             vo.setCpuSockets(msg.getCpuSockets());
             vo.setCpuCoreNum(msg.getCpuCoreNum());
-
-            HostCapacityStruct s = new HostCapacityStruct();
-            s.setCpuSockets(vo.getCpuSockets());
-            s.setCapacityVO(vo);
-            s.setCpuNum(msg.getCpuNum());
-            s.setTotalCpu(totalCpu);
-            s.setTotalMemory(msg.getTotalMemory());
-            s.setUsedCpu(msg.getUsedCpu());
-            s.setUsedMemory(msg.getUsedMemory());
-            s.setInit(true);
-            for (ReportHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(ReportHostCapacityExtensionPoint.class)) {
-                vo = ext.reportHostCapacity(s);
-            }
-            dbf.persist(vo);
-        } else if (needUpdateCapacity(vo, msg, totalCpu, availCpu, availMem)) {
+            dbf.getEntityManager().persist(vo);
+        } else if (needUpdateCapacity(vo, msg, totalCpu, availPhysMem)) {
             vo.setCpuNum(msg.getCpuNum());
             vo.setTotalCpu(totalCpu);
-            vo.setAvailableCpu(availCpu);
             vo.setTotalPhysicalMemory(msg.getTotalMemory());
-            vo.setAvailablePhysicalMemory(availMem);
+            vo.setAvailablePhysicalMemory(availPhysMem);
             vo.setTotalMemory(msg.getTotalMemory());
             vo.setCpuSockets(msg.getCpuSockets());
             vo.setCpuCoreNum(msg.getCpuCoreNum());
-
-            HostCapacityStruct s = new HostCapacityStruct();
-            s.setCapacityVO(vo);
-            s.setCpuSockets(msg.getCpuSockets());
-            s.setTotalCpu(totalCpu);
-            s.setTotalMemory(msg.getTotalMemory());
-            s.setUsedCpu(msg.getUsedCpu());
-            s.setUsedMemory(msg.getUsedMemory());
-            s.setInit(false);
-            for (ReportHostCapacityExtensionPoint ext : pluginRgty.getExtensionList(ReportHostCapacityExtensionPoint.class)) {
-                vo = ext.reportHostCapacity(s);
-            }
-            dbf.update(vo);
+            dbf.getEntityManager().merge(vo);
         }
+
+        // Layer 2: derive availableCpu / availableMemory via single-lock recalculate path.
+        psCapacityUpdater.recalculate(serverUuid);
 
         bus.reply(msg, new MessageReply());
     }
 
-    private boolean needUpdateCapacity(HostCapacityVO vo, ReportHostCapacityMessage msg, long totalCpu, long avaliCpu, long availMem) {
+    private boolean needUpdateCapacity(PhysicalServerCapacityVO vo, ReportHostCapacityMessage msg, long totalCpu, long availPhysMem) {
         return vo.getCpuNum() != msg.getCpuNum() || vo.getTotalCpu() != totalCpu
-                || vo.getAvailableCpu() != avaliCpu || vo.getTotalPhysicalMemory() != msg.getTotalMemory()
-                || vo.getAvailablePhysicalMemory() != availMem || vo.getTotalMemory() != msg.getTotalMemory()
+                || vo.getTotalPhysicalMemory() != msg.getTotalMemory()
+                || vo.getAvailablePhysicalMemory() != availPhysMem || vo.getTotalMemory() != msg.getTotalMemory()
                 || vo.getCpuSockets() != msg.getCpuSockets() || vo.getCpuCoreNum() != msg.getCpuCoreNum();
     }
 
@@ -596,15 +485,6 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
     private void handle(final APIGetCpuMemoryCapacityMsg msg) {
         APIGetCpuMemoryCapacityReply reply = new APIGetCpuMemoryCapacityReply();
-
-        class CpuMemCapacity {
-            Map<String, CpuMemCapacity> elements;
-            long totalCpu;
-            long availCpu;
-            long totalMem;
-            long availMem;
-            long managedCpu;
-        }
 
         CpuMemCapacity res = new Callable<CpuMemCapacity>() {
             private void calcElementCap(List<Tuple> tuples, CpuMemCapacity res) {
@@ -1019,5 +899,14 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         }
 
         return bsTypes;
+    }
+
+    private static class CpuMemCapacity {
+        Map<String, CpuMemCapacity> elements;
+        long totalCpu;
+        long availCpu;
+        long totalMem;
+        long availMem;
+        long managedCpu;
     }
 }

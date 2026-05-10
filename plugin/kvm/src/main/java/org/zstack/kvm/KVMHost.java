@@ -4886,6 +4886,16 @@ public class KVMHost extends HostBase implements Host {
 
     @Override
     public void deleteHook() {
+        // P1-6 (ZSTAC-84191): the PhysicalServerRoleVO cascade-delete previously
+        // fired here is now performed by KvmPhysicalServerRoleSoftDeleteExtension,
+        // which hooks HostVO soft-delete via SoftDeleteEntityExtensionPoint and runs
+        // synchronously inside the same REQUIRES_NEW tx as the HostEO soft-delete
+        // UPDATE. That gives true commit atomicity: either both rows transition
+        // together or neither does. Firing the DELETE from this hook (which sits
+        // before the cascade-callback's dbf.removeByPrimaryKeys(HostVO)) committed
+        // the role-row eagerly and could leave a reverse orphan (role gone, host
+        // still present) if any later step in the deletion flow failed. Tests
+        // covering this path live under U10/AC-RS-05 — see KvmRoleProviderIT.
     }
 
     @Override
