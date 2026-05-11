@@ -196,6 +196,14 @@ public class ModelInventory  {
         return this.requiredAccelerator;
     }
 
+    public java.lang.String pipelineTag;
+    public void setPipelineTag(java.lang.String pipelineTag) {
+        this.pipelineTag = pipelineTag;
+    }
+    public java.lang.String getPipelineTag() {
+        return this.pipelineTag;
+    }
+
     public java.util.List modelServiceRefs;
     public void setModelServiceRefs(java.util.List modelServiceRefs) {
         this.modelServiceRefs = modelServiceRefs;
