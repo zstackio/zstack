@@ -27125,6 +27125,87 @@ abstract class ApiHelper {
     }
 
 
+    def importModelServiceTemplateFromCdn(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ImportModelServiceTemplateFromCdnAction.class) Closure c) {
+        def a = new org.zstack.sdk.ImportModelServiceTemplateFromCdnAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def importModelServiceTemplateFromUpload(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ImportModelServiceTemplateFromUploadAction.class) Closure c) {
+        def a = new org.zstack.sdk.ImportModelServiceTemplateFromUploadAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def importModelServiceTemplateFromUrl(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ImportModelServiceTemplateFromUrlAction.class) Closure c) {
+        def a = new org.zstack.sdk.ImportModelServiceTemplateFromUrlAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def inspectBareMetal2Chassis(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.InspectBareMetal2ChassisAction.class) Closure c) {
         def a = new org.zstack.sdk.InspectBareMetal2ChassisAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -30062,6 +30143,35 @@ abstract class ApiHelper {
 
     def queryCbtTask(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryCbtTaskAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryCbtTaskAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryCdnModelServiceTemplateList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryCdnModelServiceTemplateListAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryCdnModelServiceTemplateListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -41653,6 +41763,33 @@ abstract class ApiHelper {
 
     def syncAliyunVirtualRouterFromRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.SyncAliyunVirtualRouterFromRemoteAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def syncCdnModelServiceTemplate(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SyncCdnModelServiceTemplateAction.class) Closure c) {
+        def a = new org.zstack.sdk.SyncCdnModelServiceTemplateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

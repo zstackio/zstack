@@ -29,3 +29,6 @@ DROP PROCEDURE IF EXISTS backfill_model_service_ref_create_date;
 -- in DEFAULT or ON UPDATE. lastOpDate already uses it, so keep createDate non-zero
 -- and let ModelServiceRefVO.@PrePersist populate the real creation time for new rows.
 ALTER TABLE `zstack`.`ModelServiceRefVO` MODIFY COLUMN `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00';
+
+CALL ADD_COLUMN('ModelServiceVO', 'hasNewVersion', 'tinyint(1)', 1, NULL); 
+
