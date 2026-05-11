@@ -1380,7 +1380,7 @@ func (cli *ZSClient) ${getMethodName}(ctx context.Context, uuid string) (*view.$
         builder.append("\tresponseKey := \"\"\n")
         builder.append("\tvar retVal interface{}\n")
         builder.append("\n")
-        builder.append("\tapiId, err := cli.PostWithAsync(resource, responseKey, params, retVal, true)\n")
+        builder.append("\tapiId, err := cli.PostWithAsync(ctx, resource, responseKey, params, retVal, true)\n")
         builder.append("\tif err != nil {\n")
         builder.append("\t\treturn \"\", err\n")
         builder.append("\t}\n")
