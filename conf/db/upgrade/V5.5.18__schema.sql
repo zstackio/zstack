@@ -232,8 +232,14 @@ ALTER TABLE `BareMetal2InstanceProvisionNicVO`
 ALTER TABLE `BareMetal2GatewayProvisionNicVO`
     DROP FOREIGN KEY `fkBareMetal2GatewayProvisionNicVONetworkVO`;
 
-ALTER TABLE `BareMetal2ProvisionNetworkClusterRefVO`
-    DROP FOREIGN KEY `fkBareMetal2ProvisionNetworkVONetworkVO`;
+-- ZSTAC-84191: previously dropped fkBareMetal2ProvisionNetworkVONetworkVO on
+-- BareMetal2ProvisionNetworkClusterRefVO here in anticipation of converting the
+-- ref table to a VIEW; STAGE 6 reversed that decision (ADR-013 keeps the table
+-- real), but the DROP was left in place without a matching re-add. Result:
+-- delete ProvisionNetwork no longer cascade-cleans ClusterRefVO at the DB
+-- layer. We rely on RENAME TABLE auto-following the FK (so the original
+-- fkBareMetal2ProvisionNetworkVONetworkVO now correctly references
+-- PhysicalServerProvisionNetworkVO after the rename at line ~252 below).
 
 -- Drop outbound FK on BM2PNVO so we can re-add it with a name matching the new
 -- parent table. (Could be kept via auto-rename on RENAME TABLE, but user

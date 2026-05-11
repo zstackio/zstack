@@ -1,8 +1,6 @@
-package org.zstack.header.longjob
+package org.zstack.header.server
 
-import org.zstack.header.longjob.LongJobState
 import java.sql.Timestamp
-import java.lang.Long
 
 doc {
 
@@ -27,47 +25,33 @@ doc {
 		since "5.5.16"
 	}
 	field {
-		name "apiId"
+		name "zoneUuid"
+		desc "区域UUID"
+		type "String"
+		since "5.5.16"
+	}
+	field {
+		name "physicalLocation"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "jobName"
+		name "networkTopology"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "jobData"
-		desc ""
-		type "String"
-		since "5.5.16"
-	}
-	field {
-		name "jobResult"
-		desc ""
-		type "String"
-		since "5.5.16"
-	}
-	ref {
 		name "state"
-		path "org.zstack.header.longjob.LongJobInventory.state"
-		desc "null"
-		type "LongJobState"
-		since "5.5.16"
-		clz LongJobState.class
-	}
-	field {
-		name "targetResourceUuid"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "managementNodeUuid"
+		name "isDefault"
 		desc ""
-		type "String"
+		type "boolean"
 		since "5.5.16"
 	}
 	field {
@@ -80,12 +64,6 @@ doc {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "5.5.16"
-	}
-	field {
-		name "executeTime"
-		desc ""
-		type "Long"
 		since "5.5.16"
 	}
 }

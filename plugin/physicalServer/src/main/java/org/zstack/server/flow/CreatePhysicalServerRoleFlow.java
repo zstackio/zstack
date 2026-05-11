@@ -5,14 +5,17 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.server.PhysicalServerRoleVO;
 import org.zstack.header.server.PhysicalServerRoleVO_;
+import org.zstack.header.server.PhysicalServerVO;
 import org.zstack.header.server.SchedulingMode;
 import org.zstack.header.server.flow.PathTwoFlowDataKey;
 
+import javax.persistence.LockModeType;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
@@ -52,26 +55,78 @@ public class CreatePhysicalServerRoleFlow implements Flow {
             return;
         }
 
-        PhysicalServerRoleVO existing = Q.New(PhysicalServerRoleVO.class)
-                .eq(PhysicalServerRoleVO_.serverUuid, serverUuid)
-                .eq(PhysicalServerRoleVO_.roleType, roleType)
-                .find();
-        if (existing != null) {
-            data.put(PathTwoFlowDataKey.ROLE_PRE_EXISTED, Boolean.TRUE);
-            // honour the existing roleUuid (path 1 may have set a different one)
-            data.put(PathTwoFlowDataKey.ROLE_UUID, existing.getRoleUuid());
-            trigger.next();
-            return;
-        }
+        // ZSTAC-84191: idempotent upsert keyed on (roleUuid, roleType).
+        //
+        // Downstream consumers (notably ContainerEndpointBase
+        // .recalcAndEvaluateCordonForEndpoint) call
+        //   Q.New(PhysicalServerRoleVO.class)
+        //     .eq(roleUuid, h.getUuid())
+        //     .eq(roleType, CONTAINER_HOST)
+        //     .findValue()
+        // so (roleUuid, roleType) is the real uniqueness invariant — NOT
+        // (serverUuid, roleType). The previous (serverUuid, roleType) check
+        // failed to detect duplicates when the same role entity (NativeHost) was
+        // re-associated to a DIFFERENT PhysicalServerVO across syncs, because
+        // PhysicalServerAutoAssociator's three-tier match (serialNumber /
+        // oobAddress / managementIp+zoneUuid) returns a fresh PSVO when any
+        // mutable input (managementIp, cluster, …) changes between syncs. Two
+        // PSVOs → two RoleVO rows with the same roleUuid → NonUniqueResultException
+        // at the cordon evaluate flow.
+        //
+        // The SQLBatch opens a transaction so the PESSIMISTIC_WRITE on
+        // PhysicalServerVO actually takes effect — mirrors the PS-row mutex
+        // used in PhysicalServerManagerImpl.attachRoleVO (path-1) and
+        // serialises concurrent path-2 flows that target the SAME serverUuid.
+        // Cross-PSVO duplicates are caught by the (roleUuid, roleType) lookup
+        // and resolved by rebinding the existing row to the new serverUuid.
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                databaseFacade.getEntityManager().find(PhysicalServerVO.class, serverUuid,
+                        LockModeType.PESSIMISTIC_WRITE);
 
-        PhysicalServerRoleVO vo = new PhysicalServerRoleVO();
-        vo.setUuid(Platform.getUuid());
-        vo.setServerUuid(serverUuid);
-        vo.setRoleType(roleType);
-        vo.setRoleUuid(roleUuid);
-        vo.setSchedulingMode(mode);
-        dbf.persist(vo);
-        data.put(PathTwoFlowDataKey.ROLE_VO_PK, vo.getUuid());
+                // Primary uniqueness key: (roleUuid, roleType). Pick up ANY existing
+                // RoleVO for this role entity regardless of serverUuid — rebind if
+                // the associated PSVO drifted, treat as no-op if it's already on
+                // the same PSVO.
+                PhysicalServerRoleVO byRole = Q.New(PhysicalServerRoleVO.class)
+                        .eq(PhysicalServerRoleVO_.roleUuid, roleUuid)
+                        .eq(PhysicalServerRoleVO_.roleType, roleType)
+                        .find();
+                if (byRole != null) {
+                    if (!serverUuid.equals(byRole.getServerUuid())) {
+                        byRole.setServerUuid(serverUuid);
+                        byRole.setSchedulingMode(mode);
+                        merge(byRole);
+                    }
+                    data.put(PathTwoFlowDataKey.ROLE_PRE_EXISTED, Boolean.TRUE);
+                    data.put(PathTwoFlowDataKey.ROLE_UUID, byRole.getRoleUuid());
+                    return;
+                }
+
+                // Secondary check: path 1 (APIAttachPhysicalServerRoleMsg) may have
+                // pre-written a RoleVO for this (serverUuid, roleType) with a
+                // different pre-generated roleUuid. Honour it.
+                PhysicalServerRoleVO byServer = Q.New(PhysicalServerRoleVO.class)
+                        .eq(PhysicalServerRoleVO_.serverUuid, serverUuid)
+                        .eq(PhysicalServerRoleVO_.roleType, roleType)
+                        .find();
+                if (byServer != null) {
+                    data.put(PathTwoFlowDataKey.ROLE_PRE_EXISTED, Boolean.TRUE);
+                    data.put(PathTwoFlowDataKey.ROLE_UUID, byServer.getRoleUuid());
+                    return;
+                }
+
+                PhysicalServerRoleVO vo = new PhysicalServerRoleVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setServerUuid(serverUuid);
+                vo.setRoleType(roleType);
+                vo.setRoleUuid(roleUuid);
+                vo.setSchedulingMode(mode);
+                persist(vo);
+                data.put(PathTwoFlowDataKey.ROLE_VO_PK, vo.getUuid());
+            }
+        }.execute();
         trigger.next();
     }
 

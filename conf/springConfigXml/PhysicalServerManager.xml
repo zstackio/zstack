@@ -37,6 +37,20 @@
 
     <bean id="PhysicalServerProvisionService" class="org.zstack.server.PhysicalServerProvisionService" />
 
+    <!--
+        ZSTAC-84191: register STANDALONE_PXE ProvisionProvider.
+        Without this <bean>, Spring autowire on PhysicalServerProvisionService.providerList
+        only picks up the GATEWAY_PXE impl declared in premium/baremetal2.xml; submitting
+        a STANDALONE_PXE provision longjob fails with
+        "no ProvisionProvider registered for ProvisionNetworkType[STANDALONE_PXE]"
+        (CLAUDE.md §14: this repo has no component-scan, @Component alone is not enough).
+    -->
+    <bean id="PhysicalServerStandalonePxeProvisionProvider" class="org.zstack.server.PhysicalServerStandalonePxeProvisionProvider">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.server.ProvisionProvider" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="PhysicalServerCascadeExtension" class="org.zstack.server.PhysicalServerCascadeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />

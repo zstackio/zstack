@@ -40,6 +40,25 @@ public class PhysicalServerAutoAssociator {
      * @return the matched or newly created PhysicalServer UUID, or null if no pool is bound and creation is needed
      */
     public String findOrCreate(RoleMatchContext ctx, String clusterUuid) {
+        // ZSTAC-84191: serialize find→persist for the same physical machine.
+        // Without this lock, 2 concurrent path-2 flows for the same NativeHost
+        // both see no existing PSVO and both create a new one with distinct uuid.
+        // Downstream the same NativeHost.uuid is then bound to 2 different
+        // PhysicalServerRoleVO rows (one per PSVO), and ContainerEndpointBase's
+        // `eq(roleUuid, h.getUuid()).findValue()` throws NonUniqueResultException
+        // at capacity-recalc-and-evaluate-cordon. Key on (managementIp, zoneUuid)
+        // — the most discriminating tier of the 3-tier fallback below — so flows
+        // for the same physical machine block on the same JVM monitor.
+        String lockKey = ("ZSTAC-84191-auto-associate-"
+                + (ctx.getManagementIp() == null ? "" : ctx.getManagementIp())
+                + "-"
+                + (ctx.getZoneUuid() == null ? "" : ctx.getZoneUuid())).intern();
+        synchronized (lockKey) {
+            return doFindOrCreate(ctx, clusterUuid);
+        }
+    }
+
+    private String doFindOrCreate(RoleMatchContext ctx, String clusterUuid) {
         // Tier 1: match by serialNumber
         String sn = ctx.getSerialNumber();
         if (sn != null && !SERIAL_NUMBER_BLACKLIST.contains(sn.trim())) {

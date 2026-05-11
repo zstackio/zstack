@@ -1,8 +1,6 @@
-package org.zstack.header.longjob
+package org.zstack.header.server
 
-import org.zstack.header.longjob.LongJobState
 import java.sql.Timestamp
-import java.lang.Long
 
 doc {
 
@@ -11,6 +9,12 @@ doc {
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
+		type "String"
+		since "5.5.16"
+	}
+	field {
+		name "zoneUuid"
+		desc "区域UUID"
 		type "String"
 		since "5.5.16"
 	}
@@ -27,45 +31,43 @@ doc {
 		since "5.5.16"
 	}
 	field {
-		name "apiId"
+		name "type"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "jobName"
+		name "dhcpInterface"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "jobData"
+		name "dhcpRangeStartIp"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
 	field {
-		name "jobResult"
+		name "dhcpRangeEndIp"
 		desc ""
 		type "String"
 		since "5.5.16"
 	}
-	ref {
+	field {
+		name "dhcpRangeNetmask"
+		desc ""
+		type "String"
+		since "5.5.16"
+	}
+	field {
+		name "dhcpRangeGateway"
+		desc ""
+		type "String"
+		since "5.5.16"
+	}
+	field {
 		name "state"
-		path "org.zstack.header.longjob.LongJobInventory.state"
-		desc "null"
-		type "LongJobState"
-		since "5.5.16"
-		clz LongJobState.class
-	}
-	field {
-		name "targetResourceUuid"
-		desc ""
-		type "String"
-		since "5.5.16"
-	}
-	field {
-		name "managementNodeUuid"
 		desc ""
 		type "String"
 		since "5.5.16"
@@ -83,9 +85,15 @@ doc {
 		since "5.5.16"
 	}
 	field {
-		name "executeTime"
+		name "attachedClusterUuids"
 		desc ""
-		type "Long"
+		type "List"
+		since "5.5.16"
+	}
+	field {
+		name "attachedPoolUuids"
+		desc ""
+		type "List"
 		since "5.5.16"
 	}
 }

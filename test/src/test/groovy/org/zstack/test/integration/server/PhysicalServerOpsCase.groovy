@@ -412,7 +412,8 @@ class PhysicalServerOpsCase extends SubCase {
         deleteServerPool { uuid = pool.uuid }
     }
 
-    // AC-PR-02: STANDALONE_PXE provider is not yet implemented — long job must fail with a clear error
+    // AC-PR-02: STANDALONE_PXE provider is a reserved stub for phase-2 implementation —
+    // long job must fail with a clear "reserved" error from the registered stub provider.
     void testProvisionPhysicalServerNoProviderFailsLongJob() {
         def zone = env.inventoryByName("zone") as ZoneInventory
         def pool = createPool("pool-provision-no-provider")
@@ -435,7 +436,10 @@ class PhysicalServerOpsCase extends SubCase {
         retryInSecs {
             job = dbFindByUuid(job.uuid, LongJobVO.class)
             assert job.state == LongJobState.Failed
-            assert job.jobResult.contains("no ProvisionProvider registered")
+            // ZSTAC-84191: STANDALONE_PXE stub bean is registered (PhysicalServerManager.xml),
+            // so lookup succeeds and startProvisioning returns the explicit "reserved" error
+            // instead of the bare "no ProvisionProvider registered" lookup miss.
+            assert job.jobResult.contains("STANDALONE_PXE ProvisionProvider is reserved and not implemented yet")
         }
 
         detachProvisionNetworkFromPool {
