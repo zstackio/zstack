@@ -40,6 +40,8 @@ import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.tpm.message.AddTpmMsg;
 import org.zstack.header.tpm.message.AddTpmReply;
+import org.zstack.header.tpm.message.RestoreTpmEncryptionKeyMsg;
+import org.zstack.header.tpm.message.RestoreTpmEncryptionKeyReply;
 import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.tpm.message.TpmDeletionReply;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -62,8 +64,8 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.efi.KvmSecureBootExtensions;
-import org.zstack.header.tpm.message.BackupVmTpmMsg;
-import org.zstack.header.tpm.message.BackupVmTpmReply;
+import org.zstack.header.tpm.message.BackupTpmEncryptionKeyMsg;
+import org.zstack.header.tpm.message.BackupTpmEncryptionKeyReply;
 import org.zstack.kvm.tpm.message.CloneVmTpmMsg;
 import org.zstack.kvm.tpm.message.CloneVmTpmReply;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -80,7 +82,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.zstack.compute.vm.VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE;
-import static org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.BackupEncryptedResourceKeyContent;
+import static org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend.*;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.errorcode.SysErrors.NOT_SUPPORTED;
@@ -147,8 +149,10 @@ public class KvmTpmManager extends AbstractService {
             handle((TpmDeletionMsg) msg);
         } else if (msg instanceof CloneVmTpmMsg) {
             handle((CloneVmTpmMsg) msg);
-        } else if (msg instanceof BackupVmTpmMsg) {
-            handle((BackupVmTpmMsg) msg);
+        } else if (msg instanceof BackupTpmEncryptionKeyMsg) {
+            handle((BackupTpmEncryptionKeyMsg) msg);
+        } else if (msg instanceof RestoreTpmEncryptionKeyMsg) {
+            handle((RestoreTpmEncryptionKeyMsg) msg);
         } else if (msg instanceof ResetVmTpmMsg) {
             handle((ResetVmTpmMsg) msg);
         } else {
@@ -171,6 +175,10 @@ public class KvmTpmManager extends AbstractService {
     }
 
     private void handle(AddTpmMsg msg) {
+        if (msg.getKeyProviderUuid() != null && msg.getResourceUuidKeyFrom() != null) {
+            throw operr("keyProviderUuid and resourceUuidKeyFrom cannot be set at the same time").toException();
+        }
+
         AddTpmReply reply = new AddTpmReply();
         threadFacade.chainSubmit(new ChainTask(msg) {
             @Override
@@ -209,7 +217,8 @@ public class KvmTpmManager extends AbstractService {
     }
 
     static class AddTpmToVmContext {
-        String keyProviderUuid;
+        String keyProviderUuid; // create new key with the provider uuid
+        String resourceUuidKeyFrom; // copy key from the resource uuid
         String vmInstanceUuid;
         String tpmUuid;
 
@@ -220,6 +229,7 @@ public class KvmTpmManager extends AbstractService {
         static AddTpmToVmContext valueOf(AddTpmMsg msg) {
             AddTpmToVmContext context = new AddTpmToVmContext();
             context.keyProviderUuid = msg.getKeyProviderUuid();
+            context.resourceUuidKeyFrom = msg.getResourceUuidKeyFrom();
             context.vmInstanceUuid = msg.getVmInstanceUuid();
             context.tpmUuid = msg.getTpmUuid();
             return context;
@@ -258,14 +268,8 @@ public class KvmTpmManager extends AbstractService {
                 })
                 .build())
             .then(Flow.of("attach-key-provider-to-tpm")
-                .skipIf(data -> VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class))
+                .skipIf(data -> VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) || context.keyProviderUuid == null)
                 .handle(trigger -> {
-                    if (context.keyProviderUuid == null) {
-                        trigger.fail(operr("keyProviderUuid is required when adding TPM to VM[uuid:%s]",
-                                context.vmInstanceUuid));
-                        return;
-                    }
-
                     tpmKeyBackend.attachKeyProviderToTpm(context.createdTpmUuid, context.keyProviderUuid);
                     context.keyProviderAttached = true;
 
@@ -289,6 +293,22 @@ public class KvmTpmManager extends AbstractService {
                 })
                 .rollback(trigger -> {
                     if (context.keyProviderAttached && context.createdTpmUuid != null) {
+                        tpmKeyBackend.detachKeyProviderFromTpm(context.createdTpmUuid);
+                    }
+                    trigger.rollback();
+                })
+                .build())
+            .then(Flow.of("copy-key-to-tpm")
+                .skipIf(data -> VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS.value(Boolean.class) || context.resourceUuidKeyFrom == null)
+                .handle(trigger -> {
+                    RestoreEncryptedResourceKeyContext restoreContext = new RestoreEncryptedResourceKeyContext();
+                    restoreContext.srcResourceUuid = context.resourceUuidKeyFrom;
+                    restoreContext.dstResourceUuid = context.createdTpmUuid;
+                    tpmKeyBackend.restoreEncryptedResourceKey(restoreContext);
+                    trigger.next();
+                })
+                .rollback(trigger -> {
+                    if (context.createdTpmUuid != null) {
                         tpmKeyBackend.detachKeyProviderFromTpm(context.createdTpmUuid);
                     }
                     trigger.rollback();
@@ -619,12 +639,20 @@ public class KvmTpmManager extends AbstractService {
         .start();
     }
 
-    private void handle(BackupVmTpmMsg msg) {
-        BackupEncryptedResourceKeyContent content = new BackupEncryptedResourceKeyContent();
+    private void handle(BackupTpmEncryptionKeyMsg msg) {
+        BackupEncryptedResourceKeyContext content = new BackupEncryptedResourceKeyContext();
         content.srcResourceUuid = msg.getSrcResourceUuid();
         content.dstResourceUuid = msg.getDstResourceUuid();
         tpmKeyBackend.backupEncryptedResourceKey(content);
-        bus.reply(msg, new BackupVmTpmReply());
+        bus.reply(msg, new BackupTpmEncryptionKeyReply());
+    }
+
+    private void handle(RestoreTpmEncryptionKeyMsg msg) {
+        RestoreEncryptedResourceKeyContext content = new RestoreEncryptedResourceKeyContext();
+        content.srcResourceUuid = msg.getSrcResourceUuid();
+        content.dstResourceUuid = msg.getDstResourceUuid();
+        tpmKeyBackend.restoreEncryptedResourceKey(content);
+        bus.reply(msg, new RestoreTpmEncryptionKeyReply());
     }
 
     static class ResetVmTpmContext {
