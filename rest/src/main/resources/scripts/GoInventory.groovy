@@ -1357,6 +1357,7 @@ class GoInventory implements SdkTemplate {
         content.append("// Copyright (c) ZStack.io, Inc.\n\n")
         content.append("package client\n\n")
         content.append("import (\n")
+        content.append("\t\"context\"\n")
         if (needsFmt) {
             content.append("\t\"fmt\"\n")
         }
@@ -1677,6 +1678,7 @@ class GoInventory implements SdkTemplate {
                 content.append("// Copyright (c) ZStack.io, Inc.\n\n")
                 content.append("package client\n\n")
                 content.append("import (\n")
+                content.append("\t\"context\"\n")
                 if (needsFmt) {
                     content.append("\t\"fmt\"\n")
                 }
