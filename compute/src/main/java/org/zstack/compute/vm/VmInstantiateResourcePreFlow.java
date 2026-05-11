@@ -29,8 +29,10 @@ public class VmInstantiateResourcePreFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private final List<PreVmInstantiateResourceExtensionPoint> extensions = pluginRgty.getExtensionList(PreVmInstantiateResourceExtensionPoint.class);
-    
+    private List<PreVmInstantiateResourceExtensionPoint> getExtensions() {
+        return pluginRgty.getExtensionList(PreVmInstantiateResourceExtensionPoint.class);
+    }
+
 
     private void runExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
         if (!it.hasNext()) {
@@ -61,7 +63,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
     @Override
     public void run(FlowTrigger chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        for (PreVmInstantiateResourceExtensionPoint extp : extensions) {
+        for (PreVmInstantiateResourceExtensionPoint extp : getExtensions()) {
             try {
                 extp.preBeforeInstantiateVmResource(spec);
             } catch (VmInstantiateResourceException vie) {
@@ -69,7 +71,7 @@ public class VmInstantiateResourcePreFlow implements Flow {
             }
         }
 
-        runExtensions(extensions.iterator(), spec, chain);
+        runExtensions(getExtensions().iterator(), spec, chain);
     }
 
     private void rollbackExtensions(final Iterator<PreVmInstantiateResourceExtensionPoint> it, final VmInstanceSpec spec, final FlowRollback chain) {
@@ -97,6 +99,6 @@ public class VmInstantiateResourcePreFlow implements Flow {
     @Override
     public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        rollbackExtensions(extensions.iterator(), spec, chain);
+        rollbackExtensions(getExtensions().iterator(), spec, chain);
     }
 }

@@ -34,6 +34,22 @@
             <artifactId>maven-artifact</artifactId>
             <version>3.0.5</version>
         </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>4.11.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -93,6 +109,17 @@
                             <artifactId>header</artifactId>
                         </aspectLibrary>
                     </aspectLibraries>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <systemPropertyVariables>
+                        <management.server.ip>127.0.0.1</management.server.ip>
+                        <exitJVMOnBootFailure>false</exitJVMOnBootFailure>
+                        <unitTestOn>true</unitTestOn>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
         </plugins>

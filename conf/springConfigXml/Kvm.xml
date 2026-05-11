@@ -243,6 +243,25 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmRoleProvider" class="org.zstack.kvm.KvmRoleProvider">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.server.PhysicalServerRoleProvider" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KvmPhysicalServerRoleSoftDeleteExtension" class="org.zstack.kvm.KvmPhysicalServerRoleSoftDeleteExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.db.SoftDeleteEntityExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.db.HardDeleteEntityExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KvmHardwareDiscoveryAdapter" class="org.zstack.kvm.server.KvmHardwareDiscoveryAdapter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.server.PhysicalServerHardwareDiscoveryExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="XmlHookManager" class="org.zstack.kvm.xmlhook.XmlHookManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

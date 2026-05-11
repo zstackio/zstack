@@ -1,81 +1,91 @@
 package org.zstack.header.longjob
 
+import org.zstack.header.longjob.LongJobState
+import java.sql.Timestamp
+import java.lang.Long
+
 doc {
 
-	title "长任务"
+	title "在这里输入结构的名称"
 
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "name"
 		desc "资源名称"
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "description"
 		desc "资源的详细描述"
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "apiId"
-		desc "用于关联TaskProgress的APIID"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "jobName"
-		desc "任务名称"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "jobData"
-		desc "任务数据"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "jobResult"
-		desc "任务结果"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	ref {
 		name "state"
 		path "org.zstack.header.longjob.LongJobInventory.state"
-		desc "任务状态"
+		desc "null"
 		type "LongJobState"
-		since "2.2.4"
+		since "5.5.16"
 		clz LongJobState.class
 	}
 	field {
 		name "targetResourceUuid"
-		desc "目标资源UUID"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "managementNodeUuid"
-		desc "管理节点UUID"
+		desc ""
 		type "String"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "2.2.4"
+		since "5.5.16"
 	}
 	field {
 		name "lastOpDate"
 		desc "最后一次修改时间"
 		type "Timestamp"
-		since "2.2.4"
+		since "5.5.16"
+	}
+	field {
+		name "executeTime"
+		desc ""
+		type "Long"
+		since "5.5.16"
 	}
 }

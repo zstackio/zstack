@@ -111,11 +111,21 @@ public class SystemTag {
         return Op.EQ;
     }
 
+    protected void ensureDependencies() {
+        if (dbf == null) {
+            dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
+        }
+        if (tagMgr == null) {
+            tagMgr = (TagManagerImpl) Platform.getComponentLoader().getComponent(TagManager.class);
+        }
+    }
+
     public boolean hasTag(String resourceUuid) {
         return hasTag(resourceUuid, resourceClass);
     }
 
     public boolean hasTag(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
         q.add(SystemTagVO_.resourceUuid, Op.EQ, resourceUuid);
@@ -128,6 +138,7 @@ public class SystemTag {
             return new ArrayList<>();
         }
 
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
         q.add(SystemTagVO_.resourceUuid, Op.IN, resourceUuids);
@@ -137,6 +148,7 @@ public class SystemTag {
     }
 
     public void copy(String srcUuid, Class srcClass, String dstUuid, Class dstClass) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.add(SystemTagVO_.resourceType, Op.EQ, srcClass.getSimpleName());
         q.add(SystemTagVO_.resourceUuid, Op.EQ, srcUuid);
@@ -154,6 +166,7 @@ public class SystemTag {
     }
 
     public List<String> getTags(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.tag);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
@@ -180,6 +193,7 @@ public class SystemTag {
     }
 
     public Map<String, List<String>> getTags(Collection<String> resourceUuids, Class resourceClass) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.tag, SystemTagVO_.resourceUuid);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());
@@ -213,18 +227,22 @@ public class SystemTag {
     }
 
     public void delete(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     public void delete(String resourceUuid) {
+        ensureDependencies();
         tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), false);
     }
 
     public void deleteInherentTag(String resourceUuid) {
+        ensureDependencies();
         tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
     public void deleteInherentTag(String resourceUuid, Class resourceClass) {
+        ensureDependencies();
         tagMgr.deleteSystemTag(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
@@ -240,6 +258,7 @@ public class SystemTag {
 
             @Override
             public SystemTagInventory create() {
+                ensureDependencies();
                 try {
                     return doCreate();
                 } catch (TransactionSystemException e) {
@@ -411,10 +430,12 @@ public class SystemTag {
     }
 
     public SystemTagInventory updateByTagUuid(String tagUuid, String newTag) {
+        ensureDependencies();
         return tagMgr.updateSystemTag(tagUuid, newTag);
     }
 
     public SystemTagInventory updateUnique(String resourceUuid, String oldTag, String newTag) {
+        ensureDependencies();
         String tagUuid = Q.New(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, resourceUuid).
                 eq(SystemTagVO_.resourceType, resourceClass.getSimpleName()).like(SystemTagVO_.tag, oldTag).
                 select(SystemTagVO_.uuid).findValue();
@@ -426,6 +447,7 @@ public class SystemTag {
     }
 
     public SystemTagInventory update(String resourceUuid, String newTag) {
+        ensureDependencies();
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
         q.select(SystemTagVO_.uuid);
         q.add(SystemTagVO_.resourceType, Op.EQ, resourceClass.getSimpleName());

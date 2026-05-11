@@ -20,6 +20,16 @@ class ZoneExtensionPointEmitter implements Component {
 
     private List<ZoneDeleteExtensionPoint> delExts;
     private List<ZoneChangeStateExtensionPoint> changeExts;
+    private List<ZoneCreateExtensionPoint> createExts;
+
+    void afterCreate(final ZoneInventory zinv) {
+        CollectionUtils.safeForEach(createExts, new ForEachFunction<ZoneCreateExtensionPoint>() {
+            @Override
+            public void run(ZoneCreateExtensionPoint arg) {
+                arg.afterCreateZone(zinv);
+            }
+        });
+    }
 
 	void preDelete(ZoneInventory zinv) throws ZoneException {
 		for (ZoneDeleteExtensionPoint extp : delExts) {
@@ -100,6 +110,7 @@ class ZoneExtensionPointEmitter implements Component {
     private void populateExtensions() {
         delExts = pluginRgty.getExtensionList(ZoneDeleteExtensionPoint.class);
         changeExts = pluginRgty.getExtensionList(ZoneChangeStateExtensionPoint.class);
+        createExts = pluginRgty.getExtensionList(ZoneCreateExtensionPoint.class);
     }
 
     @Override

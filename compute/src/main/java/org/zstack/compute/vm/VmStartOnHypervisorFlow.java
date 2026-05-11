@@ -26,10 +26,12 @@ public class VmStartOnHypervisorFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private final List<VmBeforeStartOnHypervisorExtensionPoint> exts = pluginRgty.getExtensionList(VmBeforeStartOnHypervisorExtensionPoint.class);;
+    private List<VmBeforeStartOnHypervisorExtensionPoint> getExts() {
+        return pluginRgty.getExtensionList(VmBeforeStartOnHypervisorExtensionPoint.class);
+    }
 
     private void fireExtensions(VmInstanceSpec spec) {
-        for (VmBeforeStartOnHypervisorExtensionPoint ext : exts) {
+        for (VmBeforeStartOnHypervisorExtensionPoint ext : getExts()) {
             ext.beforeStartVmOnHypervisor(spec);
         }
     }

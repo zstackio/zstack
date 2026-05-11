@@ -14,6 +14,8 @@ public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage, Seri
     private String password;
     @Param(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;
+    // TODO(U11/U12): serverUuid consumer pending — field currently carrier-only
+    private String serverUuid;
 
     @Override
     public String getUsername() {
@@ -40,5 +42,13 @@ public class AddKVMHostMsg extends AddHostMsg implements AddKVMHostMessage, Seri
 
     public void setSshPort(int sshPort) {
         this.sshPort = sshPort;
+    }
+
+    public String getServerUuid() {
+        return serverUuid;
+    }
+
+    public void setServerUuid(String serverUuid) {
+        this.serverUuid = serverUuid;
     }
 }

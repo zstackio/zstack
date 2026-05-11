@@ -118,6 +118,12 @@ public class ResourceConfig {
     }
 
     void init() {
+        if (dbf == null) {
+            dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
+        }
+        if (evtf == null) {
+            evtf = Platform.getComponentLoader().getComponent(EventFacade.class);
+        }
         installEventTrigger();
         initResourceConfigNodes();
     }

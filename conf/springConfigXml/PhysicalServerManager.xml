@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:zstack="http://zstack.org/schema/zstack"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+         http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+         http://zstack.org/schema/zstack
+         http://zstack.org/schema/zstack/plugin.xsd"
+    default-init-method="init" default-destroy-method="destroy">
+
+    <bean id="PhysicalServerManager" class="org.zstack.server.PhysicalServerManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerApiInterceptor" class="org.zstack.server.PhysicalServerApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerAutoAssociator" class="org.zstack.server.PhysicalServerAutoAssociator" />
+
+    <bean id="PhysicalServerIpmiPowerExecutor" class="org.zstack.server.PhysicalServerIpmiPowerExecutor" />
+
+    <bean id="PhysicalServerScanner" class="org.zstack.server.PhysicalServerScanner" />
+
+    <bean id="PhysicalServerPowerTracker" class="org.zstack.server.PhysicalServerPowerTracker">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerProvisionService" class="org.zstack.server.PhysicalServerProvisionService" />
+
+    <!--
+        ZSTAC-84191: register STANDALONE_PXE ProvisionProvider.
+        Without this <bean>, Spring autowire on PhysicalServerProvisionService.providerList
+        only picks up the GATEWAY_PXE impl declared in premium/baremetal2.xml; submitting
+        a STANDALONE_PXE provision longjob fails with
+        "no ProvisionProvider registered for ProvisionNetworkType[STANDALONE_PXE]"
+        (CLAUDE.md §14: this repo has no component-scan, @Component alone is not enough).
+    -->
+    <bean id="PhysicalServerStandalonePxeProvisionProvider" class="org.zstack.server.PhysicalServerStandalonePxeProvisionProvider">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.server.ProvisionProvider" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerCascadeExtension" class="org.zstack.server.PhysicalServerCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerRoleCascadeExtension" class="org.zstack.server.PhysicalServerRoleCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerCapacityCascadeExtension" class="org.zstack.server.PhysicalServerCapacityCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerHardwareInfoCascadeExtension" class="org.zstack.server.PhysicalServerHardwareInfoCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerHardwareDetailCascadeExtension" class="org.zstack.server.PhysicalServerHardwareDetailCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ServerPoolCascadeExtension" class="org.zstack.server.ServerPoolCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="DefaultServerPoolFactory" class="org.zstack.server.DefaultServerPoolFactory" />
+
+    <bean id="DefaultServerPoolZoneCreateExtension" class="org.zstack.server.DefaultServerPoolZoneCreateExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zone.ZoneCreateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="DefaultServerPoolClusterCreateExtension" class="org.zstack.server.DefaultServerPoolClusterCreateExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.cluster.ClusterCreateExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerProvisionNetworkCascadeExtension" class="org.zstack.server.PhysicalServerProvisionNetworkCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerHardwareService" class="org.zstack.server.hardware.PhysicalServerHardwareService" />
+
+    <bean id="HardwareDiscoveryScheduler" class="org.zstack.server.hardware.HardwareDiscoveryScheduler" />
+
+    <!-- Phase 3 fix-plan U1-lead / U1a: path 2 FlowChain shared infrastructure -->
+
+    <bean id="PhysicalServerEnqueueDiscoveryHookImpl"
+          class="org.zstack.server.hardware.PhysicalServerEnqueueDiscoveryHookImpl" />
+
+    <bean id="AutoAssociateFlow" class="org.zstack.server.flow.AutoAssociateFlow" />
+
+    <bean id="CreatePhysicalServerRoleFlow"
+          class="org.zstack.server.flow.CreatePhysicalServerRoleFlow" />
+
+    <bean id="InitPhysicalServerCapacityFlow"
+          class="org.zstack.server.flow.InitPhysicalServerCapacityFlow" />
+
+    <bean id="PhysicalServerPathTwoContributor"
+          class="org.zstack.server.PhysicalServerPathTwoContributor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.server.PhysicalServerPathTwoExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="physicalServerPathTwoOrchestrator"
+          class="org.zstack.server.PhysicalServerPathTwoOrchestrator" />
+</beans>

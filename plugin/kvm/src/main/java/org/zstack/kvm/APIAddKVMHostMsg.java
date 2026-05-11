@@ -91,6 +91,15 @@ public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage
     @APIParam(numberRange = {1, 65535}, required = false)
     private int sshPort = 22;
 
+    /**
+     * @desc optional uuid of the PhysicalServerVO that owns this host; set by PS-first
+     * orchestration (APIAttachPhysicalServerRoleMsg path) so the legacy Add flow and
+     * the unified-hardware flow converge on the same HostManagerImpl code path.
+     */
+    // TODO(U11/U12): serverUuid consumer pending — field currently carrier-only
+    @APIParam(required = false)
+    private String serverUuid;
+
     @Override
     public String getUsername() {
         return username;
@@ -118,6 +127,14 @@ public class APIAddKVMHostMsg extends APIAddHostMsg implements AddKVMHostMessage
         this.sshPort = sshPort;
     }
  
+    public String getServerUuid() {
+        return serverUuid;
+    }
+
+    public void setServerUuid(String serverUuid) {
+        this.serverUuid = serverUuid;
+    }
+
     public static APIAddKVMHostMsg __example__() {
         APIAddKVMHostMsg msg = new APIAddKVMHostMsg();
         msg.setUsername("userName");

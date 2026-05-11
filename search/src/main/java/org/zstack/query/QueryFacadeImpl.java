@@ -378,6 +378,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         } catch (OperationFailureException of) {
             throw of;
         } catch (Exception e) {
+            logger.warn(String.format("failed to query message[%s]", msg.getClass().getName()), e);
             throw new OperationFailureException(inerr("failed to query: %s", e.getMessage()));
         }
     }

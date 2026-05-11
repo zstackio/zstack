@@ -42,6 +42,8 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 	private TagManager tagMgr;
 	@Autowired
 	private ClusterResourceConfigInitializer crci;
+	@Autowired
+	private ClusterExtensionPointEmitter extpEmitter;
 
 	private Map<String, ClusterFactory> clusterFactories = Collections.synchronizedMap(new HashMap<String, ClusterFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
@@ -108,6 +110,8 @@ public class ClusterManagerImpl extends AbstractService implements ClusterManage
 			tagMgr.createTags(m.getSystemTags(), m.getUserTags(), vo.getUuid(), ClusterVO.class.getSimpleName());
 		}
 
+		extpEmitter.afterCreate(vo);
+		vo = dbf.reload(vo);
 		ClusterInventory inv = ClusterInventory.valueOf(vo);
 
 		crci.initClusterResourceConfigValue(inv);

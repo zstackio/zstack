@@ -613,6 +613,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setTargetResourceUuid(msg.getTargetResourceUuid());
             vo.setManagementNodeUuid(Platform.getManagementServerId());
             vo.setAccountUuid(msg.getAccountUuid());
+            Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+            vo.setCreateDate(now);
+            vo.setLastOpDate(now);
             vo = dbf.persistAndRefresh(vo);
             msg.setJobUuid(vo.getUuid());
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());

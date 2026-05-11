@@ -22,6 +22,7 @@ class SpringSpec {
             "volumeSnapshot.xml",
             "tag.xml",
             "core.xml",
+            "PhysicalServerManager.xml",
     ]
 
     Set<String> xmls = []

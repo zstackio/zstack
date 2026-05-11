@@ -37,3 +37,6 @@ premium/test-premium/zstack-api.log
 CLAUDE.md
 .claude/*
 .m2/
+.omc/
+**/.omc/
+ajcore.*.txt

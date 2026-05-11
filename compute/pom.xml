@@ -137,5 +137,18 @@
             <artifactId>configuration</artifactId>
             <version>${project.version}</version>
         </dependency>
+
+        <!-- Phase 3 Wave 1 U4: PhysicalServerCapacityUpdater unit test -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-inline</artifactId>
+            <version>4.11.0</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

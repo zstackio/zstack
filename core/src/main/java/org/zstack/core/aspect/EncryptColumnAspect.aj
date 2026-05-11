@@ -40,6 +40,9 @@ public aspect EncryptColumnAspect {
     after(EntityManager mgr, Object entity) : call(* EntityManager+.merge(Object))
             && target(mgr)
             && args(entity) {
+        if (entity == null) {
+            return;
+        }
         for (IntegrityVerificationResourceFactory f : pluginRegistry.getExtensionList(IntegrityVerificationResourceFactory.class)) {
             if (entity.getClass().getSimpleName().equals(f.getResourceType())) {
                 f.doIntegrityAfterUpdateDbRecord(entity);

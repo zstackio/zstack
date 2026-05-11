@@ -21,4 +21,13 @@ public interface HostCpuOverProvisioningManager {
     int calculateByRatio(String hostUuid, int cpuNum);
 
     int calculateHostCpuByRatio(String hostUuid, int cpuNum);
+
+    /**
+     * Refresh {@code PhysicalServerCapacityVO.totalCpu} for the given host using the supplied
+     * ratio, then trigger a recalculate. Distinct from {@link #setRatio} in that it does
+     * <b>not</b> touch the in-memory per-host ratios cache — for callers that want the JPQL-side
+     * effect (e.g. ResourceConfig hierarchy listeners) but still expect {@link #getRatio} to
+     * walk the ResourceConfig stack rather than read the cache.
+     */
+    void refreshHostCpuCapacity(String hostUuid, int ratio);
 }

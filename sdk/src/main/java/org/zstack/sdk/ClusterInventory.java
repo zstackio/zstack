@@ -84,4 +84,12 @@ public class ClusterInventory  {
         return this.architecture;
     }
 
+    public java.lang.String serverPoolUuid;
+    public void setServerPoolUuid(java.lang.String serverPoolUuid) {
+        this.serverPoolUuid = serverPoolUuid;
+    }
+    public java.lang.String getServerPoolUuid() {
+        return this.serverPoolUuid;
+    }
+
 }

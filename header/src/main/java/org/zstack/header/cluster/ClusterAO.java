@@ -46,6 +46,9 @@ public class ClusterAO extends ResourceVO {
     @Column
     private String architecture;
 
+    @Column
+    private String serverPoolUuid;
+
     public ClusterAO() {
         this.state = ClusterState.Disabled;
     }
@@ -117,6 +120,14 @@ public class ClusterAO extends ResourceVO {
 
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
+    }
+
+    public String getServerPoolUuid() {
+        return serverPoolUuid;
+    }
+
+    public void setServerPoolUuid(String serverPoolUuid) {
+        this.serverPoolUuid = serverPoolUuid;
     }
 
     public Timestamp getCreateDate() {

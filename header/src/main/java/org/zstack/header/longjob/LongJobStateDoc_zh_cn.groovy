@@ -1,21 +1,51 @@
-package org.zstack.usbDevice
+package org.zstack.header.longjob
 
 
 
 doc {
 
-	title "长任务状态"
+	title "在这里输入结构的名称"
 
 	field {
-		name "name"
-		desc "资源名称"
-		type "String"
-		since "2.2.4"
+		name "Waiting"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
 	}
 	field {
-		name "ordinal"
+		name "Suspended"
 		desc ""
-		type "int"
-		since "2.2.4"
+		type "LongJobState"
+		since "5.5.16"
+	}
+	field {
+		name "Running"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
+	}
+	field {
+		name "Succeeded"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
+	}
+	field {
+		name "Canceling"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
+	}
+	field {
+		name "Canceled"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
+	}
+	field {
+		name "Failed"
+		desc ""
+		type "LongJobState"
+		since "5.5.16"
 	}
 }

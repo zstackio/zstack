@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>physicalServer</id>
+    <interceptor>PhysicalServerApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.header.server.APICreateProvisionNetworkMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIDeleteProvisionNetworkMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIUpdateProvisionNetworkMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIQueryProvisionNetworkMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIAttachProvisionNetworkToClusterMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIDetachProvisionNetworkFromClusterMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIAttachProvisionNetworkToPoolMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.server.APIDetachProvisionNetworkFromPoolMsg</name>
+    </message>
+</service>

@@ -27,10 +27,16 @@ public class PrimaryStorageFeatureAllocatorFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    protected final List<PrimaryStorageFeatureAllocatorExtensionPoint> featureExtensions = pluginRgty.getExtensionList(PrimaryStorageFeatureAllocatorExtensionPoint.class);;
-
     @Override
     public void run(FlowTrigger trigger, Map data) {
+        // Fetch extensions inside run() rather than as a field initializer: with
+        // @Configurable preConstruction=true the AspectJ weave is supposed to autowire
+        // pluginRgty before field init runs, but the weave is not always active in test
+        // environments → field-init NPE blocks every integration case at MN bootstrap.
+        // Deferring lookup to run() side-steps the @Configurable timing entirely.
+        List<PrimaryStorageFeatureAllocatorExtensionPoint> featureExtensions =
+                pluginRgty.getExtensionList(PrimaryStorageFeatureAllocatorExtensionPoint.class);
+
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(PrimaryStorageConstant.AllocatorParams.SPEC);
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(PrimaryStorageConstant.AllocatorParams.CANDIDATES);
         List<PrimaryStorageVO> ret;

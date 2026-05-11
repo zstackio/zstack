@@ -39,6 +39,7 @@
         <module>zbs</module>
         <module>cbd</module>
         <module>xinfini</module>
+        <module>physicalServer</module>
     </modules>
     <dependencies>
         <dependency>
