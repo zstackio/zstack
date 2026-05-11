@@ -2,12 +2,15 @@ package org.zstack.kvm;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.zstack.core.db.Q;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+
+import java.util.Locale;
 
 import static org.zstack.core.Platform.operr;
 
@@ -16,6 +19,37 @@ import static org.zstack.core.Platform.operr;
  */
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
+
+    public static boolean shouldContinueReconnectOnAnsibleFailure(boolean isNewAdded, ErrorCode errorCode) {
+        return !isNewAdded && isLibvirtSocketMaskSystemdTimeout(errorCode);
+    }
+
+    public static boolean isLibvirtSocketMaskSystemdTimeout(ErrorCode errorCode) {
+        String errorText = collectErrorText(errorCode).toLowerCase(Locale.ROOT);
+        return errorText.contains("systemctl mask")
+                && errorText.contains("libvirtd.socket")
+                && errorText.contains("org.freedesktop.systemd1")
+                && errorText.contains("timed out")
+                && (errorText.contains("failed to get properties")
+                    || errorText.contains("failed to activate service"));
+    }
+
+    private static String collectErrorText(ErrorCode errorCode) {
+        StringBuilder sb = new StringBuilder();
+        ErrorCode cursor = errorCode;
+        while (cursor != null) {
+            appendIfNotNull(sb, cursor.getDetails());
+            appendIfNotNull(sb, cursor.getDescription());
+            cursor = cursor.getCause();
+        }
+        return sb.toString();
+    }
+
+    private static void appendIfNotNull(StringBuilder sb, String text) {
+        if (text != null) {
+            sb.append(text).append('\n');
+        }
+    }
 
     /**
      * Get normalized bridge name for l2 network, which at most has 15 chars.
