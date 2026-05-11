@@ -267,6 +267,7 @@ public class LoginManagerImpl extends AbstractService implements LoginManager {
                             session.setUserType(info.getUserType());
                         } else {
                             session = Session.login(info.getAccountUuid(), info.getUserUuid());
+                            session.setUserType(info.getUserType());
                         }
 
                         return session;
