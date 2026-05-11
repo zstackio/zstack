@@ -17,6 +17,9 @@
 pidfile='/var/run/zstack/zstack-server.pid'
 TOMCAT_PATH="/usr/local/zstack/root/apache-tomcat"
 zstack_app=${ZSTACK_HOME-"$TOMCAT_PATH/webapps/zstack"}
+MARIADB_SERVICE=${ZSTACK_MARIADB_SERVICE:-mariadb}
+MARIADB_SOCKET=${ZSTACK_MARIADB_SOCKET:-/var/lib/mysql/mysql.sock}
+ZSTACK_SERVER_LOG_DIR=${ZSTACK_SERVER_LOG_DIR:-/var/log/zstack}
 
 which zstack-ctl &>/dev/null
 if [ $? -ne 0 ]; then
@@ -32,7 +35,92 @@ stop_zstack(){
     ZSTACK_HOME=$zstack_app HOME=`echo ~root` zstack-ctl stop
 }
 
+log_zstack_server() {
+    mkdir -p "$ZSTACK_SERVER_LOG_DIR" 2>/dev/null
+    if [ -d "$ZSTACK_SERVER_LOG_DIR" ]; then
+        echo "$@" >> "$ZSTACK_SERVER_LOG_DIR/zstack-server.log"
+    else
+        echo "$@"
+    fi
+}
+
+mariadb_service_exists() {
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl list-unit-files "$MARIADB_SERVICE.service" 2>/dev/null | grep -q "$MARIADB_SERVICE.service" && return 0
+    fi
+
+    if command -v service >/dev/null 2>&1; then
+        service "$MARIADB_SERVICE" status >/dev/null 2>&1 && return 0
+    fi
+
+    [ -x "/etc/init.d/$MARIADB_SERVICE" ] && return 0
+
+    return 1
+}
+
+mariadb_is_active() {
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl is-active --quiet "$MARIADB_SERVICE" >/dev/null 2>&1 && return 0
+    fi
+
+    if command -v service >/dev/null 2>&1; then
+        service "$MARIADB_SERVICE" status >/dev/null 2>&1 && return 0
+    fi
+
+    if [ -x "/etc/init.d/$MARIADB_SERVICE" ]; then
+        "/etc/init.d/$MARIADB_SERVICE" status >/dev/null 2>&1 && return 0
+    fi
+
+    return 1
+}
+
+socket_is_used() {
+    has_probe=false
+
+    if command -v lsof >/dev/null 2>&1; then
+        has_probe=true
+        lsof -t -- "$MARIADB_SOCKET" >/dev/null 2>&1 && return 0
+    fi
+
+    if command -v fuser >/dev/null 2>&1; then
+        has_probe=true
+        fuser "$MARIADB_SOCKET" >/dev/null 2>&1 && return 0
+    fi
+
+    [ "$has_probe" = "true" ] || return 2
+
+    return 1
+}
+
+start_mariadb_service() {
+    if command -v systemctl >/dev/null 2>&1; then
+        systemctl reset-failed "$MARIADB_SERVICE" >/dev/null 2>&1
+        systemctl start "$MARIADB_SERVICE"
+        return $?
+    fi
+
+    service "$MARIADB_SERVICE" start
+}
+
+recover_mariadb_stale_socket() {
+    [ "$ZSTACK_RECOVER_MARIADB_SOCKET" = "false" ] && return 0
+    [ -e "$MARIADB_SOCKET" ] || return 0
+    mariadb_service_exists || return 0
+    mariadb_is_active && return 0
+    socket_is_used
+    socket_status=$?
+    [ "$socket_status" -eq 0 ] && return 0
+    [ "$socket_status" -eq 2 ] && return 0
+
+    log_zstack_server "removing stale MariaDB socket $MARIADB_SOCKET before zstack start"
+    rm -f "$MARIADB_SOCKET" || return 1
+
+    log_zstack_server "starting $MARIADB_SERVICE service before zstack start"
+    start_mariadb_service
+}
+
 start_zstack(){
+    recover_mariadb_stale_socket || return $?
     ZSTACK_HOME=$zstack_app HOME=`echo ~root` zstack-ctl start
 }
 
