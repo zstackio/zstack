@@ -148,4 +148,5 @@ CREATE TABLE IF NOT EXISTS `ZnsTenantRouterVO` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL ADD_COLUMN('ModelServiceVO', 'hasNewVersion', 'tinyint(1)', 1, NULL); 
-
+CALL ADD_COLUMN('ModelCenterCapacityVO', 'availableCapacity', 'bigint', 1, NULL);
+CALL ADD_COLUMN('ModelCenterCapacityVO', 'totalCapacity', 'bigint', 1, NULL);

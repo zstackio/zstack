@@ -108,6 +108,14 @@ public class ModelServiceInventory  {
         return this.system;
     }
 
+    public java.lang.Boolean hasNewVersion;
+    public void setHasNewVersion(java.lang.Boolean hasNewVersion) {
+        this.hasNewVersion = hasNewVersion;
+    }
+    public java.lang.Boolean getHasNewVersion() {
+        return this.hasNewVersion;
+    }
+
     public java.lang.String gpuComputeCapability;
     public void setGpuComputeCapability(java.lang.String gpuComputeCapability) {
         this.gpuComputeCapability = gpuComputeCapability;
