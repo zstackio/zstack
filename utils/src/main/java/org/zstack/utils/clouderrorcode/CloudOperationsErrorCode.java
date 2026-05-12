@@ -1500,6 +1500,14 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_BILLING_10027 = "ORG_ZSTACK_BILLING_10027";
 
+    public static final String ORG_ZSTACK_BILLING_10028 = "ORG_ZSTACK_BILLING_10028";
+
+    public static final String ORG_ZSTACK_BILLING_10029 = "ORG_ZSTACK_BILLING_10029";
+
+    public static final String ORG_ZSTACK_BILLING_10030 = "ORG_ZSTACK_BILLING_10030";
+
+    public static final String ORG_ZSTACK_BILLING_10031 = "ORG_ZSTACK_BILLING_10031";
+
     public static final String ORG_ZSTACK_CRYPTO_CCS_10000 = "ORG_ZSTACK_CRYPTO_CCS_10000";
 
     public static final String ORG_ZSTACK_CRYPTO_CCS_10001 = "ORG_ZSTACK_CRYPTO_CCS_10001";
