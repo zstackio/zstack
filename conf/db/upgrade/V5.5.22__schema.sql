@@ -54,3 +54,64 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
     CONSTRAINT `fkCdnModelServiceTemplateVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`)
         REFERENCES `zstack`.`ModelServiceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- dGPU billing support tables
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PriceDGpuGpuSpecRefVO` (
+    `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `priceUuid`   VARCHAR(32)     NOT NULL,
+    `gpuSpecUuid` VARCHAR(32)     NOT NULL,
+    `createDate`  TIMESTAMP       NULL DEFAULT NULL,
+    `lastOpDate`  TIMESTAMP       NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fk_price_dgpu_spec_price`
+        FOREIGN KEY (`priceUuid`) REFERENCES `zstack`.`PriceVO`(`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fk_price_dgpu_spec_gpu_spec`
+        FOREIGN KEY (`gpuSpecUuid`) REFERENCES `zstack`.`GpuDeviceSpecVO`(`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DGpuUsageVO` (
+    `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `dgpuDeviceUuid`  VARCHAR(32)     NOT NULL,
+    `gpuSpecUuid`     VARCHAR(32)     NOT NULL,
+    `allocatedMemory` BIGINT UNSIGNED NOT NULL,
+    `dgpuName`        VARCHAR(255)    DEFAULT NULL,
+    `vmUuid`          VARCHAR(32)     DEFAULT NULL,
+    `vmName`          VARCHAR(255)    DEFAULT NULL,
+    `status`          VARCHAR(64)     NOT NULL,
+    `accountUuid`     VARCHAR(32)     NOT NULL,
+    `dateInLong`      BIGINT UNSIGNED NOT NULL,
+    `inventory`       TEXT            DEFAULT NULL,
+    `createDate`      TIMESTAMP       NULL DEFAULT NULL,
+    `lastOpDate`      TIMESTAMP       NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_dgpu_usage_account_date` (`accountUuid`, `dateInLong`),
+    KEY `idx_dgpu_usage_device` (`accountUuid`, `dateInLong`, `dgpuDeviceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DGpuUsageHistoryVO` (
+    `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `dgpuDeviceUuid`  VARCHAR(32)     NOT NULL,
+    `gpuSpecUuid`     VARCHAR(32)     NOT NULL,
+    `allocatedMemory` BIGINT UNSIGNED NOT NULL,
+    `dgpuName`        VARCHAR(255)    DEFAULT NULL,
+    `vmUuid`          VARCHAR(32)     DEFAULT NULL,
+    `vmName`          VARCHAR(255)    DEFAULT NULL,
+    `status`          VARCHAR(64)     NOT NULL,
+    `accountUuid`     VARCHAR(32)     NOT NULL,
+    `dateInLong`      BIGINT UNSIGNED NOT NULL,
+    `inventory`       TEXT            DEFAULT NULL,
+    `createDate`      TIMESTAMP       NULL DEFAULT NULL,
+    `lastOpDate`      TIMESTAMP       NULL DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    KEY `idx_dgpu_usage_history_account_date` (`accountUuid`, `dateInLong`),
+    KEY `idx_dgpu_usage_history_device` (`accountUuid`, `dateInLong`, `dgpuDeviceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`DGpuBillingVO` (
+    `id`              BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    `vmName`          VARCHAR(255)    DEFAULT NULL,
+    `allocatedMemory` BIGINT UNSIGNED DEFAULT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `id` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
