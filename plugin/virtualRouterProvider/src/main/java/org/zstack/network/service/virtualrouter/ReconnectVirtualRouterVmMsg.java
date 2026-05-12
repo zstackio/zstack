@@ -9,6 +9,7 @@ import org.zstack.header.vm.VmInstanceMessage;
 public class ReconnectVirtualRouterVmMsg extends NeedReplyMessage implements VmInstanceMessage {
     private String virtualRouterVmUuid;
     private boolean statusChange = false;
+    private boolean skipGrayscaleUpgradeCheck = false;
 
 
     public String getVirtualRouterVmUuid() {
@@ -30,5 +31,13 @@ public class ReconnectVirtualRouterVmMsg extends NeedReplyMessage implements VmI
 
     public void setStatusChange(boolean statusChange) {
         this.statusChange = statusChange;
+    }
+
+    public boolean isSkipGrayscaleUpgradeCheck() {
+        return skipGrayscaleUpgradeCheck;
+    }
+
+    public void setSkipGrayscaleUpgradeCheck(boolean skipGrayscaleUpgradeCheck) {
+        this.skipGrayscaleUpgradeCheck = skipGrayscaleUpgradeCheck;
     }
 }
