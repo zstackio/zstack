@@ -150,3 +150,24 @@ CREATE TABLE IF NOT EXISTS `ZnsTenantRouterVO` (
 CALL ADD_COLUMN('ModelServiceVO', 'hasNewVersion', 'tinyint(1)', 1, NULL); 
 CALL ADD_COLUMN('ModelCenterCapacityVO', 'availableCapacity', 'bigint', 1, NULL);
 CALL ADD_COLUMN('ModelCenterCapacityVO', 'totalCapacity', 'bigint', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
+    `uuid` varchar(32) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `version` varchar(255) DEFAULT NULL,
+    `platform` varchar(255) DEFAULT NULL,
+    `size` bigint DEFAULT NULL,
+    `projectId` varchar(255) DEFAULT NULL,
+    `projectName` varchar(255) DEFAULT NULL,
+    `downloadUrl` varchar(2048) DEFAULT NULL,
+    `installed` tinyint(1) NOT NULL DEFAULT 0,
+    `modelServiceUuid` varchar(32) DEFAULT NULL,
+    `usingServiceCount` bigint NOT NULL DEFAULT 0,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukCdnModelServiceTemplateVOName` (`name`),
+    KEY `idxCdnModelServiceTemplateVOModelServiceUuid` (`modelServiceUuid`),
+    CONSTRAINT `fkCdnModelServiceTemplateVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`)
+        REFERENCES `zstack`.`ModelServiceVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
