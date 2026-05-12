@@ -2521,6 +2521,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                         int deviceId = deviceIdBitmap.nextClearBit(0);
                         deviceIdBitmap.set(deviceId);
                         String internalName = VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), deviceId);
+                        String driverType = vmNicVO.getDriverType();
+                        if (StringUtils.isEmpty(driverType)) {
+                            VmNicInventory nicInv = VmNicInventory.valueOf(vmNicVO);
+                            nicManager.setNicDriverType(nicInv, VmSystemTags.VIRTIO.hasTag(self.getUuid()),
+                                    ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
+                                    spec.getVmInventory());
+                            driverType = nicInv.getDriverType();
+                        }
 
                         UpdateQuery.New(VmNicVO.class)
                                 .eq(VmNicVO_.uuid, vmNicUuid)
@@ -2528,14 +2536,14 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 .set(VmNicVO_.deviceId, deviceId)
                                 .set(VmNicVO_.internalName, internalName)
                                 .set(VmNicVO_.hypervisorType, spec.getVmInventory().getHypervisorType())
+                                .set(VmNicVO_.driverType, driverType)
                                 .update();
 
                         vmNicVO.setVmInstanceUuid(self.getUuid());
                         vmNicVO.setDeviceId(deviceId);
                         vmNicVO.setInternalName(internalName);
                         vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
-                        vmNicVO.setDriverType(VmSystemTags.VIRTIO.hasTag(self.getUuid()) ?
-                                nicManager.getDefaultPVNicDriver() : nicManager.getDefaultNicDriver());
+                        vmNicVO.setDriverType(driverType);
                         spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
 
                         trigger.next();
