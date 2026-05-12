@@ -50,8 +50,8 @@
     </bean>
 
     <bean id="ClusterCascadeExtension" class="org.zstack.compute.cluster.ClusterCascadeExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
-		</zstack:plugin>
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
     </bean>
 </beans>

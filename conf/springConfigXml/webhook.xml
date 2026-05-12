@@ -13,10 +13,10 @@
     default-init-method="init" default-destroy-method="destroy">
 
     <bean id="WebhookManager" class = "org.zstack.core.webhook.WebhookManagerImpl">
-	<zstack:plugin>
+        <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.header.Component" />
-	</zstack:plugin>
+        </zstack:plugin>
     </bean>
 
     <bean id="WebhookApiInterceptor" class = "org.zstack.core.webhook.WebhookApiInterceptor"/>
