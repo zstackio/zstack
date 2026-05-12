@@ -31,4 +31,5 @@ DROP PROCEDURE IF EXISTS backfill_model_service_ref_create_date;
 ALTER TABLE `zstack`.`ModelServiceRefVO` MODIFY COLUMN `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00';
 
 CALL ADD_COLUMN('ModelServiceVO', 'hasNewVersion', 'tinyint(1)', 1, NULL); 
-
+CALL ADD_COLUMN('ModelCenterCapacityVO', 'availableCapacity', 'bigint', 1, NULL);
+CALL ADD_COLUMN('ModelCenterCapacityVO', 'totalCapacity', 'bigint', 1, NULL);

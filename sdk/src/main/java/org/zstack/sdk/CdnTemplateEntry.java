@@ -28,11 +28,11 @@ public class CdnTemplateEntry  {
         return this.platform;
     }
 
-    public java.lang.String size;
-    public void setSize(java.lang.String size) {
+    public java.lang.Long size;
+    public void setSize(java.lang.Long size) {
         this.size = size;
     }
-    public java.lang.String getSize() {
+    public java.lang.Long getSize() {
         return this.size;
     }
 
@@ -66,6 +66,22 @@ public class CdnTemplateEntry  {
     }
     public boolean getInstalled() {
         return this.installed;
+    }
+
+    public java.lang.String modelServiceUuid;
+    public void setModelServiceUuid(java.lang.String modelServiceUuid) {
+        this.modelServiceUuid = modelServiceUuid;
+    }
+    public java.lang.String getModelServiceUuid() {
+        return this.modelServiceUuid;
+    }
+
+    public long usingServiceCount;
+    public void setUsingServiceCount(long usingServiceCount) {
+        this.usingServiceCount = usingServiceCount;
+    }
+    public long getUsingServiceCount() {
+        return this.usingServiceCount;
     }
 
 }
