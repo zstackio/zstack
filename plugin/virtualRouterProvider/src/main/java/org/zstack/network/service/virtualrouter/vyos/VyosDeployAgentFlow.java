@@ -126,7 +126,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             private void deployAgent(int port) {
                 try {
-                    new Ssh().setTimeout(300).scpUpload(
+                    new Ssh().allowLegacyHostKeyAlgorithms().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             "/home/vyos/zvr.bin"
                     ).scpUpload(
@@ -142,7 +142,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     ZSTAC-18352, try again with password when key fail
                      */
                     String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
-                    new Ssh().setTimeout(300).scpUpload(
+                    new Ssh().allowLegacyHostKeyAlgorithms().setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             "/home/vyos/zvr.bin"
                     ).scpUpload(
@@ -161,14 +161,14 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         "sudo bash /home/vyos/zvr/ssh/zvr-reboot.sh %s\n", forceReboot);
 
                 try {
-                    new Ssh().shell(script
+                    new Ssh().allowLegacyHostKeyAlgorithms().shell(script
                     ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
                     String password = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
-                    new Ssh().shell(script
+                    new Ssh().allowLegacyHostKeyAlgorithms().shell(script
                     ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
@@ -193,7 +193,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
     private boolean isZvrMd5Changed(String ip, int port){
         int interval = 30 ;
-        Ssh ssh = new Ssh();
+        Ssh ssh = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh.setUsername("vyos")
                 .setPrivateKey(asf.getPrivateKey())
                 .setPort(port)
@@ -288,7 +288,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     sshPort, vrMgtIp));
             return;
         }
-        Ssh ssh1 = new Ssh();
+        Ssh ssh1 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrReboot.log").runAndClose();
@@ -298,7 +298,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             logger.debug(String.format("get vyos reboot log failed: %s", ret1.getStderr()));
         }
 
-        Ssh ssh2 = new Ssh();
+        Ssh ssh2 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret2 = ssh2.command("sudo tail -n 300 /tmp/agentRestart.log").runAndClose();
