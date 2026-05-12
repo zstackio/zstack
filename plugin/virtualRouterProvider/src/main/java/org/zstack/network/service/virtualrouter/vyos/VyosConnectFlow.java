@@ -71,7 +71,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                     sshPort, vrMgtIp));
             return;
         }
-        Ssh ssh1 = new Ssh();
+        Ssh ssh1 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh1.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret1 = ssh1.command("sudo tail -n 300 /home/vyos/zvr/zvrboot.log").runAndClose();
@@ -81,7 +81,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
             logger.debug(String.format("get vyos bootup log failed: %s", ret1.getStderr()));
         }
 
-        Ssh ssh2 = new Ssh();
+        Ssh ssh2 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh2.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret2 = ssh2.command("sudo tail -n 300 /home/vyos/zvr/zvrstartup.log").runAndClose();
@@ -91,7 +91,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
             logger.debug(String.format("get zvr startup log failed: %s", ret2.getStderr()));
         }
 
-        Ssh ssh3 = new Ssh();
+        Ssh ssh3 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh3.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret3 = ssh3.command("sudo tail -n 300 /home/vyos/zvr/zvr.log").runAndClose();
@@ -101,7 +101,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
             logger.debug(String.format("get zvr log failed: %s", ret3.getStderr()));
         }
 
-        Ssh ssh4 = new Ssh();
+        Ssh ssh4 = new Ssh().allowLegacyHostKeyAlgorithms();
         ssh4.setUsername("vyos").setPrivateKey(asf.getPrivateKey()).setPort(sshPort)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret4 = ssh4.command("ps aux | grep zvr").runAndClose();
