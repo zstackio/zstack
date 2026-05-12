@@ -1872,6 +1872,42 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_HA_10018 = "ORG_ZSTACK_HA_10018";
 
+    public static final String ORG_ZSTACK_HA_10019 = "ORG_ZSTACK_HA_10019";
+
+    public static final String ORG_ZSTACK_HA_10020 = "ORG_ZSTACK_HA_10020";
+
+    public static final String ORG_ZSTACK_HA_10021 = "ORG_ZSTACK_HA_10021";
+
+    public static final String ORG_ZSTACK_HA_10022 = "ORG_ZSTACK_HA_10022";
+
+    public static final String ORG_ZSTACK_HA_10023 = "ORG_ZSTACK_HA_10023";
+
+    public static final String ORG_ZSTACK_HA_10024 = "ORG_ZSTACK_HA_10024";
+
+    public static final String ORG_ZSTACK_HA_10025 = "ORG_ZSTACK_HA_10025";
+
+    public static final String ORG_ZSTACK_HA_10026 = "ORG_ZSTACK_HA_10026";
+
+    public static final String ORG_ZSTACK_HA_10027 = "ORG_ZSTACK_HA_10027";
+
+    public static final String ORG_ZSTACK_HA_10028 = "ORG_ZSTACK_HA_10028";
+
+    public static final String ORG_ZSTACK_HA_10029 = "ORG_ZSTACK_HA_10029";
+
+    public static final String ORG_ZSTACK_HA_10030 = "ORG_ZSTACK_HA_10030";
+
+    public static final String ORG_ZSTACK_HA_10031 = "ORG_ZSTACK_HA_10031";
+
+    public static final String ORG_ZSTACK_HA_10032 = "ORG_ZSTACK_HA_10032";
+
+    public static final String ORG_ZSTACK_HA_10033 = "ORG_ZSTACK_HA_10033";
+
+    public static final String ORG_ZSTACK_HA_10034 = "ORG_ZSTACK_HA_10034";
+
+    public static final String ORG_ZSTACK_HA_10035 = "ORG_ZSTACK_HA_10035";
+
+    public static final String ORG_ZSTACK_HA_10036 = "ORG_ZSTACK_HA_10036";
+
     public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10000 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10000";
 
     public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10001 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10001";

@@ -187,6 +187,7 @@ public class SourceClassMap {
 			put("org.zstack.guesttools.GuestVmScriptInventory", "org.zstack.sdk.GuestVmScriptInventory");
 			put("org.zstack.guesttools.InvocationRecord", "org.zstack.sdk.InvocationRecord");
 			put("org.zstack.guesttools.InvocationRecordDetail", "org.zstack.sdk.InvocationRecordDetail");
+			put("org.zstack.ha.HaNetworkGroupInventory", "org.zstack.sdk.HaNetworkGroupInventory");
 			put("org.zstack.ha.HaStrategyConditionInventory", "org.zstack.sdk.HaStrategyConditionInventory");
 			put("org.zstack.header.acl.AccessControlListEntryInventory", "org.zstack.sdk.AccessControlListEntryInventory");
 			put("org.zstack.header.acl.AccessControlListInventory", "org.zstack.sdk.AccessControlListInventory");
@@ -1124,6 +1125,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GuestVmScriptExecutedRecordInventory", "org.zstack.guesttools.GuestVmScriptExecutedRecordInventory");
 			put("org.zstack.sdk.GuestVmScriptInventory", "org.zstack.guesttools.GuestVmScriptInventory");
 			put("org.zstack.sdk.H3cSdnControllerTenantInventory", "org.zstack.sdnController.header.H3cSdnControllerTenantInventory");
+			put("org.zstack.sdk.HaNetworkGroupInventory", "org.zstack.ha.HaNetworkGroupInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HardwareL2VxlanNetworkInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkInventory");

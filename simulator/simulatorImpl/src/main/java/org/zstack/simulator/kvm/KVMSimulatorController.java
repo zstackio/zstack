@@ -705,6 +705,38 @@ public class KVMSimulatorController {
         replyer.reply(entity, rsp);
     }
 
+    @RequestMapping(value = KVMConstant.SETUP_VM_HA_ENABLED_METADATA_LIVE_PATH, method = RequestMethod.POST)
+    private @ResponseBody String setupVmHaEnabledMetadataLive(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        SetupVmHaEnabledMetadataLiveCmd cmd = JSONObjectUtil.toObject(entity.getBody(), SetupVmHaEnabledMetadataLiveCmd.class);
+        synchronized (config.setupVmHaEnabledMetadataLiveCmds) {
+            config.setupVmHaEnabledMetadataLiveCmds.add(cmd);
+        }
+        replyer.reply(entity, new AgentResponse());
+        return null;
+    }
+
+    @RequestMapping(value = KVMConstant.RECONCILE_VM_HA_ENABLED_METADATA_LIVE_PATH, method = RequestMethod.POST)
+    private @ResponseBody String reconcileVmHaEnabledMetadataLive(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        ReconcileVmHaEnabledMetadataLiveCmd cmd = JSONObjectUtil.toObject(entity.getBody(), ReconcileVmHaEnabledMetadataLiveCmd.class);
+        synchronized (config.reconcileVmHaEnabledMetadataLiveCmds) {
+            config.reconcileVmHaEnabledMetadataLiveCmds.add(cmd);
+        }
+        replyer.reply(entity, new AgentResponse());
+        return null;
+    }
+
+    @RequestMapping(value = KVMConstant.HA_NETWORK_GROUP_SYNC_PATH, method = RequestMethod.POST)
+    private @ResponseBody String syncHaNetworkGroupConfig(HttpServletRequest req) {
+        HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
+        synchronized (config.syncHaNetworkGroupConfigCmds) {
+            config.syncHaNetworkGroupConfigCmds.add(entity.getBody());
+        }
+        replyer.reply(entity, new AgentResponse());
+        return null;
+    }
+
     @RequestMapping(value=KVMConstant.KVM_LOGOUT_ISCSI_PATH, method=RequestMethod.POST)
     private @ResponseBody String logoutIscsiTarget(HttpServletRequest req) throws InterruptedException {
         HttpEntity<String> entity = restf.httpServletRequestToHttpEntity(req);
