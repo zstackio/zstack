@@ -4765,12 +4765,7 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void detachIso(final String isoUuid, final Completion completion) {
-        if (!IsoOperator.isIsoAttachedToVm(self.getUuid())) {
-            completion.success();
-            return;
-        }
-
-        if (!IsoOperator.getIsoUuidByVmUuid(self.getUuid()).contains(isoUuid)) {
+        if (isoUuid == null) {
             completion.success();
             return;
         }
@@ -4779,7 +4774,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                 .eq(VmCdRomVO_.vmInstanceUuid, self.getUuid())
                 .eq(VmCdRomVO_.isoUuid, isoUuid)
                 .find();
-        assert targetVmCdRomVO != null;
+        if (targetVmCdRomVO == null) {
+            new IsoOperator().syncVmIsoSystemTag(self.getUuid());
+            completion.success();
+            return;
+        }
 
         if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Destroyed) {
             targetVmCdRomVO.setIsoUuid(null);
@@ -4791,7 +4790,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.DetachIso);
-        boolean isoNotExist = spec.getDestIsoList().stream().noneMatch(isoSpec -> isoSpec.getImageUuid().equals(isoUuid));
+        boolean isoNotExist = spec.getDestIsoList().stream().noneMatch(isoSpec -> isoUuid.equals(isoSpec.getImageUuid()));
         if (isoNotExist) {
             // the image ISO has been deleted from backup storage
             // try to detach it from the VM anyway

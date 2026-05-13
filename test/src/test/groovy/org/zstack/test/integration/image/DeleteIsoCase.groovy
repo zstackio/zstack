@@ -172,6 +172,13 @@ class DeleteIsoCase extends SubCase {
             isoUuid = iso1.uuid
         }
 
+        detachIsoFromVmInstance {
+            vmInstanceUuid = newVm2.uuid
+            isoUuid = iso2.uuid
+        }
+
+        assert [iso1.uuid] == IsoOperator.getIsoUuidByVmUuid(newVm2.uuid)
+
         attachIsoToVmInstance {
             vmInstanceUuid = newVm.uuid
             isoUuid = iso2.uuid
