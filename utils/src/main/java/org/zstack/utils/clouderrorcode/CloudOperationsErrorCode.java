@@ -12053,6 +12053,10 @@ public class CloudOperationsErrorCode {
     // 10031 duplicate IpRange ip_version on same ZNS L3 network
     // 10032 ZNS L2 has sub-resources, cannot delete
     // 10033 ZNS VPC L3 missing znsTenantRouterUuid system tag
+    // 10035 ZNS returned an IP version that Cloud did not allocate for the NIC
+    // 10036 ZNS returned IP does not match Cloud allocated IP
+    // 10037 ZNS returned IP is outside Cloud L3 IP range
+    // 10038 ZNS returned IP is already used by another NIC
     public static final String ORG_ZSTACK_NETWORK_ZNS_10025 = "ORG_ZSTACK_NETWORK_ZNS_10025";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10026 = "ORG_ZSTACK_NETWORK_ZNS_10026";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10027 = "ORG_ZSTACK_NETWORK_ZNS_10027";
@@ -12064,6 +12068,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10033 = "ORG_ZSTACK_NETWORK_ZNS_10033";
     // 10034 ZNS API returned HTTP 409 Conflict (sub-resources still exist)
     public static final String ORG_ZSTACK_NETWORK_ZNS_10034 = "ORG_ZSTACK_NETWORK_ZNS_10034";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10038 = "ORG_ZSTACK_NETWORK_ZNS_10038";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
