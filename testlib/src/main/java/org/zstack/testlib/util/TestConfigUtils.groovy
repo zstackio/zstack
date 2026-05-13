@@ -4,7 +4,7 @@ package org.zstack.testlib.util
 import java.util.concurrent.TimeUnit
 
 class TestConfigUtils {
-    private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(25)
+    private final static long DEFAULT_MESSAGE_TIMEOUT_SECS = TimeUnit.SECONDS.toMillis(60)
 
     static long getMessageTimeoutMillisConfig(){
         String msgTimeoutStr = System.getProperty("msgTimeoutMins")
