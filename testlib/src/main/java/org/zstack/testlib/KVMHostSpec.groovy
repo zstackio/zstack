@@ -40,6 +40,7 @@ class KVMHostSpec extends HostSpec {
             delegate.systemTags = systemTags
             delegate.clusterUuid = (parent as ClusterSpec).inventory.uuid
             delegate.sessionId = sessionId
+            delegate.timeout = 60000
         } as HostInventory
 
         postCreate {
