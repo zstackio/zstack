@@ -1,6 +1,9 @@
 -- ZSTAC-84025: Add pipelineTag to ModelVO for inference template auto-matching
 CALL ADD_COLUMN('ModelVO', 'pipelineTag', 'VARCHAR(64)', 1, NULL);
 
+-- ZSTAC-84246: Persist virtiofs restore success epoch for VmModelMountVO.
+CALL ADD_COLUMN('VmModelMountVO', 'lastAttachedEpoch', 'BIGINT', 1, NULL);
+
 -- ZSTAC-84025: Add isDefault to ModelServiceRefVO to mark the default inference template per model
 ALTER TABLE `zstack`.`ModelServiceRefVO` ADD COLUMN `isDefault` TINYINT(1) NOT NULL DEFAULT 0;
 
