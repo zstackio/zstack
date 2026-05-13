@@ -90,6 +90,28 @@ public class KVMAgentCommands {
     public static class UpdateVmPriorityRsp extends AgentResponse {
     }
 
+    public static class VmShmemDevice {
+        public String name;
+        public String path;
+        public long size;
+    }
+
+    public static class HotPlugVmShmemCmd extends AgentCommand {
+        public String vmUuid;
+        public VmShmemDevice shmem;
+    }
+
+    public static class HotPlugVmShmemRsp extends AgentResponse {
+    }
+
+    public static class HotUnplugVmShmemCmd extends AgentCommand {
+        public String vmUuid;
+        public VmShmemDevice shmem;
+    }
+
+    public static class HotUnplugVmShmemRsp extends AgentResponse {
+    }
+
     public static class ChangeVmNicStateCommand extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         private String vmUuid;
