@@ -1,7 +1,5 @@
 package org.zstack.header.errorcode;
 
-/**
- */
 public enum SysErrors {
     INTERNAL(1000),
     TIMEOUT(1001),
@@ -27,6 +25,9 @@ public enum SysErrors {
     // ZSphere only
     MULTIPLE_REASONS(1090),
     NOT_SUPPORTED(1091),
+
+    // CloudBus related Error - ZSphere only - 211X
+    CLOUD_BUS_SEND_ERROR(2111),
     ;
 
     private String code;

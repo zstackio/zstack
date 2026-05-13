@@ -3,6 +3,7 @@ package org.zstack.core.cloudbus;
 import org.springframework.http.HttpEntity;
 import org.zstack.header.Component;
 import org.zstack.header.Service;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.exception.CloudConfigureFailException;
 import org.zstack.header.message.*;
@@ -12,14 +13,18 @@ import java.util.List;
 import java.util.function.Consumer;
 
 public interface CloudBus extends Component {
-    void send(Message msg);
-    
+    /**
+     * submit a message sending task into the queue.
+     * @return {@link FutureCompletion} which can be used to check whether the message was successfully sent or not.
+     */
+    FutureCompletion send(Message msg);
+
     <T extends Message> void send(List<T> msgs);
 
     @Deprecated
     void send(APIMessage msg, Consumer<APIEvent> consumer);
 
-    void send(NeedReplyMessage msg, CloudBusCallBack callback);
+    FutureCompletion send(NeedReplyMessage msg, CloudBusCallBack callback);
 
     @Deprecated
     void send(List<? extends NeedReplyMessage> msgs, CloudBusListCallBack callBack);

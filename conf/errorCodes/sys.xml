@@ -110,5 +110,10 @@
         <id>1091</id>
         <description>Operation not supported</description>
     </code>
+
+    <code>
+        <id>2111</id>
+        <description>CloudBus message sending related error</description>
+    </code>
 </error>
 

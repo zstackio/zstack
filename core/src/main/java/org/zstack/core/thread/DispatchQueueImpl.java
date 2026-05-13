@@ -8,7 +8,6 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.debug.DebugManager;
 import org.zstack.core.debug.DebugSignalHandler;
 import org.zstack.header.Constants;
-import org.zstack.header.core.Completion;
 import org.zstack.header.core.ExceptionSafe;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.progress.ChainInfo;
@@ -107,47 +106,33 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     public void beforeCleanQueuedumpThread(String signatureName) {
         String title = "\n================= Before Clean Task Queue Dump ================";
-        dumpsignatureNameThread(signatureName,title);
+        dumpSignatureNameThread(signatureName,title);
     }
 
     public void afterCleanQueuedumpThread(String signatureName) {
         String title = "\n================= After Clean Task Queue Dump ================";
-        dumpsignatureNameThread(signatureName,title);
+        dumpSignatureNameThread(signatureName,title);
     }
 
-    public void dumpsignatureNameThread(String signatureName,String title) {
+    public void dumpSignatureNameThread(String signatureName, String title) {
         StringBuilder sb = new StringBuilder();
         sb.append(title);
         sb.append("\nASYNC TASK QUEUE DUMP:");
         sb.append(String.format("\nTASK QUEUE NUMBER: %s\n", chainTasks.size()));
         List<String> asyncTasks = new ArrayList<>();
-        long now = System.currentTimeMillis();
-        synchronized (chainTasks) {
-            ChainTaskQueueWrapper w = chainTasks.get(signatureName);
-            if (w == null) {
-                sb.append(String.format("\n===== NO QUEUE SYNC SIGNATURE: %s =====", signatureName));
-                sb.append(StringUtils.join(asyncTasks, "\n"));
-                sb.append("\n================= END TASK QUEUE DUMP ==================\n");
-                _threadFacade.printThreadsAndTasks();
-                logger.debug(sb.toString());
-                return;
-            }
-            StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", signatureName));
-            tb.append(String.format("\nRUNNING TASK NUMBER: %s", w.runningQueue.size()));
-            tb.append(String.format("\nPENDING TASK NUMBER: %s", w.pendingQueue.size()));
-            tb.append(String.format("\nASYNC LEVEL: %s", w.maxThreadNum));
-            int index = 0;
-            for (Object obj : w.runningQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
-            }
 
-            for (Object obj : w.pendingQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
-            }
-            asyncTasks.add(tb.toString());
+        ChainTaskQueueWrapper w = chainTasks.get(signatureName);
+        if (w == null) {
+            sb.append(String.format("\n===== NO QUEUE SYNC SIGNATURE: %s =====", signatureName));
+            sb.append(StringUtils.join(asyncTasks, "\n"));
+            sb.append("\n================= END TASK QUEUE DUMP ==================\n");
+            _threadFacade.printThreadsAndTasks();
+            logger.debug(sb.toString());
+            return;
         }
+        StringBuilder tb = new StringBuilder(String.format("\nQUEUE SYNC SIGNATURE: %s", signatureName));
+        tb.append(w.getTaskQueueInfo());
+        asyncTasks.add(tb.toString());
 
         sb.append(StringUtils.join(asyncTasks, "\n"));
         sb.append("\n================= END TASK QUEUE DUMP ==================\n");
@@ -157,26 +142,11 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
     @Override
     public ChainInfo getChainTaskInfo(String signature) {
-        long now = System.currentTimeMillis();
-        synchronized (chainTasks) {
-            ChainInfo info = new ChainInfo();
-            ChainTaskQueueWrapper w = chainTasks.get(signature);
-            if (w == null) {
-                return info;
-            }
-
-            int index = 0;
-            for (Object obj : w.runningQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
-            }
-
-            for (Object obj : w.pendingQueue) {
-                ChainFuture cf = (ChainFuture) obj;
-                info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
-            }
-            return info;
+        ChainTaskQueueWrapper w = chainTasks.get(signature);
+        if (w == null) {
+            return new ChainInfo();
         }
+        return w.getChainInfo();
     }
 
     @Override
@@ -407,10 +377,9 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         void startThreadIfNeeded() {
             if (counter.get() >= maxThreadNum) {
-                int pendingTaskSize = counter.get() - queue.size();
                 logger.debug(String.format("Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
-                        syncSignature, maxThreadNum, counter.get(), pendingTaskSize));
-                dumpTaskQueueIfNeeded(pendingTaskSize);
+                        syncSignature, maxThreadNum, counter.get(), queue.size()));
+                dumpTaskQueueIfNeeded(queue.size());
                 return;
             }
 
@@ -783,7 +752,7 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     }
 
     private class ChainTaskQueueWrapper extends AbstractTaskQueueWrapper {
-        LinkedList pendingQueue = new LinkedList();
+        final LinkedList pendingQueue = new LinkedList();
         final Map<String, AtomicInteger> subPendingMap = new ConcurrentHashMap<>();
         final LinkedList runningQueue = new LinkedList();
         AtomicInteger counter = new AtomicInteger(0);
@@ -959,28 +928,30 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
 
         @Override
         protected String getTaskQueueInfo() {
+            return getChainInfo().toString();
+        }
+
+        protected ChainInfo getChainInfo() {
             long now = zTimer.getCurrentTimeMillis();
-            StringBuilder tb = new StringBuilder();
-            tb.append(String.format("\nRUNNING TASK NUMBER: %s", runningQueue.size()));
-            tb.append(String.format("\nPENDING TASK NUMBER: %s", pendingQueue.size()));
-            tb.append(String.format("\nASYNC LEVEL: %s", maxThreadNum));
+            ChainInfo info = new ChainInfo();
+            info.setMaxThreadNum(maxThreadNum);
 
             int index = 0;
             synchronized (runningQueue) {
                 for (Object obj : runningQueue) {
                     ChainFuture cf = (ChainFuture) obj;
-                    tb.append(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
+                    info.addRunningTask(TaskInfoBuilder.buildRunningTaskInfo(cf, now, index++));
                 }
             }
 
-            synchronized (pendingQueue) {
+            // pendingQueue is synchronized with chainTasks, do not synchronize itself
+            synchronized (chainTasks) {
                 for (Object obj : pendingQueue) {
                     ChainFuture cf = (ChainFuture) obj;
-                    tb.append(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
+                    info.addPendingTask(TaskInfoBuilder.buildPendingTaskInfo(cf, now, index++));
                 }
             }
-
-            return tb.toString();
+            return info;
         }
     }
 

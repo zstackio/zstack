@@ -1,5 +1,7 @@
 package org.zstack.header.core.progress;
 
+import org.zstack.header.rest.APINoSee;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +11,8 @@ import java.util.List;
 public class ChainInfo {
     private List<RunningTaskInfo> runningTask = new ArrayList<>();
     private List<PendingTaskInfo> pendingTask = new ArrayList<>();
+    @APINoSee
+    private long maxThreadNum;
 
     public void setPendingTask(List<PendingTaskInfo> pendingTask) {
         this.pendingTask = pendingTask;
@@ -32,5 +36,26 @@ public class ChainInfo {
 
     public void addPendingTask(PendingTaskInfo pendingTask) {
         this.pendingTask.add(pendingTask);
+    }
+
+    public void setMaxThreadNum(long maxThreadNum) {
+        this.maxThreadNum = maxThreadNum;
+    }
+
+    public long getMaxThreadNum() {
+        return maxThreadNum;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder tb = new StringBuilder();
+        tb.append(String.format("\nRUNNING TASK NUMBER: %s", runningTask.size()));
+        tb.append(String.format("\nPENDING TASK NUMBER: %s", pendingTask.size()));
+        tb.append(String.format("\nASYNC LEVEL: %s", maxThreadNum));
+
+        runningTask.forEach(tb::append);
+        pendingTask.forEach(tb::append);
+
+        return tb.toString();
     }
 }

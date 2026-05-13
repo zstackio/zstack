@@ -49,6 +49,7 @@ import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.cloudbus.CloudBusGlobalProperty.SYNC_CALL_TIMEOUT;
+import static org.zstack.header.errorcode.SysErrors.CLOUD_BUS_SEND_ERROR;
 import static org.zstack.utils.BeanUtils.getProperty;
 import static org.zstack.utils.BeanUtils.setProperty;
 
@@ -101,6 +102,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final static TimeoutRestTemplate http = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
 
     public static final String HTTP_BASE_URL = "/cloudbus";
+    public static final FutureCompletion SEND_CONFIRMED = new FutureCompletion(null);
 
     {
         if (CloudBusGlobalProperty.MESSAGE_LOG != null) {
@@ -114,6 +116,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             CloudBusGlobalProperty.HTTP_CONTEXT_PATH = "";
             CloudBusGlobalProperty.HTTP_PORT = 8989;
         }
+
+        SEND_CONFIRMED.success();
     }
 
     public static String getManagementNodeUUIDFromServiceID(String serviceID) {
@@ -123,6 +127,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         return ss[0];
+    }
+
+    private FutureCompletion sendFail(ErrorCode errorCode) {
+        FutureCompletion c = new FutureCompletion(null);
+        c.fail(errorCode);
+        return c;
     }
 
     private abstract class Envelope {
@@ -250,8 +260,8 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     @Override
-    public void send(Message msg) {
-        send(msg, true);
+    public FutureCompletion send(Message msg) {
+        return send(msg, true);
     }
 
     @Override
@@ -291,11 +301,11 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     }
 
     @Override
-    public void send(NeedReplyMessage msg, CloudBusCallBack callback) {
+    public FutureCompletion send(NeedReplyMessage msg, CloudBusCallBack callback) {
         evaluateMessageTimeout(msg);
         if (msg.getTimeout() <= 1) {
             callback.run(createTimeoutReply(msg));
-            return;
+            return SEND_CONFIRMED;
         }
 
         Envelope e = new Envelope() {
@@ -346,7 +356,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
         envelopes.put(msg.getId(), e);
         msgExts.forEach(m -> m.afterAddEnvelopes(msg.getId()));
-        send(msg, false);
+        return send(msg, false);
     }
 
     @Override
@@ -454,7 +464,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 callReplyPreSendingExtensions(reply, (NeedReplyMessage) request);
             } catch (Exception e) {
                 logger.error("failed to call pre-sending reply extension:", e);
-                reply.setError(operr(e.getMessage()));
+                reply.setError(err(CLOUD_BUS_SEND_ERROR, e.getMessage()));
             }
         }
 
@@ -526,29 +536,36 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             localSend = !CloudBusGlobalProperty.HTTP_ALWAYS && managementNodeId.equals(Platform.getManagementServerId());
         }
 
-        void send() {
+        FutureCompletion send() {
             try {
-                doSend();
+                return doSend();
             } catch (Throwable th) {
-                replyErrorIfNeeded(operr(th.getMessage()));
+                ErrorCode err = err(CLOUD_BUS_SEND_ERROR, th.getMessage());
+                replyErrorIfNeeded(err);
+
+                FutureCompletion c = new FutureCompletion(null);
+                c.fail(err);
+                return c;
             }
         }
 
-        private void doSend() {
+        private FutureCompletion doSend() {
             if (msg instanceof Event) {
                 eventSend();
-                return;
+                return SEND_CONFIRMED;
             }
 
             if (localSend) {
                 localSend();
+                return SEND_CONFIRMED;
             } else {
-                httpSend();
+                return httpSend();
             }
         }
 
-        private void httpSendInQueue(String ip) {
-            thdf.chainSubmit(new ChainTask(null) {
+        private FutureCompletion httpSendInQueue(String ip) {
+            FutureCompletion sendCompletion = new FutureCompletion(null);
+            thdf.chainSubmit(new ChainTask(sendCompletion) {
                 @Override
                 public String getSyncSignature() {
                     return "http-send-in-queue";
@@ -557,6 +574,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 @Override
                 public void run(SyncTaskChain chain) {
                     httpSend(ip);
+                    sendCompletion.success();
                     chain.next();
                 }
 
@@ -570,25 +588,29 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                     return getSyncSignature();
                 }
             });
+            return sendCompletion;
         }
 
-        private void httpSend() {
+        private FutureCompletion httpSend() {
             buildSchema(msg);
+            String ip;
             try {
-                String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
-                httpSendInQueue(ip);
+                ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
             } catch (ManagementNodeNotFoundException e) {
-                if (msg instanceof MessageReply) {
-                    if (!deadMessageManager.handleManagementNodeNotFoundError(managementNodeId, msg, () -> {
-                        String ip = destMaker.getNodeInfo(managementNodeId).getNodeIP();
-                        httpSendInQueue(ip);
-                    })) {
-                        throw e;
-                    }
+                boolean errorHandled = msg instanceof MessageReply &&
+                        deadMessageManager.handleManagementNodeNotFoundError(managementNodeId, msg, () -> {
+                            String otherIp = destMaker.getNodeInfo(managementNodeId).getNodeIP();
+                            logger.warn(String.format("resend the message[id:%s] to node[ip:%s]", msg.getId(), otherIp));
+                            httpSendInQueue(otherIp);
+                        });
+                if (errorHandled) {
+                    return SEND_CONFIRMED;
                 } else {
                     throw e;
                 }
             }
+
+            return httpSendInQueue(ip);
         }
 
         private void httpSend(String ip) {
@@ -612,12 +634,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 }.run();
 
                 if (!rsp.getStatusCode().is2xxSuccessful()) {
-                    replyErrorIfNeeded(operr("HTTP ERROR, status code: %s, body: %s", rsp.getStatusCode(), rsp.getBody()));
+                    replyErrorIfNeeded(err(CLOUD_BUS_SEND_ERROR, "HTTP ERROR, status code: %s, body: %s", rsp.getStatusCode(), rsp.getBody()));
                 }
             } catch (OperationFailureException e) {
                 replyErrorIfNeeded(e.getErrorCode());
             } catch (Throwable e) {
-                replyErrorIfNeeded(operr(e.getMessage()));
+                replyErrorIfNeeded(err(CLOUD_BUS_SEND_ERROR, e.getMessage()));
             }
         }
 
@@ -1194,7 +1216,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
     }
 
-    private void doSendAndCallExtensions(Message msg) {
+    private FutureCompletion doSendAndCallExtensions(Message msg) {
         // for unit test finding invocation chain
         MessageCommandRecorder.record(msg.getClass());
 
@@ -1209,20 +1231,20 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             interceptor.beforeSendMessage(msg);
         }
 
-        doSend(msg);
+        return doSend(msg);
     }
 
-    private void doSend(Message msg) {
+    private FutureCompletion doSend(Message msg) {
         evalThreadContextToMessage(msg);
 
         if (logger.isTraceEnabled() && islogMessage(msg)) {
             logger.trace(String.format("[msg send]: %s", dumpMessage(msg)));
         }
 
-        new MessageSender(msg).send();
+        return new MessageSender(msg).send();
     }
 
-    private void send(Message msg, Boolean noNeedReply) {
+    private FutureCompletion send(Message msg, Boolean noNeedReply) {
         if (msg.getServiceId() == null) {
             throw new IllegalArgumentException(String.format("service id cannot be null: %s", msg.getClass().getName()));
         }
@@ -1238,7 +1260,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             msg.putHeaderEntry(NO_NEED_REPLY_MSG, noNeedReply.toString());
         }
 
-        doSendAndCallExtensions(msg);
+        return doSendAndCallExtensions(msg);
     }
 
     private void restoreFromSchema(Message msg, Map raw) throws ClassNotFoundException {

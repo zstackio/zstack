@@ -163,6 +163,7 @@ public class ThreadFacadeImpl implements ThreadFacade, ThreadFactory, RejectedEx
 
     @Override
     public <T> Future<T> submit(Task<T> task) {
+        _logger.trace(String.format("submit task: %s", task.getName()));
         return _pool.submit(new Worker<T>(task));
     }
 
