@@ -95,8 +95,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         }
 
         boolean fromApi = Boolean.parseBoolean(String.valueOf(data.get(Params.fromApi.toString())));
+        boolean skipGrayscaleUpgradeCheck = Boolean.parseBoolean(String.valueOf(data.get(Params.skipGrayscaleUpgradeCheck.toString())));
         boolean isReconnect = Boolean.parseBoolean(String.valueOf(data.get(Params.isReconnect.toString())));
-        if (!fromApi && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
+        if (!fromApi && !skipGrayscaleUpgradeCheck && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
             trigger.next();
             return;
         }
