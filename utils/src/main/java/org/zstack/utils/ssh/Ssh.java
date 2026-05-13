@@ -53,8 +53,35 @@ public class Ssh {
     private boolean suppressException = false;
     private ScriptRunner script;
     private String language = "LANG=\"en_US.UTF-8\"; ";
+    private boolean legacyHostKeyAlgorithmsAllowed = false;
 
     private boolean init = false;
+
+    static String appendSshAlgorithms(String configuredAlgorithms, String... algorithms) {
+        Set<String> configured = new LinkedHashSet<String>();
+        if (StringUtils.isNotBlank(configuredAlgorithms)) {
+            for (String algorithm : configuredAlgorithms.split(",")) {
+                if (StringUtils.isNotBlank(algorithm)) {
+                    configured.add(algorithm.trim());
+                }
+            }
+        }
+
+        configured.addAll(Arrays.asList(algorithms));
+        return StringUtils.join(configured, ",");
+    }
+
+    private void enableLegacyHostKeyAlgorithms() {
+        session.setConfig("server_host_key",
+                appendSshAlgorithms(session.getConfig("server_host_key"), "ssh-rsa", "ssh-dss"));
+        session.setConfig("PubkeyAcceptedKeyTypes",
+                appendSshAlgorithms(session.getConfig("PubkeyAcceptedKeyTypes"), "ssh-rsa", "ssh-dss"));
+    }
+
+    public Ssh allowLegacyHostKeyAlgorithms() {
+        legacyHostKeyAlgorithmsAllowed = true;
+        return this;
+    }
 
     private interface SshRunner {
         SshResult run();
@@ -404,6 +431,9 @@ public class Ssh {
 
             session = jSch.getSession(username, hostname, port);
             session.setConfig("StrictHostKeyChecking", "no");
+            if (legacyHostKeyAlgorithmsAllowed) {
+                enableLegacyHostKeyAlgorithms();
+            }
             session.setPassword(password);
             if (privateKey == null) {
                 session.setConfig("PreferredAuthentications", "password");

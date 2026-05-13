@@ -119,13 +119,13 @@ public class VyosConfigSshFlow extends NoRollbackFlow {
                 script = String.format("echo \"%s\" > .ssh/authorized_keys\n %s", asf.getPublicKey(), script);
 
                 try {
-                    new Ssh().shell(script
+                    new Ssh().allowLegacyHostKeyAlgorithms().shell(script
                     ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 } catch (SshException e ) {
                      /*
                     ZSTAC-18352, try again with password when key fail
                      */
-                    new Ssh().shell(script
+                    new Ssh().allowLegacyHostKeyAlgorithms().shell(script
                     ).setTimeout(300).setPassword(password).setUsername("vyos").setHostname(mgmtNicIp).setPort(sshPort).runErrorByExceptionAndClose();
                 }
 
