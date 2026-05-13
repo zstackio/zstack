@@ -113,7 +113,7 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.console.ConsoleHypervisorBackend"/>
         </zstack:plugin>
-    </bean>	
+    </bean>
 
     <bean id="KVMApiInterceptor" class="org.zstack.kvm.KVMApiInterceptor">
         <zstack:plugin>
