@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<globalConfig xmlns="http://zstack.org/schema/zstack">
+    <config>
+        <name>reconcileOnHost.timeout</name>
+        <description>Timeout in seconds for each VmNicLifecycleExtensionPoint implementation's reconcileOnHost call during host heartbeat reconciliation</description>
+        <category>vmNicLifecycle</category>
+        <defaultValue>30</defaultValue>
+        <type>java.lang.Long</type>
+    </config>
+</globalConfig>

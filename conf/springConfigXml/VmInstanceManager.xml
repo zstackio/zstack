@@ -261,4 +261,14 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="VmNicLifecycleManager" class="org.zstack.compute.vm.VmNicLifecycleManager">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>
