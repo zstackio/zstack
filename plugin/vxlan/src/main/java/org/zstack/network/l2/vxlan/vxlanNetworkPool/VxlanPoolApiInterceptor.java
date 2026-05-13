@@ -23,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.zstack.core.db.SimpleQuery;
+
 import static org.zstack.core.Platform.argerr;
 
 /**
@@ -60,11 +60,11 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr("%s:is not ipv4", msg.getRemoteVtepIp()));
         }
 
-        SimpleQuery<VtepVO> rqv = dbf.createQuery(VtepVO.class);
-        rqv.add(VtepVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
-        rqv.add(VtepVO_.poolUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
-        rqv.add(VtepVO_.vtepIp, SimpleQuery.Op.EQ, msg.getRemoteVtepIp());
-        long count = rqv.count();
+        long count = Q.New(VtepVO.class)
+                .eq(VtepVO_.clusterUuid, msg.getClusterUuid())
+                .eq(VtepVO_.poolUuid, msg.getL2NetworkUuid())
+                .eq(VtepVO_.vtepIp, msg.getRemoteVtepIp())
+                .count();
         if (count > 0) {
             throw new ApiMessageInterceptionException(argerr("ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }

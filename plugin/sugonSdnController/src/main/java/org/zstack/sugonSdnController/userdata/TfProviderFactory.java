@@ -3,8 +3,7 @@ package org.zstack.sugonSdnController.userdata;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
+import org.zstack.core.db.Q;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
@@ -49,17 +48,17 @@ public class TfProviderFactory implements NetworkServiceProviderFactory, Prepare
 
     @Override
     public void prepareDbInitialValue() {
-        SimpleQuery<NetworkServiceProviderVO> query = dbf.createQuery(NetworkServiceProviderVO.class);
-        query.add(NetworkServiceProviderVO_.type, Op.EQ, TfNetworkServiceConstant.TF_NETWORK_SERVICE_TYPE_STRING);
-        NetworkServiceProviderVO rpvo = query.find();
+        NetworkServiceProviderVO rpvo = Q.New(NetworkServiceProviderVO.class)
+                .eq(NetworkServiceProviderVO_.type, TfNetworkServiceConstant.TF_NETWORK_SERVICE_TYPE_STRING)
+                .find();
         if (rpvo != null) {
             tfProvider = NetworkServiceProviderInventory.valueOf(rpvo);
 
             // check if any network service type missing, if any, complement them
-            SimpleQuery<NetworkServiceTypeVO> q = dbf.createQuery(NetworkServiceTypeVO.class);
-            q.add(NetworkServiceTypeVO_.networkServiceProviderUuid, Op.EQ, tfProvider.getUuid());
-            List<NetworkServiceTypeVO> refs = q.list();
-            Set<String> types = new HashSet<String>();
+            List<NetworkServiceTypeVO> refs = Q.New(NetworkServiceTypeVO.class)
+                    .eq(NetworkServiceTypeVO_.networkServiceProviderUuid, tfProvider.getUuid())
+                    .list();
+            Set<String> types = new HashSet<>();
             for (NetworkServiceTypeVO ref : refs) {
                 types.add(ref.getType());
             }
