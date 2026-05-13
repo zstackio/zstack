@@ -12,37 +12,37 @@
     http://zstack.org/schema/zstack/plugin.xsd"
     default-init-method="init" default-destroy-method="destroy">
 
-	<bean id="LoadBalancerManager" class="org.zstack.network.service.lb.LoadBalancerManagerImpl">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.header.Service" />
-			<zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
-			<zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
-			<zstack:extension interface="org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint" />
+    <bean id="LoadBalancerManager" class="org.zstack.network.service.lb.LoadBalancerManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.Service" />
+            <zstack:extension interface="org.zstack.header.query.AddExpandedQueryExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.identity.ReportQuotaExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.vip.VipGetUsedPortRangeExtensionPoint" />
             <zstack:extension interface="org.zstack.network.service.vip.VipGetServiceReferencePoint" />
-			<zstack:extension interface="org.zstack.header.vm.VmNicChangeNetworkExtensionPoint" />
-		</zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmNicChangeNetworkExtensionPoint" />
+        </zstack:plugin>
     </bean>
 
-	<bean id="LoadBalancerApiInterceptor" class="org.zstack.network.service.lb.LoadBalancerApiInterceptor">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
-			<zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
-		</zstack:plugin>
+    <bean id="LoadBalancerApiInterceptor" class="org.zstack.network.service.lb.LoadBalancerApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor"/>
+        </zstack:plugin>
     </bean>
 
-	<bean id="LoadBalancerExtension" class="org.zstack.network.service.lb.LoadBalancerExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
-			<zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
-			<zstack:extension interface="org.zstack.acl.RefreshAccessControlListExtensionPoint" />
-		</zstack:plugin>
+    <bean id="LoadBalancerExtension" class="org.zstack.network.service.lb.LoadBalancerExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.network.service.NetworkServiceExtensionPoint" />
+            <zstack:extension interface="org.zstack.network.service.vip.VipReleaseExtensionPoint" />
+            <zstack:extension interface="org.zstack.acl.RefreshAccessControlListExtensionPoint" />
+        </zstack:plugin>
     </bean>
 
-	<bean id="LoadBalancerCascadeExtension" class="org.zstack.network.service.lb.LoadBalancerCascadeExtension">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
-		</zstack:plugin>
-	</bean>
+    <bean id="LoadBalancerCascadeExtension" class="org.zstack.network.service.lb.LoadBalancerCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
 
 </beans>

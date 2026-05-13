@@ -13,11 +13,11 @@
     default-init-method="init" default-destroy-method="destroy">
 
     <bean id="EventLogManager" class = "org.zstack.core.eventlog.EventLogManager">
-		<zstack:plugin>
-			<zstack:extension interface="org.zstack.header.Component" />
-			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-			<zstack:extension interface="org.zstack.core.eventlog.EventLogger" />
-		</zstack:plugin>
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.eventlog.EventLogger" />
+        </zstack:plugin>
     </bean>
 
 </beans>

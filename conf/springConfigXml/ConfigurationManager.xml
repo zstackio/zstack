@@ -39,13 +39,13 @@
 
     <bean id="DiskOfferingCascadeExtension" class="org.zstack.configuration.DiskOfferingCascadeExtension">
         <zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
 
     <bean id="InstanceOfferingCascadeExtension" class="org.zstack.configuration.InstanceOfferingCascadeExtension">
         <zstack:plugin>
-			<zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>
