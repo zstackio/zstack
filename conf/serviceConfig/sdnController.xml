@@ -41,11 +41,6 @@
     </message>
 
     <message>
-        <name>org.zstack.network.zns.APIQueryZnsTenantRouterMsg</name>
-        <serviceId>query</serviceId>
-    </message>
-
-    <message>
         <name>org.zstack.sdnController.header.APIPullSdnControllerTenantMsg</name>
         <serviceId>query</serviceId>
     </message>
