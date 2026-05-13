@@ -3,11 +3,11 @@ package org.zstack.sdk;
 
 
 public class QueryCdnModelServiceTemplateListResult {
-    public java.util.List<org.zstack.sdk.CdnModelServiceTemplateInventory> inventories;
-    public void setInventories(java.util.List<org.zstack.sdk.CdnModelServiceTemplateInventory> inventories) {
+    public java.util.List inventories;
+    public void setInventories(java.util.List inventories) {
         this.inventories = inventories;
     }
-    public java.util.List<org.zstack.sdk.CdnModelServiceTemplateInventory> getInventories() {
+    public java.util.List getInventories() {
         return this.inventories;
     }
 

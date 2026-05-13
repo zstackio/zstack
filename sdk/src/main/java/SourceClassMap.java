@@ -10,7 +10,6 @@ public class SourceClassMap {
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.accessKey.AccessKeyType", "org.zstack.sdk.AccessKeyType");
-			put("org.zstack.ai.CdnTemplateEntry", "org.zstack.sdk.CdnTemplateEntry");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
@@ -1015,7 +1014,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CbtTaskResourceRefInventory", "org.zstack.header.cbt.CbtTaskResourceRefInventory");
 			put("org.zstack.sdk.CbtTaskStatus", "org.zstack.header.cbt.CbtTaskStatus");
 			put("org.zstack.sdk.CdRomTO", "org.zstack.kvm.KVMAgentCommands$CdRomTO");
-			put("org.zstack.sdk.CdnTemplateEntry", "org.zstack.ai.CdnTemplateEntry");
+			put("org.zstack.sdk.CdnModelServiceTemplateInventory", "org.zstack.ai.entity.CdnModelServiceTemplateInventory");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
 			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
@@ -1271,7 +1270,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
 			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MirrorNetworkUsedIpInventory", "org.zstack.header.portMirror.MirrorNetworkUsedIpInventory");
-			put("org.zstack.sdk.CdnModelServiceTemplateInventory", "org.zstack.ai.entity.CdnModelServiceTemplateInventory");
 			put("org.zstack.sdk.ModelCenterCapacityInventory", "org.zstack.ai.entity.ModelCenterCapacityInventory");
 			put("org.zstack.sdk.ModelCenterInventory", "org.zstack.ai.entity.ModelCenterInventory");
 			put("org.zstack.sdk.ModelCenterServiceInventory", "org.zstack.ai.message.ModelCenterServiceInventory");
