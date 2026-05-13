@@ -143,8 +143,15 @@ class ResumePrimaryStorageCapacityAfterCreateVmFailCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
             l3NetworkUuids = [l3.uuid]
-            rootDiskOfferingUuid = diskOffering.uuid
-            dataDiskOfferingUuids = [diskOffering.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                    "size" : volumeSize,
+                ],
+                [
+                    "diskOfferingUuid" : diskOffering.uuid,
+                ],
+            ]
         }
 
         GetPrimaryStorageCapacityResult capacityResultAfterCreateOneVm = getPrimaryStorageCapacity {
@@ -158,8 +165,15 @@ class ResumePrimaryStorageCapacityAfterCreateVmFailCase extends SubCase {
                     instanceOfferingUuid: instanceOffering.uuid,
                     imageUuid: sizedImage.uuid,
                     l3NetworkUuids: [l3.uuid],
-                    rootDiskOfferingUuid : diskOffering.uuid,
-                    dataDiskOfferingUuids : [diskOffering.uuid],
+                    diskAOs: [
+                        [
+                            "boot" : true,
+                            "diskOfferingUuid" : diskOffering.uuid,
+                        ],
+                        [
+                            "diskOfferingUuid" : diskOffering.uuid,
+                        ],
+                    ],
                     sessionId: currentEnvSpec.session.uuid
             )
             CreateVmInstanceAction.Result result = createVmInstanceAction.call()

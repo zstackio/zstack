@@ -135,7 +135,14 @@ class MultiPsCreateVmCase extends SubCase {
                 instanceOfferingUuid: diskOffering2.uuid,
                 imageUuid: image.uuid,
                 l3NetworkUuids: [l3.uuid],
-                dataDiskOfferingUuids: [diskOffering2.uuid],
+                diskAOs: [
+                    [
+                        "boot" : true,
+                    ],
+                    [
+                        "diskOfferingUuid" : diskOffering2.uuid,
+                    ],
+                ],
                 sessionId: currentEnvSpec.session.uuid
         )
         assert createVmInstanceAction.call().error != null
@@ -145,7 +152,17 @@ class MultiPsCreateVmCase extends SubCase {
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = image.uuid
             l3NetworkUuids = [l3.uuid]
-            dataDiskOfferingUuids = [diskOffering.uuid,diskOffering.uuid]
+            diskAOs = [
+                [
+                    "boot" : true,
+                ],
+                [
+                    "diskOfferingUuid" : diskOffering.uuid,
+                ],
+                [
+                    "diskOfferingUuid" : diskOffering.uuid,
+                ],
+            ]
         }
     }
 
