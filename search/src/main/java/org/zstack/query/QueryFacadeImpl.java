@@ -349,7 +349,7 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
     }
 
-    private void handle(APIQueryMessage msg) {
+    private APIQueryReply doQuery(APIQueryMessage msg) {
         AutoQuery at = autoQueryMap.get(msg.getClass());
         if (at == null) {
             at = msg.getClass().getAnnotation(AutoQuery.class);
@@ -374,12 +374,45 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
             if (result.inventories != null) {
                 replySetter.invoke(reply, result.inventories);
             }
-            bus.reply(msg, reply);
+            return reply;
         } catch (OperationFailureException of) {
             throw of;
         } catch (Exception e) {
             throw new OperationFailureException(inerr("failed to query: %s", e.getMessage()));
         }
+    }
+
+    private void handle(APIQueryMessage msg) {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public Void call() {
+                APIQueryReply reply;
+                try {
+                    reply = doQuery(msg);
+                } catch (OperationFailureException of) {
+                    reply = new APIQueryReply();
+                    reply.setError(of.getErrorCode());
+                }
+
+                bus.reply(msg, reply);
+                return null;
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return "api-query";
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return getQuerySyncLevel();
+            }
+        });
     }
 
     private String toZQLConditionString(QueryCondition c) {
