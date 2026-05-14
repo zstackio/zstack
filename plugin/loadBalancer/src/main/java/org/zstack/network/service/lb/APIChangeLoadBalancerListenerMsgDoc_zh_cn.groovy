@@ -102,7 +102,7 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					values ("tcp","udp","http")
+					values ("tcp","udp","http","none")
 				}
 				column {
 					name "healthCheckMethod"
