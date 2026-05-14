@@ -28,6 +28,8 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.atomic.AtomicBoolean
+
 /**
  * @author Xingwei Yu
  * @date 2024/4/19 10:09
@@ -179,8 +181,25 @@ class ZbsPrimaryStorageCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
+        Set<String> heartbeatPools = Collections.synchronizedSet(new HashSet<>())
+        AtomicBoolean checkStartedBeforeHeartbeatReady = new AtomicBoolean(false)
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            ZbsStorageController.CreateVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                heartbeatPools.add(cmd.logicalPool)
+                ZbsStorageController.CreateVolumeRsp createVolumeRsp = new ZbsStorageController.CreateVolumeRsp()
+                createVolumeRsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}"
+                return createVolumeRsp
+            }
+
+            return rsp
+        }
+
         env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
             ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+            if (!heartbeatPools.contains("lpool1")) {
+                checkStartedBeforeHeartbeatReady.set(true)
+            }
 
             ZbsStorageController.CheckHostStorageConnectionRsp checkHostStorageConnectionRsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
             checkHostStorageConnectionRsp.error = "fake error"
@@ -193,6 +212,10 @@ class ZbsPrimaryStorageCase extends SubCase {
             reconnectHost {
                 uuid = kvm.getUuid()
             }
+        }
+        retryInSecs {
+            assert heartbeatPools.contains("lpool1")
+            assert !checkStartedBeforeHeartbeatReady.get()
         }
 
         retryInSecs {
