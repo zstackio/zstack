@@ -12,4 +12,12 @@ public class L2GeneveNetworkInventory extends org.zstack.sdk.L2NetworkInventory 
         return this.geneveId;
     }
 
+    public java.lang.Integer vni;
+    public void setVni(java.lang.Integer vni) {
+        this.vni = vni;
+    }
+    public java.lang.Integer getVni() {
+        return this.vni;
+    }
+
 }
