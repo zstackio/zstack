@@ -29,6 +29,14 @@ public class SshShell {
     private String privateKey;
     private int port = 22;
     private Boolean withSudo = true;
+    private int connectTimeoutSeconds = 10;
+    private int serverAliveIntervalSeconds = 5;
+    private int serverAliveCountMax = 2;
+
+    private String sshTimeoutOptions() {
+        return String.format("-o ConnectTimeout=%d -o ServerAliveInterval=%d -o ServerAliveCountMax=%d",
+                connectTimeoutSeconds, serverAliveIntervalSeconds, serverAliveCountMax);
+    }
 
     private void checkParams() {
         DebugUtils.Assert(hostname != null && !hostname.trim().equals(""), "hostname cannot be null");
@@ -45,13 +53,13 @@ public class SshShell {
             if (privateKey != null) {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
-                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
+                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
+                        tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
+                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
+                        tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
             }
 
             if (logger.isTraceEnabled()) {
@@ -89,7 +97,7 @@ public class SshShell {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
                 ssh = ln(
-                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no {5} -p {1} -T {2}@{3} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
                         "{4}",
@@ -99,12 +107,12 @@ public class SshShell {
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
+                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script, sshTimeoutOptions());
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
                 ssh = ln(
-                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no {5} -p {1} -T {2}@{3} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
                         "{4}",
@@ -114,7 +122,7 @@ public class SshShell {
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
+                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script, sshTimeoutOptions());
             }
 
             if (logger.isTraceEnabled()) {
@@ -208,5 +216,29 @@ public class SshShell {
 
     public void setWithSudo(Boolean withSudo) {
         this.withSudo = withSudo;
+    }
+
+    public int getConnectTimeoutSeconds() {
+        return connectTimeoutSeconds;
+    }
+
+    public void setConnectTimeoutSeconds(int connectTimeoutSeconds) {
+        this.connectTimeoutSeconds = connectTimeoutSeconds;
+    }
+
+    public int getServerAliveIntervalSeconds() {
+        return serverAliveIntervalSeconds;
+    }
+
+    public void setServerAliveIntervalSeconds(int serverAliveIntervalSeconds) {
+        this.serverAliveIntervalSeconds = serverAliveIntervalSeconds;
+    }
+
+    public int getServerAliveCountMax() {
+        return serverAliveCountMax;
+    }
+
+    public void setServerAliveCountMax(int serverAliveCountMax) {
+        this.serverAliveCountMax = serverAliveCountMax;
     }
 }
