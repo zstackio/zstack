@@ -5417,7 +5417,7 @@ public class KVMAgentCommands {
         public String poolUuid;
         public String mountPoint;
         public boolean force;
-        public List<VolumeTO> volumes;
+        public List<String> inUseCacheUuids;
     }
 
     public static class AllocateCacheCmd extends AgentCommand {
