@@ -37,6 +37,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.CyclicBarrier
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -210,8 +211,25 @@ class ZbsPrimaryStorageCase extends SubCase {
             clusterUuid = cluster.uuid
         }
 
+        Set<String> heartbeatPools = Collections.synchronizedSet(new HashSet<>())
+        AtomicBoolean checkStartedBeforeHeartbeatReady = new AtomicBoolean(false)
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            ZbsStorageController.CreateVolumeCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                heartbeatPools.add(cmd.logicalPool)
+                ZbsStorageController.CreateVolumeRsp createVolumeRsp = new ZbsStorageController.CreateVolumeRsp()
+                createVolumeRsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}"
+                return createVolumeRsp
+            }
+
+            return rsp
+        }
+
         env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
             ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+            if (!heartbeatPools.containsAll(["lpool1", "lpool2"])) {
+                checkStartedBeforeHeartbeatReady.set(true)
+            }
 
             ZbsStorageController.CheckHostStorageConnectionRsp checkHostStorageConnectionRsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
             checkHostStorageConnectionRsp.error = "fake error"
@@ -224,6 +242,10 @@ class ZbsPrimaryStorageCase extends SubCase {
             reconnectHost {
                 uuid = kvm.getUuid()
             }
+        }
+        retryInSecs {
+            assert heartbeatPools.containsAll(["lpool1", "lpool2"])
+            assert !checkStartedBeforeHeartbeatReady.get()
         }
 
         retryInSecs {

@@ -142,6 +142,27 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 });
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "ensure-heartbeat-volume";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                ensureHeartbeatVolume(context.getInventory(), extPss, new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            logger.warn(String.format("failed to ensure heartbeat volumes before checking KVM host[uuid:%s, name:%s] storage connection, %s",
+                                    context.getInventory().getUuid(), context.getInventory().getName(), errorCodeList.getReadableDetails()));
+                            trigger.fail(operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000,
+                                    new ErrorCodeList().causedBy(errorCodeList.getCauses()),
+                                    "failed to ensure heartbeat volumes before checking KVM host[uuid:%s, name:%s] storage connection",
+                                    context.getInventory().getUuid(), context.getInventory().getName()));
+                        }
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = "check-host-status";
 
             @Override
@@ -165,6 +186,25 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 completion.success();
             }
         }).start();
+    }
+
+    private void ensureHeartbeatVolume(HostInventory host, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
+        new While<>(extPss).each((extPs, compl) -> {
+            logger.debug(String.format("ensuring heartbeat volume for external primary storage[uuid:%s, name:%s] before checking KVM host[uuid:%s, name:%s] storage connection",
+                    extPs.getUuid(), extPs.getName(), host.getUuid(), host.getName()));
+            extPsFactory.getNodeSvc(extPs.getUuid()).activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTopology>(compl) {
+                @Override
+                public void success(HeartbeatVolumeTopology returnValue) {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.done();
+                }
+            });
+        }).run(completion);
     }
 
     private void deployClient(final KVMHostConnectedContext context, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
