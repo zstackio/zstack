@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
@@ -92,6 +93,7 @@ public class VmAllocateNicFlow implements Flow {
         List<VmNicInventory> nics = new ArrayList<>();
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
+        List<String> vmSystemTags = spec.getMessage() instanceof APIMessage ? ((APIMessage) spec.getMessage()).getSystemTags() : null;
 
         new While<>(VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
@@ -103,7 +105,7 @@ public class VmAllocateNicFlow implements Flow {
             final String customNicUuid = nicOperator.getCustomNicId();
 
             // choose vnic factory based on enableSRIOV system tag & enableVhostUser globalConfig
-            VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw);
+            VmNicType type = nicManager.getVmNicType(spec.getVmInventory().getUuid(), nw, vmSystemTags);
             if (type == null) {
                 errs.add(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10068, "there is no available nicType on L3 network [%s]", nw.getUuid()));
                 wcomp.allDone();
