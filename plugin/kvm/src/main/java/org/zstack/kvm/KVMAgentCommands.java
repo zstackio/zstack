@@ -3328,6 +3328,7 @@ public class KVMAgentCommands {
         private String type;
         @GrayVersion(value = "5.0.0")
         private long timeout;
+        private boolean ignoreNotFound;
         private List<VmNicInventory> vmNics;
 
         public String getUuid() {
@@ -3352,6 +3353,14 @@ public class KVMAgentCommands {
 
         public void setType(String type) {
             this.type = type;
+        }
+
+        public boolean isIgnoreNotFound() {
+            return ignoreNotFound;
+        }
+
+        public void setIgnoreNotFound(boolean ignoreNotFound) {
+            this.ignoreNotFound = ignoreNotFound;
         }
 
         public List<VmNicInventory> getVmNics() {
