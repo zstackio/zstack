@@ -37,8 +37,7 @@ public class StopVmGC extends EventBasedGarbageCollector {
             return;
         }
 
-        VmInstanceState state = Q.New(VmInstanceVO.class)
-                .select(VmInstanceVO_.state)
+        VmInstanceState state = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
                 .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
         if (state == null || state == VmInstanceState.Destroyed) {
             completion.cancel();
