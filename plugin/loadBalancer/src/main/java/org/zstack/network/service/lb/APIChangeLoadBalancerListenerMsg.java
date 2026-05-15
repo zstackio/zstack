@@ -44,7 +44,7 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MIN, LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MAX}, required = false)
     private Integer healthCheckInterval;
 
-    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;

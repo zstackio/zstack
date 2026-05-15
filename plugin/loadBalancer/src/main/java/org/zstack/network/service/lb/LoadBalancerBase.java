@@ -2406,9 +2406,10 @@ public class LoadBalancerBase {
                         LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
                     }
 
+                    String target = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(msg.getHealthCheckProtocol()) ? "default" : ts[1];
                     LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
                                 LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
-                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), ts[1])))
+                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), target)))
                                 ));
                     ts = getHeathCheckTarget(msg.getUuid());
                 }

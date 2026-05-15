@@ -46,7 +46,7 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String certificateUuid;
 
-    @Param(required = false, validValues = {"tcp","udp","http"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"tcp","udp","http","none"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckProtocol;
 
     @Param(required = false, validValues = {"GET","HEAD"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

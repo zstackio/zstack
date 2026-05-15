@@ -7,6 +7,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.vip.VipVO
@@ -221,8 +222,113 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         }
         assert count == 1
 
+        count = 0
+        cmd = null
+        ChangeLoadBalancerListenerAction changeAction = new ChangeLoadBalancerListenerAction()
+        changeAction.uuid = listener.uuid
+        changeAction.healthCheckProtocol = "none"
+        changeAction.sessionId = adminSession()
+        ChangeLoadBalancerListenerAction.Result changeResult = changeAction.call()
+        assert changeResult.error == null
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "none:default"
+        assert count == 1
+        assert cmd.lbs.any { VirtualRouterLoadBalancerBackend.LbTO lbtemp ->
+            lbtemp.listenerUuid == listener.uuid && lbtemp.getParameters().contains("healthCheckTarget::none:default")
+        }
+
+        changeAction.healthCheckProtocol = null
+        changeAction.healthCheckTarget = "10000"
+        changeResult = changeAction.call()
+        assert changeResult.error != null
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "none:default"
+
         deleteLoadBalancerListener {
             uuid = listener.uuid
+        }
+
+        LoadBalancerListenerInventory listenerWithSpecificHealthTarget = createLoadBalancerListener {
+            protocol = "udp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 10002
+            instancePort = 10002
+            name = "test-listener-specific-health-target"
+            systemTags = ["healthCheckTarget::udp:10002"]
+        }
+
+        changeAction = new ChangeLoadBalancerListenerAction()
+        changeAction.uuid = listenerWithSpecificHealthTarget.uuid
+        changeAction.healthCheckProtocol = "none"
+        changeAction.sessionId = adminSession()
+        changeResult = changeAction.call()
+        assert changeResult.error == null
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(listenerWithSpecificHealthTarget.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "none:default"
+
+        deleteLoadBalancerListener {
+            uuid = listenerWithSpecificHealthTarget.uuid
+        }
+
+        CreateLoadBalancerListenerAction badTcpDisabledHealthCheckAction = new CreateLoadBalancerListenerAction()
+        badTcpDisabledHealthCheckAction.loadBalancerUuid = lb.uuid
+        badTcpDisabledHealthCheckAction.name = "test-tcp-listener-none-health-check"
+        badTcpDisabledHealthCheckAction.loadBalancerPort = 10001
+        badTcpDisabledHealthCheckAction.instancePort = 10001
+        badTcpDisabledHealthCheckAction.protocol = "tcp"
+        badTcpDisabledHealthCheckAction.healthCheckProtocol = "none"
+        badTcpDisabledHealthCheckAction.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result badTcpDisabledHealthCheckResult = badTcpDisabledHealthCheckAction.call()
+        assert badTcpDisabledHealthCheckResult.error != null
+
+        badTcpDisabledHealthCheckAction.healthCheckProtocol = null
+        badTcpDisabledHealthCheckAction.systemTags = ["healthCheckTarget::none:default"]
+        badTcpDisabledHealthCheckResult = badTcpDisabledHealthCheckAction.call()
+        assert badTcpDisabledHealthCheckResult.error != null
+
+        CreateLoadBalancerListenerAction badDisabledHealthCheckAction = new CreateLoadBalancerListenerAction()
+        badDisabledHealthCheckAction.loadBalancerUuid = lb.uuid
+        badDisabledHealthCheckAction.name = "test-listener-none-specific-port"
+        badDisabledHealthCheckAction.loadBalancerPort = 10001
+        badDisabledHealthCheckAction.instancePort = 10001
+        badDisabledHealthCheckAction.protocol = "udp"
+        badDisabledHealthCheckAction.healthCheckProtocol = "none"
+        badDisabledHealthCheckAction.systemTags = ["healthCheckTarget::none:10001"]
+        badDisabledHealthCheckAction.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result badDisabledHealthCheckResult = badDisabledHealthCheckAction.call()
+        assert badDisabledHealthCheckResult.error != null
+
+        badDisabledHealthCheckAction.healthCheckProtocol = null
+        badDisabledHealthCheckAction.systemTags = ["healthCheckTarget::udp:default", "healthCheckTarget::none:default"]
+        badDisabledHealthCheckResult = badDisabledHealthCheckAction.call()
+        assert badDisabledHealthCheckResult.error != null
+
+        LoadBalancerListenerInventory listenerWithDisabledHealthCheck = createLoadBalancerListener {
+            protocol = "udp"
+            healthCheckProtocol = "none"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 10001
+            instancePort = 10001
+            name = "test-listener-none-health-check"
+        }
+
+        count = 0
+        cmd = null
+
+        addVmNicToLoadBalancer {
+            listenerUuid = listenerWithDisabledHealthCheck.uuid
+            vmNicUuids = [vm.getVmNics().get(0).getUuid()]
+        }
+
+        assert count == 1
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(listenerWithDisabledHealthCheck.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "none:default"
+        assert cmd.lbs.any { VirtualRouterLoadBalancerBackend.LbTO lbtemp ->
+            lbtemp.listenerUuid == listenerWithDisabledHealthCheck.uuid && lbtemp.getParameters().contains("healthCheckTarget::none:default")
+        }
+
+        deleteLoadBalancerListener {
+            uuid = listenerWithDisabledHealthCheck.uuid
         }
     }
 

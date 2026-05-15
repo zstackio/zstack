@@ -695,6 +695,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         return false;
     }
 
+    private List<String> getSystemTagTokens(APIMessage msg, PatternedSystemTag tag, String token) {
+        List<String> tokens = new ArrayList<>();
+        if (msg.getSystemTags() == null) {
+            return tokens;
+        }
+
+        for (String t : msg.getSystemTags()) {
+            if (tag.isMatch(t)) {
+                tokens.add(tag.getTokenByTag(t, token));
+            }
+        }
+
+        return tokens;
+    }
+
     private void insertTagIfNotExisting(APICreateMessage msg, PatternedSystemTag tag, String value) {
         if (!hasTag(msg, tag)) {
             msg.addSystemTag(value);
@@ -711,6 +726,47 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 return false;
             }
         });
+    }
+
+    private boolean isHealthCheckProtocolNotSupportedByListenerProtocol(String listenerProtocol, String healthCheckProtocol) {
+        boolean isUdpListener = LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerProtocol);
+        boolean isUdpHealthCheck = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(healthCheckProtocol);
+        boolean isNoneHealthCheck = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(healthCheckProtocol);
+
+        if (isUdpListener) {
+            return !(isUdpHealthCheck || isNoneHealthCheck);
+        }
+
+        return isUdpHealthCheck || isNoneHealthCheck;
+    }
+
+    private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
+        if (healthCheckTarget == null) {
+            return null;
+        }
+
+        String[] ts = healthCheckTarget.split(":");
+        return ts.length == 2 ? ts[0] : null;
+    }
+
+    private String getHealthCheckPortFromTarget(String healthCheckTarget) {
+        if (healthCheckTarget == null) {
+            return null;
+        }
+
+        String[] ts = healthCheckTarget.split(":");
+        return ts.length == 2 ? ts[1] : null;
+    }
+
+    private boolean isNoneHealthCheckTargetWithSpecificPort(String healthCheckTarget) {
+        if (healthCheckTarget == null) {
+            return false;
+        }
+
+        String[] ts = healthCheckTarget.split(":");
+        return ts.length == 2 &&
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(ts[0]) &&
+                !"default".equals(ts[1]);
     }
 
     private void validate(APICreateLoadBalancerListenerMsg msg) {
@@ -730,33 +786,56 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                 msg.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
+
+        List<String> healthCheckTargets = getSystemTagTokens(msg, LoadBalancerSystemTags.HEALTH_TARGET,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+        if (healthCheckTargets.size() > 1) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10177, "only one health check target is allowed, but got %s",
+                            healthCheckTargets));
+        }
+        String healthCheckTarget = healthCheckTargets.isEmpty() ? null : healthCheckTargets.get(0);
+        if (isNoneHealthCheckTargetWithSpecificPort(healthCheckTarget)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10178, "the health check target [%s] is invalid, health check protocol none only supports default target",
+                            healthCheckTarget));
+        }
+        String healthCheckProtocolInTarget = getHealthCheckProtocolFromTarget(healthCheckTarget);
+
         if (msg.getHealthCheckProtocol() == null) {
-            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
+            if (healthCheckProtocolInTarget != null) {
+                msg.setHealthCheckProtocol(healthCheckProtocolInTarget);
+            } else if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol())) {
                 msg.setHealthCheckProtocol(LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP);
             } else {
                 msg.setHealthCheckProtocol(LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP);
             }
         } else {
-            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
-                    !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
+            if (healthCheckProtocolInTarget != null && !healthCheckProtocolInTarget.equals(msg.getHealthCheckProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10062, "the listener with protocol [%s] doesn't support this health check:[%s]",
-                                msg.getProtocol(), msg.getHealthCheckProtocol()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "the health check protocol [%s] conflicts with health check target [%s]",
+                                msg.getHealthCheckProtocol(), healthCheckTarget));
             }
-            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
-                if (msg.getHealthCheckURI() == null) {
-                    throw new ApiMessageInterceptionException(
-                            operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10063, "the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
-                }
+        }
 
-                if (msg.getHealthCheckMethod() == null) {
-                    msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
-                }
-            }
-            if (msg.getHealthCheckHttpCode() != null && !verifyHttpCode(msg.getHealthCheckHttpCode())) {
+        if (isHealthCheckProtocolNotSupportedByListenerProtocol(msg.getProtocol(), msg.getHealthCheckProtocol())) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10062, "the listener with protocol [%s] doesn't support this health check:[%s]",
+                            msg.getProtocol(), msg.getHealthCheckProtocol()));
+        }
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+            if (msg.getHealthCheckURI() == null) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10064, "the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10063, "the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
             }
+
+            if (msg.getHealthCheckMethod() == null) {
+                msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
+            }
+        }
+        if (msg.getHealthCheckHttpCode() != null && !verifyHttpCode(msg.getHealthCheckHttpCode())) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10064, "the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
         }
 
         if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
@@ -1384,21 +1463,40 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10118, "the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
             }
         }
-        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
-            String healthTarget = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
-                    LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
 
+        String healthTarget = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+        String currentHealthCheckProtocol = getHealthCheckProtocolFromTarget(healthTarget);
+        String currentHealthCheckTarget = getHealthCheckPortFromTarget(healthTarget);
+        String effectiveHealthCheckProtocol = msg.getHealthCheckProtocol() == null ? currentHealthCheckProtocol : msg.getHealthCheckProtocol();
+        String effectiveHealthCheckTarget;
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(msg.getHealthCheckProtocol()) &&
+                msg.getHealthCheckTarget() == null) {
+            effectiveHealthCheckTarget = LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT;
+        } else {
+            effectiveHealthCheckTarget = msg.getHealthCheckTarget() == null ? currentHealthCheckTarget : msg.getHealthCheckTarget();
+        }
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(effectiveHealthCheckProtocol) &&
+                !LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT.equals(effectiveHealthCheckTarget)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10178, "the health check target [%s] is invalid, health check protocol none only supports default target",
+                            effectiveHealthCheckTarget));
+        }
+
+        if (msg.getHealthCheckProtocol() != null) {
+            if (isHealthCheckProtocolNotSupportedByListenerProtocol(listenerVO.getProtocol(), msg.getHealthCheckProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10120, "the listener with protocol [%s] doesn't support this health check:[%s]",
+                                listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
+            }
+        }
+
+        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
             String[] ts = healthTarget.split(":");
             if (ts.length != 2) {
                 throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10119, "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));
             }
 
-            if (LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && !LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol()) ||
-                    !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerVO.getProtocol()) && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(msg.getHealthCheckProtocol())) {
-                throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10120, "the listener with protocol [%s] doesn't support this health check:[%s]",
-                                listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
-            }
             if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) && (msg.getHealthCheckMethod() == null || msg.getHealthCheckURI() == null)) {
                 throw new ApiMessageInterceptionException(
                         operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10121, "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI"));
