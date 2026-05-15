@@ -37,10 +37,22 @@ public class StopVmGC extends EventBasedGarbageCollector {
             return;
         }
 
-        VmInstanceState state = Q.New(VmInstanceVO.class).select(VmInstanceVO_.state)
+        VmInstanceState state = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.state)
                 .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
         if (state == null || state == VmInstanceState.Destroyed) {
             completion.cancel();
+            return;
+        }
+
+        String currentHostUuid = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.hostUuid)
+                .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
+        if (shouldSkipStateUpdateForHostMismatch(state, currentHostUuid)) {
+            logger.debug(String.format("vm[uuid:%s] current host[uuid:%s] is not gc host[uuid:%s], " +
+                            "stop residual vm on gc host without state update",
+                    inventory.getUuid(), currentHostUuid, hostUuid));
+            stopVmOnGcHostWithoutStateUpdate(completion);
             return;
         }
 
@@ -90,6 +102,27 @@ public class StopVmGC extends EventBasedGarbageCollector {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private void stopVmOnGcHostWithoutStateUpdate(GCCompletion completion) {
+        StopVmOnHypervisorMsg msg = new StopVmOnHypervisorMsg();
+        msg.setVmInventory(inventory);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.debug(String.format("failed to stop residual vm[uuid:%s] on gc host[uuid:%s], %s",
+                            inventory.getUuid(), hostUuid, reply.getError()));
+                }
+                completion.success();
+            }
+        });
+    }
+
+    private boolean shouldSkipStateUpdateForHostMismatch(VmInstanceState state, String currentHostUuid) {
+        return !VmInstanceState.offlineStates.contains(state)
+                && !hostUuid.equals(currentHostUuid);
     }
 
     @Override

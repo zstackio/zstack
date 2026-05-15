@@ -1,6 +1,7 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
@@ -17,6 +18,7 @@ import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DestroyVmInstanceAction
 import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -32,6 +34,7 @@ class VmGCCase extends SubCase {
 
     DatabaseFacade dbf
     CloudBus bus
+    int extraHostIndex = 2
 
     @Override
     void setup() {
@@ -223,6 +226,10 @@ class VmGCCase extends SubCase {
             // recreate the host
             env.recreate("kvm")
 
+            testStopVmGCJobCleansGcHostAfterVmHostChanged()
+            testStopVmGCJobCleansGcHostAfterVmHostCleared()
+            testStopVmGCJobCleansGcHostAfterNonOfflineVmHostChanged()
+            testStopVmGCJobStopsRunningVmOnOriginalHost()
             testStopVmWhenHostDisconnect()
             testStopVmGCJobCancelAfterVmDeleted()
             testStopVmGCJobCancelAfterHostDeleted()
@@ -256,6 +263,129 @@ class VmGCCase extends SubCase {
         assert dbf.count(GarbageCollectorVO.class) != 0
 
         return vm
+    }
+
+    private void updateVmForStopVmGC(String vmUuid, VmInstanceState state, String hostUuid) {
+        VmInstanceVO vo = dbFindByUuid(vmUuid, VmInstanceVO.class)
+        vo.state = state
+        vo.hostUuid = hostUuid
+        dbf.update(vo)
+    }
+
+    private String addAnotherHostUuid(String hostUuid) {
+        ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
+        int index = extraHostIndex++
+
+        def host = addKVMHost {
+            resourceUuid = Platform.getUuid()
+            clusterUuid = cluster.uuid
+            managementIp = "127.0.0.${index}"
+            name = "kvm-${index}"
+            username = "root"
+            password = "password"
+        }
+
+        assert host.uuid != hostUuid
+        return host.uuid
+    }
+
+    private void assertStopVmGCJobCleansGcHostWithoutStateUpdate(VmInstanceInventory vm, String gcHostUuid,
+                                                                VmInstanceState state, String currentHostUuid) {
+        updateVmForStopVmGC(vm.uuid, state, currentHostUuid)
+        KVMAgentCommands.StopVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_STOP_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.StopVmCmd.class)
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = gcHostUuid
+        }
+
+        GarbageCollectorInventory inv = null
+        retryInSecs {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
+            VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+
+            assert cmd != null
+            assert cmd.uuid == vm.uuid
+            assert inv.status == GCStatus.Done.toString()
+            assert vo.state == state
+            assert vo.hostUuid == currentHostUuid
+        }
+
+        deleteGCJob {
+            uuid = inv.uuid
+        }
+
+        updateVmForStopVmGC(vm.uuid, VmInstanceState.Stopped, gcHostUuid)
+    }
+
+    void testStopVmGCJobCleansGcHostAfterVmHostChanged() {
+        VmInstanceInventory vm = createGCCandidateStoppedVm()
+        String gcHostUuid = vm.hostUuid
+
+        assertStopVmGCJobCleansGcHostWithoutStateUpdate(vm, gcHostUuid, VmInstanceState.Running,
+                addAnotherHostUuid(gcHostUuid))
+    }
+
+    void testStopVmGCJobCleansGcHostAfterVmHostCleared() {
+        VmInstanceInventory vm = createGCCandidateStoppedVm()
+        String gcHostUuid = vm.hostUuid
+
+        assertStopVmGCJobCleansGcHostWithoutStateUpdate(vm, gcHostUuid, VmInstanceState.Running, null)
+    }
+
+    private List<VmInstanceState> nonOfflineVmStates() {
+        return VmInstanceState.values().findAll { !VmInstanceState.offlineStates.contains(it) }
+    }
+
+    void testStopVmGCJobCleansGcHostAfterNonOfflineVmHostChanged() {
+        nonOfflineVmStates().each { state ->
+            VmInstanceInventory vm = createGCCandidateStoppedVm()
+            String gcHostUuid = vm.hostUuid
+
+            assertStopVmGCJobCleansGcHostWithoutStateUpdate(vm, gcHostUuid, state, addAnotherHostUuid(gcHostUuid))
+        }
+    }
+
+    void testStopVmGCJobStopsRunningVmOnOriginalHost() {
+        VmInstanceInventory vm = createGCCandidateStoppedVm()
+        updateVmForStopVmGC(vm.uuid, VmInstanceState.Running, vm.hostUuid)
+
+        KVMAgentCommands.StopVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_STOP_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = json(e.body, KVMAgentCommands.StopVmCmd.class)
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = vm.hostUuid
+        }
+
+        retryInSecs {
+            assert cmd != null
+            assert cmd.uuid == vm.uuid
+        }
+
+        GarbageCollectorInventory inv = null
+        retryInSecs {
+            inv = queryGCJob {
+                conditions=["context~=%${vm.uuid}%"]
+            }[0]
+
+            assert inv.status == GCStatus.Done.toString()
+        }
+
+        deleteGCJob {
+            uuid = inv.uuid
+        }
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
     }
 
     void testStopVmGCJobCancelAfterHostDeleted() {
