@@ -2303,6 +2303,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         Defer.guard(setCustomMacSystemTag::rollback);
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
+        spec.setMessage(msg);
         final VmInstanceInventory vm = spec.getVmInventory();
         List<L3NetworkInventory> l3s = new ArrayList<>();
         for (String l3Uuid : l3Uuids) {
