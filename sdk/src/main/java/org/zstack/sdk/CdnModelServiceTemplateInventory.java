@@ -36,6 +36,14 @@ public class CdnModelServiceTemplateInventory  {
         return this.platform;
     }
 
+    public java.lang.String framework;
+    public void setFramework(java.lang.String framework) {
+        this.framework = framework;
+    }
+    public java.lang.String getFramework() {
+        return this.framework;
+    }
+
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;
