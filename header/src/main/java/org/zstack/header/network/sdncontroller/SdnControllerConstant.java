@@ -18,6 +18,8 @@ public class SdnControllerConstant {
 
     public static final String SERVICE_ID = "SdnController";
 
+    public static final String ALLOCATED_IPS_ON_START = "allocatedIpsOnStart";
+
     public static final String H3C_VCFC_CONTROLLER = "H3C VCFC";
 
     public static final String H3C_VCFC_VENDOR_VERSION_V1 = DEFAULT_VENDOR_VERSION;

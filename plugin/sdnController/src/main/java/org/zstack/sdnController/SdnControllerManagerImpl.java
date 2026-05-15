@@ -468,6 +468,19 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         return vSwitchType.getSdnControllerType() == null;
     }
 
+    private Set<String> getNewlyAllocatedNicUuidsForStart(VmInstanceSpec spec) {
+        if (spec.getCurrentVmOperation() != VmInstanceConstant.VmOperation.Start) {
+            return null;
+        }
+
+        List<String> nicUuids = spec.getExtensionData(SdnControllerConstant.ALLOCATED_IPS_ON_START, List.class);
+        if (nicUuids == null || nicUuids.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(nicUuids);
+    }
+
     @Override
     public SdnControllerFactory getSdnControllerFactory(String type) {
         SdnControllerFactory factory = sdnControllerFactories.get(type);
@@ -658,6 +671,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
+        Set<String> newlyAllocatedNicUuids = getNewlyAllocatedNicUuidsForStart(spec);
         Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
         for (VmNicInventory nic : nics) {
             L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
@@ -667,6 +681,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
             L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
             if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            if (newlyAllocatedNicUuids != null
+                    && L2NetworkConstant.VSWITCH_TYPE_OVN_DPDK.equals(l2VO.getvSwitchType())
+                    && !newlyAllocatedNicUuids.contains(nic.getUuid())) {
                 continue;
             }
 
@@ -758,5 +778,92 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         removeLogicalPort(nicMaps, completion);
+    }
+
+    @Override
+    public void releaseNicIps(List<VmNicInventory> nics, Completion completion) {
+        if (nics == null || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
+        for (VmNicInventory nic : nics) {
+            L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
+            if (l3Vo == null) {
+                continue;
+            }
+
+            L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
+            if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByResourceUuid(
+                    l2VO.getUuid(), L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid == null) {
+                continue;
+            }
+
+            nicMaps.computeIfAbsent(controllerUuid, k -> new ArrayList<>()).add(nic);
+        }
+
+        if (nicMaps.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        releaseNicIpsFromPort(nicMaps, completion);
+    }
+
+    private void releaseNicIpsFromPort(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
+        new While<>(nicMaps.entrySet()).each((e, wcomp) -> {
+            SdnControllerVO vo = dbf.findByUuid(e.getKey(), SdnControllerVO.class);
+            if (vo == null) {
+                wcomp.addError(operr(ORG_ZSTACK_SDNCONTROLLER_10031,
+                        "cannot release SDN NIC IPs because sdn controller[uuid:%s] cannot be found", e.getKey()));
+                wcomp.allDone();
+                return;
+            }
+            SdnControllerFactory factory;
+            try {
+                factory = getSdnControllerFactory(vo.getVendorType());
+            } catch (CloudRuntimeException ex) {
+                wcomp.addError(operr(ORG_ZSTACK_SDNCONTROLLER_10032,
+                        "cannot release SDN NIC IPs because sdn controller factory[type:%s] cannot be found: %s",
+                        vo.getVendorType(), ex.getMessage()));
+                wcomp.allDone();
+                return;
+            }
+            SdnControllerL2 controller = factory.getSdnControllerL2(vo);
+            if (controller == null) {
+                wcomp.addError(operr(ORG_ZSTACK_SDNCONTROLLER_10033,
+                        "cannot release SDN NIC IPs because sdn controller L2[controllerUuid:%s, type:%s] cannot be found",
+                        vo.getUuid(), vo.getVendorType()));
+                wcomp.allDone();
+                return;
+            }
+            controller.releaseNicIps(e.getValue(), new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    wcomp.addError(errorCode);
+                    wcomp.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
     }
 }

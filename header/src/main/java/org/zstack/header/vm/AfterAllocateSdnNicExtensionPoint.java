@@ -46,4 +46,18 @@ public interface AfterAllocateSdnNicExtensionPoint {
      * @param completion success/fail callback (best-effort)
      */
     void releaseSdnNics(List<VmNicInventory> nics, Completion completion);
+
+    /**
+     * Release IP only for NICs whose VM is being destroyed but NIC VO is retained (Recover policy).
+     * The segment port itself is kept; only the IP binding is released so the port can be
+     * re-assigned an IP when the VM starts again after recovery.
+     *
+     * Default is a no-op; only SDN controllers that manage IP allocation (e.g. ZNS) override this.
+     *
+     * @param nics NICs to release IP from (implementation filters SDN NICs internally)
+     * @param completion success/fail callback (best-effort)
+     */
+    default void releaseNicIps(List<VmNicInventory> nics, Completion completion) {
+        completion.success();
+    }
 }

@@ -66,6 +66,11 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             }
         }
 
+        VmInstanceDeletionPolicy deletionPolicy =
+                VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())
+                        ? getDeletionPolicy(spec, data)
+                        : VmInstanceDeletionPolicy.Direct;
+
         new While<>(msgs).each((returnIpMsg, completion) -> bus.send(returnIpMsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -83,7 +88,6 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                 for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                     VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                     if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
-                        VmInstanceDeletionPolicy deletionPolicy = getDeletionPolicy(spec, data);
                         if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                             nicsToDelete.add(vo);
                         } else {
@@ -99,7 +103,7 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                     releasedNics.add(nic);
                 }
 
-                callReleaseSdnNics(releasedNics, new Completion(chain) {
+                Completion releaseDone = new Completion(chain) {
                     @Override
                     public void success() {
                         nicsToDelete.forEach(dbf::remove);
@@ -112,7 +116,46 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                         nicsToDelete.forEach(dbf::remove);
                         chain.next();
                     }
-                });
+                };
+
+                if (shouldReleaseSdnNicIps(deletionPolicy)) {
+                    callReleaseSdnNicIps(releasedNics, releaseDone);
+                } else {
+                    callReleaseSdnNics(releasedNics, releaseDone);
+                }
+            }
+        });
+    }
+
+    private boolean shouldReleaseSdnNicIps(VmInstanceDeletionPolicy deletionPolicy) {
+        return deletionPolicy == VmInstanceDeletionPolicy.Delay
+                || deletionPolicy == VmInstanceDeletionPolicy.Never;
+    }
+
+    private void callReleaseSdnNicIps(List<VmNicInventory> nics, Completion completion) {
+        List<AfterAllocateSdnNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterAllocateSdnNicExtensionPoint.class);
+        if (exts.isEmpty() || nics.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(exts).each((ext, wcomp) -> {
+            ext.releaseNicIps(nics, new Completion(wcomp) {
+                @Override
+                public void success() {
+                    wcomp.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("releaseNicIps extension failed: %s, continue", errorCode));
+                    wcomp.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
             }
         });
     }

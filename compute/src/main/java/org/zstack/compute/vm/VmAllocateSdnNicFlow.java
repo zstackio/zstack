@@ -12,12 +12,15 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.network.l3.UsedIpInventory;
+import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -47,6 +50,12 @@ public class VmAllocateSdnNicFlow implements Flow {
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final List<VmNicInventory> nics = spec.getDestNics();
+        List<UsedIpInventory> allocatedIpsOnStart = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
+        if (allocatedIpsOnStart != null) {
+            spec.putExtensionData(SdnControllerConstant.ALLOCATED_IPS_ON_START, allocatedIpsOnStart.stream()
+                    .map(UsedIpInventory::getVmNicUuid)
+                    .collect(Collectors.toList()));
+        }
 
         if (nics == null || nics.isEmpty()) {
             trigger.next();
