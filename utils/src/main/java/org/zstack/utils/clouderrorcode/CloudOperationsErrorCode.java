@@ -16229,4 +16229,6 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_DGPU_10011 = "ORG_ZSTACK_DGPU_10011";
 
     public static final String ORG_ZSTACK_DGPU_10012 = "ORG_ZSTACK_DGPU_10012";
+
+    public static final String ORG_ZSTACK_DGPU_10013 = "ORG_ZSTACK_DGPU_10013";
 }

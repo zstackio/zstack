@@ -4723,6 +4723,7 @@
   "ORG_ZSTACK_DGPU_10010": "Available License not found, please apply addon license for product dGPU.",
   "ORG_ZSTACK_DGPU_10011": "Addon license for product dGPU has expired, please renew it.",
   "ORG_ZSTACK_DGPU_10012": "Insufficient dGPU GPU number licensed. Your license permits %d GPU, there are %d GPU used, shared: %d, need: %d.",
+  "ORG_ZSTACK_DGPU_10013": "dGPU AddOn License is available, but no GPU number quota is granted. Please update the dGPU AddOn License, or request dGPU GPU number capacity from License Server for the current node.",
   "ORG_ZSTACK_AI_10159": "Model service instance[UUID: %s] failed to start within %s seconds. Reason: %s",
   "ORG_ZSTACK_AI_10138": "Requested CPU count[%s] exceeds the CPU limit[%s]",
   "ORG_ZSTACK_AI_10139": "Requested memory size[%s] exceeds the memory limit[%s]",
