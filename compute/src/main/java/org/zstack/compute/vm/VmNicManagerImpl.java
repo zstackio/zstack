@@ -293,30 +293,28 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
 
         if (L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2nw.getvSwitchType())) {
-            List<String> znsNicModeTags = new ArrayList<>();
+            List<String> znsNicModes = new ArrayList<>();
             if (vmSystemTags != null) {
-                znsNicModeTags.addAll(vmSystemTags.stream()
+                znsNicModes.addAll(vmSystemTags.stream()
                         .filter(Objects::nonNull)
                         .map(String::trim)
-                        .filter(tag -> tag.startsWith(L2NetworkConstant.ZNS_NIC_MODE_TAG_PREFIX))
+                        .filter(VmSystemTags.ZNS_NIC_MODE::isMatch)
+                        .map(tag -> VmSystemTags.ZNS_NIC_MODE.getTokenByTag(tag, VmSystemTags.ZNS_NIC_MODE_TOKEN))
                         .collect(Collectors.toList()));
             }
-            znsNicModeTags.addAll(Q.New(SystemTagVO.class)
-                    .select(SystemTagVO_.tag)
-                    .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
-                    .eq(SystemTagVO_.resourceUuid, vmUuid)
-                    .like(SystemTagVO_.tag, L2NetworkConstant.ZNS_NIC_MODE_TAG_PREFIX + "%")
-                    .listValues());
+            znsNicModes.addAll(VmSystemTags.ZNS_NIC_MODE.getTags(vmUuid).stream()
+                    .map(tag -> VmSystemTags.ZNS_NIC_MODE.getTokenByTag(tag, VmSystemTags.ZNS_NIC_MODE_TOKEN))
+                    .collect(Collectors.toList()));
 
-            for (String tag : znsNicModeTags) {
-                if (!L2NetworkConstant.ZNS_NIC_MODE_DPDK_TAG.equals(tag) && !L2NetworkConstant.ZNS_NIC_MODE_KERNEL_TAG.equals(tag)) {
+            for (String mode : znsNicModes) {
+                if (!VmInstanceConstant.ZNS_NIC_MODE_DPDK.equals(mode) && !VmInstanceConstant.ZNS_NIC_MODE_KERNEL.equals(mode)) {
                     throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10257,
-                            "invalid znsNicMode system tag[%s], valid values are [%s, %s]",
-                            tag, L2NetworkConstant.ZNS_NIC_MODE_DPDK_TAG, L2NetworkConstant.ZNS_NIC_MODE_KERNEL_TAG));
+                            "invalid znsNicMode[%s], valid values are [%s, %s]",
+                            mode, VmInstanceConstant.ZNS_NIC_MODE_DPDK, VmInstanceConstant.ZNS_NIC_MODE_KERNEL));
                 }
             }
 
-            boolean enableZnsDpdk = znsNicModeTags.contains(L2NetworkConstant.ZNS_NIC_MODE_DPDK_TAG);
+            boolean enableZnsDpdk = znsNicModes.contains(VmInstanceConstant.ZNS_NIC_MODE_DPDK);
             logger.debug(String.format("create %s on zns l3 network[uuid:%s] inside VmAllocateNicFlow",
                     enableZnsDpdk ? "dpdk vhostuser nic" : "vnic", l3nw.getUuid()));
             return vSwitchType.getVmNicType(enableZnsDpdk ? VmNicType.VmNicSubType.VHOSTUSER : VmNicType.VmNicSubType.NONE);

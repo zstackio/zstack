@@ -321,6 +321,10 @@ public class VmSystemTags {
 
     public static PatternedSystemTag VM_MEMORY_ACCESS_MODE_SHARED = new PatternedSystemTag(("vmMemoryAccessModeShared"), VmInstanceVO.class);
 
+    public static String ZNS_NIC_MODE_TOKEN = "znsNicMode";
+    public static PatternedSystemTag ZNS_NIC_MODE = new PatternedSystemTag(
+            String.format("%s::{%s}", ZNS_NIC_MODE_TOKEN, ZNS_NIC_MODE_TOKEN), VmInstanceVO.class);
+
     public static String IFACE_ID_TOKEN = "ifaceId";
     public static PatternedSystemTag IFACE_ID = new PatternedSystemTag(
             String.format("ifaceId::{%s}", IFACE_ID_TOKEN), VmNicVO.class);
