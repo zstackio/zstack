@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
     `name` varchar(255) NOT NULL,
     `version` varchar(255) DEFAULT NULL,
     `platform` varchar(255) DEFAULT NULL,
+    `framework` varchar(255) DEFAULT NULL,
     `size` bigint DEFAULT NULL,
     `projectId` varchar(255) DEFAULT NULL,
     `projectName` varchar(255) DEFAULT NULL,
@@ -171,6 +172,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
     CONSTRAINT `fkCdnModelServiceTemplateVOModelServiceVO` FOREIGN KEY (`modelServiceUuid`)
         REFERENCES `zstack`.`ModelServiceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CALL ADD_COLUMN('CdnModelServiceTemplateVO', 'framework', 'varchar(255)', 1, NULL);
 
 -- dGPU billing support tables
 
