@@ -353,7 +353,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`VmModelMountVO` (
     `mountPath`       VARCHAR(512)  NOT NULL,
     `sourcePath`      VARCHAR(1024) NOT NULL,
     `status`          VARCHAR(32)   NOT NULL,
-    `lastAttachedEpoch` BIGINT      DEFAULT NULL,
     `accountUuid`     VARCHAR(32)   DEFAULT NULL,
     `createDate`      TIMESTAMP     NOT NULL DEFAULT '0000-00-00 00:00:00',
     `lastOpDate`      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
