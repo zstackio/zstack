@@ -3878,6 +3878,7 @@ public class KVMHost extends HostBase implements Host {
         cmd.setUuid(vminv.getUuid());
         cmd.setType(msg.getType());
         cmd.setTimeout(120);
+        cmd.setIgnoreNotFoundError(msg.isIgnoreNotFoundError());
         cmd.setVmNics(vminv.getVmNics());
 
         try {
