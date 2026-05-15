@@ -3328,6 +3328,7 @@ public class KVMAgentCommands {
         private String type;
         @GrayVersion(value = "5.0.0")
         private long timeout;
+        @GrayVersion(value = "5.5.22")
         private boolean ignoreNotFound;
         private List<VmNicInventory> vmNics;
 
