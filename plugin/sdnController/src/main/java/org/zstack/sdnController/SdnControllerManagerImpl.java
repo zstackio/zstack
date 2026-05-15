@@ -53,7 +53,6 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         AfterAllocateSdnNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
-    private static final String ALLOCATED_IPS_ON_START = "org.zstack.compute.vm.VmAllocateNicForStartingVmFlow";
 
     @Autowired
     private CloudBus bus;
@@ -474,7 +473,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return null;
         }
 
-        List<String> nicUuids = spec.getExtensionData(ALLOCATED_IPS_ON_START, List.class);
+        List<String> nicUuids = spec.getExtensionData(SdnControllerConstant.ALLOCATED_IPS_ON_START, List.class);
         if (nicUuids == null || nicUuids.isEmpty()) {
             return Collections.emptySet();
         }
