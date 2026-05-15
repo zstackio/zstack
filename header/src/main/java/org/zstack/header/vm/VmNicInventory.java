@@ -40,6 +40,8 @@ public class VmNicInventory implements Serializable {
     @Deprecated
     private Integer ipVersion;
     private String driverType;
+    @APINoSee
+    private String interfaceId;
     private List<UsedIpInventory> usedIps;
     private String internalName;
     private Integer deviceId;
@@ -221,6 +223,14 @@ public class VmNicInventory implements Serializable {
 
     public void setDriverType(String driverType) {
         this.driverType = driverType;
+    }
+
+    public String getInterfaceId() {
+        return interfaceId;
+    }
+
+    public void setInterfaceId(String interfaceId) {
+        this.interfaceId = interfaceId;
     }
 
     public String getType() {
