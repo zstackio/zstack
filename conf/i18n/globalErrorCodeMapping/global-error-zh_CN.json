@@ -4722,6 +4722,7 @@
   "ORG_ZSTACK_DGPU_10010": "未找到可用的 dGPU AddOn License，请为 dGPU 产品申请并上传对应授权。",
   "ORG_ZSTACK_DGPU_10011": "dGPU 产品的 AddOn License 已过期，请及时续期。",
   "ORG_ZSTACK_DGPU_10012": "dGPU 授权 GPU 数量不足。License 允许 %d 个 GPU，当前已使用 %d 个，其他节点共享使用 %d 个，本次还需要 %d 个。",
+  "ORG_ZSTACK_DGPU_10013": "dGPU AddOn License 已存在，但未授予 GPU 数量授权。请更新 dGPU AddOn License，或从 License Server 为当前节点申请 dGPU GPU 数量授权。",
   "ORG_ZSTACK_AI_10138": "请求 CPU 数量[%s]超过 CPU 上限[%s]",
   "ORG_ZSTACK_AI_10139": "请求内存大小[%s]超过内存上限[%s]",
   "ORG_ZSTACK_AI_10140": "请求 CPU 数量[%s] 不能低于最小保证值，配置最小值: %s，实际最小值: %s（max(cpuNum × 20%%, 配置最小值)）",
