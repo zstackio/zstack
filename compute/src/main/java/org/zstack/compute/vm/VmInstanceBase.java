@@ -46,6 +46,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -2234,23 +2235,32 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        class SetL3SecurityGroupSystemTag {
-            private boolean isSet = false;
+        class SetVmSystemTags {
+            private List<SystemTagInventory> createdTags = new ArrayList<>();
 
             void set () {
                 if (msg instanceof APIAttachL3NetworkToVmMsg) {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+                    if (amsg.getSystemTags() == null || amsg.getSystemTags().isEmpty()) {
+                        return;
+                    }
 
-                    if (amsg.hasSystemTag(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF::isMatch)) {
-                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
-                        isSet = true;
+                    List<String> vmSystemTags = tagMgr.filterSystemTags(
+                            amsg.getSystemTags(), VmInstanceVO.class.getSimpleName());
+
+                    for (String tag : vmSystemTags) {
+                        SystemTagInventory created = tagMgr.createNonInherentSystemTag(
+                                self.getUuid(), tag, VmInstanceVO.class.getSimpleName());
+                        if (created != null) {
+                            createdTags.add(created);
+                        }
                     }
                 }
             }
 
             void rollback() {
-                if (isSet) {
-                    VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(self.getUuid());
+                for (SystemTagInventory tag : createdTags) {
+                    tagMgr.deleteSystemTag(tag.getUuid());
                 }
             }
         }
@@ -2284,7 +2294,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         setStaticIp.set();
         Defer.guard(setStaticIp::rollback);
 
-        final SetL3SecurityGroupSystemTag setSystemTag = new SetL3SecurityGroupSystemTag();
+        final SetVmSystemTags setSystemTag = new SetVmSystemTags();
         setSystemTag.set();
         Defer.guard(setSystemTag::rollback);
 
@@ -9270,4 +9280,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-
