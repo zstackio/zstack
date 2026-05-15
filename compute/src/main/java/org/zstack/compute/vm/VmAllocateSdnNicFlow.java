@@ -12,12 +12,14 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.progress.ProgressReportService.taskProgress;
 
@@ -37,6 +39,7 @@ import static org.zstack.core.progress.ProgressReportService.taskProgress;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VmAllocateSdnNicFlow implements Flow {
     private static final CLogger logger = Utils.getLogger(VmAllocateSdnNicFlow.class);
+    public static final String ALLOCATED_IPS_ON_START = VmAllocateNicForStartingVmFlow.class.getName();
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -47,6 +50,12 @@ public class VmAllocateSdnNicFlow implements Flow {
 
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         final List<VmNicInventory> nics = spec.getDestNics();
+        List<UsedIpInventory> allocatedIpsOnStart = (List<UsedIpInventory>) data.get(VmAllocateNicForStartingVmFlow.class);
+        if (allocatedIpsOnStart != null) {
+            spec.putExtensionData(ALLOCATED_IPS_ON_START, allocatedIpsOnStart.stream()
+                    .map(UsedIpInventory::getVmNicUuid)
+                    .collect(Collectors.toList()));
+        }
 
         if (nics == null || nics.isEmpty()) {
             trigger.next();

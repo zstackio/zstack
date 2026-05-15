@@ -53,6 +53,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         AfterAllocateSdnNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
+    private static final String ALLOCATED_IPS_ON_START = "org.zstack.compute.vm.VmAllocateNicForStartingVmFlow";
 
     @Autowired
     private CloudBus bus;
@@ -468,6 +469,19 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         return vSwitchType.getSdnControllerType() == null;
     }
 
+    private Set<String> getNewlyAllocatedNicUuidsForStart(VmInstanceSpec spec) {
+        if (spec.getCurrentVmOperation() != VmInstanceConstant.VmOperation.Start) {
+            return null;
+        }
+
+        List<String> nicUuids = spec.getExtensionData(ALLOCATED_IPS_ON_START, List.class);
+        if (nicUuids == null || nicUuids.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<>(nicUuids);
+    }
+
     @Override
     public SdnControllerFactory getSdnControllerFactory(String type) {
         SdnControllerFactory factory = sdnControllerFactories.get(type);
@@ -658,6 +672,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
+        Set<String> newlyAllocatedNicUuids = getNewlyAllocatedNicUuidsForStart(spec);
         Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
         for (VmNicInventory nic : nics) {
             L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
@@ -667,6 +682,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
             L2NetworkVO l2VO = dbf.findByUuid(l3Vo.getL2NetworkUuid(), L2NetworkVO.class);
             if (l2VO == null || shouldSkipSdnForNic(l2VO)) {
+                continue;
+            }
+
+            if (newlyAllocatedNicUuids != null
+                    && L2NetworkConstant.VSWITCH_TYPE_OVN_DPDK.equals(l2VO.getvSwitchType())
+                    && !newlyAllocatedNicUuids.contains(nic.getUuid())) {
                 continue;
             }
 
