@@ -5804,6 +5804,13 @@ public class KVMHost extends HostBase implements Host {
                         dhcpChecker.setTargetIp(getSelf().getManagementIp());
                         dhcpChecker.setFilePath(KVMConstant.DHCP_BIN_FILE_PATH);
 
+                        SshFileExistChecker nestedKvmConfChecker = new SshFileExistChecker();
+                        nestedKvmConfChecker.setUsername(getSelf().getUsername());
+                        nestedKvmConfChecker.setPassword(getSelf().getPassword());
+                        nestedKvmConfChecker.setSshPort(getSelf().getPort());
+                        nestedKvmConfChecker.setTargetIp(getSelf().getManagementIp());
+                        nestedKvmConfChecker.setFilePath(KVMConstant.NESTED_KVM_CONF_FILE_PATH);
+
                         SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
                         chronyChecker.setTargetIp(getSelf().getManagementIp());
                         chronyChecker.setUsername(getSelf().getUsername());
@@ -5834,6 +5841,12 @@ public class KVMHost extends HostBase implements Host {
                         AnsibleRunner runner = new AnsibleRunner();
                         runner.installChecker(checker);
                         runner.installChecker(dhcpChecker);
+                        String architecture = getSelf().getArchitecture();
+                        if (CpuArchitecture.x86_64.name().equals(architecture)) {
+                            runner.installChecker(nestedKvmConfChecker);
+                        } else if (architecture == null) {
+                            logger.debug(String.format("skip nested KVM config checker for host[uuid:%s] because architecture is null", getSelf().getUuid()));
+                        }
                         runner.installChecker(chronyChecker);
                         runner.installChecker(repoChecker);
                         runner.installChecker(callbackChecker);
