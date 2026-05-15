@@ -4996,6 +4996,8 @@ public class KVMAgentCommands {
         public Map<String, String> nicMap = new HashMap<>();
         @GrayVersion(value = "5.4.0")
         public Map<String, String> nicVmInstanceUuidMap = new HashMap<>();
+        @GrayVersion(value = "5.5.22")
+        public Map<String, String> ifaceIdMap = new HashMap<>();
     }
 
     public static class OvsAddPortRsp extends AgentResponse {
@@ -5008,6 +5010,8 @@ public class KVMAgentCommands {
         public Map<String, String> nicMap = new HashMap<>();
         @GrayVersion(value = "5.4.0")
         public String vmUuid;
+        @GrayVersion(value = "5.5.22")
+        public Map<String, String> ifaceIdMap = new HashMap<>();
     }
 
     public static class OvsSyncPortRsp extends AgentResponse {
