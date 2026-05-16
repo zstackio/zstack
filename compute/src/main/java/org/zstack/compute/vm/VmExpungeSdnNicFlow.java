@@ -37,7 +37,7 @@ public class VmExpungeSdnNicFlow extends NoRollbackFlow {
             return;
         }
 
-        releaseSdnNics(nics, new Completion(trigger) {
+        expungeSdnNics(nics, new Completion(trigger) {
             @Override
             public void success() {
                 trigger.next();
@@ -45,20 +45,20 @@ public class VmExpungeSdnNicFlow extends NoRollbackFlow {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("releaseSdnNics failed during vm expunge: %s", errorCode));
+                logger.warn(String.format("expungeSdnNics failed during vm expunge: %s", errorCode));
                 trigger.fail(errorCode);
             }
         });
     }
 
-    private void releaseSdnNics(List<VmNicInventory> nics, Completion completion) {
+    private void expungeSdnNics(List<VmNicInventory> nics, Completion completion) {
         List<AfterAllocateSdnNicExtensionPoint> exts = pluginRgty.getExtensionList(AfterAllocateSdnNicExtensionPoint.class);
         if (exts.isEmpty()) {
             completion.success();
             return;
         }
 
-        new While<>(exts).each((ext, wcomp) -> ext.releaseSdnNics(nics, new Completion(wcomp) {
+        new While<>(exts).each((ext, wcomp) -> ext.expungeSdnNics(nics, new Completion(wcomp) {
             @Override
             public void success() {
                 wcomp.done();
@@ -66,7 +66,7 @@ public class VmExpungeSdnNicFlow extends NoRollbackFlow {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("releaseSdnNics extension failed during vm expunge: %s", errorCode));
+                logger.warn(String.format("expungeSdnNics extension failed during vm expunge: %s", errorCode));
                 wcomp.addError(errorCode);
                 wcomp.done();
             }
