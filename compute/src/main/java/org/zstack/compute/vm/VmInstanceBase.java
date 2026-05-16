@@ -1265,15 +1265,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        final VmInstanceInventory vm = getSelfInventory();
-                        final VmNicInventory nic = VmNicInventory.valueOf(targetNic);
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class),
-                                new ForEachFunction<VmIpChangedExtensionPoint>() {
-                                    @Override
-                                    public void run(VmIpChangedExtensionPoint ext) {
-                                        ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
-                                    }
-                                });
+                        notifyVmIpChanged(targetNic.getUuid(), oldIpMap, newIpMap);
                         trigger.next();
                     }
                 });
@@ -1297,6 +1289,34 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         }).start();
+    }
+
+    private void notifyVmIpChanged(String vmNicUuid, Map<Integer, UsedIpInventory> oldIpMap, Map<Integer, UsedIpInventory> newIpMap) {
+        final VmInstanceInventory vm = getSelfInventory();
+        VmNicVO latestNic = dbf.findByUuid(vmNicUuid, VmNicVO.class);
+        if (latestNic == null) {
+            return;
+        }
+
+        final VmNicInventory nic = VmNicInventory.valueOf(latestNic);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class),
+                new ForEachFunction<VmIpChangedExtensionPoint>() {
+                    @Override
+                    public void run(VmIpChangedExtensionPoint ext) {
+                        ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
+                    }
+                });
+    }
+
+    private UsedIpInventory toUsedIpInventory(UsedIpVO ipvo) {
+        UsedIpInventory ip = new UsedIpInventory();
+        ip.setIp(ipvo.getIp());
+        ip.setGateway(ipvo.getGateway());
+        ip.setNetmask(ipvo.getNetmask());
+        ip.setL3NetworkUuid(ipvo.getL3NetworkUuid());
+        ip.setUuid(ipvo.getUuid());
+        ip.setIpVersion(ipvo.getIpVersion());
+        return ip;
     }
 
     private void handle(final ExpungeVmMsg msg) {
@@ -3648,6 +3668,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                         // in dual stack l3 , keep the old ip which not set in msg
                         List<UsedIpVO> voRemoveList = new ArrayList<>();
                         List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
+                        Map<Integer, UsedIpInventory> oldIpMap = new HashMap<>();
+                        Map<Integer, UsedIpInventory> newIpMap = new HashMap<>();
                         if (msg.getIp() == null && msg.getIp6() == null) {
                             voRemoveList.addAll(voOldList);
                             nicVO.setUsedIpUuid(null);
@@ -3709,9 +3731,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
                             }
                         }
+                        for (UsedIpVO vo : voRemoveList) {
+                            oldIpMap.put(vo.getIpVersion(), toUsedIpInventory(vo));
+                        }
+                        for (UsedIpVO vo : voNewList) {
+                            newIpMap.put(vo.getIpVersion(), toUsedIpInventory(vo));
+                        }
                         dbf.persistCollection(voNewList);
                         dbf.update(nicVO);
                         dbf.removeCollection(voRemoveList, UsedIpVO.class);
+                        notifyVmIpChanged(nicVO.getUuid(), oldIpMap, newIpMap);
                         trigger.next();
                     }
                 });
