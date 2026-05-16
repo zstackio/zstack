@@ -202,9 +202,10 @@ public class LongJobUtils {
         return recoverable instanceof Boolean && (Boolean) recoverable;
     }
 
-    private static void setExecuteTimeIfNeed(LongJobVO job) {
+    static void setExecuteTimeIfNeed(LongJobVO job) {
         if (job.getExecuteTime() == null) {
-            long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
+            long startTime = job.getCreateDate() == null ? System.currentTimeMillis() : job.getCreateDate().getTime();
+            long time = (System.currentTimeMillis() - startTime) / 1000;
             job.setExecuteTime(Long.max(time, 1));
             logger.info(String.format("longjob [uuid:%s] set execute time:%d.", job.getUuid(), time));
         }

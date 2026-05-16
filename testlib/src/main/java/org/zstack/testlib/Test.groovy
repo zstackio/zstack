@@ -635,6 +635,8 @@ abstract class Test extends ApiHelper implements Retry {
     static void handleHttp(HttpServletRequest request, HttpServletResponse response) {
         if (WebBeanConstructor.WEB_HOOK_PATH.toString().contains(request.getRequestURI())) {
             ZSClient.webHookCallback(request, response)
+        } else if (currentEnvSpec == null) {
+            response.sendError(HttpServletResponse.SC_NOT_FOUND)
         } else {
             currentEnvSpec.handleSimulatorHttpRequests(request, response)
         }
