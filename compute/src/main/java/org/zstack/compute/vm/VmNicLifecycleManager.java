@@ -303,11 +303,6 @@ public class VmNicLifecycleManager implements
 
     @Override
     public void preReleaseVmResource(VmInstanceSpec spec, Completion completion) {
-        if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Reboot) {
-            completion.success();
-            return;
-        }
-
         doCleanup(spec, new NoErrorCompletion(completion) {
             @Override
             public void done() {
