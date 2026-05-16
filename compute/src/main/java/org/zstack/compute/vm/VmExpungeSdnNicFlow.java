@@ -68,7 +68,7 @@ public class VmExpungeSdnNicFlow extends NoRollbackFlow {
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("releaseSdnNics extension failed during vm expunge: %s", errorCode));
                 wcomp.addError(errorCode);
-                wcomp.allDone();
+                wcomp.done();
             }
         })).run(new WhileDoneCompletion(completion) {
             @Override
