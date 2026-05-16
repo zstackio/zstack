@@ -77,22 +77,28 @@ public class VmNicLifecycleManager implements
         }
 
         long start = System.currentTimeMillis();
-        ext.setupOnHost(context, hostUuid, nics, new Completion(completion) {
-            @Override
-            public void success() {
-                logger.debug(String.format("[VmNicLifecycle] %s.setupOnHost(host=%s, nics=%d) " +
-                                "completed in %dms", ext.getClass().getSimpleName(), hostUuid,
-                        nics.size(), System.currentTimeMillis() - start));
-                runSetup(context, it, hostUuid, allNics, completion);
-            }
+        try {
+            ext.setupOnHost(context, hostUuid, nics, new Completion(completion) {
+                @Override
+                public void success() {
+                    logger.debug(String.format("[VmNicLifecycle] %s.setupOnHost(host=%s, nics=%d) " +
+                                    "completed in %dms", ext.getClass().getSimpleName(), hostUuid,
+                            nics.size(), System.currentTimeMillis() - start));
+                    runSetup(context, it, hostUuid, allNics, completion);
+                }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("[VmNicLifecycle] %s.setupOnHost(host=%s) failed: %s",
-                        ext.getClass().getSimpleName(), hostUuid, errorCode));
-                completion.fail(errorCode);
-            }
-        });
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("[VmNicLifecycle] %s.setupOnHost(host=%s) failed: %s",
+                            ext.getClass().getSimpleName(), hostUuid, errorCode));
+                    completion.fail(errorCode);
+                }
+            });
+        } catch (Throwable t) {
+            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR,
+                    "%s.setupOnHost(host=%s) threw exception: %s",
+                    ext.getClass().getSimpleName(), hostUuid, t.getMessage()));
+        }
     }
 
     private void runPreMigrate(Iterator<VmNicLifecycleExtensionPoint> it,
@@ -117,22 +123,28 @@ public class VmNicLifecycleManager implements
         }
 
         long start = System.currentTimeMillis();
-        ext.preMigrate(srcHostUuid, destHostUuid, nics, new Completion(completion) {
-            @Override
-            public void success() {
-                logger.debug(String.format("[VmNicLifecycle] %s.preMigrate(src=%s, dest=%s, nics=%d) " +
-                                "completed in %dms", ext.getClass().getSimpleName(),
-                        srcHostUuid, destHostUuid, nics.size(), System.currentTimeMillis() - start));
-                runPreMigrate(it, srcHostUuid, destHostUuid, allNics, completion);
-            }
+        try {
+            ext.preMigrate(srcHostUuid, destHostUuid, nics, new Completion(completion) {
+                @Override
+                public void success() {
+                    logger.debug(String.format("[VmNicLifecycle] %s.preMigrate(src=%s, dest=%s, nics=%d) " +
+                                    "completed in %dms", ext.getClass().getSimpleName(),
+                            srcHostUuid, destHostUuid, nics.size(), System.currentTimeMillis() - start));
+                    runPreMigrate(it, srcHostUuid, destHostUuid, allNics, completion);
+                }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("[VmNicLifecycle] %s.preMigrate(src=%s, dest=%s) failed: %s",
-                        ext.getClass().getSimpleName(), srcHostUuid, destHostUuid, errorCode));
-                completion.fail(errorCode);
-            }
-        });
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("[VmNicLifecycle] %s.preMigrate(src=%s, dest=%s) failed: %s",
+                            ext.getClass().getSimpleName(), srcHostUuid, destHostUuid, errorCode));
+                    completion.fail(errorCode);
+                }
+            });
+        } catch (Throwable t) {
+            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR,
+                    "%s.preMigrate(src=%s, dest=%s) threw exception: %s",
+                    ext.getClass().getSimpleName(), srcHostUuid, destHostUuid, t.getMessage()));
+        }
     }
 
     // ===================== fail-logged serial runner (cleanup / postMigrate / failedMigrate) =====================

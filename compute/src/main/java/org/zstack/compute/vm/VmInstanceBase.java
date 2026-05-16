@@ -99,6 +99,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
+    private static final String ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS = "AttachCreatedVmSystemTagUuids";
 
     @Autowired
     protected CloudBus bus;
@@ -1297,7 +1298,12 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void notifyVmIpChanged(String vmNicUuid, Map<Integer, UsedIpInventory> oldIpMap, Map<Integer, UsedIpInventory> newIpMap) {
-        final VmInstanceInventory vm = getSelfInventory();
+        VmInstanceVO latestVm = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (latestVm == null) {
+            return;
+        }
+        self = latestVm;
+        final VmInstanceInventory vm = VmInstanceInventory.valueOf(latestVm);
         VmNicVO latestNic = dbf.findByUuid(vmNicUuid, VmNicVO.class);
         if (latestNic == null) {
             return;
@@ -2192,7 +2198,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     @Deferred
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void attachNic(final Message msg, final List<String> l3Uuids, final ReturnValueCompletion<VmNicInventory> completion) {
+    private void attachNic(final Message msg, final List<String> l3Uuids, final Map outerFlowData,
+                           final ReturnValueCompletion<VmNicInventory> completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (allowed != null) {
@@ -2288,6 +2295,12 @@ public class VmInstanceBase extends AbstractVmInstance {
                     tagMgr.deleteSystemTag(tag.getUuid());
                 }
             }
+
+            List<String> getCreatedTagUuids() {
+                return createdTags.stream()
+                        .map(SystemTagInventory::getUuid)
+                        .collect(Collectors.toList());
+            }
         }
 
         class SetCustomMacSystemTag {
@@ -2322,6 +2335,9 @@ public class VmInstanceBase extends AbstractVmInstance {
         final SetVmSystemTags setSystemTag = new SetVmSystemTags();
         setSystemTag.set();
         Defer.guard(setSystemTag::rollback);
+        if (outerFlowData != null && !setSystemTag.getCreatedTagUuids().isEmpty()) {
+            outerFlowData.put(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS, setSystemTag.getCreatedTagUuids());
+        }
 
         final SetCustomMacSystemTag setCustomMacSystemTag = new SetCustomMacSystemTag();
         setCustomMacSystemTag.set();
@@ -2398,6 +2414,19 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void rollbackAttachCreatedVmSystemTags(Map data) {
+        Object tagUuids = data.get(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
+        if (!(tagUuids instanceof List)) {
+            return;
+        }
+
+        for (String tagUuid : (List<String>) tagUuids) {
+            tagMgr.deleteSystemTag(tagUuid);
+        }
+        data.remove(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
     }
 
     private void attachNic(final APIAttachVmNicToVmMsg msg, final ReturnValueCompletion<VmNicInventory> completion) {
@@ -2584,7 +2613,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void run(FlowTrigger trigger, Map data) {
                         List<String> l3Uuids = new ArrayList<>();
                         l3Uuids.add(l3Uuid);
-                        attachNic((Message) msg, l3Uuids, new ReturnValueCompletion<VmNicInventory>(trigger) {
+                        attachNic((Message) msg, l3Uuids, data, new ReturnValueCompletion<VmNicInventory>(trigger) {
                             @Override
                             public void success(VmNicInventory returnValue) {
                                 data.put(vmNicInvKey, returnValue);
@@ -2610,11 +2639,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         doDetachNic(nic, true, true, new Completion(trigger) {
                             @Override
                             public void success() {
+                                rollbackAttachCreatedVmSystemTags(data);
                                 trigger.rollback();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                rollbackAttachCreatedVmSystemTags(data);
                                 trigger.rollback();
                             }
                         });
@@ -2658,6 +2689,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }).error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        rollbackAttachCreatedVmSystemTags(data);
                         completion.fail(errCode);
                         chain.next();
                     }

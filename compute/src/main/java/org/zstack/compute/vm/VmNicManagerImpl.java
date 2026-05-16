@@ -306,7 +306,13 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                     .map(tag -> VmSystemTags.ZNS_NIC_MODE.getTokenByTag(tag, VmSystemTags.ZNS_NIC_MODE_TOKEN))
                     .collect(Collectors.toList()));
 
-            for (String mode : znsNicModes) {
+            List<String> normalizedModes = znsNicModes.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .distinct()
+                    .collect(Collectors.toList());
+
+            for (String mode : normalizedModes) {
                 if (!VmInstanceConstant.ZNS_NIC_MODE_DPDK.equals(mode) && !VmInstanceConstant.ZNS_NIC_MODE_KERNEL.equals(mode)) {
                     throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10257,
                             "invalid znsNicMode[%s], valid values are [%s, %s]",
@@ -314,7 +320,12 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
                 }
             }
 
-            boolean enableZnsDpdk = znsNicModes.contains(VmInstanceConstant.ZNS_NIC_MODE_DPDK);
+            if (normalizedModes.size() > 1) {
+                throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10257,
+                        "conflicting znsNicMode tags %s, only one mode is allowed", normalizedModes));
+            }
+
+            boolean enableZnsDpdk = normalizedModes.contains(VmInstanceConstant.ZNS_NIC_MODE_DPDK);
             logger.debug(String.format("create %s on zns l3 network[uuid:%s] inside VmAllocateNicFlow",
                     enableZnsDpdk ? "dpdk vhostuser nic" : "vnic", l3nw.getUuid()));
             return vSwitchType.getVmNicType(enableZnsDpdk ? VmNicType.VmNicSubType.VHOSTUSER : VmNicType.VmNicSubType.NONE);

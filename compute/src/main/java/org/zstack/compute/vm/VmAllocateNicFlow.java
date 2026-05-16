@@ -100,7 +100,8 @@ public class VmAllocateNicFlow implements Flow {
             int deviceId = deviceIdBitmap.nextClearBit(0);
             deviceIdBitmap.set(deviceId);
             MacOperator mo = new MacOperator();
-            final String mac = allocateMac(mo, spec, nw, deviceId);
+            final String customMac = mo.getMac(spec.getVmInventory().getUuid(), nw.getUuid());
+            final String mac = allocateMac(customMac, deviceId);
             CustomNicOperator nicOperator = new CustomNicOperator(spec.getVmInventory().getUuid(),nw.getUuid());
             final String customNicUuid = nicOperator.getCustomNicId();
 
@@ -136,11 +137,20 @@ public class VmAllocateNicFlow implements Flow {
                             addVmNicConfig(updated, spec, nicSpec);
                         }
                     }.execute();
+                    if (customMac != null) {
+                        mo.deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nw.getUuid(), customMac);
+                    }
                     wcomp.done();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    try {
+                        dbf.removeByPrimaryKey(nicVO.getUuid(), VmNicVO.class);
+                    } catch (Throwable t) {
+                        logger.warn(String.format("failed to remove VmNicVO[uuid:%s] after before allocate extension failure",
+                                nicVO.getUuid()), t);
+                    }
                     errs.add(errorCode);
                     wcomp.allDone();
                 }
@@ -158,11 +168,8 @@ public class VmAllocateNicFlow implements Flow {
         });
     }
 
-    private String allocateMac(MacOperator mo, VmInstanceSpec spec, L3NetworkInventory nw, int deviceId) {
-        String vmUuid = spec.getVmInventory().getUuid();
-        String customMac = mo.getMac(vmUuid, nw.getUuid());
+    private String allocateMac(String customMac, int deviceId) {
         if (customMac != null) {
-            mo.deleteCustomMacSystemTag(vmUuid, nw.getUuid(), customMac);
             return customMac.toLowerCase();
         }
         return MacOperator.generateMacWithDeviceId((short) deviceId);
