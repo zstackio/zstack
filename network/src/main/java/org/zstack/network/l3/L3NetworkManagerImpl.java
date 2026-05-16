@@ -227,8 +227,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
                 if (oldmtu != null) {
-                    NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
                     SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
                     creator.recreate = true;
                     creator.inherent = false;

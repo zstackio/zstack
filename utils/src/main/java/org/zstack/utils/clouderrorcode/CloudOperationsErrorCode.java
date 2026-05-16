@@ -12070,12 +12070,14 @@ public class CloudOperationsErrorCode {
     // 10038 ZNS returned IP is already used by another NIC
     // 10039 ZNS did not return any IPs
     // 10040 ZNS did not return Cloud allocated IP version
+    // 10041 VM NIC MAC update is not supported for ZNS NICs
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10038 = "ORG_ZSTACK_NETWORK_ZNS_10038";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10039 = "ORG_ZSTACK_NETWORK_ZNS_10039";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10040 = "ORG_ZSTACK_NETWORK_ZNS_10040";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10041 = "ORG_ZSTACK_NETWORK_ZNS_10041";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
