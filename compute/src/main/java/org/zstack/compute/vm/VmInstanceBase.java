@@ -2335,9 +2335,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         final SetVmSystemTags setSystemTag = new SetVmSystemTags();
         setSystemTag.set();
         Defer.guard(setSystemTag::rollback);
-        if (outerFlowData != null && !setSystemTag.getCreatedTagUuids().isEmpty()) {
-            outerFlowData.put(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS, setSystemTag.getCreatedTagUuids());
-        }
 
         final SetCustomMacSystemTag setCustomMacSystemTag = new SetCustomMacSystemTag();
         setCustomMacSystemTag.set();
@@ -2401,6 +2398,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterAttachL3NetworkExtensionPoint.class),
                         arg -> l3s.forEach(l3 -> arg.vmAfterAttachL3Network(vm, l3)));
                 VmNicInventory nic = spec.getDestNics().get(0);
+                if (outerFlowData != null && !setSystemTag.getCreatedTagUuids().isEmpty()) {
+                    outerFlowData.put(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS, setSystemTag.getCreatedTagUuids());
+                }
                 completion.success(nic);
             }
         }).error(new FlowErrorHandler(completion) {
@@ -2411,6 +2411,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 setDefaultL3Network.rollback();
                 setStaticIp.rollback();
                 setSystemTag.rollback();
+                if (outerFlowData != null) {
+                    outerFlowData.remove(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
+                }
                 completion.fail(errCode);
             }
         }).start();
