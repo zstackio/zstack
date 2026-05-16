@@ -38,7 +38,7 @@ public class VxlanNetworkCheckerImpl implements VxlanNetworkChecker {
     }
 
     private void validate(APIChangeL2NetworkVlanIdMsg msg) {
-        if (!msg.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)){
+        if (!VxlanNetworkConstant.VXLAN_NETWORK_TYPE.equals(msg.getType())){
             return;
         }
         if (!NetworkUtils.isValidVni(msg.getVlan())) {

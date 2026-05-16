@@ -296,7 +296,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             @Override
             public void afterDestroy(VmInstanceInventory vm) {
                 if (applianceVm != null) {
-                    ApplianceVmCanonicalEvents.NewVmCreatedData data = new ApplianceVmCanonicalEvents.NewVmCreatedData();
+                    ApplianceVmCanonicalEvents.VmDestroyedData data = new ApplianceVmCanonicalEvents.VmDestroyedData();
                     data.vm = applianceVm;
                     data.fire();
                 }

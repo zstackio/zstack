@@ -37,6 +37,7 @@
 		        <value>org.zstack.compute.vm.VmAllocateVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicIpFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateSdnNicFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateCdRomFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmCreateOnHypervisorFlow</value>
@@ -68,6 +69,7 @@
                 <value>org.zstack.compute.vm.VmAllocateHostForStoppedVmFlow</value>
                 <value>org.zstack.compute.vm.VmImageSelectBackupStorageFlow</value>
                 <value>org.zstack.compute.vm.VmAllocateNicForStartingVmFlow</value>
+                <value>org.zstack.compute.vm.VmAllocateSdnNicFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePreFlow</value>
                 <value>org.zstack.compute.vm.VmStartOnHypervisorFlow</value>
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
@@ -115,6 +117,7 @@
         </property>
         <property name="expungeVmWorkFlowElements">
             <list>
+                <value>org.zstack.compute.vm.VmExpungeSdnNicFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
@@ -257,6 +260,16 @@
     <bean id="VmInstanceNumaCascadeExtension" class="org.zstack.compute.vm.VmInstanceNumaCascadeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmNicLifecycleManager" class="org.zstack.compute.vm.VmNicLifecycleManager">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmReleaseResourceExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.InstantiateResourceOnAttachingNicExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.vm.ReleaseNetworkServiceOnDetachingNicExtensionPoint" />
         </zstack:plugin>
     </bean>
 

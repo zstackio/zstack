@@ -284,6 +284,42 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw) {
+        return getVmNicType(vmUuid, l3nw, null);
+    }
+
+    @Override
+    public VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw, List<String> vmSystemTags) {
+        L2NetworkVO l2nw =  dbf.findByUuid(l3nw.getL2NetworkUuid(), L2NetworkVO.class);
+        VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
+
+        if (L2NetworkConstant.VSWITCH_TYPE_ZNS.equals(l2nw.getvSwitchType())) {
+            List<String> znsNicModes = new ArrayList<>();
+            if (vmSystemTags != null) {
+                znsNicModes.addAll(vmSystemTags.stream()
+                        .filter(Objects::nonNull)
+                        .map(String::trim)
+                        .filter(VmSystemTags.ZNS_NIC_MODE::isMatch)
+                        .map(tag -> VmSystemTags.ZNS_NIC_MODE.getTokenByTag(tag, VmSystemTags.ZNS_NIC_MODE_TOKEN))
+                        .collect(Collectors.toList()));
+            }
+            znsNicModes.addAll(VmSystemTags.ZNS_NIC_MODE.getTags(vmUuid).stream()
+                    .map(tag -> VmSystemTags.ZNS_NIC_MODE.getTokenByTag(tag, VmSystemTags.ZNS_NIC_MODE_TOKEN))
+                    .collect(Collectors.toList()));
+
+            for (String mode : znsNicModes) {
+                if (!VmInstanceConstant.ZNS_NIC_MODE_DPDK.equals(mode) && !VmInstanceConstant.ZNS_NIC_MODE_KERNEL.equals(mode)) {
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10257,
+                            "invalid znsNicMode[%s], valid values are [%s, %s]",
+                            mode, VmInstanceConstant.ZNS_NIC_MODE_DPDK, VmInstanceConstant.ZNS_NIC_MODE_KERNEL));
+                }
+            }
+
+            boolean enableZnsDpdk = znsNicModes.contains(VmInstanceConstant.ZNS_NIC_MODE_DPDK);
+            logger.debug(String.format("create %s on zns l3 network[uuid:%s] inside VmAllocateNicFlow",
+                    enableZnsDpdk ? "dpdk vhostuser nic" : "vnic", l3nw.getUuid()));
+            return vSwitchType.getVmNicType(enableZnsDpdk ? VmNicType.VmNicSubType.VHOSTUSER : VmNicType.VmNicSubType.NONE);
+        }
+
         List<String> tags = new ArrayList<>();
         tags.add(String.format("enableSRIOV::%s", l3nw.getUuid()));
         tags.add(String.format("enableVFHA::%s", l3nw.getUuid()));
@@ -295,14 +331,19 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
         logger.debug(String.format("create %s on l3 network[uuid:%s] inside VmAllocateNicFlow",
                 enableSriov ? "vf nic" : "vnic", l3nw.getUuid()));
         boolean enableVhostUser = NetworkServiceGlobalConfig.ENABLE_VHOSTUSER.value(Boolean.class);
+
+        boolean enableDpdkVhostuser = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceType, VmInstanceVO.class.getSimpleName())
+                .eq(SystemTagVO_.resourceUuid, vmUuid)
+                .eq(SystemTagVO_.tag, String.format("enableDpdkVhostuser::%s", l3nw.getUuid()))
+                .isExists();
+
         VmNicType.VmNicSubType subType = VmNicType.VmNicSubType.NONE;
         if (enableSriov) {
             subType = VmNicType.VmNicSubType.SRIOV;
-        } else if (enableVhostUser) {
+        } else if (enableVhostUser || enableDpdkVhostuser) {
             subType = VmNicType.VmNicSubType.VHOSTUSER;
         }
-        L2NetworkVO l2nw =  dbf.findByUuid(l3nw.getL2NetworkUuid(), L2NetworkVO.class);
-        VSwitchType vSwitchType = VSwitchType.valueOf(l2nw.getvSwitchType());
 
         return vSwitchType.getVmNicType(subType);
     }

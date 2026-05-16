@@ -3,13 +3,14 @@ package org.zstack.sugonSdnController.controller;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
+import org.zstack.sdnController.AbstractSdnControllerFactory;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerFactory;
 import org.zstack.sdnController.SdnControllerL2;
 import org.zstack.sdnController.SdnControllerType;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 
-public class SugonSdnControllerFactory implements SdnControllerFactory {
+public class SugonSdnControllerFactory extends AbstractSdnControllerFactory {
 
     SdnControllerType sdnControllerType = new SdnControllerType(SugonSdnControllerConstant.TF_CONTROLLER);
 
@@ -21,11 +22,6 @@ public class SugonSdnControllerFactory implements SdnControllerFactory {
         return sdnControllerType;
     }
 
-    @Override
-    public SdnControllerVO persistSdnController(SdnControllerVO vo) {
-        vo = dbf.persistAndRefresh(vo);
-        return vo;
-    }
 
     @Override
     public SdnController getSdnController(SdnControllerVO vo) {

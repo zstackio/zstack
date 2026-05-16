@@ -1,0 +1,975 @@
+= 对接ZNS SDN控制器
+
+== 总体描述
+
+当前 ZNS 与 Cloud 的集成采用混合主权模型：
+
+* 设备资源（transport zone、transport node、host switch、tenant、tenant router）以 ZNS 为真相源
+* 业务资源（L2Network、L3Network、IpRange、segment、segment port、DHCP service）以 Cloud 为真相源
+* Cloud 不再把 ZNS 上已有的 segment 反向导入为 L2/L3；首次同步和定时对账发现孤儿 segment 时，直接在 ZNS 侧清理
+* ZNS 通过反向通知驱动 SDN Controller 建档、首次同步和运行期设备资源同步；Cloud 通过 API 主动维护业务资源
+
+Cloud 与 ZNS 的核心映射关系如下：
+
+* ZNS transport zone / transport node / host switch → Cloud 侧设备资源视图与调度约束
+* ZNS tenant router → Cloud `ZnsTenantRouterVO`
+* Cloud `L2Network` ↔ ZNS segment
+* Cloud `VmNic` ↔ ZNS segment port
+* Cloud `IpRange` / DHCP / DNS / MTU ↔ ZNS segment 配置
+
+=== CMS
+Cloud 资源和 ZNS 资源之间的映射仍然通过 CMS 元数据协助建立。
+
+[source,go]
+----
+ type Cms struct {
+  CmsUuid string
+    Type    string  ### cloud/zsv/zaku/zns
+    IP      string  ### cloud mn vip
+  Role  string    ###owner, user
+    CmsResourceUuid string   ###owner, user
+ }
+
+type Segment {
+  ...
+  CmsMetaDatas []Cms `json:"cms"`
+}
+----
+
+* Cms::Type 定义 cms 类型：Cloud、ZSV、ZAKU、ZNS
+* Cms::IP 定义 cms 的 IP 地址，该字段主要用于资源识别；cms 的唯一标识仍是 CmsUuid
+* Cms::CmsUuid 定义 cmsUuid。对 Cloud 而言，该值对应 ZNS 的 `computerManagerUuid`，由 `add-compute-manager` 反向通知写入 `SdnController` systemTag
+* Cms::CmsResourceUuid 定义该 cms 系统对应的资源 UUID，用于回写 Cloud 资源标识并在对账时建立映射
+* 对业务资源（segment、segment port、DHCP service）而言，Cloud 是 owner；ZNS 不主动创建这些资源，也不应主动发送 `resourceType=SEGMENT` 通知
+* 对设备资源（transport zone、transport node、host switch、tenant、tenant router）而言，ZNS 是 owner，Cloud 仅做同步展示和引用校验
+
+=== ZNS API
+
+ZNS API 需要同时覆盖 Cloud 主调和 ZNS 反向通知两类场景：
+
+* Cloud → ZNS：创建/删除/更新 segment、segment port、tenant router 关联、DHCP、DNS、MTU、IpRange 等业务资源
+* ZNS → Cloud：通过反向通知完成 `add-compute-manager`、`wizard-init-sync`、`sync-fabric`、`sync-resource`，以及条件能力 `delete-compute-manager`
+* 查询 API 需要支持按 `cmsUuid` 过滤资源
+* 面向大规模对账的查询 API 应逐步支持 `hash_fields` / `content_hash` 轻量比对；segment port 列表还需要支持按 `host_uuid` 过滤
+
+[NOTE]
+不是所有 API 都需要以上全部能力，但所有会进入对账链路的资源都必须支持稳定的跨系统映射。
+
+=== ZNS 数据库对象
+
+由 cms 创建的资源，或者需要按 cms 查询的资源，都需要保存 cms 信息。
+一个资源可能有多个 cms 信息，表示资源可在多个 cms 之间共享。
+
+对账相关资源还需要满足以下要求：
+
+* segment / segment port 能够回写 Cloud 资源 UUID，支持孤儿资源清理
+* segment port 需要记录 `host_uuid`、`transport_node_uuid`，便于按主机维度对账
+* segment / segment port / DHCP service 在支持轻量对账时，可以根据 `hash_fields` 计算并返回 `content_hash`
+
+=== UUID 格式约定
+
+ZNS 使用带连字符的 UUID 格式（`550e8400-e29b-41d4-a716-446655440000`），Cloud 使用不带连字符的紧凑 UUID 格式（`550e8400e29b41d4a716446655440000`）。
+
+Cloud 在调用 ZNS API 时需要将 Cloud UUID 转换为 ZNS UUID 格式，在接收 ZNS 响应时需要将 ZNS UUID 转换回 Cloud 格式。
+
+== Cloud 与 ZNS 通信协议
+
+=== 传输层
+
+Cloud 通过 HTTP REST API 与 ZNS 通信，ZNS 也通过 HTTP POST 反向通知 Cloud。所有请求/响应体均为 JSON 格式。
+
+全局配置参数：
+
+[cols="2,2,2"]
+|===
+|配置项 |默认值 |说明
+
+|`zns.controller.scheme`
+|`http`
+|HTTP 或 HTTPS
+
+|`zns.controller.port`
+|`7278`
+|ZNS API 端口
+
+|`zns.controller.timeout`
+|`300000`（5分钟）
+|请求超时时间（毫秒）
+
+|`zns.notifyDebounceMs`
+|`1000`
+|ZNS 反向通知防抖窗口（毫秒）
+
+|===
+
+[NOTE]
+反向通知 endpoint 仅绑定到管理网，v1 阶段依赖管理网隔离、`computerManagerUuid` 校验和资源归属校验，不引入 token / signing。
+
+=== 异步回调模式
+
+Cloud 调用 ZNS 的业务写操作（POST/PATCH/DELETE）采用异步回调模式：
+
+....
+Cloud                                       ZNS
+  │  POST/PATCH/DELETE + headers            │
+  │  x-web-hook: <callbackUrl>              │
+  │  x-job-uuid: <taskUuid>                 │
+  │─────────────────────────────────────────►│
+  │  ◄── 202 Accepted                       │  (ZNS 立即返回)
+  │                                          │
+  │  (ZNS 异步处理完成后回调 Cloud)           │
+  │  ◄── POST <callbackUrl>                  │
+  │      { taskUuid, success, status, data } │
+  │                                          │
+  │  Cloud 根据 taskUuid 匹配到              │
+  │  对应的等待中的调用并完成                 │
+....
+
+Cloud 的读操作（GET）为同步调用，直接返回 200 + JSON body。
+ZNS 的反向通知也是同步 POST：Cloud 负责快速返回 200 / 4xx，真正的资源同步可以在 Cloud 内部异步执行。
+
+=== 反向通知
+
+ZNS 通过以下入口反向通知 Cloud：
+
+[cols="2,2,3"]
+|===
+|入口 |发送方 |用途
+
+|`POST /zns/notify/add-compute-manager`
+|ZNS
+|创建或更新 `SdnController` 建档信息，不触发资源同步
+
+|`POST /zns/notify/wizard-init-sync`
+|ZNS Wizard
+|首次同步设备资源，并清理 ZNS 侧孤儿 segment
+
+|`POST /zns/notify/sync-fabric`
+|ZNS
+|按 `scope` 触发设备资源重拉；支持 `ALL` 和 `TZ/TN/HOSTSWITCH/TENANT/TENANT_ROUTER`
+
+|`POST /zns/notify/sync-resource`
+|ZNS
+|单资源增删改通知，主要用于 tenant router / transport node 等；`SEGMENT` 通知直接拒绝
+
+|`POST /zns/notify/delete-compute-manager`
+|ZNS
+|条件能力，仅在应用市场支持卸载前钩子时启用
+
+|===
+
+=== 请求串行化
+
+对同一个 ZNS IP 的所有 API 调用通过任务链串行执行，避免并发操作导致的冲突。
+
+对 ZNS 反向通知，Cloud 会对相同 `sdnControllerUuid + scope` 的 `sync-fabric` 进行防抖合并，避免通知风暴导致重复重拉。
+
+== ZNS SDN控制器
+
+ZStack 已经定义 `SdnControllerVO`，目前已有 `H3cVcfcSdnController`、`SugonSdnController`、`OvnController`、`HuaweiIMasterSdnController` 等实现。
+
+新定义 `ZnsControllerVO`，继承 `SdnControllerVO`：
+
+* vendorType：ZNS
+* vendorVersion：用于记录当前连接的 ZNS 版本（详见 <<api-version>> 章节）
+* transportZones：关联的 `ZnsTransportZoneVO` 列表（一对多）
+* state：在 `Connecting`、`Connected`、`Syncing`、`Ready`、`Disconnected` 之间流转
+* lastError：记录通知或对账失败时的最近错误信息
+
+[NOTE]
+Cloud 通过 SystemTag 记录以下映射关系：
+
+* `computerManagerUuid::{uuid}` 在 `SdnControllerVO` 上
+* `znsSegmentUuid::{segmentUuid}` 在 `L2NetworkVO` 上
+* `znsSegmentPortUuid::{portUuid}` 在 `VmNicVO` 上
+* `znsTenantRouterUuid::{tenantRouterUuid}` 在 `L3VpcNetwork` 上
+* `znsDhcpServiceUuid::{serviceUuid}` 在开启 DHCP 的 `L3Network` 上
+
+=== 创建SDN控制器
+
+Cloud 侧接入 ZNS 的主路径不再是手工录入，而是由 ZNS 反向通知完成建档。
+原有 `APIAddSdnControllerMsg` 手工接入路径仍保留，作为反向通知失效时的兜底。
+
+==== 1. 接收 add-compute-manager 反向通知
+
+ZNS 在完成 `addComputerManager` 后，调用 `POST /zns/notify/add-compute-manager`，携带 vip、account、password、computerManagerUuid、name 等信息。
+
+==== 2. 幂等建档或更新连接信息
+
+Cloud 根据 `computerManagerUuid` 对 `SdnControllerVO` / `ZnsControllerVO` 做 insert 或 update：
+
+* 完全相同 payload：幂等成功，记录数不增加
+* `computerManagerUuid` 相同但 vip / account / password 变化：仅更新变化字段
+* 缺少关键字段：直接返回 400，不落库
+
+==== 3. 仅建档，不触发资源同步
+
+`add-compute-manager` 成功后，控制器进入 `Connecting` 状态，仅表示 Cloud 已知晓该 ZNS 控制器。
+在首次 `wizard-init-sync` 成功前，Cloud 不会同步任何设备资源，也不允许创建 ZNS L2。
+
+=== 首次同步（Wizard 触发）
+
+首次同步由 ZNS Wizard 通过 `POST /zns/notify/wizard-init-sync` 触发，而不是在建档时自动执行。
+
+==== 1. 进入 Syncing 状态
+
+Cloud 收到 `wizard-init-sync` 后，将控制器从 `Connecting` / `Connected` 置为 `Syncing`，开始全量同步设备资源。
+
+==== 2. 同步 Compute Collections、Discovered Nodes 和 Host Ref
+
+Cloud 调用 `GET /zns/api/v1/fabric/compute-collections`、`GET /zns/api/v1/fabric/discovered-nodes`，并继续追踪 host switch 相关信息，建立以下映射关系：
+
+* `HostData.managementIp`：匹配 Cloud `HostVO.managementIp`
+* `HostData.clusterId`：匹配 Cloud `ClusterVO.uuid`
+* `HostSwitchProfileData.type`：枚举值 `dpdk` 或 `kernel`，用于推导 `SdnControllerHostRefVO.vSwitchType`
+* `HostSwitchProfileData.transportZoneIds`：建立 `transportZoneUuid → Set<clusterUuid>` 反向映射
+
+`type` 与 `vSwitchType` 的映射规则如下：
+
+[cols="2,2"]
+|===
+|ZNS HostSwitchProfileData.type |Cloud SdnControllerHostRefVO.vSwitchType
+
+|`dpdk`
+|`OvsDpdk`
+
+|`kernel`
+|`OvsKernel`
+
+|其它未知值，或者 profile 查询失败
+|`ZNS`
+
+|===
+
+==== 3. 同步 Transport Zones、Tenant 和 Tenant Router
+
+Cloud 拉取 transport zone、tenant、tenant router 并持久化本地视图。`ZnsTransportZoneVO` 的主要字段如下：
+
+[cols="2,3,2"]
+|===
+|字段 |来源 |说明
+
+|`uuid`
+|transport zone UUID（转换为 Cloud 格式）
+|主键
+
+|`name`
+|transport zone 返回字段
+|transport zone 名称
+
+|`description`
+|transport zone 返回字段
+|描述信息
+
+|`type`
+|transport zone 返回字段
+|类型，典型值为 `vlan` 或 `overlay`
+
+|`physicalNetwork`
+|transport zone 返回字段
+|物理网络标识
+
+|`status`
+|transport zone 返回字段
+|当前状态
+
+|`tags`
+|transport zone 返回字段
+|标签信息
+
+|`znsSdnControllerUuid`
+|当前 `ZnsSdnControllerVO.uuid`
+|外键，关联到所属 ZNS SDN Controller
+
+|===
+
+==== 4. 清理 ZNS 孤儿 segment
+
+首次同步不会根据 ZNS segment 在 Cloud 侧创建新的 L2/L3。
+如果 ZNS 上已经存在不属于任何 Cloud L2 的 segment，Cloud 会把它们视为孤儿资源并在 ZNS 侧删除。
+
+==== 5. 完成首次同步
+
+首次同步成功后，控制器进入 `Ready` 状态；
+如果中途访问 ZNS 失败，则控制器进入 `Disconnected`，并记录 `lastError`，等待重试或手动 reconnect。
+
+=== 运行期变更通知
+
+ZNS 运行期资源变化后，通过反向通知驱动 Cloud 更新设备资源视图：
+
+* `sync-fabric`：按 `scope=ALL` 或具体类型重拉设备资源
+* `sync-resource`：处理 tenant router、transport node 等单资源级别的增删改
+* `resourceType=SEGMENT` 的通知直接拒绝，因为 segment 以 Cloud 为真相源
+
+[NOTE]
+如果通知触发的重拉过程因为网络抖动失败，Cloud 只记录错误并等待下一轮定时对账，不会立刻把控制器标记为 `Disconnected`。
+
+=== 重连SDN控制器
+
+重连（`APIReconnectSdnControllerMsg`）以 Cloud 数据库为基准，对设备资源和业务资源分别做收敛，不会根据 ZNS 当前状态在 Cloud 新建 L2/L3。
+
+==== 1. 刷新 SdnControllerHostRefVO（upsert）
+
+重连仍需重新扫描 host（包括 compute collections → discovered nodes → host switch），以处理新加入的主机或 `vSwitchType` 发生变化的主机。
+映射关系与首次同步相同，写库操作改为 upsert：
+
+[cols="3,2"]
+|===
+|情况 |操作
+
+|`SdnControllerHostRefVO` 不存在（新主机）
+|INSERT 新记录
+
+|已存在但 `vSwitchType` 或 `vtepIp` 发生变化
+|UPDATE
+
+|已存在且字段未变
+|跳过
+
+|===
+
+==== 2. 刷新设备资源
+
+调用 transport zone、tenant、tenant router 等设备资源查询 API，对本地视图做 upsert，并删除 ZNS 侧已不存在的旧记录。
+
+==== 3. Segment 协调（以 Cloud 为基准）
+
+重连以 Cloud 数据库中所有 `vSwitchType = ZNS` 的 `L2NetworkVO` 为基准，与 ZNS 侧 segment 做三路对比：
+
+[cols="2,2,3"]
+|===
+|Cloud 侧 L2NetworkVO |ZNS 侧 segment |操作
+
+|不存在
+|存在
+|调用 `DELETE /zns/api/v1/segments/{uuid}` 删除孤儿 segment
+
+|存在
+|不存在
+|调用 `POST /zns/api/v1/segments` 在 ZNS 新建 segment
+
+|存在
+|存在但参数不一致（名称、描述、transport zone、VNI、CIDR、DHCP、DNS、MTU 等）
+|调用 `PATCH /zns/api/v1/segments/{uuid}` 更新
+
+|存在
+|存在且参数一致
+|无操作
+
+|===
+
+[NOTE]
+重连不会根据 ZNS segment 在 Cloud 侧创建新的 L2Network / L3Network / IpRange。
+
+==== 4. Segment Port 协调
+
+完成 segment 协调后，对每个已与 Cloud L2 匹配的 segment，逐一协调其 port：
+
+[cols="2,2,3"]
+|===
+|Cloud 侧 VmNicVO |ZNS 侧 segment port |操作
+
+|存在
+|不存在
+|调用 `POST /zns/api/v1/segments/{uuid}/ports` 补建 port
+
+|不存在
+|存在
+|调用 `DELETE /zns/api/v1/segments/{uuid}/ports/{portUuid}` 删除孤儿 port
+
+|两侧均存在但参数有漂移
+|存在
+|按 Cloud 当前值补发更新或等待常规网卡变更流程收敛
+
+|两侧均存在且参数一致
+|存在
+|无操作
+
+|===
+
+==== 5. Tenant Router 引用收敛
+
+如果本地仍引用一个 ZNS 侧已不存在的 tenant router：
+
+* 若没有任何 `L3VpcNetwork` 引用它：删除本地 `ZnsTenantRouterVO`
+* 若仍有 `L3VpcNetwork` 引用它：保留本地记录并告警，等待运维先清理 Cloud 引用
+
+=== 心跳探活（Ping）
+
+Cloud 定期发送 `SdnControllerPingMsg`，通过调用 `GET /zns/api/v1/fabric/compute-managers/{uuid}` 验证 Computer Manager 连通性。
+
+* 验证成功：控制器保持当前可用状态
+* 验证失败：控制器状态变为 `Disconnected`
+
+=== 定时同步对账
+
+定时对账按照资源主权拆成两条链路：
+
+* 设备资源：以 ZNS 为真相源，Cloud 删除本地多余记录、补齐缺失记录
+* 业务资源：以 Cloud 为真相源，Cloud 修正 ZNS 侧的 segment / segment port / DHCP 漂移，并清理孤儿业务资源
+
+对账时的核心规则：
+
+* ZNS 上存在、Cloud 不存在的 segment：直接删除，不反向导入 Cloud
+* ZNS 上存在、Cloud 不存在的 segment port：按孤儿 port 清理
+* Cloud 上仍引用已删除 tenant router：保留本地记录并告警，不强制删除
+* 当 ZNS 提供 `hash_fields` / `content_hash` 能力后，可先做轻量比对，再决定是否拉全量数据
+
+=== 删除SDN控制器
+
+Cloud 主动删除 ZNS SDN Controller 时，默认走 cascade 路径：
+
+. 先级联删除 `VmNic`、`L3Network`、`L2Network`
+. 删除过程中分别按 segment port、tenant router attach、segment 的各自语义与 ZNS 交互
+. 最后删除 `SdnControllerVO` 以及本地设备资源视图
+
+`APIDeleteSdnControllerMsg` 支持两种行为：
+
+* 默认模式：允许 cascade，按资源依赖顺序清理
+* `deleteMode=Enforcing`：如果仍有 ZNS L2 / L3 / VmNic 引用，直接拒绝删除
+
+[NOTE]
+`delete-compute-manager` 反向通知是条件能力。只有应用市场支持卸载前钩子时，才允许 ZNS 反向通知 Cloud 做 restrict 删除；该路径不触发 cascade。
+
+== L2Network
+
+=== 基础信息
+
+`L2NetworkVO` 的重要字段：
+
+* `type`：L2NoVlanNetwork、L2VlanNetwork、L2GeneveNetwork
+* `vSwitchType`：固定为 `ZNS`
+* `virtualNetworkId`：vlanId 或 Geneve ID
+* `physicalInterface`：固定为空字符串
+
+ZNS L2Network 的定义如下：
+
+[cols="1,2"]
+|===
+|属性 |值
+
+|type
+|L2NoVlanNetwork、L2VlanNetwork、L2GeneveNetwork
+
+|vSwitchType
+|ZNS（固定值，不区分 kernel 和 dpdk）
+
+|physicalInterface
+|空字符串
+
+|virtualNetworkId
+|Vlan Id 或 Geneve Id
+
+|transportZoneUuid
+|创建时必须显式指定；`L2GeneveNetwork` 只能绑定 `overlay`，`L2VlanNetwork` / `L2NoVlanNetwork` 只能绑定 `vlan`
+
+|===
+
+[NOTE]
+`L2NetworkClusterRefVO` 仍由 transport zone 和 host sync 结果推导，用于表达 Cloud 侧可调度范围；ZNS 不负责 cluster 级网络隔离。
+
+=== 创建 L2Network
+
+创建 ZNS 二层网络时，Cloud 不再自动选择默认 transport zone，而是要求创建请求显式指定 `transportZoneUuid`。
+
+调用 `POST /zns/api/v1/segments` 创建 segment，请求体至少包含：
+
+* `name`
+* `description`
+* `transport_zone_uuid`
+* `transport_type`
+* `virtual_network_id`
+* `dpdk_capable`
+* cms 信息
+
+创建成功后，将 ZNS 返回的 segment UUID 通过 systemTag 记录到 `L2NetworkVO` 上。
+如果 ZNS 创建失败，Cloud 不创建本地 `L2NetworkVO`。
+
+[NOTE]
+创建 `L2Network` 时，Cloud 会自动将 `vSwitchType` 设为 `ZNS`，`physicalInterface` 设为空字符串。这通过 `ZnsApiInterceptor` 在 `APICreateL2NetworkMsg` 处理前自动完成。
+
+=== 删除 L2Network
+
+删除 ZNS 二层网络时，Cloud 先调用 `DELETE /zns/api/v1/segments/{uuid}`：
+
+* 删除成功：清理本地 L2 和 systemTag
+* ZNS 返回 5xx：按 best-effort 继续删除本地 L2；残留 segment 留给定时对账清理
+* ZNS 返回"segment 仍被引用"：中止本地删除，要求先清理引用关系
+
+=== APIChangeL2NetworkVlanIdMsg
+
+* `L2GeneveNetwork` 类型不支持修改 VLAN ID，需要在 API 拦截器中拦截
+* `L2VlanNetwork`、`L2NoVlanNetwork` 类型允许按现有语义修改，但修改后的值必须继续以 Cloud 为真相源同步到 ZNS
+
+=== APIAttachL2NetworkToClusterMsg / APIDetachL2NetworkFromClusterMsg
+
+当前实现为空操作（no-op）。
+ZNS 通过 transport zone 管理底层网络覆盖范围，attach / detach cluster 仅影响 Cloud 侧的调度约束。
+
+== L3Network
+
+=== 基础信息
+
+`L3NetworkVO` 的重要字段：
+
+* `type`：`L3BasicNetwork`、`L3VpcNetwork`
+* `category`：`Private`
+
+ZNS L3 的定义如下：
+
+[cols="1,2"]
+|===
+|属性 |值/规则
+
+|type
+|`L3BasicNetwork` 或 `L3VpcNetwork`
+
+|category
+|只能是 `Private`
+
+|`znsTenantRouterUuid`
+|仅 `L3VpcNetwork` 需要，通过 systemTag 指定
+
+|每个 ZNS L2 的 L3 数量
+|最多一个
+
+|===
+
+[NOTE]
+ZNS 集成不再创建额外的“ZNS L3 对象”。Cloud 的 L3 只是 segment 上的三层配置和可选的 tenant router 绑定关系。
+
+=== 创建 L3Network
+
+创建 `L3BasicNetwork` 时，Cloud 只创建本地 `L3NetworkVO`，不单独调用 ZNS 创建 L3 资源。
+
+创建 `L3VpcNetwork` 时，除本地建档外，还必须：
+
+* 校验请求携带 `znsTenantRouterUuid::{uuid}` systemTag
+* 校验该 tenant router 已同步到 Cloud
+* 调用 ZNS 把当前 segment attach 到对应 tenant router
+
+如果 attach 失败，Cloud 回滚本地 `L3NetworkVO` 和 systemTag，不保留半成品数据。
+
+=== 创建/删除 IpRange
+
+Cloud 为 ZNS L3 分配和维护 IpRange，ZNS 只保存 segment 上的三层配置。
+
+* IPv4 IpRange：同步到 `cidr` / `gateway_address`
+* IPv6 IpRange：同步到 `cidr6` / `gateway6_address`
+* 同一个 L3 最多允许一条 IPv4 IpRange 和一条 IPv6 IpRange
+
+创建 IpRange 时，Cloud 先落本地数据，再调用 `PATCH /zns/api/v1/segments/{uuid}` 同步对应字段；
+如果 PATCH 失败，Cloud 回滚本地 IpRange。
+
+删除 IpRange 时：
+
+* 删除 IPv4 IpRange：只清空 IPv4 相关字段
+* 删除 IPv6 IpRange：只清空 IPv6 相关字段
+* 如果该 IP 版本的 DHCP 仍处于启用状态，则拒绝删除对应 IpRange
+
+[NOTE]
+创建/删除 `L3Network` 本身不创建或删除 ZNS segment；只有 VPC attach / detach 和 IpRange / DHCP / DNS / MTU 变化才会调用 ZNS API。
+
+=== DHCP / DNS 同步
+
+ZNS L3 支持运行期开关 DHCP，并同步 DNS 配置：
+
+* 开启 DHCP：Cloud PATCH segment 的 `dhcp_configs`，并在本地记录 `znsDhcpServiceUuid`
+* 关闭 DHCP：Cloud 仅把 `dhcp_configs.enabled` 置为 `false`，保留 `dns_servers`，便于后续再次开启时复用
+* 更新 DNS：Cloud 仅 PATCH `dhcp_configs.dns_servers`
+
+如果 DHCP / DNS PATCH 失败，Cloud 回滚本地状态，不保留不一致配置。
+
+=== MTU 同步
+
+当用户修改 L3Network MTU 时，如果该 L3 属于 ZNS 网络，Cloud 调用 `PATCH /zns/api/v1/segments/{uuid}` 将 `mtu` 字段同步到 ZNS segment。
+如果 PATCH 失败，Cloud 回滚本地 MTU。
+
+== VmNic
+
+ZNS 网卡的模式选择不再直接暴露为“UI 选 VNIC 或 dpdkvhostuserclient”，而是由 VM systemTag `znsNicMode::{kernel|dpdk}` 决定。
+如果用户没有指定该 systemTag，则使用 `zns.defaultNicMode` 全局配置（默认 `kernel`）。
+
+实际创建出的 `VmNicVO.type` 映射如下：
+
+* `znsNicMode::kernel` → `vnic`
+* `znsNicMode::dpdk` → `dpdkvhostuserclient`
+
+=== 虚拟机的物理机分配
+
+创建虚拟机选择了 ZNS 网络时：
+
+* `kernel` 模式只能调度到 `OvsKernel` 主机
+* `dpdk` 模式只能调度到 `OvsDpdk` 主机
+* 如果没有符合模式的主机，则调度失败
+* `dpdk` 虚拟机不允许迁移到 `kernel` 主机
+
+=== 网卡创建过程
+
+创建虚拟机或给虚拟机添加网卡时，会调用 `VmAllocateNicFlow` 创建网卡。
+
+ZNS 网卡创建过程如下：
+
+. 按 Cloud 现有流程分配网卡 mac、internalId、internalName、driverType 和本地 `UsedIp`
+. 调用 ZNS 创建 segment port API（`POST /zns/api/v1/segments/{uuid}/ports`），请求体包含：name、mac、ipv4、ipv6、vm_uuid、dpdk_mode、cms 信息
+. 在已知主机上下文时，可以额外携带 `host_uuid`、`transport_node_uuid`，便于后续按主机维度对账
+. 如果 ZNS 创建成功，则持久化 `VmNicVO` / `UsedIpVO`，并将 port UUID 通过 systemTag 记录到 `VmNicVO` 上
+. 如果 ZNS 创建失败，则回滚本地 `VmNicVO` / `UsedIpVO`，不中断 Cloud / ZNS 一致性
+
+=== 网卡删除过程
+
+* `VmReturnReleaseNicFlow`：在 `destroyVmWorkFlowElements` 中被调用，用于虚拟机销毁时释放网卡资源
+* `VmDetachNicFlow`：在云主机删除网卡时调用
+
+两个 Flow 中都需要调用 ZNS 删除 segment port API（`DELETE /zns/api/v1/segments/{uuid}/ports/{portUuid}`）。
+
+删除语义如下：
+
+* 删除成功：清理 systemTag，删除 `VmNicVO`、`UsedIpVO`
+* 删除失败：按 best-effort 继续清理本地数据；残留 port 留给定时对账删除
+
+=== IP 变更（VmIpChanged）
+
+当虚拟机 IP 发生变化时（`SetVmStaticIp`、`ChangeVmIp` 等操作），Cloud 调用 `PATCH /zns/api/v1/segments/{uuid}/ports/{portUuid}` 更新 ZNS 侧 port 的 IPv4 / IPv6 信息。
+
+=== ChangeVmNicNetwork（换网操作）
+
+`APIChangeVmNicNetworkMsg` 涉及 detach 旧网络 + attach 新网络：
+
+* 不支持从 ZNS 变换成非 ZNS 网络，或从非 ZNS 变换成 ZNS 网络
+* 不支持在不同 ZNS 控制器之间换网
+* 从同一控制器下的 ZNS 网络换网时：先删除旧 segment port，再在新 segment 上创建新 port
+
+=== DPDK 网卡的特殊处理
+
+由于 libvirt 不能自动创建 `dpdkvhostuserclient` 类型的网卡，Cloud 需要在虚拟机启动前，在物理机上预先创建对应的 DPDK 网卡。
+该逻辑只在 `znsNicMode::dpdk` 路径生效；`kernel` 路径继续依赖 libvirt 自动创建普通 vnic。
+
+=== FilterAttachableL3NetworkExtensionPoint
+
+获取虚拟机可挂载的 L3 网络列表时，ZNS 网络有额外的过滤规则：
+
+* 如果虚拟机尚未挂载 ZNS 网络：ZNS 类型的 L3 仅当虚拟机所在物理机被该 ZNS 控制器管理时才可挂载
+* 如果虚拟机已挂载 ZNS 网络：只允许挂载同一 ZNS 控制器下的 L3，或挂载非 ZNS 的 L3
+
+== API 拦截器
+
+`ZnsApiInterceptor` 在以下场景进行拦截：
+
+* `APICreateL2NetworkMsg`：如果请求创建 ZNS L2，自动设置 `vSwitchType = ZNS`、`physicalInterface = ""`，并校验 `transportZoneUuid` 和 L2 类型匹配
+* `APICreateL3NetworkMsg`：ZNS L2 只允许创建 `Private` 类型 L3；同一 ZNS L2 只能有一个 L3；`L3VpcNetwork` 必须携带合法的 `znsTenantRouterUuid`
+* `APIAddIpRangeMsg` / `APIDeleteIpRangeMsg`：每个 ipVersion 只允许一条 IpRange；IPv6 gateway 必须落在 CIDR 内；对应 DHCP 启用时禁止删除该 ipVersion 的 IpRange
+* `APIChangeL2NetworkVlanIdMsg`：禁止修改 `L2GeneveNetwork` 的 VLAN ID
+* `APIChangeVmNicNetworkMsg`：禁止 ZNS 与非 ZNS 网络之间换网，禁止不同 ZNS 控制器之间换网
+* `APIDeleteSdnControllerMsg`：在 `deleteMode=Enforcing` 时，如果仍有引用资源则拒绝删除
+* `APISdnControllerAddHostMsg` / `RemoveHostMsg` / `ChangeHostMsg`：禁止对 ZNS 控制器手动管理主机（由 ZNS 自动同步）
+
+[[api-version]]
+== API 版本兼容性
+
+=== 问题背景
+
+Cloud 和 ZNS 是独立部署的两个组件，可能出现版本不一致：
+
+* **场景A**：Cloud 升级了，ZNS 没升级 — Cloud 发出 ZNS 不认识的 API 格式
+* **场景B**：ZNS 升级了，Cloud 没升级 — Cloud 用旧格式调新 API，参数缺失或语义变化
+* **场景C**：运行中 ZNS 被升级/降级 — Cloud 缓存的版本信息过期
+
+=== 设计思路
+
+....
+1. 每个 API 独立版本
+   不是给 ZNS 一个整体版本号，而是给每个 API 独立的版本号。
+   ZNS 一年 2-3 个版本，但不是每个 API 都会变。
+
+2. ZNS 是自己能力的真相源
+   每个 API 通过 HTTP OPTIONS 方法声明自己支持哪些版本。
+   ZNS 各 API 各管各的版本，不集中到一个大接口里。
+
+3. Cloud 通过 HTTP Header 声明自己发送的版本
+   每次请求带 X-Api-Version header，ZNS 可据此选择处理逻辑。
+....
+
+=== 版本模型
+
+==== 每个 API 有独立版本
+
+....
+API 路径 + 方法                          Cloud 发送的版本    ZNS 支持的版本
+──────────────────────────────────────  ────────────────   ───────────────
+POST   /zns/api/v1/segments              1.1               [1.0, 1.1]
+PATCH  /zns/api/v1/segments/{uuid}       1.1               [1.0, 1.1, 1.2]
+DELETE /zns/api/v1/segments              1.0               [1.0]
+GET    /zns/api/v1/segments              1.1               [1.0, 1.1]
+POST   /zns/api/v1/segments/{id}/ports   1.0               [1.0, 1.1]
+PATCH  /zns/api/v1/segments/{id}/ports   1.1               [1.0, 1.1]
+DELETE /zns/api/v1/segments/{id}/ports   1.0               [1.0]
+....
+
+* *Cloud 侧*：每个 API 有一个确定的版本，表示"我发出去的请求是什么格式"
+* *ZNS 侧*：每个 API 支持一组版本，表示"我能理解哪些格式"
+* *兼容条件*：Cloud 发送的版本 ∈ ZNS 支持的版本集合
+
+==== API 版本变更举例
+
+....
+ZNS v1.0 发布：
+  PATCH /segments  支持 [1.0]
+  POST  /ports     支持 [1.0]
+
+ZNS v1.1 发布（PATCH segment 新增 mtu 字段）：
+  PATCH /segments  支持 [1.0, 1.1]    ← 新增 1.1，但仍兼容 1.0
+  POST  /ports     支持 [1.0]         ← 没变
+
+ZNS v1.2 发布（PATCH segment 删除了某个旧字段）：
+  PATCH /segments  支持 [1.1, 1.2]    ← 不再支持 1.0
+  POST  /ports     支持 [1.0, 1.1]    ← 新增 1.1
+....
+
+=== 版本查询：HTTP OPTIONS 方法
+
+每个 API 路径通过标准的 HTTP OPTIONS 方法返回自己支持的版本。
+
+....
+Cloud                                                ZNS
+  │                                                    │
+  │  OPTIONS /zns/api/v1/segments                      │
+  │───────────────────────────────────────────────────►│
+  │                                                    │
+  │  ◄── 204 No Content                               │
+  │      Headers:                                      │
+  │        Allow: GET, POST, DELETE                    │  ← 标准头
+  │        X-Api-Versions: POST=1.0,1.1;              │  ← 自定义头
+  │                        DELETE=1.0;                 │
+  │                        GET=1.0,1.1                 │
+  │                                                    │
+  │  OPTIONS /zns/api/v1/segments/{uuid}               │
+  │───────────────────────────────────────────────────►│
+  │                                                    │
+  │  ◄── 204 No Content                               │
+  │      Headers:                                      │
+  │        Allow: GET, PATCH                           │
+  │        X-Api-Versions: PATCH=1.0,1.1,1.2;         │
+  │                        GET=1.0,1.1                 │
+  │                                                    │
+....
+
+`X-Api-Versions` Header 格式：
+....
+X-Api-Versions: {METHOD1}={ver1},{ver2};{METHOD2}={ver1},{ver2}
+
+示例：POST=1.0,1.1;DELETE=1.0;GET=1.0,1.1
+....
+
+=== 版本声明：X-Api-Version 请求头
+
+Cloud 每次发送 API 请求时，通过 Header 声明自己发送的是哪个版本的格式：
+
+....
+Cloud                                                ZNS
+  │                                                    │
+  │  PATCH /zns/api/v1/segments/{uuid}                 │
+  │  Headers:                                          │
+  │    X-Api-Version: 1.1                 ← 声明版本   │
+  │    Content-Type: application/json                  │
+  │    x-web-hook: ...                                 │
+  │    x-job-uuid: ...                                 │
+  │  Body:                                             │
+  │    { "name": "...", "mtu": 9000 }     ← 1.1 格式  │
+  │───────────────────────────────────────────────────►│
+  │                                                    │
+  │  ZNS 收到请求:                                      │
+  │    1. 检查 X-Api-Version = 1.1                     │
+  │    2. PATCH segments 支持 1.1? → 用 1.1 处理逻辑   │
+  │       不支持? → 返回 400                            │
+  │                                                    │
+....
+
+==== ZNS 处理不支持的版本
+
+....
+ZNS 返回:
+  HTTP 400 Bad Request
+  {
+      "error": "unsupported_api_version",
+      "message": "PATCH /segments does not support version 1.3",
+      "supported_versions": ["1.0", "1.1", "1.2"]
+  }
+....
+
+==== ZNS 处理没有版本 Header 的请求（兼容旧版 Cloud）
+
+没有 `X-Api-Version` header 时，ZNS 按该 API 支持的最低版本处理，确保旧版 Cloud 仍能正常使用。
+
+=== 版本检查时机
+
+....
+核心原则：
+  不在每次 API 调用前询问 ZNS（会导致每次操作延迟翻倍）
+  而是在 3 个时机批量拉取版本信息，缓存在内存中
+
+  ZNS 版本一年才变 2-3 次，变版本必然有运维动作（升级），
+  升级后通常会触发 reconnect。Ping 间隔内版本突然变化的概率极低。
+....
+
+[cols="2,3,3"]
+|===
+|时机 |触发条件 |行为
+
+|添加控制器（preInit）
+|用户首次添加 ZNS 控制器到 Cloud
+|对每个 API 路径发 OPTIONS → 检查兼容性 → 缓存。不兼容则拒绝添加
+
+|重连控制器（reconnect）
+|管理员手动触发重连，或网络恢复后自动重连
+|清除旧缓存 → 重新发 OPTIONS → 检查 → 缓存。不兼容则重连失败
+
+|心跳探活（ping）
+|Cloud 定时 Ping ZNS
+|对每个 API 路径发 OPTIONS → 与缓存对比。版本变化 → 刷新缓存 → 重新检查。不兼容 → Ping 失败 → 标记 Disconnected
+
+|===
+
+=== 双层防御
+
+版本兼容性在两个层面保证：
+
+....
+第 1 层: Cloud 提前检查（发请求之前）
+  Cloud 在 preInit/reconnect/ping 时通过 OPTIONS 拉取版本
+  缓存到内存，每次发请求前本地查缓存
+  不兼容 → 不发请求，直接报错或降级
+  作用: 避免发出注定失败的请求
+
+第 2 层: ZNS 兜底校验（收到请求时）
+  ZNS 收到请求后检查 X-Api-Version header
+  不支持 → 返回 400 + supported_versions
+  作用: 即使 Cloud 缓存过期，ZNS 也能拒绝不兼容的请求
+....
+
+=== 不兼容时的处理策略
+
+不同 API 不兼容时，处理方式不同：
+
+[cols="3,1,3"]
+|===
+|API (路径 + 方法) |重要性 |不兼容时行为
+
+|POST /segments（创建网络）
+|关键
+|阻断: 拒绝添加/重连控制器
+
+|DELETE /segments（删除网络）
+|关键
+|阻断
+
+|POST /segments/{id}/ports（创建端口）
+|关键
+|阻断
+
+|DELETE /segments/{id}/ports（删除端口）
+|关键
+|阻断
+
+|GET /segments（列表，对账用）
+|关键
+|阻断
+
+|GET /segments/{id}/ports（列表，对账用）
+|关键
+|阻断
+
+|PATCH /segments/{uuid}（更新 mtu 等）
+|非关键
+|降级: 跳过 + 打印告警日志
+
+|PATCH /segments/{id}/ports/{id}（更新端口）
+|非关键
+|降级: 跳过 + 打印告警日志
+
+|===
+
+=== 兼容旧版
+
+==== Cloud 遇到旧版 ZNS（不支持 OPTIONS 版本响应）
+
+如果 OPTIONS 返回 404 或 204 但没有 `X-Api-Versions` header，Cloud 假设所有 API 只支持 `["1.0"]`。
+
+==== ZNS 遇到旧版 Cloud（不带 X-Api-Version header）
+
+没有 `X-Api-Version` header 时，ZNS 按最低支持版本处理。
+
+=== 错误信息设计
+
+==== Cloud 新，ZNS 旧
+
+....
+ZNS controller [192.168.1.10] does not support the following APIs
+required by this Cloud version:
+  - PATCH /segments: Cloud sends v1.1, ZNS supports [1.0]
+  - POST /ports:     Cloud sends v1.1, ZNS supports [1.0]
+Please upgrade ZNS to a compatible version.
+....
+
+==== ZNS 新，Cloud 旧
+
+....
+This Cloud version is not compatible with ZNS [192.168.1.10]:
+  - PATCH /segments: Cloud sends v1.0, ZNS supports [1.1, 1.2] (v1.0 dropped)
+Please upgrade Cloud to a compatible version.
+....
+
+==== 非关键 API 降级
+
+....
+WARN: ZNS [192.168.1.10] does not support PATCH /segments v1.1
+(ZNS supports [1.0]). MTU sync will be skipped.
+This does not affect core network operations. Upgrade ZNS to enable MTU sync.
+....
+
+=== 版本维护规范
+
+==== 什么时候需要升版本
+
+需要升版本：
+
+* 请求体新增必填字段
+* 请求体删除字段
+* 字段类型变化（string → int）
+* 字段语义变化（单位从 MB 变成 KB）
+* 响应体结构变化（影响 Cloud 解析）
+
+不需要升版本：
+
+* 请求体新增可选字段（ZNS 忽略未知字段即可）
+* 纯内部实现变化，接口不变
+* 性能优化，接口不变
+
+==== ZNS 的向后兼容策略
+
+建议每个 API 至少兼容前 2 个版本。
+
+....
+示例: PATCH /segments
+  v1.2 发布时 → supported: [1.0, 1.1, 1.2]  (兼容 3 个版本)
+  v1.3 发布时 → supported: [1.1, 1.2, 1.3]  (下线 1.0)
+
+这样可以给 Cloud 升级留出足够的时间窗口。
+....
+
+=== 双方职责总结
+
+==== ZNS 侧
+
+. 每个 API 路径实现 OPTIONS 方法，返回 `Allow` + `X-Api-Versions` header
+. 收到请求时检查 `X-Api-Version` header：支持则用对应版本处理；不支持则返回 400；缺失则按最低版本处理
+. 每次 API 格式变化时在该 API 的 OPTIONS 响应中新增版本号，保留旧版本兼容
+. 新增 API 时实现 OPTIONS，初始版本为 `1.0`
+
+==== Cloud 侧
+
+. 维护 `CLOUD_API_VERSIONS` 表，记录当前发出的每个 API 的格式版本
+. 在 preInit、reconnect、ping 三个时机通过 OPTIONS 拉取版本并缓存
+. 每次发请求带上 `X-Api-Version` header
+. 每次修改 API 请求体格式时同步更新版本号
+. 标记每个 API 的重要性（关键/非关键），决定不兼容时是阻断还是降级

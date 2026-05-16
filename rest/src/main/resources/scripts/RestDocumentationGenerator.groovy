@@ -787,9 +787,12 @@ class RestDocumentationGenerator implements DocumentGenerator {
         return globalConfigMarkDown
     }
 
-    Boolean isConsistent(GlobalConfigMarkDown md, GlobalConfig globalConfig) {
-        if (md == null || globalConfig == null) {
-            return false
+    List<String> isConsistent(GlobalConfigMarkDown md, GlobalConfig globalConfig) {
+        if (md == null) {
+            return ["GlobalConfigMarkDown is null"]
+        }
+        if (globalConfig == null) {
+            return ["GlobalConfig is null"]
         }
         String mdPath =
                 PathUtil.join(PathUtil.join(Paths.get("../doc").toAbsolutePath().normalize().toString(),
@@ -798,33 +801,33 @@ class RestDocumentationGenerator implements DocumentGenerator {
         initializer.bindResources.get(globalConfig.getIdentity()).each { classes.add(it.getName()) }
         List<String> newClasses = classes.sort()
         String validatorString = initializer.validatorMap.get(globalConfig.getIdentity())
-        Boolean flag = true
+        List<String> mismatches = []
         if (md.globalConfig.name != globalConfig.name) {
             logger.info("name of ${mdPath} is not latest")
-            flag = false
+            mismatches.add("name mismatch in ${mdPath}: markdown='${md.globalConfig.name}', current='${globalConfig.name}'")
         }
         if (md.globalConfig.defaultValue != globalConfig.defaultValue) {
             logger.info("defaultValue of ${mdPath} is not latest")
-            flag = false
+            mismatches.add("defaultValue mismatch in ${mdPath}: markdown='${md.globalConfig.defaultValue}', current='${globalConfig.defaultValue}'")
         }
         if (StringUtils.trimToEmpty(md.globalConfig.description) != StringUtils.trimToEmpty(globalConfig.description)) {
             logger.info("desc of ${mdPath} is not latest")
-                flag = false
+            mismatches.add("description mismatch in ${mdPath}: markdown='${StringUtils.trimToEmpty(md.globalConfig.description)}', current='${StringUtils.trimToEmpty(globalConfig.description)}'")
         }
         if (md.globalConfig.type != globalConfig.type) {
             if (globalConfig.type != null) {
                 logger.info("type of ${mdPath} is not latest")
-                flag = false
+                mismatches.add("type mismatch in ${mdPath}: markdown='${md.globalConfig.type}', current='${globalConfig.type}'")
             }
         }
         if (md.globalConfig.category != globalConfig.category) {
             logger.info("category of ${mdPath} is not latest")
-            flag = false
+            mismatches.add("category mismatch in ${mdPath}: markdown='${md.globalConfig.category}', current='${globalConfig.category}'")
         }
             List<String> oldClasses = md.globalConfig.resources.sort()
             if (oldClasses != newClasses) {
                 logger.info("classes of ${mdPath} is not latest")
-                flag = false
+                mismatches.add("resources mismatch in ${mdPath}: markdown='${oldClasses}', current='${newClasses}'")
             }
 
         if (md.globalConfig.valueRange != (validatorString)) {
@@ -833,33 +836,40 @@ class RestDocumentationGenerator implements DocumentGenerator {
             if (validatorString != null || !useBooleanValidator) {
                 logger.info("valueRange of ${mdPath} is not latest")
                 logger.info("valueRange = ${md.globalConfig.valueRange} validatorString = ${validatorString}")
-                flag = false
+                mismatches.add("valueRange mismatch in ${mdPath}: markdown='${md.globalConfig.valueRange}', current='${validatorString}'")
             }
         }
-        return flag
+        return mismatches
     }
 
     void checkMD(String mdPath, GlobalConfig globalConfig) {
         String result = ShellUtils.runAndReturn(
                 "grep '${PLACEHOLDER}' ${mdPath}").stdout.replaceAll("\n", "")
         if (!result.empty) {
-            throw new CloudRuntimeException("Placeholders are detected in ${mdPath}, please replace them by content.")
+            throw new CloudRuntimeException("Placeholders detected in ${mdPath}; please replace them with actual content.")
         }
         GlobalConfigMarkDown markDown = getExistGlobalConfigMarkDown(mdPath)
-        if (markDown.desc_CN.isEmpty()
-                || markDown.name_CN.isEmpty()
-                || markDown.valueRangeRemark.isEmpty()
-                || markDown.defaultValueRemark.isEmpty()
-                || markDown.resourcesGranularitiesRemark.isEmpty()
-                || markDown.additionalRemark.isEmpty()
-                || markDown.backgroundInformation.isEmpty()
-                || markDown.isUIExposed.isEmpty()
-                || markDown.isCLIExposed.isEmpty()
-        ) {
-            throw new CloudRuntimeException("The necessary information of ${mdPath} is missing, please complete the information before submission.")
-        }
-        if (!isConsistent(markDown, globalConfig)) {
-            throw new CloudRuntimeException("${mdPath} is not match with its definition, please use Repair mode to correct it.")
+        List<String> missingFields = []
+        if (markDown.desc_CN.isEmpty()) missingFields.add("desc_CN")
+        if (markDown.name_CN.isEmpty()) missingFields.add("name_CN")
+        if (markDown.valueRangeRemark.isEmpty()) missingFields.add("valueRangeRemark")
+        if (markDown.defaultValueRemark.isEmpty()) missingFields.add("defaultValueRemark")
+        if (markDown.resourcesGranularitiesRemark.isEmpty()) missingFields.add("resourcesGranularitiesRemark")
+        if (markDown.additionalRemark.isEmpty()) missingFields.add("additionalRemark")
+        if (markDown.backgroundInformation.isEmpty()) missingFields.add("backgroundInformation")
+        if (markDown.isUIExposed.isEmpty()) missingFields.add("isUIExposed")
+        if (markDown.isCLIExposed.isEmpty()) missingFields.add("isCLIExposed")
+        List<String> inconsistencies = isConsistent(markDown, globalConfig)
+        if (!missingFields.isEmpty() || !inconsistencies.isEmpty()) {
+            StringBuilder sb = new StringBuilder("Validation failed for ${mdPath}:\n")
+            if (!missingFields.isEmpty()) {
+                sb.append("Missing required fields: ${missingFields}\n")
+            }
+            if (!inconsistencies.isEmpty()) {
+                sb.append("Inconsistent fields:\n")
+                inconsistencies.each { sb.append("- ${it}\n") }
+            }
+            throw new CloudRuntimeException(sb.toString())
         }
     }
 
@@ -2817,6 +2827,7 @@ ${additionalRemark}
 
     void testGlobalConfigTemplateAndMarkDown() {
         Map<String, GlobalConfig> allConfigs = initializer.configs
+        List<String> allErrors = []
         allConfigs.each {
             String newPath =
                     PathUtil.join(PathUtil.join(Paths.get("../doc").toAbsolutePath().normalize().toString(),
@@ -2829,9 +2840,17 @@ ${additionalRemark}
                             "globalconfig"), it.value.category, it.value.name) + ".md"
             File mdFile = new File(mdPath)
             if (!mdFile.exists()) {
-                throw new CloudRuntimeException("Not found the document markdown of the global config ${it.value.name} , please generate it first.")
+                allErrors.add("Global config markdown not found: ${mdPath}")
+                return
             }
-            checkMD(mdPath, it.value)
+            try {
+                checkMD(mdPath, it.value)
+            } catch (CloudRuntimeException e) {
+                allErrors.add(e.message)
+            }
+        }
+        if (!allErrors.isEmpty()) {
+            throw new CloudRuntimeException(allErrors.join("\n\n"))
         }
     }
 }

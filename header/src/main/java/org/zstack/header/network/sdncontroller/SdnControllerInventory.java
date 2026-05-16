@@ -1,7 +1,9 @@
 package org.zstack.header.network.sdncontroller;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.search.Inventory;
+import org.zstack.header.search.TypeField;
 
 import java.io.Serializable;
 import java.sql.Timestamp;
@@ -13,12 +15,14 @@ import java.util.List;
 @PythonClassInventory
 public class SdnControllerInventory implements Serializable {
     private String uuid;
+    @TypeField
     private String vendorType;
     private String vendorVersion;
     private String name;
     private String description;
     private String ip;
     private String username;
+    @NoLogging
     private String password;
     private SdnControllerStatus status;
     private List<SdnControllerHostRefInventory> hostRefs;

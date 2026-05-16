@@ -50,6 +50,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkType;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
+
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.rest.SyncHttpCallHandler;
 import org.zstack.header.tag.FormTagExtensionPoint;
@@ -380,7 +381,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public KVMCompleteNicInformationExtensionPoint getCompleteNicInfoExtension(L2NetworkType type) {
         KVMCompleteNicInformationExtensionPoint extp = completeNicInfoExtensions.get(type);
         if (extp == null) {
-            throw new IllegalArgumentException(String.format("unble to fine KVMCompleteNicInformationExtensionPoint supporting L2NetworkType[%s]", type));
+            throw new IllegalArgumentException(String.format("unable to find KVMCompleteNicInformationExtensionPoint supporting L2NetworkType[%s]", type));
         }
         return extp;
     }

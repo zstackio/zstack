@@ -110,7 +110,7 @@ public class ZQLMetadata {
 
         public void errorIfNoField(String fname) {
             if (!hasInventoryField(fname)) {
-                throw new CloudRuntimeException(String.format("inventory[${selfInventoryClass}] has no field[%s]", fname));
+                throw new CloudRuntimeException(String.format("inventory[%s] has no field[%s]", simpleInventoryName(), fname));
             }
         }
 
