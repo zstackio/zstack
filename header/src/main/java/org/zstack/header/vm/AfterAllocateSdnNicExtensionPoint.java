@@ -48,6 +48,20 @@ public interface AfterAllocateSdnNicExtensionPoint {
     void releaseSdnNics(List<VmNicInventory> nics, Completion completion);
 
     /**
+     * Expunge SDN ports for NICs whose VM is being permanently deleted.
+     *
+     * Unlike destroy/detach cleanup, expunge may fail the VM expunge workflow
+     * so the local VM/NIC records remain available for a later retry instead
+     * of leaving orphaned external SDN ports.
+     *
+     * @param nics NICs to expunge (implementation filters SDN NICs internally)
+     * @param completion success/fail callback
+     */
+    default void expungeSdnNics(List<VmNicInventory> nics, Completion completion) {
+        releaseSdnNics(nics, completion);
+    }
+
+    /**
      * Release IP only for NICs whose VM is being destroyed but NIC VO is retained (Recover policy).
      * The segment port itself is kept; only the IP binding is released so the port can be
      * re-assigned an IP when the VM starts again after recovery.

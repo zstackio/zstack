@@ -55,7 +55,7 @@ public class VmNicLifecycleManager implements
 
     // ===================== fail-fast serial runner (setup / preMigrate) =====================
 
-    private void runSetup(Iterator<VmNicLifecycleExtensionPoint> it,
+    private void runSetup(VmNicLifecycleContext context, Iterator<VmNicLifecycleExtensionPoint> it,
                           String hostUuid, List<VmNicInventory> allNics,
                           Completion completion) {
         if (!it.hasNext()) {
@@ -72,18 +72,18 @@ public class VmNicLifecycleManager implements
             return;
         }
         if (nics.isEmpty()) {
-            runSetup(it, hostUuid, allNics, completion);
+            runSetup(context, it, hostUuid, allNics, completion);
             return;
         }
 
         long start = System.currentTimeMillis();
-        ext.setupOnHost(hostUuid, nics, new Completion(completion) {
+        ext.setupOnHost(context, hostUuid, nics, new Completion(completion) {
             @Override
             public void success() {
                 logger.debug(String.format("[VmNicLifecycle] %s.setupOnHost(host=%s, nics=%d) " +
                                 "completed in %dms", ext.getClass().getSimpleName(), hostUuid,
                         nics.size(), System.currentTimeMillis() - start));
-                runSetup(it, hostUuid, allNics, completion);
+                runSetup(context, it, hostUuid, allNics, completion);
             }
 
             @Override
@@ -219,6 +219,18 @@ public class VmNicLifecycleManager implements
         // sync hook — no resource operations
     }
 
+    private VmNicLifecycleContext buildContext(VmInstanceSpec spec, String destHostUuid) {
+        VmNicLifecycleContext ctx = new VmNicLifecycleContext();
+        ctx.setOperation(spec.getCurrentVmOperation());
+        ctx.setDestHostUuid(destHostUuid);
+        if (spec.getVmInventory() != null) {
+            ctx.setVmUuid(spec.getVmInventory().getUuid());
+            ctx.setSrcHostUuid(spec.getVmInventory().getHostUuid());
+            ctx.setLastHostUuid(spec.getVmInventory().getLastHostUuid());
+        }
+        return ctx;
+    }
+
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
         List<VmNicInventory> allNics = spec.getDestNics();
@@ -234,6 +246,7 @@ public class VmNicLifecycleManager implements
         String destHostUuid = spec.getDestHost().getUuid();
         String lastHostUuid = spec.getVmInventory().getLastHostUuid();
         VmInstanceConstant.VmOperation op = spec.getCurrentVmOperation();
+        VmNicLifecycleContext ctx = buildContext(spec, destHostUuid);
 
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName("vmnic-lifecycle-pre-instantiate-" + spec.getVmInventory().getUuid());
@@ -261,7 +274,7 @@ public class VmNicLifecycleManager implements
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                runSetup(getExtensions().iterator(), destHostUuid, allNics, new Completion(trigger) {
+                runSetup(ctx, getExtensions().iterator(), destHostUuid, allNics, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -415,7 +428,9 @@ public class VmNicLifecycleManager implements
         }
 
         String hostUuid = vm.getHostUuid();
-        runSetup(getExtensions().iterator(), hostUuid, newNics, completion);
+        VmNicLifecycleContext ctx = buildContext(spec, hostUuid);
+        ctx.setOperation(VmInstanceConstant.VmOperation.AttachNic);
+        runSetup(ctx, getExtensions().iterator(), hostUuid, newNics, completion);
     }
 
     @Override

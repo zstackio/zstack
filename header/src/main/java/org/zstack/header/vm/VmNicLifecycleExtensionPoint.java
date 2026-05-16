@@ -35,6 +35,11 @@ public interface VmNicLifecycleExtensionPoint {
      */
     void setupOnHost(String hostUuid, List<VmNicInventory> nics, Completion completion);
 
+    default void setupOnHost(VmNicLifecycleContext context, String hostUuid,
+                             List<VmNicInventory> nics, Completion completion) {
+        setupOnHost(hostUuid, nics, completion);
+    }
+
     /**
      * Called when a VM stops or a NIC is detached. Errors are logged but do not
      * block the operation.
