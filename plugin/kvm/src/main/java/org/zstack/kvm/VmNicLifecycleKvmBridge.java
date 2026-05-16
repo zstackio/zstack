@@ -29,14 +29,13 @@ public class VmNicLifecycleKvmBridge implements KVMPingAgentNoFailureExtensionPo
     @Autowired
     private ThreadFacade thdf;
 
-    private List<VmNicLifecycleExtensionPoint> extensions;
-
-    void init() {
-        extensions = pluginRgty.getExtensionList(VmNicLifecycleExtensionPoint.class);
+    private List<VmNicLifecycleExtensionPoint> getExtensions() {
+        return pluginRgty.getExtensionList(VmNicLifecycleExtensionPoint.class);
     }
 
     @Override
     public void kvmPingAgentNoFailure(KVMHostInventory host, NoErrorCompletion completion) {
+        List<VmNicLifecycleExtensionPoint> extensions = getExtensions();
         if (extensions.isEmpty()) {
             completion.done();
             return;
