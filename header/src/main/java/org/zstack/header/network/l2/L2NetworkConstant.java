@@ -44,11 +44,6 @@ public interface L2NetworkConstant {
     public static final String OVN_DPDK_VNIC_SRC_PATH = "/var/run/openvswitch/";
     public static final String ACCEL_TYPE_VDPA = "vDPA";
     public static final String ACCEL_TYPE_VHOST_USER_SPACE = "dpdkvhostuserclient";
-    public static final String ZNS_NIC_MODE_TAG_PREFIX = "znsNicMode::";
-    public static final String ZNS_NIC_MODE_DPDK = "dpdk";
-    public static final String ZNS_NIC_MODE_KERNEL = "kernel";
-    public static final String ZNS_NIC_MODE_DPDK_TAG = ZNS_NIC_MODE_TAG_PREFIX + ZNS_NIC_MODE_DPDK;
-    public static final String ZNS_NIC_MODE_KERNEL_TAG = ZNS_NIC_MODE_TAG_PREFIX + ZNS_NIC_MODE_KERNEL;
 
     public static final String DETACH_L2NETWORK_CODE = "l2Network.detach";
 
