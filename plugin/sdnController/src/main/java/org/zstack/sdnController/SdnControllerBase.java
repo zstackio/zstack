@@ -205,6 +205,7 @@ public class SdnControllerBase {
                 if (changed) {
                     String newUsername = self.getUsername();
                     String newPassword = self.getPassword();
+                    // Keep concurrent DB changes while applying the credential update.
                     self = dbf.reload(self);
                     self.setUsername(newUsername);
                     self.setPassword(newPassword);

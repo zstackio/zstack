@@ -8,5 +8,11 @@ import org.zstack.header.core.Completion;
  * Cloud DB deletion must succeed before this extension point is invoked.
  */
 public interface AfterReleaseVmNicExtensionPoint {
+    /**
+     * Runs after the VM NIC has been deleted from Cloud DB.
+     *
+     * @param nic inventory snapshot of the deleted NIC
+     * @param completion must be completed by the implementation
+     */
     void afterReleaseVmNic(VmNicInventory nic, Completion completion);
 }

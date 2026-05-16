@@ -96,11 +96,11 @@ public class VmNicLifecycleKvmBridge implements KVMPingAgentNoFailureExtensionPo
                         }
                     }
                 });
-            } catch (Throwable t) {
+            } catch (Exception e) {
                 if (completed.compareAndSet(false, true)) {
                     receipt.cancel();
                     logger.warn(String.format("[VmNicLifecycle] %s.reconcileOnHost(host=%s) " +
-                            "threw exception", ext.getClass().getSimpleName(), hostUuid), t);
+                            "threw exception", ext.getClass().getSimpleName(), hostUuid), e);
                     whileCompletion.done();
                 }
             }

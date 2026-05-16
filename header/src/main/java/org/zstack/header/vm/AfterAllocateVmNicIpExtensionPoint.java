@@ -15,5 +15,11 @@ import org.zstack.header.core.Completion;
  * VmAllocateNicIpFlow.rollback (returns IPs) → VmAllocateNicFlow.rollback (deletes NICs).
  */
 public interface AfterAllocateVmNicIpExtensionPoint {
+    /**
+     * Runs after VM NIC IPs are allocated and persisted.
+     *
+     * @param spec VM allocation spec containing the latest destination NIC inventories
+     * @param completion must be completed by the implementation
+     */
     void afterAllocateVmNicIp(VmInstanceSpec spec, Completion completion);
 }

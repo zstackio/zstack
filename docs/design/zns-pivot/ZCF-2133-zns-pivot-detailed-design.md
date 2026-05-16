@@ -39,7 +39,7 @@
 ### 2.2 范围
 
 本文档覆盖 ZNS 插件目录：
-```
+```text
 zstack/premium/plugin-premium/zns/src/main/java/org/zstack/network/zns/
 ```
 以及关联的 KVM 插件改动（DPDK NIC 命令）和 VM NIC 类型计算改动。
@@ -337,7 +337,7 @@ class AddComputeManagerHandler {
 在 `ZnsSdnController.initSdnController` 中，删除 Flow 5 `create-l2-l3-from-segments`。
 
 **变更前**（5 个 Flow）：
-```
+```text
 Flow 1: sync-compute-collections
 Flow 2: fetch-discovered-nodes
 Flow 3: derive-vswitch-and-create-host-refs
@@ -346,7 +346,7 @@ Flow 5: create-l2-l3-from-segments   ← 删除此 Flow
 ```
 
 **变更后**（4 个 Flow）：
-```
+```text
 Flow 1: sync-compute-collections
 Flow 2: fetch-discovered-nodes
 Flow 3: derive-vswitch-and-create-host-refs

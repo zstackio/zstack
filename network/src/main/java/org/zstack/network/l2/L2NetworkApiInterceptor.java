@@ -268,14 +268,14 @@ public class L2NetworkApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10020, "There has been a l2Network attached to cluster that has physical interface[%s]. Failed to change l2Network[uuid:%s]",
                         l2.getPhysicalInterface(), l2.getUuid()));
             }
-        } else if (targetIsGeneve) {
+        } else if (targetIsGeneve || targetIsVxlan) {
             if (msg.getVlan() == null) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10016, "vni is required for " +
                         "ChangeL2NetworkVlanId with type[%s]", msg.getType()));
             }
-            if (msg.getVlan() < 1 || msg.getVlan() > 16777215) {
+            if (!NetworkUtils.isValidVni(msg.getVlan())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_10017, "invalid vni[%d] for " +
-                        "ChangeL2NetworkVlanId, must be between 1 and 16777215", msg.getVlan()));
+                        "ChangeL2NetworkVlanId, must be between 1 and %d", msg.getVlan(), L2NetworkConstant.VXLAN_ID_MAX));
             }
         }
     }
