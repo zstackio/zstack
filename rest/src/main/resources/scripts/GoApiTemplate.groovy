@@ -1323,7 +1323,7 @@ func (cli *ZSClient) ${getMethodName}(ctx context.Context, uuid string) (*view.$
                     String paramsStr = "fmt.Sprintf(\"deleteMode=%s\", deleteMode)"
 
                     return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, deleteMode param.DeleteMode) error {
-	return cli.DeleteWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
+    return cli.DeleteWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
 }
 """
                 }
@@ -1534,4 +1534,3 @@ func (cli *ZSClient) ${getMethodName}(ctx context.Context, uuid string) (*view.$
         return "fmt.Sprintf(\"${formatStr}\", ${params})"
     }
 }
-
