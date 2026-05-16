@@ -4,6 +4,7 @@ import groovy.transform.AutoClone
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.springframework.http.*
 import org.springframework.http.client.HttpComponentsClientHttpRequestFactory
+import org.springframework.web.multipart.MultipartHttpServletRequest
 import org.springframework.web.client.RestTemplate
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.configuration.SqlForeignKeyGenerator
@@ -109,6 +110,7 @@ class EnvSpec extends ApiHelper implements Node  {
     private ConcurrentHashMap<String, List<Tuple>> defaultHttpConditionHandlers = [:]
     protected static RestTemplate restTemplate
     protected static Set<Class> simulatorClasses = Platform.reflections.getSubTypesOf(Simulator.class)
+    private static volatile List<Pair<String, String>> cachedEORelations
 
     static Set<Closure> cleanupClosures = []
     private Map<String, VFS> virtualFilesSystems = [:]
@@ -804,8 +806,6 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     private void cleanupEO() {
-        SqlForeignKeyGenerator g = new SqlForeignKeyGenerator()
-
         def vos = Platform.reflections.getTypesAnnotatedWith(EO.class).findAll { it.isAnnotationPresent(EO.class) }
         logger.debug(String.format("cleanupEO->clean targets(%s): %s", vos.size(), vos.toString()))
         Map<String, Class> eoNameEOClassMap = new HashMap<>()
@@ -824,7 +824,19 @@ class EnvSpec extends ApiHelper implements Node  {
         logger.debug(String.format("cleanupEO->clean targets(%s): %s", eoNameEOClassMap.size(), eoNameEOClassMap.toString()))
         logger.debug(String.format("cleanupEO->all nodes(%s): %s", nodes.size(), nodes.toString()))
 
-        new TraverseCleanEO(g.generateEORelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
+        new TraverseCleanEO(eoRelations(), nodes, eoNameEOClassMap, eoNameVOClassMap).traverse()
+    }
+
+    private static List<Pair<String, String>> eoRelations() {
+        if (cachedEORelations == null) {
+            synchronized (EnvSpec.class) {
+                if (cachedEORelations == null) {
+                    cachedEORelations = Collections.unmodifiableList(new SqlForeignKeyGenerator().generateEORelations())
+                }
+            }
+        }
+
+        return cachedEORelations
     }
 
     protected void callDeleteOnResourcesNeedDeletion() {
@@ -988,19 +1000,76 @@ class EnvSpec extends ApiHelper implements Node  {
     }
 
     HttpEntity<String> getEntityFromRequest(HttpServletRequest req) {
-        StringBuilder sb = new StringBuilder()
-        String line
-        while ((line = req.getReader().readLine()) != null) {
-            sb.append(line)
-        }
-        req.getReader().close()
-
         HttpHeaders header = new HttpHeaders()
         for (Enumeration e = req.getHeaderNames() ; e.hasMoreElements() ;) {
             String name = e.nextElement().toString()
             header.add(name, req.getHeader(name))
         }
+
+        StringBuilder sb = new StringBuilder()
+        if (req.getContentType()?.toLowerCase()?.startsWith("multipart/")) {
+            sb.append(readMultipartBody(req))
+        } else {
+            def reader = req.getReader()
+            try {
+                String line
+                while ((line = reader.readLine()) != null) {
+                    sb.append(line)
+                }
+            } finally {
+                reader.close()
+            }
+        }
+
         return new HttpEntity<String>(sb.toString(), header)
+    }
+
+    protected String readMultipartBody(HttpServletRequest req) {
+        byte[] raw = req.inputStream.bytes
+        if (raw.length > 0) {
+            return new String(raw, "UTF-8")
+        }
+
+        if (req instanceof MultipartHttpServletRequest) {
+            return readSpringMultipartBody(req as MultipartHttpServletRequest)
+        }
+
+        StringBuilder sb = new StringBuilder()
+        try {
+            req.getParts().each { part ->
+                appendMultipartPart(sb, part.name, part.submittedFileName, part.contentType, part.inputStream.bytes)
+            }
+        } catch (Throwable t) {
+            logger.debug("failed to read multipart parts for ${req.requestURI}", t)
+        }
+        return sb.toString()
+    }
+
+    protected String readSpringMultipartBody(MultipartHttpServletRequest req) {
+        StringBuilder sb = new StringBuilder()
+        req.parameterMap.each { String name, String[] values ->
+            values.each { value ->
+                appendMultipartPart(sb, name, null, "text/plain", value == null ? new byte[0] : value.getBytes("UTF-8"))
+            }
+        }
+        req.fileMap.each { String name, file ->
+            appendMultipartPart(sb, name, file.originalFilename, file.contentType, file.bytes)
+        }
+        return sb.toString()
+    }
+
+    protected void appendMultipartPart(StringBuilder sb, String name, String filename, String contentType, byte[] content) {
+        sb.append("Content-Disposition: form-data; name=\"").append(name).append("\"")
+        if (filename != null) {
+            sb.append("; filename=\"").append(filename).append("\"")
+        }
+        sb.append("\n")
+        if (contentType != null) {
+            sb.append("Content-Type: ").append(contentType).append("\n")
+        }
+        sb.append("\n")
+        sb.append(new String(content == null ? new byte[0] : content, "UTF-8"))
+        sb.append("\n")
     }
 
     void handleConditionSimulatorHttpRequests(HttpServletRequest req, HttpEntity entity, HttpServletResponse rsp) {
