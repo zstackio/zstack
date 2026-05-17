@@ -1,5 +1,6 @@
 package org.zstack.header.vm;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.network.l2.VSwitchType;
 import org.zstack.header.network.l3.UsedIpInventory;
 

@@ -18,6 +18,8 @@ public interface VmInstanceConstant {
     String KVM_HYPERVISOR_TYPE = "KVM";
 
     String VIRTUAL_NIC_TYPE = "VNIC";
+    String ZNS_NIC_MODE_DPDK = "dpdk";
+    String ZNS_NIC_MODE_KERNEL = "kernel";
 
     String VM_SYNC_SIGNATURE_PREFIX = "Vm-";
 

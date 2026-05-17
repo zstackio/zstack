@@ -46,6 +46,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -98,6 +99,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
+    private static final String ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS = "AttachCreatedVmSystemTagUuids";
 
     @Autowired
     protected CloudBus bus;
@@ -1269,15 +1271,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        final VmInstanceInventory vm = getSelfInventory();
-                        final VmNicInventory nic = VmNicInventory.valueOf(targetNic);
-                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class),
-                                new ForEachFunction<VmIpChangedExtensionPoint>() {
-                                    @Override
-                                    public void run(VmIpChangedExtensionPoint ext) {
-                                        ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
-                                    }
-                                });
+                        notifyVmIpChanged(targetNic.getUuid(), oldIpMap, newIpMap);
                         trigger.next();
                     }
                 });
@@ -1301,6 +1295,39 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
             }
         }).start();
+    }
+
+    private void notifyVmIpChanged(String vmNicUuid, Map<Integer, UsedIpInventory> oldIpMap, Map<Integer, UsedIpInventory> newIpMap) {
+        VmInstanceVO latestVm = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (latestVm == null) {
+            return;
+        }
+        self = latestVm;
+        final VmInstanceInventory vm = VmInstanceInventory.valueOf(latestVm);
+        VmNicVO latestNic = dbf.findByUuid(vmNicUuid, VmNicVO.class);
+        if (latestNic == null) {
+            return;
+        }
+
+        final VmNicInventory nic = VmNicInventory.valueOf(latestNic);
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmIpChangedExtensionPoint.class),
+                new ForEachFunction<VmIpChangedExtensionPoint>() {
+                    @Override
+                    public void run(VmIpChangedExtensionPoint ext) {
+                        ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
+                    }
+                });
+    }
+
+    private UsedIpInventory toUsedIpInventory(UsedIpVO ipvo) {
+        UsedIpInventory ip = new UsedIpInventory();
+        ip.setIp(ipvo.getIp());
+        ip.setGateway(ipvo.getGateway());
+        ip.setNetmask(ipvo.getNetmask());
+        ip.setL3NetworkUuid(ipvo.getL3NetworkUuid());
+        ip.setUuid(ipvo.getUuid());
+        ip.setIpVersion(ipvo.getIpVersion());
+        return ip;
     }
 
     private void handle(final ExpungeVmMsg msg) {
@@ -2171,7 +2198,8 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     @Deferred
     @SuppressWarnings({"rawtypes", "unchecked"})
-    private void attachNic(final Message msg, final List<String> l3Uuids, final ReturnValueCompletion<VmNicInventory> completion) {
+    private void attachNic(final Message msg, final List<String> l3Uuids, final Map outerFlowData,
+                           final ReturnValueCompletion<VmNicInventory> completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
         if (allowed != null) {
@@ -2239,24 +2267,39 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
         }
 
-        class SetL3SecurityGroupSystemTag {
-            private boolean isSet = false;
+        class SetVmSystemTags {
+            private List<SystemTagInventory> createdTags = new ArrayList<>();
 
             void set () {
                 if (msg instanceof APIAttachL3NetworkToVmMsg) {
                     APIAttachL3NetworkToVmMsg amsg = (APIAttachL3NetworkToVmMsg) msg;
+                    if (amsg.getSystemTags() == null || amsg.getSystemTags().isEmpty()) {
+                        return;
+                    }
 
-                    if (amsg.hasSystemTag(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF::isMatch)) {
-                        tagMgr.createNonInherentSystemTags(amsg.getSystemTags(), self.getUuid(), VmInstanceVO.class.getSimpleName());
-                        isSet = true;
+                    List<String> vmSystemTags = tagMgr.filterSystemTags(
+                            amsg.getSystemTags(), VmInstanceVO.class.getSimpleName());
+
+                    for (String tag : vmSystemTags) {
+                        SystemTagInventory created = tagMgr.createNonInherentSystemTag(
+                                self.getUuid(), tag, VmInstanceVO.class.getSimpleName());
+                        if (created != null) {
+                            createdTags.add(created);
+                        }
                     }
                 }
             }
 
             void rollback() {
-                if (isSet) {
-                    VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(self.getUuid());
+                for (SystemTagInventory tag : createdTags) {
+                    tagMgr.deleteSystemTag(tag.getUuid());
                 }
+            }
+
+            List<String> getCreatedTagUuids() {
+                return createdTags.stream()
+                        .map(SystemTagInventory::getUuid)
+                        .collect(Collectors.toList());
             }
         }
 
@@ -2289,7 +2332,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         setStaticIp.set();
         Defer.guard(setStaticIp::rollback);
 
-        final SetL3SecurityGroupSystemTag setSystemTag = new SetL3SecurityGroupSystemTag();
+        final SetVmSystemTags setSystemTag = new SetVmSystemTags();
         setSystemTag.set();
         Defer.guard(setSystemTag::rollback);
 
@@ -2298,6 +2341,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         Defer.guard(setCustomMacSystemTag::rollback);
 
         final VmInstanceSpec spec = buildSpecFromInventory(getSelfInventory(), VmOperation.AttachNic);
+        spec.setMessage(msg);
         final VmInstanceInventory vm = spec.getVmInventory();
         List<L3NetworkInventory> l3s = new ArrayList<>();
         for (String l3Uuid : l3Uuids) {
@@ -2340,6 +2384,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         flowChain.then(new VmAllocateNicFlow());
         flowChain.then(new VmAllocateNicIpFlow());
+        flowChain.then(new VmAllocateSdnNicFlow());
         flowChain.then(new VmSetDefaultL3NetworkOnAttachingFlow());
         setAdditionalFlow(flowChain, spec);
         if (self.getState() == VmInstanceState.Running) {
@@ -2353,6 +2398,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmAfterAttachL3NetworkExtensionPoint.class),
                         arg -> l3s.forEach(l3 -> arg.vmAfterAttachL3Network(vm, l3)));
                 VmNicInventory nic = spec.getDestNics().get(0);
+                if (outerFlowData != null && !setSystemTag.getCreatedTagUuids().isEmpty()) {
+                    outerFlowData.put(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS, setSystemTag.getCreatedTagUuids());
+                }
                 completion.success(nic);
             }
         }).error(new FlowErrorHandler(completion) {
@@ -2363,9 +2411,25 @@ public class VmInstanceBase extends AbstractVmInstance {
                 setDefaultL3Network.rollback();
                 setStaticIp.rollback();
                 setSystemTag.rollback();
+                if (outerFlowData != null) {
+                    outerFlowData.remove(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
+                }
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void rollbackAttachCreatedVmSystemTags(Map data) {
+        Object tagUuids = data.get(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
+        if (!(tagUuids instanceof List)) {
+            return;
+        }
+
+        for (String tagUuid : (List<String>) tagUuids) {
+            tagMgr.deleteSystemTag(tagUuid);
+        }
+        data.remove(ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS);
     }
 
     private void attachNic(final APIAttachVmNicToVmMsg msg, final ReturnValueCompletion<VmNicInventory> completion) {
@@ -2552,7 +2616,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void run(FlowTrigger trigger, Map data) {
                         List<String> l3Uuids = new ArrayList<>();
                         l3Uuids.add(l3Uuid);
-                        attachNic((Message) msg, l3Uuids, new ReturnValueCompletion<VmNicInventory>(trigger) {
+                        attachNic((Message) msg, l3Uuids, data, new ReturnValueCompletion<VmNicInventory>(trigger) {
                             @Override
                             public void success(VmNicInventory returnValue) {
                                 data.put(vmNicInvKey, returnValue);
@@ -2578,11 +2642,13 @@ public class VmInstanceBase extends AbstractVmInstance {
                         doDetachNic(nic, true, true, new Completion(trigger) {
                             @Override
                             public void success() {
+                                rollbackAttachCreatedVmSystemTags(data);
                                 trigger.rollback();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                rollbackAttachCreatedVmSystemTags(data);
                                 trigger.rollback();
                             }
                         });
@@ -2626,6 +2692,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }).error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        rollbackAttachCreatedVmSystemTags(data);
                         completion.fail(errCode);
                         chain.next();
                     }
@@ -3641,6 +3708,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                         // in dual stack l3 , keep the old ip which not set in msg
                         List<UsedIpVO> voRemoveList = new ArrayList<>();
                         List<UsedIpVO> voOldList = Q.New(UsedIpVO.class).eq(UsedIpVO_.vmNicUuid, nicVO.getUuid()).list();
+                        Map<Integer, UsedIpInventory> oldIpMap = new HashMap<>();
+                        Map<Integer, UsedIpInventory> newIpMap = new HashMap<>();
                         if (msg.getIp() == null && msg.getIp6() == null) {
                             voRemoveList.addAll(voOldList);
                             nicVO.setUsedIpUuid(null);
@@ -3702,9 +3771,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                                 voRemoveList.addAll(voOldList.stream().filter(voOld -> voOld.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList()));
                             }
                         }
+                        for (UsedIpVO vo : voRemoveList) {
+                            oldIpMap.put(vo.getIpVersion(), toUsedIpInventory(vo));
+                        }
+                        for (UsedIpVO vo : voNewList) {
+                            newIpMap.put(vo.getIpVersion(), toUsedIpInventory(vo));
+                        }
                         dbf.persistCollection(voNewList);
                         dbf.update(nicVO);
                         dbf.removeCollection(voRemoveList, UsedIpVO.class);
+                        notifyVmIpChanged(nicVO.getUuid(), oldIpMap, newIpMap);
                         trigger.next();
                     }
                 });
@@ -5334,6 +5410,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).set(VmNicVO_.state, VmNicState.disable).update();
             }
             self = dbf.reload(self);
+            extEmitter.afterChangeVmNicState(msg.getVmNicUuid(), msg.getState());
             evt.setInventory(VmInstanceInventory.valueOf(self));
             bus.publish(evt);
             return;
@@ -9272,4 +9349,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-

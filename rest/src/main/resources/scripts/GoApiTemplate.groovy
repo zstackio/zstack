@@ -2,6 +2,8 @@ package scripts
 
 import org.zstack.header.query.APIQueryMessage
 import org.zstack.header.rest.RestRequest
+import org.zstack.header.rest.SDK
+import org.zstack.header.rest.RestResponse
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.utils.Utils
@@ -20,6 +22,7 @@ class GoApiTemplate implements SdkTemplate {
     private RestRequest at
     private String path
     private Class responseClass
+    private String allTo;
     private String replyName
     private SdkTemplate inventoryGenerator
 
@@ -54,6 +57,9 @@ class GoApiTemplate implements SdkTemplate {
     // Track APIs that should be skipped during generation
     private static Set<String> skippedApis = new HashSet<>()
 
+    // Flag to indicate if the template was successfully initialized
+    private boolean valid = false
+
     GoApiTemplate(Class apiMsgClass, SdkTemplate inventoryGenerator) {
         try {
             apiMsgClazz = apiMsgClass
@@ -85,6 +91,12 @@ class GoApiTemplate implements SdkTemplate {
                 }
             }
 
+            allTo = ""
+            if (responseClass != null) {
+                RestResponse restResponse = responseClass.getAnnotation(RestResponse)
+                allTo = restResponse != null ? restResponse.allTo() : ""
+            }
+
             if (responseClass != null) {
                 replyName = responseClass.simpleName.replaceAll('^API', '').replaceAll('Reply$', '').replaceAll('Event$', '')
             } else {
@@ -103,6 +115,7 @@ class GoApiTemplate implements SdkTemplate {
             queryInventoryClass = findInventoryClass()
 
             logger.warn("[GoSDK] Processing API: " + clzName + " -> action=" + actionType + ", resource=" + resourceName + ", response=" + responseClass?.simpleName)
+            valid = true
         } catch (Throwable e) {
             logger.error("[GoSDK] CRITICAL ERROR constructing GoApiTemplate for ${apiMsgClass.name}: ${e.class.name}: ${e.message}", e)
             throw e
@@ -111,6 +124,14 @@ class GoApiTemplate implements SdkTemplate {
 
     RestRequest getAt() {
         return at
+    }
+
+    /**
+     * Check if the template was successfully initialized.
+     * Templates without @RestRequest annotation are invalid.
+     */
+    boolean isValid() {
+        return valid
     }
 
     String getActionType() {
@@ -182,6 +203,21 @@ class GoApiTemplate implements SdkTemplate {
     static void setLongJobMappings(Map<Class, Class> mappings) {
         longJobMappings = mappings
         logger.warn("[GoSDK] Registered ${mappings.size()} LongJob mappings")
+    }
+
+    /**
+     * Reset all static state for clean re-generation.
+     * Should be called at the beginning of generate() or before each SDK generation run.
+     */
+    static void reset() {
+        generatedParamFiles.clear()
+        generatedActionFiles.clear()
+        generatedViewFiles.clear()
+        knownInventoryClasses = null
+        groupedApiNames.clear()
+        longJobMappings.clear()
+        skippedApis.clear()
+        logger.warn("[GoSDK] Reset all static state")
     }
 
     /**
@@ -373,6 +409,13 @@ class GoApiTemplate implements SdkTemplate {
         return "v1/" + path
     }
 
+    private String getApiOptPath(String optPath) {
+        if (optPath.startsWith("/")) {
+            return "v1" + optPath
+        }
+        return "v1/" + optPath
+    }
+
     List<SdkFile> generate() {
         return []
     }
@@ -431,8 +474,12 @@ class GoApiTemplate implements SdkTemplate {
                 
                 // First check HTTP method from annotation, then fall back to actionType-based logic
                 if (httpMethod == "POST") {
-                    // POST operations (Create/Add)
-                    builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                    // POST operations: Delete-via-POST needs special handling
+                    if (actionType == "Delete") {
+                        builder.append(generateDeleteViaPostMethod(apiPath, responseStructName))
+                    } else {
+                        builder.append(generateCreateMethod(apiPath, viewStructName, false, responseStructName, goInventoryFieldName))
+                    }
                 } else if (httpMethod == "GET") {
                     // GET operations (Get/Query)
                     builder.append(generateGetMethod(apiPath, viewStructName, unwrapForGet, responseStructName, goInventoryFieldName))
@@ -505,56 +552,55 @@ class GoApiTemplate implements SdkTemplate {
 
     private String generateCreateMethod(String apiPath, String viewStructName, boolean unwrap, String responseStructName, String fieldName) {
         boolean hasParams = hasApiParams()
-        
-        if (!hasParams) {
-            // No params: don't require user to pass params, use empty map internally
-            if (unwrap) {
-                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
-\tvar resp view.${responseStructName}
-\tif err := cli.Post("${apiPath}", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp.${fieldName}, nil
-}
-"""
-            } else {
-                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
-\tresp := view.${viewStructName}{}
-\tif err := cli.Post("${apiPath}", map[string]interface{}{}, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp, nil
-}
-"""
-            }
+        def placeholders = extractUrlPlaceholders(apiPath)
+        String pathExpr = placeholders.isEmpty() ? "\"${apiPath}\"" : buildFullPath(placeholders)
+        String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
+        String methodParams = "ctx context.Context"
+        if (!placeholderParams.isEmpty()) {
+            methodParams = "${methodParams}, ${placeholderParams}"
         }
-        
-        // Has params: require user to pass params
+        if (hasParams) {
+            methodParams = "${methodParams}, params param.${clzName}Param"
+        }
+
+        String bodyExpr = hasParams ? "params" : "map[string]interface{}{}"
+        String responseKey = getPostResponseKey(viewStructName, responseStructName)
+
+        String retViewStructName = viewStructName
+        String respDecl
+        String returnStmt
         if (unwrap) {
-            return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
-\tvar resp view.${responseStructName}
-\tif err := cli.Post("${apiPath}", params, &resp); err != nil {
-\t\treturn nil, err
-\t}
-\treturn &resp.${fieldName}, nil
-}
-"""
+            respDecl = "var resp view.${responseStructName}"
+            returnStmt = "return &resp.${fieldName}, nil"
         } else {
-            return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
-\tresp := view.${viewStructName}{}
-\tif err := cli.Post("${apiPath}", params, &resp); err != nil {
+            respDecl = "resp := view.${viewStructName}{}"
+            returnStmt = "return &resp, nil"
+        }
+
+        return """func (cli *ZSClient) ${clzName}(${methodParams}) (*view.${retViewStructName}, error) {
+\t${respDecl}
+\tif err := cli.PostWithRespKey(ctx, ${pathExpr}, "${responseKey}", ${bodyExpr}, &resp); err != nil {
 \t\treturn nil, err
 \t}
-\treturn &resp, nil
+\t${returnStmt}
 }
 """
+    }
+
+    private String getPostResponseKey(String viewStructName, String responseStructName) {
+        if (allTo != null && !allTo.isEmpty()) {
+            return allTo
         }
+        if (inventoryFieldName != null && !inventoryFieldName.isEmpty() && viewStructName != responseStructName) {
+            return inventoryFieldName
+        }
+        return ""
     }
 
     private String generateQueryMethod(String apiPath, String viewStructName) {
-        return """func (cli *ZSClient) ${clzName}(params *param.QueryParam) ([]view.${viewStructName}, error) {
+        return """func (cli *ZSClient) ${clzName}(ctx context.Context, params *param.QueryParam) ([]view.${viewStructName}, error) {
 \tvar resp []view.${viewStructName}
-\treturn resp, cli.List("${apiPath}", params, &resp)
+\treturn resp, cli.List(ctx, "${apiPath}", params, &resp)
 }
 """
     }
@@ -566,7 +612,7 @@ class GoApiTemplate implements SdkTemplate {
     private String generatePageMethod(String apiPath, String viewStructName) {
         String pageMethodName = clzName.replaceFirst('^Query', 'Page')
         String varName = resourceName.substring(0, 1).toLowerCase() + resourceName.substring(1)
-        if (varName.endsWith("y")) {
+        if (varName.endsWith("y") && varName.length() > 1 && !"aeiou".contains(varName.charAt(varName.length() - 2).toString())) {
             varName = varName.substring(0, varName.length() - 1) + "ies"
         } else if (!varName.endsWith("s")) {
             varName = varName + "s"
@@ -574,9 +620,9 @@ class GoApiTemplate implements SdkTemplate {
 
         return """
 // ${pageMethodName} Pagination
-func (cli *ZSClient) ${pageMethodName}(params *param.QueryParam) ([]view.${viewStructName}, int, error) {
+func (cli *ZSClient) ${pageMethodName}(ctx context.Context, params *param.QueryParam) ([]view.${viewStructName}, int, error) {
 \tvar ${varName} []view.${viewStructName}
-\ttotal, err := cli.Page("${apiPath}", params, &${varName})
+\ttotal, err := cli.Page(ctx, "${apiPath}", params, &${varName})
 \treturn ${varName}, total, err
 }
 """
@@ -602,9 +648,9 @@ func (cli *ZSClient) ${pageMethodName}(params *param.QueryParam) ([]view.${viewS
             String spec = buildSpecPath(remainingPlaceholders)
 
             return """
-func (cli *ZSClient) ${getMethodName}(${params}) (*view.${viewStructName}, error) {
+func (cli *ZSClient) ${getMethodName}(ctx context.Context, ${params}) (*view.${viewStructName}, error) {
 \tvar resp view.${viewStructName}
-\terr := cli.GetWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", nil, &resp)
+\terr := cli.GetWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "${allTo}", nil, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -615,9 +661,9 @@ func (cli *ZSClient) ${getMethodName}(${params}) (*view.${viewStructName}, error
 
         // Standard case: single uuid parameter
         return """
-func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, error) {
+func (cli *ZSClient) ${getMethodName}(ctx context.Context, uuid string) (*view.${viewStructName}, error) {
 \tvar resp view.${viewStructName}
-\tif err := cli.Get("${cleanPath}", uuid, nil, &resp); err != nil {
+\tif err := cli.Get(ctx, "${cleanPath}", uuid, nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -639,9 +685,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 if (placeholders.size() == 0) {
                     // No placeholder: no uuid parameter needed
                     // Use GetWithRespKey to extract the inventory field
-                    return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.GetWithRespKey("${cleanPath}", "", "inventory", nil, &resp); err != nil {
+\tif err := cli.GetWithRespKey(ctx, "${cleanPath}", "", "inventory", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
@@ -649,9 +695,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                 } else {
                     // Single placeholder: use GetWithRespKey with uuid to extract inventory
-                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.GetWithRespKey("${cleanPath}", uuid, "inventory", nil, &resp); err != nil {
+\tif err := cli.GetWithRespKey(ctx, "${cleanPath}", uuid, "inventory", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
@@ -666,9 +712,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                 String spec = buildSpecPath(remainingPlaceholders)
 
-                return """func (cli *ZSClient) ${clzName}(${params}) (*view.${viewStructName}, error) {
+                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\terr := cli.GetWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", nil, &resp)
+\terr := cli.GetWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "", nil, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -677,14 +723,18 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
             }
         } else {
+            // Not unwrapping: use responseStructName when it differs from viewStructName
+            // This handles cases like GetSSOClient where response is {"inventories": [...]}
+            // and the response wrapper (GetSSOClientView) must be used instead of the element type (SSOClientInventoryView)
+            String actualViewStruct = (viewStructName != responseStructName) ? responseStructName : viewStructName
             if (!useSpec) {
                 // Check if there are any placeholders
                 if (placeholders.size() == 0) {
                     // No placeholder: no uuid parameter needed
                     // Use GetWithRespKey with empty responseKey to parse whole response
-                    return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
-\tif err := cli.GetWithRespKey("${cleanPath}", "", "", nil, &resp); err != nil {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
+\tif err := cli.GetWithRespKey(ctx, "${cleanPath}", "", "", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -692,9 +742,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                 } else {
                     // Single placeholder: use GetWithRespKey with uuid
-                    return """func (cli *ZSClient) ${clzName}(uuid string) (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
-\tif err := cli.GetWithRespKey("${cleanPath}", uuid, "", nil, &resp); err != nil {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string) (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
+\tif err := cli.GetWithRespKey(ctx, "${cleanPath}", uuid, "", nil, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -709,9 +759,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                 String spec = buildSpecPath(remainingPlaceholders)
 
-                return """func (cli *ZSClient) ${clzName}(${params}) (*view.${viewStructName}, error) {
-\tvar resp view.${viewStructName}
-\terr := cli.GetWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", nil, &resp)
+                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}) (*view.${actualViewStruct}, error) {
+\tvar resp view.${actualViewStruct}
+\terr := cli.GetWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "${allTo}", nil, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -756,9 +806,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     String paramName = toSafeGoParamName(placeholders[0])
                     if (isActionApi) {
                         // Action APIs wrap params.Params inside a map
-                        return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", ${paramName}, map[string]interface{}{
+\tif err := cli.Put(ctx, "${cleanPath}", ${paramName}, map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -767,9 +817,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                     } else {
-                        return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", ${paramName}, params, &resp); err != nil {
+\tif err := cli.Put(ctx, "${cleanPath}", ${paramName}, params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
@@ -781,9 +831,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     if (!hasParams) {
                         // No params: don't require user input
                         if (isActionApi) {
-                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{
+\tif err := cli.Put(ctx, "${cleanPath}", "", map[string]interface{}{
 \t\t"${actionKey}": map[string]interface{}{},
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -792,9 +842,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                         } else {
-                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{}, &resp); err != nil {
+\tif err := cli.Put(ctx, "${cleanPath}", "", map[string]interface{}{}, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
@@ -802,9 +852,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                         }
                     } else if (isActionApi) {
-                        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", "", map[string]interface{}{
+\tif err := cli.Put(ctx, "${cleanPath}", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -813,9 +863,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                     } else {
-                        return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\tif err := cli.Put("${cleanPath}", uuid, params, &resp); err != nil {
+\tif err := cli.Put(ctx, "${cleanPath}", uuid, params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp.${fieldName}, nil
@@ -831,9 +881,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                 String spec = buildSpecPath(remainingPlaceholders)
 
-                return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp view.${responseStructName}
-\terr := cli.PutWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
+\terr := cli.PutWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -850,9 +900,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     String paramName = toSafeGoParamName(placeholders[0])
                     if (isActionApi) {
                         // Action APIs wrap params.Params inside a map
-                        return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", ${paramName}, "", map[string]interface{}{
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", ${paramName}, "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -861,9 +911,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                     } else {
-                        return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", ${paramName}, "", params, &resp); err != nil {
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", ${paramName}, "", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -875,9 +925,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     if (!hasParams) {
                         // No params: don't require user input
                         if (isActionApi) {
-                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", "", "", map[string]interface{}{
 \t\t"${actionKey}": map[string]interface{}{},
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -886,9 +936,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                         } else {
-                            return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{}, &resp); err != nil {
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", "", "", map[string]interface{}{}, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -896,9 +946,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
                         }
                     } else if (isActionApi) {
-                        return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", "", "", map[string]interface{}{
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", "", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp); err != nil {
 \t\treturn nil, err
@@ -907,9 +957,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 }
 """
                     } else {
-                        return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                        return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\tif err := cli.PutWithRespKey("${cleanPath}", uuid, "", params, &resp); err != nil {
+\tif err := cli.PutWithRespKey(ctx, "${cleanPath}", uuid, "", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \treturn &resp, nil
@@ -925,9 +975,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                 String spec = buildSpecPath(remainingPlaceholders)
 
-                return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tresp := view.${viewStructName}{}
-\terr := cli.PutWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
+\terr := cli.PutWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -936,6 +986,39 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 """
             }
         }
+    }
+
+    /**
+     * Generate Delete-via-POST method.
+     * Some Delete APIs use POST instead of DELETE (e.g. APIDeleteSSOClientMsg).
+     * These return an Event with {"success": true} and no "inventory" key,
+     * so we must use PostWithRespKey with empty responseKey to avoid "key not found".
+     *
+     * Handles URL placeholders (e.g. /cdp-task/{uuid}/data) by extracting them
+     * as function parameters and building the full path with fmt.Sprintf.
+     */
+    private String generateDeleteViaPostMethod(String apiPath, String responseStructName) {
+        boolean hasParams = hasApiParams()
+        def placeholders = extractUrlPlaceholders(apiPath)
+        String pathExpr = placeholders.isEmpty() ? "\"${removePlaceholders(apiPath)}\"" : buildFullPath(placeholders)
+        String placeholderParams = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
+        String methodParams = "ctx context.Context"
+        if (!placeholderParams.isEmpty()) {
+            methodParams = "${methodParams}, ${placeholderParams}"
+        }
+        if (hasParams) {
+            methodParams = "${methodParams}, params param.${clzName}Param"
+        }
+        String bodyExpr = hasParams ? "params" : "map[string]interface{}{}"
+
+        return """func (cli *ZSClient) ${clzName}(${methodParams}) (*view.${responseStructName}, error) {
+\tresp := view.${responseStructName}{}
+\tif err := cli.PostWithRespKey(ctx, ${pathExpr}, "", ${bodyExpr}, &resp); err != nil {
+\t\treturn nil, err
+\t}
+\treturn &resp, nil
+}
+"""
     }
 
     private String generateDeleteMethod(String apiPath) {
@@ -948,8 +1031,8 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 
         if (!useSpec) {
             // Single or no placeholder: use the standard Delete method
-            return """func (cli *ZSClient) ${clzName}(uuid string, deleteMode param.DeleteMode) error {
-\treturn cli.Delete("${cleanPath}", uuid, string(deleteMode))
+            return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string, deleteMode param.DeleteMode) error {
+\treturn cli.Delete(ctx, "${cleanPath}", uuid, string(deleteMode))
 }
 """
         } else {
@@ -961,8 +1044,8 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
             String spec = buildSpecPath(remainingPlaceholders)
             String paramsStr = "fmt.Sprintf(\"deleteMode=%s\", deleteMode)"
 
-            return """func (cli *ZSClient) ${clzName}(${params}, deleteMode param.DeleteMode) error {
-\treturn cli.DeleteWithSpec("${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
+            return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, deleteMode param.DeleteMode) error {
+\treturn cli.DeleteWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
 }
 """
         }
@@ -985,11 +1068,11 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
         // Build parameter key, for example expungeImage
         String paramKey = clzName.substring(0, 1).toLowerCase() + clzName.substring(1)
 
-        return """func (cli *ZSClient) ${clzName}(uuid string) error {
+        return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string) error {
 \tparams := map[string]interface{}{
 \t\t"${paramKey}": map[string]interface{}{},
 \t}
-\treturn cli.Put("${cleanPath}", uuid, params, nil)
+\treturn cli.Put(ctx, "${cleanPath}", uuid, params, nil)
 }
 """
     }
@@ -1025,9 +1108,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
         switch (httpMethod) {
             case "GET":
                 if (!useSpec) {
-                    return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp ${respType}
-\tif err := cli.Get("${cleanPath}", "", params, &resp); err != nil {
+\tif err := cli.Get(ctx, "${cleanPath}", "", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
@@ -1036,9 +1119,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 } else {
                     String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                     String pathSpec = buildPathSpec(placeholders)
-                    return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \tvar resp ${respType}
-\terr := cli.GetWithSpec("${cleanPath}", ${pathSpec}, "", "", params, &resp)
+\terr := cli.GetWithSpec(ctx, "${cleanPath}", ${pathSpec}, "", "${allTo}", params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -1048,9 +1131,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 }
             case "POST":
                 if (!useSpec) {
-                    return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Post("${cleanPath}", params, &resp); err != nil {
+\tif err := cli.Post(ctx, "${cleanPath}", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
@@ -1060,9 +1143,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     // POST lacks *WithSpec helpers; build the full URL manually
                     String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                     String fullPath = buildFullPath(placeholders)
-                    return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\terr := cli.Post(${fullPath}, params, &resp)
+\terr := cli.Post(ctx, ${fullPath}, params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -1087,7 +1170,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                     """("${cleanPath}", ${paramName}, "", map[string]interface{}{
 \t\t"${actionKey}": map[string]interface{}{},
 \t}, &resp)"""
-                                return """func (cli *ZSClient) ${clzName}(${paramName} string) (*view.${viewStructName}, error) {
+                                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1100,7 +1183,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                 String putArgs = unwrap ? 
                                     """("${cleanPath}", ${paramName}, map[string]interface{}{}, &resp)""" :
                                     """("${cleanPath}", ${paramName}, "", map[string]interface{}{}, &resp)"""
-                                return """func (cli *ZSClient) ${clzName}(${paramName} string) (*view.${viewStructName}, error) {
+                                return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1119,7 +1202,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                 """("${cleanPath}", ${paramName}, "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp)"""
-                            return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1132,7 +1215,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                             String putArgs = unwrap ?
                                 """("${cleanPath}", ${paramName}, params, &resp)""" :
                                 """("${cleanPath}", ${paramName}, "", params, &resp)"""
-                            return """func (cli *ZSClient) ${clzName}(${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${paramName} string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1154,7 +1237,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                     """("${cleanPath}", "", "", map[string]interface{}{
 \t\t"${actionKey}": map[string]interface{}{},
 \t}, &resp)"""
-                                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                                return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1167,7 +1250,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                 String putArgs = unwrap ?
                                     """("${cleanPath}", "", map[string]interface{}{}, &resp)""" :
                                     """("${cleanPath}", "", "", map[string]interface{}{}, &resp)"""
-                                return """func (cli *ZSClient) ${clzName}() (*view.${viewStructName}, error) {
+                                return """func (cli *ZSClient) ${clzName}(ctx context.Context) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1185,7 +1268,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                                 """("${cleanPath}", "", "", map[string]interface{}{
 \t\t"${actionKey}": params.Params,
 \t}, &resp)"""
-                            return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1198,7 +1281,7 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                             String putArgs = unwrap ?
                                 """("${cleanPath}", uuid, params, &resp)""" :
                                 """("${cleanPath}", uuid, "", params, &resp)"""
-                            return """func (cli *ZSClient) ${clzName}(uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                            return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
 \tif err := ${putMethod}${putArgs}; err != nil {
 \t\treturn nil, err
@@ -1215,9 +1298,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                     String spec = buildSpecPath(remainingPlaceholders)
 
-                    return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\terr := cli.PutWithSpec("${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
+\terr := cli.PutWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, "", params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -1227,8 +1310,8 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                 }
             case "DELETE":
                 if (!useSpec) {
-                    return """func (cli *ZSClient) ${clzName}(uuid string, deleteMode param.DeleteMode) error {
-\treturn cli.Delete("${cleanPath}", uuid, string(deleteMode))
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, uuid string, deleteMode param.DeleteMode) error {
+\treturn cli.Delete(ctx, "${cleanPath}", uuid, string(deleteMode))
 }
 """
                 } else {
@@ -1239,16 +1322,16 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     String spec = buildSpecPath(remainingPlaceholders)
                     String paramsStr = "fmt.Sprintf(\"deleteMode=%s\", deleteMode)"
 
-                    return """func (cli *ZSClient) ${clzName}(${params}, deleteMode param.DeleteMode) error {
-	return cli.DeleteWithSpec("${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, deleteMode param.DeleteMode) error {
+    return cli.DeleteWithSpec(ctx, "${cleanPath}", ${firstParam}, ${spec}, ${paramsStr}, nil)
 }
 """
                 }
             default:
                 if (!useSpec) {
-                    return """func (cli *ZSClient) ${clzName}(params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\tif err := cli.Post("${cleanPath}", params, &resp); err != nil {
+\tif err := cli.Post(ctx, "${cleanPath}", params, &resp); err != nil {
 \t\treturn nil, err
 \t}
 \t${returnStmt}
@@ -1258,9 +1341,9 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
                     // POST lacks *WithSpec helpers; build the full URL manually
                     String params = placeholders.collect { "${toSafeGoParamName(it)} string" }.join(", ")
                     String fullPath = buildFullPath(placeholders)
-                    return """func (cli *ZSClient) ${clzName}(${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
+                    return """func (cli *ZSClient) ${clzName}(ctx context.Context, ${params}, params param.${clzName}Param) (*view.${viewStructName}, error) {
 \t${respDecl}
-\terr := cli.Post(${fullPath}, params, &resp)
+\terr := cli.Post(ctx, ${fullPath}, params, &resp)
 \tif err != nil {
 \t\treturn nil, err
 \t}
@@ -1291,13 +1374,13 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
 
         def builder = new StringBuilder()
         builder.append("\n// ${asyncMethodName} Async\n")
-        builder.append("func (cli *ZSClient) ${asyncMethodName}(params param.${clzName}Param) (string, error) {\n")
+        builder.append("func (cli *ZSClient) ${asyncMethodName}(ctx context.Context, params param.${clzName}Param) (string, error) {\n")
         builder.append("\n")
         builder.append("\tresource := \"${resource}\"\n")
         builder.append("\tresponseKey := \"\"\n")
         builder.append("\tvar retVal interface{}\n")
         builder.append("\n")
-        builder.append("\tapiId, err := cli.PostWithAsync(resource, responseKey, params, retVal, true)\n")
+        builder.append("\tapiId, err := cli.PostWithAsync(ctx, resource, responseKey, params, retVal, true)\n")
         builder.append("\tif err != nil {\n")
         builder.append("\t\treturn \"\", err\n")
         builder.append("\t}\n")
@@ -1451,4 +1534,3 @@ func (cli *ZSClient) ${getMethodName}(uuid string) (*view.${viewStructName}, err
         return "fmt.Sprintf(\"${formatStr}\", ${params})"
     }
 }
-

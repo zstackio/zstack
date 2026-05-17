@@ -5,11 +5,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.network.securitygroup.SecurityGroupSdnBackend;
-import org.zstack.sdnController.SdnController;
-import org.zstack.sdnController.SdnControllerFactory;
+import org.zstack.sdnController.*;
 import org.zstack.sdnController.*;
 
-public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
+public class H3cVcfcSdnControllerFactory extends AbstractSdnControllerFactory {
     SdnControllerType sdnControllerType = new SdnControllerType(SdnControllerConstant.H3C_VCFC_CONTROLLER);
 
     @Autowired
@@ -18,12 +17,6 @@ public class H3cVcfcSdnControllerFactory implements SdnControllerFactory {
     @Override
     public SdnControllerType getVendorType() {
         return sdnControllerType;
-    }
-
-    @Override
-    public SdnControllerVO persistSdnController(SdnControllerVO vo) {
-        vo = dbf.persistAndRefresh(vo);
-        return vo;
     }
 
 

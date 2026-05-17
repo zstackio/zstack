@@ -12023,6 +12023,114 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_NETWORK_OVN_10084 = "ORG_ZSTACK_NETWORK_OVN_10084";
 
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10000 = "ORG_ZSTACK_NETWORK_ZNS_10000";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10001 = "ORG_ZSTACK_NETWORK_ZNS_10001";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10002 = "ORG_ZSTACK_NETWORK_ZNS_10002";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10003 = "ORG_ZSTACK_NETWORK_ZNS_10003";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10004 = "ORG_ZSTACK_NETWORK_ZNS_10004";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10005 = "ORG_ZSTACK_NETWORK_ZNS_10005";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10006 = "ORG_ZSTACK_NETWORK_ZNS_10006";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10007 = "ORG_ZSTACK_NETWORK_ZNS_10007";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10008 = "ORG_ZSTACK_NETWORK_ZNS_10008";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10009 = "ORG_ZSTACK_NETWORK_ZNS_10009";
+
+    // ZNS error-code semantic mapping:
+    // 10000 ZNS async API returned unexpected status (not 200/202)
+    // 10001 ZNS API returned HTTP error status
+    // 10002 ZNS API I/O/connection error
+    // 10003 ZNS API unexpected exception
+    // 10004 ZNS sync GET failed (without query params)
+    // 10005 ZNS sync GET failed (with query params)
+    // 10006 failed to resolve ZNS SdnController for an L2 network
+    // 10007 failed to resolve ZNS SdnControllerL2 for an L2 network
+    // 10008 reserved
+    // 10009 VM NIC cannot change between ZNS and non-ZNS networks
+    // 10010 unsupported API for ZNS controller
+    // 10011 ZNS L2 only supports L3BasicNetwork
+    // 10012 duplicate ZNS L2NoVlan creation under same controller
+    // 10013 invalid ZNS L2 target type in create/change-vlan flow
+    // 10014 duplicate/invalid Geneve change (or non-Geneve target from Geneve)
+    // 10015 VM NIC cannot move across different ZNS controllers
+    // 10016 duplicate Geneve VNI under same controller
+    // 10017 non-ZNS L2 cannot change to Geneve type
+    // 10018 ZNS non-Geneve L2 cannot change to L2GeneveNetwork
+    // 10019 only one L3 network is allowed per ZNS L2 network
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10010 = "ORG_ZSTACK_NETWORK_ZNS_10010";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10011 = "ORG_ZSTACK_NETWORK_ZNS_10011";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10012 = "ORG_ZSTACK_NETWORK_ZNS_10012";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10013 = "ORG_ZSTACK_NETWORK_ZNS_10013";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10014 = "ORG_ZSTACK_NETWORK_ZNS_10014";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10015 = "ORG_ZSTACK_NETWORK_ZNS_10015";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10016 = "ORG_ZSTACK_NETWORK_ZNS_10016";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10017 = "ORG_ZSTACK_NETWORK_ZNS_10017";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10018 = "ORG_ZSTACK_NETWORK_ZNS_10018";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10019 = "ORG_ZSTACK_NETWORK_ZNS_10019";
+
+    // ZNS DHCP
+    // 10020 ZNS DHCP enable/check failed due to invalid L3/segment state
+    // 10021 ZNS compute manager not found on controller
+    // 10022 ZNS reconnect: compute manager UUID missing
+    // 10023 reserved
+    // 10024 unsupported legacy SdnControllerDhcp path for ZNS L3
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10020 = "ORG_ZSTACK_NETWORK_ZNS_10020";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10021 = "ORG_ZSTACK_NETWORK_ZNS_10021";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10022 = "ORG_ZSTACK_NETWORK_ZNS_10022";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10023 = "ORG_ZSTACK_NETWORK_ZNS_10023";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10024 = "ORG_ZSTACK_NETWORK_ZNS_10024";
+
+    // ZNS Wave 4 operation error codes
+    // 10025 ZNS create segment failed
+    // 10026 ZNS patch segment failed (e.g. CIDR/gateway sync)
+    // 10027 ZNS attach router to segment failed
+    // 10028 ZNS detach router from segment failed
+    // 10029 ZNS patch DHCP config on segment failed
+    // 10030 ZNS patch segment MTU failed
+    // 10031 duplicate IpRange ip_version on same ZNS L3 network
+    // 10032 ZNS L2 has sub-resources, cannot delete
+    // 10033 ZNS VPC L3 missing znsTenantRouterUuid system tag
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10025 = "ORG_ZSTACK_NETWORK_ZNS_10025";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10026 = "ORG_ZSTACK_NETWORK_ZNS_10026";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10027 = "ORG_ZSTACK_NETWORK_ZNS_10027";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10028 = "ORG_ZSTACK_NETWORK_ZNS_10028";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10029 = "ORG_ZSTACK_NETWORK_ZNS_10029";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10030 = "ORG_ZSTACK_NETWORK_ZNS_10030";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10031 = "ORG_ZSTACK_NETWORK_ZNS_10031";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10032 = "ORG_ZSTACK_NETWORK_ZNS_10032";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10033 = "ORG_ZSTACK_NETWORK_ZNS_10033";
+    // 10034 ZNS API returned HTTP 409 Conflict (sub-resources still exist)
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10034 = "ORG_ZSTACK_NETWORK_ZNS_10034";
+    // 10035 ZNS returned an IP version that Cloud did not allocate
+    // 10036 ZNS returned IP does not match Cloud allocated IP
+    // 10037 ZNS returned IP is outside Cloud L3 IP range
+    // 10038 ZNS returned IP is already used by another NIC
+    // 10039 ZNS did not return any IPs
+    // 10040 ZNS did not return Cloud allocated IP version
+    // 10041 VM NIC MAC update is not supported for ZNS NICs
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10038 = "ORG_ZSTACK_NETWORK_ZNS_10038";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10039 = "ORG_ZSTACK_NETWORK_ZNS_10039";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10040 = "ORG_ZSTACK_NETWORK_ZNS_10040";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10041 = "ORG_ZSTACK_NETWORK_ZNS_10041";
+
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
     public static final String ORG_ZSTACK_ALIYUN_NAS_STORAGE_PRIMARY_IMAGESTORE_10000 = "ORG_ZSTACK_ALIYUN_NAS_STORAGE_PRIMARY_IMAGESTORE_10000";
@@ -15451,6 +15559,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_SDNCONTROLLER_10029 = "ORG_ZSTACK_SDNCONTROLLER_10029";
 
     public static final String ORG_ZSTACK_SDNCONTROLLER_10030 = "ORG_ZSTACK_SDNCONTROLLER_10030";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10031 = "ORG_ZSTACK_SDNCONTROLLER_10031";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10032 = "ORG_ZSTACK_SDNCONTROLLER_10032";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10033 = "ORG_ZSTACK_SDNCONTROLLER_10033";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000 = "ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000";
 

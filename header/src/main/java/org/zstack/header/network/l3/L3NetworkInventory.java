@@ -423,6 +423,9 @@ public class L3NetworkInventory implements Serializable {
         }
 
         if (!getType().equals(L3NetworkConstant.L3_BASIC_NETWORK_TYPE)) {
+            if (L3NetworkType.hasType(getType())) {
+                return L3NetworkType.valueOf(getType()).isIpAddressAllocationEnabled();
+            }
             return true;
         }
 

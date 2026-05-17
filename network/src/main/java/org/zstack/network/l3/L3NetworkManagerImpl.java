@@ -184,6 +184,41 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     }
                 });
             }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<AfterSetL3NetworkMtuExtensionPoint> exts =
+                        pluginRgty.getExtensionList(AfterSetL3NetworkMtuExtensionPoint.class);
+                if (exts.isEmpty()) {
+                    trigger.next();
+                    return;
+                }
+
+                L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class));
+                new While<>(exts).each((ext, wcompl) -> {
+                    ext.afterSetL3NetworkMtu(l3Inv, msg.getMtu(), new Completion(wcompl) {
+                        @Override
+                        public void success() {
+                            wcompl.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            wcompl.addError(errorCode);
+                            wcompl.allDone();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (errorCodeList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errorCodeList.getCauses().get(0));
+                        }
+                    }
+                });
+            }
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
@@ -192,8 +227,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
                 if (oldmtu != null) {
-                    NetworkServiceSystemTag.L3_MTU.delete(msg.getL3NetworkUuid());
                     SystemTagCreator creator = NetworkServiceSystemTag.L3_MTU.newSystemTagCreator(msg.getL3NetworkUuid());
                     creator.recreate = true;
                     creator.inherent = false;
@@ -518,6 +553,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             vo.setIpVersion(IPv6Constants.IPv4);
         }
         vo.setInternalId((int)dbf.generateSequenceNumber(L3NetworkSequenceNumberVO.class));
+        vo.setType(msg.getType() != null ? msg.getType() : L3NetworkConstant.L3_BASIC_NETWORK_TYPE);
 
         FlowChain fchain = new SimpleFlowChain();
         fchain.setName(String.format("create-l3-network-%s", vo.getUuid()));

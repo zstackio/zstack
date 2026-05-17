@@ -1047,6 +1047,7 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(APIUpdateIpRangeMsg msg) {
         IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
+        IpRangeInventory oldIpr = IpRangeInventory.valueOf(vo);
         boolean update = false;
         if (msg.getName() != null) {
             vo.setName(msg.getName());
@@ -1059,8 +1060,14 @@ public class L3BasicNetwork implements L3Network {
         if (update) {
             vo = dbf.updateAndRefresh(vo);
         }
+
+        IpRangeInventory newIpr = IpRangeInventory.valueOf(vo);
+        for (AfterUpdateIpRangeExtensionPoint ext : pluginRgty.getExtensionList(AfterUpdateIpRangeExtensionPoint.class)) {
+            ext.afterUpdateIpRange(oldIpr, newIpr);
+        }
+
         APIUpdateIpRangeEvent evt = new APIUpdateIpRangeEvent(msg.getId());
-        evt.setInventory(IpRangeInventory.valueOf(vo));
+        evt.setInventory(newIpr);
         bus.publish(evt);
     }
 

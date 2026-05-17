@@ -38,6 +38,7 @@ public interface SdnControllerL2 {
 
     default void addVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
     default void removeVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
+    default void releaseNicIps(List<VmNicInventory> nics, Completion completion) {completion.success();};
 
     default void addL3NetworkIpRange(L3NetworkInventory inv, IpRangeInventory ipr, Completion completion) {completion.success();};
     default void deleteL3NetworkIpRange(L3NetworkInventory inv, IpRangeInventory ipr, Completion completion) {completion.success();};
