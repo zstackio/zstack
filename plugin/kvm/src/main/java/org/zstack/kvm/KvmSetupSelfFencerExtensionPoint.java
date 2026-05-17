@@ -38,6 +38,7 @@ public interface KvmSetupSelfFencerExtensionPoint {
         private PrimaryStorageInventory primaryStorage;
         private String strategy;
         private List<String> fencers;
+        private boolean noStatusCheck;
         // all previous self-fencer configurations on the ps will be removed after applying the new one
         private boolean flushPrevious = true;
 
@@ -95,6 +96,14 @@ public interface KvmSetupSelfFencerExtensionPoint {
 
         public void setFencers(List<String> fencers) {
             this.fencers = fencers;
+        }
+
+        public boolean isNoStatusCheck() {
+            return noStatusCheck;
+        }
+
+        public void setNoStatusCheck(boolean noStatusCheck) {
+            this.noStatusCheck = noStatusCheck;
         }
 
         public boolean isFlushPrevious() {
