@@ -107,7 +107,10 @@ public class VmDetachNicFlow extends NoRollbackFlow {
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                        logger.warn(String.format("releaseSdnNics failed for nic[uuid:%s]: %s, continue",
+                                nic.getUuid(), errorCode));
+                        dbf.removeByPrimaryKey(nic.getUuid(), VmNicVO.class);
+                        trigger.next();
                     }
                 });
             }
@@ -130,19 +133,14 @@ public class VmDetachNicFlow extends NoRollbackFlow {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("releaseSdnNics extension failed: %s", errorCode));
-                    wcomp.addError(errorCode);
+                    logger.warn(String.format("releaseSdnNics extension failed: %s, continue", errorCode));
                     wcomp.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
+                completion.success();
             }
         });
     }

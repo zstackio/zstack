@@ -85,14 +85,17 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
             public void done(ErrorCodeList errorCodeList) {
                 List<VmNicInventory> releasedNics = new ArrayList<>();
                 List<VmNicVO> nicsToDelete = new ArrayList<>();
-                List<VmNicVO> nicsToReleaseIp = new ArrayList<>();
                 for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
                     VmNicVO vo = dbf.findByUuid(nic.getUuid(), VmNicVO.class);
                     if (VmInstanceConstant.USER_VM_TYPE.equals(spec.getVmInventory().getType())) {
                         if (deletionPolicy == VmInstanceDeletionPolicy.Direct) {
                             nicsToDelete.add(vo);
                         } else {
-                            nicsToReleaseIp.add(vo);
+                            vo.setUsedIpUuid(null);
+                            vo.setIp(null);
+                            vo.setGateway(null);
+                            vo.setNetmask(null);
+                            dbf.update(vo);
                         }
                     } else {
                         nicsToDelete.add(vo);
@@ -103,20 +106,15 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
                 Completion releaseDone = new Completion(chain) {
                     @Override
                     public void success() {
-                        for (VmNicVO vo : nicsToReleaseIp) {
-                            vo.setUsedIpUuid(null);
-                            vo.setIp(null);
-                            vo.setGateway(null);
-                            vo.setNetmask(null);
-                            dbf.update(vo);
-                        }
                         nicsToDelete.forEach(dbf::remove);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        chain.fail(errorCode);
+                        logger.warn(String.format("releaseSdnNics failed: %s, continue anyway", errorCode));
+                        nicsToDelete.forEach(dbf::remove);
+                        chain.next();
                     }
                 };
 
@@ -150,19 +148,14 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("releaseNicIps extension failed: %s", errorCode));
-                    wcomp.addError(errorCode);
+                    logger.warn(String.format("releaseNicIps extension failed: %s, continue", errorCode));
                     wcomp.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
+                completion.success();
             }
         });
     }
@@ -183,19 +176,14 @@ public class VmReturnReleaseNicFlow extends NoRollbackFlow {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    logger.warn(String.format("releaseSdnNics extension failed: %s", errorCode));
-                    wcomp.addError(errorCode);
+                    logger.warn(String.format("releaseSdnNics extension failed: %s, continue", errorCode));
                     wcomp.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
+                completion.success();
             }
         });
     }
