@@ -17,10 +17,10 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -89,9 +89,9 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.CreateL2NetworkResult value = res.getResult(org.zstack.sdk.CreateL2NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2NetworkResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.CreateL2NetworkResult() : value; 
 
         return ret;
     }
