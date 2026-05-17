@@ -73,6 +73,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.storage.primary.*;
+import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.DeviceAddress;
@@ -3058,6 +3059,7 @@ public class KVMHost extends HostBase implements Host {
                                         " data corruption may happen", ret.getNewVolumeInstallPath()));
                             }
 
+                            syncSnapshotMetadataAfterHypervisorSuccess(msg, ret);
                             extEmitter.afterTakeSnapshot((KVMHostInventory) getSelfInventory(), msg, cmd, ret);
                             reply.setNewVolumeInstallPath(ret.getNewVolumeInstallPath());
                             reply.setSnapshotInstallPath(ret.getSnapshotInstallPath());
@@ -3092,6 +3094,27 @@ public class KVMHost extends HostBase implements Host {
                 completion.done();
             }
         }).start();
+    }
+
+    private void syncSnapshotMetadataAfterHypervisorSuccess(TakeSnapshotOnHypervisorMsg msg, TakeSnapshotResponse ret) {
+        VolumeInventory volume = msg.getVolume();
+        if (volume == null || msg.getSnapshotName() == null) {
+            return;
+        }
+
+        VolumeSnapshotInventory snapshot = new VolumeSnapshotInventory();
+        snapshot.setUuid(msg.getSnapshotName());
+        snapshot.setVolumeUuid(volume.getUuid());
+        snapshot.setPrimaryStorageUuid(volume.getPrimaryStorageUuid());
+        snapshot.setPrimaryStorageInstallPath(ret.getSnapshotInstallPath());
+        snapshot.setType(VolumeSnapshotConstant.HYPERVISOR_SNAPSHOT_TYPE.toString());
+        snapshot.setStatus(VolumeSnapshotStatus.Ready.toString());
+        snapshot.setSize(ret.getSize());
+        snapshot.setFormat(volume.getFormat());
+
+        for (VolumeSnapshotDBSyncExtensionPoint ext : pluginRgty.getExtensionList(VolumeSnapshotDBSyncExtensionPoint.class)) {
+            ext.syncVolumeSnapshotDBAfterTakeSnapshot(volume, snapshot, ret.getNewVolumeInstallPath());
+        }
     }
 
     private void migrateVm(final MigrateStruct s, final Completion completion) {

@@ -26,6 +26,7 @@
             <zstack:extension interface="org.zstack.header.volume.OverwriteVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.volume.FlattenVolumeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.storage.backup.CleanUpVmBackupExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.storage.snapshot.VolumeSnapshotDBSyncExtensionPoint"/>
         </zstack:plugin>
     </bean>
 
