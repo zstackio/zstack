@@ -73,6 +73,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeBeforeExpungeExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         ReportQuotaExtensionPoint,
+        VolumeSnapshotDBSyncExtensionPoint,
         AfterReimageVmInstanceExtensionPoint,
         VmJustBeforeDeleteFromDbExtensionPoint,
         VolumeJustBeforeDeleteFromDbExtensionPoint,
@@ -680,6 +681,12 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             return;
         }
 
+        if (vo.getStatus() == VolumeSnapshotStatus.Ready) {
+            logger.warn(String.format("volume snapshot[uuid:%s] has been marked Ready, skip rollback to keep control plane metadata consistent with hypervisor snapshot",
+                    uuid));
+            return;
+        }
+
         dbf.getEntityManager().remove(vo);
 
         String sql = "delete from AccountResourceRefVO where resourceUuid = :vsUuid and resourceType = 'VolumeSnapshotVO'";
@@ -695,6 +702,42 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             VolumeSnapshotTreeVO chain = dbf.getEntityManager().find(VolumeSnapshotTreeVO.class, vo.getTreeUuid());
             dbf.getEntityManager().remove(chain);
         }
+    }
+
+    @Override
+    @Transactional
+    public VolumeSnapshotInventory syncVolumeSnapshotDBAfterTakeSnapshot(VolumeInventory volume,
+                                                                         VolumeSnapshotInventory snapshot,
+                                                                         String volumeNewInstallPath) {
+        if (volumeNewInstallPath != null) {
+            VolumeVO latestVol = dbf.findByUuid(volume.getUuid(), VolumeVO.class);
+            latestVol.setInstallPath(volumeNewInstallPath);
+            dbf.update(latestVol);
+        }
+
+        VolumeSnapshotVO svo = dbf.findByUuid(snapshot.getUuid(), VolumeSnapshotVO.class);
+        if (svo == null) {
+            return null;
+        }
+
+        svo.setType(snapshot.getType());
+        svo.setPrimaryStorageUuid(snapshot.getPrimaryStorageUuid());
+        svo.setPrimaryStorageInstallPath(snapshot.getPrimaryStorageInstallPath());
+        svo.setStatus(VolumeSnapshotStatus.Ready);
+        svo.setSize(snapshot.getSize());
+        if (snapshot.getFormat() != null) {
+            svo.setFormat(snapshot.getFormat());
+        }
+        svo = dbf.updateAndRefresh(svo);
+
+        markSnapshotTreeCompleted(VolumeSnapshotInventory.valueOf(svo));
+        if (svo.getParentUuid() == null) {
+            VolumeSnapshotReferenceUtils.updateReferenceAfterFirstSnapshot(svo);
+        }
+
+        logger.debug(String.format("synced volume snapshot[uuid:%s] metadata after hypervisor snapshot succeeded",
+                svo.getUuid()));
+        return VolumeSnapshotInventory.valueOf(svo);
     }
 
     private void handle(final AskVolumeSnapshotStructMsg msg) {
@@ -991,33 +1034,14 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        markSnapshotTreeCompleted(snapshot);
-                        if (volumeNewInstallPath != null) {
-                            vol.setInstallPath(volumeNewInstallPath);
-                            dbf.update(vol);
-                        }
-
-                        VolumeSnapshotVO svo = dbf.findByUuid(snapshot.getUuid(), VolumeSnapshotVO.class);
-                        svo.setType(snapshot.getType());
-                        svo.setPrimaryStorageUuid(snapshot.getPrimaryStorageUuid());
-                        svo.setPrimaryStorageInstallPath(snapshot.getPrimaryStorageInstallPath());
-                        svo.setStatus(VolumeSnapshotStatus.Ready);
-                        svo.setSize(snapshot.getSize());
-                        if (snapshot.getFormat() != null) {
-                            svo.setFormat(snapshot.getFormat());
-                        }
-                        svo = dbf.updateAndRefresh(svo);
-
-                        if (struct.isNewChain()) {
-                            VolumeSnapshotReferenceUtils.updateReferenceAfterFirstSnapshot(svo);
-                        }
+                        VolumeSnapshotInventory sp = syncVolumeSnapshotDBAfterTakeSnapshot(
+                                vol.toInventory(), snapshot, volumeNewInstallPath);
 
                         new FireSnapShotCanonicalEvent().
                                 fireSnapShotStatusChangedEvent(
                                         VolumeSnapshotStatus.valueOf(snapshot.getStatus()),
-                                        VolumeSnapshotInventory.valueOf(svo));
+                                        sp);
 
-                        VolumeSnapshotInventory sp = svo.toInventory();
                         callExtensionPoints(sp);
 
                         ret.setInventory(sp);
@@ -1034,8 +1058,18 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        if (struct != null) {
-                            rollbackSnapshot(struct.getCurrent().getUuid());
+                        if (snapshot != null) {
+                            syncVolumeSnapshotDBAfterTakeSnapshot(vol.toInventory(), snapshot, volumeNewInstallPath);
+                            logger.warn(String.format("volume snapshot[uuid:%s] has been created on primary storage, keep database record for recovery after error: %s",
+                                    snapshot.getUuid(), errCode));
+                        } else if (struct != null) {
+                            String snapshotUuid = struct.getCurrent().getUuid();
+                            if (getCurrentSnapshotStatus(snapshotUuid) == VolumeSnapshotStatus.Ready) {
+                                logger.warn(String.format("volume snapshot[uuid:%s] has been marked Ready, keep database record after error: %s",
+                                        snapshotUuid, errCode));
+                            } else {
+                                rollbackSnapshot(snapshotUuid);
+                            }
                         }
                         ret.setError(errCode);
                         bus.reply(msg, ret);
@@ -1043,6 +1077,13 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 });
             }
         }).start();
+    }
+
+    private VolumeSnapshotStatus getCurrentSnapshotStatus(String uuid) {
+        return Q.New(VolumeSnapshotVO.class)
+                .select(VolumeSnapshotVO_.status)
+                .eq(VolumeSnapshotVO_.uuid, uuid)
+                .findValue();
     }
 
     private void handle(MarkRootVolumeAsSnapshotMsg msg) {
