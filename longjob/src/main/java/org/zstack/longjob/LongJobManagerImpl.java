@@ -613,6 +613,9 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
             vo.setTargetResourceUuid(msg.getTargetResourceUuid());
             vo.setManagementNodeUuid(Platform.getManagementServerId());
             vo.setAccountUuid(msg.getAccountUuid());
+            Timestamp now = Timestamp.valueOf(LocalDateTime.now());
+            vo.setCreateDate(now);
+            vo.setLastOpDate(now);
             vo = dbf.persistAndRefresh(vo);
             msg.setJobUuid(vo.getUuid());
             tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), vo.getUuid(), LongJobVO.class.getSimpleName());
@@ -831,9 +834,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         dbf.installEntityLifeCycleCallback(LongJobVO.class, EntityEvent.PRE_UPDATE, (evt, o) -> {
             LongJobVO job = (LongJobVO) o;
             if (job.getExecuteTime() == null && jobCompleted(job)) {
-                long time = (System.currentTimeMillis() - job.getCreateDate().getTime()) / 1000;
-                job.setExecuteTime(Long.max(time, 1));
-                logger.info(String.format("longjob [uuid:%s] set execute time:%d", job.getUuid(), time));
+                setExecuteTimeIfNeed(job);
             }
         });
 

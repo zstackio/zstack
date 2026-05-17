@@ -27,7 +27,7 @@ public class TestLibController {
     private static final ExecutorService pool = Executors.newFixedThreadPool(32);
 
     @RequestMapping(
-            value = "/**",
+            value = {"/**", "/v1/sites/**", "/v1/quota/**"},
             method = {
                     RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.GET,
                     RequestMethod.HEAD, RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.TRACE
@@ -36,6 +36,11 @@ public class TestLibController {
     public void handle(HttpServletRequest request, HttpServletResponse response) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         if (request.getMethod().equalsIgnoreCase(RequestMethod.HEAD.toString())) {
             response.setStatus(200);
+            return;
+        }
+
+        if (isMultipartRequest(request)) {
+            Test.handleHttp(request, response);
             return;
         }
 
@@ -57,6 +62,11 @@ public class TestLibController {
                 asyncContext.complete();
             }
         });
+    }
+
+    private boolean isMultipartRequest(HttpServletRequest request) {
+        String contentType = request.getContentType();
+        return contentType != null && contentType.toLowerCase().startsWith("multipart/");
     }
 
     @PreDestroy

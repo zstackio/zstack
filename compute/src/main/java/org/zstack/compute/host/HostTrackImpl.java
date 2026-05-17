@@ -36,6 +36,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
     private final static CLogger logger = Utils.getLogger(HostTrackImpl.class);
 
     private Map<String, Tracker> trackers = new ConcurrentHashMap<>();
+    private volatile boolean stopped;
     private static boolean alwaysStartRightNow = false;
     private static final Cache<String, Long> skippedPingHostDeadline = CacheBuilder.newBuilder().expireAfterWrite(1, TimeUnit.HOURS).build();
 
@@ -251,6 +252,11 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
 
     public void trackHost(String hostUuid) {
+        if (stopped) {
+            logger.debug(String.format("skip tracking host[uuid:%s], host tracker is stopped", hostUuid));
+            return;
+        }
+
         if (!destMaker.isManagedByUs(hostUuid)) {
             logger.debug(String.format("skip tracking host[uuid:%s], not managed by us", hostUuid));
             return;
@@ -285,6 +291,11 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     @Override
     public void trackHost(Collection<String> huuids) {
+        if (stopped) {
+            logger.debug(String.format("skip tracking hosts%s, host tracker is stopped", huuids));
+            return;
+        }
+
         huuids.forEach(this::trackHost);
     }
 
@@ -353,6 +364,7 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     @Override
     public boolean start() {
+        stopped = false;
         populateExtensions();
         onHostStatusChange();
         onHostPingSkip();
@@ -421,6 +433,9 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
     @Override
     public boolean stop() {
+        stopped = true;
+        new HashSet<>(trackers.values()).forEach(Tracker::cancel);
+        trackers.clear();
         return true;
     }
 }
