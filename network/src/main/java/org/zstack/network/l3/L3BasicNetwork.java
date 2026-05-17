@@ -1541,12 +1541,14 @@ public class L3BasicNetwork implements L3Network {
                     detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, new Completion(msg) {
                         @Override
                         public void success() {
+                            dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
+                            dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
                         }
