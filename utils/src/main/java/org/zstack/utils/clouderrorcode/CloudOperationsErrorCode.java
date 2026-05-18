@@ -12124,6 +12124,12 @@ public class CloudOperationsErrorCode {
     // 10040 ZNS did not return Cloud allocated IP version
     // 10041 VM NIC MAC update is not supported for ZNS NICs
     // 10042 L3Network not found while enabling ZNS DHCP
+    // 10043 failed to allocate DHCPv4 server IP in ZNS DHCP helper
+    // 10044 ZNS DHCP enable has no eligible IpRange
+    // 10045 ZNS DHCP enable has no Cloud-reserved DHCPv4 server IP
+    // 10046 ZNS DHCP 409 fallback GET returned empty
+    // 10047 ZNS DHCP update has no Cloud-reserved DHCPv4 server IP
+    // 10048 failed to allocate DHCPv4 server IP in ZNS DHCP backend
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
@@ -12132,6 +12138,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10040 = "ORG_ZSTACK_NETWORK_ZNS_10040";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10041 = "ORG_ZSTACK_NETWORK_ZNS_10041";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10042 = "ORG_ZSTACK_NETWORK_ZNS_10042";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10043 = "ORG_ZSTACK_NETWORK_ZNS_10043";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10044 = "ORG_ZSTACK_NETWORK_ZNS_10044";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10045 = "ORG_ZSTACK_NETWORK_ZNS_10045";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10046 = "ORG_ZSTACK_NETWORK_ZNS_10046";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10047 = "ORG_ZSTACK_NETWORK_ZNS_10047";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10048 = "ORG_ZSTACK_NETWORK_ZNS_10048";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
