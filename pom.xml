@@ -53,6 +53,7 @@
         <module>resourceconfig</module>
         <module>plugin/iscsi</module>
         <module>abstraction</module>
+        <module>agents</module>
     </modules>
 
     <dependencyManagement>
