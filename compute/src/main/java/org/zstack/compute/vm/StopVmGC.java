@@ -51,6 +51,7 @@ public class StopVmGC extends EventBasedGarbageCollector {
             public void run(FlowTrigger trigger, Map data) {
                 StopVmOnHypervisorMsg msg = new StopVmOnHypervisorMsg();
                 msg.setVmInventory(inventory);
+                msg.setIgnoreNotFoundError(true);
                 bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
@@ -66,6 +67,16 @@ public class StopVmGC extends EventBasedGarbageCollector {
         }).then(new NoRollbackFlow() {
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                String vmHostUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.hostUuid)
+                        .eq(VmInstanceVO_.uuid, inventory.getUuid()).findValue();
+                if (!hostUuid.equals(vmHostUuid)) {
+                    logger.debug(String.format("skip changing vm[uuid:%s] state to stopped after StopVmGC, " +
+                            "current host[uuid:%s] is not gc host[uuid:%s]", inventory.getUuid(),
+                            vmHostUuid, hostUuid));
+                    trigger.next();
+                    return;
+                }
+
                 ChangeVmStateMsg cmsg = new ChangeVmStateMsg();
                 cmsg.setVmInstanceUuid(inventory.getUuid());
                 cmsg.setStateEvent(VmInstanceStateEvent.stopped.toString());
