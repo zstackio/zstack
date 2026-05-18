@@ -1560,6 +1560,13 @@ public class L3BasicNetwork implements L3Network {
 
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
         APIAttachNetworkServiceToL3NetworkEvent evt = new APIAttachNetworkServiceToL3NetworkEvent(msg.getId());
+        if (msg.isSkipAttach()) {
+            self = dbf.reload(self);
+            evt.setInventory(L3NetworkInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+
         AttachNetworkServiceToL3Msg amsg = new AttachNetworkServiceToL3Msg();
         amsg.setL3NetworkUuid(msg.getL3NetworkUuid());
         amsg.setNetworkServices(msg.getNetworkServices());

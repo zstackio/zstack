@@ -66,6 +66,7 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
      */
     @APIParam
     private Map<String, List<String>> networkServices;
+    private transient boolean skipAttach;
 
     @Override
     public String getL3NetworkUuid() {
@@ -82,6 +83,14 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    public boolean isSkipAttach() {
+        return skipAttach;
+    }
+
+    public void setSkipAttach(boolean skipAttach) {
+        this.skipAttach = skipAttach;
     }
  
     public static APIAttachNetworkServiceToL3NetworkMsg __example__() {

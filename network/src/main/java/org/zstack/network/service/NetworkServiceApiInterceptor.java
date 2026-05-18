@@ -1,6 +1,7 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -29,16 +30,22 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
-public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {   
-   private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
-   @Autowired
+public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
+    private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
+    @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
             APIAttachNetworkServiceToL3NetworkMsg attachMsg = (APIAttachNetworkServiceToL3NetworkMsg)msg;
             attachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(attachMsg.getNetworkServices()));
+            if (skipAttachNetworkService(attachMsg)) {
+                attachMsg.setSkipAttach(true);
+                return msg;
+            }
             validate(attachMsg);
         } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
             APIDetachNetworkServiceFromL3NetworkMsg detachMsg = (APIDetachNetworkServiceFromL3NetworkMsg)msg;
@@ -57,6 +64,15 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         }
 
         return msg;
+    }
+
+    private boolean skipAttachNetworkService(APIAttachNetworkServiceToL3NetworkMsg msg) {
+        for (NetworkServiceAttachExtensionPoint ext : pluginRgty.getExtensionList(NetworkServiceAttachExtensionPoint.class)) {
+            if (ext.skipAttachNetworkService(msg)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void validate(APIAttachNetworkServiceToL3NetworkMsg msg) {
