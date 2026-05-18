@@ -4178,6 +4178,7 @@
   "ORG_ZSTACK_POLICYROUTE_10013": "操作失败，IP格式仅支持ipv4/iprange/cidr，但发现%s",
   "ORG_ZSTACK_POLICYROUTE_10010": "下一跳IP必须是ipv4格式，但发现[%s]",
   "ORG_ZSTACK_CORE_REST_10012": "无法在 %sms 内回显 %s",
+  "ORG_ZSTACK_CORE_REST_10013": "物理机[uuid:%s]上的 kvmagent 于 %s 重启，丢弃发出于 %s 之前的待处理 HTTP 请求",
   "ORG_ZSTACK_QUERY_10021": "字段[%s]不是库存%s中的原始类型；你无法在参数\u0027fields\u0027中指定它；有效的字段是%s",
   "ORG_ZSTACK_NETWORK_SERVICE_FLAT_10034": "DHCP服务器IP [%s] 已存在于L3网络 [%s] 中",
   "ORG_ZSTACK_QUERY_10020": "实体元类[%s]不存在字段[%s]",

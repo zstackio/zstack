@@ -339,6 +339,8 @@ public class KVMAgentCommands {
     public static class ConnectResponse extends AgentResponse {
         private String libvirtVersion;
         private String qemuVersion;
+        private boolean firstConnect;
+        private long agentStartTimeMillis;
 
         public String getLibvirtVersion() {
             return libvirtVersion;
@@ -354,6 +356,22 @@ public class KVMAgentCommands {
 
         public void setQemuVersion(String qemuVersion) {
             this.qemuVersion = qemuVersion;
+        }
+
+        public boolean isFirstConnect() {
+            return firstConnect;
+        }
+
+        public void setFirstConnect(boolean firstConnect) {
+            this.firstConnect = firstConnect;
+        }
+
+        public long getAgentStartTimeMillis() {
+            return agentStartTimeMillis;
+        }
+
+        public void setAgentStartTimeMillis(long agentStartTimeMillis) {
+            this.agentStartTimeMillis = agentStartTimeMillis;
         }
     }
 
