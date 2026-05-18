@@ -996,7 +996,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     @Deferred
     private String allocateDhcpIp(String l3Uuid, int ipVersion, boolean allocate_ip, String requiredIp, String excludedIp) {
-        if (!isAllocateDhcpServerIp(l3Uuid)) {
+        if (!isAllocateDhcpServerIp(l3Uuid, ipVersion)) {
             return null;
         }
 
@@ -1274,6 +1274,17 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
         return type.isAllocateDhcpServerIp();
+    }
+
+    private boolean isAllocateDhcpServerIp(String l3Uuid, int ipVersion) {
+        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3Uuid, NetworkServiceType.DHCP.toString());
+        if (providerType == null) {
+            return false;
+        }
+
+        NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
+        return type.isAllocateDhcpServerIp()
+                && (ipVersion != IPv6Constants.IPv6 || type.isAllocateDhcpv6ServerIp());
     }
 
     private boolean isCreateDhcpNameSpace(String l3Uuid) {
@@ -2490,7 +2501,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void validate(APIChangeL3NetworkDhcpIpAddressMsg msg) {
-        if (!isAllocateDhcpServerIp(msg.getL3NetworkUuid())) {
+        if ((msg.getDhcpServerIp() != null && !isAllocateDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv4))
+                || (msg.getDhcpv6ServerIp() != null && !isAllocateDhcpServerIp(msg.getL3NetworkUuid(), IPv6Constants.IPv6))
+                || (msg.getDhcpServerIp() == null && msg.getDhcpv6ServerIp() == null
+                && !isAllocateDhcpServerIp(msg.getL3NetworkUuid()))) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10044, "could change dhcp server ip, because flat dhcp is not enabled"));
         }
 

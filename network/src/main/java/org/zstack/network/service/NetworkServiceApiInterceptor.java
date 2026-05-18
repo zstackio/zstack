@@ -173,11 +173,11 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private Map<String, List<String>> convertNetworkProviderTypeToUuid(Map<String, List<String>> map){
-        if (map.isEmpty()) {
+        Map<String, List<String>> mapNew = normalizeNetworkServices(map);
+        if (mapNew.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_10012, "networkServices cannot be empty"));
         }
 
-        Map<String, List<String>> mapNew = new HashMap<>(map);
         List<NetworkServiceProviderVO> networkServiceProviderVOs = Q.New(NetworkServiceProviderVO.class).list();
 
         for (NetworkServiceProviderVO vo :networkServiceProviderVOs) {
@@ -187,5 +187,40 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         }
 
         return mapNew;
+    }
+
+    private Map<String, List<String>> normalizeNetworkServices(Map<String, List<String>> map) {
+        Map<String, List<String>> ret = new LinkedHashMap<>();
+        if (map == null) {
+            return ret;
+        }
+
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            if (entry.getKey() == null) {
+                continue;
+            }
+
+            String provider = entry.getKey().trim();
+            if (provider.isEmpty()) {
+                continue;
+            }
+
+            List<String> services = new ArrayList<>();
+            if (entry.getValue() != null) {
+                for (String service : entry.getValue()) {
+                    if (service == null) {
+                        continue;
+                    }
+
+                    String normalized = service.trim();
+                    if (!normalized.isEmpty()) {
+                        services.add(normalized);
+                    }
+                }
+            }
+
+            ret.computeIfAbsent(provider, k -> new ArrayList<>()).addAll(services);
+        }
+        return ret;
     }
 }
