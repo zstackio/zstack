@@ -5166,6 +5166,16 @@ public class KVMHost extends HostBase implements Host {
                 errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
                         self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {
+                if (rsp.isFirstConnect()) {
+                    long cutoffMillis = rsp.getAgentStartTimeMillis() - TimeUnit.SECONDS.toMillis(60);
+                    int drained = restf.failPendingCallsForResourceBefore(self.getUuid(), cutoffMillis,
+                            operr("kvmagent on host[uuid:%s] restarted at %s, pending HTTP call sent before %s aborted",
+                                    self.getUuid(), rsp.getAgentStartTimeMillis(), cutoffMillis));
+                    if (drained > 0) {
+                        logger.info(String.format("kvmagent on host[uuid:%s] restarted at %d, drained %d pending HTTP call(s)",
+                                self.getUuid(), rsp.getAgentStartTimeMillis(), drained));
+                    }
+                }
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
                 VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
                 boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
