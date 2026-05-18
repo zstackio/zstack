@@ -860,12 +860,12 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                SshShell sshShell = new SshShell();
+                SshShell sshShell = Platform.New(() -> new SshShell());
                 sshShell.setHostname(getSelf().getManagementIp());
                 sshShell.setUsername(getSelf().getUsername());
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
-                SshResult ret = sshShell.runCommand("sudo service zstack-kvmagent restart");
+                SshResult ret = sshShell.runCommandWithPseudoTty("sudo service zstack-kvmagent restart");
 
                 if (ret.isSshFailure() || ret.getReturnCode() != 0) {
                     trigger.fail(operr(ORG_ZSTACK_KVM_10017, ret.getExitErrorMessage()));
@@ -5208,12 +5208,12 @@ public class KVMHost extends HostBase implements Host {
             return;
         }
 
-        SshShell sshShell = new SshShell();
+        SshShell sshShell = Platform.New(() -> new SshShell());
         sshShell.setHostname(getSelf().getManagementIp());
         sshShell.setUsername(getSelf().getUsername());
         sshShell.setPassword(getSelf().getPassword());
         sshShell.setPort(getSelf().getPort());
-        SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"rm -rf %s\"", hostTakeOverFlagPath));
+        SshResult ret = sshShell.runCommandWithPseudoTty(String.format("sudo /bin/sh -c \"rm -rf %s\"", hostTakeOverFlagPath));
         if (ret.isSshFailure() || ret.getReturnCode() != 0) {
             completion.fail(operr(ORG_ZSTACK_KVM_10092, ret.getExitErrorMessage()));
             return;
@@ -5308,12 +5308,12 @@ public class KVMHost extends HostBase implements Host {
                         return;
                     }
 
-                    SshShell sshShell = new SshShell();
+                    SshShell sshShell = Platform.New(() -> new SshShell());
                     sshShell.setHostname(getSelf().getManagementIp());
                     sshShell.setUsername(getSelf().getUsername());
                     sshShell.setPassword(getSelf().getPassword());
                     sshShell.setPort(getSelf().getPort());
-                    SshResult ret = sshShell.runCommand(String.format("sudo /bin/sh -c \"echo uuid:%s > %s\"", self.getUuid(), hostTakeOverFlagPath));
+                    SshResult ret = sshShell.runCommandWithPseudoTty(String.format("sudo /bin/sh -c \"echo uuid:%s > %s\"", self.getUuid(), hostTakeOverFlagPath));
 
                     if (ret.isSshFailure() || ret.getReturnCode() != 0) {
                         completion.fail(operr(ORG_ZSTACK_KVM_10097, ret.getExitErrorMessage()));

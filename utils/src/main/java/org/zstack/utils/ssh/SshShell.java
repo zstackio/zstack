@@ -45,21 +45,30 @@ public class SshShell {
     }
 
     public SshResult runCommand(String cmd) {
+        return runCommand(cmd, false);
+    }
+
+    public SshResult runCommandWithPseudoTty(String cmd) {
+        return runCommand(cmd, true);
+    }
+
+    private SshResult runCommand(String cmd, boolean allocatePseudoTty) {
         checkParams();
         String ssh;
         File tempPasswordFile = null;
+        String pseudoTtyOption = allocatePseudoTty ? "-tt " : "";
 
         try {
             if (privateKey != null) {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
-                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
+                ssh = String.format("ssh -q %s-i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
+                        pseudoTtyOption, tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
+                ssh = String.format("sshpass -f%s ssh -q %s-o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
+                        tempPasswordFile.getAbsolutePath(), pseudoTtyOption, sshTimeoutOptions(), port, username, hostname, cmd);
             }
 
             if (logger.isTraceEnabled()) {
