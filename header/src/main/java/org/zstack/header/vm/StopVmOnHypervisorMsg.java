@@ -7,7 +7,7 @@ public class StopVmOnHypervisorMsg extends NeedReplyMessage implements HostMessa
     private VmInstanceInventory vmInventory;
     private String type;
     private boolean debug;
-    private boolean ignoreNotFoundError;
+    private Boolean ignoreNotFoundError;
 
     public VmInstanceInventory getVmInventory() {
         return vmInventory;
@@ -38,11 +38,11 @@ public class StopVmOnHypervisorMsg extends NeedReplyMessage implements HostMessa
         this.debug = debug;
     }
 
-    public boolean isIgnoreNotFoundError() {
+    public Boolean isIgnoreNotFoundError() {
         return ignoreNotFoundError;
     }
 
-    public void setIgnoreNotFoundError(boolean ignoreNotFoundError) {
+    public void setIgnoreNotFoundError(Boolean ignoreNotFoundError) {
         this.ignoreNotFoundError = ignoreNotFoundError;
     }
 }
