@@ -34,7 +34,10 @@ public class RegisterLicenseClientAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String productLine;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validRegexValues = "^[a-f0-9]{32}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String siteUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String bundle;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
