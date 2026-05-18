@@ -4178,6 +4178,7 @@
   "ORG_ZSTACK_POLICYROUTE_10013": "operation failure, IP format only supports IPv4/IP range/CIDR, but found %s",
   "ORG_ZSTACK_POLICYROUTE_10010": "NextHopIp must be in IPv4 format but found [%s]",
   "ORG_ZSTACK_CORE_REST_10012": "unable to retrieve %s within %sms",
+  "ORG_ZSTACK_CORE_REST_10013": "kvmagent on host[uuid:%s] restarted at %s, pending HTTP call sent before %s aborted",
   "ORG_ZSTACK_QUERY_10021": "field[%s] is not a primitive of the inventory %s; you cannot specify it in the parameter \u0027fields\u0027; valid fields are %s",
   "ORG_ZSTACK_NETWORK_SERVICE_FLAT_10034": "DHCP server IP [%s] already exists within L3 network [%s]",
   "ORG_ZSTACK_QUERY_10020": "entity metadata class[%s] lacks field[%s]",
