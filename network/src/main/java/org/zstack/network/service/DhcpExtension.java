@@ -437,6 +437,7 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
             SdnControllerEnableDHCPMsg msg = new SdnControllerEnableDHCPMsg();
             msg.setL3NetworkUuid(l3VO.getUuid());
             msg.setSdnControllerUuid(sdnControllerUuid);
+            msg.setSystemTags(systemTags);
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
