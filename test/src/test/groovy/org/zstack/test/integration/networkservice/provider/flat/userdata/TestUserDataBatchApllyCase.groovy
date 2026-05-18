@@ -29,8 +29,8 @@ class TestUserDataBatchApllyCase extends SubCase {
         env = env {
             instanceOffering {
                 name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(8)
-                cpu = 4
+                memory = SizeUnit.GIGABYTE.toByte(1)
+                cpu = 1
             }
 
             sftpBackupStorage {
@@ -115,6 +115,8 @@ class TestUserDataBatchApllyCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testApplyUserdataAfterAttachNonDefaultVmNic()
+            testApplyUserdataAfterAttachNonDefaultL3Network()
             testReconnectHost()
         }
     }
@@ -215,6 +217,90 @@ class TestUserDataBatchApllyCase extends SubCase {
             assert ccmd.l3NetworkUuid == l31.uuid
         }
     }
+
+    void testApplyUserdataAfterAttachNonDefaultVmNic() {
+        L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        L3NetworkInventory l32 = env.inventoryByName("l3-2")
+
+        VmInstanceInventory vm = createVmWithHostnameTag("vm-for-attach-nic", l31.uuid)
+        VmNicInventory defaultNic = vm.vmNics.get(0)
+
+        VmNicInventory nic = createVmNic {
+            l3NetworkUuid = l32.uuid
+        }
+
+        Map userdataCmd = captureApplyUserdataCmd()
+
+        attachVmNicToVm {
+            vmInstanceUuid = vm.uuid
+            vmNicUuid = nic.uuid
+        }
+
+        assertApplyUserdataMetadataRefreshed(userdataCmd, defaultNic, nic)
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+    }
+
+    void testApplyUserdataAfterAttachNonDefaultL3Network() {
+        L3NetworkInventory l31 = env.inventoryByName("l3-1")
+        L3NetworkInventory l32 = env.inventoryByName("l3-2")
+
+        VmInstanceInventory vm = createVmWithHostnameTag("vm-for-attach-l3", l31.uuid)
+        VmNicInventory defaultNic = vm.vmNics.get(0)
+
+        Map userdataCmd = captureApplyUserdataCmd()
+
+        attachL3NetworkToVm {
+            vmInstanceUuid = vm.uuid
+            l3NetworkUuid = l32.uuid
+        }
+        VmNicInventory attachedNic = queryVmNic {
+            conditions = ["vmInstance.uuid=${vm.uuid}", "l3NetworkUuid=${l32.uuid}"]
+        }[0]
+
+        assertApplyUserdataMetadataRefreshed(userdataCmd, defaultNic, attachedNic)
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+    }
+
+    private VmInstanceInventory createVmWithHostnameTag(String vmName, String l3NetworkUuid) {
+        ImageInventory image = env.inventoryByName("image")
+        InstanceOfferingInventory offer = env.inventoryByName("instanceOffering")
+
+        VmInstanceInventory vm = createVmInstance {
+            name = vmName
+            instanceOfferingUuid = offer.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3NetworkUuid]
+        }
+        createSystemTag {
+            resourceUuid = vm.uuid
+            resourceType = VmInstanceVO.class.getSimpleName()
+            tag = "hostname::kvm"
+        }
+
+        return vm
+    }
+
+    private Map captureApplyUserdataCmd() {
+        Map holder = [:]
+        env.afterSimulator(FlatUserdataBackend.APPLY_USER_DATA) { rsp, HttpEntity<String> e ->
+            holder.cmd = json(e.body, FlatUserdataBackend.ApplyUserdataCmd.class)
+            return rsp
+        }
+
+        return holder
+    }
+
+    private void assertApplyUserdataMetadataRefreshed(Map holder, VmNicInventory defaultNic, VmNicInventory attachedNic) {
+        retryInSecs {
+            assert holder.cmd != null
+            assert holder.cmd.userdata.vmIp == defaultNic.ip
+            assert holder.cmd.userdata.l3NetworkUuid == defaultNic.l3NetworkUuid
+            assert holder.cmd.userdata.networkInterfaces.size() == 2
+            assert holder.cmd.userdata.networkInterfaces.collect { it.macAddress }.toSet() == [defaultNic.mac, attachedNic.mac].toSet()
+        }
+    }
 }
-
-
