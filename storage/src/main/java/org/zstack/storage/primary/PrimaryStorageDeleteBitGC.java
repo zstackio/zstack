@@ -53,6 +53,7 @@ public class PrimaryStorageDeleteBitGC extends TimeBasedGarbageCollector {
         delMsg.setBitsUuid(volume.getUuid());
         delMsg.setBitsType(VolumeVO.class.getSimpleName());
         delMsg.setPrimaryStorageUuid(primaryStorageUuid);
+        delMsg.setSize(volume.getSize());
         delMsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
         bus.makeTargetServiceIdByResourceUuid(delMsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
         bus.send(delMsg, new CloudBusCallBack(completion) {

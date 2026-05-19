@@ -40,6 +40,8 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
@@ -65,6 +67,7 @@ import org.zstack.header.volume.APIDetachDataVolumeFromHostMsg;
 import org.zstack.header.volume.APIDetachDataVolumeFromVmMsg;
 import org.zstack.header.volume.APIFlattenVolumeMsg;
 import org.zstack.header.volume.APIGetDataVolumeAttachableVmMsg;
+import org.zstack.header.volume.APIReInitDataVolumeMsg;
 import org.zstack.header.volume.APIRecoverDataVolumeMsg;
 import org.zstack.header.volume.APIUndoSnapshotCreationMsg;
 import org.zstack.header.volume.VolumeConstant;
@@ -99,6 +102,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * To change this template use File | Settings | File Templates.
  */
 public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, GlobalApiMessageInterceptor {
+    private static final String CEPH_PRIMARY_STORAGE_TYPE = "Ceph";
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -148,6 +153,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             validate((APIDetachDataVolumeFromHostMsg) msg);
         } else if (msg instanceof APIFlattenVolumeMsg) {
             validate((APIFlattenVolumeMsg) msg);
+        } else if (msg instanceof APIReInitDataVolumeMsg) {
+            validate((APIReInitDataVolumeMsg) msg);
         } else if (msg instanceof APIUndoSnapshotCreationMsg) {
             validate((APIUndoSnapshotCreationMsg) msg);
         } else if (msg instanceof APICreateVmInstanceMsg) {
@@ -580,6 +587,57 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         boolean isShareable = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).select(VolumeVO_.isShareable).findValue();
         if (isShareable) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10080, "cannot flatten a shareable volume[uuid:%s]", msg.getVolumeUuid()));
+        }
+    }
+
+    private void validate(APIReInitDataVolumeMsg msg) {
+        String volumeUuid = msg.getVolumeUuid() == null ? null : msg.getVolumeUuid().trim();
+        msg.setUuid(volumeUuid);
+        Tuple t = Q.New(VolumeVO.class)
+                .select(VolumeVO_.type, VolumeVO_.status, VolumeVO_.vmInstanceUuid, VolumeVO_.primaryStorageUuid)
+                .eq(VolumeVO_.uuid, volumeUuid)
+                .findTuple();
+
+        if (t == null) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10097, "volume[uuid:%s] not found", volumeUuid));
+        }
+
+        VolumeType type = t.get(0, VolumeType.class);
+        if (type != VolumeType.Data) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10098,
+                    "volume[uuid:%s, type:%s] is not a data volume, only data volumes can be re-initialized",
+                    volumeUuid, type));
+        }
+
+        VolumeStatus status = t.get(1, VolumeStatus.class);
+        if (status != VolumeStatus.Ready) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10099,
+                    "volume[uuid:%s] is not in status Ready, current status is %s",
+                    volumeUuid, status));
+        }
+
+        String primaryStorageUuid = t.get(3, String.class);
+        String primaryStorageType = Q.New(PrimaryStorageVO.class)
+                .select(PrimaryStorageVO_.type)
+                .eq(PrimaryStorageVO_.uuid, primaryStorageUuid)
+                .findValue();
+        if (!CEPH_PRIMARY_STORAGE_TYPE.equals(primaryStorageType)) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10003,
+                    "current primary storage %s is not Ceph type, re-initializing data volume is not supported",
+                    primaryStorageUuid));
+        }
+
+        String vmInstanceUuid = t.get(2, String.class);
+        if (vmInstanceUuid != null) {
+            VmInstanceState vmState = Q.New(VmInstanceVO.class)
+                    .select(VmInstanceVO_.state)
+                    .eq(VmInstanceVO_.uuid, vmInstanceUuid)
+                    .findValue();
+            if (vmState != VmInstanceState.Stopped) {
+                throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10100,
+                        "cannot re-initialize data volume[uuid:%s], the vm[uuid:%s] it attached to is not in Stopped state, current state is %s",
+                        volumeUuid, vmInstanceUuid, vmState));
+            }
         }
     }
 

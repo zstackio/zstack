@@ -162,6 +162,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     protected abstract void handle(ReInitRootVolumeFromTemplateOnPrimaryStorageMsg msg);
 
+    protected abstract void handle(ReInitDataVolumeOnPrimaryStorageMsg msg);
+
     protected abstract void handle(AskInstallPathForNewSnapshotMsg msg);
 
     protected abstract void handle(GetPrimaryStorageResourceLocationMsg msg);
@@ -190,7 +192,7 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         return String.format("primaryStorage-%s", self.getUuid());
     }
 
-    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume, TrashType.VolumeSnapshot, TrashType.ReimageVolume);
+    protected static List<TrashType> trashLists = CollectionDSL.list(TrashType.MigrateVolume, TrashType.MigrateVolumeSnapshot, TrashType.RevertVolume, TrashType.VolumeSnapshot, TrashType.ReimageVolume, TrashType.ReInitDataVolume);
 
     protected void fireDisconnectedCanonicalEvent(ErrorCode reason) {
         PrimaryStorageCanonicalEvent.DisconnectedData data = new PrimaryStorageCanonicalEvent.DisconnectedData();
@@ -313,6 +315,9 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             new PrimaryStorageValidater().disable().maintenance()
                     .validate();
+        } else if (msg instanceof ReInitDataVolumeOnPrimaryStorageMsg) {
+            new PrimaryStorageValidater().disable().maintenance()
+                    .validate();
         } else if (msg instanceof CheckVolumeSnapshotOperationOnPrimaryStorageMsg) {
             SnapshotBackendOperation operation = ((CheckVolumeSnapshotOperationOnPrimaryStorageMsg) msg).getOperation();
             if (operation == SnapshotBackendOperation.FILE_CREATION) {
@@ -374,6 +379,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((RevertVolumeFromSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) {
             handle((ReInitRootVolumeFromTemplateOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof ReInitDataVolumeOnPrimaryStorageMsg) {
+            handle((ReInitDataVolumeOnPrimaryStorageMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnPrimaryStorageMsg) {
             handle((MergeVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof FlattenVolumeOnPrimaryStorageMsg) {

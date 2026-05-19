@@ -2,10 +2,13 @@ package org.zstack.test.integration.kvm.nic
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.compute.vm.VmNicManagerImpl
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.tag.SystemTagVO
 import org.zstack.header.tag.SystemTagVO_
 import org.zstack.sdk.VmInstanceInventory
+import org.zstack.sdk.L3NetworkInventory
+import org.zstack.sdk.VmNicInventory
 import org.zstack.header.vm.VmNicVO
 import org.zstack.header.vm.VmNicVO_
 import org.zstack.tag.SystemTag
@@ -16,6 +19,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 
 class ChangeWindowsVmNicDriverCase extends SubCase {
     EnvSpec env
@@ -39,6 +43,7 @@ class ChangeWindowsVmNicDriverCase extends SubCase {
     void test() {
         env.create {
             testChangeWindowsVmNicDriver()
+            testPrepareDbInitialValueForVirtioTaggedWindowsVm()
         }
     }
 
@@ -87,5 +92,39 @@ class ChangeWindowsVmNicDriverCase extends SubCase {
 
         assert VmSystemTags.VIRTIO.hasTag(vm.uuid)
         assert Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.uuid).select(VmNicVO_.driverType).findValue().equals("virtio")
+    }
+
+    void testPrepareDbInitialValueForVirtioTaggedWindowsVm() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        L3NetworkInventory pubL3 = env.inventoryByName("pubL3") as L3NetworkInventory
+        VmNicVO originalNic = Q.New(VmNicVO.class)
+                .eq(VmNicVO_.vmInstanceUuid, vm.uuid)
+                .find()
+
+        assert VmSystemTags.VIRTIO.hasTag(vm.uuid)
+        assert originalNic.driverType == "virtio"
+
+        VmNicInventory newNic = createVmNic {
+            l3NetworkUuid = pubL3.uuid
+        }
+
+        attachVmNicToVm {
+            vmInstanceUuid = vm.uuid
+            vmNicUuid = newNic.uuid
+        }
+
+        SQL.New(VmNicVO.class)
+                .eq(VmNicVO_.uuid, newNic.uuid)
+                .set(VmNicVO_.driverType, null)
+                .update()
+        assert Q.New(VmNicVO.class)
+                .eq(VmNicVO_.uuid, newNic.uuid)
+                .select(VmNicVO_.driverType)
+                .findValue() == null
+
+        bean(VmNicManagerImpl.class).prepareDbInitialValue()
+
+        assert Q.New(VmNicVO.class).eq(VmNicVO_.uuid, originalNic.uuid).select(VmNicVO_.driverType).findValue() == "virtio"
+        assert Q.New(VmNicVO.class).eq(VmNicVO_.uuid, newNic.uuid).select(VmNicVO_.driverType).findValue() == "virtio"
     }
 }

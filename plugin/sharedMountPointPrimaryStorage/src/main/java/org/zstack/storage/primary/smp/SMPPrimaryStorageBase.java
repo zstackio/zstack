@@ -59,6 +59,7 @@ import static org.zstack.storage.primary.smp.SMPPrimaryStorageFactory.type;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageMsg;
 
 /**
  * Created by xing5 on 2016/3/26.
@@ -990,6 +991,12 @@ public class SMPPrimaryStorageBase extends PrimaryStorageBase implements KVMTake
             }
         });
     }
+
+    @Override
+    protected void handle(ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
 
     @Override
     protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {

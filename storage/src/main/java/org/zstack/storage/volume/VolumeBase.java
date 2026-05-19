@@ -191,6 +191,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
         chain.then(new ShareFlow() {
             VolumeVO vo = self;
             String allocatedInstallUrl;
+            String reinitNewVolumeInstallPath;
+            boolean primaryStorageReinitSucceeded;
+            boolean dbInstallPathSwitched;
 
             @Override
             public void setup() {
@@ -246,7 +249,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        if (success) {
+                        if (success && !dbInstallPathSwitched) {
+                            if (primaryStorageReinitSucceeded) {
+                                cleanupReinitNewVolumeBits(self.getPrimaryStorageUuid(), reinitNewVolumeInstallPath, self);
+                                trigger.rollback();
+                                return;
+                            }
                             ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
                             rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
                             rmsg.setDiskSize(originSize);
@@ -263,7 +271,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        MarkRootVolumeAsSnapshotMsg gmsg = new MarkRootVolumeAsSnapshotMsg();
+                        MarkVolumeAsSnapshotMsg gmsg = new MarkVolumeAsSnapshotMsg();
                         rootVolumeInventory.setDescription(String.format("save snapshot for reimage vm [uuid:%s]", msg.getVmInstanceUuid()));
                         rootVolumeInventory.setName(String.format("reimage-vm-point-%s-%s", msg.getVmInstanceUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
                         gmsg.setVolume(rootVolumeInventory);
@@ -295,14 +303,19 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         bus.send(rmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    ReInitRootVolumeFromTemplateOnPrimaryStorageReply re = (ReInitRootVolumeFromTemplateOnPrimaryStorageReply) reply;
-                                    vo.setInstallPath(re.getNewVolumeInstallPath());
-                                    vo = dbf.updateAndRefresh(vo);
-                                    trigger.next();
-                                } else {
+                                if (!reply.isSuccess()) {
                                     trigger.fail(reply.getError());
+                                    return;
                                 }
+
+                                ReInitRootVolumeFromTemplateOnPrimaryStorageReply re = reply.castReply();
+                                reinitNewVolumeInstallPath = re.getNewVolumeInstallPath();
+                                primaryStorageReinitSucceeded = true;
+
+                                vo.setInstallPath(reinitNewVolumeInstallPath);
+                                vo = dbf.updateAndRefresh(vo);
+                                dbInstallPathSwitched = true;
+                                trigger.next();
                             }
                         });
                     }
@@ -324,7 +337,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                     return;
                                 }
 
-                                vo.setSize(((SyncVolumeSizeReply) reply).getSize());
+                                SyncVolumeSizeReply syncReply = reply.castReply();
+                                vo.setSize(syncReply.getSize());
+                                vo.setActualSize(syncReply.getActualSize());
                                 trigger.next();
                             }
                         });
@@ -358,6 +373,242 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
             }
         }).start();
+    }
+
+    private void handle(final APIReInitDataVolumeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                reInitDataVolume(msg, new NoErrorCompletion(chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return "reinit-data-volume";
+            }
+        });
+    }
+
+    private void reInitDataVolume(final APIReInitDataVolumeMsg msg, NoErrorCompletion completion) {
+        final APIReInitDataVolumeEvent evt = new APIReInitDataVolumeEvent(msg.getId());
+
+        refreshVO();
+        VolumeInventory dataVolumeInventory = VolumeInventory.valueOf(self);
+        List<String> systemTags = Q.New(SystemTagVO.class).select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, dataVolumeInventory.getUuid())
+                .listValues();
+        FlowChain chain = FlowChainBuilder.newShareFlowChain();
+        chain.setName(String.format("reinit-data-volume-%s", self.getUuid()));
+        chain.then(new ShareFlow() {
+            VolumeVO vo = self;
+            String allocatedInstallUrl;
+            String reinitNewVolumeInstallPath;
+            boolean primaryStorageReinitSucceeded;
+            boolean dbInstallPathSwitched;
+
+            @Override
+            public void setup() {
+                flow(new Flow() {
+                    String __name__ = "allocate-primary-storage";
+
+                    boolean success;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AllocatePrimaryStorageSpaceMsg amsg = new AllocatePrimaryStorageSpaceMsg();
+                        amsg.setRequiredPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                        amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+                        amsg.setSize(self.getSize());
+                        amsg.setSystemTags(systemTags);
+                        amsg.setRequiredInstallUri(String.format("volume://%s", vo.getUuid()));
+
+                        bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+                                AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
+                                allocatedInstallUrl = ar.getAllocatedInstallUrl();
+                                success = true;
+                                trigger.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (success && !dbInstallPathSwitched) {
+                            if (primaryStorageReinitSucceeded) {
+                                cleanupReinitNewVolumeBits(self.getPrimaryStorageUuid(), reinitNewVolumeInstallPath, self);
+                                trigger.rollback();
+                                return;
+                            }
+                            ReleasePrimaryStorageSpaceMsg rmsg = new ReleasePrimaryStorageSpaceMsg();
+                            rmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
+                            rmsg.setDiskSize(self.getSize());
+                            rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                            bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+                            bus.send(rmsg);
+                        }
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "mark-data-volume-as-snapshot-on-primary-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        MarkVolumeAsSnapshotMsg gmsg = new MarkVolumeAsSnapshotMsg();
+                        dataVolumeInventory.setDescription(String.format("save snapshot for reinit data volume [uuid:%s]", self.getUuid()));
+                        dataVolumeInventory.setName(String.format("reinit-data-vol-point-%s-%s", self.getUuid(), TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
+                        gmsg.setVolume(dataVolumeInventory);
+                        gmsg.setAccountUuid(msg.getSession().getAccountUuid());
+                        bus.makeLocalServiceId(gmsg, VolumeSnapshotConstant.SERVICE_ID);
+                        bus.send(gmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "reinit-data-volume-on-primary-storage";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        ReInitDataVolumeOnPrimaryStorageMsg rmsg = new ReInitDataVolumeOnPrimaryStorageMsg();
+                        rmsg.setVolume(dataVolumeInventory);
+                        rmsg.setAllocatedInstallUrl(allocatedInstallUrl);
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, dataVolumeInventory.getPrimaryStorageUuid());
+                        bus.send(rmsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                ReInitDataVolumeOnPrimaryStorageReply re = reply.castReply();
+                                reinitNewVolumeInstallPath = re.getNewVolumeInstallPath();
+                                primaryStorageReinitSucceeded = true;
+
+                                vo.setInstallPath(reinitNewVolumeInstallPath);
+                                vo = dbf.updateAndRefresh(vo);
+                                dbInstallPathSwitched = true;
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "sync-volume-size-after-reinit";
+
+                    @Override
+                    public void run(final FlowTrigger trigger, Map data) {
+                        SyncVolumeSizeMsg smsg = new SyncVolumeSizeMsg();
+                        smsg.setVolumeUuid(vo.getUuid());
+                        bus.makeTargetServiceIdByResourceUuid(smsg, VolumeConstant.SERVICE_ID, dataVolumeInventory.getUuid());
+                        bus.send(smsg, new CloudBusCallBack(msg) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    trigger.fail(reply.getError());
+                                    return;
+                                }
+
+                                SyncVolumeSizeReply syncReply = reply.castReply();
+                                vo.setSize(syncReply.getSize());
+                                vo.setActualSize(syncReply.getActualSize());
+                                trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        dbf.update(vo);
+
+                        List<AfterReimageVmInstanceExtensionPoint> list = pluginRgty.getExtensionList(
+                                AfterReimageVmInstanceExtensionPoint.class);
+                        for (AfterReimageVmInstanceExtensionPoint ext : list) {
+                            ext.afterReimageVmInstance(dataVolumeInventory);
+                        }
+
+                        self = dbf.reload(self);
+                        evt.setInventory(VolumeInventory.valueOf(self));
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+
+                error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errCode, Map data) {
+                        logger.warn(String.format("failed to reinit data volume[uuid:%s], %s",
+                                dataVolumeInventory.getUuid(), errCode));
+                        evt.setError(errCode);
+                        bus.publish(evt);
+                        completion.done();
+                    }
+                });
+            }
+        }).start();
+    }
+
+    private void cleanupReinitNewVolumeBits(String primaryStorageUuid, String installPath, VolumeVO volume) {
+        if (primaryStorageUuid == null || installPath == null || volume == null) {
+            return;
+        }
+
+        DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+        dmsg.setPrimaryStorageUuid(primaryStorageUuid);
+        dmsg.setInstallPath(installPath);
+        dmsg.setBitsUuid(volume.getUuid());
+        dmsg.setBitsType(VolumeVO.class.getSimpleName());
+        dmsg.setSize(volume.getSize());
+        dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, primaryStorageUuid);
+        bus.send(dmsg, new CloudBusCallBack(null) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    return;
+                }
+
+                logger.warn(String.format("failed to delete reinit new volume bits[path:%s, volumeUuid:%s], submit GC. %s",
+                        installPath, volume.getUuid(), reply.getError()));
+                PrimaryStorageDeleteBitGC gc = new PrimaryStorageDeleteBitGC();
+                gc.NAME = String.format("gc-delete-reinit-volume-%s-bits-on-primary-storage-%s", volume.getUuid(), primaryStorageUuid);
+                gc.primaryStorageInstallPath = installPath;
+                gc.primaryStorageUuid = primaryStorageUuid;
+                gc.volume = volume;
+                gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
+                        TimeUnit.SECONDS);
+            }
+        });
     }
 
     private void handle(ChangeVolumeStatusMsg msg) {
@@ -2173,6 +2424,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
             handle((APIDetachDataVolumeFromHostMsg) msg);
         } else if (msg instanceof APIFlattenVolumeMsg) {
             handle((APIFlattenVolumeMsg) msg);
+        } else if (msg instanceof APIReInitDataVolumeMsg) {
+            handle((APIReInitDataVolumeMsg) msg);
         } else if (msg instanceof APIUndoSnapshotCreationMsg) {
             handle((APIUndoSnapshotCreationMsg) msg);
         } else {

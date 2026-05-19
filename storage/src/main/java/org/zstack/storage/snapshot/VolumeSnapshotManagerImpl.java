@@ -158,8 +158,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             handle((CreateVolumeSnapshotMsg) msg);
         } else if (msg instanceof VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) {
             handle((VolumeSnapshotReportPrimaryStorageCapacityUsageMsg) msg);
-        } else if (msg instanceof MarkRootVolumeAsSnapshotMsg) {
-            handle((MarkRootVolumeAsSnapshotMsg) msg);
+        } else if (msg instanceof MarkVolumeAsSnapshotMsg) {
+            handle((MarkVolumeAsSnapshotMsg) msg);
         } else if (msg instanceof AskVolumeSnapshotStructMsg) {
             handle((AskVolumeSnapshotStructMsg) msg);
         } else if (msg instanceof GetVolumeSnapshotTreeRootNodeMsg) {
@@ -1086,8 +1086,8 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
                 .findValue();
     }
 
-    private void handle(MarkRootVolumeAsSnapshotMsg msg) {
-        final MarkRootVolumeAsSnapshotReply ret = new MarkRootVolumeAsSnapshotReply();
+    private void handle(MarkVolumeAsSnapshotMsg msg) {
+        final MarkVolumeAsSnapshotReply ret = new MarkVolumeAsSnapshotReply();
         VolumeInventory vol = msg.getVolume();
 
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, vol.getPrimaryStorageUuid()).findValue();

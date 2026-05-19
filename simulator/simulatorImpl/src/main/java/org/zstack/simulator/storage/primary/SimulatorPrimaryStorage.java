@@ -23,6 +23,8 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageReply;
 
 
 public class SimulatorPrimaryStorage extends PrimaryStorageBase {
@@ -218,6 +220,14 @@ public class SimulatorPrimaryStorage extends PrimaryStorageBase {
         reply.setSuccess(true);
         bus.reply(msg, reply);
     }
+
+    @Override
+    protected void handle(ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        ReInitDataVolumeOnPrimaryStorageReply reply = new ReInitDataVolumeOnPrimaryStorageReply();
+        reply.setSuccess(true);
+        bus.reply(msg, reply);
+    }
+
 
     @Override
     protected void connectHook(ConnectParam param, Completion completion) {

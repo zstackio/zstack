@@ -71,6 +71,7 @@ import static org.zstack.core.progress.ProgressReportService.*;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
+import org.zstack.header.storage.primary.ReInitDataVolumeOnPrimaryStorageMsg;
 
 public class NfsPrimaryStorage extends PrimaryStorageBase {
     private static final CLogger logger = Utils.getLogger(NfsPrimaryStorage.class);
@@ -520,6 +521,12 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             }
         });
     }
+
+    @Override
+    protected void handle(ReInitDataVolumeOnPrimaryStorageMsg msg) {
+        bus.dealWithUnknownMessage(msg);
+    }
+
 
     @Override
     protected void handle(final DeleteSnapshotOnPrimaryStorageMsg msg) {
