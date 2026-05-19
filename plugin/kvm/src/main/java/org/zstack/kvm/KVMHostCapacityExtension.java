@@ -16,6 +16,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
 
@@ -31,6 +32,7 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     public void reportCapacity(HostInventory host, Completion completion) {
         CheckHostCapacityMsg msg = new CheckHostCapacityMsg();
         msg.setHostUuid(host.getUuid());
+        msg.setTimeout(TimeUnit.MINUTES.toMillis(30));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
