@@ -3,12 +3,9 @@ package org.zstack.header.network.l3;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 
-import java.util.List;
-
 public class SdnControllerEnableDHCPMsg extends NeedReplyMessage implements SdnControllerMessage {
     private String l3NetworkUuid;
     private String sdnControllerUuid;
-    private List<String> systemTags;
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;
@@ -25,13 +22,5 @@ public class SdnControllerEnableDHCPMsg extends NeedReplyMessage implements SdnC
 
     public void setSdnControllerUuid(String sdnControllerUuid) {
         this.sdnControllerUuid = sdnControllerUuid;
-    }
-
-    public List<String> getSystemTags() {
-        return systemTags;
-    }
-
-    public void setSystemTags(List<String> systemTags) {
-        this.systemTags = systemTags;
     }
 }
