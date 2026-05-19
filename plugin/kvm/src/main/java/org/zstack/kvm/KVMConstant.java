@@ -67,6 +67,8 @@ public interface KVMConstant {
     String KVM_DETACH_VOLUME = "/vm/detachdatavolume";
     String KVM_ATTACH_NIC_PATH = "/vm/attachnic";
     String KVM_DETACH_NIC_PATH = "/vm/detachnic";
+    String KVM_VM_SHMEM_HOTPLUG_PATH = "/vm/shmem/hotplug";
+    String KVM_VM_SHMEM_HOTUNPLUG_PATH = "/vm/shmem/hotunplug";
     String KVM_CHANGE_NIC_STATE_PATH = "/vm/changenicstate";
     String KVM_UPDATE_NIC_PATH = "/vm/updatenic";
     String KVM_SET_VF_NIC_MAC_PATH = "/vm/setvfnicmac";

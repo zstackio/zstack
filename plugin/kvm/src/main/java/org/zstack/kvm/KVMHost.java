@@ -56,6 +56,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -634,6 +635,10 @@ public class KVMHost extends HostBase implements Host {
             handle((CheckSnapshotOnHypervisorMsg) msg);
         } else if (msg instanceof MergeVolumeSnapshotOnKvmMsg) {
             handle((MergeVolumeSnapshotOnKvmMsg) msg);
+        } else if (msg instanceof KVMHotPlugVmShmemMsg) {
+            handle((KVMHotPlugVmShmemMsg) msg);
+        } else if (msg instanceof KVMHotUnplugVmShmemMsg) {
+            handle((KVMHotUnplugVmShmemMsg) msg);
         } else if (msg instanceof KVMHostAsyncHttpCallMsg) {
             handle((KVMHostAsyncHttpCallMsg) msg);
         } else if (msg instanceof KVMHostSyncHttpCallMsg) {
@@ -2706,6 +2711,46 @@ public class KVMHost extends HostBase implements Host {
                             }
                         }))
                 );
+    }
+
+    private void handle(final KVMHotPlugVmShmemMsg msg) {
+        KVMAgentCommands.HotPlugVmShmemCmd cmd = new KVMAgentCommands.HotPlugVmShmemCmd();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.shmem = msg.getShmem();
+
+        sendVmShmemCommand(msg, cmd, KVMConstant.KVM_VM_SHMEM_HOTPLUG_PATH,
+                KVMAgentCommands.HotPlugVmShmemRsp.class);
+    }
+
+    private void handle(final KVMHotUnplugVmShmemMsg msg) {
+        KVMAgentCommands.HotUnplugVmShmemCmd cmd = new KVMAgentCommands.HotUnplugVmShmemCmd();
+        cmd.vmUuid = msg.getVmUuid();
+        cmd.shmem = msg.getShmem();
+
+        sendVmShmemCommand(msg, cmd, KVMConstant.KVM_VM_SHMEM_HOTUNPLUG_PATH,
+                KVMAgentCommands.HotUnplugVmShmemRsp.class);
+    }
+
+    private <T extends AgentResponse> void sendVmShmemCommand(NeedReplyMessage origin,
+                                                             Object cmd,
+                                                             String path,
+                                                             Class<T> responseClass) {
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setHostUuid(((HostMessage) origin).getHostUuid());
+        kmsg.setPath(path);
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, ((HostMessage) origin).getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(origin) {
+            @Override
+            public void run(MessageReply reply) {
+                ErrorableValue<T> response = KVMHostAsyncHttpCallReply.unwrap(reply, responseClass);
+                MessageReply ret = new MessageReply();
+                if (!response.isSuccess()) {
+                    ret.setError(response.error);
+                }
+                bus.reply(origin, ret);
+            }
+        });
     }
 
     private String buildUrl(String path) {
