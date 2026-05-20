@@ -7,12 +7,12 @@ doc {
 
     title "查询第三方用户来源绑定关系清单列表"
 
-	field {
-		name "success"
-		desc "请求是否成功"
-		type "boolean"
-		since "4.3.0"
-	}
+    field {
+        name "success"
+        desc "请求是否成功"
+        type "boolean"
+        since "4.3.0"
+    }
     ref {
         name "error"
         path "org.zstack.ldap.api.APIQueryLdapBindingReply.error"
