@@ -8,6 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.network.l3.L3NetworkConstant;
 import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 import java.util.*;
@@ -66,6 +67,8 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
      */
     @APIParam
     private Map<String, List<String>> networkServices;
+    @APINoSee
+    private transient boolean skipAttach;
 
     @Override
     public String getL3NetworkUuid() {
@@ -82,6 +85,14 @@ public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    public boolean isSkipAttach() {
+        return skipAttach;
+    }
+
+    public void setSkipAttach(boolean skipAttach) {
+        this.skipAttach = skipAttach;
     }
  
     public static APIAttachNetworkServiceToL3NetworkMsg __example__() {

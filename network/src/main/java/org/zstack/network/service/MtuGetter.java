@@ -3,6 +3,7 @@ package org.zstack.network.service;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.network.l2.*;
@@ -28,6 +29,13 @@ public class MtuGetter {
     @Autowired
     private PluginRegistry pluginRgty;
 
+    private PluginRegistry getPluginRegistry() {
+        if (pluginRgty == null) {
+            pluginRgty = Platform.getComponentLoader().getComponent(PluginRegistry.class);
+        }
+        return pluginRgty;
+    }
+
     public Integer getMtu(String l3NetworkUuid) {
         String l2NetworkUuid = Q.New(L3NetworkVO.class).select(L3NetworkVO_.l2NetworkUuid).eq(L3NetworkVO_.uuid, l3NetworkUuid).findValue();
 
@@ -43,7 +51,7 @@ public class MtuGetter {
         }
 
         L2NetworkVO l2VO = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l2NetworkUuid).find();
-        for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
+        for (L2NetworkDefaultMtu e : getPluginRegistry().getExtensionList(L2NetworkDefaultMtu.class)) {
             if (l2VO.getType().equals(e.getL2NetworkType())) {
                 mtu = e.getDefaultMtu(L2NetworkInventory.valueOf(l2VO));
             }
@@ -82,7 +90,7 @@ public class MtuGetter {
         }
 
         /* compare to default mtu */
-        for (L2NetworkDefaultMtu e : pluginRgty.getExtensionList(L2NetworkDefaultMtu.class)) {
+        for (L2NetworkDefaultMtu e : getPluginRegistry().getExtensionList(L2NetworkDefaultMtu.class)) {
             if (l2Inv.getType().equals(e.getL2NetworkType())) {
                 Integer l2mtu = e.getDefaultMtu(l2Inv);
                 if (mtu == null) {

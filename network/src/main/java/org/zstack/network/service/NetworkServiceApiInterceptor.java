@@ -1,6 +1,7 @@
 package org.zstack.network.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
@@ -29,16 +30,22 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
-public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {   
-   private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
-   @Autowired
+public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
+    private final static CLogger logger = Utils.getLogger(NetworkServiceApiInterceptor.class);
+    @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAttachNetworkServiceToL3NetworkMsg) {
             APIAttachNetworkServiceToL3NetworkMsg attachMsg = (APIAttachNetworkServiceToL3NetworkMsg)msg;
             attachMsg.setNetworkServices(convertNetworkProviderTypeToUuid(attachMsg.getNetworkServices()));
+            if (skipAttachNetworkService(attachMsg)) {
+                attachMsg.setSkipAttach(true);
+                return msg;
+            }
             validate(attachMsg);
         } else if (msg instanceof APIDetachNetworkServiceFromL3NetworkMsg) {
             APIDetachNetworkServiceFromL3NetworkMsg detachMsg = (APIDetachNetworkServiceFromL3NetworkMsg)msg;
@@ -57,6 +64,15 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         }
 
         return msg;
+    }
+
+    private boolean skipAttachNetworkService(APIAttachNetworkServiceToL3NetworkMsg msg) {
+        for (NetworkServiceAttachExtensionPoint ext : pluginRgty.getExtensionList(NetworkServiceAttachExtensionPoint.class)) {
+            if (ext.skipAttachNetworkService(msg)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void validate(APIAttachNetworkServiceToL3NetworkMsg msg) {
@@ -157,11 +173,11 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private Map<String, List<String>> convertNetworkProviderTypeToUuid(Map<String, List<String>> map){
-        if (map.isEmpty()) {
+        Map<String, List<String>> mapNew = normalizeNetworkServices(map);
+        if (mapNew.isEmpty()) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_10012, "networkServices cannot be empty"));
         }
 
-        Map<String, List<String>> mapNew = new HashMap<>(map);
         List<NetworkServiceProviderVO> networkServiceProviderVOs = Q.New(NetworkServiceProviderVO.class).list();
 
         for (NetworkServiceProviderVO vo :networkServiceProviderVOs) {
@@ -171,5 +187,40 @@ public class NetworkServiceApiInterceptor implements ApiMessageInterceptor {
         }
 
         return mapNew;
+    }
+
+    private Map<String, List<String>> normalizeNetworkServices(Map<String, List<String>> map) {
+        Map<String, List<String>> ret = new LinkedHashMap<>();
+        if (map == null) {
+            return ret;
+        }
+
+        for (Map.Entry<String, List<String>> entry : map.entrySet()) {
+            if (entry.getKey() == null) {
+                continue;
+            }
+
+            String provider = entry.getKey().trim();
+            if (provider.isEmpty()) {
+                continue;
+            }
+
+            List<String> services = new ArrayList<>();
+            if (entry.getValue() != null) {
+                for (String service : entry.getValue()) {
+                    if (service == null) {
+                        continue;
+                    }
+
+                    String normalized = service.trim();
+                    if (!normalized.isEmpty()) {
+                        services.add(normalized);
+                    }
+                }
+            }
+
+            ret.computeIfAbsent(provider, k -> new ArrayList<>()).addAll(services);
+        }
+        return ret;
     }
 }

@@ -10,6 +10,7 @@ public class NetworkServiceProviderType {
     private final String typeName;
     private boolean createDhcpNameSpace = true;
     private boolean allocateDhcpServerIp = true;
+    private boolean allocateDhcpv6ServerIp = true;
 
     public NetworkServiceProviderType(String typeName) {
         this.typeName = typeName;
@@ -53,6 +54,14 @@ public class NetworkServiceProviderType {
 
     public void setAllocateDhcpServerIp(boolean allocateDhcpServerIp) {
         this.allocateDhcpServerIp = allocateDhcpServerIp;
+    }
+
+    public boolean isAllocateDhcpv6ServerIp() {
+        return allocateDhcpv6ServerIp;
+    }
+
+    public void setAllocateDhcpv6ServerIp(boolean allocateDhcpv6ServerIp) {
+        this.allocateDhcpv6ServerIp = allocateDhcpv6ServerIp;
     }
 
     @Override
