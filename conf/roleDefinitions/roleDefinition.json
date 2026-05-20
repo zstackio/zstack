@@ -78,6 +78,7 @@
           "org.zstack.license.APIGetLicenseRecordsMsg",
           "org.zstack.license.APIGetLicenseInfoMsg",
           "org.zstack.license.APIGetLicenseCapabilitiesMsg",
+          "org.zstack.license.api.usage.APIGetLicenseUsagesMsg",
           "org.zstack.ldap.**",
           "org.zstack.header.storageDevice.**",
           "org.zstack.header.aliyun.oss.**",
