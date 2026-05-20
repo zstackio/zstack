@@ -38,7 +38,7 @@ public class SdnControllerInventory implements Serializable {
         this.setVendorVersion(vo.getVendorVersion());
         this.setDescription(vo.getDescription());
         this.setName(vo.getName());
-        this.setIp(vo.getIp());
+        this.setIp(toHostAddress(vo.getIp()));
         this.setUsername(vo.getUsername());
         this.setPassword(vo.getPassword());
         this.setStatus(vo.getStatus());
@@ -57,6 +57,28 @@ public class SdnControllerInventory implements Serializable {
             lst.add(SdnControllerInventory.valueOf(vo));
         }
         return lst;
+    }
+
+    private static String toHostAddress(String endpoint) {
+        if (endpoint == null) {
+            return null;
+        }
+
+        String value = endpoint.trim();
+        if (value.startsWith("[")) {
+            int rightBracket = value.indexOf(']');
+            if (rightBracket > 1 && rightBracket + 1 < value.length() && value.charAt(rightBracket + 1) == ':') {
+                return value.substring(1, rightBracket);
+            }
+        }
+
+        int firstColon = value.indexOf(':');
+        int lastColon = value.lastIndexOf(':');
+        if (firstColon > 0 && firstColon == lastColon) {
+            return value.substring(0, lastColon);
+        }
+
+        return value;
     }
 
     public String getUuid() {
