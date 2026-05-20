@@ -21,6 +21,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
@@ -95,6 +96,9 @@ public class VmAllocateHostFlow implements Flow {
         }));
         msg.setImage(image);
         msg.setVmOperation(spec.getCurrentVmOperation().toString());
+        if (spec.getMessage() instanceof APIMessage && ((APIMessage) spec.getMessage()).getSystemTags() != null) {
+            msg.setSystemTags(new ArrayList<>(((APIMessage) spec.getMessage()).getSystemTags()));
+        }
 
         if (spec.getVmInventory().getZoneUuid() != null) {
             msg.setZoneUuid(spec.getVmInventory().getZoneUuid());
