@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class SetVmDGpuStrategyAction extends AbstractAction {
+public class UpdateVmDGpuAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class SetVmDGpuStrategyAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.SetVmDGpuStrategyResult value;
+        public org.zstack.sdk.UpdateVmDGpuResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -72,8 +72,8 @@ public class SetVmDGpuStrategyAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.SetVmDGpuStrategyResult value = res.getResult(org.zstack.sdk.SetVmDGpuStrategyResult.class);
-        ret.value = value == null ? new org.zstack.sdk.SetVmDGpuStrategyResult() : value; 
+        org.zstack.sdk.UpdateVmDGpuResult value = res.getResult(org.zstack.sdk.UpdateVmDGpuResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateVmDGpuResult() : value; 
 
         return ret;
     }
@@ -106,7 +106,7 @@ public class SetVmDGpuStrategyAction extends AbstractAction {
         info.path = "/vm-instances/{vmInstanceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "setVmDGpuStrategy";
+        info.parameterName = "updateVmDGpu";
         return info;
     }
 

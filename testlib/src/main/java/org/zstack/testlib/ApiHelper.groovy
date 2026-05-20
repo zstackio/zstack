@@ -40519,8 +40519,8 @@ abstract class ApiHelper {
     }
 
 
-    def setVmDGpuStrategy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetVmDGpuStrategyAction.class) Closure c) {
-        def a = new org.zstack.sdk.SetVmDGpuStrategyAction()
+    def updateVmDGpu(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateVmDGpuAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateVmDGpuAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
