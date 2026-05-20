@@ -2717,7 +2717,7 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final KVMHotPlugVmShmemMsg msg) {
         KVMAgentCommands.HotPlugVmShmemCmd cmd = new KVMAgentCommands.HotPlugVmShmemCmd();
         cmd.vmUuid = msg.getVmUuid();
-        cmd.shmem = msg.getShmem();
+        cmd.shmem = buildVmShmemDevice(msg.getShmemName(), msg.getShmemPath(), msg.getShmemSize());
 
         sendVmShmemCommand(msg, cmd, KVMConstant.KVM_VM_SHMEM_HOTPLUG_PATH,
                 KVMAgentCommands.HotPlugVmShmemRsp.class);
@@ -2726,10 +2726,18 @@ public class KVMHost extends HostBase implements Host {
     private void handle(final KVMHotUnplugVmShmemMsg msg) {
         KVMAgentCommands.HotUnplugVmShmemCmd cmd = new KVMAgentCommands.HotUnplugVmShmemCmd();
         cmd.vmUuid = msg.getVmUuid();
-        cmd.shmem = msg.getShmem();
+        cmd.shmem = buildVmShmemDevice(msg.getShmemName(), msg.getShmemPath(), msg.getShmemSize());
 
         sendVmShmemCommand(msg, cmd, KVMConstant.KVM_VM_SHMEM_HOTUNPLUG_PATH,
                 KVMAgentCommands.HotUnplugVmShmemRsp.class);
+    }
+
+    private KVMAgentCommands.VmShmemDevice buildVmShmemDevice(String name, String path, long size) {
+        KVMAgentCommands.VmShmemDevice shmem = new KVMAgentCommands.VmShmemDevice();
+        shmem.name = name;
+        shmem.path = path;
+        shmem.size = size;
+        return shmem;
     }
 
     private <T extends AgentResponse> void sendVmShmemCommand(NeedReplyMessage origin,
