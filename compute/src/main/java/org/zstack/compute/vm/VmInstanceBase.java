@@ -1023,6 +1023,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                         }
 
                         sql.update();
+                        refreshVO();
+                        createPreFencePendingTag(msg);
 
                         startVm(msg, new Completion(msg, chain) {
                             @Override
@@ -1051,6 +1053,28 @@ public class VmInstanceBase extends AbstractVmInstance {
                 return "ha-start-vm";
             }
         });
+    }
+
+    private void createPreFencePendingTag(HaStartVmInstanceMsg msg) {
+        String suspectHostUuid = StringUtils.trimToNull(CollectionUtils.isEmpty(msg.getSoftAvoidHostUuids()) ?
+                self.getLastHostUuid() : msg.getSoftAvoidHostUuids().get(0));
+        String peerHostUuid = StringUtils.trimToNull(msg.getAccessiblePeerHostUuid());
+        if (suspectHostUuid == null || peerHostUuid == null) {
+            logger.debug(String.format("HA-start vm[%s]: skip creating pre-fence tag because suspect host[%s] or peer host[%s] is absent",
+                    self.getUuid(), suspectHostUuid, peerHostUuid));
+            return;
+        }
+
+        Map<String, String> tokens = new HashMap<>();
+        tokens.put(VmSystemTags.HA_PRE_FENCE_SUSPECT_HOST_UUID_TOKEN, suspectHostUuid);
+        tokens.put(VmSystemTags.HA_PRE_FENCE_ACCESSIBLE_PEER_HOST_UUID_TOKEN, peerHostUuid);
+
+        SystemTagCreator creator = VmSystemTags.HA_PRE_FENCE_PENDING.newSystemTagCreator(self.getUuid());
+        creator.inherent = true;
+        creator.recreate = true;
+        creator.ignoreIfExisting = true;
+        creator.setTagByTokens(tokens);
+        creator.create();
     }
 
     static class IpOverrideInfo {
