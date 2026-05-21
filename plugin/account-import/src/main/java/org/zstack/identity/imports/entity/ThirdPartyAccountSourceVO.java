@@ -26,7 +26,8 @@ public class ThirdPartyAccountSourceVO extends ResourceVO {
     private String description;
 
     /**
-     * ex: "ldap"
+     * ex: "WindowsAD" (exclude "Local")
+     * @see {@link org.zstack.header.identity.AccountSource}
      */
     @Column
     private String type;
