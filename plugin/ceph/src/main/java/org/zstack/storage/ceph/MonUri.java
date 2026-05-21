@@ -26,6 +26,8 @@ public class MonUri {
     private int sshPort = 22;
 
     private static List<String> allowedQueryParameter;
+    private static final String IPV6_URL_HOST_PREFIX = "[";
+    private static final String IPV6_URL_HOST_SUFFIX = "]";
     static {
         allowedQueryParameter = list("monPort");
     }
@@ -90,6 +92,7 @@ public class MonUri {
                                 " in format of %s", url, MON_URL_FORMAT)
                 );
             }
+            hostname = stripIpv6Brackets(hostname);
 
             sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
             if (sshPort < 1 || sshPort > 65535) {
@@ -102,6 +105,14 @@ public class MonUri {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(e);
         }
+    }
+
+    private static String stripIpv6Brackets(String host) {
+        if (host != null && host.startsWith(IPV6_URL_HOST_PREFIX) && host.endsWith(IPV6_URL_HOST_SUFFIX)) {
+            return host.substring(IPV6_URL_HOST_PREFIX.length(), host.length() - IPV6_URL_HOST_SUFFIX.length());
+        }
+
+        return host;
     }
 
     public int getSshPort() {

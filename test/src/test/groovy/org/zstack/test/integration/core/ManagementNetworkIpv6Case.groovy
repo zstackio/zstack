@@ -6,6 +6,9 @@ import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.header.rest.RESTConstant
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
+import org.zstack.storage.ceph.MonUri
+import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
@@ -23,6 +26,11 @@ class ManagementNetworkIpv6Case {
     private static final String INVALID_IP = "not-an-ip!!"
     private static final String MANAGEMENT_SERVER_ID = "1234567890abcdef1234567890abcdef"
     private static final String NEW_MANAGEMENT_SERVER_ID = "abcdef1234567890abcdef1234567890"
+    private static final String NFS_EXPORT_PATH = "/export/nfs"
+    private static final String NFS_IPV4_URL = "${IPV4}:${NFS_EXPORT_PATH}"
+    private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
+    private static final String CEPH_IPV6_MON_URL = "root:password@[${IPV6}]:22/?monPort=6789"
+    private static final String INVALID_VTEP_IP = "not-a-vtep-ip"
     private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
 2: eth0
     inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0
@@ -59,6 +67,9 @@ class ManagementNetworkIpv6Case {
         testManagementCidrCommandOutputParsing()
         testManagementCidrIpVersionOverload()
         testManagementServerIdPersisted()
+        testNfsIpv6UrlParsing()
+        testCephIpv6MonUrlParsing()
+        testVxlanVtepIpv6Validation()
         testApplianceVmBootstrapParam()
     }
 
@@ -202,6 +213,27 @@ class ManagementNetworkIpv6Case {
                 System.setProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY, oldValue)
             }
         }
+    }
+
+    void testNfsIpv6UrlParsing() {
+        assert NfsApiParamChecker.getNfsHostFromUrl(NFS_IPV4_URL) == IPV4
+        assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV4_URL) == NFS_EXPORT_PATH
+        assert NfsApiParamChecker.getNfsHostFromUrl(NFS_IPV6_URL) == IPV6
+        assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV6_URL) == NFS_EXPORT_PATH
+    }
+
+    void testCephIpv6MonUrlParsing() {
+        MonUri monUri = new MonUri(CEPH_IPV6_MON_URL)
+        assert monUri.hostname == IPV6
+        assert monUri.sshPort == 22
+        assert monUri.monPort == 6789
+        assert IPv6NetworkUtils.formatHostPort(monUri.hostname, monUri.monPort) == "[${IPV6}]:6789"
+    }
+
+    void testVxlanVtepIpv6Validation() {
+        assert VxlanPoolApiInterceptor.isValidVtepIp(IPV4)
+        assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
+        assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
     }
 
     void testApplianceVmBootstrapParam() {

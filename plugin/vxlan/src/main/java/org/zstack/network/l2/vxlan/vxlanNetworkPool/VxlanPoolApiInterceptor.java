@@ -56,7 +56,7 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVxlanPoolRemoteVtepMsg msg) {
-        if (!NetworkUtils.isIpAddress(msg.getRemoteVtepIp())) {
+        if (!isValidVtepIp(msg.getRemoteVtepIp())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10032, "%s is not a valid IP address", msg.getRemoteVtepIp()));
         }
 
@@ -72,10 +72,14 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVxlanPoolRemoteVtepMsg msg) {
-        if (!NetworkUtils.isIpAddress(msg.getRemoteVtepIp())) {
+        if (!isValidVtepIp(msg.getRemoteVtepIp())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10033, "%s is not a valid IP address", msg.getRemoteVtepIp()));
         }
 
+    }
+
+    public static boolean isValidVtepIp(String vtepIp) {
+        return NetworkUtils.isIpAddress(vtepIp);
     }
 
     private void validate(APICreateVxlanVtepMsg msg) {

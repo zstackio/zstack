@@ -51,13 +51,13 @@ public class NfsApiParamChecker {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10006, "there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid));
         }
 
-        String path = getNfsPath(url);
+        String path = getNfsPathFromUrl(url);
         if (path != null && (
                 path.startsWith("/dev") || path.startsWith("/proc") || path.startsWith("/sys"))) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007, " the url contains an invalid folder[/dev or /proc or /sys]"));
         }
 
-        validateUrl(systemTags, getNfsHost(url));
+        validateUrl(systemTags, getNfsHostFromUrl(url));
     }
 
 
@@ -88,7 +88,7 @@ public class NfsApiParamChecker {
         }
     }
 
-    private String getNfsHost(String url) {
+    public static String getNfsHostFromUrl(String url) {
         if (url.startsWith(IPV6_URL_HOST_PREFIX)) {
             int end = url.indexOf(IPV6_URL_HOST_SUFFIX);
             if (end > 0) {
@@ -99,7 +99,7 @@ public class NfsApiParamChecker {
         return url.split(NFS_URL_SEPARATOR)[0];
     }
 
-    private String getNfsPath(String url) {
+    public static String getNfsPathFromUrl(String url) {
         if (url.startsWith(IPV6_URL_HOST_PREFIX)) {
             int end = url.indexOf(IPV6_URL_HOST_SUFFIX);
             if (end > 0 && url.length() > end + IPV6_URL_HOST_SUFFIX.length()) {
