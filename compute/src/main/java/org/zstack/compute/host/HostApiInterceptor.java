@@ -125,6 +125,10 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddHostMsg msg) {
+        validateManagementEndpoint(msg);
+    }
+
+    static void validateManagementEndpoint(APIAddHostMsg msg) {
         if (!isValidManagementEndpoint(msg.getManagementIp())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10128, INVALID_MANAGEMENT_IP_ERROR, msg.getManagementIp()));
         }
@@ -134,7 +138,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private boolean isValidManagementEndpoint(String endpoint) {
+    private static boolean isValidManagementEndpoint(String endpoint) {
         return IPv6NetworkUtils.isValidManagementEndpoint(endpoint);
     }
 
