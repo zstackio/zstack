@@ -91,6 +91,8 @@ public class Platform {
     private static final String DEFAULT_ROUTE_MARK = "default via";
     private static final String JGROUPS_INITIAL_HOST_FORMAT = "%s[%s],%s[%s]";
     private static final int IP_ADDRESS_COMMAND_CIDR_INDEX = 1;
+    private static final int IP_ADDRESS_COMMAND_MIN_TOKEN_COUNT = 2;
+    private static final String CIDR_SEPARATOR = "/";
     private static final String TEMP_FILE_SUFFIX = ".tmp";
     private static final String ZSTACK_UUID_PATTERN = "[0-9a-fA-F]{32}";
     private static EncryptRSA rsa = new EncryptRSA();
@@ -860,14 +862,35 @@ public class Platform {
     private static String getManagementServerCidrInternal(String mgtIp) {
         String command = IPv6NetworkUtils.isIpv6Address(mgtIp) ? IPV6_ADDRESS_COMMAND : IPV4_ADDRESS_COMMAND;
         Linux.ShellResult ret = Linux.shell(command);
-        for (String line : ret.getStdout().split("\\n")) {
-            if (line.contains(mgtIp)) {
-                line = line.trim();
-                try {
-                    return NetworkUtils.getNetworkAddressFromCidr(line.split(" ")[IP_ADDRESS_COMMAND_CIDR_INDEX]);
-                } catch (RuntimeException e) {
-                    return null;
-                }
+        return parseManagementServerCidrFromIpAddressOutput(mgtIp, ret.getStdout());
+    }
+
+    public static String parseManagementServerCidrFromIpAddressOutput(String managementIp, String commandOutput) {
+        if (commandOutput == null) {
+            return null;
+        }
+
+        String normalizedManagementIp = normalizeManagementIp(managementIp);
+        for (String line : commandOutput.split("\\n")) {
+            String[] tokens = line.trim().split("\\s+");
+            if (tokens.length < IP_ADDRESS_COMMAND_MIN_TOKEN_COUNT) {
+                continue;
+            }
+
+            String cidr = tokens[IP_ADDRESS_COMMAND_CIDR_INDEX];
+            if (!cidr.contains(CIDR_SEPARATOR)) {
+                continue;
+            }
+
+            String ip = cidr.substring(0, cidr.indexOf(CIDR_SEPARATOR));
+            if (!normalizedManagementIp.equals(normalizeManagementIp(ip))) {
+                continue;
+            }
+
+            try {
+                return NetworkUtils.getNetworkAddressFromCidr(cidr);
+            } catch (RuntimeException e) {
+                return null;
             }
         }
 

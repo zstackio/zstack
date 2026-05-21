@@ -23,6 +23,19 @@ class ManagementNetworkIpv6Case {
     private static final String INVALID_IP = "not-an-ip!!"
     private static final String MANAGEMENT_SERVER_ID = "1234567890abcdef1234567890abcdef"
     private static final String NEW_MANAGEMENT_SERVER_ID = "abcdef1234567890abcdef1234567890"
+    private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
+2: eth0
+    inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0
+3: eth1
+    inet 10.0.0.10/24 brd 10.0.0.255 scope global eth1
+"""
+    private static final String IPV6_ADDRESS_COMMAND_OUTPUT = """\
+2: eth0
+    inet6 2001:db8::1/64 scope global
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1/64 scope link
+       valid_lft forever preferred_lft forever
+"""
     private static final int REST_PORT = 8080
     private static final int JGROUP_PORT = 7805
 
@@ -43,6 +56,7 @@ class ManagementNetworkIpv6Case {
         testJGroupsInitialHostsIpv4Regression()
         testIpv6NetworkCidr()
         testIpInCidrDualStack()
+        testManagementCidrCommandOutputParsing()
         testManagementCidrIpVersionOverload()
         testManagementServerIdPersisted()
         testApplianceVmBootstrapParam()
@@ -151,6 +165,12 @@ class ManagementNetworkIpv6Case {
         assert NetworkUtils.isIpInCidr(IPV6, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV4, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV6, "192.168.1.0/24")
+    }
+
+    void testManagementCidrCommandOutputParsing() {
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV4, IPV4_ADDRESS_COMMAND_OUTPUT) == "192.168.1.0/24"
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV6, IPV6_ADDRESS_COMMAND_OUTPUT) == "2001:db8::/64"
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV6_2, IPV6_ADDRESS_COMMAND_OUTPUT) == null
     }
 
     void testManagementCidrIpVersionOverload() {
