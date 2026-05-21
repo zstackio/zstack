@@ -33,6 +33,22 @@ public class TfPortClient {
         if (sdn == null){
             throw new RuntimeException("Can not find a tf sdn controller.");
         }
+        init(sdn);
+    }
+
+    public TfPortClient(String sdnControllerUuid) {
+        SdnControllerVO sdn = Q.New(SdnControllerVO.class).eq(
+                SdnControllerVO_.uuid, sdnControllerUuid).find();
+        if (sdn == null) {
+            throw new RuntimeException(String.format("Can not find a tf sdn controller[uuid:%s].", sdnControllerUuid));
+        }
+        if (!Objects.equals(sdn.getVendorType(), SdnControllerConstant.TF_CONTROLLER)) {
+            throw new RuntimeException(String.format("Sdn controller[uuid:%s] is not a tf sdn controller.", sdnControllerUuid));
+        }
+        init(sdn);
+    }
+
+    private void init(SdnControllerVO sdn) {
         client = new TfHttpClient(sdn.getIp());
         tenantId = StringDSL.transToTfUuid(sdn.getAccountUuid());
     }
@@ -510,5 +526,4 @@ public class TfPortClient {
         }
     }
 }
-
 
