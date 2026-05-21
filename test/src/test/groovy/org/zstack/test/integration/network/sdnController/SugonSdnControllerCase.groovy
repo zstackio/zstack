@@ -1,7 +1,12 @@
 package org.zstack.test.integration.network.sdnController
 
+import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.header.message.MessageReply
 import org.zstack.header.network.sdncontroller.SdnControllerVO
+import org.zstack.header.network.sdncontroller.SdnControllerConstant
+import org.zstack.sdnController.SdnControllerPingMsg
 import org.zstack.sdk.*
 import org.zstack.sugonSdnController.controller.SugonSdnControllerConstant
 import org.zstack.sugonSdnController.controller.api.types.MacAddressesType
@@ -15,6 +20,9 @@ import org.zstack.testlib.SubCase
 import javax.persistence.TypedQuery;
 import org.springframework.http.ResponseEntity
 import org.springframework.http.HttpStatus
+
+import javax.servlet.http.HttpServletRequest
+import java.util.concurrent.atomic.AtomicInteger
 
 
 class SugonSdnControllerCase extends SubCase {
@@ -37,6 +45,7 @@ class SugonSdnControllerCase extends SubCase {
     void test() {
         env.create {
             dbf = bean(DatabaseFacade.class)
+            testTfPortSyncTriggeredByPingSuccess()
             testTfApi()
         }
     }
@@ -44,6 +53,53 @@ class SugonSdnControllerCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testTfPortSyncTriggeredByPingSuccess() {
+        String sql = "select sdn" +
+                " from SdnControllerVO sdn" +
+                " where sdn.vendorType = :vendorType";
+        TypedQuery<SdnControllerVO> q = dbf.getEntityManager().createQuery(sql, SdnControllerVO.class);
+        q.setParameter("vendorType", SugonSdnControllerConstant.TF_CONTROLLER);
+        SdnControllerVO sdn = q.getResultList().get(0);
+        AtomicInteger syncCount = new AtomicInteger(0)
+
+        env.simulator(TfCommands.TF_CREATE_VMI) { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            if (req.method == "GET") {
+                syncCount.incrementAndGet()
+                return '{"virtual-machine-interfaces":[]}'
+            }
+
+            VirtualMachineInterface rsp = new VirtualMachineInterface();
+            rsp.name = TfCommands.TEST_VMI_UUID
+            rsp.uuid = TfCommands.TEST_VMI_UUID
+            Project project = new Project();
+            project.name = TfCommands.TEST_PROJECT_UUID
+            project.uuid = TfCommands.TEST_PROJECT_UUID
+            project.displayName = "admin";
+            rsp.setParent(project)
+            String json = ApiSerializer.serializeObject("virtual-machine-interface", rsp);
+            ResponseEntity<String> response = new ResponseEntity<String>(json, HttpStatus.OK);
+            return response.getBody()
+        }
+
+        sendTfPing(sdn.uuid)
+        retryInSecs {
+            assert syncCount.get() == 1
+        }
+
+        sendTfPing(sdn.uuid)
+        sleep(500)
+        assert syncCount.get() == 1
+    }
+
+    void sendTfPing(String sdnControllerUuid) {
+        CloudBus bus = bean(CloudBus.class)
+        SdnControllerPingMsg msg = new SdnControllerPingMsg()
+        msg.sdnControllerUuid = sdnControllerUuid
+        bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid)
+        MessageReply reply = bus.call(msg)
+        assert reply.success
     }
 
     void testTfApi() {
