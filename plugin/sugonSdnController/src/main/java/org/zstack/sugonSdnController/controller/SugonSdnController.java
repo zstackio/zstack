@@ -22,10 +22,13 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerL2;
+import org.zstack.sdnController.SdnControllerPingMsg;
+import org.zstack.sdnController.SdnControllerPingReply;
 import org.zstack.sdnController.header.*;
 import org.zstack.sugonSdnController.controller.api.*;
 import org.zstack.sugonSdnController.controller.api.types.*;
 import org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg;
+import org.zstack.sugonSdnController.network.TfZstackPortSync;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -44,6 +47,8 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     CloudBus bus;
     @Autowired
     DatabaseFacade dbf;
+    @Autowired
+    TfZstackPortSync tfZstackPortSync;
 
     private SdnControllerVO sdnControllerVO;
     private TfHttpClient client;
@@ -56,7 +61,49 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
 
     @Override
     public void handleMessage(SdnControllerMessage msg) {
-        bus.dealWithUnknownMessage((Message) msg);
+        if (msg instanceof SdnControllerPingMsg) {
+            handMessage((SdnControllerPingMsg) msg);
+        } else if (msg instanceof SdnControllerEnableDHCPMsg) {
+            handMessage((SdnControllerEnableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerDisableDHCPMsg) {
+            handMessage((SdnControllerDisableDHCPMsg) msg);
+        } else if (msg instanceof SdnControllerUpdateDHCPMsg) {
+            handMessage((SdnControllerUpdateDHCPMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage((Message) msg);
+        }
+    }
+
+    void handMessage(SdnControllerEnableDHCPMsg msg) {
+        SdnControllerEnableDHCPReply reply = new SdnControllerEnableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handMessage(SdnControllerDisableDHCPMsg msg) {
+        SdnControllerDisableDHCPReply reply = new SdnControllerDisableDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handMessage(SdnControllerUpdateDHCPMsg msg) {
+        SdnControllerUpdateDHCPReply reply = new SdnControllerUpdateDHCPReply();
+        bus.reply(msg, reply);
+    }
+
+    void handMessage(SdnControllerPingMsg msg) {
+        SdnControllerPingReply reply = new SdnControllerPingReply();
+        try {
+            Domain domain = (Domain) client.getDomain();
+            if (domain == null) {
+                reply.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10002, "get default domain on tf controller failed"));
+            } else {
+                tfZstackPortSync.triggerSyncIfDue(msg.getSdnControllerUuid());
+                reply.setSuccess(true);
+            }
+        } catch (Exception e) {
+            logger.warn("ping tf sdn controller failed", e);
+            reply.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10002, "get default domain on tf controller failed"));
+        }
+        bus.reply(msg, reply);
     }
 
     @Override

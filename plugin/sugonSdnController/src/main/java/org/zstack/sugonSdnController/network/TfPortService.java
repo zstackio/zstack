@@ -33,6 +33,11 @@ public class TfPortService {
         return tfPortClient.getVirtualMachineInterfaceDetail();
     }
 
+    public List<VirtualMachineInterface> getTfPortsDetail(String sdnControllerUuid) {
+        TfPortClient tfPortClient = new TfPortClient(sdnControllerUuid);
+        return tfPortClient.getVirtualMachineInterfaceDetail();
+    }
+
     public TfPortResponse createTfPort(String tfPortUUid, String l2NetworkUuid, String l3NetworkUuid, String mac, String ip) {
         //invoke tf rest interface to retrieve real ip and mac and portId
         TfPortClient tfPortClient = new TfPortClient();
@@ -112,6 +117,12 @@ public class TfPortService {
     public TfPortResponse deleteTfPort(String portUUid) {
         String tfPortUUid = StringDSL.transToTfUuid(portUUid);
         TfPortClient tfPortClient = new TfPortClient();
+        return tfPortClient.deletePort(tfPortUUid);
+    }
+
+    public TfPortResponse deleteTfPort(String sdnControllerUuid, String portUUid) {
+        String tfPortUUid = StringDSL.transToTfUuid(portUUid);
+        TfPortClient tfPortClient = new TfPortClient(sdnControllerUuid);
         return tfPortClient.deletePort(tfPortUUid);
     }
 
