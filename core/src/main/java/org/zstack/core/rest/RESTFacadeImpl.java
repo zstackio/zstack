@@ -193,20 +193,10 @@ public class RESTFacadeImpl implements RESTFacade {
             callbackHostName = hostname.trim();
         }
 
-        String url = IPv6NetworkUtils.buildHttpUrl(callbackHostName, port);
-        if (path != null && !path.isEmpty()) {
-            url = String.format("%s/%s", url, path);
-        }
-        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(url);
-        ub.path(RESTConstant.CALLBACK_PATH);
-        callbackUrl = ub.build().toUriString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(url);
-        baseUrl = ub.build().toUriString();
-
-        ub = UriComponentsBuilder.fromHttpUrl(url);
-        ub.path(RESTConstant.COMMAND_CHANNEL_PATH);
-        sendCommandUrl = ub.build().toUriString();
+        String url = buildBaseUrl(callbackHostName, port, path);
+        callbackUrl = buildCallbackUrl(callbackHostName, port, path);
+        baseUrl = url;
+        sendCommandUrl = buildSendCommandUrl(callbackHostName, port, path);
 
         logger.debug(String.format("RESTFacade built callback url: %s", callbackUrl));
         template = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
@@ -215,6 +205,26 @@ public class RESTFacadeImpl implements RESTFacade {
                 CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT,
                 CoreGlobalProperty.REST_FACADE_MAX_PER_ROUTE,
                 CoreGlobalProperty.REST_FACADE_MAX_TOTAL);
+    }
+
+    public static String buildBaseUrl(String hostName, int port, String path) {
+        String url = IPv6NetworkUtils.buildHttpUrl(hostName, port);
+        if (path != null && !path.isEmpty()) {
+            url = String.format("%s/%s", url, path);
+        }
+        return UriComponentsBuilder.fromHttpUrl(url).build().toUriString();
+    }
+
+    public static String buildCallbackUrl(String hostName, int port, String path) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(buildBaseUrl(hostName, port, path));
+        ub.path(RESTConstant.CALLBACK_PATH);
+        return ub.build().toUriString();
+    }
+
+    public static String buildSendCommandUrl(String hostName, int port, String path) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(buildBaseUrl(hostName, port, path));
+        ub.path(RESTConstant.COMMAND_CHANNEL_PATH);
+        return ub.build().toUriString();
     }
 
     // timeout are in milliseconds

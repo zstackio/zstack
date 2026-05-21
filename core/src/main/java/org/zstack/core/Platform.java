@@ -47,6 +47,7 @@ import org.zstack.utils.zsha2.ZSha2Info;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -59,6 +60,8 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.sql.Timestamp;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -88,9 +91,12 @@ public class Platform {
     private static final String DEFAULT_ROUTE_MARK = "default via";
     private static final String JGROUPS_INITIAL_HOST_FORMAT = "%s[%s],%s[%s]";
     private static final int IP_ADDRESS_COMMAND_CIDR_INDEX = 1;
+    private static final String TEMP_FILE_SUFFIX = ".tmp";
+    private static final String ZSTACK_UUID_PATTERN = "[0-9a-fA-F]{32}";
     private static EncryptRSA rsa = new EncryptRSA();
     private static Map<String, Double> errorCounter = new HashMap<>();
 
+    public static final String MANAGEMENT_SERVER_ID_PROPERTY = "managementServerId";
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
     public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
 
@@ -503,8 +509,8 @@ public class Platform {
             in = new FileInputStream(globalPropertiesFile);
             System.getProperties().load(in);
 
-            // get ms ip should after global property setup
-            msId = UUID.nameUUIDFromBytes(getManagementServerIp().getBytes()).toString().replaceAll("-", "");
+            // get ms id should after global property setup
+            msId = loadOrCreateManagementServerId(globalPropertiesFile, Platform::getUuid);
 
             collectDynamicObjectMetadata();
             linkGlobalProperty();
@@ -709,6 +715,64 @@ public class Platform {
 
     public static String getManagementServerId() {
         return msId;
+    }
+
+    public static synchronized String loadOrCreateManagementServerId(File propertiesFile, Supplier<String> idSupplier) {
+        Properties properties = new Properties();
+        if (propertiesFile.exists()) {
+            try (FileInputStream inputStream = new FileInputStream(propertiesFile)) {
+                properties.load(inputStream);
+            } catch (IOException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
+        String configuredId = properties.getProperty(MANAGEMENT_SERVER_ID_PROPERTY);
+        if (isValidManagementServerId(configuredId)) {
+            System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, configuredId);
+            return configuredId;
+        }
+
+        String generatedId = idSupplier.get();
+        if (!isValidManagementServerId(generatedId)) {
+            throw new CloudRuntimeException(String.format("generated management server id[%s] is not a valid uuid", generatedId));
+        }
+
+        properties.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
+        saveManagementServerId(propertiesFile, properties);
+        System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
+        return generatedId;
+    }
+
+    private static boolean isValidManagementServerId(String id) {
+        if (id == null) {
+            return false;
+        }
+
+        try {
+            UUID.fromString(id);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+            return id.matches(ZSTACK_UUID_PATTERN);
+        }
+    }
+
+    private static void saveManagementServerId(File propertiesFile, Properties properties) {
+        File tmp = new File(propertiesFile.getAbsolutePath() + TEMP_FILE_SUFFIX);
+        try (FileOutputStream outputStream = new FileOutputStream(tmp)) {
+            properties.store(outputStream, "ZStack properties");
+            try {
+                Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            } catch (IOException e) {
+                Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            }
+        } catch (IOException e) {
+            throw new CloudRuntimeException(e);
+        } finally {
+            if (tmp.exists()) {
+                tmp.delete();
+            }
+        }
     }
 
     public static <K extends Enum<K>, T extends Enum<T>> StateMachine<K, T> createStateMachine() {

@@ -4,10 +4,14 @@ import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
+import org.zstack.core.rest.RESTFacadeImpl
+import org.zstack.header.rest.RESTConstant
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
 import org.junit.Test
+
+import java.util.function.Supplier
 
 class ManagementNetworkIpv6Case {
     private static final String IPV4 = "192.168.1.10"
@@ -17,6 +21,8 @@ class ManagementNetworkIpv6Case {
     private static final String LINK_LOCAL_IPV6 = "fe80::1"
     private static final String LOOPBACK_IPV6 = "::1"
     private static final String INVALID_IP = "not-an-ip!!"
+    private static final String MANAGEMENT_SERVER_ID = "1234567890abcdef1234567890abcdef"
+    private static final String NEW_MANAGEMENT_SERVER_ID = "abcdef1234567890abcdef1234567890"
     private static final int REST_PORT = 8080
     private static final int JGROUP_PORT = 7805
 
@@ -28,6 +34,7 @@ class ManagementNetworkIpv6Case {
         testSelectApplianceVmManagementNodeIpByCidr()
         testBuildUrlIpv4()
         testBuildUrlIpv6()
+        testRestFacadeIpv6Urls()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
         testNormalizeIpv6()
@@ -37,6 +44,7 @@ class ManagementNetworkIpv6Case {
         testIpv6NetworkCidr()
         testIpInCidrDualStack()
         testManagementCidrIpVersionOverload()
+        testManagementServerIdPersisted()
         testApplianceVmBootstrapParam()
     }
 
@@ -93,6 +101,15 @@ class ManagementNetworkIpv6Case {
         assert IPv6NetworkUtils.buildHttpUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080"
     }
 
+    void testRestFacadeIpv6Urls() {
+        assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, null) == "http://[2001:db8::1]:8080"
+        assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, "zstack") == "http://[2001:db8::1]:8080/zstack"
+        assert RESTFacadeImpl.buildCallbackUrl(IPV6, REST_PORT, "zstack") ==
+                "http://[2001:db8::1]:8080/zstack${RESTConstant.CALLBACK_PATH}"
+        assert RESTFacadeImpl.buildSendCommandUrl(IPV6, REST_PORT, "zstack") ==
+                "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
+    }
+
     void testBuildHostPortIpv6() {
         assert IPv6NetworkUtils.formatHostPort(IPV6, REST_PORT) == "[2001:db8::1]:8080"
     }
@@ -138,6 +155,33 @@ class ManagementNetworkIpv6Case {
 
     void testManagementCidrIpVersionOverload() {
         assert Platform.getManagementServerCidr(IPv6Constants.IPv4) == Platform.getManagementServerCidr(Platform.getManagementServerIp())
+    }
+
+    void testManagementServerIdPersisted() {
+        String oldValue = System.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
+        File propertiesFile = File.createTempFile("zstack-management-server-id", ".properties")
+        try {
+            propertiesFile.text = ""
+            String generatedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert generatedId == MANAGEMENT_SERVER_ID
+            Properties properties = new Properties()
+            propertiesFile.withInputStream { properties.load(it) }
+            assert properties.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
+
+            String persistedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert persistedId == MANAGEMENT_SERVER_ID
+        } finally {
+            propertiesFile.delete()
+            if (oldValue == null) {
+                System.clearProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
+            } else {
+                System.setProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY, oldValue)
+            }
+        }
     }
 
     void testApplianceVmBootstrapParam() {
