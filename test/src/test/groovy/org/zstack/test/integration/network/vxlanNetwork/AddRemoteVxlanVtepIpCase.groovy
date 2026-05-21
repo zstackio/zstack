@@ -32,30 +32,6 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
     @Override
     void environment() {
         env = env {
-            instanceOffering {
-                name = "instanceOffering"
-                memory = SizeUnit.GIGABYTE.toByte(1)
-                cpu = 1
-            }
-
-            sftpBackupStorage {
-                name = "sftp"
-                url = "/sftp"
-                username = "root"
-                password = "password"
-                hostname = "localhost"
-
-                image {
-                    name = "image1"
-                    url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
-                }
-            }
-
             zone {
                 name = "zone"
                 description = "test"
@@ -63,70 +39,12 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
                 cluster {
                     name = "cluster1"
                     hypervisorType = "KVM"
-
-                    kvm {
-                        name = "kvm1"
-                        managementIp = "localhost"
-                        username = "root"
-                        password = "password"
-
-                        totalCpu = 8
-                        totalMem = SizeUnit.GIGABYTE.toByte(20)
-                    }
-
-                    kvm {
-                        name = "kvm2"
-                        managementIp = "127.0.0.1"
-                        username = "root"
-                        password = "password"
-
-                        totalCpu = 8
-                        totalMem = SizeUnit.GIGABYTE.toByte(20)
-                    }
-
-                    attachPrimaryStorage("local")
-
                 }
 
                 cluster {
                     name = "cluster2"
                     hypervisorType = "KVM"
-
-                    kvm {
-                        name = "kvm3"
-                        managementIp = "127.0.0.2"
-                        username = "root"
-                        password = "password"
-
-                        totalCpu = 8
-                        totalMem = SizeUnit.GIGABYTE.toByte(20)
-                    }
-
-                    kvm {
-                        name = "kvm4"
-                        managementIp = "127.0.0.3"
-                        username = "root"
-                        password = "password"
-
-                        totalCpu = 8
-                        totalMem = SizeUnit.GIGABYTE.toByte(20)
-                    }
-
-                    attachPrimaryStorage("nfs-ps")
-
                 }
-
-                localPrimaryStorage {
-                    name = "local"
-                    url = "/local_ps"
-                }
-
-                nfsPrimaryStorage {
-                    name = "nfs-ps"
-                    url = "localhost:/nfs"
-                }
-
-                attachBackupStorage("sftp")
             }
         }
     }
@@ -147,10 +65,6 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
         def zone = env.inventoryByName("zone") as ZoneInventory
         def cluster = env.inventoryByName("cluster1") as ClusterInventory
         def cluster2 = env.inventoryByName("cluster2") as ClusterInventory
-        def host1 = env.inventoryByName("kvm1") as KVMHostInventory
-        def host2 = env.inventoryByName("kvm2") as KVMHostInventory
-        def host3 = env.inventoryByName("kvm3") as KVMHostInventory
-        def host4 = env.inventoryByName("kvm4") as KVMHostInventory
 
         def pool = createL2VxlanNetworkPool {
             name = "TestVxlanPool1"

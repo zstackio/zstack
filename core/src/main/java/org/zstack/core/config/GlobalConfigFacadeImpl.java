@@ -233,7 +233,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
             Map<String, String> propertiesMap = new HashMap<>();
 
             void init() {
-                GLock lock = new GLock(GlobalConfigConstant.LOCK, 320);
+                GLock lock = new GLock(GlobalConfigConstant.LOCK, GlobalConfigConstant.LOCK_TIMEOUT_SECONDS, dbf);
                 lock.lock();
                 try {
                     loadSystemProperties();

@@ -522,7 +522,7 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     public <T> SimpleQuery<T> createQuery(Class<T> entityClass) {
         assert entityClass.isAnnotationPresent(Entity.class)
                 : entityClass.getName() + " is not annotated by JPA @Entity";
-        return new SimpleQueryImpl<T>(entityClass);
+        return new SimpleQueryImpl<T>(entityClass, this);
     }
 
     public EntityManager getEntityManager() {
