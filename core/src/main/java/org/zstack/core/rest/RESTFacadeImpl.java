@@ -47,6 +47,7 @@ import org.zstack.utils.IptablesUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -192,11 +193,9 @@ public class RESTFacadeImpl implements RESTFacade {
             callbackHostName = hostname.trim();
         }
 
-        String url;
-        if ("".equals(path) || path == null) {
-            url = String.format("http://%s:%s", callbackHostName, port);
-        } else {
-            url = String.format("http://%s:%s/%s", callbackHostName, port, path);
+        String url = IPv6NetworkUtils.buildHttpUrl(callbackHostName, port);
+        if (path != null && !path.isEmpty()) {
+            url = String.format("%s/%s", url, path);
         }
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(url);
         ub.path(RESTConstant.CALLBACK_PATH);

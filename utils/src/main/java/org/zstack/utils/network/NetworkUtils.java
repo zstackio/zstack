@@ -558,6 +558,23 @@ public class NetworkUtils {
         return isIpv4InRange(ipv4, info.getLowAddress(), info.getHighAddress());
     }
 
+    public static boolean isIpInCidr(String ip, String cidr) {
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        validateIp(ip);
+
+        if (isIpv4Address(ip)) {
+            if (!isCidr(cidr, IPv6Constants.IPv4)) {
+                return false;
+            }
+            return isIpv4InCidr(ip, cidr);
+        }
+
+        if (!isCidr(cidr, IPv6Constants.IPv6)) {
+            return false;
+        }
+        return IPv6NetworkUtils.isIpv6InCidrRange(ip, cidr);
+    }
+
     public static List<String> filterIpv4sInCidr(List<String> ipv4s, String cidr){
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
         SubnetUtils.SubnetInfo info = getSubnetInfo(new SubnetUtils(cidr));
@@ -588,6 +605,10 @@ public class NetworkUtils {
     
     public static String getNetworkAddressFromCidr(String cidr) {
         DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        if (isIpv6Address(cidr.split("\\/")[0])) {
+            return IPv6NetworkUtils.getFormalCidrOfNetworkCidr(cidr);
+        }
+
         SubnetUtils n = new SubnetUtils(cidr);
         return String.format("%s/%s", n.getInfo().getNetworkAddress(), cidr.split("\\/")[1]);
     }
@@ -972,4 +993,3 @@ public class NetworkUtils {
         return diff > 0 ? 1 : diff == 0 ? 0 : -1;
     }
 }
-

@@ -36,6 +36,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
@@ -78,6 +79,15 @@ public class Platform {
     private static String managementServerCidr;
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
+    private static final String MANAGEMENT_SERVER_IP_PROPERTY = "management.server.ip";
+    private static final String MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY = "management.server.prefer.ipv6";
+    private static final String ZSTACK_MANAGEMENT_SERVER_IP_ENV = "ZSTACK_MANAGEMENT_SERVER_IP";
+    private static final String IPV4_ADDRESS_COMMAND = "ip -4 add";
+    private static final String IPV6_ADDRESS_COMMAND = "ip -6 addr";
+    private static final String DEFAULT_ROUTE_COMMAND = "/sbin/ip route";
+    private static final String DEFAULT_ROUTE_MARK = "default via";
+    private static final String JGROUPS_INITIAL_HOST_FORMAT = "%s[%s],%s[%s]";
+    private static final int IP_ADDRESS_COMMAND_CIDR_INDEX = 1;
     private static EncryptRSA rsa = new EncryptRSA();
     private static Map<String, Double> errorCounter = new HashMap<>();
 
@@ -442,12 +452,10 @@ public class Platform {
             if (info.getPeerip() == null) {
                 throw new RuntimeException("the ip of peer node was null, please check the config of zsha2");
             }
-            SearchGlobalProperty.JGroupInfinispanInitialHosts = String.format("%s[%s],%s[%s]",
-                    info.getNodeip(), SearchGlobalProperty.JGroupInfinispanPort,
-                    info.getPeerip(), SearchGlobalProperty.JGroupInfinispanPort);
-            SearchGlobalProperty.JGroupBackendInitialHosts = String.format("%s[%s],%s[%s]",
-                    info.getNodeip(), SearchGlobalProperty.JGroupBackendPort,
-                    info.getPeerip(), SearchGlobalProperty.JGroupBackendPort);
+            SearchGlobalProperty.JGroupInfinispanInitialHosts = formatJGroupsInitialHosts(
+                    info.getNodeip(), info.getPeerip(), Integer.parseInt(SearchGlobalProperty.JGroupInfinispanPort));
+            SearchGlobalProperty.JGroupBackendInitialHosts = formatJGroupsInitialHosts(
+                    info.getNodeip(), info.getPeerip(), Integer.parseInt(SearchGlobalProperty.JGroupBackendPort));
             if (getGlobalProperty("JGroup.TcppingInitialHosts") == null) {
                 System.setProperty("JGroup.InfinispanInitialHosts", SearchGlobalProperty.JGroupInfinispanInitialHosts);
                 logger.debug(String.format("default JGroup.InfinispanInitialHosts to JGroup.InfinispanInitialHosts [%s]", SearchGlobalProperty.JGroupInfinispanInitialHosts));
@@ -785,18 +793,14 @@ public class Platform {
         return false;
     }
 
-    private static String getManagementServerCidrInternal() {
-        String mgtIp = getManagementServerIp();
-
-        /*# ip add | grep 10.86.4.132
-            inet 10.86.4.132/23 brd 10.86.5.255 scope global br_eth0*/
-        /* because Linux.shell can not run command with '|', pares the output of ip address in java  */
-        Linux.ShellResult ret = Linux.shell("ip -4 add");
+    private static String getManagementServerCidrInternal(String mgtIp) {
+        String command = IPv6NetworkUtils.isIpv6Address(mgtIp) ? IPV6_ADDRESS_COMMAND : IPV4_ADDRESS_COMMAND;
+        Linux.ShellResult ret = Linux.shell(command);
         for (String line : ret.getStdout().split("\\n")) {
             if (line.contains(mgtIp)) {
                 line = line.trim();
                 try {
-                    return NetworkUtils.getNetworkAddressFromCidr(line.split(" ")[1]);
+                    return NetworkUtils.getNetworkAddressFromCidr(line.split(" ")[IP_ADDRESS_COMMAND_CIDR_INDEX]);
                 } catch (RuntimeException e) {
                     return null;
                 }
@@ -808,29 +812,44 @@ public class Platform {
 
     public static String getManagementServerCidr() {
         if (managementServerCidr == null) {
-            managementServerCidr = getManagementServerCidrInternal();
+            managementServerCidr = getManagementServerCidrInternal(getManagementServerIp());
         }
 
         return managementServerCidr;
     }
 
+    public static String getManagementServerCidr(String managementIp) {
+        return getManagementServerCidrInternal(normalizeManagementIp(managementIp));
+    }
+
+    public static String getManagementServerCidr(int ipVersion) {
+        String currentIp = getManagementServerIp();
+        if ((ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(currentIp)) ||
+                (ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(currentIp))) {
+            return getManagementServerCidr(currentIp);
+        }
+
+        String ip = ipVersion == IPv6Constants.IPv6 ? getManagementServerIp6() : getManagementServerIp4();
+        return ip == null ? null : getManagementServerCidr(ip);
+    }
+
     private static String getManagementServerIpInternal() {
-        String ip = System.getProperty("management.server.ip");
+        String ip = System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY);
         if (ip != null) {
-            logger.info(String.format("get management IP[%s] from Java property[management.server.ip]", ip));
-            return ip;
+            logger.info(String.format("get management IP[%s] from Java property[%s]", ip, MANAGEMENT_SERVER_IP_PROPERTY));
+            return normalizeManagementIp(ip);
         }
 
-        ip = System.getenv("ZSTACK_MANAGEMENT_SERVER_IP");
+        ip = System.getenv(ZSTACK_MANAGEMENT_SERVER_IP_ENV);
         if (ip != null) {
-            logger.info(String.format("get management IP[%s] from environment variable[ZSTACK_MANAGEMENT_SERVER_IP]", ip));
-            return ip;
+            logger.info(String.format("get management IP[%s] from environment variable[%s]", ip, ZSTACK_MANAGEMENT_SERVER_IP_ENV));
+            return normalizeManagementIp(ip);
         }
 
-        Linux.ShellResult ret = Linux.shell("/sbin/ip route");
+        Linux.ShellResult ret = Linux.shell(DEFAULT_ROUTE_COMMAND);
         String defaultLine = null;
         for (String s : ret.getStdout().split("\n")) {
-            if (s.contains("default via")) {
+            if (s.contains(DEFAULT_ROUTE_MARK)) {
                 defaultLine = s;
                 break;
             }
@@ -846,14 +865,7 @@ public class Platform {
             for (NetworkInterface iface : Collections.list(nets)) {
                 String name = iface.getName();
                 if (defaultLine.contains(name)) {
-                    for (InetAddress ia : Collections.list(iface.getInetAddresses())) {
-                        ip = ia.getHostAddress();
-                        if (ia instanceof Inet4Address) {
-                            // we prefer IPv4 address
-                            ip = ia.getHostAddress();
-                            break;
-                        }
-                    }
+                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()), isManagementServerPreferIpv6());
                 }
             }
         } catch (SocketException e) {
@@ -866,6 +878,101 @@ public class Platform {
 
         logger.info(String.format("get management IP[%s] from default route[/sbin/ip route]", ip));
         return ip;
+    }
+
+    public static String getManagementServerIp6() {
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface iface : Collections.list(nets)) {
+                if (!iface.isUp()) {
+                    continue;
+                }
+                for (InetAddress ia : Collections.list(iface.getInetAddresses())) {
+                    if (!(ia instanceof Inet4Address) && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress()) {
+                        return normalizeManagementIp(ia.getHostAddress());
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            throw new CloudRuntimeException(e);
+        }
+
+        return null;
+    }
+
+    private static String getManagementServerIp4() {
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface iface : Collections.list(nets)) {
+                if (!iface.isUp()) {
+                    continue;
+                }
+                for (InetAddress ia : Collections.list(iface.getInetAddresses())) {
+                    if (ia instanceof Inet4Address && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress()) {
+                        return normalizeManagementIp(ia.getHostAddress());
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            throw new CloudRuntimeException(e);
+        }
+
+        return null;
+    }
+
+    public static String getManagementServerIp6Cidr() {
+        String ip6 = getManagementServerIp6();
+        return ip6 == null ? null : getManagementServerCidr(ip6);
+    }
+
+    public static String selectManagementServerIp(Collection<InetAddress> addresses, boolean preferIpv6) {
+        String ipv4 = null;
+        String ipv6 = null;
+
+        for (InetAddress address : addresses) {
+            String hostAddress = normalizeManagementIp(address.getHostAddress());
+            if (address instanceof Inet4Address) {
+                ipv4 = hostAddress;
+            } else if (!IPv6NetworkUtils.isLinkLocalAddress(hostAddress)) {
+                ipv6 = hostAddress;
+            }
+        }
+
+        if (preferIpv6 && ipv6 != null) {
+            return ipv6;
+        }
+
+        return ipv4 != null ? ipv4 : ipv6;
+    }
+
+    public static boolean isManagementServerPreferIpv6() {
+        String propertyValue = System.getProperty(MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY);
+        if (propertyValue != null) {
+            return Boolean.parseBoolean(propertyValue);
+        }
+
+        try {
+            return NetworkGlobalConfig.PREFER_IPV6.value(Boolean.class);
+        } catch (Throwable ignored) {
+            return false;
+        }
+    }
+
+    public static String formatJGroupsInitialHosts(String nodeIp, String peerIp, int port) {
+        return String.format(JGROUPS_INITIAL_HOST_FORMAT,
+                IPv6NetworkUtils.formatHostForUrl(nodeIp), port,
+                IPv6NetworkUtils.formatHostForUrl(peerIp), port);
+    }
+
+    private static String normalizeManagementIp(String ip) {
+        if (ip == null) {
+            return null;
+        }
+        int scopeIndex = ip.indexOf('%');
+        if (scopeIndex >= 0) {
+            ip = ip.substring(0, scopeIndex);
+        }
+        return IPv6NetworkUtils.isIpv6Address(ip) ? IPv6NetworkUtils.normalizeIpv6(ip) : ip;
     }
 
     public static String toI18nString(String code, Object... args) {

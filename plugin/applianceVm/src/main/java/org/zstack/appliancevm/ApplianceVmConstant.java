@@ -33,6 +33,7 @@ public class ApplianceVmConstant {
         managementNodeIp,
         managementNodeVip,
         managementNodeCidr,
+        managementNodeIp6Cidr,
         additionalL3Uuids,
     }
 

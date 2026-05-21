@@ -2207,7 +2207,7 @@ public class KVMHost extends HostBase implements Host {
 
         final String[] ips = extraIps.split(",");
         for (String ip: ips) {
-            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
+            if (NetworkUtils.isIpInCidr(ip, cidr)) {
                 return ip;
             }
         }
@@ -6779,7 +6779,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private boolean checkMigrateNetworkCidrOfHost(String cidr) {
-        if (NetworkUtils.isIpv4InCidr(self.getManagementIp(), cidr)) {
+        if (NetworkUtils.isIpInCidr(self.getManagementIp(), cidr)) {
             return true;
         }
 
@@ -6792,7 +6792,7 @@ public class KVMHost extends HostBase implements Host {
 
         final String[] ips = extraIps.split(",");
         for (String ip: ips) {
-            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
+            if (NetworkUtils.isIpInCidr(ip, cidr)) {
                 return true;
             }
         }

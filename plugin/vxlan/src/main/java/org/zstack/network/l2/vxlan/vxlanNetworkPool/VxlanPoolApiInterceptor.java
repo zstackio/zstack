@@ -56,9 +56,8 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVxlanPoolRemoteVtepMsg msg) {
-        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
-        if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10015, "%s:is not ipv4", msg.getRemoteVtepIp()));
+        if (!NetworkUtils.isIpAddress(msg.getRemoteVtepIp())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10015, "%s is not a valid IP address", msg.getRemoteVtepIp()));
         }
 
         SimpleQuery<VtepVO> rqv = dbf.createQuery(VtepVO.class);
@@ -73,9 +72,8 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeleteVxlanPoolRemoteVtepMsg msg) {
-        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
-        if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10017, "%s:is not ipv4", msg.getRemoteVtepIp()));
+        if (!NetworkUtils.isIpAddress(msg.getRemoteVtepIp())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10017, "%s is not a valid IP address", msg.getRemoteVtepIp()));
         }
 
     }

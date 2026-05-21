@@ -13,6 +13,11 @@ import java.util.List;
 
 public class IPv6NetworkUtils {
     private final static CLogger logger = Utils.getLogger(IPv6NetworkUtils.class);
+    private static final String URL_IPV6_HOST_FORMAT = "[%s]";
+    private static final String HTTP_URL_FORMAT = "http://%s:%s";
+    private static final String HOST_PORT_FORMAT = "%s:%s";
+    private static final String IPV6_BRACKET_PREFIX = "[";
+    private static final String IPV6_BRACKET_SUFFIX = "]";
 
     // IPv4 地址正则表达式
     private static String ipv4Regex = "^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
@@ -134,6 +139,9 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isIpv6Address(String ip) {
+        if (ip == null) {
+            return false;
+        }
         try {
             IPv6Address.fromString(ip);
             return true;
@@ -143,6 +151,9 @@ public class IPv6NetworkUtils {
     }
 
     public static boolean isIpv6UnicastAddress(String ip) {
+        if (ip == null) {
+            return false;
+        }
         try {
             IPv6Address address = IPv6Address.fromString(ip);
             if (address.isMulticast() || address.isLinkLocal() || address.isSiteLocal()) {
@@ -499,5 +510,37 @@ public class IPv6NetworkUtils {
 
     public static boolean isFullCidr(String cidr) {
         return cidr.equals("::/0");
+    }
+
+    public static String normalizeIpv6(String ip) {
+        return getIpv6AddressCanonicalString(ip);
+    }
+
+    public static String formatHostForUrl(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        if (host.startsWith(IPV6_BRACKET_PREFIX) && host.endsWith(IPV6_BRACKET_SUFFIX)) {
+            return host;
+        }
+
+        return isIpv6Address(host) ? String.format(URL_IPV6_HOST_FORMAT, host) : host;
+    }
+
+    public static String buildHttpUrl(String host, int port) {
+        return String.format(HTTP_URL_FORMAT, formatHostForUrl(host), port);
+    }
+
+    public static String formatHostPort(String host, int port) {
+        return String.format(HOST_PORT_FORMAT, formatHostForUrl(host), port);
+    }
+
+    public static boolean isValidManagementEndpoint(String endpoint) {
+        if (NetworkUtils.isIpv4Address(endpoint) || NetworkUtils.isHostname(endpoint)) {
+            return true;
+        }
+
+        return isIpv6Address(endpoint) && !isLinkLocalAddress(endpoint);
     }
 }

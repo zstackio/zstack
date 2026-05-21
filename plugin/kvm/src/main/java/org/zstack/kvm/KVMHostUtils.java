@@ -27,7 +27,6 @@ import java.util.Set;
  */
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
-    private static final String URL_IPV6_HOST_FORMAT = "[%s]";
 
     // ZSTAC-84446: br_conn_all_ns is host-internal; exclude from TLS cert SAN
     // to keep check-flow and deploy-flow IP lists identical.
@@ -137,7 +136,7 @@ public class KVMHostUtils {
     }
 
     public static String formatHostForUrl(String host) {
-        return IPv6NetworkUtils.isIpv6Address(host) ? String.format(URL_IPV6_HOST_FORMAT, host) : host;
+        return IPv6NetworkUtils.formatHostForUrl(host);
     }
 
     // ZSTAC-84446: force ansible re-run + libvirtd restart only when operator opted in

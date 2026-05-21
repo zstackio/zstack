@@ -135,11 +135,7 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     }
 
     private boolean isValidManagementEndpoint(String endpoint) {
-        if (NetworkUtils.isIpv4Address(endpoint) || NetworkUtils.isHostname(endpoint)) {
-            return true;
-        }
-
-        return IPv6NetworkUtils.isIpv6Address(endpoint) && !IPv6NetworkUtils.isLinkLocalAddress(endpoint);
+        return IPv6NetworkUtils.isValidManagementEndpoint(endpoint);
     }
 
     private void validate(APIChangeHostStateMsg msg){
