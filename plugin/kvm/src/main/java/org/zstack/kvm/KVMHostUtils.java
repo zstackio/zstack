@@ -12,6 +12,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
@@ -26,6 +27,7 @@ import java.util.Set;
  */
 public class KVMHostUtils {
     private static final CLogger logger = CLoggerImpl.getLogger(KVMHostUtils.class);
+    private static final String URL_IPV6_HOST_FORMAT = "[%s]";
 
     // ZSTAC-84446: br_conn_all_ns is host-internal; exclude from TLS cert SAN
     // to keep check-flow and deploy-flow IP lists identical.
@@ -132,6 +134,10 @@ public class KVMHostUtils {
     public static String collectHostIps(String hostUuid, String managementIp,
                                         String username, String password, int sshPort) {
         return collectHostIps(newSsh(managementIp, username, password, sshPort), hostUuid, managementIp);
+    }
+
+    public static String formatHostForUrl(String host) {
+        return IPv6NetworkUtils.isIpv6Address(host) ? String.format(URL_IPV6_HOST_FORMAT, host) : host;
     }
 
     // ZSTAC-84446: force ansible re-run + libvirtd restart only when operator opted in

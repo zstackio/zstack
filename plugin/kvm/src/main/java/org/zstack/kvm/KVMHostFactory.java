@@ -1070,7 +1070,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public KVMHostContext createHostContext(KVMHostVO vo) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-        ub.host(vo.getManagementIp());
+        ub.host(KVMHostUtils.formatHostForUrl(vo.getManagementIp()));
         ub.port(KVMGlobalProperty.AGENT_PORT);
         if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);

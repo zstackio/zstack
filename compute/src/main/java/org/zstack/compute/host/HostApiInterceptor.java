@@ -15,6 +15,7 @@ import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import static org.zstack.core.Platform.argerr;
@@ -28,6 +29,9 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * To change this template use File | Settings | File Templates.
  */
 public class HostApiInterceptor implements ApiMessageInterceptor {
+    private static final String INVALID_MANAGEMENT_IP_ERROR =
+            "managementIp[%s] is not a valid IPv4 address, IPv6 address, or hostname";
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -121,9 +125,21 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIAddHostMsg msg) {
-        if (!NetworkUtils.isIpv4Address(msg.getManagementIp()) && !NetworkUtils.isHostname(msg.getManagementIp())) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10113, "managementIp[%s] is neither an IPv4 address nor a valid hostname", msg.getManagementIp()));
+        if (!isValidManagementEndpoint(msg.getManagementIp())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10128, INVALID_MANAGEMENT_IP_ERROR, msg.getManagementIp()));
         }
+
+        if (IPv6NetworkUtils.isIpv6Address(msg.getManagementIp())) {
+            msg.setManagementIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(msg.getManagementIp()));
+        }
+    }
+
+    private boolean isValidManagementEndpoint(String endpoint) {
+        if (NetworkUtils.isIpv4Address(endpoint) || NetworkUtils.isHostname(endpoint)) {
+            return true;
+        }
+
+        return IPv6NetworkUtils.isIpv6Address(endpoint) && !IPv6NetworkUtils.isLinkLocalAddress(endpoint);
     }
 
     private void validate(APIChangeHostStateMsg msg){
