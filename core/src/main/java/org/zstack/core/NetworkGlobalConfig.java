@@ -7,7 +7,7 @@ import org.zstack.core.config.GlobalConfigValidation;
 
 @GlobalConfigDefinition
 public class NetworkGlobalConfig {
-    public static final String CATEGORY = "managementServer";
+    public static final String CATEGORY = "management.server";
 
     @GlobalConfigValidation
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Prefer IPv6 for management server address selection")

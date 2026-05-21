@@ -16,9 +16,10 @@ class KvmHostIpv6Case extends SubCase {
     EnvSpec env
     ClusterInventory cluster
 
-    private static final String LOOPBACK_IPV6_FULL = "0:0:0:0:0:0:0:1"
-    private static final String LOOPBACK_IPV6_CANONICAL = "::1"
+    private static final String GLOBAL_IPV6_FULL = "2001:0db8:0000:0000:0000:0000:0000:0010"
+    private static final String GLOBAL_IPV6_CANONICAL = "2001:db8::10"
     private static final String LINK_LOCAL_IPV6 = "fe80::1"
+    private static final String LOOPBACK_IPV6 = "::1"
     private static final String INVALID_MANAGEMENT_IP = "not-an-ip!!"
 
     @Override
@@ -50,15 +51,15 @@ class KvmHostIpv6Case extends SubCase {
         action.sessionId = adminSession()
         action.resourceUuid = Platform.uuid
         action.clusterUuid = cluster.uuid
-        action.managementIp = LOOPBACK_IPV6_FULL
+        action.managementIp = GLOBAL_IPV6_FULL
         action.name = "kvm-ipv6"
         action.username = "root"
         action.password = "password"
         def res = action.call()
 
         assert res.error == null
-        assert (res.value.inventory as KVMHostInventory).managementIp == LOOPBACK_IPV6_CANONICAL
-        assert Q.New(HostVO.class).eq(HostVO_.managementIp, LOOPBACK_IPV6_CANONICAL).isExists()
+        assert (res.value.inventory as KVMHostInventory).managementIp == GLOBAL_IPV6_CANONICAL
+        assert Q.New(HostVO.class).eq(HostVO_.managementIp, GLOBAL_IPV6_CANONICAL).isExists()
     }
 
     void testRejectInvalidAndLinkLocalIpv6() {
@@ -73,6 +74,20 @@ class KvmHostIpv6Case extends SubCase {
         action.username = "root"
         action.password = "password"
         def res = action.call()
+
+        assert res.error != null
+        assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert Q.New(HostVO.class).count() == before
+
+        action = new AddKVMHostAction()
+        action.sessionId = adminSession()
+        action.resourceUuid = Platform.uuid
+        action.clusterUuid = cluster.uuid
+        action.managementIp = LOOPBACK_IPV6
+        action.name = "kvm-loopback"
+        action.username = "root"
+        action.password = "password"
+        res = action.call()
 
         assert res.error != null
         assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()

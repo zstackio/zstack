@@ -1,6 +1,7 @@
 package org.zstack.appliancevm;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
@@ -31,6 +32,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.l3.UsedIpInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.header.rest.RESTFacade;
@@ -46,6 +48,8 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
 import java.util.*;
@@ -59,6 +63,7 @@ import java.util.stream.Collectors;
  */
 public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceVmFacade, Component {
     private static final CLogger logger = Utils.getLogger(ApplianceVmFacadeImpl.class);
+    private static final String NO_MATCHED_MN_IP_WARN = "no MN IP matched VR management CIDR %s, fallback to %s";
 
     @Autowired
     private CloudBus bus;
@@ -461,7 +466,10 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
-        ret.put(BootstrapParams.managementNodeIp.toString(), Platform.getManagementServerIp());
+        ret.put(BootstrapParams.managementNodeIp.toString(), selectManagementNodeIpForBootstrap(
+                Platform.getManagementServerIps(),
+                getVrManagementCidrs(mgmtNic),
+                Platform.getManagementServerIp()));
         ret.put(BootstrapParams.managementNodeVip.toString(), Platform.getManagementServerVip());
         ret.put(BootstrapParams.managementNodeCidr.toString(), Platform.getManagementServerCidr());
         String managementNodeIp6Cidr = Platform.getManagementServerIp6Cidr();
@@ -477,6 +485,44 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.remove(BootstrapParams.additionalL3Uuids.toString());
 
         return ret;
+    }
+
+    public static String selectManagementNodeIpForBootstrap(Collection<String> mnIps, Collection<String> vrManagementCidrs, String fallbackIp) {
+        for (String cidr : vrManagementCidrs) {
+            if (!NetworkUtils.isCidr(cidr)) {
+                continue;
+            }
+            for (String ip : mnIps) {
+                if (StringUtils.isBlank(ip)) {
+                    continue;
+                }
+                if (NetworkUtils.isIpInCidr(ip, cidr)) {
+                    return ip;
+                }
+            }
+        }
+
+        if (!vrManagementCidrs.isEmpty()) {
+            logger.warn(String.format(NO_MATCHED_MN_IP_WARN, String.join(",", vrManagementCidrs), fallbackIp));
+        }
+        return fallbackIp;
+    }
+
+    private Collection<String> getVrManagementCidrs(VmNicInventory managementNic) {
+        List<String> cidrs = new ArrayList<>();
+        if (managementNic == null || managementNic.getUsedIps() == null) {
+            return cidrs;
+        }
+
+        for (UsedIpInventory ip : managementNic.getUsedIps()) {
+            if (Objects.equals(ip.getIpVersion(), IPv6Constants.IPv4) && StringUtils.isNotBlank(ip.getNetmask())) {
+                cidrs.add(NetworkUtils.getCidrFromIpMask(ip.getIp(), ip.getNetmask()));
+            } else if (Objects.equals(ip.getIpVersion(), IPv6Constants.IPv6) && ip.getPrefixLen() != null) {
+                cidrs.add(NetworkUtils.getNetworkAddressFromCidr(String.format("%s/%s", ip.getIp(), ip.getPrefixLen())));
+            }
+        }
+
+        return cidrs;
     }
 
 

@@ -1,6 +1,7 @@
 package org.zstack.test.integration.core
 
 import org.zstack.appliancevm.ApplianceVmConstant
+import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.utils.network.IPv6Constants
@@ -11,8 +12,10 @@ import org.junit.Test
 class ManagementNetworkIpv6Case {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
+    private static final String IPV6_2 = "2001:db8::2"
     private static final String IPV6_FULL = "2001:0db8:0000:0000:0000:0000:0000:0001"
     private static final String LINK_LOCAL_IPV6 = "fe80::1"
+    private static final String LOOPBACK_IPV6 = "::1"
     private static final String INVALID_IP = "not-an-ip!!"
     private static final int REST_PORT = 8080
     private static final int JGROUP_PORT = 7805
@@ -20,6 +23,9 @@ class ManagementNetworkIpv6Case {
     @Test
     void test() {
         testPreferIpv6DefaultFalse()
+        testPreferIpv6SystemProperty()
+        testSelectManagementServerIpDualStackPolicy()
+        testSelectApplianceVmManagementNodeIpByCidr()
         testBuildUrlIpv4()
         testBuildUrlIpv6()
         testBuildHostPortIpv6()
@@ -35,7 +41,48 @@ class ManagementNetworkIpv6Case {
     }
 
     void testPreferIpv6DefaultFalse() {
-        assert NetworkGlobalConfig.PREFER_IPV6.getIdentity() == "managementServer.prefer.ipv6"
+        assert NetworkGlobalConfig.PREFER_IPV6.getIdentity() == "management.server.prefer.ipv6"
+    }
+
+    void testPreferIpv6SystemProperty() {
+        String oldValue = System.getProperty("management.server.prefer.ipv6")
+        try {
+            System.setProperty("management.server.prefer.ipv6", "true")
+            assert Platform.isManagementServerPreferIpv6()
+            System.setProperty("management.server.prefer.ipv6", "false")
+            assert !Platform.isManagementServerPreferIpv6()
+        } finally {
+            if (oldValue == null) {
+                System.clearProperty("management.server.prefer.ipv6")
+            } else {
+                System.setProperty("management.server.prefer.ipv6", oldValue)
+            }
+        }
+    }
+
+    void testSelectManagementServerIpDualStackPolicy() {
+        def ipv4 = InetAddress.getByName(IPV4)
+        def ipv6 = InetAddress.getByName(IPV6)
+
+        assert Platform.selectManagementServerIp([ipv6, ipv4], false) == IPV4
+        assert Platform.selectManagementServerIp([ipv4, ipv6], true) == IPV6
+        assert Platform.selectManagementServerIp([ipv6], false) == IPV6
+        assert Platform.selectManagementServerIp([ipv4], true) == IPV4
+    }
+
+    void testSelectApplianceVmManagementNodeIpByCidr() {
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["2001:db8::/64"],
+                IPV4) == IPV6
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["192.168.1.0/24"],
+                IPV6) == IPV4
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["10.0.0.0/24"],
+                IPV6) == IPV6
     }
 
     void testBuildUrlIpv4() {
@@ -64,11 +111,12 @@ class ManagementNetworkIpv6Case {
         assert IPv6NetworkUtils.isValidManagementEndpoint(IPV6)
         assert IPv6NetworkUtils.isValidManagementEndpoint("host-01.example.com")
         assert !IPv6NetworkUtils.isValidManagementEndpoint(LINK_LOCAL_IPV6)
+        assert !IPv6NetworkUtils.isValidManagementEndpoint(LOOPBACK_IPV6)
         assert !IPv6NetworkUtils.isValidManagementEndpoint(INVALID_IP)
     }
 
     void testJGroupsInitialHostsIpv6Format() {
-        assert Platform.formatJGroupsInitialHosts(IPV6, "2001:db8::2", JGROUP_PORT) ==
+        assert Platform.formatJGroupsInitialHosts(IPV6, IPV6_2, JGROUP_PORT) ==
                 "[2001:db8::1][7805],[2001:db8::2][7805]"
     }
 

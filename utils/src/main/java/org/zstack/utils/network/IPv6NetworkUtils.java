@@ -8,6 +8,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.math.BigInteger;
+import java.net.Inet6Address;
+import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
 
@@ -541,6 +543,23 @@ public class IPv6NetworkUtils {
             return true;
         }
 
-        return isIpv6Address(endpoint) && !isLinkLocalAddress(endpoint);
+        return isValidManagementIpv6Address(endpoint);
+    }
+
+    private static boolean isValidManagementIpv6Address(String endpoint) {
+        if (!isIpv6Address(endpoint)) {
+            return false;
+        }
+
+        try {
+            InetAddress address = InetAddress.getByName(endpoint);
+            return address instanceof Inet6Address &&
+                    !address.isLinkLocalAddress() &&
+                    !address.isLoopbackAddress() &&
+                    !address.isAnyLocalAddress() &&
+                    !address.isMulticastAddress();
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

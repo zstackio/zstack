@@ -925,6 +925,15 @@ public class Platform {
         return ip6 == null ? null : getManagementServerCidr(ip6);
     }
 
+    public static List<String> getManagementServerIps() {
+        LinkedHashSet<String> ips = new LinkedHashSet<>();
+        ips.add(getManagementServerIp());
+        ips.add(getManagementServerIp4());
+        ips.add(getManagementServerIp6());
+        ips.remove(null);
+        return new ArrayList<>(ips);
+    }
+
     public static String selectManagementServerIp(Collection<InetAddress> addresses, boolean preferIpv6) {
         String ipv4 = null;
         String ipv6 = null;
