@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -54,6 +55,8 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private EventFacade evtf;
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -336,6 +339,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
 
             private void initAllConfig() {
                 for (GlobalConfig config : configsFromXml.values()) {
+                    config.wire(dbf, evtf);
                     config.init();
                 }
             }
