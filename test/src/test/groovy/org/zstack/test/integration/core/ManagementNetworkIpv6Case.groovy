@@ -6,6 +6,7 @@ import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.header.rest.RESTConstant
+import org.zstack.kvm.KVMHost
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
@@ -31,6 +32,7 @@ class ManagementNetworkIpv6Case {
     private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
     private static final String CEPH_IPV6_MON_URL = "root:password@[${IPV6}]:22/?monPort=6789"
     private static final String INVALID_VTEP_IP = "not-a-vtep-ip"
+    private static final String HOST_EXTRA_IPS = "10.0.0.10,${IPV6_2}"
     private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
 2: eth0
     inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0
@@ -70,6 +72,7 @@ class ManagementNetworkIpv6Case {
         testNfsIpv6UrlParsing()
         testCephIpv6MonUrlParsing()
         testVxlanVtepIpv6Validation()
+        testKvmExtraIpCidrSelection()
         testApplianceVmBootstrapParam()
     }
 
@@ -234,6 +237,12 @@ class ManagementNetworkIpv6Case {
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV4)
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
         assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
+    }
+
+    void testKvmExtraIpCidrSelection() {
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "10.0.0.0/24") == "10.0.0.10"
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "2001:db8::/64") == IPV6_2
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "172.16.0.0/16") == null
     }
 
     void testApplianceVmBootstrapParam() {

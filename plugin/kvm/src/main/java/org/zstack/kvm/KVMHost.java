@@ -126,6 +126,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
+    private static final String EXTRA_IP_SEPARATOR = ",";
     protected static OperationChecker allowedOperations = new OperationChecker(true);
     protected static OperationChecker skipOperations = new OperationChecker(true);
 
@@ -2205,10 +2206,19 @@ public class KVMHost extends HostBase implements Host {
             return null;
         }
 
-        final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
-            if (NetworkUtils.isIpInCidr(ip, cidr)) {
-                return ip;
+        return selectIpInCidr(extraIps, cidr);
+    }
+
+    public static String selectIpInCidr(String ips, String cidr) {
+        if (ips == null) {
+            return null;
+        }
+
+        final String[] ipList = ips.split(EXTRA_IP_SEPARATOR);
+        for (String ip: ipList) {
+            String trimmedIp = ip.trim();
+            if (NetworkUtils.isIpInCidr(trimmedIp, cidr)) {
+                return trimmedIp;
             }
         }
 
@@ -6790,14 +6800,7 @@ public class KVMHost extends HostBase implements Host {
             return false;
         }
 
-        final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
-            if (NetworkUtils.isIpInCidr(ip, cidr)) {
-                return true;
-            }
-        }
-
-        return false;
+        return selectIpInCidr(extraIps, cidr) != null;
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {
