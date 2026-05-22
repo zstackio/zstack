@@ -146,3 +146,6 @@ CREATE TABLE IF NOT EXISTS `ZnsTenantRouterVO` (
   KEY `idx_zns_tr_tenant` (`tenantUuid`),
   CONSTRAINT `fk_zns_tr_tenant` FOREIGN KEY (`tenantUuid`) REFERENCES `ZnsTenantVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ModelServiceVO', 'hasNewVersion', 'tinyint(1)', 1, NULL); 
+
