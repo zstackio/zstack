@@ -54,6 +54,7 @@ class ManagementNetworkIpv6Case {
         testPreferIpv6DefaultFalse()
         testPreferIpv6SystemProperty()
         testSelectManagementServerIpDualStackPolicy()
+        testSelectManagementServerIpSkipsLoopbackAndLinkLocal()
         testSelectApplianceVmManagementNodeIpByCidr()
         testBuildUrlIpv4()
         testBuildUrlIpv6()
@@ -104,6 +105,18 @@ class ManagementNetworkIpv6Case {
         assert Platform.selectManagementServerIp([ipv4, ipv6], true) == IPV6
         assert Platform.selectManagementServerIp([ipv6], false) == IPV6
         assert Platform.selectManagementServerIp([ipv4], true) == IPV4
+    }
+
+    void testSelectManagementServerIpSkipsLoopbackAndLinkLocal() {
+        def ipv4 = InetAddress.getByName(IPV4)
+        def ipv6 = InetAddress.getByName(IPV6)
+        def loopbackIpv4 = InetAddress.getByName("127.0.0.1")
+        def loopbackIpv6 = InetAddress.getByName(LOOPBACK_IPV6)
+        def linkLocalIpv6 = InetAddress.getByName(LINK_LOCAL_IPV6)
+
+        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4], false) == IPV4
+        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6], true) == IPV6
+        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6], true) == null
     }
 
     void testSelectApplianceVmManagementNodeIpByCidr() {

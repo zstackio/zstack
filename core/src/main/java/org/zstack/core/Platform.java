@@ -1027,9 +1027,13 @@ public class Platform {
 
         for (InetAddress address : addresses) {
             String hostAddress = normalizeManagementIp(address.getHostAddress());
+            if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                continue;
+            }
+
             if (address instanceof Inet4Address) {
                 ipv4 = hostAddress;
-            } else if (!IPv6NetworkUtils.isLinkLocalAddress(hostAddress)) {
+            } else {
                 ipv6 = hostAddress;
             }
         }
