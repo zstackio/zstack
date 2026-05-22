@@ -5,6 +5,7 @@ import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.rest.RESTFacadeImpl
+import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMConsoleHypervisorBackend
 import org.zstack.kvm.KVMHost
@@ -63,6 +64,7 @@ class ManagementNetworkIpv6Case {
         testBuildUrlIpv6()
         testLegacyUrlBuilderIpv6()
         testConsoleVncUriIpv6()
+        testConsoleProxyListenHostByAgentIpVersion()
         testRestFacadeIpv6Urls()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
@@ -160,6 +162,12 @@ class ManagementNetworkIpv6Case {
         assert uri.toString() == "vnc://[2001:db8::1]:8080/"
         assert uri.host == "[${IPV6}]"
         assert uri.port == REST_PORT
+    }
+
+    void testConsoleProxyListenHostByAgentIpVersion() {
+        assert ConsoleProxyBase.selectProxyListenHostname(IPV6) == "::"
+        assert ConsoleProxyBase.selectProxyListenHostname(IPV4) == "0.0.0.0"
+        assert ConsoleProxyBase.selectProxyListenHostname("mn.example.com") == "0.0.0.0"
     }
 
     void testRestFacadeIpv6Urls() {
