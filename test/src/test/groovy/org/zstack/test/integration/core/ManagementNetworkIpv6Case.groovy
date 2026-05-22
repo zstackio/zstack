@@ -2,8 +2,11 @@ package org.zstack.test.integration.core
 
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
+import org.zstack.core.agent.AgentManagerImpl
+import org.zstack.core.cloudbus.CloudBusImpl3
 import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
@@ -65,6 +68,7 @@ class ManagementNetworkIpv6Case {
         testLegacyUrlBuilderIpv6()
         testConsoleVncUriIpv6()
         testConsoleProxyListenHostByAgentIpVersion()
+        testCoreManagementUrlsIpv6()
         testRestFacadeIpv6Urls()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
@@ -168,6 +172,12 @@ class ManagementNetworkIpv6Case {
         assert ConsoleProxyBase.selectProxyListenHostname(IPV6) == "::"
         assert ConsoleProxyBase.selectProxyListenHostname(IPV4) == "0.0.0.0"
         assert ConsoleProxyBase.selectProxyListenHostname("mn.example.com") == "0.0.0.0"
+    }
+
+    void testCoreManagementUrlsIpv6() {
+        assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
+        assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
+        assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
     }
 
     void testRestFacadeIpv6Urls() {
