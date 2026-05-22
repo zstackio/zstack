@@ -523,6 +523,14 @@ public class XInfiniApiHelper {
         } else {
             retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
         }
+
+        // the polling above intentionally swallows timeout, so verify the bdev is really gone:
+        // a bdev that is still attached means the old client keeps holding the volume
+        if (!call(gReq, GetBdcBdevResponse.class).resourceIsDeleted()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_XINFINI_10004,
+                    "bdev[id:%s] still exists after deletion polling on bdc[id:%s], " +
+                            "the old storage client may still hold the volume", bdevId, bdcId));
+        }
     }
 
     public VolumeModule rollbackSnapshot(int volId, int snapId) {

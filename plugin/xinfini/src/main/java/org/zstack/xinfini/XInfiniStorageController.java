@@ -206,18 +206,25 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
         logger.debug(String.format("deactivating volume[path: %s, protocol:%s] on host[uuid:%s, ip:%s]",
                 installPath, protocol, h.getUuid(), h.getManagementIp()));
-        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
-            deactivateVhost(installPath, h);
-            comp.success();
-            return;
-        } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
-            // iscsi target is shared by all hosts, we cannot control one volume on one host for now.
-            deactivateIscsi(installPath, h);
-            comp.success();
+        // a deactivate failure must be reported through comp.fail() rather than swallowed,
+        // otherwise the caller cannot tell the old storage client is still holding the volume
+        try {
+            if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+                deactivateVhost(installPath, h);
+            } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
+                // iscsi target is shared by all hosts, we cannot control one volume on one host for now.
+                deactivateIscsi(installPath, h);
+            } else {
+                comp.fail(operr(ORG_ZSTACK_XINFINI_10013, "not supported protocol[%s] for deactivate", protocol));
+                return;
+            }
+        } catch (Exception e) {
+            comp.fail(operr("failed to deactivate volume[path:%s, protocol:%s] on host[uuid:%s, ip:%s]: %s",
+                    installPath, protocol, h.getUuid(), h.getManagementIp(), e.getMessage()));
             return;
         }
 
-        comp.fail(operr(ORG_ZSTACK_XINFINI_10013, "not supported protocol[%s] for deactivate", protocol));
+        comp.success();
     }
 
     private void deactivateIscsi(String installPath, HostInventory h) {
@@ -259,7 +266,8 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
+        // use the rethrowing retry: a bdev that cannot be removed must surface as a failure
+        retryOrThrow(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
     }
 
     @Override
@@ -1098,18 +1106,35 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
         retry(r, 3);
     }
 
-
     private void retry(Runnable r, int retry) {
-        while (retry-- > 0) {
+        // retry is the swallowing variant of retryOrThrow: give up silently after the last attempt
+        try {
+            retryOrThrow(r, retry);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private void retryOrThrow(Runnable r) {
+        retryOrThrow(r, 3);
+    }
+
+    private void retryOrThrow(Runnable r, int retry) {
+        RuntimeException lastError = null;
+        for (int i = 0; i < retry; i++) {
             try {
                 r.run();
                 return;
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
+                lastError = e;
                 logger.warn("runnable failed, try ", e);
                 try {
                     TimeUnit.SECONDS.sleep(3);
                 } catch (InterruptedException ignore) {}
             }
+        }
+
+        if (lastError != null) {
+            throw lastError;
         }
     }
 }
