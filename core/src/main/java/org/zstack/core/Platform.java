@@ -94,6 +94,12 @@ public class Platform {
     private static final int IP_ADDRESS_COMMAND_MIN_TOKEN_COUNT = 2;
     private static final String CIDR_SEPARATOR = "/";
     private static final String TEMP_FILE_SUFFIX = ".tmp";
+    private static final String DATA_DIR_PROPERTY = "dataDir";
+    private static final String DEFAULT_DATA_DIR = "/var/lib/zstack/";
+    private static final String UNIT_TEST_ON_PROPERTY = "unitTestOn";
+    private static final String JAVA_TMP_DIR_PROPERTY = "java.io.tmpdir";
+    private static final String UNIT_TEST_DATA_DIR_NAME = "zstack-unit-test";
+    private static final String MANAGEMENT_SERVER_ID_STATE_FILE_NAME = "management-server-id.properties";
     private static final String ZSTACK_UUID_PATTERN = "[0-9a-fA-F]{32}";
     private static EncryptRSA rsa = new EncryptRSA();
     private static Map<String, Double> errorCounter = new HashMap<>();
@@ -720,14 +726,11 @@ public class Platform {
     }
 
     public static synchronized String loadOrCreateManagementServerId(File propertiesFile, Supplier<String> idSupplier) {
-        Properties properties = new Properties();
-        if (propertiesFile.exists()) {
-            try (FileInputStream inputStream = new FileInputStream(propertiesFile)) {
-                properties.load(inputStream);
-            } catch (IOException e) {
-                throw new CloudRuntimeException(e);
-            }
-        }
+        return loadOrCreateManagementServerId(propertiesFile, getManagementServerIdStateFile(), idSupplier);
+    }
+
+    public static synchronized String loadOrCreateManagementServerId(File propertiesFile, File stateFile, Supplier<String> idSupplier) {
+        Properties properties = loadProperties(propertiesFile);
 
         String configuredId = properties.getProperty(MANAGEMENT_SERVER_ID_PROPERTY);
         if (isValidManagementServerId(configuredId)) {
@@ -735,15 +738,46 @@ public class Platform {
             return configuredId;
         }
 
+        Properties state = loadProperties(stateFile);
+        String persistedId = state.getProperty(MANAGEMENT_SERVER_ID_PROPERTY);
+        if (isValidManagementServerId(persistedId)) {
+            System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, persistedId);
+            return persistedId;
+        }
+
         String generatedId = idSupplier.get();
         if (!isValidManagementServerId(generatedId)) {
             throw new CloudRuntimeException(String.format("generated management server id[%s] is not a valid uuid", generatedId));
         }
 
-        properties.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
-        saveManagementServerId(propertiesFile, properties);
+        state.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
+        saveManagementServerId(stateFile, state);
         System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
         return generatedId;
+    }
+
+    private static Properties loadProperties(File file) {
+        Properties properties = new Properties();
+        if (file.exists()) {
+            try (FileInputStream inputStream = new FileInputStream(file)) {
+                properties.load(inputStream);
+            } catch (IOException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+        return properties;
+    }
+
+    private static File getManagementServerIdStateFile() {
+        String dataDir = System.getProperty(DATA_DIR_PROPERTY);
+        if (dataDir == null && Boolean.parseBoolean(System.getProperty(UNIT_TEST_ON_PROPERTY))) {
+            dataDir = new File(System.getProperty(JAVA_TMP_DIR_PROPERTY), UNIT_TEST_DATA_DIR_NAME).getAbsolutePath();
+        }
+        if (dataDir == null) {
+            dataDir = DEFAULT_DATA_DIR;
+        }
+
+        return new File(dataDir, MANAGEMENT_SERVER_ID_STATE_FILE_NAME);
     }
 
     private static boolean isValidManagementServerId(String id) {
@@ -760,6 +794,14 @@ public class Platform {
     }
 
     private static void saveManagementServerId(File propertiesFile, Properties properties) {
+        if (propertiesFile.getParentFile() != null && !propertiesFile.getParentFile().exists()) {
+            try {
+                FileUtils.forceMkdir(propertiesFile.getParentFile());
+            } catch (IOException e) {
+                throw new CloudRuntimeException(e);
+            }
+        }
+
         File tmp = new File(propertiesFile.getAbsolutePath() + TEMP_FILE_SUFFIX);
         try (FileOutputStream outputStream = new FileOutputStream(tmp)) {
             properties.store(outputStream, "ZStack properties");
@@ -968,16 +1010,29 @@ public class Platform {
     }
 
     public static String getManagementServerIp6() {
+        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv6);
+    }
+
+    private static String getManagementServerIp4() {
+        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv4);
+    }
+
+    private static String getManagementServerIpOnManagementInterface(int ipVersion) {
         try {
-            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-            for (NetworkInterface iface : Collections.list(nets)) {
-                if (!iface.isUp()) {
+            NetworkInterface iface = findManagementServerInterface();
+            if (iface == null || !iface.isUp()) {
+                return null;
+            }
+
+            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
+                if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
                     continue;
                 }
-                for (InetAddress ia : Collections.list(iface.getInetAddresses())) {
-                    if (!(ia instanceof Inet4Address) && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress()) {
-                        return normalizeManagementIp(ia.getHostAddress());
-                    }
+                if (ipVersion == IPv6Constants.IPv6 && !(address instanceof Inet4Address)) {
+                    return normalizeManagementIp(address.getHostAddress());
+                }
+                if (ipVersion == IPv6Constants.IPv4 && address instanceof Inet4Address) {
+                    return normalizeManagementIp(address.getHostAddress());
                 }
             }
         } catch (SocketException e) {
@@ -987,21 +1042,15 @@ public class Platform {
         return null;
     }
 
-    private static String getManagementServerIp4() {
-        try {
-            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-            for (NetworkInterface iface : Collections.list(nets)) {
-                if (!iface.isUp()) {
-                    continue;
-                }
-                for (InetAddress ia : Collections.list(iface.getInetAddresses())) {
-                    if (ia instanceof Inet4Address && !ia.isLoopbackAddress() && !ia.isLinkLocalAddress()) {
-                        return normalizeManagementIp(ia.getHostAddress());
-                    }
+    private static NetworkInterface findManagementServerInterface() throws SocketException {
+        String currentIp = normalizeManagementIp(getManagementServerIp());
+        Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+        for (NetworkInterface iface : Collections.list(nets)) {
+            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
+                if (currentIp.equals(normalizeManagementIp(address.getHostAddress()))) {
+                    return iface;
                 }
             }
-        } catch (SocketException e) {
-            throw new CloudRuntimeException(e);
         }
 
         return null;

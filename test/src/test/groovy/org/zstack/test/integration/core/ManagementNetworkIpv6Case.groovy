@@ -255,22 +255,38 @@ class ManagementNetworkIpv6Case {
     void testManagementServerIdPersisted() {
         String oldValue = System.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
         File propertiesFile = File.createTempFile("zstack-management-server-id", ".properties")
+        File stateFile = File.createTempFile("zstack-management-server-id-state", ".properties")
         try {
+            System.clearProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
             propertiesFile.text = ""
+            stateFile.delete()
             String generatedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
+                    stateFile,
                     { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
             assert generatedId == MANAGEMENT_SERVER_ID
             Properties properties = new Properties()
             propertiesFile.withInputStream { properties.load(it) }
-            assert properties.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
+            assert properties.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == null
+            Properties state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
 
             String persistedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
+                    stateFile,
                     { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>)
             assert persistedId == MANAGEMENT_SERVER_ID
+
+            propertiesFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${NEW_MANAGEMENT_SERVER_ID}\n"
+            String configuredId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert configuredId == NEW_MANAGEMENT_SERVER_ID
         } finally {
             propertiesFile.delete()
+            stateFile.delete()
             if (oldValue == null) {
                 System.clearProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
             } else {
@@ -305,6 +321,7 @@ class ManagementNetworkIpv6Case {
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV4)
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
         assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
+        assert VxlanPoolApiInterceptor.normalizeVtepIp(" ${IPV6_FULL}\n") == IPV6
     }
 
     void testKvmExtraIpCidrSelection() {

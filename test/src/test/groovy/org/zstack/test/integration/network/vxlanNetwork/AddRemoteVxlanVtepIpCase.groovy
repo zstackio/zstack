@@ -20,6 +20,7 @@ import org.zstack.sdk.ApiException
 class AddRemoteVxlanVtepIpCase extends SubCase {
     private static final String IPV4_REMOTE_VTEP_IP = "1.1.1.1"
     private static final String IPV6_REMOTE_VTEP_IP = "2001:db8:ffff::10"
+    private static final String IPV6_REMOTE_VTEP_FULL_IP = "2001:0db8:ffff:0000:0000:0000:0000:0010"
     private static final String INVALID_REMOTE_VTEP_IP = "not-a-vtep-ip"
 
     EnvSpec env
@@ -150,6 +151,23 @@ class AddRemoteVxlanVtepIpCase extends SubCase {
                 .eq(RemoteVtepVO_.vtepIp, IPV6_REMOTE_VTEP_IP)
                 .isExists()
         assert Q.New(RemoteVtepVO.class).eq(RemoteVtepVO_.poolUuid, pool.uuid).count() == 1
+        expect(AssertionError.class) {
+            createVxlanPoolRemoteVtep {
+                l2NetworkUuid = pool.uuid
+                clusterUuid = cluster.uuid
+                remoteVtepIp = " ${IPV6_REMOTE_VTEP_FULL_IP}\n"
+            }
+        }
+        deleteVxlanPoolRemoteVtep {
+            l2NetworkUuid = pool.uuid
+            clusterUuid = cluster.uuid
+            remoteVtepIp = " ${IPV6_REMOTE_VTEP_FULL_IP}\n"
+        }
+        assert !Q.New(RemoteVtepVO.class)
+                .eq(RemoteVtepVO_.poolUuid, pool.uuid)
+                .eq(RemoteVtepVO_.clusterUuid, cluster.uuid)
+                .eq(RemoteVtepVO_.vtepIp, IPV6_REMOTE_VTEP_IP)
+                .isExists()
 
         expect(AssertionError.class) {
             createVxlanPoolRemoteVtep {
