@@ -17,6 +17,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.utils.URLBuilder
+import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
@@ -70,6 +71,7 @@ class ManagementNetworkIpv6Case {
         testConsoleProxyListenHostByAgentIpVersion()
         testCoreManagementUrlsIpv6()
         testRestFacadeIpv6Urls()
+        testSshTargetUsesBracketedIpv6Host()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
         testNormalizeIpv6()
@@ -187,6 +189,12 @@ class ManagementNetworkIpv6Case {
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.CALLBACK_PATH}"
         assert RESTFacadeImpl.buildSendCommandUrl(IPV6, REST_PORT, "zstack") ==
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
+    }
+
+    void testSshTargetUsesBracketedIpv6Host() {
+        assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
+        assert SshShell.formatSshTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatSshTarget("root", "host-01.example.com") == "root@host-01.example.com"
     }
 
     void testBuildHostPortIpv6() {
