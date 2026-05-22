@@ -8,6 +8,7 @@ import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMConsoleHypervisorBackend
 import org.zstack.kvm.KVMHost
+import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
@@ -78,6 +79,7 @@ class ManagementNetworkIpv6Case {
         testCephIpv6MonUrlParsing()
         testVxlanVtepIpv6Validation()
         testKvmExtraIpCidrSelection()
+        testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
     }
 
@@ -275,6 +277,13 @@ class ManagementNetworkIpv6Case {
         assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "2001:db8::/64") == IPV6_2
         assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "172.16.0.0/16") == null
         assert KVMHost.selectIpInCidr(" ,not-an-ip,${IPV6_2}", "2001:db8::/64") == IPV6_2
+    }
+
+    void testKvmIpmiAddressKeepsIpv6() {
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(IPV4) == IPV4
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(IPV6) == IPV6
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(INVALID_IP) == null
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(null) == null
     }
 
     void testApplianceVmBootstrapParam() {
