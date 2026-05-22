@@ -546,7 +546,7 @@ public class IPv6NetworkUtils {
         return isValidManagementIpv6Address(endpoint);
     }
 
-    private static boolean isValidManagementIpv6Address(String endpoint) {
+    public static boolean isValidManagementIpv6Address(String endpoint) {
         if (!isIpv6Address(endpoint)) {
             return false;
         }

@@ -2,6 +2,7 @@ package org.zstack.core.db;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.Platform;
 import org.zstack.utils.DebugUtils;
 
 import javax.persistence.Tuple;
@@ -18,7 +19,8 @@ public class Q {
 
     @SuppressWarnings("unchecked")
     private Q(Class clz) {
-        q = new SimpleQueryImpl(clz);
+        DatabaseFacade dbf = Platform.getComponentLoader().getComponent(DatabaseFacade.class);
+        q = new SimpleQueryImpl(clz, dbf);
     }
 
     public Q select(SingularAttribute... attrs) {
