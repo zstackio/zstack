@@ -2217,8 +2217,16 @@ public class KVMHost extends HostBase implements Host {
         final String[] ipList = ips.split(EXTRA_IP_SEPARATOR);
         for (String ip: ipList) {
             String trimmedIp = ip.trim();
-            if (NetworkUtils.isIpInCidr(trimmedIp, cidr)) {
-                return trimmedIp;
+            if (StringUtils.isBlank(trimmedIp)) {
+                continue;
+            }
+
+            try {
+                if (NetworkUtils.isIpInCidr(trimmedIp, cidr)) {
+                    return trimmedIp;
+                }
+            } catch (RuntimeException e) {
+                logger.warn(String.format("skip invalid host extra IP[%s] when matching CIDR[%s]: %s", trimmedIp, cidr, e.getMessage()));
             }
         }
 

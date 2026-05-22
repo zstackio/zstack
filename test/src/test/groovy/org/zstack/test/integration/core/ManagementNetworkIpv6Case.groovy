@@ -243,6 +243,7 @@ class ManagementNetworkIpv6Case {
         assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "10.0.0.0/24") == "10.0.0.10"
         assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "2001:db8::/64") == IPV6_2
         assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "172.16.0.0/16") == null
+        assert KVMHost.selectIpInCidr(" ,not-an-ip,${IPV6_2}", "2001:db8::/64") == IPV6_2
     }
 
     void testApplianceVmBootstrapParam() {
