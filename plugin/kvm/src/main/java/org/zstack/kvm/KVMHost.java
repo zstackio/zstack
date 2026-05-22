@@ -4455,6 +4455,20 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuOnSocket(cpuOnSocket);
     }
 
+    private boolean isWindowsVm(VmInstanceSpec spec, String platform) {
+        if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)) {
+            return true;
+        }
+
+        // The VM guestOsType is authoritative after creation; image guestOsType is only a fallback.
+        String guestOsType = spec.getVmInventory().getGuestOsType();
+        if (guestOsType == null && spec.getImageSpec() != null && spec.getImageSpec().getInventory() != null) {
+            guestOsType = spec.getImageSpec().getInventory().getGuestOsType();
+        }
+
+        return guestOsType != null && guestOsType.toLowerCase(Locale.ROOT).contains("windows");
+    }
+
     protected void startVm(final VmInstanceSpec spec, final NeedReplyMessage msg, final NoErrorCompletion completion) {
         checkStateAndStatus();
 
@@ -4698,6 +4712,21 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuHypervisorFeature(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE,
                 spec.getVmInventory().getUuid(),
                 Boolean.class));
+        if (isWindowsVm(spec, platform)) {
+            Boolean cpuHardwareVirtualization = rcf.getResourceConfigValue(
+                    KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION,
+                    spec.getVmInventory().getUuid(),
+                    Boolean.class);
+            if (Boolean.FALSE.equals(cpuHardwareVirtualization)) {
+                if (KVMConstant.CPU_MODE_NONE.equals(vmCpuMode)) {
+                    logger.info(String.format("skip disabling cpu hardware virtualization for vm[uuid:%s] because vm.cpuMode is none",
+                            spec.getVmInventory().getUuid()));
+                } else {
+                    // Only false is sent; true and null keep the kvmagent default CPU feature behavior.
+                    cmd.setCpuHardwareVirtualization(cpuHardwareVirtualization);
+                }
+            }
+        }
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
         memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
