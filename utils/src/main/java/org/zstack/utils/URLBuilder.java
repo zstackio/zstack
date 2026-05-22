@@ -2,11 +2,14 @@ package org.zstack.utils;
 
 import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 public class URLBuilder {
+    private static final String BASE_URL_FORMAT = "%s://%s:%s";
+
     public static String buildUrl(String scheme, String host, int port, String...paths) {
-        UriComponentsBuilder builder = UriComponentsBuilder.newInstance();
-        builder.scheme(scheme).host(host).port(port);
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(
+                String.format(BASE_URL_FORMAT, scheme, IPv6NetworkUtils.formatHostForUrl(host), port));
         for (String p : paths) {
             builder.path(p);
         }

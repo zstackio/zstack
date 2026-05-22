@@ -6,10 +6,12 @@ import org.zstack.core.NetworkGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.header.rest.RESTConstant
+import org.zstack.kvm.KVMConsoleHypervisorBackend
 import org.zstack.kvm.KVMHost
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
+import org.zstack.utils.URLBuilder
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
@@ -58,6 +60,8 @@ class ManagementNetworkIpv6Case {
         testSelectApplianceVmManagementNodeIpByCidr()
         testBuildUrlIpv4()
         testBuildUrlIpv6()
+        testLegacyUrlBuilderIpv6()
+        testConsoleVncUriIpv6()
         testRestFacadeIpv6Urls()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
@@ -140,6 +144,20 @@ class ManagementNetworkIpv6Case {
 
     void testBuildUrlIpv6() {
         assert IPv6NetworkUtils.buildHttpUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080"
+    }
+
+    void testLegacyUrlBuilderIpv6() {
+        assert URLBuilder.buildHttpUrl(IPV6, REST_PORT, "/console/establish") ==
+                "http://[2001:db8::1]:8080/console/establish"
+        assert URLBuilder.buildSslHttpUrl(IPV6, REST_PORT, "/console/establish") ==
+                "https://[2001:db8::1]:8080/console/establish"
+    }
+
+    void testConsoleVncUriIpv6() {
+        URI uri = KVMConsoleHypervisorBackend.buildConsoleUri(IPV6, REST_PORT)
+        assert uri.toString() == "vnc://[2001:db8::1]:8080/"
+        assert uri.host == "[${IPV6}]"
+        assert uri.port == REST_PORT
     }
 
     void testRestFacadeIpv6Urls() {
