@@ -3,7 +3,7 @@ package org.zstack.test.integration.core
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.ansible.AnsibleRunner
-import org.zstack.core.NetworkGlobalConfig
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -17,6 +17,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
+import org.zstack.testlib.SubCase
 import org.zstack.utils.URLBuilder
 import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
@@ -26,7 +27,7 @@ import org.junit.Test
 
 import java.util.function.Supplier
 
-class ManagementNetworkIpv6Case {
+class ManagementNetworkIpv6Case extends SubCase {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
     private static final String IPV6_2 = "2001:db8::2"
@@ -58,6 +59,19 @@ class ManagementNetworkIpv6Case {
     private static final int REST_PORT = 8080
     private static final int JGROUP_PORT = 7805
 
+    @Override
+    void clean() {
+    }
+
+    @Override
+    void setup() {
+    }
+
+    @Override
+    void environment() {
+    }
+
+    @Override
     @Test
     void test() {
         testPreferIpv6DefaultFalse()
@@ -94,7 +108,7 @@ class ManagementNetworkIpv6Case {
     }
 
     void testPreferIpv6DefaultFalse() {
-        assert NetworkGlobalConfig.PREFER_IPV6.getIdentity() == "management.server.prefer.ipv6"
+        assert !CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6
     }
 
     void testPreferIpv6SystemProperty() {

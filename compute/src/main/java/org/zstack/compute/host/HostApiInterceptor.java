@@ -132,10 +132,18 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
 
     static void validateManagementEndpoint(APIAddHostMsg msg) {
         String managementIp = msg.getManagementIp();
-        String errorCode = getManagementEndpointValidationErrorCode(managementIp);
-
-        if (errorCode != null) {
-            throw new ApiMessageInterceptionException(argerr(errorCode, getManagementEndpointValidationErrorMessage(errorCode), managementIp));
+        if (IPv6NetworkUtils.isIpv6Address(managementIp)) {
+            if (!IPv6NetworkUtils.isValidManagementIpv6Address(managementIp)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        ORG_ZSTACK_COMPUTE_HOST_10129,
+                        RESERVED_MANAGEMENT_IPV6_ERROR,
+                        managementIp));
+            }
+        } else if (!isValidManagementEndpoint(managementIp)) {
+            throw new ApiMessageInterceptionException(argerr(
+                    ORG_ZSTACK_COMPUTE_HOST_10128,
+                    INVALID_MANAGEMENT_IP_ERROR,
+                    managementIp));
         }
 
         if (IPv6NetworkUtils.isIpv6Address(managementIp)) {
@@ -149,10 +157,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         }
 
         return isValidManagementEndpoint(managementIp) ? null : ORG_ZSTACK_COMPUTE_HOST_10128;
-    }
-
-    private static String getManagementEndpointValidationErrorMessage(String errorCode) {
-        return ORG_ZSTACK_COMPUTE_HOST_10129.equals(errorCode) ? RESERVED_MANAGEMENT_IPV6_ERROR : INVALID_MANAGEMENT_IP_ERROR;
     }
 
     private static boolean isValidManagementEndpoint(String endpoint) {

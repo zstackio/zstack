@@ -3,13 +3,35 @@ package org.zstack.test.integration.appliancevm
 import org.junit.Test
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.testlib.SubCase
 
-class ApplianceVmIpv6Case {
+class ApplianceVmIpv6Case extends SubCase {
     private static final String IPV4_MN_IP = "192.168.1.10"
     private static final String IPV6_MN_IP = "2001:db8::1"
     private static final String IPV4_MN_CIDR = "192.168.1.0/24"
     private static final String IPV6_MN_CIDR = "2001:db8::/64"
     private static final String UNMATCHED_VR_CIDR = "10.0.0.0/24"
+
+    @Override
+    void clean() {
+    }
+
+    @Override
+    void setup() {
+    }
+
+    @Override
+    void environment() {
+    }
+
+    @Override
+    void test() {
+        testVrBootstrapIpv6Cidr()
+        testVrBootstrapMnIpNoBrackets()
+        testVrMnIpCidrMatch()
+        testVrBootstrapAddressFamilyIndependent()
+        testVrBootstrapFallbackWhenNoCidrMatches()
+    }
 
     @Test
     void testVrBootstrapIpv6Cidr() {
