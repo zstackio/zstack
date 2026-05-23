@@ -6,8 +6,6 @@ import org.zstack.sdk.*;
 
 public class CreateVxlanPoolRemoteVtepAction extends AbstractAction {
 
-    private static final int REMOTE_VTEP_IP_MAX_LENGTH = 39;
-
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
     private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
@@ -33,7 +31,7 @@ public class CreateVxlanPoolRemoteVtepAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
-    @Param(required = true, maxLength = REMOTE_VTEP_IP_MAX_LENGTH, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 39, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String remoteVtepIp;
 
     @Param(required = false)
