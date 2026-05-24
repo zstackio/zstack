@@ -6,6 +6,7 @@ import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import static org.zstack.utils.path.PathUtil.*;
  */
 public class SshShell {
     private static final CLogger logger = Utils.getLogger(SshShell.class);
+    private static final String SSH_TARGET_FORMAT = "%s@%s";
 
     private String hostname;
     private String username;
@@ -36,6 +38,10 @@ public class SshShell {
         DebugUtils.Assert(password != null || privateKey != null, "password and privateKey must have at least one set");
     }
 
+    public static String formatSshTarget(String username, String hostname) {
+        return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.formatHostForUrl(hostname));
+    }
+
     public SshResult runCommand(String cmd) {
         checkParams();
         String ssh;
@@ -45,13 +51,13 @@ public class SshShell {
             if (privateKey != null) {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
-                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
+                ssh = String.format("ssh -q -i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p %s %s '%s'",
+                        tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), cmd);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), port, username, hostname, cmd);
+                ssh = String.format("sshpass -f%s ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p %s %s '%s'",
+                        tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), cmd);
             }
 
             if (logger.isTraceEnabled()) {

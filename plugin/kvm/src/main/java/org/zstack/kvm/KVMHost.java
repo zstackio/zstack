@@ -126,6 +126,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
+    private static final String EXTRA_IP_SEPARATOR = ",";
     protected static OperationChecker allowedOperations = new OperationChecker(true);
     protected static OperationChecker skipOperations = new OperationChecker(true);
 
@@ -2205,10 +2206,27 @@ public class KVMHost extends HostBase implements Host {
             return null;
         }
 
-        final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
-            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
-                return ip;
+        return selectIpInCidr(extraIps, cidr);
+    }
+
+    public static String selectIpInCidr(String ips, String cidr) {
+        if (ips == null) {
+            return null;
+        }
+
+        final String[] ipList = ips.split(EXTRA_IP_SEPARATOR);
+        for (String ip: ipList) {
+            String trimmedIp = ip.trim();
+            if (StringUtils.isBlank(trimmedIp)) {
+                continue;
+            }
+
+            try {
+                if (NetworkUtils.isIpInCidr(trimmedIp, cidr)) {
+                    return trimmedIp;
+                }
+            } catch (RuntimeException e) {
+                logger.warn(String.format("skip invalid host extra IP[%s] when matching CIDR[%s]: %s", trimmedIp, cidr, e.getMessage()));
             }
         }
 
@@ -2711,7 +2729,7 @@ public class KVMHost extends HostBase implements Host {
     private String buildUrl(String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-        ub.host(self.getManagementIp());
+        ub.host(KVMHostUtils.formatHostForUrl(self.getManagementIp()));
         ub.port(KVMGlobalProperty.AGENT_PORT);
         if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);
@@ -6779,7 +6797,7 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private boolean checkMigrateNetworkCidrOfHost(String cidr) {
-        if (NetworkUtils.isIpv4InCidr(self.getManagementIp(), cidr)) {
+        if (NetworkUtils.isIpInCidr(self.getManagementIp(), cidr)) {
             return true;
         }
 
@@ -6790,14 +6808,7 @@ public class KVMHost extends HostBase implements Host {
             return false;
         }
 
-        final String[] ips = extraIps.split(",");
-        for (String ip: ips) {
-            if (NetworkUtils.isIpv4InCidr(ip, cidr)) {
-                return true;
-            }
-        }
-
-        return false;
+        return selectIpInCidr(extraIps, cidr) != null;
     }
 
     private boolean checkQemuLibvirtVersionOfHost() {

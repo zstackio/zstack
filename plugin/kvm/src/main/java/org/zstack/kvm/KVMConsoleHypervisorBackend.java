@@ -16,6 +16,7 @@ import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.kvm.KVMAgentCommands.GetVncPortResponse;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -78,7 +79,7 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 String mgmtIp = q.findValue();
                 try {
                     // see https://tools.ietf.org/html/rfc7869#section-2.1
-                    URI uri = new URI(String.format("vnc://%s:%s/", mgmtIp, rsp.getPort()));
+                    URI uri = buildConsoleUri(mgmtIp, rsp.getPort());
                     ConsoleUrl consoleUrl = new ConsoleUrl();
                     consoleUrl.setUri(uri);
                     consoleUrl.setVersion(dbf.getDbVersion());
@@ -88,5 +89,9 @@ public class KVMConsoleHypervisorBackend implements ConsoleHypervisorBackend {
                 }
             }
         });
+    }
+
+    public static URI buildConsoleUri(String host, int port) throws URISyntaxException {
+        return new URI(String.format("vnc://%s:%s/", IPv6NetworkUtils.formatHostForUrl(host), port));
     }
 }

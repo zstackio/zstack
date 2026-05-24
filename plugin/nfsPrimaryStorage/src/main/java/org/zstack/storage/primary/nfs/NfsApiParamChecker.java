@@ -32,6 +32,10 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class NfsApiParamChecker {
+    private static final String IPV6_URL_HOST_PREFIX = "[";
+    private static final String IPV6_URL_HOST_SUFFIX = "]";
+    private static final String NFS_URL_SEPARATOR = ":";
+
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -47,13 +51,13 @@ public class NfsApiParamChecker {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10006, "there has been a nfs primary storage having url as %s in zone[uuid:%s]", url, zoneUuid));
         }
 
-        String[] results = url.split(":");
-        if (results.length == 2 && (
-                results[1].startsWith("/dev") || results[1].startsWith("/proc") || results[1].startsWith("/sys"))) {
+        String path = getNfsPathFromUrl(url);
+        if (path != null && (
+                path.startsWith("/dev") || path.startsWith("/proc") || path.startsWith("/sys"))) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007, " the url contains an invalid folder[/dev or /proc or /sys]"));
         }
 
-        validateUrl(systemTags, results[0]);
+        validateUrl(systemTags, getNfsHostFromUrl(url));
     }
 
 
@@ -79,9 +83,36 @@ public class NfsApiParamChecker {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10009, "invalid CIDR: %s", cidr));
         }
 
-        if (!NetworkUtils.isIpv4InCidr(ipAddr, cidr)) {
+        if (!NetworkUtils.isIpInCidr(ipAddr, cidr)) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10010, "IP address[%s] is not in CIDR[%s]", ipAddr, cidr));
         }
+    }
+
+    public static String getNfsHostFromUrl(String url) {
+        if (url.startsWith(IPV6_URL_HOST_PREFIX)) {
+            int end = url.indexOf(IPV6_URL_HOST_SUFFIX);
+            if (end > 0) {
+                return url.substring(IPV6_URL_HOST_PREFIX.length(), end);
+            }
+        }
+
+        return url.split(NFS_URL_SEPARATOR)[0];
+    }
+
+    public static String getNfsPathFromUrl(String url) {
+        if (url.startsWith(IPV6_URL_HOST_PREFIX)) {
+            int end = url.indexOf(IPV6_URL_HOST_SUFFIX);
+            if (end > 0 && url.length() > end + IPV6_URL_HOST_SUFFIX.length()) {
+                String suffix = url.substring(end + IPV6_URL_HOST_SUFFIX.length());
+                if (suffix.startsWith(NFS_URL_SEPARATOR)) {
+                    return suffix.substring(NFS_URL_SEPARATOR.length());
+                }
+            }
+            return null;
+        }
+
+        String[] results = url.split(NFS_URL_SEPARATOR);
+        return results.length == 2 ? results[1] : null;
     }
 
     public void checkRunningVmForUpdateUrl(String psuuid) {

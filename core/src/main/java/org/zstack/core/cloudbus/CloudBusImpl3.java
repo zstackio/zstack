@@ -66,6 +66,7 @@ import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -140,7 +141,15 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
     private final static TimeoutRestTemplate http = RESTFacade.createRestTemplate(CoreGlobalProperty.REST_FACADE_READ_TIMEOUT, CoreGlobalProperty.REST_FACADE_CONNECT_TIMEOUT);
 
     public static final String HTTP_BASE_URL = "/cloudbus";
+    private static final String HTTP_URL_FORMAT = "http://%s:%s%s";
+    private static final String HTTP_CONTEXT_URL_FORMAT = "http://%s:%s/%s/%s";
     public static final FutureCompletion SEND_CONFIRMED = new FutureCompletion(null);
+
+    public static String buildCloudBusUrl(String ip, int port, String contextPath) {
+        String host = IPv6NetworkUtils.formatHostForUrl(ip);
+        return contextPath.isEmpty() ? String.format(HTTP_URL_FORMAT, host, port, HTTP_BASE_URL) :
+                String.format(HTTP_CONTEXT_URL_FORMAT, host, port, contextPath, HTTP_BASE_URL);
+    }
 
     private TelemetryFacade telemetryFacade;
 
@@ -673,9 +682,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         private void httpSend(String ip) {
-            String url = CloudBusGlobalProperty.HTTP_CONTEXT_PATH.isEmpty() ? String.format("http://%s:%s%s",
-                    ip, CloudBusGlobalProperty.HTTP_PORT, HTTP_BASE_URL) : String.format("http://%s:%s/%s/%s",
-                    ip, CloudBusGlobalProperty.HTTP_PORT, CloudBusGlobalProperty.HTTP_CONTEXT_PATH, HTTP_BASE_URL);
+            String url = CloudBusImpl3.buildCloudBusUrl(ip, CloudBusGlobalProperty.HTTP_PORT, CloudBusGlobalProperty.HTTP_CONTEXT_PATH);
 
             HttpHeaders headers = new HttpHeaders();
             HttpEntity<String> req = new HttpEntity<>(CloudBusGson.toJson(msg), headers);

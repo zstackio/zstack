@@ -87,10 +87,12 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.function.ValidateFunction;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.net.StandardSocketOptions;
@@ -958,7 +960,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @AsyncThread
     private void startTcpServer() throws IOException {
         try (Selector selector = Selector.open(); ServerSocketChannel serverSocket = ServerSocketChannel.open()) {
-            serverSocket.bind(new InetSocketAddress("0.0.0.0", KVMGlobalProperty.TCP_SERVER_PORT));
+            serverSocket.bind(makeTcpServerBindAddress(KVMGlobalProperty.TCP_SERVER_PORT));
             serverSocket.configureBlocking(false);
             serverSocket.register(selector, SelectionKey.OP_ACCEPT);
             ByteBuffer buffer = ByteBuffer.allocate(256);
@@ -1005,7 +1007,11 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         client.close();
         socketTimeoutMap.remove(client, timeHelper.getCurrentTimeMillis());
 
-        String managementIp = remoteAddress.toString().split("/")[1].split(":")[0];
+        String managementIp = extractRemoteManagementIp(remoteAddress);
+        if (managementIp == null) {
+            return;
+        }
+
         String hostUuid = Q.New(HostVO.class)
                 .select(HostVO_.uuid)
                 .eq(HostVO_.managementIp, managementIp)
@@ -1031,6 +1037,29 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         client.register(selector, SelectionKey.OP_READ);
 
         socketTimeoutMap.put(client, timeHelper.getCurrentTimeMillis());
+    }
+
+    static InetSocketAddress makeTcpServerBindAddress(int port) {
+        return new InetSocketAddress(port);
+    }
+
+    static String extractRemoteManagementIp(SocketAddress remoteAddress) {
+        if (!(remoteAddress instanceof InetSocketAddress)) {
+            return null;
+        }
+
+        InetAddress address = ((InetSocketAddress) remoteAddress).getAddress();
+        if (address == null) {
+            return null;
+        }
+
+        String hostAddress = address.getHostAddress();
+        int scopeIndex = hostAddress.indexOf('%');
+        if (scopeIndex >= 0) {
+            hostAddress = hostAddress.substring(0, scopeIndex);
+        }
+
+        return IPv6NetworkUtils.isIpv6Address(hostAddress) ? IPv6NetworkUtils.normalizeIpv6(hostAddress) : hostAddress;
     }
 
     private Map<String, String> getHostsWithDiffModel(String clusterUuid) {
@@ -1070,7 +1099,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public KVMHostContext createHostContext(KVMHostVO vo) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-        ub.host(vo.getManagementIp());
+        ub.host(KVMHostUtils.formatHostForUrl(vo.getManagementIp()));
         ub.port(KVMGlobalProperty.AGENT_PORT);
         if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);

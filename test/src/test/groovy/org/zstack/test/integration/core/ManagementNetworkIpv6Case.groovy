@@ -1,0 +1,358 @@
+package org.zstack.test.integration.core
+
+import org.zstack.appliancevm.ApplianceVmConstant
+import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.core.ansible.AnsibleRunner
+import org.zstack.core.CoreGlobalProperty
+import org.zstack.core.Platform
+import org.zstack.core.agent.AgentManagerImpl
+import org.zstack.core.cloudbus.CloudBusImpl3
+import org.zstack.core.rest.RESTFacadeImpl
+import org.zstack.console.ConsoleProxyBase
+import org.zstack.header.rest.RESTConstant
+import org.zstack.kvm.KVMConsoleHypervisorBackend
+import org.zstack.kvm.KVMHost
+import org.zstack.kvm.KvmHostIpmiPowerExecutor
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
+import org.zstack.storage.ceph.MonUri
+import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
+import org.zstack.storage.primary.nfs.NfsApiParamChecker
+import org.zstack.testlib.SubCase
+import org.zstack.utils.URLBuilder
+import org.zstack.utils.ssh.SshShell
+import org.zstack.utils.network.IPv6Constants
+import org.zstack.utils.network.IPv6NetworkUtils
+import org.zstack.utils.network.NetworkUtils
+import org.junit.Test
+
+import java.util.function.Supplier
+
+class ManagementNetworkIpv6Case extends SubCase {
+    private static final String IPV4 = "192.168.1.10"
+    private static final String IPV6 = "2001:db8::1"
+    private static final String IPV6_2 = "2001:db8::2"
+    private static final String IPV6_FULL = "2001:0db8:0000:0000:0000:0000:0000:0001"
+    private static final String LINK_LOCAL_IPV6 = "fe80::1"
+    private static final String LOOPBACK_IPV6 = "::1"
+    private static final String INVALID_IP = "not-an-ip!!"
+    private static final String MANAGEMENT_SERVER_ID = "1234567890abcdef1234567890abcdef"
+    private static final String NEW_MANAGEMENT_SERVER_ID = "abcdef1234567890abcdef1234567890"
+    private static final String NFS_EXPORT_PATH = "/export/nfs"
+    private static final String NFS_IPV4_URL = "${IPV4}:${NFS_EXPORT_PATH}"
+    private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
+    private static final String CEPH_IPV6_MON_URL = "root:password@[${IPV6}]:22/?monPort=6789"
+    private static final String INVALID_VTEP_IP = "not-a-vtep-ip"
+    private static final String HOST_EXTRA_IPS = "10.0.0.10,${IPV6_2}"
+    private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
+2: eth0
+    inet 192.168.1.10/24 brd 192.168.1.255 scope global eth0
+3: eth1
+    inet 10.0.0.10/24 brd 10.0.0.255 scope global eth1
+"""
+    private static final String IPV6_ADDRESS_COMMAND_OUTPUT = """\
+2: eth0
+    inet6 2001:db8::1/64 scope global
+       valid_lft forever preferred_lft forever
+    inet6 fe80::1/64 scope link
+       valid_lft forever preferred_lft forever
+"""
+    private static final int REST_PORT = 8080
+    private static final int JGROUP_PORT = 7805
+
+    @Override
+    void clean() {
+    }
+
+    @Override
+    void setup() {
+    }
+
+    @Override
+    void environment() {
+    }
+
+    @Override
+    @Test
+    void test() {
+        testPreferIpv6DefaultFalse()
+        testPreferIpv6SystemProperty()
+        testSelectManagementServerIpDualStackPolicy()
+        testSelectManagementServerIpSkipsLoopbackAndLinkLocal()
+        testSelectApplianceVmManagementNodeIpByCidr()
+        testBuildUrlIpv4()
+        testBuildUrlIpv6()
+        testLegacyUrlBuilderIpv6()
+        testConsoleVncUriIpv6()
+        testConsoleProxyListenHostByAgentIpVersion()
+        testCoreManagementUrlsIpv6()
+        testRestFacadeIpv6Urls()
+        testSshTargetUsesBracketedIpv6Host()
+        testBuildHostPortIpv6()
+        testBracketIpv6Idempotent()
+        testNormalizeIpv6()
+        testManagementEndpointValidation()
+        testJGroupsInitialHostsIpv6Format()
+        testJGroupsInitialHostsIpv4Regression()
+        testIpv6NetworkCidr()
+        testIpInCidrDualStack()
+        testManagementCidrCommandOutputParsing()
+        testManagementCidrIpVersionOverload()
+        testManagementServerIdPersisted()
+        testNfsIpv6UrlParsing()
+        testCephIpv6MonUrlParsing()
+        testCephMetadataAgentUrlUsesBracketedIpv6Host()
+        testVxlanVtepIpv6Validation()
+        testKvmExtraIpCidrSelection()
+        testKvmIpmiAddressKeepsIpv6()
+        testApplianceVmBootstrapParam()
+    }
+
+    void testPreferIpv6DefaultFalse() {
+        assert !CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6
+    }
+
+    void testPreferIpv6SystemProperty() {
+        String oldValue = System.getProperty("management.server.prefer.ipv6")
+        try {
+            System.setProperty("management.server.prefer.ipv6", "true")
+            assert Platform.isManagementServerPreferIpv6()
+            System.setProperty("management.server.prefer.ipv6", "false")
+            assert !Platform.isManagementServerPreferIpv6()
+        } finally {
+            if (oldValue == null) {
+                System.clearProperty("management.server.prefer.ipv6")
+            } else {
+                System.setProperty("management.server.prefer.ipv6", oldValue)
+            }
+        }
+    }
+
+    void testSelectManagementServerIpDualStackPolicy() {
+        def ipv4 = InetAddress.getByName(IPV4)
+        def ipv6 = InetAddress.getByName(IPV6)
+
+        assert Platform.selectManagementServerIp([ipv6, ipv4], false) == IPV4
+        assert Platform.selectManagementServerIp([ipv4, ipv6], true) == IPV6
+        assert Platform.selectManagementServerIp([ipv6], false) == IPV6
+        assert Platform.selectManagementServerIp([ipv4], true) == IPV4
+    }
+
+    void testSelectManagementServerIpSkipsLoopbackAndLinkLocal() {
+        def ipv4 = InetAddress.getByName(IPV4)
+        def ipv6 = InetAddress.getByName(IPV6)
+        def loopbackIpv4 = InetAddress.getByName("127.0.0.1")
+        def loopbackIpv6 = InetAddress.getByName(LOOPBACK_IPV6)
+        def linkLocalIpv6 = InetAddress.getByName(LINK_LOCAL_IPV6)
+
+        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4], false) == IPV4
+        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6], true) == IPV6
+        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6], true) == null
+    }
+
+    void testSelectApplianceVmManagementNodeIpByCidr() {
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["2001:db8::/64"],
+                IPV4) == IPV6
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["192.168.1.0/24"],
+                IPV6) == IPV4
+        assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
+                [IPV4, IPV6],
+                ["10.0.0.0/24"],
+                IPV6) == IPV6
+    }
+
+    void testBuildUrlIpv4() {
+        assert IPv6NetworkUtils.buildHttpUrl(IPV4, REST_PORT) == "http://192.168.1.10:8080"
+    }
+
+    void testBuildUrlIpv6() {
+        assert IPv6NetworkUtils.buildHttpUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080"
+    }
+
+    void testLegacyUrlBuilderIpv6() {
+        assert URLBuilder.buildHttpUrl(IPV6, REST_PORT, "/console/establish") ==
+                "http://[2001:db8::1]:8080/console/establish"
+        assert URLBuilder.buildSslHttpUrl(IPV6, REST_PORT, "/console/establish") ==
+                "https://[2001:db8::1]:8080/console/establish"
+    }
+
+    void testConsoleVncUriIpv6() {
+        URI uri = KVMConsoleHypervisorBackend.buildConsoleUri(IPV6, REST_PORT)
+        assert uri.toString() == "vnc://[2001:db8::1]:8080/"
+        assert uri.host == "[${IPV6}]"
+        assert uri.port == REST_PORT
+    }
+
+    void testConsoleProxyListenHostByAgentIpVersion() {
+        assert ConsoleProxyBase.selectProxyListenHostname(IPV6) == "::"
+        assert ConsoleProxyBase.selectProxyListenHostname(IPV4) == "0.0.0.0"
+        assert ConsoleProxyBase.selectProxyListenHostname("mn.example.com") == "0.0.0.0"
+    }
+
+    void testCoreManagementUrlsIpv6() {
+        assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
+        assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
+        assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
+    }
+
+    void testRestFacadeIpv6Urls() {
+        assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, null) == "http://[2001:db8::1]:8080"
+        assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, "zstack") == "http://[2001:db8::1]:8080/zstack"
+        assert RESTFacadeImpl.buildCallbackUrl(IPV6, REST_PORT, "zstack") ==
+                "http://[2001:db8::1]:8080/zstack${RESTConstant.CALLBACK_PATH}"
+        assert RESTFacadeImpl.buildSendCommandUrl(IPV6, REST_PORT, "zstack") ==
+                "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
+    }
+
+    void testSshTargetUsesBracketedIpv6Host() {
+        assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
+        assert SshShell.formatSshTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatSshTarget("root", "host-01.example.com") == "root@host-01.example.com"
+    }
+
+    void testBuildHostPortIpv6() {
+        assert IPv6NetworkUtils.formatHostPort(IPV6, REST_PORT) == "[2001:db8::1]:8080"
+    }
+
+    void testBracketIpv6Idempotent() {
+        assert IPv6NetworkUtils.formatHostForUrl(IPV6) == "[2001:db8::1]"
+        assert IPv6NetworkUtils.formatHostForUrl("[2001:db8::1]") == "[2001:db8::1]"
+    }
+
+    void testNormalizeIpv6() {
+        assert IPv6NetworkUtils.normalizeIpv6(IPV6_FULL) == IPV6
+    }
+
+    void testManagementEndpointValidation() {
+        assert IPv6NetworkUtils.isValidManagementEndpoint(IPV4)
+        assert IPv6NetworkUtils.isValidManagementEndpoint(IPV6)
+        assert IPv6NetworkUtils.isValidManagementEndpoint("host-01.example.com")
+        assert !IPv6NetworkUtils.isValidManagementEndpoint(LINK_LOCAL_IPV6)
+        assert !IPv6NetworkUtils.isValidManagementEndpoint(LOOPBACK_IPV6)
+        assert !IPv6NetworkUtils.isValidManagementEndpoint(INVALID_IP)
+    }
+
+    void testJGroupsInitialHostsIpv6Format() {
+        assert Platform.formatJGroupsInitialHosts(IPV6, IPV6_2, JGROUP_PORT) ==
+                "[2001:db8::1][7805],[2001:db8::2][7805]"
+    }
+
+    void testJGroupsInitialHostsIpv4Regression() {
+        assert Platform.formatJGroupsInitialHosts(IPV4, "192.168.1.11", JGROUP_PORT) ==
+                "192.168.1.10[7805],192.168.1.11[7805]"
+    }
+
+    void testIpv6NetworkCidr() {
+        assert NetworkUtils.getNetworkAddressFromCidr("2001:db8::1/64") == "2001:db8::/64"
+    }
+
+    void testIpInCidrDualStack() {
+        assert NetworkUtils.isIpInCidr(IPV4, "192.168.1.0/24")
+        assert NetworkUtils.isIpInCidr(IPV6, "2001:db8::/64")
+        assert !NetworkUtils.isIpInCidr(IPV4, "2001:db8::/64")
+        assert !NetworkUtils.isIpInCidr(IPV6, "192.168.1.0/24")
+    }
+
+    void testManagementCidrCommandOutputParsing() {
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV4, IPV4_ADDRESS_COMMAND_OUTPUT) == "192.168.1.0/24"
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV6, IPV6_ADDRESS_COMMAND_OUTPUT) == "2001:db8::/64"
+        assert Platform.parseManagementServerCidrFromIpAddressOutput(IPV6_2, IPV6_ADDRESS_COMMAND_OUTPUT) == null
+    }
+
+    void testManagementCidrIpVersionOverload() {
+        assert Platform.getManagementServerCidr(IPv6Constants.IPv4) == Platform.getManagementServerCidr(Platform.getManagementServerIp())
+    }
+
+    void testManagementServerIdPersisted() {
+        String oldValue = System.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
+        File propertiesFile = File.createTempFile("zstack-management-server-id", ".properties")
+        File stateFile = File.createTempFile("zstack-management-server-id-state", ".properties")
+        try {
+            System.clearProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
+            propertiesFile.text = ""
+            stateFile.delete()
+            String generatedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert generatedId == MANAGEMENT_SERVER_ID
+            Properties properties = new Properties()
+            propertiesFile.withInputStream { properties.load(it) }
+            assert properties.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == null
+            Properties state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
+
+            String persistedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert persistedId == MANAGEMENT_SERVER_ID
+
+            propertiesFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${NEW_MANAGEMENT_SERVER_ID}\n"
+            String configuredId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+            assert configuredId == NEW_MANAGEMENT_SERVER_ID
+        } finally {
+            propertiesFile.delete()
+            stateFile.delete()
+            if (oldValue == null) {
+                System.clearProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
+            } else {
+                System.setProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY, oldValue)
+            }
+        }
+    }
+
+    void testNfsIpv6UrlParsing() {
+        assert NfsApiParamChecker.getNfsHostFromUrl(NFS_IPV4_URL) == IPV4
+        assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV4_URL) == NFS_EXPORT_PATH
+        assert NfsApiParamChecker.getNfsHostFromUrl(NFS_IPV6_URL) == IPV6
+        assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV6_URL) == NFS_EXPORT_PATH
+    }
+
+    void testCephIpv6MonUrlParsing() {
+        MonUri monUri = new MonUri(CEPH_IPV6_MON_URL)
+        assert monUri.hostname == IPV6
+        assert monUri.sshPort == 22
+        assert monUri.monPort == 6789
+        assert IPv6NetworkUtils.formatHostPort(monUri.hostname, monUri.monPort) == "[${IPV6}]:6789"
+    }
+
+    void testCephMetadataAgentUrlUsesBracketedIpv6Host() {
+        assert CephBackupStorageMetaDataMaker.buildAgentUrl(IPV6, REST_PORT, "/ceph/backupstorage/dumpimagemetadatatofile") ==
+                "http://[2001:db8::1]:8080/ceph/backupstorage/dumpimagemetadatatofile"
+        assert CephBackupStorageMetaDataMaker.buildAgentUrl(IPV4, REST_PORT, "/ceph/backupstorage/dumpimagemetadatatofile") ==
+                "http://192.168.1.10:8080/ceph/backupstorage/dumpimagemetadatatofile"
+    }
+
+    void testVxlanVtepIpv6Validation() {
+        assert VxlanPoolApiInterceptor.isValidVtepIp(IPV4)
+        assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
+        assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
+        assert VxlanPoolApiInterceptor.normalizeVtepIp(" ${IPV6_FULL}\n") == IPV6
+    }
+
+    void testKvmExtraIpCidrSelection() {
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "10.0.0.0/24") == "10.0.0.10"
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "2001:db8::/64") == IPV6_2
+        assert KVMHost.selectIpInCidr(HOST_EXTRA_IPS, "172.16.0.0/16") == null
+        assert KVMHost.selectIpInCidr(" ,not-an-ip,${IPV6_2}", "2001:db8::/64") == IPV6_2
+    }
+
+    void testKvmIpmiAddressKeepsIpv6() {
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(IPV4) == IPV4
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(IPV6) == IPV6
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(INVALID_IP) == null
+        assert KvmHostIpmiPowerExecutor.normalizeIpmiAddress(null) == null
+    }
+
+    void testApplianceVmBootstrapParam() {
+        assert ApplianceVmConstant.BootstrapParams.managementNodeIp6Cidr.toString() == "managementNodeIp6Cidr"
+    }
+}

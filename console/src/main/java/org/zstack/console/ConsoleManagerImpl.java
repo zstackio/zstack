@@ -31,6 +31,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Query;
 import java.util.HashMap;
@@ -44,6 +45,8 @@ import java.util.Map;
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
         VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, PostVmInstantiateResourceExtensionPoint, KvmReportVmShutdownFromGuestEventExtensionPoint {
+    static final String ANY_IPV4_ADDRESS = "0.0.0.0";
+    static final String UNIT_TEST_CONSOLE_PROXY_HOST = "127.0.0.1";
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -125,12 +128,10 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             }
 
             private void overriddenConsoleProxyIP(ConsoleInventory consoleInventory) {
-                if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP) &&
-                        !"".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
-                    consoleInventory.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
-                } else {
-                    consoleInventory.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
-                }
+                consoleInventory.setHostname(selectConsoleProxyHostname(
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP,
+                        CoreGlobalProperty.UNIT_TEST_ON,
+                        Platform.getManagementServerIp()));
             }
 
             @Override
@@ -138,6 +139,12 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 return getSyncSignature();
             }
         });
+    }
+
+    static String selectConsoleProxyHostname(String overriddenIp, boolean unitTestOn, String managementServerIp) {
+        String hostname = overriddenIp != null && !overriddenIp.isEmpty() && !ANY_IPV4_ADDRESS.equals(overriddenIp) ?
+                overriddenIp : (unitTestOn ? UNIT_TEST_CONSOLE_PROXY_HOST : managementServerIp);
+        return IPv6NetworkUtils.formatHostForUrl(hostname);
     }
 
     @Override

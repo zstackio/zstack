@@ -15,6 +15,7 @@ public class VxlanNetworkPoolConstant {
     public static final Integer VXLAN_PORT = 8472;
     @PythonClass
     public static final String KVM_VXLAN_TYPE = "KVM_HOST_VXLAN";
+    public static final int REMOTE_VTEP_IP_MAX_LENGTH = 39;
 
     public static final String ACTION_CATEGORY = "vxlan";
 

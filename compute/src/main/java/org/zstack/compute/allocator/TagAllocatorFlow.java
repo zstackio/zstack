@@ -40,7 +40,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
     private List<InstanceOfferingTagAllocatorExtensionPoint> instanceOfferingExtensions;
     private List<DiskOfferingTagAllocatorExtensionPoint> diskOfferingExtensions;
 
-    public TagAllocatorFlow() {
+    private void loadExtensions() {
         instanceOfferingExtensions = pluginRgty.getExtensionList(InstanceOfferingTagAllocatorExtensionPoint.class);
         diskOfferingExtensions = pluginRgty.getExtensionList(DiskOfferingTagAllocatorExtensionPoint.class);
     }
@@ -48,6 +48,7 @@ public class TagAllocatorFlow extends AbstractHostAllocatorFlow {
     @Override
     public void allocate() {
         throwExceptionIfIAmTheFirstFlow();
+        loadExtensions();
 
         if (!instanceOfferingExtensions.isEmpty()) {
             SimpleQuery<SystemTagVO> q  = dbf.createQuery(SystemTagVO.class);

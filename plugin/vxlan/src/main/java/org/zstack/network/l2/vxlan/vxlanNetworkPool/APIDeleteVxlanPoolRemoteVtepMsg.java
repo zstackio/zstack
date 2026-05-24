@@ -26,7 +26,7 @@ public class APIDeleteVxlanPoolRemoteVtepMsg extends APIDeleteMessage implements
     @APIParam
     private String clusterUuid;
     
-    @APIParam(maxLength = 15)
+    @APIParam(maxLength = VxlanNetworkPoolConstant.REMOTE_VTEP_IP_MAX_LENGTH)
     private String remoteVtepIp;
 
     @Override

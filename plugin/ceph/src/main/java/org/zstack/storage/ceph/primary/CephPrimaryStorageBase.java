@@ -87,6 +87,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.io.Serializable;
@@ -4822,7 +4823,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
-                return String.format("%s:%s", arg.getMonAddr(), arg.getMonPort());
+                return IPv6NetworkUtils.formatHostPort(arg.getMonAddr(), arg.getMonPort());
             }
         });
         cmd.strategy = param.getStrategy();
@@ -4987,7 +4988,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
                         .listValues())
                 .monUrls(CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg
-                        -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
+                        -> IPv6NetworkUtils.formatHostPort(arg.getMonAddr(), arg.getMonPort())));
 
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
