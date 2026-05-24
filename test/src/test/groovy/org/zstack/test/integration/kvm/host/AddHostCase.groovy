@@ -6,6 +6,7 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.AddHostReply
+import org.zstack.header.host.CpuArchitecture
 import org.zstack.header.host.HostConstant
 import org.zstack.header.host.HostStatus
 import org.zstack.header.host.HostVO
@@ -58,6 +59,8 @@ class AddHostCase extends SubCase {
             testInnerAddHostMsg()
             testGetHypervisorTypes()
             testPackageVersionTagsClearedWhenFactMissing()
+            testIothreadVqMappingCapabilityUsesAarch64PackageVersion()
+            testIothreadVqMappingCapabilitySkipsUnsupportedArchitecture()
             testAddHostFailureRollback()
             testAddHostViaLongJob()
             testLongJobAddHostFailure()
@@ -259,7 +262,7 @@ class AddHostCase extends SubCase {
     }
 
     void testPackageVersionTagsClearedWhenFactMissing() {
-        String qemuKvmPackageVersion = "6.2.0-451.g623f2a5caf.el8"
+        String qemuKvmPackageVersion = "${MIN_X86_64_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION}.g623f2a5caf.el8"
         String libvirtPackageVersion = "8.0.0-163.gd30ff15b84.el8"
 
         env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
@@ -280,6 +283,7 @@ class AddHostCase extends SubCase {
 
         assert KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.QEMU_KVM_PACKAGE_VERSION_TOKEN) == qemuKvmPackageVersion
         assert KVMSystemTags.LIBVIRT_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN) == libvirtPackageVersion
+        assert KVMSystemTags.IOTHREAD_VQ_MAPPING.hasTag(host.uuid)
 
         env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
             rsp.qemuKvmPackageVersion = null
@@ -293,6 +297,49 @@ class AddHostCase extends SubCase {
 
         assert KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.QEMU_KVM_PACKAGE_VERSION_TOKEN) == null
         assert KVMSystemTags.LIBVIRT_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN) == null
+        assert !KVMSystemTags.IOTHREAD_VQ_MAPPING.hasTag(host.uuid)
+    }
+
+    void testIothreadVqMappingCapabilityUsesAarch64PackageVersion() {
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.cpuArchitecture = CpuArchitecture.aarch64.name()
+            rsp.qemuKvmPackageVersion = MIN_AARCH64_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION
+            rsp.libvirtPackageVersion = MIN_AARCH64_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION
+            return rsp
+        }
+
+        org.zstack.sdk.KVMHostInventory host = addKVMHost {
+            resourceUuid = Platform.uuid
+            sessionId = adminSession()
+            clusterUuid = cluster.uuid
+            name = "kvm-aarch64-iothread-vq-mapping"
+            managementIp = "127.0.0.7"
+            username = "root"
+            password = "password"
+        } as org.zstack.sdk.KVMHostInventory
+
+        assert KVMSystemTags.IOTHREAD_VQ_MAPPING.hasTag(host.uuid)
+    }
+
+    void testIothreadVqMappingCapabilitySkipsUnsupportedArchitecture() {
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.cpuArchitecture = CpuArchitecture.loongarch64.name()
+            rsp.qemuKvmPackageVersion = MIN_X86_64_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION
+            rsp.libvirtPackageVersion = MIN_X86_64_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION
+            return rsp
+        }
+
+        org.zstack.sdk.KVMHostInventory host = addKVMHost {
+            resourceUuid = Platform.uuid
+            sessionId = adminSession()
+            clusterUuid = cluster.uuid
+            name = "kvm-unsupported-arch-iothread-vq-mapping"
+            managementIp = "127.0.0.8"
+            username = "root"
+            password = "password"
+        } as org.zstack.sdk.KVMHostInventory
+
+        assert !KVMSystemTags.IOTHREAD_VQ_MAPPING.hasTag(host.uuid)
     }
 
     void testGetHypervisorTypes() {

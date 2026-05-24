@@ -136,12 +136,34 @@ public class KVMHost extends HostBase implements Host {
     protected static OperationChecker skipOperations = new OperationChecker(true);
     private static final Pattern NUMERIC_VERSION_TOKEN = Pattern.compile("\\d+(?:\\.\\d+)*");
 
-    private static boolean isIothreadVqMappingSupported(String qemuKvmPackageVersion, String libvirtPackageVersion) {
-        return versionAtLeast(qemuKvmPackageVersion, KVMConstant.MIN_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION)
-                && versionAtLeast(libvirtPackageVersion, KVMConstant.MIN_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION);
+    private static boolean isIothreadVqMappingSupported(String architecture, String qemuKvmPackageVersion, String libvirtPackageVersion) {
+        return versionAtLeast(qemuKvmPackageVersion, minQemuKvmIothreadVqMappingPackageVersion(architecture))
+                && versionAtLeast(libvirtPackageVersion, minLibvirtIothreadVqMappingPackageVersion(architecture));
+    }
+
+    private static String minQemuKvmIothreadVqMappingPackageVersion(String architecture) {
+        if (CpuArchitecture.x86_64.name().equals(architecture)) {
+            return KVMConstant.MIN_X86_64_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION;
+        } else if (CpuArchitecture.aarch64.name().equals(architecture)) {
+            return KVMConstant.MIN_AARCH64_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION;
+        }
+        return null;
+    }
+
+    private static String minLibvirtIothreadVqMappingPackageVersion(String architecture) {
+        if (CpuArchitecture.x86_64.name().equals(architecture)) {
+            return KVMConstant.MIN_X86_64_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION;
+        } else if (CpuArchitecture.aarch64.name().equals(architecture)) {
+            return KVMConstant.MIN_AARCH64_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION;
+        }
+        return null;
     }
 
     private static boolean versionAtLeast(String current, String required) {
+        if (StringUtils.isBlank(required)) {
+            return false;
+        }
+
         String normalized = normalizePackageVersion(current);
         if (normalized == null) {
             return false;
@@ -6545,7 +6567,8 @@ public class KVMHost extends HostBase implements Host {
                     KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.delete(self.getUuid());
                 }
 
-                if (isIothreadVqMappingSupported(ret.getQemuKvmPackageVersion(), ret.getLibvirtPackageVersion())) {
+                String architecture = StringUtils.isNotBlank(ret.getCpuArchitecture()) ? ret.getCpuArchitecture() : self.getArchitecture();
+                if (isIothreadVqMappingSupported(architecture, ret.getQemuKvmPackageVersion(), ret.getLibvirtPackageVersion())) {
                     recreateNonInherentTag(KVMSystemTags.IOTHREAD_VQ_MAPPING);
                 } else {
                     KVMSystemTags.IOTHREAD_VQ_MAPPING.delete(self.getUuid());
