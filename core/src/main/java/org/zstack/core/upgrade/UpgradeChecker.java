@@ -327,31 +327,23 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             return;
         }
 
-        String originExpectVersion = agentVersionVO.getExpectVersion();
-        String originCurrentVersion = agentVersionVO.getCurrentVersion();
-        boolean expectVersionChanged = !Objects.equals(originExpectVersion, expectVersion);
-        if (expectVersionChanged) {
-            agentVersionVO.setExpectVersion(expectVersion);
+        if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
+            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed", agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
+            return;
         }
 
-        if ((expectVersionChanged || !Objects.equals(originExpectVersion, originCurrentVersion))
-                && !Objects.equals(originCurrentVersion, currentVersion)) {
+        if (!Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
+            String originCurrentVersion = agentVersionVO.getCurrentVersion();
             agentVersionVO.setCurrentVersion(currentVersion);
-        }
-
-        if (!Objects.equals(originExpectVersion, agentVersionVO.getExpectVersion())
-                || !Objects.equals(originCurrentVersion, agentVersionVO.getCurrentVersion())) {
             logger.trace(String.format("Update agent[uuid: %s] version\n" +
                     "From:\n" +
                     "expected version: %s, current version: %s\n" +
                     "To:\n" +
                     "expected version: %s, current version: %s\n",
-                    agentUuid, originExpectVersion, originCurrentVersion,
+                    agentUuid,
+                    agentVersionVO.getExpectVersion(), originCurrentVersion,
                     agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             dbf.update(agentVersionVO);
-        } else {
-            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed",
-                    agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
         }
     }
 
