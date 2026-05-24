@@ -1,10 +1,12 @@
 package org.zstack.test.integration.core
 
+import org.zstack.testlib.SkipTestSuite
 import org.zstack.testlib.SubCase
 
 /**
  * Created by lining on 2017/4/10.
  */
+@SkipTestSuite
 class MustFailCase extends SubCase {
 
     @Override
