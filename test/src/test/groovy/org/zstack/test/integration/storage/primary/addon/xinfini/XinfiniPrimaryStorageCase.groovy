@@ -12,7 +12,12 @@ import org.zstack.xinfini.XInfiniApiHelper
 import org.zstack.xinfini.XInfiniPathHelper
 import org.zstack.xinfini.sdk.vhost.BdcModule
 import org.zstack.xinfini.sdk.vhost.BdcBdevModule
+import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.host.HostConstant
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
 import org.zstack.header.host.PingHostMsg
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
@@ -44,6 +49,8 @@ import org.zstack.storage.backup.BackupStorageSystemTags
 import org.zstack.tag.SystemTagCreator
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.ExternalPrimaryStorageSpec
+import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
@@ -181,6 +188,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
             simulatorEnv()
             testCreateXinfiniStorage()
             testCreateVm()
+            testPreventSplitBrainOnDeactivateFailure()
             testHandleInactiveVolume()
             testCreateVolumeRollback()
             testAttachIso()
@@ -341,6 +349,86 @@ class XinfiniPrimaryStorageCase extends SubCase {
         } as VmInstanceInventory
 
         deleteVm(vm2.uuid)
+    }
+
+    // when the old host's storage client cannot be isolated, deactivate must report
+    // a failure instead of silently succeeding, otherwise the VM gets started on a
+    // new host while the old QEMU still holds the volume (split-brain).
+    void testPreventSplitBrainOnDeactivateFailure() {
+        def rootVolPath = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, vm.rootVolumeUuid)
+                .select(VolumeVO_.installPath).findValue() as String
+        int volId = XInfiniPathHelper.getVolIdFromPath(rootVolPath)
+        BdcModule bdc = controller.apiHelper.queryBdcByIp(host1.managementIp)
+        BdcBdevModule bdev = controller.apiHelper.queryBdcBdevByVolumeIdAndBdcId(volId, bdc.spec.id)
+        assert bdev != null
+
+        // simMode: 0 = default, 1 = delete request fails, 2 = delete accepted but bdev never disappears
+        int[] simMode = [0]
+        boolean[] bdcInactive = [false]
+
+        env.simulator("/afa/v1/bdcs/\\d+") { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            return [
+                metadata: [id: 1, name: "bdc-1", state: [state: "active"]],
+                spec    : [id: 1, name: "bdc-1", ip: "127.0.0.1", port: 9500],
+                status  : [id: 1, run_state: bdcInactive[0] ? "Offline" : "Active",
+                           installed: true, hostname: "localhost", version: "1.0.0"]
+            ]
+        }
+
+        env.simulator("/afa/v1/bdc-bdevs/\\d+") { HttpServletRequest req, HttpEntity<String> e, EnvSpec spec ->
+            def matcher = (req.getRequestURI() =~ /\/(\d+)$/)
+            int bdevId = matcher.find() ? Integer.parseInt(matcher.group(1)) : -1
+            def store = ExternalPrimaryStorageSpec.XinfiniSimulators.bdcBdevs
+            if (req.getMethod() == "DELETE") {
+                if (simMode[0] == 1) {
+                    return [message: "delete bdev failed on purpose"]
+                }
+                if (simMode[0] != 2) {
+                    store.remove(bdevId)
+                }
+                return [:]
+            }
+
+            def stored = store.get(bdevId)
+            if (stored == null) {
+                throw new HttpError(404, "not found")
+            }
+            return [metadata: [id: stored.spec?.id, name: stored.spec?.name, state: [state: "active"]],
+                    spec: stored.spec, status: stored.status]
+        }
+
+        def hostVO = Q.New(HostVO.class).eq(HostVO_.uuid, host1.uuid).find()
+        def headerHost = org.zstack.header.host.HostInventory.valueOf(hostVO)
+
+        // scenario 1: the delete bdev request fails -> deactivate must report failure
+        simMode[0] = 1
+        boolean[] result = [false, false]   // [success, fail]
+        controller.deactivate(rootVolPath, "Vhost", headerHost, new Completion(null) {
+            @Override
+            void success() { result[0] = true }
+
+            @Override
+            void fail(ErrorCode errorCode) { result[1] = true }
+        })
+        assert result[1]: "deactivate must fail when the bdev cannot be deleted"
+        assert !result[0]: "deactivate must not report success when the bdev cannot be deleted"
+
+        // scenario 2: the delete request is accepted but the bdev stays attached ->
+        // deleteBdcBdev must error out instead of silently treating it as deleted
+        simMode[0] = 2
+        bdcInactive[0] = true
+        boolean errored = false
+        try {
+            controller.apiHelper.deleteBdcBdev(bdev.spec.id, bdc.spec.id)
+        } catch (OperationFailureException ignored) {
+            errored = true
+        }
+        assert errored: "deleteBdcBdev must error out when the bdev is still attached"
+
+        // restore default simulator behaviour for the rest of the suite
+        simMode[0] = 0
+        bdcInactive[0] = false
     }
 
     void testHandleInactiveVolume() {
