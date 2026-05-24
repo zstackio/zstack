@@ -12,6 +12,7 @@ import org.zstack.header.host.HostVO
 import org.zstack.kvm.APIAddKVMHostMsg
 import org.zstack.kvm.AddKVMHostMsg
 import org.zstack.kvm.KVMHostInventory
+import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.GetHypervisorTypesResult
@@ -56,6 +57,7 @@ class AddHostCase extends SubCase {
             testCheckHostManagementFailure()
             testInnerAddHostMsg()
             testGetHypervisorTypes()
+            testPackageVersionTagsClearedWhenFactMissing()
             testAddHostFailureRollback()
             testAddHostViaLongJob()
             testLongJobAddHostFailure()
@@ -254,6 +256,43 @@ class AddHostCase extends SubCase {
         assert tags.size() == 1
 
         assert (reply.inventory as KVMHostInventory).osDistribution == distribution
+    }
+
+    void testPackageVersionTagsClearedWhenFactMissing() {
+        String qemuKvmPackageVersion = "6.2.0-451.g623f2a5caf.el8"
+        String libvirtPackageVersion = "8.0.0-163.gd30ff15b84.el8"
+
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.qemuKvmPackageVersion = qemuKvmPackageVersion
+            rsp.libvirtPackageVersion = libvirtPackageVersion
+            return rsp
+        }
+
+        org.zstack.sdk.KVMHostInventory host = addKVMHost {
+            resourceUuid = Platform.uuid
+            sessionId = adminSession()
+            clusterUuid = cluster.uuid
+            name = "kvm-package-version"
+            managementIp = "127.0.0.6"
+            username = "root"
+            password = "password"
+        } as org.zstack.sdk.KVMHostInventory
+
+        assert KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.QEMU_KVM_PACKAGE_VERSION_TOKEN) == qemuKvmPackageVersion
+        assert KVMSystemTags.LIBVIRT_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN) == libvirtPackageVersion
+
+        env.afterSimulator(KVM_HOST_FACT_PATH) { HostFactResponse rsp ->
+            rsp.qemuKvmPackageVersion = null
+            rsp.libvirtPackageVersion = " "
+            return rsp
+        }
+
+        reconnectHost {
+            uuid = host.uuid
+        }
+
+        assert KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.QEMU_KVM_PACKAGE_VERSION_TOKEN) == null
+        assert KVMSystemTags.LIBVIRT_PACKAGE_VERSION.getTokenByResourceUuid(host.uuid, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN) == null
     }
 
     void testGetHypervisorTypes() {
