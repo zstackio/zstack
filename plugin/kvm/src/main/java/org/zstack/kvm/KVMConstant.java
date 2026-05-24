@@ -110,6 +110,8 @@ public interface KVMConstant {
     String MIN_QEMU_LIVESNAPSHOT_VERSION = "1.3.0";
     String MIN_LIBVIRT_LIVE_BLOCK_COMMIT_VERSION = "1.2.7";
     String MIN_LIBVIRT_VIRTIO_SCSI_VERSION = "1.0.4";
+    String MIN_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION = "6.2.0-451";
+    String MIN_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION = "8.0.0-163";
 
     String KVM_REPORT_VM_STATE = "/kvm/reportvmstate";
     String KVM_RECONNECT_ME = "/kvm/reconnectme";
