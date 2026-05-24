@@ -20,6 +20,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -2254,6 +2255,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
             return;
         }
 
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            logger.debug(String.format("skip checking virtual router[uuid:%s] version because grayscale upgrade is enabled", inv.getUuid()));
+            return;
+        }
+
         if (vrVo.getStatus() == ApplianceVmStatus.Connecting) {
             reconenctVirtualRouter(inv.getUuid(), false);
             return;
@@ -2281,6 +2287,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void managementNodeReady() {
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            logger.debug("skip checking virtual router versions on management node ready because grayscale upgrade is enabled");
+            return;
+        }
+
         List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
         for (VirtualRouterVmVO vrVo : vrVos) {
             CheckVirtualRouterVmVersionMsg msg = new CheckVirtualRouterVmVersionMsg();
