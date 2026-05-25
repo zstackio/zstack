@@ -15799,6 +15799,14 @@
     "fileName": "src/main/java/org/zstack/sdnController/hardwareVxlan/KVMRealizeHardwareVxlanPoolNetworkBackend.java"
   },
   {
+    "raw": "Volume security level must be set before attach",
+    "en_US": "Volume security level must be set before attach",
+    "zh_CN": "挂载前必须设置云盘的密级",
+    "arguments": [],
+    "line": 264,
+    "fileName": "src/main/java/org/zstack/security/SecurityManagerImpl.java"
+  },
+  {
     "raw": "set to disconnected",
     "en_US": "set to disconnected",
     "zh_CN": "",
