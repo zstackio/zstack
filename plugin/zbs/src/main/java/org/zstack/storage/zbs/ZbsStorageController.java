@@ -156,8 +156,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
-        comp.success();
+    public void blacklist(String installPath, String protocol, HostInventory h) {
     }
 
     @Override
