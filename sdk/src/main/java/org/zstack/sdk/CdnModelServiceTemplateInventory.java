@@ -44,6 +44,14 @@ public class CdnModelServiceTemplateInventory  {
         return this.framework;
     }
 
+    public java.lang.String gpuVendor;
+    public void setGpuVendor(java.lang.String gpuVendor) {
+        this.gpuVendor = gpuVendor;
+    }
+    public java.lang.String getGpuVendor() {
+        return this.gpuVendor;
+    }
+
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;
