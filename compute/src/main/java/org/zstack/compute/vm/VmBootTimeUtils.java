@@ -10,22 +10,15 @@ import org.zstack.header.vm.VmInstanceVO_;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 public class VmBootTimeUtils {
-    private static final String STOPPED_UPTIME = "0";
+    public static final String STOPPED_UPTIME = "0";
+    public static final String UNKNOWN_UPTIME = "";
     private static final DateTimeFormatter BOOT_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
-    public String getUptime(String vmUuid, VmInstanceState state) {
-        if (StringUtils.isBlank(vmUuid) || state != VmInstanceState.Running) {
-            return STOPPED_UPTIME;
-        }
-
-        String bootTime = getBootTime(vmUuid);
-        if (StringUtils.isNotEmpty(bootTime)) {
-            return bootTime;
-        }
-
-        return resetBootTime(vmUuid);
+    public static boolean isBootTimeValidState(VmInstanceState state) {
+        return state != null && state != VmInstanceState.Stopped && state != VmInstanceState.Destroyed;
     }
 
     public String getBootTime(String vmUuid) {
@@ -40,14 +33,15 @@ public class VmBootTimeUtils {
         return formatBootTime(bootTime);
     }
 
-    public String resetBootTime(String vmUuid) {
-        if (!vmExists(vmUuid)) {
-            return STOPPED_UPTIME;
+    public void resetBootTime(String vmUuid) {
+        if (StringUtils.isBlank(vmUuid)) {
+            return;
         }
 
-        Timestamp bootTime = Timestamp.valueOf(LocalDateTime.now());
-        setBootTime(vmUuid, bootTime);
-        return formatBootTime(bootTime);
+        SQL.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .set(VmInstanceVO_.bootTime, Timestamp.valueOf(LocalDateTime.now()))
+                .update();
     }
 
     public void clearBootTime(String vmUuid) {
@@ -61,14 +55,15 @@ public class VmBootTimeUtils {
                 .update();
     }
 
-    private static boolean vmExists(String vmUuid) {
-        return StringUtils.isNotBlank(vmUuid)
-                && Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).isExists();
-    }
+    public void backfillBootTimeIfMissing(String vmUuid, String hostUptime) {
+        Timestamp bootTime = parseBootTime(hostUptime);
+        if (StringUtils.isBlank(vmUuid) || bootTime == null) {
+            return;
+        }
 
-    private static void setBootTime(String vmUuid, Timestamp bootTime) {
         SQL.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, vmUuid)
+                .isNull(VmInstanceVO_.bootTime)
                 .set(VmInstanceVO_.bootTime, bootTime)
                 .update();
     }
@@ -79,5 +74,17 @@ public class VmBootTimeUtils {
         }
 
         return bootTime.toLocalDateTime().format(BOOT_TIME_FORMATTER);
+    }
+
+    private static Timestamp parseBootTime(String bootTime) {
+        if (StringUtils.isBlank(bootTime)) {
+            return null;
+        }
+
+        try {
+            return Timestamp.valueOf(LocalDateTime.parse(bootTime, BOOT_TIME_FORMATTER));
+        } catch (DateTimeParseException ignored) {
+            return null;
+        }
     }
 }

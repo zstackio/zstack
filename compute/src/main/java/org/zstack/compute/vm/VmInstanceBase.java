@@ -382,6 +382,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 self.setState(state);
+                self.setBootTime(getBootTimeAfterStateChanged(bs, state, getCurrentBootTimeForStateChange()));
                 self = merge(self);
             }
         };
@@ -396,8 +397,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         if (bs != state) {
             logger.debug(String.format("vm[uuid:%s] changed state from %s to %s in db", self.getUuid(), bs, state));
-
-            updateBootTimeAfterStateChanged(bs, state);
 
             VmCanonicalEvents.VmStateChangedData data = new VmCanonicalEvents.VmStateChangedData();
             data.setVmUuid(self.getUuid());
@@ -422,16 +421,33 @@ public class VmInstanceBase extends AbstractVmInstance {
         return self;
     }
 
-    private void updateBootTimeAfterStateChanged(VmInstanceState oldState, VmInstanceState newState) {
-        if (newState == VmInstanceState.Stopped || newState == VmInstanceState.Destroyed) {
-            vmBootTimeUtils.clearBootTime(self.getUuid());
-            return;
+    private Timestamp getCurrentBootTimeForStateChange() {
+        if (self.getBootTime() != null) {
+            return self.getBootTime();
         }
 
-        if (newState == VmInstanceState.Running
-                && (oldState == VmInstanceState.Starting || oldState == VmInstanceState.Rebooting || oldState == VmInstanceState.Stopped)) {
-            vmBootTimeUtils.resetBootTime(self.getUuid());
+        return Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.bootTime)
+                .eq(VmInstanceVO_.uuid, self.getUuid())
+                .findValue();
+    }
+
+    private Timestamp getBootTimeAfterStateChanged(VmInstanceState oldState, VmInstanceState newState, Timestamp currentBootTime) {
+        if (!VmBootTimeUtils.isBootTimeValidState(newState)) {
+            return null;
         }
+
+        if (newState != VmInstanceState.Running) {
+            return currentBootTime;
+        }
+
+        if (oldState == VmInstanceState.Starting
+                || oldState == VmInstanceState.Rebooting
+                || (oldState == VmInstanceState.Resuming && currentBootTime == null)) {
+            return Timestamp.valueOf(LocalDateTime.now());
+        }
+
+        return currentBootTime;
     }
 
     @Override
@@ -3739,8 +3755,31 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void handle(APIGetVmUptimeMsg msg) {
         APIGetVmUptimeReply reply = new APIGetVmUptimeReply();
 
-        reply.setUptime(vmBootTimeUtils.getUptime(self.getUuid(), self.getState()));
-        bus.reply(msg, reply);
+        String uptime = StringUtils.defaultString(vmBootTimeUtils.getBootTime(self.getUuid()), VmBootTimeUtils.UNKNOWN_UPTIME);
+        if (StringUtils.isNotEmpty(uptime)) {
+            reply.setUptime(uptime);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        GetVmUptimeMsg gmsg = new GetVmUptimeMsg();
+        gmsg.setVmInstanceUuid(self.getUuid());
+        gmsg.setHostUuid(self.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, self.getHostUuid());
+
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (r.isSuccess()) {
+                    GetVmUptimeReply re = (GetVmUptimeReply) r;
+                    vmBootTimeUtils.backfillBootTimeIfMissing(self.getUuid(), re.getUptime());
+                    reply.setUptime(StringUtils.defaultString(vmBootTimeUtils.getBootTime(self.getUuid()), VmBootTimeUtils.UNKNOWN_UPTIME));
+                } else {
+                    reply.setUptime(VmBootTimeUtils.UNKNOWN_UPTIME);
+                }
+                bus.reply(msg, reply);
+            }
+        });
     }
 
 

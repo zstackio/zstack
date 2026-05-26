@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizeHistoryVO` (
 
 -- Feature: VM boot time | ZSV-12297
 
-CALL INSERT_COLUMN('VmInstanceEO', 'bootTime', 'timestamp', 1, NULL, 'state');
+CALL INSERT_COLUMN('VmInstanceEO', 'bootTime', 'timestamp NULL', 1, NULL, 'state');
 
 CREATE OR REPLACE VIEW `zstack`.`VmInstanceVO` AS
 SELECT uuid,
