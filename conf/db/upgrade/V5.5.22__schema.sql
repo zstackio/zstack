@@ -161,6 +161,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
     `version` varchar(255) DEFAULT NULL,
     `platform` varchar(255) DEFAULT NULL,
     `framework` varchar(255) DEFAULT NULL,
+    `gpuVendor` varchar(255) DEFAULT NULL,
     `size` bigint DEFAULT NULL,
     `projectId` varchar(255) DEFAULT NULL,
     `projectName` varchar(255) DEFAULT NULL,
@@ -177,6 +178,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`CdnModelServiceTemplateVO` (
         REFERENCES `zstack`.`ModelServiceVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CALL ADD_COLUMN('CdnModelServiceTemplateVO', 'framework', 'varchar(255)', 1, NULL);
+CALL ADD_COLUMN('CdnModelServiceTemplateVO', 'gpuVendor', 'varchar(255)', 1, NULL);
 
 -- dGPU billing support tables
 
