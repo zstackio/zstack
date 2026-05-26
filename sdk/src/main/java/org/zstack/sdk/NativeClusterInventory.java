@@ -68,4 +68,12 @@ public class NativeClusterInventory extends org.zstack.sdk.ClusterInventory {
         return this.status;
     }
 
+    public long id;
+    public void setId(long id) {
+        this.id = id;
+    }
+    public long getId() {
+        return this.id;
+    }
+
 }

@@ -12,6 +12,7 @@ public class SourceClassMap {
 			put("org.zstack.accessKey.AccessKeyType", "org.zstack.sdk.AccessKeyType");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
+			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
 			put("org.zstack.ai.entity.ModelCenterCapacityInventory", "org.zstack.sdk.ModelCenterCapacityInventory");
 			put("org.zstack.ai.entity.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
@@ -89,6 +90,7 @@ public class SourceClassMap {
 			put("org.zstack.billing.SpendingDetails", "org.zstack.sdk.SpendingDetails");
 			put("org.zstack.billing.generator.BillingInventory", "org.zstack.sdk.BillingInventory");
 			put("org.zstack.billing.generator.baremetal2.BareMetal2BillingInventory", "org.zstack.sdk.BareMetal2BillingInventory");
+			put("org.zstack.billing.generator.dgpu.DGpuBillingInventory", "org.zstack.sdk.DGpuBillingInventory");
 			put("org.zstack.billing.generator.pcidevice.PciDeviceBillingInventory", "org.zstack.sdk.PciDeviceBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingInventory", "org.zstack.sdk.PubIpVipBandwidthInBillingInventory");
 			put("org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingInventory", "org.zstack.sdk.PubIpVipBandwidthOutBillingInventory");
@@ -101,6 +103,8 @@ public class SourceClassMap {
 			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2Spending", "org.zstack.sdk.BareMetal2Spending");
 			put("org.zstack.billing.spendingcalculator.baremetal2.BareMetal2SpendingDetails", "org.zstack.sdk.BareMetal2SpendingDetails");
 			put("org.zstack.billing.spendingcalculator.baremetal2.PriceBareMetal2ChassisOfferingRefInventory", "org.zstack.sdk.PriceBareMetal2ChassisOfferingRefInventory");
+			put("org.zstack.billing.spendingcalculator.dgpu.DGpuSpending", "org.zstack.sdk.DGpuSpending");
+			put("org.zstack.billing.spendingcalculator.dgpu.DGpuSpendingInventory", "org.zstack.sdk.DGpuSpendingInventory");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpending", "org.zstack.sdk.PciDeviceSpending");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PciDeviceSpendingInventory", "org.zstack.sdk.PciDeviceSpendingInventory");
 			put("org.zstack.billing.spendingcalculator.pcidevice.PricePciDeviceOfferingRefInventory", "org.zstack.sdk.PricePciDeviceOfferingRefInventory");
@@ -1016,6 +1020,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CbtTaskResourceRefInventory", "org.zstack.header.cbt.CbtTaskResourceRefInventory");
 			put("org.zstack.sdk.CbtTaskStatus", "org.zstack.header.cbt.CbtTaskStatus");
 			put("org.zstack.sdk.CdRomTO", "org.zstack.kvm.KVMAgentCommands$CdRomTO");
+			put("org.zstack.sdk.CdnModelServiceTemplateInventory", "org.zstack.ai.entity.CdnModelServiceTemplateInventory");
 			put("org.zstack.sdk.CdpPolicyInventory", "org.zstack.header.storage.cdp.CdpPolicyInventory");
 			put("org.zstack.sdk.CdpPolicyState", "org.zstack.header.storage.cdp.CdpPolicyState");
 			put("org.zstack.sdk.CdpTaskInventory", "org.zstack.header.storage.cdp.CdpTaskInventory");
@@ -1054,9 +1059,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.CpuMemoryCapacityData", "org.zstack.header.allocator.datatypes.CpuMemoryCapacityData");
 			put("org.zstack.sdk.CreateDataVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeSnapshotEvent$Failure");
 			put("org.zstack.sdk.CreateRootVolumeTemplateFromVolumeSnapshotFailure", "org.zstack.header.image.APICreateRootVolumeTemplateFromVolumeSnapshotEvent$Failure");
+			put("org.zstack.sdk.DGpuBillingInventory", "org.zstack.billing.generator.dgpu.DGpuBillingInventory");
 			put("org.zstack.sdk.DGpuDeviceInventory", "org.zstack.pciDevice.gpu.dgpu.DGpuDeviceInventory");
 			put("org.zstack.sdk.DGpuProfileInventory", "org.zstack.pciDevice.gpu.dgpu.DGpuProfileInventory");
 			put("org.zstack.sdk.DGpuSpecStatsInventory", "org.zstack.pciDevice.gpu.dgpu.DGpuSpecStatsInventory");
+			put("org.zstack.sdk.DGpuSpending", "org.zstack.billing.spendingcalculator.dgpu.DGpuSpending");
+			put("org.zstack.sdk.DGpuSpendingInventory", "org.zstack.billing.spendingcalculator.dgpu.DGpuSpendingInventory");
 			put("org.zstack.sdk.DGpuStatus", "org.zstack.pciDevice.gpu.dgpu.DGpuStatus");
 			put("org.zstack.sdk.DRSAdviceInventory", "org.zstack.drs.entity.DRSAdviceInventory");
 			put("org.zstack.sdk.DRSVmMigrationActivityInventory", "org.zstack.drs.entity.DRSVmMigrationActivityInventory");

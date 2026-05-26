@@ -28,4 +28,12 @@ public class AutoMatchModelServiceByModelResult {
         return this.evidence;
     }
 
+    public java.lang.String recommendedGpuSpecUuid;
+    public void setRecommendedGpuSpecUuid(java.lang.String recommendedGpuSpecUuid) {
+        this.recommendedGpuSpecUuid = recommendedGpuSpecUuid;
+    }
+    public java.lang.String getRecommendedGpuSpecUuid() {
+        return this.recommendedGpuSpecUuid;
+    }
+
 }

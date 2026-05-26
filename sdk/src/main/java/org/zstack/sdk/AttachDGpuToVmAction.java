@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelAction extends AbstractAction {
+public class AttachDGpuToVmAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelResult value;
+        public org.zstack.sdk.AttachDGpuToVmResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,43 +26,19 @@ public class UpdateModelAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
+    public java.lang.String vmInstanceUuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String installPath;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vendor;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelCenterUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String dgpuProfileUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List modelClassifications;
+    public java.lang.String gpuDeviceUuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String recommendedGpuNum;
-
-    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gpuConstraintDescription;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelId;
+    @Param(required = true, validValues = {"BySpec","ByDevice"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chooser;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String defaultModelServiceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean clearDefaultModelService;
+    public java.lang.Boolean autoDetachOnStop;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -96,8 +72,8 @@ public class UpdateModelAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelResult value = res.getResult(org.zstack.sdk.UpdateModelResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelResult() : value; 
+        org.zstack.sdk.AttachDGpuToVmResult value = res.getResult(org.zstack.sdk.AttachDGpuToVmResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AttachDGpuToVmResult() : value; 
 
         return ret;
     }
@@ -127,10 +103,10 @@ public class UpdateModelAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/models/{uuid}";
+        info.path = "/vm-instances/{vmInstanceUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModel";
+        info.parameterName = "attachDGpuToVm";
         return info;
     }
 

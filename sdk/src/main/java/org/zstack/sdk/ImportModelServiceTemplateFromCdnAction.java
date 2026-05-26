@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelAction extends AbstractAction {
+public class ImportModelServiceTemplateFromCdnAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelResult value;
+        public org.zstack.sdk.ImportModelServiceTemplateFromCdnResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,43 +26,16 @@ public class UpdateModelAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String installPath;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vendor;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String modelCenterUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List modelClassifications;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String templateName;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String recommendedGpuNum;
-
-    @Param(required = false, maxLength = 512, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gpuConstraintDescription;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelId;
+    @Param(required = false)
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String defaultModelServiceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean clearDefaultModelService;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -96,8 +69,8 @@ public class UpdateModelAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelResult value = res.getResult(org.zstack.sdk.UpdateModelResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelResult() : value; 
+        org.zstack.sdk.ImportModelServiceTemplateFromCdnResult value = res.getResult(org.zstack.sdk.ImportModelServiceTemplateFromCdnResult.class);
+        ret.value = value == null ? new org.zstack.sdk.ImportModelServiceTemplateFromCdnResult() : value; 
 
         return ret;
     }
@@ -126,11 +99,11 @@ public class UpdateModelAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/ai/models/{uuid}";
+        info.httpMethod = "POST";
+        info.path = "/ai/model-services/template/import/cdn";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModel";
+        info.parameterName = "param";
         return info;
     }
 
