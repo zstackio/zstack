@@ -39,6 +39,10 @@ public class SshShell {
     }
 
     public static String formatSshTarget(String username, String hostname) {
+        return String.format(SSH_TARGET_FORMAT, username, hostname);
+    }
+
+    public static String formatScpTarget(String username, String hostname) {
         return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.formatHostForUrl(hostname));
     }
 

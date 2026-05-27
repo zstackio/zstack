@@ -234,9 +234,10 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
     }
 
-    void testSshTargetUsesBracketedIpv6Host() {
+    void testSshAndScpTargetsFormatIpv6Host() {
         assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
-        assert SshShell.formatSshTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatSshTarget("root", IPV6) == "root@2001:db8::1"
+        assert SshShell.formatScpTarget("root", IPV6) == "root@[2001:db8::1]"
         assert SshShell.formatSshTarget("root", "host-01.example.com") == "root@host-01.example.com"
     }
 
