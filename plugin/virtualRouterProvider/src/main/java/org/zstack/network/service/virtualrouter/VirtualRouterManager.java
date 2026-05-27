@@ -11,12 +11,15 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 
 import java.util.List;
+import java.util.Map;
 
 public interface VirtualRouterManager {
 
     VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
 	
     String buildUrl(String mgmtNicIp, String subPath);
+
+    Map<String, String> buildAgentCallbackUrlHeaders(String mgmtNicIp);
 
     List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
 

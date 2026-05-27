@@ -187,7 +187,8 @@ public class VirtualRouter extends ApplianceVmBase {
     void doPing(String vrUuid, ReturnValueCompletion<PingVirtualRouterVmReply> completion) {
         PingCmd cmd = new PingCmd();
         cmd.setUuid(vrUuid);
-        restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING), cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {
+        restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), VirtualRouterConstant.VR_PING),
+                cmd, vrMgr.buildAgentCallbackUrlHeaders(vr.getManagementNic().getIp()), new JsonAsyncRESTCallback<PingRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -685,7 +686,8 @@ public class VirtualRouter extends ApplianceVmBase {
                             self.getUuid(), msg.getPath()));
                 }
 
-                restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), msg.getPath()), msg.getCommand(), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
+                restf.asyncJsonPost(buildUrl(vr.getManagementNic().getIp(), msg.getPath()),
+                        msg.getCommand(), vrMgr.buildAgentCallbackUrlHeaders(vr.getManagementNic().getIp()), new JsonAsyncRESTCallback<LinkedHashMap>(msg, chain) {
                     @Override
                     public void fail(ErrorCode err) {
                         reply.setError(err);
