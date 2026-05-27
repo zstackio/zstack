@@ -36,6 +36,9 @@ public class VolumeSnapshotReferenceInventory {
 
     private String directSnapshotInstallUrl;
 
+    /**
+     * the UUID of resource referencing @volumeUuid.
+     */
     private String referenceUuid;
 
     private String referenceType;

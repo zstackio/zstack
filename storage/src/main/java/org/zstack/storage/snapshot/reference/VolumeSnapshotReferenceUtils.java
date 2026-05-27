@@ -82,33 +82,55 @@ public class VolumeSnapshotReferenceUtils {
         return null;
     }
 
-    public static List<String> getVolumeInstallUrlsReferenceByOtherVolumes(String volumeUuid) {
+    // use getVolumeAllSnapshotsReferencedOtherVolumes or isVolumeDirectlyReferenceByOthers
+    @Deprecated
+    public static List<String> getVolumeSnapshotsReferencedByOtherVolumes(String volumeUuid) {
         return getVolumeReferenceRef(volumeUuid).stream()
                 .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl).distinct()
                 .collect(Collectors.toList());
     }
 
     // get volume snapshotUuids referenced by other volumes directly or indirectly
+    // FIXME split different primary storage snapshot reference
     public static Set<String> getVolumeAllSnapshotsReferencedByOtherVolumes(String volumeUuid) {
-        List<String> refVolumeSnapshotUuids = getVolumeReferenceRef(volumeUuid).stream()
-                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotUuid).distinct()
-                .collect(Collectors.toList());
-        if (refVolumeSnapshotUuids.isEmpty()) {
+        Set<String> refSnapshotUuids = getVolumeReferenceRef(volumeUuid).stream()
+                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotUuid)
+                .collect(Collectors.toSet());
+        if (refSnapshotUuids.isEmpty()) {
             return Collections.emptySet();
         }
 
         List<VolumeSnapshotVO> allSnapshots = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.volumeUuid, volumeUuid).list();
-
-        Map<String, List<VolumeSnapshotVO>> treeSnapshotsMap = allSnapshots.stream().collect(Collectors.groupingBy(VolumeSnapshotVO::getTreeUuid));
-        List<String> refVolumeSnapshotUuidsInTree = new ArrayList<>();
-        for (VolumeSnapshotVO refSnapshot : allSnapshots.stream().filter(sp -> refVolumeSnapshotUuids.contains(sp.getUuid())).collect(Collectors.toList())) {
-            refVolumeSnapshotUuidsInTree.add(refSnapshot.getUuid());
-            VolumeSnapshotTree tree = VolumeSnapshotTree.fromVOs(treeSnapshotsMap.get(refSnapshot.getTreeUuid()));
-            VolumeSnapshotTree.SnapshotLeaf snapshotLeaf = tree.findSnapshot(arg -> arg.getUuid().equals(refSnapshot.getUuid()));
-            refVolumeSnapshotUuidsInTree.addAll(snapshotLeaf.getAncestors().stream()
-                    .map(VolumeSnapshotInventory::getUuid).collect(Collectors.toList()));
+        // snapshotUuid in VolumeSnapshotReferenceVO may not exist in VolumeSnapshotVO,
+        // maybe because the snapshot has been deleted db only after volume migration,
+        // so we need to filter them out
+        refSnapshotUuids.retainAll(allSnapshots.stream().map(VolumeSnapshotVO::getUuid).collect(Collectors.toSet()));
+        if (refSnapshotUuids.isEmpty()) {
+            return Collections.emptySet();
         }
-        return new HashSet<>(refVolumeSnapshotUuidsInTree);
+
+        Set<String> allRefSnapshotUuids = new HashSet<>(refSnapshotUuids);
+        Map<String, VolumeSnapshotTree> trees = allSnapshots.stream()
+                .collect(Collectors.groupingBy(VolumeSnapshotVO::getTreeUuid, Collectors.toList()))
+                .values().stream()
+                .collect(Collectors.toMap(
+                        snaps -> snaps.get(0).getTreeUuid(),
+                        VolumeSnapshotTree::fromVOs
+                ));
+
+        List<VolumeSnapshotVO> refSnapshots = allSnapshots.stream()
+                .filter(sp -> refSnapshotUuids.contains(sp.getUuid()))
+                .collect(Collectors.toList());
+        for (VolumeSnapshotVO refSnapshot : refSnapshots) {
+            Set<String> ancestorUuids = trees.get(refSnapshot.getTreeUuid())
+                    .findSnapshot(refSnapshot.getUuid())
+                    .getAncestors().stream()
+                    .map(VolumeSnapshotInventory::getUuid)
+                    .collect(Collectors.toSet());
+            allRefSnapshotUuids.addAll(ancestorUuids);
+        }
+
+        return allRefSnapshotUuids;
     }
 
     public static List<VolumeInventory> getReferenceVolume(String volumeUuid) {

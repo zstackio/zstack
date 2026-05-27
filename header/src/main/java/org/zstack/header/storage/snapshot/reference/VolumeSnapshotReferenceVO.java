@@ -52,6 +52,9 @@ public class VolumeSnapshotReferenceVO {
     private Long parentId;
 
 
+    /**
+     * the UUID of resource referencing @volumeUuid.
+     */
     @Column
     private String referenceUuid;
 

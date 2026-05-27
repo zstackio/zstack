@@ -3,7 +3,6 @@ package org.zstack.kvm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.ansible.AnsibleChecker;
-import org.zstack.core.ansible.CallBackNetworkChecker;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.ssh.Ssh;
@@ -31,9 +30,11 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.command("cat /sys/kernel/mm/ksm/run");
+            ssh.sudoCommand("cat /sys/kernel/mm/ksm/run");
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
+                logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
+                        ret.getReturnCode(), ret.getStdout(), ret.getStderr()));
                 return true;
             }
 
