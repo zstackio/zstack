@@ -16,6 +16,7 @@ import org.zstack.kvm.KVMConsoleHypervisorBackend
 import org.zstack.kvm.KVMHost
 import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
@@ -44,6 +45,10 @@ class ManagementNetworkIpv6Case extends SubCase {
     private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
     private static final String CEPH_IPV6_MON_URL = "root:password@[${IPV6}]:22/?monPort=6789"
     private static final String INVALID_VTEP_IP = "not-a-vtep-ip"
+    private static final String VXLAN_POOL_UUID = "235f904603a2416d83810ff1dd5850b8"
+    private static final String CLUSTER_UUID = "e9acb8d6a4b04eea89f14e91918deed7"
+    private static final String VXLAN_IPV4_CIDR = "192.168.100.0/24"
+    private static final String VXLAN_IPV6_CIDR = "fd00:172:24:249::/64"
     private static final String HOST_EXTRA_IPS = "10.0.0.10,${IPV6_2}"
     private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
 2: eth0
@@ -108,6 +113,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testCephIpv6MonUrlParsing()
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
         testVxlanVtepIpv6Validation()
+        testVxlanSystemTagMatchesIpv6Cidr()
         testKvmExtraIpCidrSelection()
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
@@ -384,6 +390,27 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
         assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
         assert VxlanPoolApiInterceptor.normalizeVtepIp(" ${IPV6_FULL}\n") == IPV6
+    }
+
+    void testVxlanSystemTagMatchesIpv6Cidr() {
+        String ipv4Tag = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag([
+                (VxlanSystemTags.VXLAN_POOL_UUID_TOKEN): VXLAN_POOL_UUID,
+                (VxlanSystemTags.CLUSTER_UUID_TOKEN)   : CLUSTER_UUID,
+                (VxlanSystemTags.VTEP_CIDR_TOKEN)     : "{${VXLAN_IPV4_CIDR}}"
+        ])
+        String ipv6Tag = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag([
+                (VxlanSystemTags.VXLAN_POOL_UUID_TOKEN): VXLAN_POOL_UUID,
+                (VxlanSystemTags.CLUSTER_UUID_TOKEN)   : CLUSTER_UUID,
+                (VxlanSystemTags.VTEP_CIDR_TOKEN)     : "{${VXLAN_IPV6_CIDR}}"
+        ])
+
+        assert VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.isMatch(ipv4Tag)
+        assert VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.isMatch(ipv6Tag)
+
+        def tokens = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensByTag(ipv6Tag)
+        assert tokens[VxlanSystemTags.VXLAN_POOL_UUID_TOKEN] == VXLAN_POOL_UUID
+        assert tokens[VxlanSystemTags.CLUSTER_UUID_TOKEN] == CLUSTER_UUID
+        assert tokens[VxlanSystemTags.VTEP_CIDR_TOKEN] == "{${VXLAN_IPV6_CIDR}}"
     }
 
     void testKvmExtraIpCidrSelection() {

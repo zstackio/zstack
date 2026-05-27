@@ -8,12 +8,16 @@ import java.util.*;
 /**
  */
 public class TagUtils {
+    private static final String TAG_DELIMITER = "::";
+    private static final char TOKEN_START = '{';
+    private static final char TOKEN_END = '}';
+
     public static Map<String, String> parse(String fmt, String tag) {
         List<String> origins =  new ArrayList<String>();
-        Collections.addAll(origins, tag.split("::"));
+        origins.addAll(splitTagFields(tag));
 
         List<String> t = new ArrayList<String>();
-        Collections.addAll(t, fmt.split("::"));
+        t.addAll(splitTagFields(fmt));
 
         Map<String, String> ret = new HashMap();
         for (int i=0;i<t.size(); i++) {
@@ -38,12 +42,12 @@ public class TagUtils {
         }
 
         List<String> origins =  new ArrayList<String>();
-        Collections.addAll(origins, tag.split("::"));
+        origins.addAll(splitTagFields(tag));
 
         List<String> t = new ArrayList<String>();
-        Collections.addAll(t, fmt.split("::"));
+        t.addAll(splitTagFields(fmt));
 
-        if (fmt.indexOf("::") == -1) {
+        if (fmt.indexOf(TAG_DELIMITER) == -1) {
             return fmt.equals(tag);
         }
 
@@ -64,6 +68,37 @@ public class TagUtils {
         }
 
         return true;
+    }
+
+    private static List<String> splitTagFields(String tag) {
+        List<String> fields = new ArrayList<>();
+        StringBuilder field = new StringBuilder();
+        int braceDepth = 0;
+
+        for (int i = 0; i < tag.length(); i++) {
+            char current = tag.charAt(i);
+            if (current == TOKEN_START) {
+                braceDepth++;
+            } else if (current == TOKEN_END && braceDepth > 0) {
+                braceDepth--;
+            }
+
+            if (braceDepth == 0 && tag.startsWith(TAG_DELIMITER, i)) {
+                fields.add(field.toString());
+                field.setLength(0);
+                i += TAG_DELIMITER.length() - 1;
+                continue;
+            }
+
+            field.append(current);
+        }
+
+        fields.add(field.toString());
+        while (!fields.isEmpty() && fields.get(fields.size() - 1).isEmpty()) {
+            fields.remove(fields.size() - 1);
+        }
+
+        return fields;
     }
 
     public static Map<String, String> parseIfMatch(String fmt, String tag) {
