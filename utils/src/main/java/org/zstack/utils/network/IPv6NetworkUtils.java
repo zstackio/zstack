@@ -530,6 +530,18 @@ public class IPv6NetworkUtils {
         return isIpv6Address(host) ? String.format(URL_IPV6_HOST_FORMAT, host) : host;
     }
 
+    public static String stripHostUrlBrackets(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        if (host.startsWith(IPV6_BRACKET_PREFIX) && host.endsWith(IPV6_BRACKET_SUFFIX)) {
+            return host.substring(IPV6_BRACKET_PREFIX.length(), host.length() - IPV6_BRACKET_SUFFIX.length());
+        }
+
+        return host;
+    }
+
     public static String buildHttpUrl(String host, int port) {
         return String.format(HTTP_URL_FORMAT, formatHostForUrl(host), port);
     }

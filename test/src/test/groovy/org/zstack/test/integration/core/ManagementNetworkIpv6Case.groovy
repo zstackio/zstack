@@ -2,6 +2,7 @@ package org.zstack.test.integration.core
 
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.ManagementServerGlobalConfig
@@ -89,7 +90,9 @@ class ManagementNetworkIpv6Case extends SubCase {
         testConsoleProxyListenHostByProxyIpVersion()
         testCoreManagementUrlsIpv6()
         testRestFacadeIpv6Urls()
-        testSshTargetUsesBracketedIpv6Host()
+        testSshTargetUsesRawIpv6Host()
+        testScpTargetUsesBracketedIpv6Host()
+        testCallbackCheckerUsesIpv6Options()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
         testNormalizeIpv6()
@@ -234,11 +237,27 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
     }
 
-    void testSshAndScpTargetsFormatIpv6Host() {
+    void testSshTargetUsesRawIpv6Host() {
         assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
         assert SshShell.formatSshTarget("root", IPV6) == "root@2001:db8::1"
-        assert SshShell.formatScpTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatSshTarget("root", "[2001:db8::1]") == "root@2001:db8::1"
         assert SshShell.formatSshTarget("root", "host-01.example.com") == "root@host-01.example.com"
+    }
+
+    void testScpTargetUsesBracketedIpv6Host() {
+        assert SshShell.formatScpTarget("root", IPV4) == "root@192.168.1.10"
+        assert SshShell.formatScpTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatScpTarget("root", "host-01.example.com") == "root@host-01.example.com"
+    }
+
+    void testCallbackCheckerUsesIpv6Options() {
+        String ipv4Script = CallBackNetworkChecker.buildCallbackCheckScript("password", REST_PORT, IPV4)
+        assert ipv4Script.contains("nc ${IPV4} ${REST_PORT}")
+        assert ipv4Script.contains("nmap -sS -P0 -n -p ${REST_PORT} ${IPV4}")
+
+        String ipv6Script = CallBackNetworkChecker.buildCallbackCheckScript("password", REST_PORT, IPV6)
+        assert ipv6Script.contains("nc -6 ${IPV6} ${REST_PORT}")
+        assert ipv6Script.contains("nmap -6 -sS -P0 -n -p ${REST_PORT} ${IPV6}")
     }
 
     void testBuildHostPortIpv6() {
@@ -248,6 +267,7 @@ class ManagementNetworkIpv6Case extends SubCase {
     void testBracketIpv6Idempotent() {
         assert IPv6NetworkUtils.formatHostForUrl(IPV6) == "[2001:db8::1]"
         assert IPv6NetworkUtils.formatHostForUrl("[2001:db8::1]") == "[2001:db8::1]"
+        assert IPv6NetworkUtils.stripHostUrlBrackets("[2001:db8::1]") == IPV6
     }
 
     void testNormalizeIpv6() {
