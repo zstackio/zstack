@@ -82,7 +82,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetSchema(targetSchema);
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
-        cmd.setProxyHostname(selectProxyListenHostname(self.getAgentIp()));
+        cmd.setProxyHostname(selectProxyListenHostname(self.getProxyHostname()));
         if (ConsoleConstants.HTTP_SCHEMA.equals(targetSchema)) {
             cmd.setProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
         } else {
@@ -128,8 +128,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
         });
     }
 
-    public static String selectProxyListenHostname(String agentIp) {
-        return IPv6NetworkUtils.isIpv6Address(agentIp) ? ANY_IPV6_ADDRESS : ANY_IPV4_ADDRESS;
+    public static String selectProxyListenHostname(String proxyHostname) {
+        return IPv6NetworkUtils.isIpv6Address(proxyHostname) ? ANY_IPV6_ADDRESS : ANY_IPV4_ADDRESS;
     }
 
     void doEstablishDirectConsoleConnection(ConsoleUrl consoleUrl, final ReturnValueCompletion<ConsoleProxyInventory> completion) {
