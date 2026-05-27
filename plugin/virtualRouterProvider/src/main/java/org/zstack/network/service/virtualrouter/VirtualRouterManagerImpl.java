@@ -50,6 +50,8 @@ import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.query.QueryBelongFilter;
+import org.zstack.header.rest.RESTConstant;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
@@ -116,6 +118,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	private NetworkServiceProviderInventory virtualRouterProvider;
 	private final Map<String, VirtualRouterHypervisorBackend> hypervisorBackends = new HashMap<String, VirtualRouterHypervisorBackend>();
     private final Map<String, Integer> vrParallelismDegrees = new ConcurrentHashMap<String, Integer>();
+
+    @Autowired
+    private RESTFacade restf;
 
     private List<String> virtualRouterPostCreateFlows;
     private List<String> virtualRouterPostStartFlows;
@@ -965,6 +970,29 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         ub.path(subPath);
 
         return ub.build().toUriString();
+    }
+
+    @Override
+    public Map<String, String> buildAgentCallbackUrlHeaders(String mgmtNicIp) {
+        return Collections.singletonMap(RESTConstant.CALLBACK_URL, restf.buildCallbackUrl(selectManagementIpForAgent(mgmtNicIp)));
+    }
+
+    private String selectManagementIpForAgent(String agentIp) {
+        if (IPv6NetworkUtils.isIpv6Address(agentIp)) {
+            return Platform.getManagementServerIps().stream()
+                    .filter(IPv6NetworkUtils::isIpv6Address)
+                    .findFirst()
+                    .orElse(Platform.getManagementServerIp());
+        }
+
+        if (NetworkUtils.isIpv4Address(agentIp)) {
+            return Platform.getManagementServerIps().stream()
+                    .filter(NetworkUtils::isIpv4Address)
+                    .findFirst()
+                    .orElse(Platform.getManagementServerIp());
+        }
+
+        return Platform.getManagementServerIp();
     }
 
 	private void buildWorkFlowBuilder() {

@@ -88,6 +88,8 @@ public interface RESTFacade {
 
     String getCallbackUrl();
 
+    String buildCallbackUrl(String hostName);
+
     String getHostName();
 
     int getPort();
