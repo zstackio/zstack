@@ -45,6 +45,8 @@ import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.vm.*;
@@ -65,6 +67,7 @@ import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -5102,10 +5105,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
 
-        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
-        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
-            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
-        }
+        List<L3NetworkInventory> ret = filterAttachableL3Network(VmInstanceInventory.valueOf(self), l3Invs);
 
         reply.setInventories(ret);
         bus.reply(msg, reply);
@@ -5115,10 +5115,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
 
-        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
-        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
-            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
-        }
+        List<L3NetworkInventory> ret = filterAttachableL3Network(VmInstanceInventory.valueOf(self), l3Invs);
 
         VmNicVO nicVO= Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         for (FilterVmNicChangeableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterVmNicChangeableL3NetworkExtensionPoint.class)) {
@@ -5127,6 +5124,74 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         reply.setInventories(ret);
         bus.reply(msg, reply);
+    }
+
+    private List<L3NetworkInventory> filterAttachableL3Network(VmInstanceInventory vm, List<L3NetworkInventory> l3Invs) {
+        List<L3NetworkInventory> ret = filterAttachableL3NetworkByDomain(vm, l3Invs);
+        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
+            if (ext instanceof VmAttachableL3NetworkDomainFilterExtensionPoint) {
+                continue;
+            }
+            ret = ext.filterAttachableL3Network(vm, ret);
+        }
+        return ret;
+    }
+
+    private List<L3NetworkInventory> filterAttachableL3NetworkByDomain(VmInstanceInventory vm, List<L3NetworkInventory> l3Invs) {
+        Set<VmAttachableL3NetworkDomainFilterExtensionPoint> domainFilters = new LinkedHashSet<>(
+                pluginRgty.getExtensionList(VmAttachableL3NetworkDomainFilterExtensionPoint.class));
+        pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class).stream()
+                .filter(VmAttachableL3NetworkDomainFilterExtensionPoint.class::isInstance)
+                .map(VmAttachableL3NetworkDomainFilterExtensionPoint.class::cast)
+                .forEach(domainFilters::add);
+        if (domainFilters.isEmpty()) {
+            return new ArrayList<>(l3Invs);
+        }
+
+        Map<String, List<VmAttachableL3NetworkDomainFilterExtensionPoint>> filtersByVendor = new HashMap<>();
+        List<VmAttachableL3NetworkDomainFilterExtensionPoint> defaultFilters = new ArrayList<>();
+        for (VmAttachableL3NetworkDomainFilterExtensionPoint filter : domainFilters) {
+            String vendorType = filter.getSdnControllerVendorType();
+            if (vendorType == null) {
+                defaultFilters.add(filter);
+            } else {
+                filtersByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(filter);
+            }
+        }
+        Map<String, List<L3NetworkInventory>> l3sByVendor = new LinkedHashMap<>();
+        for (L3NetworkInventory l3 : l3Invs) {
+            String vendorType = getSdnControllerVendorType(l3.getUuid());
+            l3sByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(l3);
+        }
+
+        List<L3NetworkInventory> ret = new ArrayList<>();
+        for (Map.Entry<String, List<L3NetworkInventory>> e : l3sByVendor.entrySet()) {
+            List<VmAttachableL3NetworkDomainFilterExtensionPoint> filters = e.getKey() == null ?
+                    defaultFilters : filtersByVendor.getOrDefault(e.getKey(), Collections.emptyList());
+            if (filters.isEmpty()) {
+                ret.addAll(e.getValue());
+                continue;
+            }
+
+            List<L3NetworkInventory> filtered = new ArrayList<>(e.getValue());
+            for (VmAttachableL3NetworkDomainFilterExtensionPoint filter : filters) {
+                filtered = filter.filterAttachableL3NetworkInDomain(vm, filtered);
+            }
+            ret.addAll(filtered);
+        }
+        return ret;
+    }
+
+    private String getSdnControllerVendorType(String l3NetworkUuid) {
+        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3NetworkUuid);
+        if (controllerUuid == null) {
+            return null;
+        }
+
+        return Q.New(SdnControllerVO.class)
+                .select(SdnControllerVO_.vendorType)
+                .eq(SdnControllerVO_.uuid, controllerUuid)
+                .findValue();
     }
 
     private void handle(final AttachIsoToVmInstanceMsg msg) {
