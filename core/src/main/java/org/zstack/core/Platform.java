@@ -1100,7 +1100,11 @@ public class Platform {
             return Boolean.parseBoolean(propertyValue);
         }
 
-        return CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6;
+        try {
+            return ManagementServerGlobalConfig.PREFER_IPV6.value(Boolean.class);
+        } catch (RuntimeException e) {
+            return CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6;
+        }
     }
 
     public static String formatJGroupsInitialHosts(String nodeIp, String peerIp, int port) {

@@ -4,6 +4,7 @@ import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.CoreGlobalProperty
+import org.zstack.core.ManagementServerGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -75,6 +76,8 @@ class ManagementNetworkIpv6Case extends SubCase {
     @Test
     void test() {
         testPreferIpv6DefaultFalse()
+        testPreferIpv6GlobalConfigDefinition()
+        testPreferIpv6GlobalConfigValue()
         testPreferIpv6SystemProperty()
         testSelectManagementServerIpDualStackPolicy()
         testSelectManagementServerIpSkipsLoopbackAndLinkLocal()
@@ -109,6 +112,30 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     void testPreferIpv6DefaultFalse() {
         assert !CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6
+    }
+
+    void testPreferIpv6GlobalConfigDefinition() {
+        assert ManagementServerGlobalConfig.PREFER_IPV6.category == "management.server"
+        assert ManagementServerGlobalConfig.PREFER_IPV6.name == "prefer.ipv6"
+    }
+
+    void testPreferIpv6GlobalConfigValue() {
+        String oldPropertyValue = System.getProperty("management.server.prefer.ipv6")
+        String oldGlobalConfigValue = ManagementServerGlobalConfig.PREFER_IPV6.@value
+        try {
+            System.clearProperty("management.server.prefer.ipv6")
+            ManagementServerGlobalConfig.PREFER_IPV6.@value = "true"
+            assert Platform.isManagementServerPreferIpv6()
+            ManagementServerGlobalConfig.PREFER_IPV6.@value = "false"
+            assert !Platform.isManagementServerPreferIpv6()
+        } finally {
+            if (oldPropertyValue == null) {
+                System.clearProperty("management.server.prefer.ipv6")
+            } else {
+                System.setProperty("management.server.prefer.ipv6", oldPropertyValue)
+            }
+            ManagementServerGlobalConfig.PREFER_IPV6.@value = oldGlobalConfigValue
+        }
     }
 
     void testPreferIpv6SystemProperty() {
