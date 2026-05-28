@@ -429,7 +429,6 @@ public class SourceClassMap {
 			put("org.zstack.header.volume.block.ExponBlockVolumeInventory", "org.zstack.sdk.ExponBlockVolumeInventory");
 			put("org.zstack.header.volume.block.XskyBlockVolumeInventory", "org.zstack.sdk.XskyBlockVolumeInventory");
 			put("org.zstack.header.vpc.VpcRouterDnsInventory", "org.zstack.sdk.VpcRouterDnsInventory");
-			put("org.zstack.header.vpc.VpcRouterDnsRecordInventory", "org.zstack.sdk.VpcRouterDnsRecordInventory");
 			put("org.zstack.header.vpc.VpcRouterVmInventory", "org.zstack.sdk.VpcRouterVmInventory");
 			put("org.zstack.header.vpc.VpcSnatStateInventory", "org.zstack.sdk.VpcSnatStateInventory");
 			put("org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefInventory", "org.zstack.sdk.VpcHaGroupApplianceVmRefInventory");
@@ -1545,7 +1544,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VpcHaGroupNetworkServiceRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupNetworkServiceRefInventory");
 			put("org.zstack.sdk.VpcHaGroupVipRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupVipRefInventory");
 			put("org.zstack.sdk.VpcRouterDnsInventory", "org.zstack.header.vpc.VpcRouterDnsInventory");
-			put("org.zstack.sdk.VpcRouterDnsRecordInventory", "org.zstack.header.vpc.VpcRouterDnsRecordInventory");
 			put("org.zstack.sdk.VpcRouterVmInventory", "org.zstack.header.vpc.VpcRouterVmInventory");
 			put("org.zstack.sdk.VpcSharedQosInventory", "org.zstack.header.vipQos.VpcSharedQosInventory");
 			put("org.zstack.sdk.VpcSharedQosRefVipInventory", "org.zstack.header.vipQos.VpcSharedQosRefVipInventory");

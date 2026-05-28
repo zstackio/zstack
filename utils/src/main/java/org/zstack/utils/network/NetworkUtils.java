@@ -25,9 +25,6 @@ import static org.zstack.utils.network.IPv6NetworkUtils.isIpv6UnicastAddress;
 public class NetworkUtils {
     private static final CLogger logger = Utils.getLogger(NetworkUtils.class);
 
-    private static final int MAX_DOMAIN_NAME_LENGTH = 253;
-    private static final int MAX_DOMAIN_NAME_LABEL_LENGTH = 63;
-
     private static final Map<String, Integer> validNetmasks = new HashMap<String, Integer>();
 
     private static final Random random = new Random();
@@ -76,20 +73,6 @@ public class NetworkUtils {
         Pattern pattern = Pattern.compile(PATTERN);
         Matcher matcher = pattern.matcher(hostname);
         return matcher.matches();
-    }
-
-    public static boolean isDomainName(String domainName) {
-        if (domainName == null || domainName.length() > MAX_DOMAIN_NAME_LENGTH || !isHostname(domainName)) {
-            return false;
-        }
-
-        for (String label : domainName.split("\\.")) {
-            if (label.length() > MAX_DOMAIN_NAME_LABEL_LENGTH) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public static boolean isIpv4Address(String ip) {
@@ -989,3 +972,4 @@ public class NetworkUtils {
         return diff > 0 ? 1 : diff == 0 ? 0 : -1;
     }
 }
+
