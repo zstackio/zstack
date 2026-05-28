@@ -19,6 +19,12 @@ public interface VirtualRouterManager {
 	
     String buildUrl(String mgmtNicIp, String subPath);
 
+    /**
+     * Builds async REST callback headers for virtual router agent requests.
+     *
+     * @param mgmtNicIp virtual router management NIC IP address used to select the callback IP family
+     * @return HTTP headers carrying the callback URL for agent requests
+     */
     Map<String, String> buildAgentCallbackUrlHeaders(String mgmtNicIp);
 
     List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
