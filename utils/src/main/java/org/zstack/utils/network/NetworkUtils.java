@@ -589,6 +589,19 @@ public class NetworkUtils {
         return results;
     }
 
+    public static List<String> filterIpsInCidr(List<String> ips, String cidr){
+        DebugUtils.Assert(isCidr(cidr), String.format("%s is not a cidr", cidr));
+        List<String> results = new ArrayList<>();
+
+        for (String ip : ips) {
+            validateIp(ip);
+            if (isIpInCidr(ip, cidr)) {
+                results.add(ip);
+            }
+        }
+        return results;
+    }
+
     public static boolean isIpRoutedByDefaultGateway(String ip) {
         ShellResult res = ShellUtils.runAndReturn(String.format("ip route get %s | grep -q \"via $(ip route | awk '/default/ {print $3}')\"", ip));
         return res.isReturnCode(0);
@@ -628,9 +641,8 @@ public class NetworkUtils {
     }
 
     public static String fmtCidr(final String origin) {
-        // format "*.*.1.1/16" to "*.*.0.0/16"
         DebugUtils.Assert(isCidr(origin), String.format("%s is not a cidr", origin));
-        return new SubnetUtils(origin).getInfo().getNetworkAddress() + "/" + origin.split("/")[1];
+        return getNetworkAddressFromCidr(origin);
     }
 
     public static List<String> getCidrsFromIpRange(String startIp, String endIp) {

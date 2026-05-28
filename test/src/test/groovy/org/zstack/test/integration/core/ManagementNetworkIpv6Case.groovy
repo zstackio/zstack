@@ -21,6 +21,7 @@ import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.testlib.SubCase
+import org.zstack.utils.TagUtils
 import org.zstack.utils.URLBuilder
 import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
@@ -111,6 +112,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
         testVxlanVtepIpv6Validation()
         testVxlanSystemTagMatchesIpv6Cidr()
+        testPatternedSystemTagParsesIpv6Token()
         testKvmExtraIpCidrSelection()
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
@@ -263,6 +265,7 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     void testIpv6NetworkCidr() {
         assert NetworkUtils.getNetworkAddressFromCidr("2001:db8::1/64") == "2001:db8::/64"
+        assert NetworkUtils.fmtCidr("2001:db8::1/64") == "2001:db8::/64"
     }
 
     void testIpInCidrDualStack() {
@@ -270,6 +273,8 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert NetworkUtils.isIpInCidr(IPV6, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV4, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV6, "192.168.1.0/24")
+        assert NetworkUtils.filterIpsInCidr([IPV4, IPV6], "192.168.1.0/24") == [IPV4]
+        assert NetworkUtils.filterIpsInCidr([IPV4, IPV6], "2001:db8::/64") == [IPV6]
     }
 
     void testManagementCidrCommandOutputParsing() {
@@ -373,6 +378,18 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert tokens[VxlanSystemTags.VXLAN_POOL_UUID_TOKEN] == VXLAN_POOL_UUID
         assert tokens[VxlanSystemTags.CLUSTER_UUID_TOKEN] == CLUSTER_UUID
         assert tokens[VxlanSystemTags.VTEP_CIDR_TOKEN] == "{${VXLAN_IPV6_CIDR}}"
+    }
+
+    void testPatternedSystemTagParsesIpv6Token() {
+        String extraIpsFormat = "extraips::{extraips}"
+        String extraIpsTag = "extraips::10.0.0.10,${IPV6_2}"
+        assert TagUtils.isMatch(extraIpsFormat, extraIpsTag)
+        assert TagUtils.parseIfMatch(extraIpsFormat, extraIpsTag)["extraips"] == "10.0.0.10,${IPV6_2}"
+
+        String migrateCidrFormat = "cluster::migrate::network::cidr::{migrateCidr}"
+        String migrateCidrTag = "cluster::migrate::network::cidr::${VXLAN_IPV6_CIDR}"
+        assert TagUtils.isMatch(migrateCidrFormat, migrateCidrTag)
+        assert TagUtils.parseIfMatch(migrateCidrFormat, migrateCidrTag)["migrateCidr"] == VXLAN_IPV6_CIDR
     }
 
     void testKvmExtraIpCidrSelection() {

@@ -5869,7 +5869,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 final String extraIps = CephMonSystemTags.EXTRA_IPS
                         .getTokenByResourceUuid(mon.getUuid(), CephMonSystemTags.EXTRA_IPS_TOKEN);
                 Optional.ofNullable(extraIps).ifPresent(it -> ips.addAll(Arrays.asList(it.split(","))));
-                List<String> cidrIps = NetworkUtils.filterIpv4sInCidr(ips, migrateCidr);
+                List<String> cidrIps = NetworkUtils.filterIpsInCidr(ips, migrateCidr);
                 if (!cidrIps.isEmpty()) {
                     monMigrateIpMap.put(mon.getUuid(), cidrIps.get(0));
                 }
