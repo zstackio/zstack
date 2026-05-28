@@ -107,6 +107,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
     private static final String ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS = "AttachCreatedVmSystemTagUuids";
+    private static final String UNRESOLVED_SDN_VENDOR = "__UNRESOLVED_SDN_VENDOR__";
 
     @Autowired
     protected CloudBus bus;
@@ -5171,8 +5172,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         List<L3NetworkInventory> ret = new ArrayList<>();
         for (Map.Entry<String, List<L3NetworkInventory>> e : l3sByVendor.entrySet()) {
-            List<VmAttachableL3NetworkDomainFilterExtensionPoint> filters = e.getKey() == null ?
-                    defaultFilters : filtersByVendor.getOrDefault(e.getKey(), Collections.emptyList());
+            List<VmAttachableL3NetworkDomainFilterExtensionPoint> filters;
+            if (e.getKey() == null) {
+                filters = defaultFilters;
+            } else if (UNRESOLVED_SDN_VENDOR.equals(e.getKey())) {
+                filters = Collections.emptyList();
+            } else {
+                filters = filtersByVendor.getOrDefault(e.getKey(), Collections.emptyList());
+            }
             if (filters.isEmpty()) {
                 ret.addAll(e.getValue());
                 continue;
@@ -5254,9 +5261,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
 
             String vendorType = controllerUuidToVendorType.get(controllerUuid);
-            if (vendorType != null) {
-                vendorTypeByL3Uuid.put(e.getKey(), vendorType);
-            }
+            vendorTypeByL3Uuid.put(e.getKey(),
+                    StringUtils.isBlank(vendorType) ? UNRESOLVED_SDN_VENDOR : vendorType);
         }
         return vendorTypeByL3Uuid;
     }
