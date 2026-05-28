@@ -44,11 +44,14 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -66,8 +69,8 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
-import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -88,6 +91,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.PersistenceException;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -5158,9 +5162,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 filtersByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(filter);
             }
         }
+        Map<String, String> vendorTypeByL3Uuid = getSdnControllerVendorTypeByL3Uuid(l3Invs);
         Map<String, List<L3NetworkInventory>> l3sByVendor = new LinkedHashMap<>();
         for (L3NetworkInventory l3 : l3Invs) {
-            String vendorType = getSdnControllerVendorType(l3.getUuid());
+            String vendorType = vendorTypeByL3Uuid.get(l3.getUuid());
             l3sByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(l3);
         }
 
@@ -5182,16 +5187,78 @@ public class VmInstanceBase extends AbstractVmInstance {
         return ret;
     }
 
-    private String getSdnControllerVendorType(String l3NetworkUuid) {
-        String controllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3NetworkUuid);
-        if (controllerUuid == null) {
-            return null;
+    private Map<String, String> getSdnControllerVendorTypeByL3Uuid(List<L3NetworkInventory> l3Invs) {
+        if (l3Invs.isEmpty()) {
+            return Collections.emptyMap();
         }
 
-        return Q.New(SdnControllerVO.class)
-                .select(SdnControllerVO_.vendorType)
-                .eq(SdnControllerVO_.uuid, controllerUuid)
-                .findValue();
+        List<String> l3Uuids = l3Invs.stream()
+                .map(L3NetworkInventory::getUuid)
+                .collect(Collectors.toList());
+        List<Tuple> l3L2Tuples = Q.New(L3NetworkVO.class)
+                .select(L3NetworkVO_.uuid, L3NetworkVO_.l2NetworkUuid)
+                .in(L3NetworkVO_.uuid, l3Uuids)
+                .listTuple();
+
+        Map<String, String> l3ToL2Uuid = new HashMap<>();
+        Set<String> l2Uuids = new HashSet<>();
+        for (Tuple t : l3L2Tuples) {
+            String l3Uuid = t.get(0, String.class);
+            String l2Uuid = t.get(1, String.class);
+            l3ToL2Uuid.put(l3Uuid, l2Uuid);
+            if (l2Uuid != null) {
+                l2Uuids.add(l2Uuid);
+            }
+        }
+
+        if (l2Uuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Tuple> controllerTagTuples = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.resourceUuid, SystemTagVO_.tag)
+                .in(SystemTagVO_.resourceUuid, l2Uuids)
+                .eq(SystemTagVO_.resourceType, L2NetworkVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN + "::%")
+                .listTuple();
+        Map<String, String> l2ToControllerUuid = new HashMap<>();
+        Set<String> controllerUuids = new HashSet<>();
+        for (Tuple t : controllerTagTuples) {
+            String l2Uuid = t.get(0, String.class);
+            String tag = t.get(1, String.class);
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByTag(
+                    tag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid != null) {
+                l2ToControllerUuid.put(l2Uuid, controllerUuid);
+                controllerUuids.add(controllerUuid);
+            }
+        }
+
+        if (controllerUuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<SdnControllerVO> controllerVOS = Q.New(SdnControllerVO.class)
+                .in(SdnControllerVO_.uuid, controllerUuids)
+                .list();
+        Map<String, String> controllerUuidToVendorType = new HashMap<>();
+        for (SdnControllerVO vo : controllerVOS) {
+            controllerUuidToVendorType.put(vo.getUuid(), vo.getVendorType());
+        }
+
+        Map<String, String> vendorTypeByL3Uuid = new HashMap<>();
+        for (Map.Entry<String, String> e : l3ToL2Uuid.entrySet()) {
+            String controllerUuid = l2ToControllerUuid.get(e.getValue());
+            if (controllerUuid == null) {
+                continue;
+            }
+
+            String vendorType = controllerUuidToVendorType.get(controllerUuid);
+            if (vendorType != null) {
+                vendorTypeByL3Uuid.put(e.getKey(), vendorType);
+            }
+        }
+        return vendorTypeByL3Uuid;
     }
 
     private void handle(final AttachIsoToVmInstanceMsg msg) {
