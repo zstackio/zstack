@@ -2726,16 +2726,20 @@ public class KVMHost extends HostBase implements Host {
                 );
     }
 
-    private String buildUrl(String path) {
+    public static String buildAgentUrl(String host, String path) {
         UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
         ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-        ub.host(KVMHostUtils.formatHostForUrl(self.getManagementIp()));
+        ub.host(KVMHostUtils.formatHostForUrl(host));
         ub.port(KVMGlobalProperty.AGENT_PORT);
         if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);
         }
         ub.path(path);
         return ub.build().toUriString();
+    }
+
+    private String buildUrl(String path) {
+        return buildAgentUrl(self.getManagementIp(), path);
     }
 
     private void executeAsyncHttpCall(final KVMHostAsyncHttpCallMsg msg, final NoErrorCompletion completion) {
@@ -3154,10 +3158,7 @@ public class KVMHost extends HostBase implements Host {
                         CleanVmFirmwareFlashCmd cmd = new CleanVmFirmwareFlashCmd();
                         cmd.vmUuid = vmUuid;
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(dstHostMnIp);
-                        ub.path(KVMConstant.CLEAN_FIRMWARE_FLASH);
-                        String url = ub.build().toString();
+                        String url = buildAgentUrl(dstHostMnIp, KVMConstant.CLEAN_FIRMWARE_FLASH);
                         new Http<>(url, cmd, AgentResponse.class).call(dstHostUuid, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
@@ -3227,9 +3228,9 @@ public class KVMHost extends HostBase implements Host {
                             cmd.setDisks(diskMigrationMap);
                         }
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(migrateVmPath);
-                        ub.host(migrateFromDestination ? dstHostMnIp : srcHostMnIp);
-                        String migrateUrl = ub.build().toString();
+                        String migrateUrl = buildAgentUrl(
+                                migrateFromDestination ? dstHostMnIp : srcHostMnIp,
+                                KVMConstant.KVM_MIGRATE_VM_PATH);
                         new Http<>(migrateUrl, cmd, MigrateVmResponse.class).call(migrateFromDestination ? dstHostUuid : srcHostUuid, new ReturnValueCompletion<MigrateVmResponse>(trigger) {
                             @Override
                             public void success(MigrateVmResponse ret) {
@@ -3268,10 +3269,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.vmUuid = vmUuid;
                         cmd.hostManagementIp = dstHostMnIp;
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(dstHostMnIp);
-                        ub.path(KVMConstant.KVM_HARDEN_CONSOLE_PATH);
-                        String url = ub.build().toString();
+                        String url = buildAgentUrl(dstHostMnIp, KVMConstant.KVM_HARDEN_CONSOLE_PATH);
                         new Http<>(url, cmd, AgentResponse.class).call(dstHostUuid, new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {
@@ -3304,10 +3302,7 @@ public class KVMHost extends HostBase implements Host {
                         cmd.vmUuid = vmUuid;
                         cmd.hostManagementIp = srcHostMnIp;
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
-                        ub.host(srcHostMnIp);
-                        ub.path(KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
-                        String url = ub.build().toString();
+                        String url = buildAgentUrl(srcHostMnIp, KVMConstant.KVM_DELETE_CONSOLE_FIREWALL_PATH);
                         new Http<>(url, cmd, AgentResponse.class).call(new ReturnValueCompletion<AgentResponse>(trigger) {
                             @Override
                             public void success(AgentResponse ret) {

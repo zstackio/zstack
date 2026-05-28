@@ -11,7 +11,9 @@ import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMConsoleHypervisorBackend
+import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMHost
+import org.zstack.kvm.KVMGlobalProperty
 import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags
@@ -88,6 +90,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testConsoleVncUriIpv6()
         testConsoleProxyListenHostByProxyIpVersion()
         testCoreManagementUrlsIpv6()
+        testKvmAgentUrlsIpv6()
         testRestFacadeIpv6Urls()
         testSshTargetUsesRawIpv6Host()
         testScpTargetUsesBracketedIpv6Host()
@@ -182,6 +185,15 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
         assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
         assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
+    }
+
+    void testKvmAgentUrlsIpv6() {
+        assert KVMHost.buildAgentUrl(IPV6, KVMConstant.KVM_MIGRATE_VM_PATH) ==
+                "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
+        assert KVMHost.buildAgentUrl(IPV6, KVMConstant.CLEAN_FIRMWARE_FLASH) ==
+                "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/clean/firmware/flash"
+        assert KVMHost.buildAgentUrl(IPV4, KVMConstant.KVM_MIGRATE_VM_PATH) ==
+                "http://192.168.1.10:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
     }
 
     void testRestFacadeIpv6Urls() {
