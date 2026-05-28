@@ -41,6 +41,9 @@ public class HostCapacityVO {
     private int cpuSockets;
 
     @Column
+    private int cpuCoreNum;
+
+    @Column
     @Index
     private long availableMemory;
 
@@ -61,6 +64,14 @@ public class HostCapacityVO {
 
     public int getCpuSockets() {
         return cpuSockets;
+    }
+
+    public int getCpuCoreNum() {
+        return cpuCoreNum;
+    }
+
+    public void setCpuCoreNum(int cpuCoreNum) {
+        this.cpuCoreNum = cpuCoreNum;
     }
 
     public void setCpuSockets(int cpuSockets) {

@@ -778,6 +778,16 @@ public class KVMAgentCommands {
         private long usedMemory;
         @GrayVersion(value = "5.0.0")
         private int cpuSockets;
+        @GrayVersion(value = "5.4.0")
+        private int cpuCoreNum;
+
+        public int getCpuCoreNum() {
+            return cpuCoreNum;
+        }
+
+        public void setCpuCoreNum(int cpuCoreNum) {
+            this.cpuCoreNum = cpuCoreNum;
+        }
 
         public int getCpuSockets() {
             return cpuSockets;
