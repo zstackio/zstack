@@ -2875,7 +2875,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10018": "部署 %s 没有副本信息",
   "ORG_ZSTACK_TAG2_10005": "非法标签UUIDs %s，标签类型必须是简单型,)",
   "ORG_ZSTACK_AI_CONTAINER_10017": "部署 %s 未找到",
-  "ORG_ZSTACK_IDENTITY_10070": "无法找到账号[uuid: %s]的配额[name: %s]",
+  "ORG_ZSTACK_IDENTITY_10070": "无法找到配额[name: %s]，账号[uuid: %s]",
   "ORG_ZSTACK_TAG2_10002": "无法更新简单标签模式格式",
   "ORG_ZSTACK_TAG2_10003": "重复名称",
   "ORG_ZSTACK_SNS_PLATFORM_WECOM_10000": "失败向企业微信发送消息。状态：%s，正文：%s",

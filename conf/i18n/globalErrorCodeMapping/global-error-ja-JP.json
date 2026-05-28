@@ -2844,7 +2844,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10018": "デプロイメント%sにはインスタンス情報がありません",
   "ORG_ZSTACK_TAG2_10005": "タグUUIDs %sが無効です。タグタイプはシンプルタイプでなければなりません",
   "ORG_ZSTACK_AI_CONTAINER_10017": "デプロイメント%sは存在しません",
-  "ORG_ZSTACK_IDENTITY_10070": "アカウント[uuid: %s]のQuota[name: %s]が見つかりません",
+  "ORG_ZSTACK_IDENTITY_10070": "Quota[name: %s]がアカウント[uuid: %s]で見つかりません",
   "ORG_ZSTACK_TAG2_10002": "クラウドリソースメタデータのシンプルタグパターン形式を更新できません",
   "ORG_ZSTACK_TAG2_10003": "重複するリソース名が見つかりました。確認して解決してください。",
   "ORG_ZSTACK_SNS_PLATFORM_WECOM_10000": "WeComへのメッセージ送信に失敗しました。ステータス: %s、本文: %s",
