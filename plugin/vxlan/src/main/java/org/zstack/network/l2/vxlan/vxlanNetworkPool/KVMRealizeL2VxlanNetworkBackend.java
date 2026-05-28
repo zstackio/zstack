@@ -461,6 +461,11 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
 
     @Override
     public void instantiateResourceOnAttachingNic(VmInstanceSpec spec, L3NetworkInventory l3, Completion completion) {
+        if (!KVMConstant.KVM_HYPERVISOR_TYPE.equals(spec.getDestHost().getHypervisorType())) {
+            completion.success();
+            return;
+        }
+
         L2NetworkVO vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, l3.getL2NetworkUuid()).find();
         if (!vo.getType().equals(VxlanNetworkConstant.VXLAN_NETWORK_TYPE)) {
             completion.success();
