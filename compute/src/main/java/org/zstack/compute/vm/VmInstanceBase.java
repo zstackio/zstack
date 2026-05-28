@@ -44,9 +44,14 @@ import org.zstack.header.host.*;
 import org.zstack.header.image.*;
 import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.message.*;
+import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.network.sdncontroller.SdnControllerVO_;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicHostUuid;
 import org.zstack.header.vm.ChangeVmMetaDataMsg.AtomicVmState;
@@ -64,6 +69,7 @@ import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.volume.*;
 import org.zstack.identity.Account;
 import org.zstack.identity.AccountManager;
+import org.zstack.network.l2.L2NetworkSystemTags;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -85,6 +91,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.PersistenceException;
+import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
@@ -100,6 +107,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class VmInstanceBase extends AbstractVmInstance {
     protected static final CLogger logger = Utils.getLogger(VmInstanceBase.class);
     private static final String ATTACH_CREATED_VM_SYSTEM_TAG_UUIDS = "AttachCreatedVmSystemTagUuids";
+    private static final String UNRESOLVED_SDN_VENDOR = "__UNRESOLVED_SDN_VENDOR__";
 
     @Autowired
     protected CloudBus bus;
@@ -5102,10 +5110,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
 
-        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
-        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
-            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
-        }
+        List<L3NetworkInventory> ret = filterAttachableL3Network(VmInstanceInventory.valueOf(self), l3Invs);
 
         reply.setInventories(ret);
         bus.reply(msg, reply);
@@ -5115,10 +5120,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIGetVmAttachableL3NetworkReply reply = new APIGetVmAttachableL3NetworkReply();
         List<L3NetworkInventory> l3Invs = getAttachableL3Network(msg.getSession().getAccountUuid());
 
-        List<L3NetworkInventory> ret = new ArrayList<>(l3Invs);
-        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
-            ret = ext.filterAttachableL3Network(VmInstanceInventory.valueOf(self), ret);
-        }
+        List<L3NetworkInventory> ret = filterAttachableL3Network(VmInstanceInventory.valueOf(self), l3Invs);
 
         VmNicVO nicVO= Q.New(VmNicVO.class).eq(VmNicVO_.uuid, msg.getVmNicUuid()).find();
         for (FilterVmNicChangeableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterVmNicChangeableL3NetworkExtensionPoint.class)) {
@@ -5127,6 +5129,142 @@ public class VmInstanceBase extends AbstractVmInstance {
 
         reply.setInventories(ret);
         bus.reply(msg, reply);
+    }
+
+    private List<L3NetworkInventory> filterAttachableL3Network(VmInstanceInventory vm, List<L3NetworkInventory> l3Invs) {
+        List<L3NetworkInventory> ret = filterAttachableL3NetworkByDomain(vm, l3Invs);
+        for (FilterAttachableL3NetworkExtensionPoint ext : pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class)) {
+            if (ext instanceof VmAttachableL3NetworkDomainFilterExtensionPoint) {
+                continue;
+            }
+            ret = ext.filterAttachableL3Network(vm, ret);
+        }
+        return ret;
+    }
+
+    private List<L3NetworkInventory> filterAttachableL3NetworkByDomain(VmInstanceInventory vm, List<L3NetworkInventory> l3Invs) {
+        Set<VmAttachableL3NetworkDomainFilterExtensionPoint> domainFilters = new LinkedHashSet<>(
+                pluginRgty.getExtensionList(VmAttachableL3NetworkDomainFilterExtensionPoint.class));
+        pluginRgty.getExtensionList(FilterAttachableL3NetworkExtensionPoint.class).stream()
+                .filter(VmAttachableL3NetworkDomainFilterExtensionPoint.class::isInstance)
+                .map(VmAttachableL3NetworkDomainFilterExtensionPoint.class::cast)
+                .forEach(domainFilters::add);
+        if (domainFilters.isEmpty()) {
+            return new ArrayList<>(l3Invs);
+        }
+
+        Map<String, List<VmAttachableL3NetworkDomainFilterExtensionPoint>> filtersByVendor = new HashMap<>();
+        List<VmAttachableL3NetworkDomainFilterExtensionPoint> defaultFilters = new ArrayList<>();
+        for (VmAttachableL3NetworkDomainFilterExtensionPoint filter : domainFilters) {
+            String vendorType = filter.getSdnControllerVendorType();
+            if (vendorType == null) {
+                defaultFilters.add(filter);
+            } else {
+                filtersByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(filter);
+            }
+        }
+        Map<String, String> vendorTypeByL3Uuid = getSdnControllerVendorTypeByL3Uuid(l3Invs);
+        Map<String, List<L3NetworkInventory>> l3sByVendor = new LinkedHashMap<>();
+        for (L3NetworkInventory l3 : l3Invs) {
+            String vendorType = vendorTypeByL3Uuid.get(l3.getUuid());
+            l3sByVendor.computeIfAbsent(vendorType, k -> new ArrayList<>()).add(l3);
+        }
+
+        List<L3NetworkInventory> ret = new ArrayList<>();
+        for (Map.Entry<String, List<L3NetworkInventory>> e : l3sByVendor.entrySet()) {
+            List<VmAttachableL3NetworkDomainFilterExtensionPoint> filters;
+            if (e.getKey() == null) {
+                filters = defaultFilters;
+            } else if (UNRESOLVED_SDN_VENDOR.equals(e.getKey())) {
+                filters = Collections.emptyList();
+            } else {
+                filters = filtersByVendor.getOrDefault(e.getKey(), Collections.emptyList());
+            }
+            if (filters.isEmpty()) {
+                ret.addAll(e.getValue());
+                continue;
+            }
+
+            List<L3NetworkInventory> filtered = new ArrayList<>(e.getValue());
+            for (VmAttachableL3NetworkDomainFilterExtensionPoint filter : filters) {
+                filtered = filter.filterAttachableL3NetworkInDomain(vm, filtered);
+            }
+            ret.addAll(filtered);
+        }
+        return ret;
+    }
+
+    private Map<String, String> getSdnControllerVendorTypeByL3Uuid(List<L3NetworkInventory> l3Invs) {
+        if (l3Invs.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<String> l3Uuids = l3Invs.stream()
+                .map(L3NetworkInventory::getUuid)
+                .collect(Collectors.toList());
+        List<Tuple> l3L2Tuples = Q.New(L3NetworkVO.class)
+                .select(L3NetworkVO_.uuid, L3NetworkVO_.l2NetworkUuid)
+                .in(L3NetworkVO_.uuid, l3Uuids)
+                .listTuple();
+
+        Map<String, String> l3ToL2Uuid = new HashMap<>();
+        Set<String> l2Uuids = new HashSet<>();
+        for (Tuple t : l3L2Tuples) {
+            String l3Uuid = t.get(0, String.class);
+            String l2Uuid = t.get(1, String.class);
+            l3ToL2Uuid.put(l3Uuid, l2Uuid);
+            if (l2Uuid != null) {
+                l2Uuids.add(l2Uuid);
+            }
+        }
+
+        if (l2Uuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<Tuple> controllerTagTuples = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.resourceUuid, SystemTagVO_.tag)
+                .in(SystemTagVO_.resourceUuid, l2Uuids)
+                .eq(SystemTagVO_.resourceType, L2NetworkVO.class.getSimpleName())
+                .like(SystemTagVO_.tag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN + "::%")
+                .listTuple();
+        Map<String, String> l2ToControllerUuid = new HashMap<>();
+        Set<String> controllerUuids = new HashSet<>();
+        for (Tuple t : controllerTagTuples) {
+            String l2Uuid = t.get(0, String.class);
+            String tag = t.get(1, String.class);
+            String controllerUuid = L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID.getTokenByTag(
+                    tag, L2NetworkSystemTags.L2_NETWORK_SDN_CONTROLLER_UUID_TOKEN);
+            if (controllerUuid != null) {
+                l2ToControllerUuid.put(l2Uuid, controllerUuid);
+                controllerUuids.add(controllerUuid);
+            }
+        }
+
+        if (controllerUuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        List<SdnControllerVO> controllerVOS = Q.New(SdnControllerVO.class)
+                .in(SdnControllerVO_.uuid, controllerUuids)
+                .list();
+        Map<String, String> controllerUuidToVendorType = new HashMap<>();
+        for (SdnControllerVO vo : controllerVOS) {
+            controllerUuidToVendorType.put(vo.getUuid(), vo.getVendorType());
+        }
+
+        Map<String, String> vendorTypeByL3Uuid = new HashMap<>();
+        for (Map.Entry<String, String> e : l3ToL2Uuid.entrySet()) {
+            String controllerUuid = l2ToControllerUuid.get(e.getValue());
+            if (controllerUuid == null) {
+                continue;
+            }
+
+            String vendorType = controllerUuidToVendorType.get(controllerUuid);
+            vendorTypeByL3Uuid.put(e.getKey(),
+                    StringUtils.isBlank(vendorType) ? UNRESOLVED_SDN_VENDOR : vendorType);
+        }
+        return vendorTypeByL3Uuid;
     }
 
     private void handle(final AttachIsoToVmInstanceMsg msg) {
