@@ -987,6 +987,11 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public String buildCallbackUrl(String hostName) {
+        return buildCallbackUrl(hostName, port, path);
+    }
+
+    @Override
     public String getHostName() {
         return callbackHostName;
     }

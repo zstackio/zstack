@@ -188,7 +188,7 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             cmd.setParms(parms);
 
 
-                            restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                            restf.asyncJsonPost(url, cmd, vrMgr.buildAgentCallbackUrlHeaders(mgmtNic.getIp()), new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     errs.add(err);

@@ -83,7 +83,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testBuildUrlIpv6()
         testLegacyUrlBuilderIpv6()
         testConsoleVncUriIpv6()
-        testConsoleProxyListenHostByAgentIpVersion()
+        testConsoleProxyListenHostByProxyIpVersion()
         testCoreManagementUrlsIpv6()
         testRestFacadeIpv6Urls()
         testSshTargetUsesBracketedIpv6Host()
@@ -186,7 +186,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert uri.port == REST_PORT
     }
 
-    void testConsoleProxyListenHostByAgentIpVersion() {
+    void testConsoleProxyListenHostByProxyIpVersion() {
         assert ConsoleProxyBase.selectProxyListenHostname(IPV6) == "::"
         assert ConsoleProxyBase.selectProxyListenHostname(IPV4) == "0.0.0.0"
         assert ConsoleProxyBase.selectProxyListenHostname("mn.example.com") == "0.0.0.0"
