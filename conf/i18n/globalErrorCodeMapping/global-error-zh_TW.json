@@ -2874,7 +2874,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10018": "部署 %s 没有副本信息",
   "ORG_ZSTACK_TAG2_10005": "非法標签UUIDs %s，標签類型必須是简单型,)",
   "ORG_ZSTACK_AI_CONTAINER_10017": "部署 %s 未找到",
-  "ORG_ZSTACK_IDENTITY_10070": "無法找到帳號[uuid: %s]的配額[name: %s]",
+  "ORG_ZSTACK_IDENTITY_10070": "無法找到配額[name: %s]，帳號[uuid: %s]",
   "ORG_ZSTACK_TAG2_10002": "無法更新简单標签模式格式",
   "ORG_ZSTACK_TAG2_10003": "重复名称",
   "ORG_ZSTACK_SNS_PLATFORM_WECOM_10000": "失敗向企业微信發送消息。状态：%s，正文：%s",

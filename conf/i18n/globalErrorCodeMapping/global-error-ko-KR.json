@@ -2784,7 +2784,7 @@
   "ORG_ZSTACK_AI_CONTAINER_10018": "배포 %s에 인스턴스 정보가 없습니다.",
   "ORG_ZSTACK_TAG2_10005": "잘못된 태그 UUID %s, 태그 유형은 단순 유형이어야 합니다.",
   "ORG_ZSTACK_AI_CONTAINER_10017": "배포 %s이(가) 존재하지 않습니다.",
-  "ORG_ZSTACK_IDENTITY_10070": "계정[uuid: %s]에 대한 Quota[name: %s]를 찾을 수 없습니다.",
+  "ORG_ZSTACK_IDENTITY_10070": "Quota[name: %s]를 계정[uuid: %s]에서 찾을 수 없습니다.",
   "ORG_ZSTACK_TAG2_10002": "클라우드 리소스 메타데이터의 단순 태그 패턴 형식을 업데이트할 수 없습니다.",
   "ORG_ZSTACK_TAG2_10003": "중복된 리소스 이름이 발견되었습니다. 확인하고 해결하세요.",
   "ORG_ZSTACK_SNS_PLATFORM_WECOM_10000": "WeCom으로 메시지를 보내지 못했습니다. 상태: %s, 본문: %s",
