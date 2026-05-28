@@ -5643,7 +5643,7 @@ public class KVMHost extends HostBase implements Host {
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                final String cmd = String.format("curl --connect-timeout 10 --max-time 15 %s|| wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
