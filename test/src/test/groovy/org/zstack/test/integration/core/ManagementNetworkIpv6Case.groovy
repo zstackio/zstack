@@ -4,8 +4,6 @@ import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
-import org.zstack.core.CoreGlobalProperty
-import org.zstack.core.ManagementServerGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -81,10 +79,6 @@ class ManagementNetworkIpv6Case extends SubCase {
     @Override
     @Test
     void test() {
-        testPreferIpv6DefaultFalse()
-        testPreferIpv6GlobalConfigDefinition()
-        testPreferIpv6GlobalConfigValue()
-        testPreferIpv6SystemProperty()
         testSelectManagementServerIpDualStackPolicy()
         testSelectManagementServerIpSkipsLoopbackAndLinkLocal()
         testSelectApplianceVmManagementNodeIpByCidr()
@@ -119,58 +113,14 @@ class ManagementNetworkIpv6Case extends SubCase {
         testApplianceVmBootstrapParam()
     }
 
-    void testPreferIpv6DefaultFalse() {
-        assert !CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6
-    }
-
-    void testPreferIpv6GlobalConfigDefinition() {
-        assert ManagementServerGlobalConfig.PREFER_IPV6.category == "management.server"
-        assert ManagementServerGlobalConfig.PREFER_IPV6.name == "prefer.ipv6"
-    }
-
-    void testPreferIpv6GlobalConfigValue() {
-        String oldPropertyValue = System.getProperty("management.server.prefer.ipv6")
-        String oldGlobalConfigValue = ManagementServerGlobalConfig.PREFER_IPV6.@value
-        try {
-            System.clearProperty("management.server.prefer.ipv6")
-            ManagementServerGlobalConfig.PREFER_IPV6.@value = "true"
-            assert Platform.isManagementServerPreferIpv6()
-            ManagementServerGlobalConfig.PREFER_IPV6.@value = "false"
-            assert !Platform.isManagementServerPreferIpv6()
-        } finally {
-            if (oldPropertyValue == null) {
-                System.clearProperty("management.server.prefer.ipv6")
-            } else {
-                System.setProperty("management.server.prefer.ipv6", oldPropertyValue)
-            }
-            ManagementServerGlobalConfig.PREFER_IPV6.@value = oldGlobalConfigValue
-        }
-    }
-
-    void testPreferIpv6SystemProperty() {
-        String oldValue = System.getProperty("management.server.prefer.ipv6")
-        try {
-            System.setProperty("management.server.prefer.ipv6", "true")
-            assert Platform.isManagementServerPreferIpv6()
-            System.setProperty("management.server.prefer.ipv6", "false")
-            assert !Platform.isManagementServerPreferIpv6()
-        } finally {
-            if (oldValue == null) {
-                System.clearProperty("management.server.prefer.ipv6")
-            } else {
-                System.setProperty("management.server.prefer.ipv6", oldValue)
-            }
-        }
-    }
-
     void testSelectManagementServerIpDualStackPolicy() {
         def ipv4 = InetAddress.getByName(IPV4)
         def ipv6 = InetAddress.getByName(IPV6)
 
-        assert Platform.selectManagementServerIp([ipv6, ipv4], false) == IPV4
-        assert Platform.selectManagementServerIp([ipv4, ipv6], true) == IPV6
-        assert Platform.selectManagementServerIp([ipv6], false) == IPV6
-        assert Platform.selectManagementServerIp([ipv4], true) == IPV4
+        assert Platform.selectManagementServerIp([ipv6, ipv4]) == IPV4
+        assert Platform.selectManagementServerIp([ipv4, ipv6]) == IPV4
+        assert Platform.selectManagementServerIp([ipv6]) == IPV6
+        assert Platform.selectManagementServerIp([ipv4]) == IPV4
     }
 
     void testSelectManagementServerIpSkipsLoopbackAndLinkLocal() {
@@ -180,9 +130,9 @@ class ManagementNetworkIpv6Case extends SubCase {
         def loopbackIpv6 = InetAddress.getByName(LOOPBACK_IPV6)
         def linkLocalIpv6 = InetAddress.getByName(LINK_LOCAL_IPV6)
 
-        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4], false) == IPV4
-        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6], true) == IPV6
-        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6], true) == null
+        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4]) == IPV4
+        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6]) == IPV6
+        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6]) == null
     }
 
     void testSelectApplianceVmManagementNodeIpByCidr() {

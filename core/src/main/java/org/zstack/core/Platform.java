@@ -83,7 +83,6 @@ public class Platform {
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static final String MANAGEMENT_SERVER_IP_PROPERTY = "management.server.ip";
-    private static final String MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY = "management.server.prefer.ipv6";
     private static final String ZSTACK_MANAGEMENT_SERVER_IP_ENV = "ZSTACK_MANAGEMENT_SERVER_IP";
     private static final String IPV4_ADDRESS_COMMAND = "ip -4 add";
     private static final String IPV6_ADDRESS_COMMAND = "ip -6 addr";
@@ -994,7 +993,7 @@ public class Platform {
             for (NetworkInterface iface : Collections.list(nets)) {
                 String name = iface.getName();
                 if (defaultLine.contains(name)) {
-                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()), isManagementServerPreferIpv6());
+                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()));
                 }
             }
         } catch (SocketException e) {
@@ -1070,7 +1069,7 @@ public class Platform {
         return new ArrayList<>(ips);
     }
 
-    public static String selectManagementServerIp(Collection<InetAddress> addresses, boolean preferIpv6) {
+    public static String selectManagementServerIp(Collection<InetAddress> addresses) {
         String ipv4 = null;
         String ipv6 = null;
 
@@ -1087,24 +1086,7 @@ public class Platform {
             }
         }
 
-        if (preferIpv6 && ipv6 != null) {
-            return ipv6;
-        }
-
         return ipv4 != null ? ipv4 : ipv6;
-    }
-
-    public static boolean isManagementServerPreferIpv6() {
-        String propertyValue = System.getProperty(MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY);
-        if (propertyValue != null) {
-            return Boolean.parseBoolean(propertyValue);
-        }
-
-        try {
-            return ManagementServerGlobalConfig.PREFER_IPV6.value(Boolean.class);
-        } catch (RuntimeException e) {
-            return CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6;
-        }
     }
 
     public static String formatJGroupsInitialHosts(String nodeIp, String peerIp, int port) {
