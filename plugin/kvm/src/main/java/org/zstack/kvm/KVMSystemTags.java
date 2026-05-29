@@ -32,6 +32,9 @@ public class KVMSystemTags {
     public static final String CPU_MODEL_NAME_TOKEN = "name";
     public static PatternedSystemTag CPU_MODEL_NAME = new PatternedSystemTag(String.format("cpuModelName::{%s}", CPU_MODEL_NAME_TOKEN), HostVO.class);
 
+    public static final String CPU_FEATURE_MD5_TOKEN = "cpuFeatureMd5";
+    public static PatternedSystemTag CPU_FEATURE_MD5 = new PatternedSystemTag(String.format("cpuFeatureMd5::{%s}", CPU_FEATURE_MD5_TOKEN), HostVO.class);
+
     public static final String CHECK_CLUSTER_CPU_MODEL_TOKEN = "enable";
     public static PatternedSystemTag CHECK_CLUSTER_CPU_MODEL = new PatternedSystemTag(String.format("check::cluster::cpu::model::{%s}", CHECK_CLUSTER_CPU_MODEL_TOKEN), ClusterVO.class);
 
