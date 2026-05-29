@@ -445,10 +445,6 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
 
-        if (l3Vo.getCategory().equals(L3NetworkCategory.System)) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10034, "can not add ip range, because system network doesn't support ipv6 yet"));
-        }
-
         List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         if (rangeVOS != null && !rangeVOS.isEmpty()) {
             if (!rangeVOS.get(0).getAddressMode().equals(ipr.getAddressMode())) {
