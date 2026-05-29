@@ -140,6 +140,10 @@ public class KVMGlobalConfig {
     public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");
 
     @GlobalConfigValidation
+    @GlobalConfigDef(defaultValue = "300", type = Long.class, description = "timeout in seconds for KVM agent connectivity-check commands that opt out of the default command timeout")
+    public static GlobalConfig AGENT_CONNECTIVITY_CHECK_TIMEOUT = new GlobalConfig(CATEGORY, "agent.connectivityCheck.timeout");
+
+    @GlobalConfigValidation
     public static GlobalConfig KVMAGENT_PHYSICAL_MEMORY_USAGE_ALARM_THRESHOLD = new GlobalConfig(CATEGORY, "kvmagent.physicalmemory.usage.alarm.threshold");
 
     @GlobalConfigValidation
