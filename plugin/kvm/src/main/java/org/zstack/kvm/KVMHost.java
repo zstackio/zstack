@@ -488,6 +488,12 @@ public class KVMHost extends HostBase implements Host {
         Class<T> responseClass;
         String commandStr;
         String commandName;
+        long timeout = -1;
+
+        Http<T> timeout(long timeout) {
+            this.timeout = timeout;
+            return this;
+        }
 
         public Http(String path, String cmd, String commandName, Class<T> rspClz) {
             this.path = path;
@@ -518,6 +524,8 @@ public class KVMHost extends HostBase implements Host {
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
             runBeforeAsyncJsonPostExts(header);
             if (commandStr != null) {
+                long overall = timeoutManager.getTimeout();
+                long effectiveTimeout = timeout > 0 ? Math.min(timeout, overall) : overall;
                 restf.asyncJsonPost(path, commandStr, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
@@ -537,7 +545,7 @@ public class KVMHost extends HostBase implements Host {
                     public Class<T> getReturnClass() {
                         return responseClass;
                     }
-                }, TimeUnit.MILLISECONDS, timeoutManager.getTimeout());
+                }, TimeUnit.MILLISECONDS, effectiveTimeout);
             } else {
                 restf.asyncJsonPost(path, cmd, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
@@ -2782,6 +2790,7 @@ public class KVMHost extends HostBase implements Host {
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
         new Http<>(url, msg.getCommand(), msg.getCommandClassName(), LinkedHashMap.class)
+                .timeout(msg.getTimeout() > 0 ? msg.getTimeout() : factory.getAgentHttpShortTimeout(msg.getPath()))
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {
