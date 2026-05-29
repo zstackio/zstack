@@ -26,7 +26,9 @@ import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.AddonInfo
 import org.zstack.storage.zbs.Config
+import org.zstack.storage.zbs.ZbsAgentUrl
 import org.zstack.storage.zbs.ZbsConstants
+import org.zstack.storage.zbs.ZbsGlobalProperty
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
@@ -184,6 +186,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testAddExternalPrimaryStorageWithMalformedJsonRejectedByInterceptor()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
+            testZbsMdsUriAndAgentUrlSupportIpv6()
             testMdsReconnectAfterMaximumPingFailures()
         }
     }
@@ -814,6 +817,36 @@ class ZbsPrimaryStorageCase extends SubCase {
         def mdsUri = "root:${specialPassword}@127.0.2.1"
         MdsUri uri = new MdsUri(mdsUri);
         assert uri.password == specialPassword
+    }
+
+    void testZbsMdsUriAndAgentUrlSupportIpv6() {
+        def ipv6Uri = new MdsUri("root:password@[2001:db8::10]:2222/?mdsPort=7777")
+        assert ipv6Uri.hostname == "2001:db8::10"
+        assert ipv6Uri.sshPort == 2222
+        assert ipv6Uri.mdsPort == 7777
+        assert ZbsAgentUrl.primaryStorageUrl(ipv6Uri.hostname, ZbsPrimaryStorageMdsBase.PING_PATH) ==
+                "http://[2001:db8::10]:${ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT}${ZbsPrimaryStorageMdsBase.PING_PATH}"
+
+        def ipv4Uri = new MdsUri("root:password@172.24.249.182:2222/?mdsPort=7777")
+        assert ipv4Uri.hostname == "172.24.249.182"
+        assert ZbsAgentUrl.primaryStorageUrl(ipv4Uri.hostname, ZbsPrimaryStorageMdsBase.PING_PATH) ==
+                "http://172.24.249.182:${ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT}${ZbsPrimaryStorageMdsBase.PING_PATH}"
+
+        def endpoints = [
+                "http://172.24.249.182:7763${ZbsPrimaryStorageMdsBase.PING_PATH}",
+                ZbsAgentUrl.primaryStorageUrl(ipv6Uri.hostname, ZbsPrimaryStorageMdsBase.PING_PATH)
+        ]
+        String ipv6PingUrl = "http://[2001:db8::10]:${ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT}${ZbsPrimaryStorageMdsBase.PING_PATH}"
+        assert endpoints.contains(ipv6PingUrl)
+
+        String oldRootPath = ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH
+        try {
+            ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = "zstack"
+            assert ZbsAgentUrl.primaryStorageUrl(ipv6Uri.hostname, ZbsPrimaryStorageMdsBase.PING_PATH) ==
+                    "http://[2001:db8::10]:${ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_PORT}/zstack${ZbsPrimaryStorageMdsBase.PING_PATH}"
+        } finally {
+            ZbsGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = oldRootPath
+        }
     }
 
     void testMdsReconnectAfterMaximumPingFailures() {

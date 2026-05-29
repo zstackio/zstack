@@ -2,6 +2,7 @@ package org.zstack.test.integration.console
 
 import org.springframework.http.HttpEntity
 import org.zstack.console.ConsoleGlobalConfig
+import org.zstack.console.ConsoleManagerImpl
 import org.zstack.header.vm.VmInstanceConstant
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
@@ -16,6 +17,7 @@ import org.zstack.header.console.ConsoleProxyVO
 import org.zstack.header.console.ConsoleProxyVO_
 import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg
 import org.zstack.sdk.ConsoleInventory
+import org.zstack.sdk.ConsoleProxyAgentInventory
 import org.zstack.sdk.GarbageCollectorInventory
 import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -235,6 +237,32 @@ class ConsoleProxyCase extends SubCase {
         agent = dbf.reload(agent)
         assert agent.consoleProxyOverriddenIp == "127.0.0.1"
         assert agent.consoleProxyPort == 4900
+
+        String ipv6ConsoleProxyIp = "2001:db8::100"
+        updateConsoleProxyAgent {
+            uuid = agent.uuid
+            consoleProxyOverriddenIp = ipv6ConsoleProxyIp
+            consoleProxyPort = 4900
+        }
+
+        agent = dbf.reload(agent)
+        assert agent.consoleProxyOverriddenIp == ipv6ConsoleProxyIp
+        assert Platform.getGlobalProperties().get("consoleProxyOverriddenIp") == ipv6ConsoleProxyIp
+        assert CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP == ipv6ConsoleProxyIp
+
+        List<ConsoleProxyAgentInventory> agents = queryConsoleProxyAgent {
+            conditions = ["uuid=${agent.uuid}".toString()]
+        } as List<ConsoleProxyAgentInventory>
+        assert agents[0].consoleProxyOverriddenIp == ipv6ConsoleProxyIp
+        def selectConsoleProxyHostname = ConsoleManagerImpl.class.getDeclaredMethod("selectConsoleProxyHostname", String.class, Boolean.TYPE, String.class)
+        selectConsoleProxyHostname.accessible = true
+        assert selectConsoleProxyHostname.invoke(null, ipv6ConsoleProxyIp, false, "127.0.0.1") == "[${ipv6ConsoleProxyIp}]"
+
+        updateConsoleProxyAgent {
+            uuid = agent.uuid
+            consoleProxyOverriddenIp = "127.0.0.1"
+            consoleProxyPort = 4900
+        }
 
         // update console proxy agent by none admin account
         SessionInventory testAccountSession = logInByAccount {

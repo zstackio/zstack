@@ -5,6 +5,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,7 +27,7 @@ public class MdsUri {
     private String username;
     private String password;
 
-    private static final String MDS_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[mdsPort=]";
+    private static final String MDS_URL_FORMAT = "sshUsername:sshPassword@hostname[:sshPort]/?[mdsPort=], IPv6 hostname must be bracketed";
     private static final Integer DEFAULT_MDS_PORT = 6666;
     private static final Integer DEFAULT_SSH_PORT = 22;
 
@@ -80,7 +81,7 @@ public class MdsUri {
             password = ssh[1];
 
             URI uri = new URI(String.format("ssh://%s", rest));
-            hostname = uri.getHost();
+            hostname = IPv6NetworkUtils.stripHostUrlBrackets(uri.getHost());
             if (hostname == null) {
                 throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10004, "invalid mdsUrl[%s], hostname cannot be null. A valid mdsUrl is" +
                                 " in format of %s", url, MDS_URL_FORMAT)
