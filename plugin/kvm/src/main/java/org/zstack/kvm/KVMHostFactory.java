@@ -96,6 +96,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final VolumeFormat VMDK_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_VMDK, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
+    private final Set<String> agentHttpPathsWithShortTimeout = new HashSet<>();
     private int maxDataVolumeNum;
     private static final String GUEST_OS_CATEGORY_FILE = "guestOs/guestOsCategory.xml";
     private static final String GUEST_OS_CHARACTER_FILE = "guestOs/guestOsCharacter.xml";
@@ -333,6 +334,19 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
             completeNicInfoExtensions.put(ext.getL2NetworkTypeVmNicOn(), ext);
         }
+        for (KVMAgentHttpTimeoutExtensionPoint ext : pluginRgty.getExtensionList(KVMAgentHttpTimeoutExtensionPoint.class)) {
+            Set<String> paths = ext.agentHttpPathsWithShortTimeout();
+            if (paths != null) {
+                agentHttpPathsWithShortTimeout.addAll(paths);
+            }
+        }
+    }
+
+    public long getAgentHttpShortTimeout(String path) {
+        if (agentHttpPathsWithShortTimeout.contains(path)) {
+            return TimeUnit.SECONDS.toMillis(KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class));
+        }
+        return -1;
     }
 
     public KVMCompleteNicInformationExtensionPoint getCompleteNicInfoExtension(L2NetworkType type) {
