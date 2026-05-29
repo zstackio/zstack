@@ -98,6 +98,9 @@ public class CoreManagerImpl extends AbstractService implements CoreManager {
         GetLocalTaskReply reply = new GetLocalTaskReply();
         Map<String, ChainInfo> results = msg.getSyncSignatures().stream()
                 .collect(Collectors.toMap(Function.identity(), thdf::getChainTaskInfo));
+        if (msg.isOnlyRunningTask()) {
+            results.values().forEach(c -> c.getPendingTask().clear());
+        }
         reply.setResults(results);
         bus.reply(msg, reply);
     }

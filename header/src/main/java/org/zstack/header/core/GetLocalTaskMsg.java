@@ -6,6 +6,15 @@ import java.util.List;
 
 public class GetLocalTaskMsg extends NeedReplyMessage {
     private List<String> syncSignatures;
+    private boolean onlyRunningTask;
+
+    public boolean isOnlyRunningTask() {
+        return onlyRunningTask;
+    }
+
+    public void setOnlyRunningTask(boolean onlyRunningTask) {
+        this.onlyRunningTask = onlyRunningTask;
+    }
 
     public void setSyncSignatures(List<String> syncSignatures) {
         this.syncSignatures = syncSignatures;
