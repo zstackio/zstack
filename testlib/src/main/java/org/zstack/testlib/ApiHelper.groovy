@@ -37233,6 +37233,222 @@ abstract class ApiHelper {
     }
 
 
+    def getLicenseAuthorizedCapacity(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.GetLicenseAuthorizedCapacityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def registerLicenseServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.RegisterLicenseServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.RegisterLicenseServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def requestLicenseCapacity(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.RequestLicenseCapacityAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.RequestLicenseCapacityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def syncLicenseCapacity(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.SyncLicenseCapacityAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.SyncLicenseCapacityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def unregisterLicenseRequestedApplication(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.UnregisterLicenseRequestedApplicationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def unregisterLicenseServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.UnregisterLicenseServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.UnregisterLicenseServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def verifyLicenseServer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.VerifyLicenseServerAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.VerifyLicenseServerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def withdrawLicenseCapacityApplication(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationAction.class) Closure c) {
+        def a = new org.zstack.sdk.license.api.server.WithdrawLicenseCapacityApplicationAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getLicenseUsages(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.license.api.usage.GetLicenseUsagesAction.class) Closure c) {
         def a = new org.zstack.sdk.license.api.usage.GetLicenseUsagesAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
