@@ -13097,6 +13097,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_VPC_HA_10020 = "ORG_ZSTACK_VPC_HA_10020";
 
+    public static final String ORG_ZSTACK_VPC_HA_10021 = "ORG_ZSTACK_VPC_HA_10021";
+
+    public static final String ORG_ZSTACK_VPC_HA_10022 = "ORG_ZSTACK_VPC_HA_10022";
+
     public static final String ORG_ZSTACK_SSO_CAS_FILTER_10000 = "ORG_ZSTACK_SSO_CAS_FILTER_10000";
 
     public static final String ORG_ZSTACK_SSO_CAS_FILTER_10001 = "ORG_ZSTACK_SSO_CAS_FILTER_10001";

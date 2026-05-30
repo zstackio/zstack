@@ -1065,6 +1065,12 @@ public class Platform {
         ips.add(getManagementServerIp());
         ips.add(getManagementServerIp4());
         ips.add(getManagementServerIp6());
+        ips.remove(null);
+        return new ArrayList<>(ips);
+    }
+
+    public static List<String> getManagementServerIpsWithLocalFallback() {
+        LinkedHashSet<String> ips = new LinkedHashSet<>(getManagementServerIps());
         ips.addAll(getLocalNonLoopbackIps());
         ips.remove(null);
         return new ArrayList<>(ips);
