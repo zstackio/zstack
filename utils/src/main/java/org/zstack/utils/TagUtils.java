@@ -84,7 +84,7 @@ public class TagUtils {
                     continue;
                 }
 
-                int end = tag.indexOf(TAG_DELIMITER, offset);
+                int end = indexOfDelimiterOutsideToken(tag, offset);
                 if (end < 0) {
                     return null;
                 }
@@ -143,6 +143,24 @@ public class TagUtils {
         }
 
         return fields;
+    }
+
+    private static int indexOfDelimiterOutsideToken(String tag, int offset) {
+        int braceDepth = 0;
+        for (int i = offset; i < tag.length(); i++) {
+            char current = tag.charAt(i);
+            if (current == TOKEN_START) {
+                braceDepth++;
+            } else if (current == TOKEN_END && braceDepth > 0) {
+                braceDepth--;
+            }
+
+            if (braceDepth == 0 && tag.startsWith(TAG_DELIMITER, i)) {
+                return i;
+            }
+        }
+
+        return -1;
     }
 
     public static Map<String, String> parseIfMatch(String fmt, String tag) {
