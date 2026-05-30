@@ -960,7 +960,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
         } else {
-            ub.host(mgmtNicIp);
+            ub.host(IPv6NetworkUtils.formatHostForUrl(mgmtNicIp));
         }
 
         ub.port(VirtualRouterGlobalProperty.AGENT_PORT);
@@ -978,6 +978,11 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private String selectManagementIpForAgent(String agentIp) {
+        String routeSourceIp = Platform.getRouteSourceIp(agentIp);
+        if (routeSourceIp != null) {
+            return routeSourceIp;
+        }
+
         if (IPv6NetworkUtils.isIpv6Address(agentIp)) {
             return Platform.getManagementServerIps().stream()
                     .filter(IPv6NetworkUtils::isIpv6Address)

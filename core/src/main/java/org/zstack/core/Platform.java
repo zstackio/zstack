@@ -1065,8 +1065,69 @@ public class Platform {
         ips.add(getManagementServerIp());
         ips.add(getManagementServerIp4());
         ips.add(getManagementServerIp6());
+        ips.addAll(getLocalNonLoopbackIps());
         ips.remove(null);
         return new ArrayList<>(ips);
+    }
+
+    private static List<String> getLocalNonLoopbackIps() {
+        List<String> ips = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface iface : Collections.list(nets)) {
+                if (!iface.isUp()) {
+                    continue;
+                }
+                for (InetAddress address : Collections.list(iface.getInetAddresses())) {
+                    if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                        continue;
+                    }
+                    ips.add(normalizeManagementIp(address.getHostAddress()));
+                }
+            }
+        } catch (SocketException e) {
+            logger.warn("failed to list local non-loopback IPs", e);
+        }
+        return ips;
+    }
+
+    public static String getRouteSourceIp(String remoteIp) {
+        if (StringUtils.isBlank(remoteIp)) {
+            return null;
+        }
+
+        remoteIp = normalizeManagementIp(remoteIp);
+        String family;
+        if (IPv6NetworkUtils.isIpv6Address(remoteIp)) {
+            family = "-6";
+        } else if (NetworkUtils.isIpv4Address(remoteIp)) {
+            family = "-4";
+        } else {
+            return null;
+        }
+
+        Linux.ShellResult ret = Linux.shell(String.format("/sbin/ip %s route get %s", family, remoteIp));
+        if (ret.getExitCode() != 0) {
+            logger.warn(String.format("failed to get route source IP for remote[%s], stdout[%s], stderr[%s]",
+                    remoteIp, ret.getStdout(), ret.getStderr()));
+            return null;
+        }
+
+        String[] tokens = ret.getStdout().trim().split("\\s+");
+        for (int i = 0; i < tokens.length - 1; i++) {
+            if (!"src".equals(tokens[i])) {
+                continue;
+            }
+            String sourceIp = normalizeManagementIp(tokens[i + 1]);
+            if (IPv6NetworkUtils.isIpv6Address(remoteIp) && IPv6NetworkUtils.isIpv6Address(sourceIp)) {
+                return sourceIp;
+            }
+            if (NetworkUtils.isIpv4Address(remoteIp) && NetworkUtils.isIpv4Address(sourceIp)) {
+                return sourceIp;
+            }
+        }
+
+        return null;
     }
 
     public static String selectManagementServerIp(Collection<InetAddress> addresses) {
