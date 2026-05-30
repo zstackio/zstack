@@ -79,9 +79,6 @@ public class CoreGlobalProperty {
     public static List<String> CHRONY_SERVERS;
     @GlobalProperty(name="management.server.vip")
     public static String MN_VIP;
-    @GlobalProperty(name = "management.server.prefer.ipv6", defaultValue = "false")
-    @AvailableValues(value = {"true", "false"})
-    public static boolean MANAGEMENT_SERVER_PREFER_IPV6;
     @GlobalProperty(name = "simulatorsOn", defaultValue = "false")
     public static boolean SIMULATORS_ON;
     @GlobalProperty(name = "startMode", defaultValue = "")

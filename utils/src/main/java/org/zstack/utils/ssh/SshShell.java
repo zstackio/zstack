@@ -39,6 +39,10 @@ public class SshShell {
     }
 
     public static String formatSshTarget(String username, String hostname) {
+        return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.stripHostUrlBrackets(hostname));
+    }
+
+    public static String formatScpTarget(String username, String hostname) {
         return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.formatHostForUrl(hostname));
     }
 
@@ -95,32 +99,32 @@ public class SshShell {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
                 ssh = ln(
-                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
-                        "{4}",
+                        "{3}",
                         "EOT",
                         "bash $s",
                         "ret=$?",
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
+                ).format(tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), script);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
                 ssh = ln(
-                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2}@{3} << 'EOF'",
+                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no -p {1} -T {2} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
-                        "{4}",
+                        "{3}",
                         "EOT",
                         "bash $s",
                         "ret=$?",
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script);
+                ).format(tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), script);
             }
 
             if (logger.isTraceEnabled()) {

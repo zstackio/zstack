@@ -2,8 +2,8 @@ package org.zstack.test.integration.core
 
 import org.zstack.appliancevm.ApplianceVmConstant
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
-import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -11,13 +11,17 @@ import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMConsoleHypervisorBackend
+import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMHost
+import org.zstack.kvm.KVMGlobalProperty
 import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
+import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.testlib.SubCase
+import org.zstack.utils.TagUtils
 import org.zstack.utils.URLBuilder
 import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
@@ -42,6 +46,10 @@ class ManagementNetworkIpv6Case extends SubCase {
     private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
     private static final String CEPH_IPV6_MON_URL = "root:password@[${IPV6}]:22/?monPort=6789"
     private static final String INVALID_VTEP_IP = "not-a-vtep-ip"
+    private static final String VXLAN_POOL_UUID = "235f904603a2416d83810ff1dd5850b8"
+    private static final String CLUSTER_UUID = "e9acb8d6a4b04eea89f14e91918deed7"
+    private static final String VXLAN_IPV4_CIDR = "192.168.100.0/24"
+    private static final String VXLAN_IPV6_CIDR = "fd00:172:24:249::/64"
     private static final String HOST_EXTRA_IPS = "10.0.0.10,${IPV6_2}"
     private static final String IPV4_ADDRESS_COMMAND_OUTPUT = """\
 2: eth0
@@ -74,8 +82,6 @@ class ManagementNetworkIpv6Case extends SubCase {
     @Override
     @Test
     void test() {
-        testPreferIpv6DefaultFalse()
-        testPreferIpv6SystemProperty()
         testSelectManagementServerIpDualStackPolicy()
         testSelectManagementServerIpSkipsLoopbackAndLinkLocal()
         testSelectApplianceVmManagementNodeIpByCidr()
@@ -85,8 +91,11 @@ class ManagementNetworkIpv6Case extends SubCase {
         testConsoleVncUriIpv6()
         testConsoleProxyListenHostByProxyIpVersion()
         testCoreManagementUrlsIpv6()
+        testKvmAgentUrlsIpv6()
         testRestFacadeIpv6Urls()
-        testSshTargetUsesBracketedIpv6Host()
+        testSshTargetUsesRawIpv6Host()
+        testScpTargetUsesBracketedIpv6Host()
+        testCallbackCheckerUsesIpv6Options()
         testBuildHostPortIpv6()
         testBracketIpv6Idempotent()
         testNormalizeIpv6()
@@ -102,39 +111,21 @@ class ManagementNetworkIpv6Case extends SubCase {
         testCephIpv6MonUrlParsing()
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
         testVxlanVtepIpv6Validation()
+        testVxlanSystemTagMatchesIpv6Cidr()
+        testPatternedSystemTagParsesIpv6Token()
         testKvmExtraIpCidrSelection()
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
-    }
-
-    void testPreferIpv6DefaultFalse() {
-        assert !CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6
-    }
-
-    void testPreferIpv6SystemProperty() {
-        String oldValue = System.getProperty("management.server.prefer.ipv6")
-        try {
-            System.setProperty("management.server.prefer.ipv6", "true")
-            assert Platform.isManagementServerPreferIpv6()
-            System.setProperty("management.server.prefer.ipv6", "false")
-            assert !Platform.isManagementServerPreferIpv6()
-        } finally {
-            if (oldValue == null) {
-                System.clearProperty("management.server.prefer.ipv6")
-            } else {
-                System.setProperty("management.server.prefer.ipv6", oldValue)
-            }
-        }
     }
 
     void testSelectManagementServerIpDualStackPolicy() {
         def ipv4 = InetAddress.getByName(IPV4)
         def ipv6 = InetAddress.getByName(IPV6)
 
-        assert Platform.selectManagementServerIp([ipv6, ipv4], false) == IPV4
-        assert Platform.selectManagementServerIp([ipv4, ipv6], true) == IPV6
-        assert Platform.selectManagementServerIp([ipv6], false) == IPV6
-        assert Platform.selectManagementServerIp([ipv4], true) == IPV4
+        assert Platform.selectManagementServerIp([ipv6, ipv4]) == IPV4
+        assert Platform.selectManagementServerIp([ipv4, ipv6]) == IPV4
+        assert Platform.selectManagementServerIp([ipv6]) == IPV6
+        assert Platform.selectManagementServerIp([ipv4]) == IPV4
     }
 
     void testSelectManagementServerIpSkipsLoopbackAndLinkLocal() {
@@ -144,9 +135,9 @@ class ManagementNetworkIpv6Case extends SubCase {
         def loopbackIpv6 = InetAddress.getByName(LOOPBACK_IPV6)
         def linkLocalIpv6 = InetAddress.getByName(LINK_LOCAL_IPV6)
 
-        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4], false) == IPV4
-        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6], true) == IPV6
-        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6], true) == null
+        assert Platform.selectManagementServerIp([loopbackIpv4, ipv4]) == IPV4
+        assert Platform.selectManagementServerIp([loopbackIpv6, linkLocalIpv6, ipv6]) == IPV6
+        assert Platform.selectManagementServerIp([loopbackIpv4, loopbackIpv6, linkLocalIpv6]) == null
     }
 
     void testSelectApplianceVmManagementNodeIpByCidr() {
@@ -198,6 +189,15 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
     }
 
+    void testKvmAgentUrlsIpv6() {
+        assert KVMHost.buildAgentUrl(IPV6, KVMConstant.KVM_MIGRATE_VM_PATH) ==
+                "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
+        assert KVMHost.buildAgentUrl(IPV6, KVMConstant.CLEAN_FIRMWARE_FLASH) ==
+                "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/clean/firmware/flash"
+        assert KVMHost.buildAgentUrl(IPV4, KVMConstant.KVM_MIGRATE_VM_PATH) ==
+                "http://192.168.1.10:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
+    }
+
     void testRestFacadeIpv6Urls() {
         assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, null) == "http://[2001:db8::1]:8080"
         assert RESTFacadeImpl.buildBaseUrl(IPV6, REST_PORT, "zstack") == "http://[2001:db8::1]:8080/zstack"
@@ -207,10 +207,27 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
     }
 
-    void testSshTargetUsesBracketedIpv6Host() {
+    void testSshTargetUsesRawIpv6Host() {
         assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
-        assert SshShell.formatSshTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatSshTarget("root", IPV6) == "root@2001:db8::1"
+        assert SshShell.formatSshTarget("root", "[2001:db8::1]") == "root@2001:db8::1"
         assert SshShell.formatSshTarget("root", "host-01.example.com") == "root@host-01.example.com"
+    }
+
+    void testScpTargetUsesBracketedIpv6Host() {
+        assert SshShell.formatScpTarget("root", IPV4) == "root@192.168.1.10"
+        assert SshShell.formatScpTarget("root", IPV6) == "root@[2001:db8::1]"
+        assert SshShell.formatScpTarget("root", "host-01.example.com") == "root@host-01.example.com"
+    }
+
+    void testCallbackCheckerUsesIpv6Options() {
+        String ipv4Script = CallBackNetworkChecker.buildCallbackCheckScript("password", REST_PORT, IPV4)
+        assert ipv4Script.contains("nc ${IPV4} ${REST_PORT}")
+        assert ipv4Script.contains("nmap -sS -P0 -n -p ${REST_PORT} ${IPV4}")
+
+        String ipv6Script = CallBackNetworkChecker.buildCallbackCheckScript("password", REST_PORT, IPV6)
+        assert ipv6Script.contains("nc -6 ${IPV6} ${REST_PORT}")
+        assert ipv6Script.contains("nmap -6 -sS -P0 -n -p ${REST_PORT} ${IPV6}")
     }
 
     void testBuildHostPortIpv6() {
@@ -220,6 +237,7 @@ class ManagementNetworkIpv6Case extends SubCase {
     void testBracketIpv6Idempotent() {
         assert IPv6NetworkUtils.formatHostForUrl(IPV6) == "[2001:db8::1]"
         assert IPv6NetworkUtils.formatHostForUrl("[2001:db8::1]") == "[2001:db8::1]"
+        assert IPv6NetworkUtils.stripHostUrlBrackets("[2001:db8::1]") == IPV6
     }
 
     void testNormalizeIpv6() {
@@ -247,6 +265,7 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     void testIpv6NetworkCidr() {
         assert NetworkUtils.getNetworkAddressFromCidr("2001:db8::1/64") == "2001:db8::/64"
+        assert NetworkUtils.fmtCidr("2001:db8::1/64") == "2001:db8::/64"
     }
 
     void testIpInCidrDualStack() {
@@ -254,6 +273,8 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert NetworkUtils.isIpInCidr(IPV6, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV4, "2001:db8::/64")
         assert !NetworkUtils.isIpInCidr(IPV6, "192.168.1.0/24")
+        assert NetworkUtils.filterIpsInCidr([IPV4, IPV6], "192.168.1.0/24") == [IPV4]
+        assert NetworkUtils.filterIpsInCidr([IPV4, IPV6], "2001:db8::/64") == [IPV6]
     }
 
     void testManagementCidrCommandOutputParsing() {
@@ -336,6 +357,39 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert VxlanPoolApiInterceptor.isValidVtepIp(IPV6)
         assert !VxlanPoolApiInterceptor.isValidVtepIp(INVALID_VTEP_IP)
         assert VxlanPoolApiInterceptor.normalizeVtepIp(" ${IPV6_FULL}\n") == IPV6
+    }
+
+    void testVxlanSystemTagMatchesIpv6Cidr() {
+        String ipv4Tag = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag([
+                (VxlanSystemTags.VXLAN_POOL_UUID_TOKEN): VXLAN_POOL_UUID,
+                (VxlanSystemTags.CLUSTER_UUID_TOKEN)   : CLUSTER_UUID,
+                (VxlanSystemTags.VTEP_CIDR_TOKEN)     : "{${VXLAN_IPV4_CIDR}}"
+        ])
+        String ipv6Tag = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.instantiateTag([
+                (VxlanSystemTags.VXLAN_POOL_UUID_TOKEN): VXLAN_POOL_UUID,
+                (VxlanSystemTags.CLUSTER_UUID_TOKEN)   : CLUSTER_UUID,
+                (VxlanSystemTags.VTEP_CIDR_TOKEN)     : "{${VXLAN_IPV6_CIDR}}"
+        ])
+
+        assert VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.isMatch(ipv4Tag)
+        assert VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.isMatch(ipv6Tag)
+
+        def tokens = VxlanSystemTags.VXLAN_POOL_CLUSTER_VTEP_CIDR.getTokensByTag(ipv6Tag)
+        assert tokens[VxlanSystemTags.VXLAN_POOL_UUID_TOKEN] == VXLAN_POOL_UUID
+        assert tokens[VxlanSystemTags.CLUSTER_UUID_TOKEN] == CLUSTER_UUID
+        assert tokens[VxlanSystemTags.VTEP_CIDR_TOKEN] == "{${VXLAN_IPV6_CIDR}}"
+    }
+
+    void testPatternedSystemTagParsesIpv6Token() {
+        String extraIpsFormat = "extraips::{extraips}"
+        String extraIpsTag = "extraips::10.0.0.10,${IPV6_2}"
+        assert TagUtils.isMatch(extraIpsFormat, extraIpsTag)
+        assert TagUtils.parseIfMatch(extraIpsFormat, extraIpsTag)["extraips"] == "10.0.0.10,${IPV6_2}"
+
+        String migrateCidrFormat = "cluster::migrate::network::cidr::{migrateCidr}"
+        String migrateCidrTag = "cluster::migrate::network::cidr::${VXLAN_IPV6_CIDR}"
+        assert TagUtils.isMatch(migrateCidrFormat, migrateCidrTag)
+        assert TagUtils.parseIfMatch(migrateCidrFormat, migrateCidrTag)["migrateCidr"] == VXLAN_IPV6_CIDR
     }
 
     void testKvmExtraIpCidrSelection() {

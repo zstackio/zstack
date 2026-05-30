@@ -467,7 +467,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
         putManagementNodeBootstrapParams(ret,
-                Platform.getManagementServerIps(),
+                Platform.getManagementServerIpsWithLocalFallback(),
                 getVrManagementCidrs(mgmtNic),
                 Platform.getManagementServerIp(),
                 Platform.getManagementServerVip(),

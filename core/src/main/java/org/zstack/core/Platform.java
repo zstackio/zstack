@@ -83,7 +83,6 @@ public class Platform {
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static final String MANAGEMENT_SERVER_IP_PROPERTY = "management.server.ip";
-    private static final String MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY = "management.server.prefer.ipv6";
     private static final String ZSTACK_MANAGEMENT_SERVER_IP_ENV = "ZSTACK_MANAGEMENT_SERVER_IP";
     private static final String IPV4_ADDRESS_COMMAND = "ip -4 add";
     private static final String IPV6_ADDRESS_COMMAND = "ip -6 addr";
@@ -994,7 +993,7 @@ public class Platform {
             for (NetworkInterface iface : Collections.list(nets)) {
                 String name = iface.getName();
                 if (defaultLine.contains(name)) {
-                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()), isManagementServerPreferIpv6());
+                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()));
                 }
             }
         } catch (SocketException e) {
@@ -1070,7 +1069,74 @@ public class Platform {
         return new ArrayList<>(ips);
     }
 
-    public static String selectManagementServerIp(Collection<InetAddress> addresses, boolean preferIpv6) {
+    public static List<String> getManagementServerIpsWithLocalFallback() {
+        LinkedHashSet<String> ips = new LinkedHashSet<>(getManagementServerIps());
+        ips.addAll(getLocalNonLoopbackIps());
+        ips.remove(null);
+        return new ArrayList<>(ips);
+    }
+
+    private static List<String> getLocalNonLoopbackIps() {
+        List<String> ips = new ArrayList<>();
+        try {
+            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
+            for (NetworkInterface iface : Collections.list(nets)) {
+                if (!iface.isUp()) {
+                    continue;
+                }
+                for (InetAddress address : Collections.list(iface.getInetAddresses())) {
+                    if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
+                        continue;
+                    }
+                    ips.add(normalizeManagementIp(address.getHostAddress()));
+                }
+            }
+        } catch (SocketException e) {
+            logger.warn("failed to list local non-loopback IPs", e);
+        }
+        return ips;
+    }
+
+    public static String getRouteSourceIp(String remoteIp) {
+        if (StringUtils.isBlank(remoteIp)) {
+            return null;
+        }
+
+        remoteIp = normalizeManagementIp(remoteIp);
+        String family;
+        if (IPv6NetworkUtils.isIpv6Address(remoteIp)) {
+            family = "-6";
+        } else if (NetworkUtils.isIpv4Address(remoteIp)) {
+            family = "-4";
+        } else {
+            return null;
+        }
+
+        Linux.ShellResult ret = Linux.shell(String.format("/sbin/ip %s route get %s", family, remoteIp));
+        if (ret.getExitCode() != 0) {
+            logger.warn(String.format("failed to get route source IP for remote[%s], stdout[%s], stderr[%s]",
+                    remoteIp, ret.getStdout(), ret.getStderr()));
+            return null;
+        }
+
+        String[] tokens = ret.getStdout().trim().split("\\s+");
+        for (int i = 0; i < tokens.length - 1; i++) {
+            if (!"src".equals(tokens[i])) {
+                continue;
+            }
+            String sourceIp = normalizeManagementIp(tokens[i + 1]);
+            if (IPv6NetworkUtils.isIpv6Address(remoteIp) && IPv6NetworkUtils.isIpv6Address(sourceIp)) {
+                return sourceIp;
+            }
+            if (NetworkUtils.isIpv4Address(remoteIp) && NetworkUtils.isIpv4Address(sourceIp)) {
+                return sourceIp;
+            }
+        }
+
+        return null;
+    }
+
+    public static String selectManagementServerIp(Collection<InetAddress> addresses) {
         String ipv4 = null;
         String ipv6 = null;
 
@@ -1087,20 +1153,7 @@ public class Platform {
             }
         }
 
-        if (preferIpv6 && ipv6 != null) {
-            return ipv6;
-        }
-
         return ipv4 != null ? ipv4 : ipv6;
-    }
-
-    public static boolean isManagementServerPreferIpv6() {
-        String propertyValue = System.getProperty(MANAGEMENT_SERVER_PREFER_IPV6_PROPERTY);
-        if (propertyValue != null) {
-            return Boolean.parseBoolean(propertyValue);
-        }
-
-        return CoreGlobalProperty.MANAGEMENT_SERVER_PREFER_IPV6;
     }
 
     public static String formatJGroupsInitialHosts(String nodeIp, String peerIp, int port) {
