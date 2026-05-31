@@ -5753,7 +5753,9 @@ public class KVMHost extends HostBase implements Host {
                             // expectation matches what the host itself reports.
                             String certIpList = KVMHostUtils.collectHostIps(
                                     sshShell, self.getUuid(), managementIp);
-                            List<String> allIps = new ArrayList<>(Arrays.asList(certIpList.split(",")));
+                            String expectedCertIpList = KVMHostUtils.unionTlsCertIps(
+                                    self.getUuid(), managementIp, certIpList);
+                            List<String> allIps = new ArrayList<>(Arrays.asList(expectedCertIpList.split(",")));
                             // Save detected IPs so apply-ansible-playbook can union with
                             // EXTRA_IPS without running a second SSH.
                             data.put("TLS_DETECTED_IPS", certIpList);
