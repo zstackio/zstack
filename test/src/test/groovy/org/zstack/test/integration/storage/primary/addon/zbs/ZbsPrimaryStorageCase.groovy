@@ -1,10 +1,17 @@
 package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.message.MessageReply
+import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg
+import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply
+import org.zstack.header.storage.primary.PrimaryStorageConstant
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageMsg
+import org.zstack.header.volume.BatchSyncVolumeSizeOnPrimaryStorageReply
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
@@ -191,6 +198,8 @@ class ZbsPrimaryStorageCase extends SubCase {
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
             testMdsReconnectAfterMaximumPingFailures()
+            testGetBackingChainNormalizesCbdParentUri()
+            testBatchStatsNormalizesCbdInstallPath()
         }
     }
 
@@ -1093,6 +1102,72 @@ class ZbsPrimaryStorageCase extends SubCase {
 
         PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(originalPingInterval)
         env.cleanAfterSimulatorHandlers()
+    }
+
+    void testGetBackingChainNormalizesCbdParentUri() {
+        String childSnapPath = "zbs://lpool1/volume_child@snapshot_s1"
+        String parentZbsPath = "zbs://lpool1/volume_parent"
+        String parentCbdPath = "cbd:pool1/lpool1/volume_parent"
+
+        env.simulator(ZbsStorageController.QUERY_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.QueryVolumeCmd.class)
+            def rsp = new ZbsStorageController.QueryVolumeRsp()
+            rsp.size = SizeUnit.GIGABYTE.toByte(8)
+            rsp.actualSize = SizeUnit.MEGABYTE.toByte(1)
+            if (cmd.path.contains("volume_child")) {
+                rsp.parentUri = parentCbdPath
+            } else {
+                rsp.parentUri = null
+            }
+            return rsp
+        }
+
+        CloudBus bus = bean(CloudBus.class)
+        GetVolumeBackingChainFromPrimaryStorageMsg msg = new GetVolumeBackingChainFromPrimaryStorageMsg()
+        msg.setPrimaryStorageUuid(ps.uuid)
+        msg.setVolumeUuid(childSnapPath)
+        msg.setRootInstallPaths([childSnapPath])
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps.uuid)
+        MessageReply reply = bus.call(msg)
+
+        assert reply.isSuccess() : "backing chain walk must not fail on cbd-form parentUri: ${reply.error}"
+        GetVolumeBackingChainFromPrimaryStorageReply r = reply as GetVolumeBackingChainFromPrimaryStorageReply
+        List<String> chain = r.getBackingChainInstallPath(childSnapPath)
+        assert chain != null && chain.contains(parentZbsPath) :
+                "parent must be resolved as a zbs:// path, got ${chain}"
+
+        env.cleanSimulatorHandlers()
+    }
+
+    void testBatchStatsNormalizesCbdInstallPath() {
+        String volUuid = "vol85707batch"
+        String zbsPath = "zbs://lpool1/volume_batch"
+        long usedSize = SizeUnit.MEGABYTE.toByte(7)
+
+        env.simulator(ZbsStorageController.BATCH_QUERY_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.BatchQueryVolumeCmd.class)
+            def rsp = new ZbsStorageController.BatchQueryVolumeRsp()
+            Map<String, Map<String, Long>> volumes = new HashMap<>()
+            cmd.installPaths.each { cbd ->
+                volumes.put(cbd, ["length": SizeUnit.GIGABYTE.toByte(8), "usedSize": usedSize])
+            }
+            rsp.setVolumes(volumes)
+            return rsp
+        }
+
+        CloudBus bus = bean(CloudBus.class)
+        BatchSyncVolumeSizeOnPrimaryStorageMsg msg = new BatchSyncVolumeSizeOnPrimaryStorageMsg()
+        msg.setPrimaryStorageUuid(ps.uuid)
+        msg.setVolumeUuidInstallPaths([(volUuid): zbsPath])
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, ps.uuid)
+        MessageReply reply = bus.call(msg)
+
+        assert reply.isSuccess() : "batch size sync must not fail on cbd-form install path: ${reply.error}"
+        BatchSyncVolumeSizeOnPrimaryStorageReply r = reply as BatchSyncVolumeSizeOnPrimaryStorageReply
+        assert r.actualSizes.get(volUuid) == usedSize :
+                "actualSize must map back to uuid via zbs:// install path, got ${r.actualSizes}"
+
+        env.cleanSimulatorHandlers()
     }
 
     void deleteVolume(String volUuid) {
