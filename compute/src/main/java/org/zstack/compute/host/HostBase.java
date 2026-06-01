@@ -64,7 +64,6 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public abstract class HostBase extends AbstractHost {
     protected static final CLogger logger = Utils.getLogger(HostBase.class);
-    private static final String AFTER_CONNECT_HOOK_RECONNECT = "afterConnectHookReconnect";
     protected HostVO self;
 
     @Autowired
@@ -1087,7 +1086,7 @@ public abstract class HostBase extends AbstractHost {
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
                 connectMsg.setCalledByAPI(msg.isCalledByAPI());
-                connectMsg.putHeaderEntry(AFTER_CONNECT_HOOK_RECONNECT, Boolean.TRUE.toString());
+                connectMsg.setReconnect(true);
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
                 bus.send(connectMsg, new CloudBusCallBack(msg, chain, completion) {
                     @Override
@@ -1350,111 +1349,6 @@ public abstract class HostBase extends AbstractHost {
                             }
                         });
 
-                        flow(new Flow() {
-                            String __name__ = "call-after-connect-hook-extensions";
-                            private final List<Flow> afterConnectHookFlows = new ArrayList<>();
-                            private boolean done;
-
-                            @Override
-                            public void run(FlowTrigger trigger, Map data) {
-                                FlowChain afterConnectHookChain = FlowChainBuilder.newSimpleFlowChain();
-                                afterConnectHookChain.allowEmptyFlow();
-
-                                self = dbf.reload(self);
-                                HostInventory inv = getSelfInventory();
-                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
-                                boolean reconnect = Boolean.parseBoolean(msg.getHeaderEntry(AFTER_CONNECT_HOOK_RECONNECT));
-
-                                for (HostAfterConnectHookExtensionPoint p : pluginRgty.getExtensionList(HostAfterConnectHookExtensionPoint.class)) {
-                                    Flow flow = p.createAfterConnectHookFlow(inv, info, reconnect);
-                                    if (flow != null) {
-                                        Flow wrapper = new Flow() {
-                                            private boolean ran;
-                                            private Map runData;
-
-                                            @Override
-                                            public void run(FlowTrigger trigger, Map data) {
-                                                ran = true;
-                                                runData = data;
-                                                flow.run(trigger, data);
-                                            }
-
-                                            @Override
-                                            public void rollback(FlowRollback trigger, Map data) {
-                                                if (!ran) {
-                                                    trigger.rollback();
-                                                    return;
-                                                }
-
-                                                flow.rollback(trigger, runData);
-                                            }
-
-                                            @Override
-                                            public boolean skip(Map data) {
-                                                return flow.skip(data);
-                                            }
-                                        };
-                                        afterConnectHookFlows.add(wrapper);
-                                        afterConnectHookChain.then(wrapper);
-                                    }
-                                }
-
-                                afterConnectHookChain.done(new FlowDoneHandler(trigger) {
-                                    @Override
-                                    public void handle(Map data) {
-                                        done = true;
-                                        trigger.next();
-                                    }
-                                }).error(new FlowErrorHandler(trigger) {
-                                    @Override
-                                    public void handle(ErrorCode errCode, Map data) {
-                                        trigger.fail(errCode);
-                                    }
-                                }).start();
-                            }
-
-                            @Override
-                            public void rollback(FlowRollback trigger, Map data) {
-                                if (!done) {
-                                    trigger.rollback();
-                                    return;
-                                }
-
-                                ListIterator<Flow> iterator = afterConnectHookFlows.listIterator(afterConnectHookFlows.size());
-                                rollbackAfterConnectHookFlows(iterator, trigger, data);
-                            }
-
-                            private void rollbackAfterConnectHookFlows(ListIterator<Flow> iterator, FlowRollback trigger, Map data) {
-                                if (!iterator.hasPrevious()) {
-                                    trigger.rollback();
-                                    return;
-                                }
-
-                                try {
-                                    iterator.previous().rollback(new FlowRollback() {
-                                        @Override
-                                        public void rollback() {
-                                            rollbackAfterConnectHookFlows(iterator, trigger, data);
-                                        }
-
-                                        @Override
-                                        public void skipRestRollbacks() {
-                                            trigger.skipRestRollbacks();
-                                        }
-
-                                        @Override
-                                        public ErrorCode getErrorCode() {
-                                            return trigger.getErrorCode();
-                                        }
-
-                                    }, data);
-                                } catch (Throwable t) {
-                                    logger.warn("unhandled exception when rolling back after-connect-hook flow", t);
-                                    rollbackAfterConnectHookFlows(iterator, trigger, data);
-                                }
-                            }
-                        });
-
                         flow(new NoRollbackFlow() {
                             String __name__ = "call-pre-connect-extensions";
 
@@ -1465,9 +1359,11 @@ public abstract class HostBase extends AbstractHost {
 
                                 self = dbf.reload(self);
                                 HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
+                                boolean reconnect = msg.isReconnect();
 
                                 for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
-                                    Flow flow = p.createPreHostConnectFlow(inv);
+                                    Flow flow = p.createPreHostConnectFlow(inv, info, reconnect);
                                     if (flow != null) {
                                         preConnectChain.then(flow);
                                     }
@@ -1538,8 +1434,11 @@ public abstract class HostBase extends AbstractHost {
                                 changeConnectionState(HostStatusEvent.connected);
                                 tracker.trackHost(self.getUuid());
 
+                                HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
+                                boolean reconnect = msg.isReconnect();
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(getSelfInventory()));
+                                        ext -> ext.afterHostConnected(inv, info, reconnect));
                                 completion.success();
                             }
                         });

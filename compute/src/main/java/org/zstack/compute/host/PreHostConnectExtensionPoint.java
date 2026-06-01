@@ -1,6 +1,7 @@
 package org.zstack.compute.host;
 
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.host.ConnectHostInfo;
 import org.zstack.header.host.HostInventory;
 
 /**
@@ -8,4 +9,8 @@ import org.zstack.header.host.HostInventory;
  */
 public interface PreHostConnectExtensionPoint {
     Flow createPreHostConnectFlow(HostInventory host);
+
+    default Flow createPreHostConnectFlow(HostInventory host, ConnectHostInfo info, boolean reconnect) {
+        return createPreHostConnectFlow(host);
+    }
 }

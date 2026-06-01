@@ -7,6 +7,7 @@ public class ConnectHostMsg extends NeedReplyMessage implements HostMessage {
     private boolean isStartPingTaskOnFailure;
     private boolean newAdd;
     private boolean calledByAPI;
+    private boolean reconnect;
 
     public ConnectHostMsg() {
     }
@@ -46,6 +47,14 @@ public class ConnectHostMsg extends NeedReplyMessage implements HostMessage {
 
     public void setCalledByAPI(boolean calledByAPI) {
         this.calledByAPI = calledByAPI;
+    }
+
+    public boolean isReconnect() {
+        return reconnect;
+    }
+
+    public void setReconnect(boolean reconnect) {
+        this.reconnect = reconnect;
     }
 
     @Override

@@ -14,7 +14,6 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.defer.Deferred;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.*;
-import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.allocator.HostAllocatorConstant;
@@ -93,8 +92,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
     private ResourceConfigFacade rcf;
     @Autowired
     private ClusterResourceConfigInitializer crci;
-    @Autowired
-    private ApiTimeoutManager timeoutMgr;
 
     private Map<Class, HostBaseExtensionFactory> hostBaseExtensionFactories = new HashMap<>();
     private List<HostExtensionManager> hostExtensionManagers = new ArrayList<>();
@@ -821,7 +818,6 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         new While<>(hostUuids).step((hostUuid, completion) -> {
             CheckHostCapacityMsg msg = new CheckHostCapacityMsg();
             msg.setHostUuid(hostUuid);
-            timeoutMgr.setMessageTimeout(msg);
             bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
@@ -1039,6 +1035,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         for (String uuid : hostsToLoadSorted) {
             ConnectHostMsg connectMsg = new ConnectHostMsg(uuid);
             connectMsg.setNewAdd(false);
+            connectMsg.setReconnect(true);
             connectMsg.setServiceId(serviceId);
             connectMsg.setStartPingTaskOnFailure(true);
             msgs.add(connectMsg);
