@@ -96,6 +96,10 @@ public class KVMGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig VM_CPU_HARDWARE_VIRTUALIZATION = new GlobalConfig(CATEGORY, "vm.cpu.hardwareVirtualization");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig({VmInstanceVO.class})
     public static GlobalConfig VM_HYPERV_CLOCK_FEATURE = new GlobalConfig(CATEGORY, "vm.hyperv.clock.feature");
 
     @GlobalConfigValidation(validValues = {"true", "false"})

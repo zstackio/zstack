@@ -228,6 +228,14 @@
 
     <config>
         <category>kvm</category>
+        <name>vm.cpu.hardwareVirtualization</name>
+        <description>enable or disable hardware virtualization feature in Windows guest cpuid</description>
+        <defaultValue>false</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>vm.hyperv.clock.feature</name>
         <description>Enable or disable hypervclock</description>
         <defaultValue>true</defaultValue>
