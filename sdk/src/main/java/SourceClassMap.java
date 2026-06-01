@@ -514,6 +514,8 @@ public class SourceClassMap {
 			put("org.zstack.license.AdditionalLicenseInfo", "org.zstack.sdk.AdditionalLicenseInfo");
 			put("org.zstack.license.AdditionalLicenseType", "org.zstack.sdk.AdditionalLicenseType");
 			put("org.zstack.license.LicenseAddOnInventory", "org.zstack.sdk.LicenseAddOnInventory");
+			put("org.zstack.license.LicenseAuthorizationInfo", "org.zstack.sdk.LicenseAuthorizationInfo");
+			put("org.zstack.license.LicenseAuthorizationQuotaInventory", "org.zstack.sdk.LicenseAuthorizationQuotaInventory");
 			put("org.zstack.license.LicenseInventory", "org.zstack.sdk.LicenseInventory");
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
@@ -1233,6 +1235,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LdapResourceRefInventory", "org.zstack.login.entity.LdapResourceRefInventory");
 			put("org.zstack.sdk.LdapServerInventory", "org.zstack.ldap.LdapServerInventory");
 			put("org.zstack.sdk.LicenseAddOnInventory", "org.zstack.license.LicenseAddOnInventory");
+			put("org.zstack.sdk.LicenseAuthorizationInfo", "org.zstack.license.LicenseAuthorizationInfo");
+			put("org.zstack.sdk.LicenseAuthorizationQuotaInventory", "org.zstack.license.LicenseAuthorizationQuotaInventory");
 			put("org.zstack.sdk.LicenseInventory", "org.zstack.license.LicenseInventory");
 			put("org.zstack.sdk.LoadBalancerDataInventory", "org.zstack.observabilityServer.service.loadBalancer.LoadBalancerDataInventory");
 			put("org.zstack.sdk.LoadBalancerInventory", "org.zstack.network.service.lb.LoadBalancerInventory");
