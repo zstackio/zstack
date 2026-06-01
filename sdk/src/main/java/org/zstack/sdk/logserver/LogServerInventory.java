@@ -1,8 +1,8 @@
 package org.zstack.sdk.logserver;
 
-import org.zstack.sdk.LogCategory;
-import org.zstack.sdk.LogType;
-import org.zstack.sdk.LogLevel;
+import org.zstack.sdk.logserver.LogCategory;
+import org.zstack.sdk.logserver.LogType;
+import org.zstack.sdk.logserver.LogLevel;
 import org.zstack.sdk.logserver.LogServerState;
 
 public class LogServerInventory  {
