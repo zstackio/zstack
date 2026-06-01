@@ -12,6 +12,8 @@ public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstance
     private String vmInstanceUuid;
     private String judgerClassName;
     private List<String> softAvoidHostUuids;
+    private String accessiblePeerHostUuid;
+    private String haReason;
 
     public String getJudgerClassName() {
         return judgerClassName;
@@ -29,6 +31,14 @@ public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstance
         this.softAvoidHostUuids = softAvoidHostUuids;
     }
 
+    public String getAccessiblePeerHostUuid() {
+        return accessiblePeerHostUuid;
+    }
+
+    public void setAccessiblePeerHostUuid(String accessiblePeerHostUuid) {
+        this.accessiblePeerHostUuid = accessiblePeerHostUuid;
+    }
+
     @Override
     public String getVmInstanceUuid() {
         return vmInstanceUuid;
@@ -36,5 +46,13 @@ public class HaStartVmInstanceMsg extends NeedReplyMessage implements VmInstance
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
+    }
+
+    public String getHaReason() {
+        return haReason;
+    }
+
+    public void setHaReason(String haReason) {
+        this.haReason = haReason;
     }
 }
