@@ -84,3 +84,36 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizeHistoryVO` (
     PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Feature: VM boot time | ZSV-12297
+
+CALL INSERT_COLUMN('VmInstanceEO', 'bootTime', 'timestamp NULL', 1, NULL, 'state');
+
+CREATE OR REPLACE VIEW `zstack`.`VmInstanceVO` AS
+SELECT uuid,
+       name,
+       description,
+       zoneUuid,
+       clusterUuid,
+       imageUuid,
+       hostUuid,
+       internalId,
+       lastHostUuid,
+       instanceOfferingUuid,
+       rootVolumeUuid,
+       defaultL3NetworkUuid,
+       type,
+       hypervisorType,
+       cpuNum,
+       cpuSpeed,
+       memorySize,
+       reservedMemorySize,
+       platform,
+       guestOsType,
+       allocatorStrategy,
+       createDate,
+       lastOpDate,
+       state,
+       architecture,
+       bootTime
+FROM `zstack`.`VmInstanceEO`
+WHERE deleted IS NULL;
