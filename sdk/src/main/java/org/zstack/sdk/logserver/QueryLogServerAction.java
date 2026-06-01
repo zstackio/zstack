@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class DeleteLogServerAction extends AbstractAction {
+public class QueryLogServerAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class DeleteLogServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.DeleteLogServerResult value;
+        public org.zstack.sdk.logserver.QueryLogServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,6 @@ public class DeleteLogServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
-
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -60,8 +34,8 @@ public class DeleteLogServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.DeleteLogServerResult value = res.getResult(org.zstack.sdk.DeleteLogServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteLogServerResult() : value; 
+        org.zstack.sdk.logserver.QueryLogServerResult value = res.getResult(org.zstack.sdk.logserver.QueryLogServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.logserver.QueryLogServerResult() : value; 
 
         return ret;
     }
@@ -90,10 +64,10 @@ public class DeleteLogServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "DELETE";
+        info.httpMethod = "GET";
         info.path = "/log/servers";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "";
         return info;
     }

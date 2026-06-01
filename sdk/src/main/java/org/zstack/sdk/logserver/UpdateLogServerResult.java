@@ -1,8 +1,8 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
-import org.zstack.sdk.LogServerInventory;
+import org.zstack.sdk.logserver.LogServerInventory;
 
-public class AddLogServerResult {
+public class UpdateLogServerResult {
     public LogServerInventory inventory;
     public void setInventory(LogServerInventory inventory) {
         this.inventory = inventory;

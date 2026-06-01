@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateLogServerAction extends AbstractAction {
+public class AddLogServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateLogServerAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateLogServerResult value;
+        public org.zstack.sdk.logserver.AddLogServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,29 @@ public class UpdateLogServerAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String uuid;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
+
+    @Param(required = true, validValues = {"ManagementNodeLog","PlatformOperationLog"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category;
+
+    @Param(required = true, validValues = {"Log4j2","FluentBit"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
+
+    @Param(required = false, validValues = {"OFF","FATAL","ERROR","WARN","INFO","DEBUG","TRACE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String level;
+
+    @Param(required = true, maxLength = 8192, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String configuration;
+
+    @Param(required = false)
+    public java.lang.String resourceUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -66,8 +81,8 @@ public class UpdateLogServerAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateLogServerResult value = res.getResult(org.zstack.sdk.UpdateLogServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateLogServerResult() : value; 
+        org.zstack.sdk.logserver.AddLogServerResult value = res.getResult(org.zstack.sdk.logserver.AddLogServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.logserver.AddLogServerResult() : value; 
 
         return ret;
     }
@@ -96,11 +111,11 @@ public class UpdateLogServerAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
+        info.httpMethod = "POST";
         info.path = "/log/servers";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateLogServer";
+        info.parameterName = "params";
         return info;
     }
 

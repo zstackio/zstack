@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QueryLogServerAction extends QueryAction {
+public class DeleteLogServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QueryLogServerAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.QueryLogServerResult value;
+        public org.zstack.sdk.logserver.DeleteLogServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,32 @@ public class QueryLogServerAction extends QueryAction {
         }
     }
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +60,8 @@ public class QueryLogServerAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.QueryLogServerResult value = res.getResult(org.zstack.sdk.QueryLogServerResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryLogServerResult() : value; 
+        org.zstack.sdk.logserver.DeleteLogServerResult value = res.getResult(org.zstack.sdk.logserver.DeleteLogServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.logserver.DeleteLogServerResult() : value; 
 
         return ret;
     }
@@ -64,10 +90,10 @@ public class QueryLogServerAction extends QueryAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
+        info.httpMethod = "DELETE";
         info.path = "/log/servers";
         info.needSession = true;
-        info.needPoll = false;
+        info.needPoll = true;
         info.parameterName = "";
         return info;
     }
