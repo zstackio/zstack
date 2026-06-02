@@ -40,6 +40,10 @@ public class Session implements Component {
     private DatabaseFacade dbf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private PluginRegistry pluginRgty;
+
+    private static List<LogoutExtensionPoint> logoutExtensionPoints;
 
     private Future<Void> expiredSessionCollector;
     private static Interner<String> sessionLock = Interners.newWeakInterner();
@@ -221,6 +225,11 @@ public class Session implements Component {
                     }
 
                     logout(s.getUuid());
+
+                    for (LogoutExtensionPoint ext : logoutExtensionPoints) {
+                        ext.beforeLogout(s);
+                    }
+
                     return err(IdentityErrors.INVALID_SESSION, "Session expired");
                 }
 
@@ -266,6 +275,7 @@ public class Session implements Component {
         setupGlobalConfig();
         startCleanUpStaleSessionTask();
         setupCanonicalEvents();
+        logoutExtensionPoints = pluginRgty.getExtensionList(LogoutExtensionPoint.class);
         return true;
     }
 
