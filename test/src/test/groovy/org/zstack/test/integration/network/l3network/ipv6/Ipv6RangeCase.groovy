@@ -3,6 +3,8 @@ package org.zstack.test.integration.network.l3network.ipv6
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.sdk.AddIpRangeByNetworkCidrAction
+import org.zstack.sdk.AddIpv6RangeByNetworkCidrAction
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.IpRangeInventory
@@ -15,6 +17,7 @@ import org.zstack.test.integration.network.NetworkTest
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.clouderrorcode.CloudOperationsErrorCode
 import org.zstack.utils.network.IPv6Constants
 
 import static java.util.Arrays.asList
@@ -52,6 +55,7 @@ class Ipv6RangeCase extends SubCase {
             testAttachIpv6RangeAddressMode()
             testIpv6RangeWith2Ips()
             testIpv6RangeLastAddress()
+            testManagementNetworkRejectMixedIpRanges()
         }
     }
 
@@ -500,5 +504,55 @@ class Ipv6RangeCase extends SubCase {
             addressMode = IPv6Constants.Stateful_DHCP
         }
     }
-}
 
+    void testManagementNetworkRejectMixedIpRanges() {
+        L2NetworkInventory l2 = env.inventoryByName("l2")
+
+        L3NetworkInventory ipv4ManagementL3 = createL3Network {
+            category = "System"
+            system = true
+            l2NetworkUuid = l2.uuid
+            name = "system-ipv4"
+        }
+
+        addIpRangeByNetworkCidr {
+            name = "system-ipv4-range"
+            l3NetworkUuid = ipv4ManagementL3.uuid
+            networkCidr = "10.10.10.0/24"
+        }
+
+        AddIpv6RangeByNetworkCidrAction addIpv6RangeAction = new AddIpv6RangeByNetworkCidrAction()
+        addIpv6RangeAction.name = "system-ipv6-range"
+        addIpv6RangeAction.l3NetworkUuid = ipv4ManagementL3.uuid
+        addIpv6RangeAction.networkCidr = "2005:2001::/64"
+        addIpv6RangeAction.addressMode = IPv6Constants.Stateful_DHCP
+        addIpv6RangeAction.sessionId = adminSession()
+        AddIpv6RangeByNetworkCidrAction.Result addIpv6RangeResult = addIpv6RangeAction.call()
+        assert addIpv6RangeResult.error != null
+        assert addIpv6RangeResult.error.globalErrorCode == CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10082
+
+        L3NetworkInventory ipv6ManagementL3 = createL3Network {
+            category = "System"
+            system = true
+            l2NetworkUuid = l2.uuid
+            name = "system-ipv6"
+            ipVersion = 6
+        }
+
+        addIpv6RangeByNetworkCidr {
+            name = "system-ipv6-range"
+            l3NetworkUuid = ipv6ManagementL3.uuid
+            networkCidr = "2006:2001::/64"
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        AddIpRangeByNetworkCidrAction addIpRangeAction = new AddIpRangeByNetworkCidrAction()
+        addIpRangeAction.name = "system-ipv4-range"
+        addIpRangeAction.l3NetworkUuid = ipv6ManagementL3.uuid
+        addIpRangeAction.networkCidr = "10.10.11.0/24"
+        addIpRangeAction.sessionId = adminSession()
+        AddIpRangeByNetworkCidrAction.Result addIpRangeResult = addIpRangeAction.call()
+        assert addIpRangeResult.error != null
+        assert addIpRangeResult.error.globalErrorCode == CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10082
+    }
+}
