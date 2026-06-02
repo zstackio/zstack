@@ -1022,7 +1022,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 stats.setSize(returnValue.getSize());
                 stats.setActualSize(returnValue.getActualSize());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-                stats.setParentUri(returnValue.getParentUri());
+                stats.setParentUri(ZbsHelper.normalizeToZbsPath(returnValue.getParentUri()));
                 comp.success(stats);
             }
 
@@ -1046,7 +1046,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 stats.setSize(returnValue.getSize());
                 stats.setActualSize(returnValue.getActualSize());
                 stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-                stats.setParentUri(returnValue.getParentUri());
+                stats.setParentUri(ZbsHelper.normalizeToZbsPath(returnValue.getParentUri()));
                 comp.success(stats);
             }
 
@@ -1069,7 +1069,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             public void success(BatchQueryVolumeRsp returnValue) {
                 List<VolumeStats> stats = returnValue.getVolumes().entrySet().stream().map(v -> {
                     VolumeStats s = new VolumeStats();
-                    s.setInstallPath(v.getKey());
+                    s.setInstallPath(ZbsHelper.normalizeToZbsPath(v.getKey()));
                     s.setSize(v.getValue().get("length"));
                     s.setActualSize(v.getValue().get("usedSize"));
                     s.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);

@@ -19,6 +19,10 @@ public class ZbsHelper {
         return cbdPath.replaceFirst(".+?/", "zbs://");
     }
 
+    public static String normalizeToZbsPath(String path) {
+        return path != null && path.startsWith("cbd:") ? convertCbdPathToZbsPath(path) : path;
+    }
+
     public static String convertZbsPathToCbdPath(String zbsPath, Function<String, String> physicalPoolGetter) {
         String logicalPool = getPoolFromVolumePath(zbsPath);
         String physicalPool = physicalPoolGetter.apply(logicalPool);
