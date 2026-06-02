@@ -69,6 +69,33 @@ class TProxy {
         }
     }
 
+    TProxy(Object adaptee, Class[] argumentTypes, Object[] arguments) {
+        assert adaptee != null : "call TProxy(Class adapteeClass) instead"
+
+        Enhancer enhancer = new Enhancer()
+        enhancer.setSuperclass(adaptee.getClass())
+        enhancer.setCallback(new ProxyHandler())
+        try {
+            proxyedObject = enhancer.create(argumentTypes, arguments)
+            if (adaptee != null) {
+                FieldUtils.getAllFields(adaptee.getClass()).each { f ->
+                    if (Modifier.isStatic(f.modifiers) || Modifier.isFinal(f.modifiers)) {
+                        return
+                    }
+
+                    f.setAccessible(true)
+                    f.set(proxyedObject, f.get(adaptee))
+                }
+            }
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("Superclass has no null constructors" )) {
+                throw new Exception("the class ${adaptee.getClass()} has no non-argument constructor", e)
+            }
+
+            throw e
+        }
+    }
+
     /**
      *
      * @param name: 要替换函数的名称
