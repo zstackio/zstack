@@ -587,7 +587,13 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
             return;
         }
 
-        EipInventory eip = EipInventory.valueOf(vo);
+        final String attachedVmNicUuid = nicInventory.getUuid();
+        final String attachedGuestIp = guestIp.getIp();
+        vo.setVmNicUuid(attachedVmNicUuid);
+        vo.setGuestIp(attachedGuestIp);
+        final EipVO updated = dbf.updateAndRefresh(vo);
+
+        EipInventory eip = EipInventory.valueOf(updated);
         String l3NetworkUuid = getEipL3Network(nicInventory, eip);
         NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(
                 l3NetworkUuid, EipConstant.EIP_TYPE);
@@ -596,15 +602,25 @@ public class EipManagerImpl extends AbstractService implements EipManager, VipRe
         attachEip(struct, providerType.toString(), new Completion(msg) {
             @Override
             public void success() {
-                vo.setVmNicUuid(nicInventory.getUuid());
-                vo.setGuestIp(guestIp.getIp());
-                EipVO evo = dbf.updateAndRefresh(vo);
-                evt.setInventory(EipInventory.valueOf(evo));
+                evt.setInventory(EipInventory.valueOf(dbf.reload(updated)));
                 bus.publish(evt);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                int affectedRows = SQL.New(EipVO.class)
+                        .eq(EipVO_.uuid, msg.getEipUuid())
+                        .eq(EipVO_.vmNicUuid, attachedVmNicUuid)
+                        .eq(EipVO_.guestIp, attachedGuestIp)
+                        .set(EipVO_.vmNicUuid, null)
+                        .set(EipVO_.guestIp, null)
+                        .update();
+                if (affectedRows == 0) {
+                    logger.warn(String.format(
+                            "failed to roll back EIP[uuid:%s] attach binding[vmNicUuid:%s, guestIp:%s], " +
+                                    "the binding may have been changed by another flow",
+                            msg.getEipUuid(), attachedVmNicUuid, attachedGuestIp));
+                }
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
