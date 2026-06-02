@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddLogConfigurationAction extends AbstractAction {
+public class AddLogServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddLogConfigurationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddLogConfigurationResult value;
+        public org.zstack.sdk.logserver.AddLogServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,19 +25,22 @@ public class AddLogConfigurationAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"ManagementNodeLog","PlatformOperationLog"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String category;
+
+    @Param(required = true, validValues = {"Log4j2","FluentBit"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, validValues = {"OFF","FATAL","ERROR","WARN","INFO","DEBUG","TRACE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String level;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 8192, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String configuration;
 
     @Param(required = false)
@@ -78,8 +81,8 @@ public class AddLogConfigurationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddLogConfigurationResult value = res.getResult(org.zstack.sdk.AddLogConfigurationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddLogConfigurationResult() : value; 
+        org.zstack.sdk.logserver.AddLogServerResult value = res.getResult(org.zstack.sdk.logserver.AddLogServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.logserver.AddLogServerResult() : value; 
 
         return ret;
     }
@@ -109,7 +112,7 @@ public class AddLogConfigurationAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/log/configurations";
+        info.path = "/log/servers";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

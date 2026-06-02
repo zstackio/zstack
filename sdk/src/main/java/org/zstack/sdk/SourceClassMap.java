@@ -375,6 +375,11 @@ public class SourceClassMap {
 			put("org.zstack.license.entity.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.sdk.license.entity.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.license.entity.server.LicenseAuthorizedNodeInventory", "org.zstack.sdk.license.entity.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.license.entity.server.TotalLicenseAuthorizedCapacityView", "org.zstack.sdk.license.entity.server.TotalLicenseAuthorizedCapacityView");
+			put("org.zstack.log.server.LogCategory", "org.zstack.sdk.logserver.LogCategory");
+			put("org.zstack.log.server.LogLevel", "org.zstack.sdk.logserver.LogLevel");
+			put("org.zstack.log.server.LogServerInventory", "org.zstack.sdk.logserver.LogServerInventory");
+			put("org.zstack.log.server.LogServerState", "org.zstack.sdk.logserver.LogServerState");
+			put("org.zstack.log.server.LogType", "org.zstack.sdk.logserver.LogType");
 			put("org.zstack.loginControl.entity.AccessControlRuleInventory", "org.zstack.sdk.AccessControlRuleInventory");
 			put("org.zstack.loginControl.entity.ControlStrategy", "org.zstack.sdk.ControlStrategy");
 			put("org.zstack.managements.entity.common.ManagementNodeStatusView", "org.zstack.sdk.managements.common.ManagementNodeStatusView");
@@ -1285,6 +1290,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.entity.server.LicenseAuthorizedCapacityUsageDetailView", "org.zstack.license.entity.server.LicenseAuthorizedCapacityUsageDetailView");
 			put("org.zstack.sdk.license.entity.server.LicenseAuthorizedNodeInventory", "org.zstack.license.entity.server.LicenseAuthorizedNodeInventory");
 			put("org.zstack.sdk.license.entity.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.entity.server.TotalLicenseAuthorizedCapacityView");
+			put("org.zstack.sdk.logserver.LogCategory", "org.zstack.log.server.LogCategory");
+			put("org.zstack.sdk.logserver.LogLevel", "org.zstack.log.server.LogLevel");
+			put("org.zstack.sdk.logserver.LogServerInventory", "org.zstack.log.server.LogServerInventory");
+			put("org.zstack.sdk.logserver.LogServerState", "org.zstack.log.server.LogServerState");
+			put("org.zstack.sdk.logserver.LogType", "org.zstack.log.server.LogType");
 			put("org.zstack.sdk.managements.common.ManagementNodeStatusView", "org.zstack.managements.entity.common.ManagementNodeStatusView");
 			put("org.zstack.sdk.managements.common.ManagementsStatusView", "org.zstack.managements.entity.common.ManagementsStatusView");
 			put("org.zstack.sdk.managements.ha2.ZSha2StatusView", "org.zstack.managements.entity.ha2.ZSha2StatusView");

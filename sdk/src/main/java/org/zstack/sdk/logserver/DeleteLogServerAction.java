@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.logserver;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddLogConfigurationAction extends AbstractAction {
+public class DeleteLogServerAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddLogConfigurationAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddLogConfigurationResult value;
+        public org.zstack.sdk.logserver.DeleteLogServerResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,25 +26,7 @@ public class AddLogConfigurationAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"OFF","FATAL","ERROR","WARN","INFO","DEBUG","TRACE","ALL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String level;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String configuration;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String uuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -78,8 +60,8 @@ public class AddLogConfigurationAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddLogConfigurationResult value = res.getResult(org.zstack.sdk.AddLogConfigurationResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddLogConfigurationResult() : value; 
+        org.zstack.sdk.logserver.DeleteLogServerResult value = res.getResult(org.zstack.sdk.logserver.DeleteLogServerResult.class);
+        ret.value = value == null ? new org.zstack.sdk.logserver.DeleteLogServerResult() : value; 
 
         return ret;
     }
@@ -108,11 +90,11 @@ public class AddLogConfigurationAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/log/configurations";
+        info.httpMethod = "DELETE";
+        info.path = "/log/servers";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
