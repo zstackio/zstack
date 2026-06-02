@@ -36,6 +36,14 @@ public class LicenseAuthorizationInfo  {
         return this.serverVersion;
     }
 
+    public java.lang.String localVersion;
+    public void setLocalVersion(java.lang.String localVersion) {
+        this.localVersion = localVersion;
+    }
+    public java.lang.String getLocalVersion() {
+        return this.localVersion;
+    }
+
     public java.lang.String siteUuid;
     public void setSiteUuid(java.lang.String siteUuid) {
         this.siteUuid = siteUuid;
