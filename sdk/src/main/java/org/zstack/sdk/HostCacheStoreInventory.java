@@ -61,20 +61,28 @@ public class HostCacheStoreInventory  {
         return this.availableCapacity;
     }
 
-    public long allocated;
-    public void setAllocated(long allocated) {
-        this.allocated = allocated;
+    public long totalPhysicalCapacity;
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
     }
-    public long getAllocated() {
-        return this.allocated;
+    public long getTotalPhysicalCapacity() {
+        return this.totalPhysicalCapacity;
     }
 
-    public long dirty;
-    public void setDirty(long dirty) {
-        this.dirty = dirty;
+    public long availablePhysicalCapacity;
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
     }
-    public long getDirty() {
-        return this.dirty;
+    public long getAvailablePhysicalCapacity() {
+        return this.availablePhysicalCapacity;
+    }
+
+    public long systemUsedCapacity;
+    public void setSystemUsedCapacity(long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
+    }
+    public long getSystemUsedCapacity() {
+        return this.systemUsedCapacity;
     }
 
     public HostCacheStoreState state;
