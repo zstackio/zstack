@@ -35558,6 +35558,92 @@
     "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
   },
   {
+    "raw": "domain[%s] is not a valid format",
+    "en_US": "domain[{0}] is not a valid format",
+    "zh_CN": "domain[{0}]格式无效",
+    "arguments": [
+      "domain"
+    ],
+    "line": 627,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "ip[%s] is not a valid IPv4 address",
+    "en_US": "ip[{0}] is not a valid IPv4 address",
+    "zh_CN": "ip[{0}]不是有效的IPv4地址",
+    "arguments": [
+      "msg.getIp()"
+    ],
+    "line": 576,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "ip[%s] is not in private network range of vpc router[uuid:%s]",
+    "en_US": "ip[{0}] is not in private network range of vpc router[uuid:{1}]",
+    "zh_CN": "ip[{0}]不在vpc router[uuid:{1}]的私有网络范围内",
+    "arguments": [
+      "ip",
+      "vpcRouterUuid"
+    ],
+    "line": 631,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "vpc router[uuid:%s] is not in state[%s]",
+    "en_US": "vpc router[uuid:{0}] is not in state[{1}]",
+    "zh_CN": "vpc router[uuid:{0}]不处于[{1}]状态",
+    "arguments": [
+      "vpcRouterUuid",
+      "VmInstanceState.Running"
+    ],
+    "line": 603,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "dns record[domain:%s] has been added to vpc router[uuid:%s]",
+    "en_US": "dns record[domain:{0}] has been added to vpc router[uuid:{1}]",
+    "zh_CN": "dns record[domain:{0}]已添加到vpc router[uuid:{1}]",
+    "arguments": [
+      "msg.getDomain()",
+      "msg.getUuid()"
+    ],
+    "line": 586,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "dns record count of vpc router[uuid:%s] exceeds the limit[%s]",
+    "en_US": "dns record count of vpc router[uuid:{0}] exceeds the limit[{1}]",
+    "zh_CN": "vpc router[uuid:{0}]的dns record数量超过上限[{1}]",
+    "arguments": [
+      "msg.getUuid()",
+      "MAX_DNS_RECORDS_PER_VPC_ROUTER"
+    ],
+    "line": 593,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "dns record[domain:%s] is not added to vpc router[uuid:%s]",
+    "en_US": "dns record[domain:{0}] is not added to vpc router[uuid:{1}]",
+    "zh_CN": "dns record[domain:{0}]未添加到vpc router[uuid:{1}]",
+    "arguments": [
+      "msg.getDomain()",
+      "msg.getUuid()"
+    ],
+    "line": 637,
+    "fileName": "src/main/java/org/zstack/vpc/VpcApiInterceptor.java"
+  },
+  {
+    "raw": "failed to sync dns record to vpc router[uuid:%s], because: %s",
+    "en_US": "failed to sync dns record to vpc router[uuid:{0}], because: {1}",
+    "zh_CN": "同步dns record到vpc router[uuid:{0}]失败，原因：{1}",
+    "arguments": [
+      "vrUuid",
+      "rsp.getError()"
+    ],
+    "line": 68,
+    "fileName": "src/main/java/org/zstack/vpc/VpcRouterDnsRecordBackend.java"
+  },
+  {
     "raw": "no ip ranges attached with l3 network[uuid:%s]",
     "en_US": "no ip ranges attached with l3 network[uuid:{0}]",
     "zh_CN": "在三层网络[uuid:{0}]上没有IP范围被绑定",

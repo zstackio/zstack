@@ -4,6 +4,9 @@ import org.junit.Test;
 import org.omg.PortableInterceptor.SYSTEM_EXCEPTION;
 import org.zstack.utils.network.NetworkUtils;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 public class TestNetworkUtils {
     @Test
     public void test() {
@@ -35,5 +38,23 @@ public class TestNetworkUtils {
         System.out.println(String.format("%s %s", hname, NetworkUtils.isHostname(hname)));
         hname = "hostname.zstack.org";
         System.out.println(String.format("%s %s", hname, NetworkUtils.isHostname(hname)));
+    }
+
+    @Test
+    public void testDomainName() {
+        assertTrue(NetworkUtils.isDomainName("db.prod.local"));
+        assertTrue(NetworkUtils.isDomainName("app-1.internal"));
+        assertTrue(NetworkUtils.isDomainName("localhost"));
+
+        assertFalse(NetworkUtils.isDomainName(null));
+        assertFalse(NetworkUtils.isDomainName("*.app.local"));
+        assertFalse(NetworkUtils.isDomainName("db_prod.local"));
+        assertFalse(NetworkUtils.isDomainName("中文.local"));
+        assertFalse(NetworkUtils.isDomainName(".prod.local"));
+        assertFalse(NetworkUtils.isDomainName("prod.local."));
+        assertFalse(NetworkUtils.isDomainName("-db.prod.local"));
+        assertFalse(NetworkUtils.isDomainName("db-.prod.local"));
+        assertFalse(NetworkUtils.isDomainName(new String(new char[64]).replace('\0', 'a') + ".local"));
+        assertFalse(NetworkUtils.isDomainName(new String(new char[254]).replace('\0', 'a')));
     }
 }
