@@ -26,6 +26,7 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_POWER_SUPPLY_STATUS_ABNORMAL = "/host/physicalPowerSupply/status/abnormal";
     public static final String HOST_PHYSICAL_GPU_REMOVE_TRIGGERED = "/host/physicalGpu/remove/triggered";
     public static final String HOST_PHYSICAL_GPU_STATUS_ABNORMAL = "/host/physicalGpu/status/abnormal";
+    public static final String HOST_PHYSICAL_GPU_XID_ERROR = "/host/physicalGpu/xid/error";
     public static final String HOST_PHYSICAL_VGPU_STATUS_ABNORMAL = "/host/physicalVGpu/status/abnormal";
     public static final String HOST_PHYSICAL_RAID_STATUS_ABNORMAL = "/host/physicalRaid/status/abnormal";
     public static final String HOST_PHYSICAL_HBA_STATE_ABNORMAL = "/host/physicalHBA/state/abnormal";
@@ -175,6 +176,46 @@ public class HostCanonicalEvents {
 
         public void setStatus(String status) {
             this.status = status;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPhysicalGpuXidErrorData {
+        private String hostUuid;
+        private String pcideviceAddress;
+        private String xidCode;
+        private String message;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPcideviceAddress() {
+            return pcideviceAddress;
+        }
+
+        public void setPcideviceAddress(String pcideviceAddress) {
+            this.pcideviceAddress = pcideviceAddress;
+        }
+
+        public String getXidCode() {
+            return xidCode;
+        }
+
+        public void setXidCode(String xidCode) {
+            this.xidCode = xidCode;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
         }
     }
 

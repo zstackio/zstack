@@ -5271,6 +5271,45 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class VmEventAlarmCmd {
+        private String hostUuid;
+        private String vmUuid;
+        private String eventType;
+        private Map<String, String> properties = new HashMap<>();
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getEventType() {
+            return eventType;
+        }
+
+        public void setEventType(String eventType) {
+            this.eventType = eventType;
+        }
+
+        public Map<String, String> getProperties() {
+            return properties;
+        }
+
+        public void setProperties(Map<String, String> properties) {
+            this.properties = properties;
+        }
+    }
+
     public static class HostProcessPhysicalMemoryUsageAlarmCmd {
         private String hostUuid;
         private String pid;

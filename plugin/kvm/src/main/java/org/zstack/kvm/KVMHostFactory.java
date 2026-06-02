@@ -724,6 +724,11 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                         ext.handleKvmHardwareStatus(HostHardware.GPU, cmd);
                     }
                     break;
+                case GPU_XID:
+                    for (KvmHardwareStatusHandlerExtensionPoint ext : pluginRgty.getExtensionList(KvmHardwareStatusHandlerExtensionPoint.class)) {
+                        ext.handleKvmHardwareStatus(HostHardware.GPU_XID, cmd);
+                    }
+                    break;
                 case POWERSUPPLY:
                     physicalPowerSupplyStatusAlarmEvent(cmd);
                     break;
@@ -747,6 +752,12 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.HOST_VM_EVENT_ALARM, KVMAgentCommands.VmEventAlarmCmd.class, cmd -> {
+            for (VmEventAlarmHandlerExtensionPoint ext : pluginRgty.getExtensionList(VmEventAlarmHandlerExtensionPoint.class)) {
+                ext.handleVmEventAlarm(cmd);
+            }
+            return null;
+        });
 
         restf.registerSyncHttpCallHandler(KVMConstant.HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH, HostProcessPhysicalMemoryUsageAlarmCmd.class, cmd -> {
             HostCanonicalEvents.HostProcessPhysicalMemoryUsageAlarmData data = new HostCanonicalEvents.HostProcessPhysicalMemoryUsageAlarmData();
