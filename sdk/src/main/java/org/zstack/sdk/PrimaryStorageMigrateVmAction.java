@@ -49,6 +49,9 @@ public class PrimaryStorageMigrateVmAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public long bandwidth = 0L;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableMigrationTls;
+
     @Param(required = false)
     public java.util.List systemTags;
 

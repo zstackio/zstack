@@ -55,6 +55,8 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
+import org.zstack.header.migration.KvmMigrateTlsExtensionPoint;
+import org.zstack.header.migration.KvmMigrateTlsSpec;
 import org.zstack.header.secret.SecretHostDefineMsg;
 import org.zstack.header.secret.SecretHostDefineReply;
 import org.zstack.header.secret.SecretHostEnsureLuksSecretFileMsg;
@@ -3206,6 +3208,25 @@ public class KVMHost extends HostBase implements Host {
                         cmd.setBandwidth(s.bandwidth);
                         cmd.setNics(nicTos);
 
+                        KvmMigrateTlsSpec tlsSpec = new KvmMigrateTlsSpec();
+                        tlsSpec.setRequestedByUser(s.enableMigrationTls);
+                        for (KvmMigrateTlsExtensionPoint ext : pluginRgty.getExtensionList(KvmMigrateTlsExtensionPoint.class)) {
+                            if (ext.configureMigrateTls(vmUuid, srcHostUuid, dstHostUuid, dstHostMigrateIp, tlsSpec)) {
+                                break;
+                            }
+                        }
+                        cmd.setMigrateTls(tlsSpec.isMigrateTls());
+                        if (tlsSpec.isMigrateTls()) {
+                            if (StringUtils.isBlank(tlsSpec.getExpectedDestCertFingerprint())) {
+                                trigger.fail(operr(
+                                        "migration TLS is enabled for vm[uuid:%s] destination certificate fingerprint is missing",
+                                        vmUuid));
+                                return;
+                            }
+                            cmd.setMutualTls(tlsSpec.isMutualTls());
+                            cmd.setExpectedDestCertFingerprint(tlsSpec.getExpectedDestCertFingerprint());
+                        }
+
                         if (s.diskMigrationMap != null) {
                             Map<String, VolumeTO> diskMigrationMap = new HashMap<>();
                             new SQLBatch() {
@@ -3379,6 +3400,7 @@ public class KVMHost extends HostBase implements Host {
         Map<String, String> volumeLuksSecrets;
         boolean reload;
         long bandwidth;
+        Boolean enableMigrationTls;
     }
 
     private MigrateStruct buildMigrateStuct(final MigrateVmOnHypervisorMsg msg){
@@ -3394,6 +3416,7 @@ public class KVMHost extends HostBase implements Host {
         s.volumeLuksSecrets = msg.getVolumeLuksSecrets();
         s.reload = msg.isReload();
         s.bandwidth = msg.getBandwidth();
+        s.enableMigrationTls = msg.getEnableMigrationTls();
 
         MigrateNetworkExtensionPoint.MigrateInfo migrateIpInfo = null;
         for (MigrateNetworkExtensionPoint ext: pluginRgty.getExtensionList(MigrateNetworkExtensionPoint.class)) {
