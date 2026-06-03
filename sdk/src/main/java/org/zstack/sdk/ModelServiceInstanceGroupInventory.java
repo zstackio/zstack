@@ -28,6 +28,14 @@ public class ModelServiceInstanceGroupInventory  {
         return this.modelUuid;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.util.List instances;
     public void setInstances(java.util.List instances) {
         this.instances = instances;
