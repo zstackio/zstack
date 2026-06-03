@@ -4901,6 +4901,11 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             }
 
             @Override
+            protected int getSyncLevel() {
+                return 10;
+            }
+
+            @Override
             public void run(SyncTaskChain chain) {
                 CheckHostStorageConnectionReply reply = new CheckHostStorageConnectionReply();
                 checkHostStorageConnection(msg.getHostUuids(), new Completion(chain) {
