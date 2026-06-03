@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.allocator.*;
 import org.zstack.header.allocator.HostCandidateProducer;
 import org.zstack.header.allocator.HostCandidateProducer.HostCandidateProducerContext;
+import org.zstack.header.core.I18nMessage;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -26,6 +27,13 @@ import static org.zstack.utils.CollectionUtils.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorStrategy {
     private static final CLogger logger = Utils.getLogger(HostAllocatorChain.class);
+    private static final String NO_HOST_WITH_REASONS = "[Host Allocation] no host meet the requirements. rejection reasons: %s";
+    private static final String FAILED_TO_ALLOCATE_HOST_WITH_REASON = "failed to allocate host[%s]: %s";
+    private static final String UNKNOWN_REASON = "unknown reason";
+    private static final String NO_DETAILED_REJECTION_REASON = "no detailed host rejection reasons";
+    private static final int MAX_REJECTION_REASON_LENGTH = 2048;
+    private static final String REJECTED_HOST_ENTRY = "- host[uuid:%s, name:%s]: %s";
+    private static final String REJECTION_OMITTED_SUFFIX = "\n- ... and %d more hosts omitted";
 
     private String name;
     private HostAllocatorSpec allocationSpec;
@@ -207,9 +215,12 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
         }
 
         if (!anyAllowed) {
-            ErrorCode errorCode = new ErrorCode();
-            errorCode.setCode(HostAllocatorError.NO_AVAILABLE_HOST.toString());
-            errorCode.setDetails("no host meet the requirements");
+            String reasonSummary = summarizeRejectedReasons(false);
+            String i18nReasonSummary = summarizeRejectedReasons(true);
+            I18nMessage summary = I18nMessage.valueOf(reasonSummary, i18nReasonSummary);
+
+            ErrorCode errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST,
+                    NO_HOST_WITH_REASONS, summary);
 
             if (paginationInfo != null) {
                 // in pagination, and a middle flow fails, we can continue
@@ -250,30 +261,84 @@ public class HostAllocatorChain implements HostAllocatorTrigger, HostAllocatorSt
     public void fail(ErrorCode errorCode) {
         result = null;
 
-        for (HostCandidate.RejectedCandidate candidate : rejectedList) {
-            if (candidate.rejectI18n == null)
-                candidate.rejectI18n = i18n(candidate.reject);
-        }
-
-        LinkedHashMap<String, Object> opaque = new LinkedHashMap<>();
-        opaque.put("rejectedCandidates", rejectedList);
+        String reasonSummary = summarizeRejectedReasons(false);
+        String i18nReasonSummary = summarizeRejectedReasons(true);
+        I18nMessage summary = I18nMessage.valueOf(reasonSummary, i18nReasonSummary);
 
         if (rejectedList.size() == 1) {
             HostCandidate.RejectedCandidate candidate = rejectedList.get(0);
+            I18nMessage reason = I18nMessage.valueOf(getRejectedReason(candidate, false), getRejectedReason(candidate, true));
             this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST,
-            "failed to allocate host[%s]: %s", candidate.hostUuid, candidate);
+                    FAILED_TO_ALLOCATE_HOST_WITH_REASON, candidate.hostUuid, reason);
         } else {
             this.errorCode = err(HostAllocatorError.NO_AVAILABLE_HOST,
-            "[Host Allocation] no host meet the requirements");
+                    NO_HOST_WITH_REASONS, summary);
         }
 
-        this.errorCode.setOpaque(opaque);
+        this.errorCode.withOpaque("rejectedCandidates", rejectedList);
         this.errorCode.withCause(errorCode);
         if (!seriesErrorWhenPagination.isEmpty()) {
             this.errorCode.withCause(seriesErrorWhenPagination);
         }
 
         done();
+    }
+
+    private String getRejectedReason(HostCandidate.RejectedCandidate candidate, boolean isI18n) {
+        String reason;
+        if (isI18n) {
+            reason = candidate.rejectI18n;
+            if (reason == null || reason.trim().isEmpty()) {
+                reason = candidate.reject == null ? null : i18n(candidate.reject);
+            }
+        } else {
+            reason = candidate.reject;
+        }
+
+        if (reason == null || reason.trim().isEmpty()) {
+            return UNKNOWN_REASON;
+        }
+
+        return reason;
+    }
+
+    private String summarizeRejectedReasons(boolean isI18n) {
+        if (rejectedList.isEmpty()) {
+            return NO_DETAILED_REJECTION_REASON;
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < rejectedList.size(); i++) {
+            HostCandidate.RejectedCandidate candidate = rejectedList.get(i);
+            String reason = getRejectedReason(candidate, isI18n);
+            String entry = isI18n ? i18n(REJECTED_HOST_ENTRY, candidate.hostUuid, candidate.hostName, reason)
+                    : String.format(REJECTED_HOST_ENTRY, candidate.hostUuid, candidate.hostName, reason);
+            String sep = sb.length() == 0 ? "" : "\n";
+
+            if (sb.length() + sep.length() + entry.length() > MAX_REJECTION_REASON_LENGTH) {
+                if (sb.length() == 0) {
+                    sb.append(entry, 0, Math.min(entry.length(), MAX_REJECTION_REASON_LENGTH));
+                    return sb.toString();
+                }
+
+                int omitted = rejectedList.size() - i;
+                String suffix = String.format(REJECTION_OMITTED_SUFFIX, omitted);
+                int remain = MAX_REJECTION_REASON_LENGTH - sb.length();
+                if (remain > 0) {
+                    if (suffix.length() <= remain) {
+                        sb.append(suffix);
+                    } else {
+                        sb.append(suffix, 0, remain);
+                    }
+                }
+
+                return sb.toString();
+            }
+
+            sb.append(sep).append(entry);
+        }
+
+        return sb.toString();
     }
 
     @Override
