@@ -500,6 +500,91 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
         List<QueryObject> children = new ArrayList<QueryObject>();
         SubQueryInfo subQueryInfo;
         APIQueryMessage msg;
+        private boolean conditionsNormalized;
+        private boolean alwaysFalse;
+
+        private boolean isTagCondition(MetaCondition cond) {
+            return USER_TAG.equals(cond.attr) || SYSTEM_TAG.equals(cond.attr);
+        }
+
+        private String conditionIdentity(MetaCondition cond) {
+            return String.format("%s\0%s\0%s\0%s", cond.attr, cond.op, cond.value, cond.skipInventoryCheck);
+        }
+
+        private List<MetaCondition> normalizeConditions() {
+            if (conditionsNormalized) {
+                return conditions;
+            }
+
+            alwaysFalse = false;
+
+            List<MetaCondition> tagConditions = new ArrayList<MetaCondition>();
+            Map<String, List<MetaCondition>> conditionsByAttr = new LinkedHashMap<String, List<MetaCondition>>();
+            Set<String> seenConditions = new HashSet<String>();
+
+            for (MetaCondition cond : conditions) {
+                if (isTagCondition(cond)) {
+                    tagConditions.add(cond);
+                    continue;
+                }
+
+                if (!seenConditions.add(conditionIdentity(cond))) {
+                    continue;
+                }
+
+                List<MetaCondition> sameAttrConditions = conditionsByAttr.get(cond.attr);
+                if (sameAttrConditions == null) {
+                    sameAttrConditions = new ArrayList<MetaCondition>();
+                    conditionsByAttr.put(cond.attr, sameAttrConditions);
+                }
+                sameAttrConditions.add(cond);
+            }
+
+            List<MetaCondition> normalizedConditions = new ArrayList<MetaCondition>();
+            for (List<MetaCondition> sameAttrConditions : conditionsByAttr.values()) {
+                MetaCondition equalCondition = null;
+                for (MetaCondition cond : sameAttrConditions) {
+                    if (!QueryOp.EQ.equals(cond.op)) {
+                        continue;
+                    }
+
+                    if (equalCondition == null) {
+                        equalCondition = cond;
+                    } else if (!Objects.equals(equalCondition.value, cond.value)) {
+                        alwaysFalse = true;
+                        conditionsNormalized = true;
+                        return new ArrayList<MetaCondition>();
+                    }
+                }
+
+                if (equalCondition == null) {
+                    normalizedConditions.addAll(sameAttrConditions);
+                    continue;
+                }
+
+                normalizedConditions.add(equalCondition);
+                for (MetaCondition cond : sameAttrConditions) {
+                    if (cond == equalCondition || QueryOp.EQ.equals(cond.op)) {
+                        continue;
+                    }
+
+                    if (QueryOp.NOT_EQ.equals(cond.op)) {
+                        if (Objects.equals(equalCondition.value, cond.value)) {
+                            alwaysFalse = true;
+                            conditionsNormalized = true;
+                            return new ArrayList<MetaCondition>();
+                        }
+                        continue;
+                    }
+
+                    normalizedConditions.add(cond);
+                }
+            }
+
+            normalizedConditions.addAll(tagConditions);
+            conditionsNormalized = true;
+            return normalizedConditions;
+        }
 
         // NOTE: we hard code tag specific logic here because we think current query model is not sustainable,
         // it worth nothing to waste effort on making this as extension point; we will switch the entire
@@ -622,10 +707,14 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
             List<String> where = new ArrayList<String>();
 
             boolean hasTag = false;
+            conditions = normalizeConditions();
+            if (alwaysFalse) {
+                where.add("1 = 0");
+            }
 
             int index = 0;
             for (MetaCondition it : conditions) {
-                if (USER_TAG.equals(it.attr) || SYSTEM_TAG.equals(it.attr)) {
+                if (isTagCondition(it)) {
                     hasTag = true;
                     continue;
                 }
