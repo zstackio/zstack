@@ -52,6 +52,14 @@ public class ModelInventory  {
         return this.modelCenterUuid;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String logo;
     public void setLogo(java.lang.String logo) {
         this.logo = logo;

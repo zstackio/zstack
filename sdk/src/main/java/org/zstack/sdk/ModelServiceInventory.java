@@ -68,6 +68,14 @@ public class ModelServiceInventory  {
         return this.modelCenterUuid;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String type;
     public void setType(java.lang.String type) {
         this.type = type;
