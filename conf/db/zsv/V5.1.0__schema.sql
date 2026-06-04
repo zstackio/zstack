@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
     `lastSyncDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     `status` varchar(64) NOT NULL,
     `type` varchar(64) NOT NULL,
+    `protocol` varchar(64) NOT NULL DEFAULT 'Normal',
     `lastOpDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`uuid`)

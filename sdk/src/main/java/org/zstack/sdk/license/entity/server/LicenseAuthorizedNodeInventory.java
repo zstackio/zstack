@@ -52,6 +52,14 @@ public class LicenseAuthorizedNodeInventory  {
         return this.type;
     }
 
+    public java.lang.String protocol;
+    public void setProtocol(java.lang.String protocol) {
+        this.protocol = protocol;
+    }
+    public java.lang.String getProtocol() {
+        return this.protocol;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
