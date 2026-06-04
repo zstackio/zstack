@@ -68,6 +68,14 @@ public class NativeClusterInventory extends org.zstack.sdk.ClusterInventory {
         return this.status;
     }
 
+    public java.lang.String zakuHealthStatus;
+    public void setZakuHealthStatus(java.lang.String zakuHealthStatus) {
+        this.zakuHealthStatus = zakuHealthStatus;
+    }
+    public java.lang.String getZakuHealthStatus() {
+        return this.zakuHealthStatus;
+    }
+
     public long id;
     public void setId(long id) {
         this.id = id;
