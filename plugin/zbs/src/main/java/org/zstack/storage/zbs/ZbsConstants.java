@@ -20,4 +20,10 @@ public interface ZbsConstants {
     String MEGABYTE_SUPPORTED_VERSION = "1.6.1";
     String MEGABYTE_UNIT = "M";
     String DEFAULT_GIGABYTE_UNIT = null;
+
+    // vhost: SPDK target runs as a container on the compute node, exposing a
+    // vhost-user-blk unix socket at <VHOST_SOCKET_DIR>/<controller name>.
+    String VHOST_SOCKET_DIR = "/var/tmp/vhost-sockets";
+    String VHOST_CONTROLLER_NAME_PREFIX = "zbs-vhost-";
+    String VHOST_BDEV_NAME_PREFIX = "zbs-bdev-";
 }

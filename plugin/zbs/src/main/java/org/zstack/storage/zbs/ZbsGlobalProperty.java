@@ -23,4 +23,10 @@ public class ZbsGlobalProperty {
     public static String PRIMARY_STORAGE_AGENT_URL_ROOT_PATH;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
+    @GlobalProperty(name="Zbs.vhost.targetImage", defaultValue = "zbs-vhost:latest")
+    public static String VHOST_TARGET_IMAGE;
+    @GlobalProperty(name="Zbs.vhost.targetCores", defaultValue = "[0,1]")
+    public static String VHOST_TARGET_CORES;
+    @GlobalProperty(name="Zbs.vhost.hugepageNr", defaultValue = "256")
+    public static int VHOST_HUGEPAGE_NR;
 }

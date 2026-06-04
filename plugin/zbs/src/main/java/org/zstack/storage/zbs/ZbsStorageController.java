@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
+import org.zstack.vhost.kvm.VhostVolumeTO;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
@@ -110,6 +111,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
+    public static final String VHOST_TARGET_ENSURE_PATH = "/zbs/primarystorage/vhost/target/ensure";
+    public static final String VHOST_ACTIVATE_PATH = "/zbs/primarystorage/vhost/activate";
+    public static final String VHOST_DEACTIVATE_PATH = "/zbs/primarystorage/vhost/deactivate";
+    public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -135,6 +140,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            activateVhostVolume(v.getInstallPath(), h, comp);
+            return;
+        }
+
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
 
             comp.success(new CbdVolumeTo());
@@ -144,8 +154,104 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "not supported protocol[%s]", v.getProtocol()));
     }
 
+    private void activateVhostVolume(String installPath, HostInventory h, ReturnValueCompletion<ActiveVolumeTO> comp) {
+        VhostActivateCmd cmd = new VhostActivateCmd();
+        fillVhostTargetParams(cmd);
+        cmd.installPath = stripScheme(installPath);
+        cmd.controllerName = buildVhostControllerName(installPath);
+        cmd.bdevName = buildVhostBdevName(installPath);
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setHostUuid(h.getUuid());
+        msg.setPath(VHOST_ACTIVATE_PATH);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(comp) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    comp.fail(reply.getError());
+                    return;
+                }
+
+                KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                VhostActivateRsp rsp = hreply.toResponse(VhostActivateRsp.class);
+                if (!rsp.isSuccess()) {
+                    comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "failed to activate vhost volume[%s] on host[%s]: %s",
+                            installPath, h.getUuid(), rsp.getError()));
+                    return;
+                }
+
+                VhostVolumeTO to = new VhostVolumeTO();
+                to.setInstallPath(rsp.getSocketPath());
+                comp.success(to);
+            }
+        });
+    }
+
+    private void fillVhostTargetParams(VhostActivateCmd cmd) {
+        cmd.image = ZbsGlobalProperty.VHOST_TARGET_IMAGE;
+        cmd.cores = ZbsGlobalProperty.VHOST_TARGET_CORES;
+        cmd.hugepageNr = ZbsGlobalProperty.VHOST_HUGEPAGE_NR;
+        cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
+    }
+
+    private static String stripScheme(String installPath) {
+        return installPath.replaceFirst(ZbsConstants.SCHEME_PREFIX, "");
+    }
+
+    // controller/bdev names derive from installPath (deactivate has no volume uuid),
+    // hashed to keep the socket path within the 108-byte unix-socket limit.
+    private static String buildVhostControllerName(String installPath) {
+        return ZbsConstants.VHOST_CONTROLLER_NAME_PREFIX + installPathHash(installPath);
+    }
+
+    private static String buildVhostBdevName(String installPath) {
+        return ZbsConstants.VHOST_BDEV_NAME_PREFIX + installPathHash(installPath);
+    }
+
+    private static String installPathHash(String installPath) {
+        return UUID.nameUUIDFromBytes(stripScheme(installPath).getBytes()).toString().replace("-", "");
+    }
+
+    private static String buildVhostSocketPath(String installPath) {
+        return ZbsConstants.VHOST_SOCKET_DIR + "/" + buildVhostControllerName(installPath);
+    }
+
     @Override
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
+        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+            VhostDeactivateCmd cmd = new VhostDeactivateCmd();
+            cmd.controllerName = buildVhostControllerName(installPath);
+            cmd.bdevName = buildVhostBdevName(installPath);
+            cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
+
+            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+            msg.setCommand(cmd);
+            msg.setHostUuid(h.getUuid());
+            msg.setPath(VHOST_DEACTIVATE_PATH);
+            msg.setNoStatusCheck(true);
+            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+            bus.send(msg, new CloudBusCallBack(comp) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        comp.fail(reply.getError());
+                        return;
+                    }
+
+                    VhostActivateRsp rsp = ((KVMHostAsyncHttpCallReply) reply.castReply()).toResponse(VhostActivateRsp.class);
+                    if (!rsp.isSuccess()) {
+                        comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "failed to deactivate vhost volume[%s] on host[%s]: %s",
+                                installPath, h.getUuid(), rsp.getError()));
+                        return;
+                    }
+                    comp.success();
+                }
+            });
+            return;
+        }
+
         // not support inactive client yet
         comp.success();
     }
@@ -161,6 +267,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            return buildVhostSocketPath(v.getInstallPath());
+        }
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
             return convertZbsPathToCbdPath(v.getInstallPath(), this::getPhysicalPoolName);
         } else {
@@ -175,30 +284,34 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
-        if (VolumeProtocol.CBD.toString().equals(protocol)) {
-            GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
-            cmd.setPath(installPath);
-            GetVolumeClientsRsp rsp = new HttpCaller<>(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class,
-                    null, TimeUnit.SECONDS, 30, true)
-                    .setTryNext(true)
-                    .syncCall();
-            List<ActiveVolumeClient> clients = new ArrayList<>();
-
-            if (!rsp.isSuccess()) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10008, rsp.getError()));
-            }
-
-            if (rsp.getClients() != null) {
-                for (ClientInfo clientInfo : rsp.getClients()) {
-                    ActiveVolumeClient client = new ActiveVolumeClient();
-                    client.setManagerIp(clientInfo.getIp());
-                    clients.add(client);
-                }
-            }
-            return clients;
-        } else {
+        // both CBD and Vhost resolve clients via the MDS by path: the SPDK vhost
+        // target opens the volume over the same cbd backend, so it registers as a
+        // client on the MDS exactly like a CBD-mapped host.
+        if (!VolumeProtocol.CBD.toString().equals(protocol)
+                && !VolumeProtocol.Vhost.toString().equals(protocol)) {
             throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10009, "not supported protocol[%s] for active", protocol));
         }
+
+        GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
+        cmd.setPath(installPath);
+        GetVolumeClientsRsp rsp = new HttpCaller<>(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class,
+                null, TimeUnit.SECONDS, 30, true)
+                .setTryNext(true)
+                .syncCall();
+        List<ActiveVolumeClient> clients = new ArrayList<>();
+
+        if (!rsp.isSuccess()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10008, rsp.getError()));
+        }
+
+        if (rsp.getClients() != null) {
+            for (ClientInfo clientInfo : rsp.getClients()) {
+                ActiveVolumeClient client = new ActiveVolumeClient();
+                client.setManagerIp(clientInfo.getIp());
+                clients.add(client);
+            }
+        }
+        return clients;
     }
 
     @Override
@@ -2065,6 +2178,44 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class UpdateHostDependencyRsp extends AgentResponse {
+    }
+
+    public static class VhostActivateCmd extends AgentCommand {
+        public String image;
+        public String cores;
+        public Integer hugepageNr;
+        public String socketDir;
+        public String controlSock;
+        public String clientConf;
+        public String imageTar;
+        public String installPath;
+        public String controllerName;
+        public String bdevName;
+    }
+
+    public static class VhostActivateRsp extends AgentResponse {
+        private String socketPath;
+
+        public String getSocketPath() {
+            return socketPath;
+        }
+
+        public void setSocketPath(String socketPath) {
+            this.socketPath = socketPath;
+        }
+    }
+
+    public static class VhostDeactivateCmd extends AgentCommand {
+        public String controllerName;
+        public String bdevName;
+        public String socketDir;
+        public String controlSock;
+    }
+
+    public static class VhostResizeCmd extends AgentCommand {
+        public String bdevName;
+        public long sizeMib;
+        public String controlSock;
     }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {
