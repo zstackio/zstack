@@ -225,6 +225,7 @@ CALL ADD_COLUMN('ModelVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('ModelServiceVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('DatasetVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('ModelServiceInstanceGroupVO', 'zoneUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ZdfsVO', 'metaServerPort', 'INT', 0, 6379);
 
 UPDATE `zstack`.`ModelCenterVO` mc
 INNER JOIN (
