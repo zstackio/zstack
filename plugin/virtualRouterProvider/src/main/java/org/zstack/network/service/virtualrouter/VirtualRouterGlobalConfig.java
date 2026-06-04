@@ -18,6 +18,12 @@ public class VirtualRouterGlobalConfig {
     public static GlobalConfig COMMANDS_PARALELLISM_DEGREE = new GlobalConfig(CATEGORY, "command.parallelismDegree");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_DNSMASQ_COUNT = new GlobalConfig(CATEGORY, "dnsmasq.restartAfterNumberOfSIGUSER1");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig DNSMASQ_DNS_FORWARD_MAX = new GlobalConfig(CATEGORY, "dnsmasq.dnsForwardMax");
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @BindResourceConfig({VmInstanceVO.class})
+    public static GlobalConfig DNSMASQ_CACHE_SIZE = new GlobalConfig(CATEGORY, "dnsmasq.cacheSize");
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
     @GlobalConfigValidation
