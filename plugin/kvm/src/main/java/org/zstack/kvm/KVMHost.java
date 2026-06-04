@@ -5989,6 +5989,7 @@ public class KVMHost extends HostBase implements Host {
                         if (NetworkGlobalProperty.SKIP_IPV6 || NetworkGlobalProperty.BRIDGE_DISABLE_IP6TABLES) {
                             deployArguments.setDisableIp6Tables("true");
                         }
+                        deployArguments.setEnableIpv6(rcf.getResourceConfigValue(KVMGlobalConfig.HOST_IPV6, self.getUuid(), String.class));
 
                         for (KvmHostAgentDeploymentExtensionPoint ext : pluginRegistry.getExtensionList(KvmHostAgentDeploymentExtensionPoint.class)) {
                             if (logger.isTraceEnabled()) {

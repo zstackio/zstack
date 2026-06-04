@@ -20,6 +20,7 @@ import org.zstack.kvm.KVMAgentCommands.CreateVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeCmd;
 import org.zstack.kvm.KVMAgentCommands.DeleteVlanBridgeResponse;
 import org.zstack.kvm.KVMAgentCommands.NicTO;
+import org.zstack.network.l2.L2NetworkGlobalConfig;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.network.service.MtuGetter;
 import org.zstack.tag.SystemTagCreator;
@@ -64,6 +65,9 @@ public class KVMRealizeL2VlanNetworkBackend implements L2NetworkRealizationExten
         cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
         cmd.setIsolated(l2vlan.getIsolated());
         cmd.setPvlan(l2vlan.getPvlan());
+        cmd.setIgmpVersion(L2NetworkGlobalConfig.IGMPVersion.value(Integer.class));
+        cmd.setMldVersion(L2NetworkGlobalConfig.MLDVersion.value(Integer.class));
+        cmd.setEnableMulticastQuerier(L2NetworkGlobalConfig.BridgeMulticastQuerier.value(Boolean.class));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
