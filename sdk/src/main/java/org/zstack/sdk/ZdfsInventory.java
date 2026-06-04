@@ -68,6 +68,14 @@ public class ZdfsInventory  {
         return this.sshPort;
     }
 
+    public int metaServerPort;
+    public void setMetaServerPort(int metaServerPort) {
+        this.metaServerPort = metaServerPort;
+    }
+    public int getMetaServerPort() {
+        return this.metaServerPort;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
