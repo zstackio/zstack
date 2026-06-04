@@ -135,6 +135,11 @@ public class KVMGlobalConfig {
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 
     @GlobalConfigValidation(validValues = {"true", "false"})
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable host IPv6")
+    @BindResourceConfig({HostVO.class, ClusterVO.class, ZoneVO.class})
+    public static GlobalConfig HOST_IPV6 = new GlobalConfig(CATEGORY, "host.ipv6.enable");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", description = "restart kvm host libvirtd service or not")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig RECONNECT_HOST_RESTART_LIBVIRTD_SERVICE = new GlobalConfig(CATEGORY, "reconnect.host.restart.libvirtd.service");

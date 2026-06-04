@@ -122,6 +122,8 @@ public class VxlanKvmAgentCommands {
         private Integer igmpVersion;
         @GrayVersion(value = "5.3.0")
         private Integer mldVersion;
+        @GrayVersion(value = "5.5.28")
+        private Boolean enableMulticastQuerier;
 
         public Integer getDstport() {
             return dstport;
@@ -194,6 +196,15 @@ public class VxlanKvmAgentCommands {
         public void setMldVersion(Integer mldVersion) {
             this.mldVersion = mldVersion;
         }
+
+        public Boolean getEnableMulticastQuerier() {
+            return enableMulticastQuerier;
+        }
+
+        public void setEnableMulticastQuerier(Boolean enableMulticastQuerier) {
+            this.enableMulticastQuerier = enableMulticastQuerier;
+        }
+
     }
 
     public static class CreateVxlanBridgeResponse extends CreateBridgeResponse {

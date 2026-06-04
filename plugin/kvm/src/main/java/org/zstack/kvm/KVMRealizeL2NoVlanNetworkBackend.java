@@ -60,6 +60,7 @@ public class KVMRealizeL2NoVlanNetworkBackend implements L2NetworkRealizationExt
         cmd.setIsolated(l2Network.getIsolated());
         cmd.setIgmpVersion(L2NetworkGlobalConfig.IGMPVersion.value(Integer.class));
         cmd.setMldVersion(L2NetworkGlobalConfig.MLDVersion.value(Integer.class));
+        cmd.setEnableMulticastQuerier(L2NetworkGlobalConfig.BridgeMulticastQuerier.value(Boolean.class));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);

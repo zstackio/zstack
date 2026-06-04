@@ -28,4 +28,11 @@
         <category>l2Network</category>
         <type>java.lang.Integer</type>
     </config>
+    <config>
+        <name>bridge.multicastQuerier</name>
+        <description>Enable multicast querier and snooping on linux bridge when creating l2 network bridge</description>
+        <defaultValue>true</defaultValue>
+        <category>l2Network</category>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>

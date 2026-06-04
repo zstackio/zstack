@@ -128,6 +128,7 @@ public class KVMRealizeL2VxlanNetworkBackend implements L2NetworkRealizationExte
         cmd.setMtu(new MtuGetter().getL2Mtu(l2Network));
         cmd.setIgmpVersion(L2NetworkGlobalConfig.IGMPVersion.value(Integer.class));
         cmd.setMldVersion(L2NetworkGlobalConfig.MLDVersion.value(Integer.class));
+        cmd.setEnableMulticastQuerier(L2NetworkGlobalConfig.BridgeMulticastQuerier.value(Boolean.class));
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);

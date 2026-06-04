@@ -21,4 +21,8 @@ public class L2NetworkGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig MLDVersion = new GlobalConfig(CATEGORY, "mld.version");
+
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig BridgeMulticastQuerier = new GlobalConfig(CATEGORY, "bridge.multicastQuerier");
+
 }
