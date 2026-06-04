@@ -337,6 +337,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable) {
+        return changeVmStateInDb(stateEvent, runnable, null);
+    }
+
+    protected VmInstanceVO changeVmStateInDb(VmInstanceStateEvent stateEvent, Runnable runnable, String stateChangeSource) {
         VmInstanceState bs = self.getState();
         final VmInstanceState state = self.getState().nextState(stateEvent);
 
@@ -385,6 +389,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             data.setVmUuid(self.getUuid());
             data.setOldState(bs.toString());
             data.setNewState(state.toString());
+            data.setStateChangeSource(stateChangeSource);
             data.setInventory(getSelfInventory());
             evtf.fire(VmCanonicalEvents.VM_FULL_STATE_CHANGED_PATH, data);
 
@@ -1024,17 +1029,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         String hostUuid = self.getHostUuid();
                         String suspectHostUuid = StringUtils.trimToNull(hostUuid);
                         String peerHostUuid = StringUtils.trimToNull(msg.getAccessiblePeerHostUuid());
-                        UpdateQuery sql = SQL.New(VmInstanceVO.class)
-                                .eq(VmInstanceVO_.uuid, self.getUuid())
-                                .set(VmInstanceVO_.state, VmInstanceState.Stopped)
-                                .set(VmInstanceVO_.hostUuid, null);
-
-                        if (hostUuid != null) {
-                            sql.set(VmInstanceVO_.lastHostUuid, hostUuid);
-                        }
-
-                        sql.update();
-                        refreshVO();
+                        changeVmStateInDb(VmInstanceStateEvent.stopped, null, HaStartVmInstanceMsg.class.getName());
                         if (suspectHostUuid == null) {
                             logger.debug(String.format("HA-start vm[%s]: skip creating pre-fence tag because suspect host is absent",
                                     self.getUuid()));
