@@ -484,6 +484,30 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class SecretHostEnsureLuksSecretFileCmd extends AgentCommand {
+        private String encryptedDek;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
+    }
+
+    public static class SecretHostEnsureLuksSecretFileResponse extends AgentResponse {
+        private String secFilePath;
+
+        public String getSecFilePath() {
+            return secFilePath;
+        }
+
+        public void setSecFilePath(String secFilePath) {
+            this.secFilePath = secFilePath;
+        }
+    }
+
     public static class SecretHostGetCmd extends AgentCommand {
         private String vmUuid;
         private String purpose;
@@ -548,6 +572,39 @@ public class KVMAgentCommands {
     }
 
     public static class ResolveVtpmLibvirtSecretResponse extends AgentResponse {
+        private String secretUuid;
+
+        public String getSecretUuid() {
+            return secretUuid;
+        }
+
+        public void setSecretUuid(String secretUuid) {
+            this.secretUuid = secretUuid;
+        }
+    }
+
+    public static class ResolveVolumeLibvirtSecretCmd extends AgentCommand {
+        private String vmUuid;
+        private String volumeUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getVolumeUuid() {
+            return volumeUuid;
+        }
+
+        public void setVolumeUuid(String volumeUuid) {
+            this.volumeUuid = volumeUuid;
+        }
+    }
+
+    public static class ResolveVolumeLibvirtSecretResponse extends AgentResponse {
         private String secretUuid;
 
         public String getSecretUuid() {
@@ -3799,6 +3856,39 @@ public class KVMAgentCommands {
         }
     }
 
+    public static class GetActiveVolumeSizeCmd extends AgentCommand {
+        private String vmUuid;
+        private List<String> installPaths;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public List<String> getInstallPaths() {
+            return installPaths;
+        }
+
+        public void setInstallPaths(List<String> installPaths) {
+            this.installPaths = installPaths;
+        }
+    }
+
+    public static class GetActiveVolumeSizeRsp extends AgentResponse {
+        private Map<String, Long> volumeSizes;
+
+        public Map<String, Long> getVolumeSizes() {
+            return volumeSizes;
+        }
+
+        public void setVolumeSizes(Map<String, Long> volumeSizes) {
+            this.volumeSizes = volumeSizes;
+        }
+    }
+
     public static class RefreshAllRulesOnHostCmd extends AgentCommand {
         private List<VmNicSecurityTO> vmNicTOs;
         private Map<String, List<RuleTO>> ruleTOs;
@@ -4300,6 +4390,7 @@ public class KVMAgentCommands {
         private String volumeInstallPath;
         private String newVolumeUuid;
         private String newVolumeInstallPath;
+        private String encryptedDek;
         private boolean online;
         private long timeout;
 
@@ -4368,6 +4459,14 @@ public class KVMAgentCommands {
 
         public void setNewVolumeUuid(String newVolumeUuid) {
             this.newVolumeUuid = newVolumeUuid;
+        }
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
         }
 
         public VolumeTO getVolume() {

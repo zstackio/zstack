@@ -90,6 +90,9 @@ public class VmInstanceAO extends ResourceVO {
     private String guestOsType;
 
     @Column
+    private boolean encrypted;
+
+    @Column
     private Timestamp createDate;
 
     @Column
@@ -128,6 +131,7 @@ public class VmInstanceAO extends ResourceVO {
         this.platform = other.platform;
         this.guestOsType = other.guestOsType;
         this.architecture = other.architecture;
+        this.encrypted = other.encrypted;
     }
 
     @PreUpdate
@@ -329,5 +333,13 @@ public class VmInstanceAO extends ResourceVO {
 
     public void setGuestOsType(String guestOsType) {
         this.guestOsType = guestOsType;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
     }
 }
