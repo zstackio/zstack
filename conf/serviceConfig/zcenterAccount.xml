@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>zcenter-accounts</id>
+    <interceptor>ZCenterAccountApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.zcenter.accounts.api.APICreateSessionForZCenterAccountMsg</name>
+    </message>
+</service>

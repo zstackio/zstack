@@ -1,6 +1,7 @@
 package org.zstack.header.identity;
 
 import org.zstack.header.configuration.PythonClassInventory;
+import org.zstack.header.message.DocUtils;
 import org.zstack.header.rest.APINoSee;
 
 import java.io.Serializable;
@@ -95,5 +96,14 @@ public class SessionInventory implements Serializable {
     @Deprecated
     public void setUserType(String userType) {
         this.userType = userType;
+    }
+
+    public static SessionInventory __example__() {
+        SessionInventory session = new SessionInventory();
+        session.setUuid(DocUtils.createFixedUuid(SessionVO.class));
+        session.setAccountUuid(DocUtils.createFixedUuid(AccountVO.class));
+        session.setCreateDate(DocUtils.timestamp());
+        session.setExpiredDate(DocUtils.timestampAndAddDays(1));
+        return session;
     }
 }
