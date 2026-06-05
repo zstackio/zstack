@@ -360,19 +360,27 @@ class ManagementNetworkIpv6Case extends SubCase {
     }
 
     private void withManagementServerIpProperties(Map<String, String> properties, Closure closure) {
+        List<String> managedKeys = [
+                "management.server.ip",
+                "management.server.ip4",
+                "management.server.ip6",
+        ]
         Map<String, String> oldValues = [:]
-        properties.keySet().each { key ->
+        managedKeys.each { key ->
             oldValues[key] = System.getProperty(key)
         }
 
         try {
             resetCachedManagementServerIp()
+            managedKeys.each { key ->
+                System.clearProperty(key)
+            }
             properties.each { key, value ->
                 System.setProperty(key, value)
             }
             closure.call()
         } finally {
-            properties.keySet().each { key ->
+            managedKeys.each { key ->
                 if (oldValues[key] == null) {
                     System.clearProperty(key)
                 } else {
