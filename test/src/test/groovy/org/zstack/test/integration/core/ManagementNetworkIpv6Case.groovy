@@ -5,6 +5,7 @@ import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.Platform
+import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
 import org.zstack.core.rest.RESTFacadeImpl
@@ -29,6 +30,7 @@ import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
 import org.junit.Test
 
+import java.lang.reflect.Field
 import java.util.function.Supplier
 
 class ManagementNetworkIpv6Case extends SubCase {
@@ -287,6 +289,33 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert Platform.getManagementServerCidr(IPv6Constants.IPv4) == Platform.getManagementServerCidr(Platform.getManagementServerIp())
     }
 
+    void testManagementServerIpsReadSecondaryProperties() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV6,
+                "management.server.ip4": IPV4,
+        ]) {
+            assert Platform.getManagementServerIps() == [IPV6, IPV4]
+        }
+
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV6,
+        ]) {
+            assert Platform.getManagementServerIps() == [IPV4, IPV6]
+        }
+    }
+
+    void testManagementServerSecondaryPropertyRejectsWrongAddressFamily() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV4,
+        ]) {
+            expect(CloudRuntimeException.class) {
+                Platform.getManagementServerIps()
+            }
+        }
+    }
+
     void testManagementServerIdPersisted() {
         String oldValue = System.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY)
         File propertiesFile = File.createTempFile("zstack-management-server-id", ".properties")
@@ -328,6 +357,36 @@ class ManagementNetworkIpv6Case extends SubCase {
                 System.setProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY, oldValue)
             }
         }
+    }
+
+    private void withManagementServerIpProperties(Map<String, String> properties, Closure closure) {
+        Map<String, String> oldValues = [:]
+        properties.keySet().each { key ->
+            oldValues[key] = System.getProperty(key)
+        }
+
+        try {
+            resetCachedManagementServerIp()
+            properties.each { key, value ->
+                System.setProperty(key, value)
+            }
+            closure.call()
+        } finally {
+            properties.keySet().each { key ->
+                if (oldValues[key] == null) {
+                    System.clearProperty(key)
+                } else {
+                    System.setProperty(key, oldValues[key])
+                }
+            }
+            resetCachedManagementServerIp()
+        }
+    }
+
+    private void resetCachedManagementServerIp() {
+        Field field = Platform.class.getDeclaredField("managementServerIp")
+        field.setAccessible(true)
+        field.set(null, null)
     }
 
     void testNfsIpv6UrlParsing() {
