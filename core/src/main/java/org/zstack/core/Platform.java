@@ -83,6 +83,8 @@ public class Platform {
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static final String MANAGEMENT_SERVER_IP_PROPERTY = "management.server.ip";
+    private static final String MANAGEMENT_SERVER_IP4_PROPERTY = "management.server.ip4";
+    private static final String MANAGEMENT_SERVER_IP6_PROPERTY = "management.server.ip6";
     private static final String ZSTACK_MANAGEMENT_SERVER_IP_ENV = "ZSTACK_MANAGEMENT_SERVER_IP";
     private static final String IPV4_ADDRESS_COMMAND = "ip -4 add";
     private static final String IPV6_ADDRESS_COMMAND = "ip -6 addr";
@@ -1009,11 +1011,37 @@ public class Platform {
     }
 
     public static String getManagementServerIp6() {
+        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP6_PROPERTY, IPv6Constants.IPv6);
+        if (ip != null) {
+            return ip;
+        }
         return getManagementServerIpOnManagementInterface(IPv6Constants.IPv6);
     }
 
     private static String getManagementServerIp4() {
+        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
+        if (ip != null) {
+            return ip;
+        }
         return getManagementServerIpOnManagementInterface(IPv6Constants.IPv4);
+    }
+
+    private static String getManagementServerSecondaryIpProperty(String property, int ipVersion) {
+        String ip = System.getProperty(property);
+        if (ip == null || ip.trim().isEmpty()) {
+            return null;
+        }
+
+        String normalizedIp = normalizeManagementIp(ip);
+        if ((ipVersion == IPv6Constants.IPv6 && !IPv6NetworkUtils.isIpv6Address(normalizedIp)) ||
+                (ipVersion == IPv6Constants.IPv4 && !NetworkUtils.isIpv4Address(normalizedIp))) {
+            throw new CloudRuntimeException(String.format(
+                    "management IP[%s] from Java property[%s] is not IPv%s",
+                    ip, property, ipVersion));
+        }
+
+        logger.info(String.format("get management IP[%s] from Java property[%s]", ip, property));
+        return normalizedIp;
     }
 
     private static String getManagementServerIpOnManagementInterface(int ipVersion) {
