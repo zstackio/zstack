@@ -22,6 +22,20 @@
         <type>java.lang.Integer</type>
     </config>
     <config>
+        <name>dnsmasq.dnsForwardMax</name>
+        <description>The maximum number of concurrent DNS queries forwarded by dnsmasq on a virtual router.</description>
+        <defaultValue>1000</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Integer</type>
+    </config>
+    <config>
+        <name>dnsmasq.cacheSize</name>
+        <description>The DNS cache size used by dnsmasq on a virtual router.</description>
+        <defaultValue>10000</defaultValue>
+        <category>virtualRouter</category>
+        <type>java.lang.Integer</type>
+    </config>
+    <config>
         <name>ping.interval</name>
         <description>The interval management nodes ping the virtual router agents running virtual router VMs, in seconds</description>
         <defaultValue>15</defaultValue>
