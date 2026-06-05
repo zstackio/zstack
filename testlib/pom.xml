@@ -104,6 +104,16 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>account-import</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>zcenter-accounts</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>search</artifactId>
             <version>${project.version}</version>
         </dependency>
