@@ -148,6 +148,14 @@ public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
         return this.ioThreadPin;
     }
 
+    public int ioThreads;
+    public void setIoThreads(int ioThreads) {
+        this.ioThreads = ioThreads;
+    }
+    public int getIoThreads() {
+        return this.ioThreads;
+    }
+
     public int controllerIndex;
     public void setControllerIndex(int controllerIndex) {
         this.controllerIndex = controllerIndex;

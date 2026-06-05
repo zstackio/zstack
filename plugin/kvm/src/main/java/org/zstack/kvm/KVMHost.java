@@ -2,6 +2,7 @@ package org.zstack.kvm;
 
 import okhttp3.Response;
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -113,6 +114,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -128,6 +131,38 @@ public class KVMHost extends HostBase implements Host {
     private static final ZTester tester = Utils.getTester();
     protected static OperationChecker allowedOperations = new OperationChecker(true);
     protected static OperationChecker skipOperations = new OperationChecker(true);
+    private static final Pattern NUMERIC_VERSION_TOKEN = Pattern.compile("\\d+(?:\\.\\d+)*");
+
+    private static boolean isIothreadVqMappingSupported(String qemuKvmPackageVersion, String libvirtPackageVersion) {
+        return versionAtLeast(qemuKvmPackageVersion, KVMConstant.MIN_QEMU_KVM_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION)
+                && versionAtLeast(libvirtPackageVersion, KVMConstant.MIN_LIBVIRT_IOTHREAD_VQ_MAPPING_PACKAGE_VERSION);
+    }
+
+    private static boolean versionAtLeast(String current, String required) {
+        String normalized = normalizePackageVersion(current);
+        if (normalized == null) {
+            return false;
+        }
+
+        return new ComparableVersion(normalized).compareTo(new ComparableVersion(required)) >= 0;
+    }
+
+    private static String normalizePackageVersion(String version) {
+        if (StringUtils.isBlank(version)) {
+            return null;
+        }
+
+        String normalized = Arrays.stream(version.trim().split("\\s+")[0].split("-"))
+                .map(KVMHost::numericPrefix)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.joining("-"));
+        return StringUtils.isBlank(normalized) ? null : normalized;
+    }
+
+    private static String numericPrefix(String versionSegment) {
+        Matcher matcher = NUMERIC_VERSION_TOKEN.matcher(versionSegment);
+        return matcher.lookingAt() ? matcher.group() : null;
+    }
 
     public static Set<String> parseSanIps(String sanOutput) {
         Set<String> sanIps = new HashSet<>();
@@ -6326,8 +6361,22 @@ public class KVMHost extends HostBase implements Host {
             private void saveKvmHostRelatedFacts(HostFactResponse ret) {
                 updateHostOsInformation(ret.getOsDistribution(), ret.getOsRelease(), ret.getOsVersion());
 
-                if (ret.getLibvirtPackageVersion() != null) {
+                if (StringUtils.isNotBlank(ret.getLibvirtPackageVersion())) {
                     createTagWithoutNonValue(KVMSystemTags.LIBVIRT_PACKAGE_VERSION, KVMSystemTags.LIBVIRT_PACKAGE_VERSION_TOKEN, ret.getLibvirtPackageVersion().trim(), false);
+                } else {
+                    KVMSystemTags.LIBVIRT_PACKAGE_VERSION.delete(self.getUuid());
+                }
+
+                if (StringUtils.isNotBlank(ret.getQemuKvmPackageVersion())) {
+                    createTagWithoutNonValue(KVMSystemTags.QEMU_KVM_PACKAGE_VERSION, KVMSystemTags.QEMU_KVM_PACKAGE_VERSION_TOKEN, ret.getQemuKvmPackageVersion().trim(), false);
+                } else {
+                    KVMSystemTags.QEMU_KVM_PACKAGE_VERSION.delete(self.getUuid());
+                }
+
+                if (isIothreadVqMappingSupported(ret.getQemuKvmPackageVersion(), ret.getLibvirtPackageVersion())) {
+                    recreateNonInherentTag(KVMSystemTags.IOTHREAD_VQ_MAPPING);
+                } else {
+                    KVMSystemTags.IOTHREAD_VQ_MAPPING.delete(self.getUuid());
                 }
 
                 createTagWithoutNonValue(KVMSystemTags.QEMU_IMG_VERSION, KVMSystemTags.QEMU_IMG_VERSION_TOKEN, ret.getQemuImgVersion(), false);
