@@ -11,7 +11,7 @@ ALTER TABLE `EncryptedResourceKeyRefVO`
         ADD CONSTRAINT `fkEncryptedResourceKeyRefResourceVO` FOREIGN KEY (`resourceUuid`) REFERENCES `ResourceVO`(`uuid`)
         ON DELETE CASCADE;
 
--- Feature: ZCenter Account | ZSV-12257, ZSV-12380
+-- Feature: ZCenter Account | ZSV-12257, ZSV-12379, ZSV-12380
 
 CALL INSERT_COLUMN('AccountVO', 'source', 'varchar(32)', 0, 'Local', 'type');
 
@@ -110,6 +110,10 @@ CALL DROP_FOREIGN_KEY('VpcVpnIpSecConfigVO', 'fkVpcVpnIpSecConfigVOAccountVO');
 CALL DELETE_INDEX('VpcVpnIpSecConfigVO', 'fkVpcVpnIpSecConfigVOAccountVO');
 CALL ADD_CONSTRAINT('VpcVpnIpSecConfigVO', 'fkVpcVpnIpSecConfigVOAccountVO', 'accountUuid', 'AccountVO', 'uuid', 'RESTRICT');
 CALL DROP_COLUMN('VpcVpnIpSecConfigVO', 'accountName');
+
+CALL CREATE_INDEX('AccountVO', 'idxAccountVOname', 'name');
+CALL DELETE_INDEX('AccountVO', 'name');
+ALTER TABLE `zstack`.`AccountVO` ADD CONSTRAINT `uqAccountVOSourceName` UNIQUE (`source`, `name`);
 
 -- Feature: ZCenter License & License Client | ZSV-12274
 
