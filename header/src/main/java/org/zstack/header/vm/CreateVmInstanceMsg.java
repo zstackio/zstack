@@ -38,6 +38,7 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private String architecture;
     private Boolean virtio;
     private Boolean encrypted;
+    private Boolean vmEncryption;
     private List<String> rootVolumeSystemTags;
     private List<String> dataVolumeSystemTags;
     private List<String> disableL3Networks;
@@ -378,6 +379,14 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
 
     public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
+    }
+
+    public Boolean getVmEncryption() {
+        return vmEncryption;
+    }
+
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public VmCustomSpecificationStruct getVmCustomSpecification() {
