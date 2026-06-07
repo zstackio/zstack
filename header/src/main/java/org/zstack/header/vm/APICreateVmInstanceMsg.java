@@ -223,7 +223,7 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     private Boolean virtio;
 
     @APIParam(required = false)
-    private Boolean encrypted;
+    private Boolean vmEncryption;
 
     @APIParam(required = false)
     private String allocatorStrategy;
@@ -246,16 +246,6 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setDiskAOs(List<DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
-    }
-
-    @Override
-    public Boolean getEncrypted() {
-        return encrypted;
-    }
-
-    @Override
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
     }
 
     public String getStrategy() {
@@ -481,6 +471,16 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
+    }
+
+    @Override
+    public Boolean getVmEncryption() {
+        return vmEncryption;
+    }
+
+    @Override
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public String getAllocatorStrategy() {

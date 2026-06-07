@@ -140,6 +140,15 @@ doc {
 					optional true
 					since "4.10.10"
 				}
+				column {
+					name "vmEncryption"
+					enclosedIn "updateVmInstance"
+					desc "虚拟机是否加密"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.1.0"
+				}
 			}
 		}
 

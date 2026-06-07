@@ -106,7 +106,7 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
     private String strategy = VmCreationStrategy.InstantStart.toString();
 
     @APIParam(required = false)
-    private Boolean encrypted;
+    private Boolean vmEncryption;
 
     public String getName() {
         return name;
@@ -234,13 +234,13 @@ public class APICreateVmInstanceFromVolumeMsg extends APICreateMessage implement
     }
 
     @Override
-    public Boolean getEncrypted() {
-        return encrypted;
+    public Boolean getVmEncryption() {
+        return vmEncryption;
     }
 
     @Override
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public String getPlatform() {
