@@ -122,7 +122,7 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     private Boolean resetTpm;
 
     @APIParam(required = false)
-    private Boolean encrypted;
+    private Boolean vmEncryption;
 
     public String getName() {
         return name;
@@ -250,13 +250,13 @@ public class APICreateVmInstanceFromVolumeSnapshotGroupMsg extends APICreateMess
     }
 
     @Override
-    public Boolean getEncrypted() {
-        return encrypted;
+    public Boolean getVmEncryption() {
+        return vmEncryption;
     }
 
     @Override
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public String getPrimaryStorageUuidForRootVolume() {

@@ -109,7 +109,7 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     private List<String> rootVolumeSystemTags;
 
     @APIParam(required = false)
-    private Boolean encrypted;
+    private Boolean vmEncryption;
 
     public String getName() {
         return name;
@@ -237,13 +237,13 @@ public class APICreateVmInstanceFromVolumeSnapshotMsg extends APICreateMessage i
     }
 
     @Override
-    public Boolean getEncrypted() {
-        return encrypted;
+    public Boolean getVmEncryption() {
+        return vmEncryption;
     }
 
     @Override
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public String getPlatform() {

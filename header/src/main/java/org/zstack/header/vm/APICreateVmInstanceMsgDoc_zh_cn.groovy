@@ -339,7 +339,7 @@ doc {
 					since "4.10.10"
 				}
 				column {
-					name "encrypted"
+					name "vmEncryption"
 					enclosedIn "params"
 					desc "虚拟机是否加密"
 					location "body"

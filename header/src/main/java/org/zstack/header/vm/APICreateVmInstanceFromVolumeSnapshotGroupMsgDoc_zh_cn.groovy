@@ -240,7 +240,7 @@ doc {
 					since "5.1.0"
 				}
 				column {
-					name "encrypted"
+					name "vmEncryption"
 					enclosedIn "params"
 					desc "虚拟机是否加密"
 					location "body"

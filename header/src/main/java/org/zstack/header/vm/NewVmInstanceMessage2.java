@@ -12,7 +12,7 @@ public interface NewVmInstanceMessage2 extends NewVmInstanceMessage {
     String getHostUuid();
     String getStrategy();
     String getInstanceOfferingUuid();
-    default Boolean getEncrypted() {
+    default Boolean getVmEncryption() {
         return null;
     }
 
@@ -23,6 +23,6 @@ public interface NewVmInstanceMessage2 extends NewVmInstanceMessage {
     void setClusterUuid(String clusterUuid);
     void setDefaultL3NetworkUuid(String defaultL3NetworkUuid);
     void setType(String type);
-    default void setEncrypted(Boolean encrypted) {
+    default void setVmEncryption(Boolean vmEncryption) {
     }
 }
