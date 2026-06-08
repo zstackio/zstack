@@ -6108,13 +6108,13 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger trigger, Map data) {
                 if (Boolean.TRUE.equals(requestedVmEncryption)) {
                     if (encryptionEnabledBeforeUpdate) {
-                        syncVmEncryptedField(true);
+                        syncVmEncryptionField(true);
                         trigger.next();
                         return;
                     }
                 } else if (Boolean.FALSE.equals(requestedVmEncryption)) {
                     if (!encryptionEnabledBeforeUpdate) {
-                        syncVmEncryptedField(false);
+                        syncVmEncryptionField(false);
                         trigger.next();
                         return;
                     }
@@ -6164,31 +6164,31 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void applyVmEncryptionState(boolean enable) {
         if (enable) {
-            self.setEncrypted(true);
+            self.setVmEncryption(true);
             vmSensitiveTagEncryptor.enableVmEncryption(self.getUuid());
         } else {
             vmSensitiveTagEncryptor.disableVmEncryption(self.getUuid());
-            self.setEncrypted(false);
+            self.setVmEncryption(false);
         }
         dbf.update(self);
     }
 
     private void restoreVmEncryptionState(boolean encryptionEnabled) {
         if (encryptionEnabled) {
-            self.setEncrypted(true);
+            self.setVmEncryption(true);
             vmSensitiveTagEncryptor.enableVmEncryption(self.getUuid());
         } else {
             vmSensitiveTagEncryptor.disableVmEncryption(self.getUuid());
-            self.setEncrypted(false);
+            self.setVmEncryption(false);
         }
         dbf.update(self);
     }
 
-    private void syncVmEncryptedField(boolean encrypted) {
-        if (self.isEncrypted() == encrypted) {
+    private void syncVmEncryptionField(boolean vmEncryption) {
+        if (self.isVmEncryption() == vmEncryption) {
             return;
         }
-        self.setEncrypted(encrypted);
+        self.setVmEncryption(vmEncryption);
         dbf.update(self);
     }
 

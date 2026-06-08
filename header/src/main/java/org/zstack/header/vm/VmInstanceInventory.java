@@ -232,9 +232,9 @@ public class VmInstanceInventory implements Serializable, Cloneable {
      */
     private Timestamp lastOpDate;
     /**
-     * @desc whether the vm itself is marked encrypted
+     * @desc whether VM sensitive system tags are encrypted
      */
-    private Boolean encrypted;
+    private Boolean vmEncryption;
     /**
      * @desc whether the vm itself, any attached volume, or its TPM has encrypted resource
      */
@@ -313,7 +313,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setPlatform(vo.getPlatform());
         this.setArchitecture(vo.getArchitecture());
         this.setGuestOsType(vo.getGuestOsType());
-        this.setEncrypted(vo.isEncrypted());
+        this.setVmEncryption(vo.isVmEncryption());
     }
 
     public static VmInstanceInventory valueOf(VmInstanceVO vo) {
@@ -392,7 +392,7 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.setAllocatorStrategy(inv.getAllocatorStrategy());
         this.setArchitecture(inv.getArchitecture());
         this.setGuestOsType(inv.getGuestOsType());
-        this.setEncrypted(inv.getEncrypted());
+        this.setVmEncryption(inv.getVmEncryption());
         this.setHasEncryptionResource(inv.getHasEncryptionResource());
         this.setKeyLastOpDate(inv.getKeyLastOpDate());
     }
@@ -609,12 +609,12 @@ public class VmInstanceInventory implements Serializable, Cloneable {
         this.lastOpDate = lastOpDate;
     }
 
-    public Boolean getEncrypted() {
-        return encrypted;
+    public Boolean getVmEncryption() {
+        return vmEncryption;
     }
 
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public Boolean getHasEncryptionResource() {
