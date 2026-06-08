@@ -214,6 +214,8 @@
     </bean>
     <bean id="HypervisorMetadataCollector" class="org.zstack.kvm.hypervisor.HypervisorMetadataCollectorImpl">
     </bean>
+    <bean id="KvmHypervisorMetadataStore" class="org.zstack.kvm.hypervisor.KvmHypervisorMetadataStoreImpl">
+    </bean>
 
     <bean id="KvmHypervisorZQLExtension" class="org.zstack.kvm.hypervisor.KvmHypervisorZQLExtension">
         <zstack:plugin>

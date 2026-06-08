@@ -7,6 +7,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
+import org.zstack.kvm.hypervisor.HostExpectedHypervisorMetadata;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
 
 import java.util.*;
@@ -45,7 +46,7 @@ public class ResourceHypervisorInfo {
     public static ResourceHypervisorInfo fromHostVirtualizerInfo(VirtualizerInfoTO info) {
         ResourceHypervisorInfo result = from(info);
         result.resourceType = HostVO.class.getSimpleName();
-        result.matchTargetResourceType = KvmHostHypervisorMetadataVO.class.getSimpleName();
+        result.matchTargetResourceType = HostExpectedHypervisorMetadata.class.getSimpleName();
         return result;
     }
 
@@ -107,7 +108,7 @@ public class ResourceHypervisorInfo {
             collectMatchTargetOfVm(vmInventories);
         }
 
-        // collect expect version of Host : from HostOsCategoryVO
+        // collect expect version of Host from the local MN repository metadata cache
         List<ResourceHypervisorInfo> hostInventories = inventories.stream()
                 .filter(inv -> inv.resourceType.equals(HostVO.class.getSimpleName()))
                 .collect(Collectors.toList());
@@ -148,28 +149,24 @@ public class ResourceHypervisorInfo {
     }
 
     private static void collectMatchTargetOfHost(List<ResourceHypervisorInfo> inventories) {
-        inventories.forEach(info -> info.matchTargetResourceType = KvmHostHypervisorMetadataVO.class.getSimpleName());
+        inventories.forEach(info -> info.matchTargetResourceType = HostExpectedHypervisorMetadata.class.getSimpleName());
 
-        Map<String, HostOsCategoryVO> hostExpectedMap =
-                KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(inventories.stream()
-                        .map(info -> info.uuid)
-                        .collect(Collectors.toSet()));
+        Map<String, List<ResourceHypervisorInfo>> hostInventoriesByHypervisor = inventories.stream()
+                .collect(Collectors.groupingBy(info -> info.virtualizer));
+        hostInventoriesByHypervisor.forEach((hypervisor, list) -> {
+            Map<String, HostExpectedHypervisorMetadata> hostExpectedMap =
+                    KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(
+                            list.stream().map(info -> info.uuid).collect(Collectors.toSet()), hypervisor);
 
-        for (ResourceHypervisorInfo hostInventory : inventories) {
-            HostOsCategoryVO category = hostExpectedMap.get(hostInventory.uuid);
-            if (category == null) {
-                continue;
+            for (ResourceHypervisorInfo hostInventory : list) {
+                HostExpectedHypervisorMetadata metadata = hostExpectedMap.get(hostInventory.uuid);
+                if (metadata == null) {
+                    continue;
+                }
+                hostInventory.matchTargetVersion = metadata.getVersion();
+                hostInventory.matchTargetUuid = metadata.getUuid();
             }
-            KvmHostHypervisorMetadataVO metadata = category.getMetadataList().stream()
-                    .filter(m -> m.getHypervisor().equals(hostInventory.virtualizer))
-                    .findAny()
-                    .orElse(null);
-            if (metadata == null) {
-                continue;
-            }
-            hostInventory.matchTargetVersion = metadata.getVersion();
-            hostInventory.matchTargetUuid = metadata.getUuid();
-        }
+        });
     }
 
     public KvmHypervisorInfoVO generate() {
@@ -179,7 +176,14 @@ public class ResourceHypervisorInfo {
         }
         vo.setHypervisor(virtualizer);
         vo.setVersion(version);
-        vo.setMatchState(KvmHypervisorInfoHelper.isQemuVersionMatched(version, matchTargetVersion));
+        boolean preserveHostMatchState = matchTargetVersion == null
+                && vo.getMatchState() != null
+                && HostVO.class.getSimpleName().equals(resourceType)
+                && HostExpectedHypervisorMetadata.class.getSimpleName().equals(matchTargetResourceType)
+                && !KvmHypervisorInfoHelper.isExpectedHypervisorMetadataAvailable();
+        if (!preserveHostMatchState) {
+            vo.setMatchState(KvmHypervisorInfoHelper.isQemuVersionMatched(version, matchTargetVersion));
+        }
 
         return vo;
     }
