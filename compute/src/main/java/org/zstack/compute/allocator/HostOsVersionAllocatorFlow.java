@@ -7,8 +7,11 @@ import org.zstack.compute.host.HostManager;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.allocator.AbstractHostAllocatorFlow;
+import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.host.*;
 import org.zstack.header.vo.ResourceVO;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -21,9 +24,16 @@ import java.util.stream.Collectors;
 public class HostOsVersionAllocatorFlow  extends AbstractHostAllocatorFlow {
     @Autowired
     private HostManager manager;
+    private static CLogger logger = Utils.getLogger(HostOsVersionAllocatorFlow.class);
 
     @Override
     public void allocate() {
+        if (HostAllocatorConstant.MIGRATE_VM_ALLOCATOR_TYPE.equals(spec.getAllocatorStrategy()) &&
+                HostAllocatorGlobalConfig.MIGRATION_BETWEEN_DIFFERENT_OS.value(Boolean.class)) {
+            next(candidates);
+            logger.debug("allow migration between hosts with different os, skip checking the target host os");
+            return;
+        }
         throwExceptionIfIAmTheFirstFlow();
 
         Map<String, HostVO> hostMap = new HashMap<>();
