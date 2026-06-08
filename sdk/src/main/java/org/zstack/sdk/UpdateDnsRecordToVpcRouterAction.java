@@ -20,7 +20,7 @@ public class UpdateDnsRecordToVpcRouterAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -62,9 +62,9 @@ public class UpdateDnsRecordToVpcRouterAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.UpdateDnsRecordToVpcRouterResult value = res.getResult(org.zstack.sdk.UpdateDnsRecordToVpcRouterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateDnsRecordToVpcRouterResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.UpdateDnsRecordToVpcRouterResult() : value; 
 
         return ret;
     }
