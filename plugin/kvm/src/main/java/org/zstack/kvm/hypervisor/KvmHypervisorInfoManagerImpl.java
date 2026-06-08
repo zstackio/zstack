@@ -47,6 +47,8 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     private EventFacade events;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private KvmHypervisorMetadataStore metadataStore;
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
@@ -164,32 +166,30 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         Set<String> hostUuidSet = uuidInfoMap.values().stream()
                 .filter(info -> info.matchTargetVersion == null)
                 .filter(info -> HostVO.class.getSimpleName().equals(info.resourceType))
-                .filter(info -> KvmHostHypervisorMetadataVO.class.getSimpleName().equals(info.matchTargetResourceType))
+                .filter(info -> HostExpectedHypervisorMetadata.class.getSimpleName().equals(info.matchTargetResourceType))
                 .map(info -> info.uuid)
                 .collect(Collectors.toSet());
         if (hostUuidSet.isEmpty()) {
             return;
         }
 
-        final Map<String, HostOsCategoryVO> uuidCategoryMap =
-                KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(hostUuidSet);
-        uuidCategoryMap.forEach((uuid, category) -> {
-            if (category == null) {
-                return;
-            }
+        Map<String, List<ResourceHypervisorInfo>> hostInfosByHypervisor = uuidInfoMap.values().stream()
+                .filter(info -> hostUuidSet.contains(info.uuid))
+                .collect(Collectors.groupingBy(info -> info.virtualizer));
+        hostInfosByHypervisor.forEach((hypervisor, infos) -> {
+            final Map<String, HostExpectedHypervisorMetadata> uuidExpectedMap =
+                    KvmHypervisorInfoHelper.collectExpectedHypervisorInfoForHosts(
+                            infos.stream().map(info -> info.uuid).collect(Collectors.toSet()), hypervisor);
 
-            ResourceHypervisorInfo info = uuidInfoMap.get(uuid);
-            final KvmHostHypervisorMetadataVO metadata = category.getMetadataList()
-                    .stream()
-                    .filter(m -> m.getHypervisor().equals(info.virtualizer))
-                    .findAny()
-                    .orElse(null);
-            if (metadata == null) {
-                return;
-            }
+            uuidExpectedMap.forEach((uuid, metadata) -> {
+                if (metadata == null) {
+                    return;
+                }
 
-            info.matchTargetUuid = metadata.getUuid();
-            info.matchTargetVersion = metadata.getVersion();
+                ResourceHypervisorInfo info = uuidInfoMap.get(uuid);
+                info.matchTargetUuid = metadata.getUuid();
+                info.matchTargetVersion = metadata.getVersion();
+            });
         });
     }
 
@@ -206,16 +206,6 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         }
     }
 
-    private KvmHypervisorInfoVO updateKvmHypervisorInfoVO(String uuid, KvmHypervisorInfoVO vo, VirtualizerInfoTO to) {
-        if (vo == null) {
-            vo = new KvmHypervisorInfoVO();
-            vo.setUuid(uuid);
-        }
-        vo.setHypervisor(to.getVirtualizer());
-        vo.setVersion(to.getVersion());
-        return vo;
-    }
-
     @Override
     public void clean(String uuid) {
         SQL.New(KvmHypervisorInfoVO.class).eq(KvmHypervisorInfoVO_.uuid, uuid).delete();
@@ -224,10 +214,14 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     @Override
     public void refreshMetadata() {
         List<HypervisorMetadataDefinition> collected = collector.collect();
-        boolean anyRecordUpdated = saveMetadataList(collected);
-        if (anyRecordUpdated) {
-            refreshHostMatchState();
+        boolean metadataUpdated = metadataStore.refresh(collected);
+        if (!metadataUpdated) {
+            logger.warn("no hypervisor metadata collected from DVD, skip refresh to preserve existing metadata");
+            return;
         }
+
+        saveMetadataList(metadataStore.listForCompatibility());
+        refreshHostMatchState();
     }
 
     private void registerRefreshVmHypervisorHooks() {
@@ -263,13 +257,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         bus.send(message); // no need to reply
     }
 
-    private boolean saveMetadataList(List<HypervisorMetadataDefinition> definitions) {
-        List<HostOsCategoryVO> categoryVOS = definitions.stream()
-                .map(this::mapToHostOsCategory)
-                .collect(Collectors.collectingAndThen(
-                        Collectors.toCollection(() -> new TreeSet<>(Comparator
-                                .comparing(HostOsCategoryVO::getArchitecture)
-                                .thenComparing(HostOsCategoryVO::getOsReleaseVersion))), ArrayList::new));
+    private boolean saveMetadataList(List<HostOsCategoryVO> categoryVOS) {
         return saveHostOsCategoryList(categoryVOS);
     }
 
@@ -280,7 +268,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
             return false;
         }
 
-        // refresh all metadata with current management node
+        // refresh all compatibility metadata with current management node
         SQL.New(KvmHostHypervisorMetadataVO.class)
                 .eq(KvmHostHypervisorMetadataVO_.managementNodeUuid, Platform.getManagementServerId())
                 .delete();
@@ -299,22 +287,16 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         List<HostOsCategoryVO> needPersistCategories = new ArrayList<>();
         List<KvmHostHypervisorMetadataVO> metadataList = new ArrayList<>();
 
-        // fill KvmHostHypervisorMetadataVO.categoryUuid
-        // fill HostOsCategoryVO.uuid if it is new
         for (HostOsCategoryVO category : categoryVOS) {
             HostOsCategoryVO realCategory = existsCategories.stream()
                     .filter(c -> c.getArchitecture().equals(category.getArchitecture()))
                     .filter(c -> c.getOsReleaseVersion().equals(category.getOsReleaseVersion()))
                     .findAny().orElse(null);
-            
+
             if (realCategory == null) {
-                String newUuid = Platform.getUuid();
-                category.setUuid(newUuid);
-                category.getMetadataList().forEach(m -> m.setCategoryUuid(newUuid));
                 needPersistCategories.add(category);
             } else {
-                String uuid = realCategory.getUuid();
-                category.getMetadataList().forEach(m -> m.setCategoryUuid(uuid));
+                category.getMetadataList().forEach(m -> m.setCategoryUuid(realCategory.getUuid()));
             }
 
             metadataList.addAll(category.getMetadataList());
@@ -368,6 +350,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
             if (originState == state) {
                 return;
             }
+
             updatedMap.compute(state, (v, list) -> {
                 if (list == null) {
                     return new ArrayList<>(Arrays.asList(uuid));
@@ -391,27 +374,6 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
                         hyper -> hyper.uuid,
                         hyper -> KvmHypervisorInfoHelper.isQemuVersionMatched(hyper.version, hyper.matchTargetVersion)
                 ));
-    }
-
-    /**
-     * note:
-     *   HostOsCategoryVO.uuid is empty
-     *   KvmHostHypervisorMetadataVO.categoryUuid is empty
-     */
-    private HostOsCategoryVO mapToHostOsCategory(HypervisorMetadataDefinition definition) {
-        HostOsCategoryVO vo = new HostOsCategoryVO();
-
-        vo.setArchitecture(definition.getArchitecture());
-        vo.setOsReleaseVersion(definition.getOsReleaseVersion());
-
-        KvmHostHypervisorMetadataVO metadata = new KvmHostHypervisorMetadataVO();
-        metadata.setUuid(Platform.getUuid());
-        metadata.setManagementNodeUuid(Platform.getManagementServerId());
-        metadata.setHypervisor(definition.getHypervisor());
-        metadata.setVersion(definition.getVersion());
-        vo.setMetadataList(Arrays.asList(metadata));
-
-        return vo;
     }
 
     @Override
