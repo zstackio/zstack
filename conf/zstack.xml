@@ -39,6 +39,7 @@
     <import resource="springConfigXml/ApiMediator.xml"/>
     <import resource="springConfigXml/ApplianceVmFacade.xml"/>
     <import resource="springConfigXml/Aspect.xml"/>
+    <import resource="springConfigXml/agents/ZCenterAccount.xml"/>
     <import resource="springConfigXml/BackupStorageManager.xml"/>
     <import resource="springConfigXml/CascadeFacade.xml"/>
     <import resource="springConfigXml/ceph.xml"/>
