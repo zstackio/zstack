@@ -180,12 +180,12 @@ public class VmInstanceInventory  {
         return this.lastOpDate;
     }
 
-    public java.lang.Boolean encrypted;
-    public void setEncrypted(java.lang.Boolean encrypted) {
-        this.encrypted = encrypted;
+    public java.lang.Boolean vmEncryption;
+    public void setVmEncryption(java.lang.Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
-    public java.lang.Boolean getEncrypted() {
-        return this.encrypted;
+    public java.lang.Boolean getVmEncryption() {
+        return this.vmEncryption;
     }
 
     public java.lang.Boolean hasEncryptionResource;
