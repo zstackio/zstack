@@ -20,7 +20,7 @@ public class QueryVpcRouterDnsRecordAction extends QueryAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -33,9 +33,9 @@ public class QueryVpcRouterDnsRecordAction extends QueryAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.QueryVpcRouterDnsRecordResult value = res.getResult(org.zstack.sdk.QueryVpcRouterDnsRecordResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryVpcRouterDnsRecordResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.QueryVpcRouterDnsRecordResult() : value; 
 
         return ret;
     }

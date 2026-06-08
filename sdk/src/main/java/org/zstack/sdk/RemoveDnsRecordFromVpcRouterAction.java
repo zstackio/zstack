@@ -20,7 +20,7 @@ public class RemoveDnsRecordFromVpcRouterAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -59,9 +59,9 @@ public class RemoveDnsRecordFromVpcRouterAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.RemoveDnsRecordFromVpcRouterResult value = res.getResult(org.zstack.sdk.RemoveDnsRecordFromVpcRouterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RemoveDnsRecordFromVpcRouterResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.RemoveDnsRecordFromVpcRouterResult() : value; 
 
         return ret;
     }
