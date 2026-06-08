@@ -334,10 +334,11 @@ INSERT IGNORE INTO `zstack`.`VmMetadataCleanupBarrierVO` (`id`, `state`, `create
 VALUES ('vm-metadata-cleanup', 'Idle', CURRENT_TIMESTAMP);
 
 -- Volume LUKS encryption flag (API opt-in + EncryptedResourceKeyRefVO binding)
+-- VmInstanceEO.vmEncryption: VM sensitive system-tag encryption (consolePassword / sshkey / userdata)
 
 ALTER TABLE `zstack`.`VolumeEO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
 ALTER TABLE `zstack`.`VolumeSnapshotEO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
-ALTER TABLE `zstack`.`VmInstanceEO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `zstack`.`VmInstanceEO` ADD COLUMN `vmEncryption` tinyint(1) NOT NULL DEFAULT 0;
 
 DROP VIEW IF EXISTS `zstack`.`VolumeVO`;
 CREATE VIEW `zstack`.`VolumeVO` AS
@@ -360,7 +361,7 @@ CREATE VIEW `zstack`.`VmInstanceVO` AS
 SELECT uuid, name, description, zoneUuid, clusterUuid, imageUuid, hostUuid, internalId,
        lastHostUuid, instanceOfferingUuid, rootVolumeUuid, defaultL3NetworkUuid, type,
        hypervisorType, cpuNum, cpuSpeed, memorySize, reservedMemorySize, platform,
-       guestOsType, allocatorStrategy, createDate, lastOpDate, state, architecture, encrypted
+       guestOsType, allocatorStrategy, createDate, lastOpDate, state, architecture, vmEncryption
 FROM `zstack`.`VmInstanceEO`
 WHERE deleted IS NULL;
 
