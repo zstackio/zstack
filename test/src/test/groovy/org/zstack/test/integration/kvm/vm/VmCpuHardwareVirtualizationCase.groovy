@@ -133,7 +133,7 @@ class VmCpuHardwareVirtualizationCase extends SubCase {
             testCreateWindowsVmWithExplicitResourceConfig()
             testJustCreateWindowsVmUsesGlobalOnStart()
             testGuestOsTypeWindowsUsesGlobalFallback()
-            testNonWindowsVmIgnoresConfig()
+            testNonWindowsVmRejectsConfig()
             testNonWindowsVmChangedToWindowsUsesGlobalFallback()
         } finally {
             KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.updateValue(originalValue)
@@ -287,7 +287,7 @@ class VmCpuHardwareVirtualizationCase extends SubCase {
         expungeVmInstance { uuid = vm.uuid }
     }
 
-    void testNonWindowsVmIgnoresConfig() {
+    void testNonWindowsVmRejectsConfig() {
         KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.updateValue(false)
         def vm = createVmAndCaptureStartCmd("linux-vm", "linux-image", { KVMAgentCommands.StartVmCmd cmd ->
             assert cmd.cpuHardwareVirtualization == null
@@ -295,18 +295,31 @@ class VmCpuHardwareVirtualizationCase extends SubCase {
 
         assert explicitCpuHardwareVirtualizationValue(vm.uuid) == null
 
+        expect(AssertionError.class) {
+            updateResourceConfig {
+                category = KVMGlobalConfig.CATEGORY
+                name = KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.name
+                value = Boolean.FALSE.toString()
+                resourceUuid = vm.uuid
+            }
+        }
+        assert explicitCpuHardwareVirtualizationValue(vm.uuid) == null
+
         destroyVmInstance { uuid = vm.uuid }
         expungeVmInstance { uuid = vm.uuid }
 
-        def explicitVm = createVmAndCaptureStartCmd("linux-explicit-false-vm", "linux-image",
-                [CPU_HARDWARE_VIRTUALIZATION_FALSE_TAG], { KVMAgentCommands.StartVmCmd cmd ->
-            assert cmd.cpuHardwareVirtualization == null
-        })
-
-        assert explicitCpuHardwareVirtualizationValue(explicitVm.uuid) == Boolean.FALSE.toString()
-
-        destroyVmInstance { uuid = explicitVm.uuid }
-        expungeVmInstance { uuid = explicitVm.uuid }
+        expect(AssertionError.class) {
+            def image = env.inventoryByName("linux-image")
+            def l3 = env.inventoryByName("l3")
+            def instanceOffering = env.inventoryByName("instanceOffering")
+            createVmInstance {
+                name = "linux-explicit-false-vm"
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                instanceOfferingUuid = instanceOffering.uuid
+                systemTags = [CPU_MODE_HOST_MODEL_TAG, CPU_HARDWARE_VIRTUALIZATION_FALSE_TAG]
+            }
+        }
     }
 
     void testNonWindowsVmChangedToWindowsUsesGlobalFallback() {

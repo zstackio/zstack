@@ -41,6 +41,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
+import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -106,6 +107,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -585,6 +587,17 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                     && !VmInstanceState.offlineStates.contains(vmState)) {
                 throw new GlobalConfigException("Can not change vm.cpuMode while VM is living.");
             }
+        });
+
+        resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            Tuple vm = getVmPlatformAndGuestOsType(resourceUuid);
+            if (vm == null || isWindowsVm(vm)) {
+                return;
+            }
+
+            throw new GlobalConfigException(String.format("ResourceConfig [category:%s, name:%s] only supports Windows VM, but vm[uuid:%s] is not Windows",
+                    KVMGlobalConfig.CATEGORY, KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.getName(), resourceUuid));
         });
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
@@ -1214,6 +1227,23 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         if (!vmNicManager.getSupportNicDriverTypes().contains(config.getNicDriver())) {
             throw new CloudRuntimeException(String.format("Invalid nic driver of config %s, valid values are %s", JSONObjectUtil.toJsonString(config), vmNicManager.getSupportNicDriverTypes()));
         }
+    }
+
+    private Tuple getVmPlatformAndGuestOsType(String vmUuid) {
+        return Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.platform, VmInstanceVO_.guestOsType)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findTuple();
+    }
+
+    private boolean isWindowsVm(Tuple vm) {
+        String platform = vm.get(0, String.class);
+        if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)) {
+            return true;
+        }
+
+        String guestOsType = vm.get(1, String.class);
+        return guestOsType != null && guestOsType.toLowerCase(Locale.ROOT).contains("windows");
     }
 
     private Boolean isNeedAlarmNic(String hostUuid, String nicName, String bondName) {
