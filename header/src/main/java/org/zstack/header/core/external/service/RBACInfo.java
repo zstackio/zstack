@@ -5,7 +5,7 @@ import org.zstack.header.identity.rbac.RBACDescription;
 public class RBACInfo implements RBACDescription {
     @Override
     public String permissionName() {
-        return "core-external-service";
+        return "external-service";
     }
 
     @Override
