@@ -138,8 +138,10 @@ public class SourceClassMap {
 			put("org.zstack.header.configuration.VmCustomSpecificationStruct", "org.zstack.sdk.VmCustomSpecificationStruct");
 			put("org.zstack.header.console.ConsoleInventory", "org.zstack.sdk.ConsoleInventory");
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
-			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
-			put("org.zstack.header.core.external.service.ExternalServiceInventory", "org.zstack.sdk.ExternalServiceInventory");
+			put("org.zstack.header.core.external.service.ApplyExternalConfigurationResult", "org.zstack.sdk.external.service.ApplyExternalConfigurationResult");
+			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.external.service.ExternalServiceCapabilities");
+			put("org.zstack.header.core.external.service.ExternalServiceConfigurationInventory", "org.zstack.sdk.external.service.ExternalServiceConfigurationInventory");
+			put("org.zstack.header.core.external.service.ExternalServiceInventory", "org.zstack.sdk.external.service.ExternalServiceInventory");
 			put("org.zstack.header.core.progress.ChainInfo", "org.zstack.sdk.ChainInfo");
 			put("org.zstack.header.core.progress.PendingTaskInfo", "org.zstack.sdk.PendingTaskInfo");
 			put("org.zstack.header.core.progress.RunningTaskInfo", "org.zstack.sdk.RunningTaskInfo");
@@ -826,9 +828,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalBackupStorageInventory", "org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory");
 			put("org.zstack.sdk.ExternalPrimaryStorageInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory");
-			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
-			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
@@ -1257,6 +1257,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");
 			put("org.zstack.sdk.databasebackup.DatabaseType", "org.zstack.header.storage.database.backup.DatabaseType");
+			put("org.zstack.sdk.external.service.ApplyExternalConfigurationResult", "org.zstack.header.core.external.service.ApplyExternalConfigurationResult");
+			put("org.zstack.sdk.external.service.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
+			put("org.zstack.sdk.external.service.ExternalServiceConfigurationInventory", "org.zstack.header.core.external.service.ExternalServiceConfigurationInventory");
+			put("org.zstack.sdk.external.service.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
 			put("org.zstack.sdk.guesttools.GuestToolsInventory", "org.zstack.guesttools.GuestToolsInventory");
 			put("org.zstack.sdk.guesttools.GuestToolsStateInventory", "org.zstack.guesttools.GuestToolsStateInventory");
 			put("org.zstack.sdk.guesttools.advanced.VmCustomSpecificationInventory", "org.zstack.guesttools.advanced.VmCustomSpecificationInventory");
