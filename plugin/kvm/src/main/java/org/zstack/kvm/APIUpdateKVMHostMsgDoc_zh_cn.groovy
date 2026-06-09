@@ -78,7 +78,7 @@ doc {
 				column {
 					name "managementIp"
 					enclosedIn "updateKVMHost"
-					desc "管理节点IP"
+					desc "物理机管理地址，支持IPv4地址、IPv6地址或DNS名称"
 					location "body"
 					type "String"
 					optional true
