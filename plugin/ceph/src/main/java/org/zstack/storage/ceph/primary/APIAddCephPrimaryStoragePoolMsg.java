@@ -28,7 +28,7 @@ public class APIAddCephPrimaryStoragePoolMsg extends APICreateMessage implements
     private String aliasName;
     @APIParam(maxLength = 2048, required = false)
     private String description;
-    @APIParam(validValues = {"Root", "Data"})
+    @APIParam(validValues = {"Root", "Data", "ImageCache"})
     private String type;
 
     private boolean isCreate;
