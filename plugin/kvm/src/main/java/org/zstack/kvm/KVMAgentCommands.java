@@ -1709,6 +1709,7 @@ public class KVMAgentCommands {
         private boolean coloSecondary;
         private boolean consoleLogToFile;
         private boolean acpi;
+        private boolean pmu = true;
 
         // TODO: only for test
         private boolean useColoBinary;
@@ -2166,6 +2167,14 @@ public class KVMAgentCommands {
 
         public void setAcpi(boolean acpi) {
             this.acpi = acpi;
+        }
+
+        public boolean isPmu() {
+            return pmu;
+        }
+
+        public void setPmu(boolean pmu) {
+            this.pmu = pmu;
         }
 
         public boolean isHypervClock() {
