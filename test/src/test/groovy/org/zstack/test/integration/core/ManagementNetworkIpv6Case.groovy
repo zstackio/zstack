@@ -257,7 +257,9 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     void testJGroupsInitialHostsIpv6Format() {
         assert Platform.formatJGroupsInitialHosts(IPV6, IPV6_2, JGROUP_PORT) ==
-                "[2001:db8::1][7805],[2001:db8::2][7805]"
+                "2001:db8::1[7805],2001:db8::2[7805]"
+        assert Platform.formatJGroupsInitialHosts("[2001:db8::1]", "[2001:db8::2]", JGROUP_PORT) ==
+                "2001:db8::1[7805],2001:db8::2[7805]"
     }
 
     void testJGroupsInitialHostsIpv4Regression() {

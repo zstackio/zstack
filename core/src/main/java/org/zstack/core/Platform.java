@@ -1186,8 +1186,8 @@ public class Platform {
 
     public static String formatJGroupsInitialHosts(String nodeIp, String peerIp, int port) {
         return String.format(JGROUPS_INITIAL_HOST_FORMAT,
-                IPv6NetworkUtils.formatHostForUrl(nodeIp), port,
-                IPv6NetworkUtils.formatHostForUrl(peerIp), port);
+                IPv6NetworkUtils.stripHostUrlBrackets(nodeIp), port,
+                IPv6NetworkUtils.stripHostUrlBrackets(peerIp), port);
     }
 
     private static String normalizeManagementIp(String ip) {
