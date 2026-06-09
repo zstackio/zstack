@@ -57,18 +57,19 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
     protected PluginRegistry pluginRgty;
 
     private static Map<String, Map<String, String>> grayUpgradeConfigMap = new HashMap<>();
-    private static ConcurrentLinkedQueue<String> grayScaleApiWhiteList = new ConcurrentLinkedQueue<>();
+    private static volatile ConcurrentLinkedQueue<String> grayScaleApiWhiteList = new ConcurrentLinkedQueue<>();
     private static Set<String> predefinedApiClassSet = new HashSet<>();
+    private static boolean globalConfigExtensionInstalled = false;
 
     private static String INITIAL_AGENT_VERSION = "3.10.38";
 
     @Override
     public boolean start() {
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return true;
-        }
-        initGrayScaleConfig();
         populateGlobalConfigForGrayscaleUpgrade();
+
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            initGrayScaleConfig();
+        }
         return true;
     }
 
@@ -87,27 +88,16 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         predefinedApiClassSet.add(APIUpdateClusterOSMsg.class.getSimpleName());
     }
 
-    private void populateGlobalConfigForGrayscaleUpgrade() {
+    private synchronized void populateGlobalConfigForGrayscaleUpgrade() {
         initPredefinedApiClassSet();
-        grayScaleApiWhiteList.addAll(predefinedApiClassSet);
-        List<String> predefinedClasses;
-        try {
-            predefinedClasses = Arrays.asList(UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING.value().split(","));
-        } catch (PatternSyntaxException exception) {
-            throw new CloudRuntimeException(String.format("Failed to split config value by ','," +
-                    ", because %s. Please input a string separate api by ','", exception));
-        }
-        grayScaleApiWhiteList.addAll(predefinedClasses);
+        refreshGrayScaleApiWhiteList(UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING.value());
 
+        if (globalConfigExtensionInstalled) {
+            return;
+        }
         UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING
                 .installValidateExtension((category, name, oldValue, newValue) -> {
-                    List<String> apiClassNames;
-                    try {
-                        apiClassNames = Arrays.asList(newValue.split(","));
-                    } catch (PatternSyntaxException exception) {
-                        throw new GlobalConfigException(String.format("Failed to split config value by ','," +
-                                ", because %s. Please input a string separate api by ','", exception));
-                    }
+                    List<String> apiClassNames = parseGrayScaleApiClassNames(newValue);
 
                     List<String> matchedApiClassName = apiClassNames.stream()
                             .filter(className -> APIMessage.apiMessageClasses
@@ -115,6 +105,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
                                     .anyMatch(clazz -> clazz.getSimpleName().equals(className)))
                             .collect(Collectors.toList());
 
+                    apiClassNames = new ArrayList<>(apiClassNames);
                     apiClassNames.removeAll(matchedApiClassName);
                     if (!apiClassNames.isEmpty()) {
                         throw new GlobalConfigException(String.format("Failed to find api class name: %s", apiClassNames));
@@ -122,13 +113,40 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         });
 
         UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING.installUpdateExtension((oldConfig, newConfig) -> {
-            List<String> apiClassNames = Arrays.asList(newConfig.value().split(","));
-            grayScaleApiWhiteList.clear();
-
-            apiClassNames.removeAll(predefinedApiClassSet);
-            grayScaleApiWhiteList.addAll(predefinedApiClassSet);
-            grayScaleApiWhiteList.addAll(apiClassNames);
+            refreshGrayScaleApiWhiteList(newConfig.value());
         });
+        globalConfigExtensionInstalled = true;
+    }
+
+    private List<String> parseGrayScaleApiClassNames(String value) {
+        try {
+            return Arrays.stream(StringUtils.defaultString(value).split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::isNotEmpty)
+                    .collect(Collectors.toList());
+        } catch (PatternSyntaxException exception) {
+            throw new GlobalConfigException(String.format("Failed to split config value by ','," +
+                    ", because %s. Please input a string separate api by ','", exception));
+        }
+    }
+
+    private void refreshGrayScaleApiWhiteList(String configValue) {
+        List<String> apiClassNames = parseGrayScaleApiClassNames(configValue);
+
+        ConcurrentLinkedQueue<String> whiteList = new ConcurrentLinkedQueue<>();
+        whiteList.addAll(predefinedApiClassSet);
+        apiClassNames.removeAll(predefinedApiClassSet);
+        whiteList.addAll(apiClassNames);
+        grayScaleApiWhiteList = whiteList;
+    }
+
+    public synchronized void addPredefinedApiClassName(String className) {
+        if (StringUtils.isEmpty(className)) {
+            return;
+        }
+
+        predefinedApiClassSet.add(className);
+        refreshGrayScaleApiWhiteList(UpgradeGlobalConfig.ALLOWED_API_LIST_GRAYSCALE_UPGRADING.value());
     }
 
     public void initGrayScaleConfig() {
@@ -191,14 +209,15 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         } else {
             agentVersionVO = versionVO;
         }
+        String currentAgentVersion = agentVersionVO.getCurrentVersion() == null ? INITIAL_AGENT_VERSION : agentVersionVO.getCurrentVersion();
 
         // if agent version not changed skip gray scale check
-        if (agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion())) {
+        if (agentVersionVO.getExpectVersion().equals(currentAgentVersion)) {
             logger.trace(String.format("agent[uuid: %s] expected version: %s, current version :%s matched," +
                             " skip grayscale upgrade check",
                     agentUuid,
-                    agentVersionVO.getCurrentVersion(),
-                    agentVersionVO.getCurrentVersion()));
+                    currentAgentVersion,
+                    currentAgentVersion));
             return null;
         }
 
@@ -235,7 +254,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         for (Map<String, String> fields : relatedFieldsVersionMap) {
             // check if current command has unexpected versions
             logger.debug("grayscale compare fields " + JSONObjectUtil.toJsonString(fields));
-            VersionComparator currentVersion = new VersionComparator(agentVersionVO.getCurrentVersion());
+            VersionComparator currentVersion = new VersionComparator(currentAgentVersion);
             Set<Map.Entry<String, String>> entries = fields.entrySet()
                     .stream()
                     .filter(entry -> {//logger.debug(String.format("entry key: %s, value:%s", entry.getKey(), entry.getValue()));
@@ -252,7 +271,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             if (entries.isEmpty()) {
                 if (logger.isTraceEnabled()) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, agentVersionVO.getCurrentVersion()));
+                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, currentAgentVersion));
                     fields.forEach((key, value) -> sb.append(String.format("field: %s, support version: %s\n", key, value)));
                     sb.append("all fields is supported by current agent, allow operations");
                     logger.trace(sb.toString());
@@ -282,7 +301,7 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             if (entries.isEmpty()) {
                 if (logger.isTraceEnabled()) {
                     StringBuilder sb = new StringBuilder();
-                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, agentVersionVO.getCurrentVersion()));
+                    sb.append(String.format("agent[uuid: %s] current version: %s\n", agentUuid, currentAgentVersion));
                     fields.forEach((key, value) -> sb.append(String.format("field: %s, support version: %s\n", key, value)));
                     sb.append("after check those fields' usage in command, allow operations");
                     logger.trace(sb.toString());
@@ -292,18 +311,18 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
 
             StringBuilder sb = new StringBuilder();
             sb.append(String.format("This operation is not allowed on host[uuid:%s] during grayscale upgrade: \n", agentUuid));
-            entries.forEach(entry -> sb.append(String.format("field: %s, current agent version %s, support version: %s\n", entry.getKey(), agentVersionVO.getCurrentVersion(), entry.getValue())));
+            entries.forEach(entry -> sb.append(String.format("field: %s, current agent version %s, support version: %s\n", entry.getKey(), currentAgentVersion, entry.getValue())));
             return operr(ORG_ZSTACK_CORE_UPGRADE_10001, sb.toString());
         }
 
         return null;
     }
 
-    public void updateAgentVersion(String agentUuid, String agentType, String expectVersion, String currentVersion) {
-        if (!UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
-            return;
-        }
+    public void refreshAgentExpectedVersion(String agentUuid, String agentType, String expectVersion) {
+        updateAgentVersion(agentUuid, agentType, expectVersion, null);
+    }
 
+    public void updateAgentVersion(String agentUuid, String agentType, String expectVersion, String currentVersion) {
         AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
         if (agentVersionVO == null) {
             agentVersionVO = new AgentVersionVO();
@@ -322,27 +341,33 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             return;
         }
 
-        if (currentVersion == null) {
-            logger.trace(String.format("Update agent[uuid: %s] version to null is not supported, skip updating", agentUuid));
-            return;
-        }
-
-        if (Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
-            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed", agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
-            return;
-        }
-
+        String originExpectVersion = agentVersionVO.getExpectVersion();
         String originCurrentVersion = agentVersionVO.getCurrentVersion();
-        agentVersionVO.setCurrentVersion(currentVersion);
-        logger.trace(String.format("Update agent[uuid: %s] version\n" +
-                "From:\n" +
-                "expected version: %s, current version: %s\n" +
-                "To:\n" +
-                "expected version: %s, current version: %s\n",
-                agentUuid,
-                agentVersionVO.getExpectVersion(), originCurrentVersion,
-                agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
-        dbf.update(agentVersionVO);
+        boolean changed = false;
+
+        if (!Objects.equals(originExpectVersion, expectVersion)) {
+            agentVersionVO.setExpectVersion(expectVersion);
+            changed = true;
+        }
+
+        if (currentVersion != null && !Objects.equals(originCurrentVersion, currentVersion)) {
+            agentVersionVO.setCurrentVersion(currentVersion);
+            changed = true;
+        }
+
+        if (changed) {
+            logger.trace(String.format("Update agent[uuid: %s] version\n" +
+                    "From:\n" +
+                    "expected version: %s, current version: %s\n" +
+                    "To:\n" +
+                    "expected version: %s, current version: %s\n",
+                    agentUuid, originExpectVersion, originCurrentVersion,
+                    agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
+            dbf.update(agentVersionVO);
+        } else {
+            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed",
+                    agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
+        }
     }
 
     /**
