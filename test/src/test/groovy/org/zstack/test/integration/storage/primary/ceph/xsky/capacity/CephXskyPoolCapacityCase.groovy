@@ -205,4 +205,5 @@ class CephXskyPoolCapacityCase extends SubCase {
         SQL.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, rootSnapshot.uuid)
                 .set(VolumeSnapshotVO_.primaryStorageInstallPath, volumeSnapshotInstallPath).update()
     }
+
 }
