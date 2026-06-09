@@ -5,9 +5,9 @@ import org.zstack.header.host.APIGetBlockDevicesEvent
 doc {
     title "GetBlockDevices"
 
-    category "未知类别"
+    category "host"
 
-    desc """在这里填写API描述"""
+    desc """获取指定物理机上的块设备列表"""
 
     rest {
         request {
@@ -17,7 +17,7 @@ doc {
 
             clz APIGetBlockDevicesMsg.class
 
-            desc """"""
+            desc """获取指定物理机上的块设备列表"""
             
 			params {
 
@@ -28,7 +28,7 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "5.5.6"
+					since "5.5.28"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "5.5.6"
+					since "5.5.28"
 				}
 				column {
 					name "userTags"
@@ -46,16 +46,16 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "5.5.6"
+					since "5.5.28"
 				}
 				column {
 					name "includeInUse"
 					enclosedIn ""
-					desc ""
+					desc "是否包含已被系统使用的块设备"
 					location "query"
 					type "boolean"
 					optional true
-					since "5.5.6"
+					since "5.5.28"
 				}
 			}
         }

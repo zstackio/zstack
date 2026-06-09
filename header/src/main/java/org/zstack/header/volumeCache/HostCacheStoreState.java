@@ -4,4 +4,3 @@ public enum HostCacheStoreState {
     Enabled,
     Disabled,
 }
-

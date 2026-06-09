@@ -207,4 +207,3 @@ public class HostCacheStoreInventory implements Serializable {
         this.lastOpDate = lastOpDate;
     }
 }
-

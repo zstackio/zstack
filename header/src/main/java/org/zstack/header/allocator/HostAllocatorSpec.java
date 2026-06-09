@@ -37,6 +37,16 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String accountUuid;
+    /**
+     * Allocation purpose. Defaults to ALLOCATE so existing call sites keep
+     * their current behavior. Filters may relax some checks (e.g. PCI device
+     * owner-RBAC) when this is LIST_CANDIDATES.
+     *
+     * Permission gating is the caller's responsibility; filters trust this
+     * value as-is.
+     */
+    private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
     private LinkedHashMap opaque;
 
     public LinkedHashMap getOpaque() {

@@ -5,4 +5,3 @@ public enum HostCacheStoreStatus {
     Connected,
     Disconnected,
 }
-

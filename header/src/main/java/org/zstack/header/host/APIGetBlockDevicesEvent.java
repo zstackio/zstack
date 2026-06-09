@@ -28,6 +28,7 @@ public class APIGetBlockDevicesEvent extends APIEvent {
     public static APIGetBlockDevicesEvent __example__() {
         APIGetBlockDevicesEvent event = new APIGetBlockDevicesEvent();
         HostBlockDeviceStruct struct = new HostBlockDeviceStruct();
+        struct.setName("sda");
         struct.setWwid("3600508b400105e5a0000800001490000");
         struct.setVendor("VMware");
         struct.setModel("Virtual disk");

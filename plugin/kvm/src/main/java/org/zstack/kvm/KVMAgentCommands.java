@@ -1325,7 +1325,7 @@ public class KVMAgentCommands {
 
         // for vDPA & dpdkvhostuserclient nic
         private String srcPath;
-        
+
         private Boolean cleanTraffic;
 
         private Boolean isolated;

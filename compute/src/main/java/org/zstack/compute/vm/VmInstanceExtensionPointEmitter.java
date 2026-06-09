@@ -52,6 +52,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private List<CleanUpAfterVmChangeImageExtensionPoint> cleanUpAfterVmChangeImageExtensionPoints;
     private List<VmNicChangeStateExtensionPoint> vmNicChangeStateExtensionPoints;
     private List<SshKeyPairAssociateExtensionPoint> sshKeyPairAssociateExtensionPoints;
+    private List<AfterUpdateVmNicMacExtensionPoint> afterUpdateVmNicMacExtensionPoints;
     private List<BeforeVmAllocateHostExtensionPoint> beforeVmAllocateHostExtensions;
 
     public List<ErrorCode> handleSystemTag(String vmUuid, List<String> tags){
@@ -636,6 +637,7 @@ public class VmInstanceExtensionPointEmitter implements Component {
         cleanUpAfterVmChangeImageExtensionPoints = pluginRgty.getExtensionList(CleanUpAfterVmChangeImageExtensionPoint.class);
         vmNicChangeStateExtensionPoints = pluginRgty.getExtensionList(VmNicChangeStateExtensionPoint.class);
         sshKeyPairAssociateExtensionPoints = pluginRgty.getExtensionList(SshKeyPairAssociateExtensionPoint.class);
+        afterUpdateVmNicMacExtensionPoints = pluginRgty.getExtensionList(AfterUpdateVmNicMacExtensionPoint.class);
         beforeVmAllocateHostExtensions = pluginRgty.getExtensionList(BeforeVmAllocateHostExtensionPoint.class);
     }
 

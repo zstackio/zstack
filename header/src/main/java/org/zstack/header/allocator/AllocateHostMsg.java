@@ -31,6 +31,13 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String accountUuid;
+    /**
+     * Allocation purpose. Defaults to ALLOCATE; LIST_CANDIDATES tells the
+     * downstream filters this is a candidate-listing call. Callers must gate
+     * LIST_CANDIDATES on admin permission.
+     */
+    private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
     private LinkedHashMap opaque;
 
     public List<Set<String>> getOptionalPrimaryStorageUuids() {
@@ -213,8 +220,19 @@ public class AllocateHostMsg extends NeedReplyMessage {
         this.architecture = architecture;
     }
 
+    public String getAccountUuid() { return accountUuid; }
+
+    public void setAccountUuid(String accountUuid) { this.accountUuid = accountUuid; }
+
+    public HostAllocationPurpose getPurpose() {
+        return purpose;
+    }
+
+    public void setPurpose(HostAllocationPurpose purpose) {
+        this.purpose = purpose == null ? HostAllocationPurpose.ALLOCATE : purpose;
+    }
+
     public LinkedHashMap getOpaque() { return opaque; }
 
     public void setOpaque(LinkedHashMap opaque) { this.opaque = opaque; }
-
 }

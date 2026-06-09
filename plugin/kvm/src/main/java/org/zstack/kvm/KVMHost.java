@@ -525,7 +525,7 @@ public class KVMHost extends HostBase implements Host {
                 completion.fail(errorCode);
                 return;
             }
-            
+
             Map<String, String> header = new HashMap<>();
             header.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, resourceUuid == null ? self.getUuid() : resourceUuid);
             runBeforeAsyncJsonPostExts(header);
@@ -602,7 +602,7 @@ public class KVMHost extends HostBase implements Host {
             commandStr = JSONObjectUtil.toJsonString(commandMap);
         }
     }
-    
+
     @Override
     protected void handleApiMessage(APIMessage msg) {
         super.handleApiMessage(msg);

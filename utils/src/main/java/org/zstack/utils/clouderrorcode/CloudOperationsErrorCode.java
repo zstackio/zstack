@@ -16220,6 +16220,32 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006 = "ORG_ZSTACK_CRYPTO_SECURITYMACHINE_THIRDPARTY_PLUGIN_10006";
 
+    public static final String ORG_ZSTACK_DGPU_10001 = "ORG_ZSTACK_DGPU_10001";
+
+    public static final String ORG_ZSTACK_DGPU_10002 = "ORG_ZSTACK_DGPU_10002";
+
+    public static final String ORG_ZSTACK_DGPU_10003 = "ORG_ZSTACK_DGPU_10003";
+
+    public static final String ORG_ZSTACK_DGPU_10004 = "ORG_ZSTACK_DGPU_10004";
+
+    public static final String ORG_ZSTACK_DGPU_10005 = "ORG_ZSTACK_DGPU_10005";
+
+    public static final String ORG_ZSTACK_DGPU_10006 = "ORG_ZSTACK_DGPU_10006";
+
+    public static final String ORG_ZSTACK_DGPU_10007 = "ORG_ZSTACK_DGPU_10007";
+
+    public static final String ORG_ZSTACK_DGPU_10008 = "ORG_ZSTACK_DGPU_10008";
+
+    public static final String ORG_ZSTACK_DGPU_10009 = "ORG_ZSTACK_DGPU_10009";
+
+    public static final String ORG_ZSTACK_DGPU_10010 = "ORG_ZSTACK_DGPU_10010";
+
+    public static final String ORG_ZSTACK_DGPU_10011 = "ORG_ZSTACK_DGPU_10011";
+
+    public static final String ORG_ZSTACK_DGPU_10012 = "ORG_ZSTACK_DGPU_10012";
+
+    public static final String ORG_ZSTACK_DGPU_10013 = "ORG_ZSTACK_DGPU_10013";
+
     public static final String ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10001 = "ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10001";
 
     public static final String ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10002 = "ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10002";

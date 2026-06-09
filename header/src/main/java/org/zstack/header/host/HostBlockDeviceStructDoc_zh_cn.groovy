@@ -4,78 +4,84 @@ import java.lang.Long
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "主机块设备结构"
 
 	field {
-		name "wwid"
-		desc ""
+		name "name"
+		desc "块设备名称"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
+	}
+	field {
+		name "wwid"
+		desc "块设备全局唯一标识"
+		type "String"
+		since "5.5.28"
 	}
 	field {
 		name "vendor"
-		desc ""
+		desc "块设备厂商"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "model"
-		desc ""
+		desc "块设备型号"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "wwn"
-		desc ""
+		desc "块设备全局名称"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "serial"
-		desc ""
+		desc "块设备序列号"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "hctl"
-		desc ""
+		desc "块设备的 HCTL 地址"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "type"
-		desc ""
+		desc "块设备类型"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "path"
-		desc ""
+		desc "块设备路径"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "size"
-		desc ""
+		desc "块设备容量，单位为字节"
 		type "Long"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "source"
-		desc ""
+		desc "块设备来源"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "transport"
-		desc ""
+		desc "块设备传输协议"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 	field {
 		name "targetIdentifier"
-		desc ""
+		desc "块设备目标标识"
 		type "String"
-		since "5.5.6"
+		since "5.5.28"
 	}
 }
