@@ -225,11 +225,12 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 String netmask;
                 String l3Uuid;
                 String dhcpServerIp;
+                String mac;
             }
 
             @Transactional(readOnly = true)
             private Map<String, VmIpL3Uuid> getVmIpL3Uuid(List<String> vmUuids) {
-                String sql = "select vm.uuid, ip.ip, ip.l3NetworkUuid, ip.netmask from VmInstanceVO vm," +
+                String sql = "select vm.uuid, ip.ip, ip.l3NetworkUuid, ip.netmask, nic.mac from VmInstanceVO vm," +
                         "VmNicVO nic, NetworkServiceL3NetworkRefVO ref," +
                         "NetworkServiceProviderVO pro, UsedIpVO ip where " +
                         " vm.uuid = nic.vmInstanceUuid and vm.uuid in (:uuids)" +
@@ -253,7 +254,102 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                     v.vmIp = t.get(1, String.class);
                     v.l3Uuid = t.get(2, String.class);
                     v.netmask = t.get(3, String.class);
+                    v.mac = t.get(4, String.class);
                     ret.put(vmUuid, v);
+                }
+
+                return ret;
+            }
+
+            @Transactional(readOnly = true)
+            private Map<String, String> getZoneNameByVmUuid(List<String> vmUuids) {
+                if (vmUuids.isEmpty()) {
+                    return Collections.emptyMap();
+                }
+
+                String sql = "select vm.uuid, zone.name from VmInstanceVO vm, ZoneVO zone " +
+                        "where vm.zoneUuid = zone.uuid and vm.uuid in (:vmUuids)";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("vmUuids", vmUuids);
+
+                Map<String, String> ret = new HashMap<>();
+                for (Tuple t : q.getResultList()) {
+                    ret.put(t.get(0, String.class), t.get(1, String.class));
+                }
+
+                return ret;
+            }
+
+            @Transactional(readOnly = true)
+            private Map<String, String> getDnsServersIpByL3Uuid(Set<String> l3Uuids) {
+                if (l3Uuids.isEmpty()) {
+                    return Collections.emptyMap();
+                }
+
+                String sql = "select dns.l3NetworkUuid, dns.dns from L3NetworkDnsVO dns where dns.l3NetworkUuid in (:l3Uuids)";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("l3Uuids", l3Uuids);
+
+                Map<String, List<String>> dnsServers = new HashMap<>();
+                for (Tuple t : q.getResultList()) {
+                    String l3Uuid = t.get(0, String.class);
+                    List<String> servers = dnsServers.computeIfAbsent(l3Uuid, k -> new ArrayList<>());
+                    servers.add(t.get(1, String.class));
+                }
+
+                Map<String, String> ret = new HashMap<>();
+                dnsServers.forEach((l3Uuid, servers) -> ret.put(l3Uuid, String.join("\n", servers)));
+                return ret;
+            }
+
+            @Transactional(readOnly = true)
+            private Map<String, String> getVpcIdByL3Uuid(Set<String> l3Uuids) {
+                if (l3Uuids.isEmpty()) {
+                    return Collections.emptyMap();
+                }
+
+                String sql = "select distinct nic.l3NetworkUuid, vm.uuid " +
+                        "from VmInstanceVO vm join VmNicVO nic on vm.uuid = nic.vmInstanceUuid " +
+                        "where vm.type = :vmType and nic.l3NetworkUuid in (:l3Uuids)";
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("vmType", VmInstanceConstant.APPLIANCE_VM_TYPE);
+                q.setParameter("l3Uuids", l3Uuids);
+
+                Map<String, String> ret = new HashMap<>();
+                for (Tuple t : q.getResultList()) {
+                    ret.putIfAbsent(t.get(0, String.class), t.get(1, String.class));
+                }
+
+                return ret;
+            }
+
+            @Transactional(readOnly = true)
+            private Map<String, List<NetworkInterfaceDetails>> getNetworkInterfaceDetailsByVmUuid(List<String> vmUuids) {
+                if (vmUuids.isEmpty()) {
+                    return Collections.emptyMap();
+                }
+
+                String sql = "select DISTINCT nic.vmInstanceUuid, nic.mac, nic.ip, nic.netmask, nic.gateway, ipr.networkCidr " +
+                        "from VmNicVO nic " +
+                        "join IpRangeVO ipr on nic.l3NetworkUuid = ipr.l3NetworkUuid " +
+                        "where nic.vmInstanceUuid in (:vmUuids) " +
+                        "and nic.ipVersion = :ipVersion ";
+
+                TypedQuery<Tuple> q = dbf.getEntityManager().createQuery(sql, Tuple.class);
+                q.setParameter("vmUuids", vmUuids);
+                q.setParameter("ipVersion", IPv6Constants.IPv4);
+
+                Map<String, List<NetworkInterfaceDetails>> ret = new HashMap<>();
+                for (Tuple t : q.getResultList()) {
+                    String vmUuid = t.get(0, String.class);
+                    NetworkInterfaceDetails details = new NetworkInterfaceDetails();
+                    details.macAddress = t.get(1, String.class);
+                    details.ip = t.get(2, String.class);
+                    details.netmask = t.get(3, String.class);
+                    details.gateway = t.get(4, String.class);
+                    details.vpcCidrBlock = t.get(5, String.class);
+                    details.vSwitchCidrBlock = t.get(5, String.class);
+                    ret.computeIfAbsent(vmUuid, k -> new ArrayList<>()).add(details);
                 }
 
                 return ret;
@@ -277,13 +373,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 }
 
                 Map<String, List<String>> userdata = new UserdataBuilder().buildByVmUuids(vmUuids);
-                Set<String> l3Uuids = new HashSet<String>();
-                for (VmIpL3Uuid l : vmipl3.values()) {
-                    String dhcpIp = dhcpBackend.allocateDhcpIp(l.l3Uuid, IPv6Constants.IPv4);
+                Set<String> l3Uuids = vmipl3.values().stream().map(l -> l.l3Uuid).collect(Collectors.toSet());
+                Map<String, String> l3DhcpIpMap = new HashMap<>();
+                for (String l3Uuid : l3Uuids) {
+                    String dhcpIp = dhcpBackend.allocateDhcpIp(l3Uuid, IPv6Constants.IPv4);
                     if (dhcpIp != null) {
-                        l.dhcpServerIp = dhcpIp;
+                        l3DhcpIpMap.put(l3Uuid, dhcpIp);
                     }
-                    l3Uuids.add(l.l3Uuid);
+                }
+                for (VmIpL3Uuid l : vmipl3.values()) {
+                    l.dhcpServerIp = l3DhcpIpMap.get(l.l3Uuid);
                 }
                 List<UserdataTO> tos = new ArrayList<>();
                 if (l3Uuids.isEmpty()) {
@@ -293,16 +392,16 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                 List<String> l2Uuids = Q.New(L3NetworkVO.class)
                         .select(L3NetworkVO_.l2NetworkUuid).in(L3NetworkVO_.uuid, l3Uuids).listValues();
                 Map<String, String> bridgesVlan = new BridgeVlanIdFinder().findByL2Uuids(l2Uuids);
+                Map<String, String> dnsServers = getDnsServersIpByL3Uuid(l3Uuids);
+                Map<String, String> vpcIds = getVpcIdByL3Uuid(l3Uuids);
+                Map<String, String> zoneNames = getZoneNameByVmUuid(vmUuids);
+                Map<String, List<NetworkInterfaceDetails>> networkInterfaceDetails = getNetworkInterfaceDetailsByVmUuid(vmUuids);
 
                 for (String vmuuid : vmUuids) {
                     UserdataTO to = new UserdataTO();
                     MetadataTO mto = new MetadataTO();
                     mto.vmUuid = vmuuid;
                     mto.vmHostname = VmSystemTags.HOSTNAME.getTokenByResourceUuid(vmuuid, VmSystemTags.HOSTNAME_TOKEN);
-                    mto.regionName = getZoneNameByVmInstanceUuid(vmuuid);
-                    mto.mac = getVmNicMacAddressByVmInstanceUuid(vmuuid);
-                    mto.dnsServersIp = getDnsServersIpFromVm(vmuuid);
-                    mto.vpcId = getVpcIdByVmInstanceUuid(vmuuid);
                     to.metadata = mto;
 
                     VmIpL3Uuid l = vmipl3.get(vmuuid);
@@ -321,7 +420,11 @@ public class FlatUserdataBackend implements UserdataBackend, KVMHostConnectExten
                         continue;
                     }
 
-                    to.networkInterfaces = getNetworkInterfaceDetails(vmuuid);
+                    mto.regionName = zoneNames.get(vmuuid);
+                    mto.mac = l.mac;
+                    mto.dnsServersIp = dnsServers.get(l.l3Uuid);
+                    mto.vpcId = vpcIds.get(l.l3Uuid);
+                    to.networkInterfaces = networkInterfaceDetails.getOrDefault(vmuuid, Collections.emptyList());
                     to.dhcpServerIp = l.dhcpServerIp;
                     to.vmIp = l.vmIp;
                     to.netmask = l.netmask;
