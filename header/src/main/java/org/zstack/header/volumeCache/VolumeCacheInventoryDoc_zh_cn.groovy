@@ -2,6 +2,7 @@ package org.zstack.header.volumeCache
 
 import org.zstack.header.volumeCache.VolumeCacheMode
 import org.zstack.header.volumeCache.VolumeCacheStatus
+import java.lang.Long
 import java.sql.Timestamp
 
 doc {
@@ -47,6 +48,18 @@ doc {
 		type "VolumeCacheStatus"
 		since "5.5.6"
 		clz VolumeCacheStatus.class
+	}
+	field {
+		name "virtualSize"
+		desc "卷缓存虚拟大小"
+		type "Long"
+		since "5.5.28"
+	}
+	field {
+		name "actualSize"
+		desc "卷缓存实际占用大小"
+		type "Long"
+		since "5.5.28"
 	}
 	field {
 		name "createDate"
