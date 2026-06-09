@@ -1,7 +1,5 @@
 package org.zstack.sdk;
 
-import org.zstack.sdk.ModelServiceLaunchCommandInventory;
-
 public class ModelServiceInstanceLaunchCommandInventory  {
 
     public java.lang.String instanceUuid;
