@@ -10,6 +10,7 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.compute.vm.VmNicManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleFacade;
+import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.jsonlabel.JsonLabelInventory;
 import org.zstack.core.cloudbus.CloudBus;
@@ -33,6 +34,8 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.UpgradeChecker;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
@@ -177,6 +180,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     @Autowired
     private GlobalConfigFacade gcf;
     @Autowired
+    private UpgradeChecker upgradeChecker;
+    @Autowired
     KvmVmSyncPingTask pingTask;
     private Future<Void> checkSocketChannelTimeoutThread;
     public static int skipHostPingTimeWhenKvmagentBusy = 300;
@@ -262,16 +267,22 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     }
 
     private List<String> getHostManagedByUs() {
+        return getHostManagedByUs(true);
+    }
+
+    private List<String> getHostManagedByUs(boolean connectedOnly) {
         int qun = 10000;
-        long amount = dbf.count(HostVO.class);
+        long amount = dbf.count(KVMHostVO.class);
         int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
         List<String> hostUuids = new ArrayList<String>();
         int start = 0;
         for (int i = 0; i < times; i++) {
             SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
             q.select(HostVO_.uuid);
-            // disconnected host will be handled by HostManager
-            q.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+            if (connectedOnly) {
+                // disconnected host will be handled by HostManager
+                q.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+            }
             q.setLimit(qun);
             q.setStart(start);
             List<String> lst = q.listValue();
@@ -1121,17 +1132,27 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return;
         }
 
-        if (!asf.isModuleChanged(KVMConstant.ANSIBLE_PLAYBOOK_NAME)) {
+        List<String> allHostUuids = getHostManagedByUs(false);
+        for (String huuid : allHostUuids) {
+            upgradeChecker.refreshAgentExpectedVersion(huuid, AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion());
+        }
+
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            logger.debug(String.format("skip connecting kvm hosts on management node ready because grayscale upgrade is enabled, refreshed expected versions for hosts:%s", allHostUuids));
             return;
         }
 
-        // KVM hosts need to deploy new agent
-        // connect hosts even if they are ConnectionState is Connected
+        if (!asf.isModuleChanged(KVMConstant.ANSIBLE_PLAYBOOK_NAME)) {
+            return;
+        }
 
         List<String> hostUuids = getHostManagedByUs();
         if (hostUuids.isEmpty()) {
             return;
         }
+
+        // KVM hosts need to deploy new agent
+        // connect hosts even if they are ConnectionState is Connected
 
         logger.debug(String.format("need to connect kvm hosts because kvm agent changed, uuids:%s", hostUuids));
 
