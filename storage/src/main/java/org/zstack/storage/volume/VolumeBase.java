@@ -1139,6 +1139,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         cmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         cmsg.setImageInventory(ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class)));
         cmsg.setVolumeInventory(getSelfInventory());
+        cmsg.setEncrypted(msg.getEncrypted());
         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
         bus.send(cmsg, new CloudBusCallBack(msg, noErrorCompletion) {
             @Override
