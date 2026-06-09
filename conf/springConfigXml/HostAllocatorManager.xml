@@ -210,6 +210,11 @@
                 <value>org.zstack.compute.allocator.LastHostAllocatorFlow</value>
             </list>
         </property>
+        <property name="sortFlowNames">
+            <list>
+                <value>org.zstack.compute.allocator.PreferredClusterHostSortFlow</value>
+            </list>
+        </property>
     </bean>
 
     <bean id="LastHostPreferredAllocatorStrategyFactory"

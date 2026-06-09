@@ -37,6 +37,7 @@ public class HostAllocatorSpec {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String preferClusterUuid;
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -44,6 +45,14 @@ public class HostAllocatorSpec {
 
     public void setAllocationScene(AllocationScene allocationScene) {
         this.allocationScene = allocationScene;
+    }
+
+    public String getPreferClusterUuid() {
+        return preferClusterUuid;
+    }
+
+    public void setPreferClusterUuid(String preferClusterUuid) {
+        this.preferClusterUuid = preferClusterUuid;
     }
 
     public List<String> getSystemTags() {
@@ -249,6 +258,7 @@ public class HostAllocatorSpec {
         spec.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
         msg.getOptionalPrimaryStorageUuids().forEach(spec::addOptionalPrimaryStorageUuids);
         spec.setAllocationScene(msg.getAllocationScene());
+        spec.setPreferClusterUuid(msg.getPreferClusterUuid());
         spec.setArchitecture(msg.getArchitecture());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));

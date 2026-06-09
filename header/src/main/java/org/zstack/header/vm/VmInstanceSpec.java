@@ -305,6 +305,7 @@ public class VmInstanceSpec implements Serializable {
     private List<VolumeSpec> volumeSpecs = new ArrayList<>();
     private String requiredClusterUuid;
     private List<String> requiredClusterUuids;
+    private String preferClusterUuid;
     private String requiredHostUuid;
     private List<String> softAvoidHostUuids;
     private List<String> avoidHostUuids;
@@ -460,6 +461,14 @@ public class VmInstanceSpec implements Serializable {
 
     public void setRequiredClusterUuid(String requiredClusterUuid) {
         this.requiredClusterUuid = requiredClusterUuid;
+    }
+
+    public String getPreferClusterUuid() {
+        return preferClusterUuid;
+    }
+
+    public void setPreferClusterUuid(String preferClusterUuid) {
+        this.preferClusterUuid = preferClusterUuid;
     }
 
     public String getRequiredHostUuid() {

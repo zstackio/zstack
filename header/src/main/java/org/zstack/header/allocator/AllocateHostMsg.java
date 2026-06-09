@@ -31,6 +31,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
     private String architecture;
+    private String preferClusterUuid;
 
     public List<Set<String>> getOptionalPrimaryStorageUuids() {
         return optionalPrimaryStorageUuids;
@@ -48,6 +49,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void setAllocationScene(AllocationScene allocationScene) {
         this.allocationScene = allocationScene;
+    }
+
+    public String getPreferClusterUuid() {
+        return preferClusterUuid;
+    }
+
+    public void setPreferClusterUuid(String preferClusterUuid) {
+        this.preferClusterUuid = preferClusterUuid;
     }
 
     public Set<String> getRequiredPrimaryStorageUuids() {

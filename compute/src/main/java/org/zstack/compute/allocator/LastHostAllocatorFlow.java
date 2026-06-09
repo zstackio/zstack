@@ -36,12 +36,17 @@ public class LastHostAllocatorFlow extends AbstractHostAllocatorFlow {
             }
         });
 
-        if (vo != null) {
+        if (vo != null && !isSoftAvoidHost(vo.getUuid())) {
             List<HostVO> vos = new ArrayList<>();
             vos.add(vo);
             next(vos);
         } else {
             next(candidates);
         }
+    }
+
+    private boolean isSoftAvoidHost(String hostUuid) {
+        List<String> softAvoidHostUuids = spec.getSoftAvoidHostUuids();
+        return softAvoidHostUuids != null && softAvoidHostUuids.contains(hostUuid);
     }
 }

@@ -6896,6 +6896,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setMemorySnapshotUuid(((RestoreVmInstanceMsg) msg).getMemorySnapshotUuid());
         }
 
+        if (AllocationScene.Auto.equals(spec.getAllocationScene())
+                && rcf.getResourceConfigValue(VmGlobalConfig.VM_HA_ACROSS_CLUSTERS, self.getUuid(), Boolean.class)) {
+            spec.setPreferClusterUuid(self.getClusterUuid());
+        }
+
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.starting);
 

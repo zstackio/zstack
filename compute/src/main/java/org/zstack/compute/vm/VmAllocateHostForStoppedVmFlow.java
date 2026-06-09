@@ -42,8 +42,37 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
     public void run(final FlowTrigger chain, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
 
-        AllocateHostMsg amsg;
+        allocateHost(spec, getRequiredClusterUuid(spec), new CloudBusCallBack(chain) {
+            @Override
+            public void run(MessageReply reply) {
+                handleReply(reply, spec, data, chain);
+            }
+        });
+    }
 
+    private String getRequiredClusterUuid(VmInstanceSpec spec) {
+        if (spec.getRequiredClusterUuid() != null) {
+            return spec.getRequiredClusterUuid();
+        }
+
+        if (shouldRestrictNoNicVmToCurrentCluster(spec)) {
+            return spec.getVmInventory().getClusterUuid();
+        }
+
+        return null;
+    }
+
+    private boolean shouldRestrictNoNicVmToCurrentCluster(VmInstanceSpec spec) {
+        if (spec.getRequiredHostUuid() != null
+                || spec.getVmInventory().getClusterUuid() == null
+                || !CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
+            return false;
+        }
+
+        return !AllocationScene.Auto.equals(spec.getAllocationScene());
+    }
+
+    private void allocateHost(VmInstanceSpec spec, String clusterUuid, CloudBusCallBack callback) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
         msg.setVmInstance(spec.getVmInventory());
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
@@ -76,51 +105,43 @@ public class VmAllocateHostForStoppedVmFlow implements Flow {
                 return arg.getUuid();
             }
         }));
-        if (spec.getRequiredClusterUuid() == null) {
-            if (CollectionUtils.isEmpty(spec.getVmInventory().getVmNics())) {
-                msg.setClusterUuid(spec.getVmInventory().getClusterUuid());
-            }
-        } else {
-            msg.setClusterUuid(spec.getRequiredClusterUuid());
-        }
+        msg.setClusterUuid(clusterUuid);
         msg.setRequiredPrimaryStorageUuids(spec.getVmInventory().getAllVolumes().stream()
                 .map(VolumeInventory::getPrimaryStorageUuid)
                 .collect(Collectors.toSet()));
         msg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         msg.setAllocationScene(spec.getAllocationScene());
+        msg.setPreferClusterUuid(spec.getPreferClusterUuid());
         msg.setAvoidHostUuids(spec.getAvoidHostUuids());
-        amsg = msg;
+        bus.send(msg, callback);
+    }
 
-        bus.send(amsg, new CloudBusCallBack(chain) {
+    private void handleReply(MessageReply reply, VmInstanceSpec spec, Map data, FlowTrigger chain) {
+        if (!reply.isSuccess()) {
+            chain.fail(reply.getError());
+            return;
+        }
+
+        AllocateHostReply areply = (AllocateHostReply) reply;
+        spec.setDestHost(areply.getHost());
+
+        new SQLBatch(){
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    chain.fail(reply.getError());
-                    return;
-                }
-
-                AllocateHostReply areply = (AllocateHostReply) reply;
-                spec.setDestHost(areply.getHost());
-
-                new SQLBatch(){
-                    @Override
-                    protected void scripts() {
-                        String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
-                                spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
-                        oldHostUuid = q(HostVO.class).eq(HostVO_.uuid, oldHostUuid).isExists() ? oldHostUuid : null;
-                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
-                                .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
-                                .set(VmInstanceVO_.hostUuid, areply.getHost().getUuid())
-                                .set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid())
-                                .update();
-                    }
-                }.execute();
-
-                data.put(SUCCESS, true);
-                chain.next();
+            protected void scripts() {
+                String oldHostUuid = spec.getVmInventory().getHostUuid() == null ?
+                        spec.getVmInventory().getLastHostUuid() : spec.getVmInventory().getHostUuid();
+                oldHostUuid = q(HostVO.class).eq(HostVO_.uuid, oldHostUuid).isExists() ? oldHostUuid : null;
+                sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, spec.getVmInventory().getUuid())
+                        .set(VmInstanceVO_.lastHostUuid, oldHostUuid)
+                        .set(VmInstanceVO_.hostUuid, areply.getHost().getUuid())
+                        .set(VmInstanceVO_.clusterUuid, areply.getHost().getClusterUuid())
+                        .update();
             }
-        });
+        }.execute();
+
+        data.put(SUCCESS, true);
+        chain.next();
     }
 
     @Override
