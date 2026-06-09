@@ -72,6 +72,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ZnsProxyKvmReconnectExtension" class="org.zstack.sdnController.znsproxy.ZnsProxyKvmReconnectExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="H3cSdnControllerFactory" class="org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.sdnController.SdnControllerFactory"/>
