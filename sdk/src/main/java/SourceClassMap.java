@@ -37,6 +37,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus", "org.zstack.sdk.ServiceStatus");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService", "org.zstack.sdk.ZdfsService");
 			put("org.zstack.ai.message.ModelService", "org.zstack.sdk.ModelService");
+			put("org.zstack.ai.message.ModelServiceInstanceLaunchCommandInventory", "org.zstack.sdk.ModelServiceInstanceLaunchCommandInventory");
 			put("org.zstack.ai.message.ModelServiceLaunchCommandInventory", "org.zstack.sdk.ModelServiceLaunchCommandInventory");
 			put("org.zstack.ai.message.ModelServiceMatchEntry", "org.zstack.sdk.ModelServiceMatchEntry");
 			put("org.zstack.ai.message.ModelServiceMatchEntryName", "org.zstack.sdk.ModelServiceMatchEntryName");
@@ -1311,6 +1312,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelServiceGroupDatasetRefInventory", "org.zstack.ai.entity.ModelServiceGroupDatasetRefInventory");
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
+			put("org.zstack.sdk.ModelServiceInstanceLaunchCommandInventory", "org.zstack.ai.message.ModelServiceInstanceLaunchCommandInventory");
 			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.entity.ModelServiceInventory");
 			put("org.zstack.sdk.ModelServiceLaunchCommandInventory", "org.zstack.ai.message.ModelServiceLaunchCommandInventory");
 			put("org.zstack.sdk.ModelServiceMatchEntry", "org.zstack.ai.message.ModelServiceMatchEntry");
