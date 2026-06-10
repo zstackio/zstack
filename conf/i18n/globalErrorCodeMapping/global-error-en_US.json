@@ -2963,6 +2963,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "Get integrity password from database failed due to %s does not generate integrity password",
   "ORG_ZSTACK_VHOST_KVM_10000": "vHostUser disk only supports virtio mode. Please verify that the image platform has the necessary virtio drivers installed.",
   "ORG_ZSTACK_VHOST_KVM_10001": "vhost-user disk does not support virtio-scsi mode; please disable virtio-scsi mode.",
+  "ORG_ZSTACK_VHOST_KVM_10002": "Cannot attach vhost-user data volume online: the running VM does not have shared memory enabled. Either shut down the VM and then attach, or set the global config 'generate.config.vhost.required' to 'auto' or 'true' and restart the VM (this disables memory overcommit for the VM).",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s is not a valid IPv6 address for cloud resource configuration",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough only supports usage on a VM running in the host environment.",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "Only administrative users can set the parameter [onlyZstack] to false.",

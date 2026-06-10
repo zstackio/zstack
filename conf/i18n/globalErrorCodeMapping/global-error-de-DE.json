@@ -2871,6 +2871,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "Abrufen des Integritätspassworts aus der Datenbank fehlgeschlagen, da %s kein Integritätspasswort generiert",
   "ORG_ZSTACK_VHOST_KVM_10000": "vHostUser-Datenträger unterstützt nur den Virtio-Modus. Bitte überprüfen Sie, ob die Image-Plattform die erforderlichen Virtio-Treiber installiert hat.",
   "ORG_ZSTACK_VHOST_KVM_10001": "vHost-User-Datenträger unterstützt den Virtio-SCSI-Modus nicht; bitte deaktivieren Sie den Virtio-SCSI-Modus.",
+  "ORG_ZSTACK_VHOST_KVM_10002": "vhost-user-Datenträger kann nicht online angehängt werden: Bei der laufenden VM ist kein gemeinsam genutzter Speicher aktiviert. Fahren Sie die VM herunter und hängen Sie sie dann an, oder setzen Sie die globale Konfiguration 'generate.config.vhost.required' auf 'auto' oder 'true' und starten Sie die VM neu (dies deaktiviert Memory Overcommit für die VM).",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s ist keine gültige IPv6-Adresse für die Cloud-Ressourcenkonfiguration",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough unterstützt nur die Verwendung auf einer VM, die in der Host-Umgebung ausgeführt wird.",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "Nur administrative Benutzer können den Parameter [onlyZstack] auf false setzen.",

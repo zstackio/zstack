@@ -12199,6 +12199,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_VHOST_KVM_10001 = "ORG_ZSTACK_VHOST_KVM_10001";
 
+    public static final String ORG_ZSTACK_VHOST_KVM_10002 = "ORG_ZSTACK_VHOST_KVM_10002";
+
     public static final String ORG_ZSTACK_STORAGE_BACKUP_SFTP_10000 = "ORG_ZSTACK_STORAGE_BACKUP_SFTP_10000";
 
     public static final String ORG_ZSTACK_STORAGE_BACKUP_SFTP_10001 = "ORG_ZSTACK_STORAGE_BACKUP_SFTP_10001";

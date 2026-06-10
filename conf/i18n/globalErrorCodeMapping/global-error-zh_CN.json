@@ -2963,6 +2963,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "从数据库获取完整性密码失败，因为 [%s] 未生成完整性密码",
   "ORG_ZSTACK_VHOST_KVM_10000": "vhostuser磁盘仅支持virtio模式，请检查镜像平台是否包含virtio驱动程序",
   "ORG_ZSTACK_VHOST_KVM_10001": "vhost-user磁盘不支持virtio-scsi模式，请关闭virtio-scsi模式",
+  "ORG_ZSTACK_VHOST_KVM_10002": "无法在线挂载vhost数据盘：该运行中云主机未启用共享内存。两种方式：1) 关机后再挂载；2) 将全局配置 generate.config.vhost.required 设为 auto 或 true 后重启该云主机（会禁用该云主机的内存超分）",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s 不是一个有效的IPv6地址",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough 只支持在运行中的主机 VM 上使用",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "只有管理员可以将参数 [onlyZstack] 设置为 false",
