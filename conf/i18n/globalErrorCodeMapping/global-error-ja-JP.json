@@ -2931,6 +2931,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "データベースから整合性パスワードの取得に失敗しました。%sが整合性パスワードを生成していないためです",
   "ORG_ZSTACK_VHOST_KVM_10000": "vHostUserディスクはvirtioモードのみをサポートします。イメージプラットフォームに必要なvirtioドライバーがインストールされていることを確認してください。",
   "ORG_ZSTACK_VHOST_KVM_10001": "vhost-userディスクはvirtio-scsiモードをサポートしません。virtio-scsiモードを無効にしてください。",
+  "ORG_ZSTACK_VHOST_KVM_10002": "vhost-userデータボリュームをオンラインでアタッチできません：実行中のVMで共有メモリが有効化されていません。VMをシャットダウンしてからアタッチするか、グローバル設定 generate.config.vhost.required を auto または true に設定してVMを再起動してください（VMのメモリオーバーコミットが無効になります）。",
   "ORG_ZSTACK_NETWORK_L3_10029": "%sはクラウドリソース構成の有効なIPv6アドレスではありません",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThroughはホスト環境で実行されているVMでのみ使用できます。",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "パラメータ[onlyZstack]をfalseに設定できるのは管理者のみです。",

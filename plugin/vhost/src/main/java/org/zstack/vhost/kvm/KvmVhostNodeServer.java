@@ -6,13 +6,16 @@ import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.storage.addon.primary.BaseVolumeInfo;
 import org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc;
+import org.zstack.header.vm.VmAttachVolumeExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeProtocolCapability;
@@ -28,7 +31,8 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
-        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint {
+        KVMConvertVolumeExtensionPoint, KVMDetachVolumeExtensionPoint, KVMAttachVolumeExtensionPoint,
+        VmAttachVolumeExtensionPoint {
     @Autowired
     private ExternalPrimaryStorageFactory extPsFactory;
     @Autowired
@@ -169,4 +173,42 @@ public class KvmVhostNodeServer implements Component, KVMStartVmExtensionPoint,
     public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd) {}
     @Override
     public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory volume, KVMAgentCommands.AttachDataVolumeCmd cmd, ErrorCode err, Map data) {}
+
+    @Override
+    public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
+        if (!VolumeProtocol.Vhost.name().equals(volume.getProtocol())) {
+            completion.success();
+            return;
+        }
+        if (vm.getHostUuid() == null || !VmInstanceState.Running.toString().equals(vm.getState())) {
+            completion.success();
+            return;
+        }
+        if (vmHasSharedMemory(vm)) {
+            completion.success();
+            return;
+        }
+        completion.fail(argerr(ORG_ZSTACK_VHOST_KVM_10002,
+                "cannot attach vhost-user data volume online: the running VM does not have shared memory enabled." +
+                " Either shut down the VM and then attach, or set the global config" +
+                " 'generate.config.vhost.required' to 'auto' or 'true' and restart the VM" +
+                " (this disables memory overcommit for the VM)"));
+    }
+
+    private boolean vmHasSharedMemory(VmInstanceInventory vm) {
+        if (vm.getAllVolumes() != null && vm.getAllVolumes().stream()
+                .anyMatch(v -> VolumeProtocol.Vhost.name().equals(v.getProtocol()))) {
+            return true;
+        }
+        return needSupportVhostPrimaryStorage(vm.getClusterUuid());
+    }
+
+    @Override
+    public void beforeAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Map data) {}
+
+    @Override
+    public void afterAttachVolume(VmInstanceInventory vm, VolumeInventory volume) {}
+
+    @Override
+    public void failedToAttachVolume(VmInstanceInventory vm, VolumeInventory volume, ErrorCode errorCode, Map data) {}
 }
