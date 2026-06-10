@@ -28,6 +28,9 @@ public class UnregisterLicenseServerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clientAuthorizedNodeUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean force = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 
