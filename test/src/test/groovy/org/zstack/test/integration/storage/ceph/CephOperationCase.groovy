@@ -177,9 +177,10 @@ class CephOperationCase extends SubCase {
         ps = env.inventoryByName("ceph-pri") as CephPrimaryStorageInventory
         bs = env.inventoryByName("ceph-bk") as CephBackupStorageInventory
 
-        assert ps.pools.securityPolicy == [DataSecurityPolicy.Copy.toString()] * 3
-        assert ps.pools.diskUtilization == [0.33f] * 3
-        assert ps.pools.replicatedSize == [3] * 3
+        assert ps.pools.size() == 3
+        assert ps.pools.securityPolicy.every { it == DataSecurityPolicy.Copy.toString() }
+        assert ps.pools.diskUtilization.every { it == 0.33f }
+        assert ps.pools.replicatedSize.every { it == 3 }
 
         assert bs.poolSecurityPolicy == DataSecurityPolicy.ErasureCode.toString()
         assert bs.poolDiskUtilization == 0.67f

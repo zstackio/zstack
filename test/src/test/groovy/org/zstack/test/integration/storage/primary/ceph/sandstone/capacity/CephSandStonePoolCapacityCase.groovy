@@ -164,4 +164,5 @@ class CephSandStonePoolCapacityCase extends SubCase {
         assert afterBs.availableCapacity == bs.availableCapacity + addSize
         assert afterBs.totalCapacity == bs.totalCapacity + addSize
     }
+
 }
