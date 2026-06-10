@@ -145,3 +145,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalServiceConfigurationVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `ukExternalServiceConfigurationVOServiceType` (`serviceType`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- Feature: System AccessKey | ZSV-12416
+
+CALL ADD_COLUMN('AccessKeyVO', 'type', 'varchar(32)', 0, 'User');
