@@ -132,3 +132,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LogServerVO` (
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY  (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Feature: System AccessKey | ZSV-12416
+
+CALL ADD_COLUMN('AccessKeyVO', 'type', 'varchar(32)', 0, 'User');
