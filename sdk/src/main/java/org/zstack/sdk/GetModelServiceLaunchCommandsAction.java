@@ -26,16 +26,16 @@ public class GetModelServiceLaunchCommandsAction extends AbstractAction {
     }
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List<String> groupUuids;
+    public java.util.List groupUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List<String> instanceUuids;
+    public java.util.List instanceUuids;
 
     @Param(required = false)
-    public java.util.List<String> systemTags;
+    public java.util.List systemTags;
 
     @Param(required = false)
-    public java.util.List<String> userTags;
+    public java.util.List userTags;
 
     @Param(required = false)
     public String sessionId;
