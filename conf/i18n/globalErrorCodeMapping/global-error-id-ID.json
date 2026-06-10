@@ -2961,6 +2961,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "Gagal mendapatkan kata sandi integritas dari database karena %s tidak menghasilkan kata sandi integritas",
   "ORG_ZSTACK_VHOST_KVM_10000": "Disk vHostUser hanya mendukung mode virtio. Harap verifikasi bahwa platform gambar memiliki driver virtio yang diperlukan terinstal.",
   "ORG_ZSTACK_VHOST_KVM_10001": "Disk vhost-user tidak mendukung mode virtio-scsi; harap nonaktifkan mode virtio-scsi.",
+  "ORG_ZSTACK_VHOST_KVM_10002": "Tidak dapat memasang disk vhost-user secara online: VM yang berjalan tidak mengaktifkan shared memory. Matikan VM lalu pasang, atau atur konfigurasi global 'generate.config.vhost.required' ke 'auto' atau 'true' dan mulai ulang VM (ini menonaktifkan overcommit memori untuk VM).",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s bukan alamat IPv6 yang valid untuk konfigurasi sumber daya cloud",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough hanya didukung untuk penggunaan pada VM yang berjalan di lingkungan host.",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "Hanya pengguna administratif yang dapat menetapkan parameter [onlyZstack] ke false.",

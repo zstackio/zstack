@@ -2961,6 +2961,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "Échec de l'obtention du mot de passe d'intégrité de la base de données car %s ne génère pas de mot de passe d'intégrité",
   "ORG_ZSTACK_VHOST_KVM_10000": "Le disque vHostUser ne prend en charge que le mode virtio. Veuillez vérifier que la plateforme d'image dispose des pilotes virtio nécessaires.",
   "ORG_ZSTACK_VHOST_KVM_10001": "Le disque vhost-user ne prend pas en charge le mode virtio-scsi ; veuillez désactiver le mode virtio-scsi.",
+  "ORG_ZSTACK_VHOST_KVM_10002": "Impossible d’attacher le disque vhost-user en ligne : la VM en cours d’exécution n’a pas la mémoire partagée activée. Arrêtez la VM puis attachez, ou définissez la configuration globale « generate.config.vhost.required » sur « auto » ou « true » et redémarrez la VM (cela désactive la surallocation mémoire pour la VM).",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s n'est pas une adresse IPv6 valide pour la configuration des ressources cloud",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough ne peut être utilisé que sur une machine virtuelle s'exécutant dans l'environnement hôte.",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "Seuls les utilisateurs administratifs peuvent définir le paramètre [onlyZstack] sur false.",

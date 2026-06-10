@@ -2871,6 +2871,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "데이터베이스에서 무결성 비밀번호를 가져오지 못했습니다. %s이(가) 무결성 비밀번호를 생성하지 않았기 때문입니다.",
   "ORG_ZSTACK_VHOST_KVM_10000": "vHostUser 디스크는 virtio 모드만 지원합니다. 이미지 플랫폼에 필요한 virtio 드라이버가 설치되어 있는지 확인하십시오.",
   "ORG_ZSTACK_VHOST_KVM_10001": "vhost-user 디스크는 virtio-scsi 모드를 지원하지 않습니다. virtio-scsi 모드를 비활성화하십시오.",
+  "ORG_ZSTACK_VHOST_KVM_10002": "vhost-user 데이터 볼륨을 온라인으로 연결할 수 없습니다: 실행 중인 VM에 공유 메모리가 활성화되어 있지 않습니다. VM을 종료한 후 연결하거나, 전역 구성 generate.config.vhost.required 를 auto 또는 true 로 설정하고 VM을 재시작하십시오(해당 VM의 메모리 오버커밋이 비활성화됩니다).",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s은(는) 클라우드 리소스 구성에 유효한 IPv6 주소가 아닙니다",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough는 호스트 환경에서 실행되는 VM에서만 사용하도록 지원됩니다.",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "관리자 사용자만 매개변수 [onlyZstack]을 false로 설정할 수 있습니다.",
