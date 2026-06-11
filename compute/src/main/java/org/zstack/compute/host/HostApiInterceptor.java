@@ -11,8 +11,11 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.cluster.ClusterVO;
+import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -40,6 +43,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof HostMessage) {
@@ -118,20 +123,39 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateHostMsg msg) {
         if (msg.getManagementIp() != null) {
+            msg.setManagementIp(validateManagementEndpoint(msg.getManagementIp()));
+
             SimpleQuery<HostVO> q = dbf.createQuery(HostVO.class);
             q.add(HostVO_.managementIp, Op.EQ, msg.getManagementIp());
             if (q.isExists()) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10112, "there has been a host having managementIp[%s]", msg.getManagementIp()));
             }
+
+            String zoneUuid = Q.New(HostVO.class)
+                    .select(HostVO_.zoneUuid)
+                    .eq(HostVO_.uuid, msg.getUuid())
+                    .findValue();
+            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, msg.getManagementIp(),
+                    "host", msg.getUuid(), ORG_ZSTACK_COMPUTE_HOST_10130);
         }
     }
 
     private void validate(APIAddHostMsg msg) {
         validateManagementEndpoint(msg);
+        String zoneUuid = Q.New(ClusterVO.class)
+                .select(ClusterVO_.zoneUuid)
+                .eq(ClusterVO_.uuid, msg.getClusterUuid())
+                .findValue();
+        managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, msg.getManagementIp(),
+                "host", msg.getName(), ORG_ZSTACK_COMPUTE_HOST_10130);
     }
 
     static void validateManagementEndpoint(APIAddHostMsg msg) {
         String managementIp = msg.getManagementIp();
+        msg.setManagementIp(validateManagementEndpoint(managementIp));
+    }
+
+    static String validateManagementEndpoint(String managementIp) {
         if (IPv6NetworkUtils.isIpv6Address(managementIp)) {
             if (!IPv6NetworkUtils.isValidManagementIpv6Address(managementIp)) {
                 throw new ApiMessageInterceptionException(argerr(
@@ -147,8 +171,10 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (IPv6NetworkUtils.isIpv6Address(managementIp)) {
-            msg.setManagementIp(IPv6NetworkUtils.getIpv6AddressCanonicalString(managementIp));
+            return IPv6NetworkUtils.getIpv6AddressCanonicalString(managementIp);
         }
+
+        return managementIp;
     }
 
     static String getManagementEndpointValidationErrorCode(String managementIp) {

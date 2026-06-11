@@ -23,6 +23,7 @@ class HostApiInterceptorIpv6Case {
         HostApiInterceptor.validateManagementEndpoint(msg)
 
         assert msg.managementIp == GLOBAL_IPV6_CANONICAL
+        assert HostApiInterceptor.validateManagementEndpoint(GLOBAL_IPV6_FULL) == GLOBAL_IPV6_CANONICAL
         assert HostApiInterceptor.getManagementEndpointValidationErrorCode(INVALID_MANAGEMENT_IP) == ORG_ZSTACK_COMPUTE_HOST_10128
         assert HostApiInterceptor.getManagementEndpointValidationErrorCode(LOOPBACK_IPV6) == ORG_ZSTACK_COMPUTE_HOST_10129
         assert HostApiInterceptor.getManagementEndpointValidationErrorCode(LINK_LOCAL_IPV6) == ORG_ZSTACK_COMPUTE_HOST_10129

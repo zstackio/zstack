@@ -8,6 +8,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.tag.TagResourceType;
 
 /**
  * @api create a new zone
@@ -36,6 +37,7 @@ import org.zstack.header.rest.RestRequest;
  * @result see :ref:`APICreateZoneEvent`
  * @since 0.1.0
  */
+@TagResourceType(ZoneVO.class)
 @RestRequest(
         path = "/zones",
         method = HttpMethod.POST,

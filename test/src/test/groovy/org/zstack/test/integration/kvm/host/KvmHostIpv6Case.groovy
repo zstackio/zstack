@@ -10,6 +10,9 @@ import org.zstack.header.host.ConnectHostReply
 import org.zstack.header.host.CpuArchitecture
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
+import org.zstack.header.zone.ZoneVO
 import org.zstack.kvm.KVMHostVO
 import org.zstack.sdk.AddKVMHostAction
 import org.zstack.sdk.ClusterInventory
@@ -52,8 +55,23 @@ class KvmHostIpv6Case extends SubCase {
         env.create {
             dbf = bean(DatabaseFacade.class)
             cluster = env.inventoryByName("cluster") as ClusterInventory
+            updateZoneIpVersionToIpv6(cluster.zoneUuid)
             testAddHostWithIpv6()
             testRejectInvalidAndLinkLocalIpv6()
+        }
+    }
+
+    private void updateZoneIpVersionToIpv6(String zoneUuid) {
+        SystemTagVO currentTag = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, zoneUuid)
+                .eq(SystemTagVO_.resourceType, ZoneVO.simpleName)
+                .like(SystemTagVO_.tag, "managementNetwork::ipVersion::%")
+                .find()
+        assert currentTag != null
+
+        updateSystemTag {
+            uuid = currentTag.uuid
+            tag = "managementNetwork::ipVersion::ipv6"
         }
     }
 
