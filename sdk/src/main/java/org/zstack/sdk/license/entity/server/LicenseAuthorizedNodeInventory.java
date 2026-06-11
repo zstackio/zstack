@@ -28,6 +28,14 @@ public class LicenseAuthorizedNodeInventory  {
         return this.ip;
     }
 
+    public java.lang.Integer port;
+    public void setPort(java.lang.Integer port) {
+        this.port = port;
+    }
+    public java.lang.Integer getPort() {
+        return this.port;
+    }
+
     public java.sql.Timestamp lastSyncDate;
     public void setLastSyncDate(java.sql.Timestamp lastSyncDate) {
         this.lastSyncDate = lastSyncDate;
