@@ -25,6 +25,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.thread.ThreadFacadeImpl.TimeoutTaskReceipt;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.validation.ValidationFacade;
+import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -80,6 +81,10 @@ public class RESTFacadeImpl implements RESTFacade {
         void fail(ErrorCode err);
 
         void success(HttpEntity<String> responseEntity);
+
+        String getResourceUuid();
+
+        long getSentAtMillis();
     }
 
     private interface HttpCallHandlerWrapper {
@@ -341,6 +346,9 @@ public class RESTFacadeImpl implements RESTFacade {
 
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
 
+        final long sentAtMillis = System.currentTimeMillis();
+        final String resourceUuid = (headers == null) ? null : headers.get(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID);
+
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
             final AtomicBoolean called = new AtomicBoolean(false);
 
@@ -435,6 +443,16 @@ public class RESTFacadeImpl implements RESTFacade {
             public void success(HttpEntity<String> responseEntity) {
                 completion.success(responseEntity);
             }
+
+            @Override
+            public String getResourceUuid() {
+                return resourceUuid;
+            }
+
+            @Override
+            public long getSentAtMillis() {
+                return sentAtMillis;
+            }
         };
 
         try {
@@ -468,6 +486,29 @@ public class RESTFacadeImpl implements RESTFacade {
     public void asyncJsonPost(String url, String body, AsyncRESTCallback callback) {
         Long timeout = timeoutMgr.getTimeout();
         asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout);
+    }
+
+    @Override
+    public int failPendingCallsForResourceBefore(String resourceUuid, long cutoffMillis, ErrorCode err) {
+        if (resourceUuid == null) {
+            return 0;
+        }
+        int drained = 0;
+        for (AsyncHttpWrapper w : wrappers.values()) {
+            if (!resourceUuid.equals(w.getResourceUuid())) {
+                continue;
+            }
+            if (w.getSentAtMillis() >= cutoffMillis) {
+                continue;
+            }
+            try {
+                w.fail(err);
+                drained++;
+            } catch (Throwable t) {
+                logger.warn(String.format("fail injection threw for resource[uuid:%s]: %s", resourceUuid, t.getMessage()), t);
+            }
+        }
+        return drained;
     }
 
     @Override

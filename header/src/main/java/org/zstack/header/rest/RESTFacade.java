@@ -11,6 +11,7 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 
 import javax.net.ssl.SSLContext;
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +36,8 @@ public interface RESTFacade {
     void asyncJsonPost(String url, String body, AsyncRESTCallback callback);
     void asyncJsonDelete(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
     void asyncJsonGet(String url, String body, Map<String, String> headers, AsyncRESTCallback callback, TimeUnit unit, long timeout);
+
+    int failPendingCallsForResourceBefore(String resourceUuid, long cutoffMillis, ErrorCode err);
 
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
 
