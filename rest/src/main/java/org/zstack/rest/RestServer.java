@@ -721,13 +721,13 @@ public class RestServer implements Component, CloudBusEventListener {
 
     void handle(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         RequestInfo info = new RequestInfo(req);
+        requestInfo.set(info);
 
         if (rateLimiter.isRateLimitExceeded(info.clientIp)) {
-            sendResponse(HttpStatus.TOO_MANY_REQUESTS.value(), "Rate limit exceeded", rsp);
+            sendRestErrorResponse(HttpStatus.TOO_MANY_REQUESTS.value(), "Rate limit exceeded", rsp);
             return;
         }
 
-        requestInfo.set(info);
         rsp.setCharacterEncoding("utf-8");
         String path = getDecodedUrl(req);
         HttpEntity<String> entity = toHttpEntity(req);
@@ -793,7 +793,7 @@ public class RestServer implements Component, CloudBusEventListener {
                     finalApiSpan.setStatus(StatusCode.ERROR, e.error);
                     finalApiSpan.setAttribute("http.status_code", e.statusCode);
                 }
-                sendResponse(e.statusCode, e.error, rsp);
+                sendRestErrorResponse(e.statusCode, e.error, rsp);
                 return;
             }
 
@@ -811,7 +811,7 @@ public class RestServer implements Component, CloudBusEventListener {
                     finalApiSpan.setStatus(StatusCode.ERROR, "API not found");
                     finalApiSpan.setAttribute("http.status_code", HttpStatus.NOT_FOUND.value());
                 }
-                sendResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
+                sendRestErrorResponse(HttpStatus.NOT_FOUND.value(), String.format("no api mapping to %s", path), rsp);
                 return;
             }
 
@@ -829,7 +829,7 @@ public class RestServer implements Component, CloudBusEventListener {
                     finalApiSpan.setStatus(StatusCode.ERROR, e.error);
                     finalApiSpan.setAttribute("http.status_code", e.statusCode);
                 }
-                sendResponse(e.statusCode, e.error, rsp);
+                sendRestErrorResponse(e.statusCode, e.error, rsp);
             } catch (Throwable e) {
                 logger.warn(String.format("failed to handle API to %s", path), e);
                 if (finalApiSpan != null) {
@@ -837,7 +837,10 @@ public class RestServer implements Component, CloudBusEventListener {
                     finalApiSpan.setStatus(StatusCode.ERROR, e.getMessage());
                     finalApiSpan.setAttribute("http.status_code", HttpStatus.INTERNAL_SERVER_ERROR.value());
                 }
-                sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), e.getMessage(), rsp);
+                ApiResponse response = new ApiResponse();
+                response.setError(Platform.inerr(org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_REST_10014,
+                        "failed to handle REST API: %s", e.getMessage()));
+                sendResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), response, rsp);
             }
         } finally {
             endSpanAndScope(finalApiSpan, finalScope);
@@ -890,7 +893,7 @@ public class RestServer implements Component, CloudBusEventListener {
 
     private void handleJobQuery(HttpServletRequest req, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         if (!req.getMethod().equals(HttpMethod.GET.name())) {
-            sendResponse(HttpStatus.METHOD_NOT_ALLOWED.value(), "only GET method is allowed for querying job status", rsp);
+            sendRestErrorResponse(HttpStatus.METHOD_NOT_ALLOWED.value(), "only GET method is allowed for querying job status", rsp);
             return;
         }
 
@@ -899,7 +902,7 @@ public class RestServer implements Component, CloudBusEventListener {
         AsyncRestQueryResult ret = asyncStore.query(uuid);
 
         if (ret.getState() == AsyncRestState.expired) {
-            sendResponse(HttpStatus.NOT_FOUND.value(), "the job has been expired", rsp);
+            sendRestErrorResponse(HttpStatus.NOT_FOUND.value(), "the job has been expired", rsp);
             return;
         }
 
@@ -921,16 +924,16 @@ public class RestServer implements Component, CloudBusEventListener {
             sendResponse(HttpStatus.OK.value(), response, rsp);
         } else {
             response.setError(evt.getError());
-            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp);
+            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp, firstNonBlank(evt.getApiId(), uuid));
         }
     }
 
     private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp) throws IOException {
-        // centralized localization: override message with client's preferred locale
-        if (response.getError() != null) {
-            String locale = resolveLocale();
-            i18nService.localizeErrorCode(response.getError(), locale);
-        }
+        sendResponse(statusCode, response, rsp, null);
+    }
+
+    private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp, String apiId) throws IOException {
+        prepareApiResponse(response, rsp, apiId);
 
         RequestInfo info = requestInfo.get();
         if (requestLogger.isTraceEnabled() && needLog(info)) {
@@ -946,6 +949,60 @@ public class RestServer implements Component, CloudBusEventListener {
         String body = CloudBusGson.toJsonForHttpResponse(response);
         rsp.setStatus(statusCode);
         rsp.getWriter().write(body == null ? "" : body);
+    }
+
+    private void sendJsonObjectResponse(int statusCode, ApiResponse response, HttpServletResponse rsp, String apiId) throws IOException {
+        prepareApiResponse(response, rsp, apiId);
+        sendResponse(statusCode, JSONObjectUtil.toJsonString(response), rsp);
+    }
+
+    private void sendRestErrorResponse(int statusCode, String message, HttpServletResponse rsp) throws IOException {
+        ApiResponse response = new ApiResponse();
+        response.setError(Platform.err(org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_REST_10015,
+                sysErrorForStatus(statusCode), "%s", message));
+        sendResponse(statusCode, response, rsp);
+    }
+
+    private org.zstack.header.errorcode.SysErrors sysErrorForStatus(int statusCode) {
+        if (statusCode == HttpStatus.NOT_FOUND.value()) {
+            return org.zstack.header.errorcode.SysErrors.RESOURCE_NOT_FOUND;
+        }
+        if (statusCode == HttpStatus.BAD_REQUEST.value() || statusCode == HttpStatus.METHOD_NOT_ALLOWED.value()) {
+            return org.zstack.header.errorcode.SysErrors.INVALID_ARGUMENT_ERROR;
+        }
+        if (statusCode >= HttpStatus.INTERNAL_SERVER_ERROR.value()) {
+            return org.zstack.header.errorcode.SysErrors.INTERNAL;
+        }
+        return org.zstack.header.errorcode.SysErrors.OPERATION_ERROR;
+    }
+
+    private void prepareApiResponse(ApiResponse response, HttpServletResponse rsp, String apiId) {
+        String locale = resolveLocale();
+        rsp.setHeader("Content-Language", toLanguageTag(locale));
+        if (response.getError() != null) {
+            i18nService.localizeErrorCode(response.getError(), locale);
+            response.completeFailure(apiId, locale);
+        }
+    }
+
+    private String toLanguageTag(String locale) {
+        if (locale == null) {
+            return LocaleUtils.DEFAULT_LOCALE.replace('_', '-');
+        }
+        return locale.replace('_', '-');
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+
+        for (String value : values) {
+            if (StringUtils.isNotBlank(value)) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private void handleNonUniqueApi(Collection<Api> apis, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException, IOException {
@@ -1435,17 +1492,15 @@ public class RestServer implements Component, CloudBusEventListener {
         return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
     }
 
-    private void sendReplyResponse(MessageReply reply, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
+    private void sendReplyResponse(MessageReply reply, Api api, HttpServletResponse rsp, String apiId) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         ApiResponse response = new ApiResponse();
 
         if (!reply.isSuccess()) {
-            String locale = resolveLocale();
-            i18nService.localizeErrorCode(reply.getError(), locale);
             response.setError(reply.getError());
             // use JSONObjectUtil (which disables HTML escaping) to keep the same
             // serialization behavior as before; CloudBusGson.httpGson escapes '\'' to
             // '\u0027' which breaks SDK-side string assertions (ZSTAC-71075 etc.)
-            sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), JSONObjectUtil.toJsonString(response), rsp);
+            sendJsonObjectResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp, apiId);
             return;
         }
 
@@ -1458,7 +1513,7 @@ public class RestServer implements Component, CloudBusEventListener {
     private void sendMessage(APIMessage msg, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
         if (msg instanceof APISyncCallMessage) {
             MessageReply reply = bus.call(msg);
-            sendReplyResponse(reply, api, rsp);
+            sendReplyResponse(reply, api, rsp, msg.getId());
         } else {
             RequestData d = new RequestData();
             d.apiMessage = msg;

@@ -8,7 +8,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
@@ -16,6 +15,8 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmNicLifecycleManager implements
         PreVmInstantiateResourceExtensionPoint,
@@ -68,7 +69,8 @@ public class VmNicLifecycleManager implements
         try {
             nics = filterNics(ext, allNics);
         } catch (RuntimeException e) {
-            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR, "%s", e.getMessage()));
+            completion.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10331,
+                    "vm nic lifecycle setup failed while selecting applicable NICs: %s", e.getMessage()));
             return;
         }
         if (nics.isEmpty()) {
@@ -95,7 +97,7 @@ public class VmNicLifecycleManager implements
                 }
             });
         } catch (Throwable t) {
-            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR,
+            completion.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10332,
                     "%s.setupOnHost(host=%s) threw exception: %s",
                     ext.getClass().getSimpleName(), hostUuid, t.getMessage()));
         }
@@ -114,7 +116,8 @@ public class VmNicLifecycleManager implements
         try {
             nics = filterNics(ext, allNics);
         } catch (RuntimeException e) {
-            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR, "%s", e.getMessage()));
+            completion.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10333,
+                    "vm nic lifecycle pre-migration failed while selecting applicable NICs: %s", e.getMessage()));
             return;
         }
         if (nics.isEmpty()) {
@@ -141,7 +144,7 @@ public class VmNicLifecycleManager implements
                 }
             });
         } catch (Throwable t) {
-            completion.fail(Platform.err(SysErrors.OPERATION_ERROR.toString(), SysErrors.OPERATION_ERROR,
+            completion.fail(Platform.operr(ORG_ZSTACK_COMPUTE_VM_10334,
                     "%s.preMigrate(src=%s, dest=%s) threw exception: %s",
                     ext.getClass().getSimpleName(), srcHostUuid, destHostUuid, t.getMessage()));
         }
