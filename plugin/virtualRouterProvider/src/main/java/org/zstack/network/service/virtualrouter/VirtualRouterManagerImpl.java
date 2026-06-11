@@ -2877,50 +2877,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
-        if (ApplianceVmConstant.APPLIANCE_VM_TYPE.equals(vm.getType())) {
-            VirtualRouterVmVO vrVo = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vm.getUuid()).find();
-            if (vrVo == null) {
-                completion.success();
-                return;
-            }
-            VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vrVo);
-            List<VmNicInventory> vfNics = inv.getVmNics().stream()
-                    .filter(nic -> !Objects.equals(nic.getType(), VmInstanceConstant.VIRTUAL_NIC_TYPE))
-                    .collect(Collectors.toList());
-            if (vrVo.isHaEnabled() && !vfNics.isEmpty()) {
-                List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
-                if (exps.isEmpty()) {
-                    completion.success();
-                    return;
-                }
-                String peerUuid = exps.get(0).getPeerUuid(vrVo.getUuid());
-                if (peerUuid == null) {
-                    completion.success();
-                    return;
-                }
-                if (ApplianceVmHaStatus.Master.equals(vrVo.getHaStatus()) &&
-                        ApplianceVmStatus.Connected.equals(vrVo.getStatus()) &&
-                        Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.status, ApplianceVmStatus.Connected)
-                                .eq(VirtualRouterVmVO_.uuid, peerUuid).isExists()) {
-                    logger.debug(String.format("demote ha master before migrate, virtual router[uuid:%s]", vrVo.getUuid()));
-                    VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-                    msg.setVmInstanceUuid(vrVo.getUuid());
-                    msg.setCommand(new VirtualRouterCommands.AgentCommand());
-                    msg.setCheckStatus(true);
-                    msg.setPath(VirtualRouterConstant.VR_HA_MASTER_DEMOTE);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrVo.getUuid());
-                    bus.send(msg, new CloudBusCallBack(null) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(reply.getError().toString());
-                            }
-                            completion.success();
-                        }
-                    });
-                }
-            }
-        }
         completion.success();
     }
 }
