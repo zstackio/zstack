@@ -121,6 +121,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
     `uuid` char(32) NOT NULL UNIQUE,
     `appId` char(32) NOT NULL,
     `ip` varchar(255) NOT NULL,
+    `port` int DEFAULT NULL,
     `lastSyncDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     `status` varchar(64) NOT NULL,
     `type` varchar(64) NOT NULL,
