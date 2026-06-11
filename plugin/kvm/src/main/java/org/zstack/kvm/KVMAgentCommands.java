@@ -5430,9 +5430,10 @@ public class KVMAgentCommands {
         public VolumeTO volume;
     }
 
-    public static class FlushCacheCmd extends AgentCommand {
+    public static class FlushCacheCmd extends AgentCommand implements HasThreadContext {
         public String poolUuid;
         public VolumeTO volume;
+        public String sendCommandUrl;
     }
 
     public static class GetCacheCapacityCmd extends AgentCommand {
@@ -5448,6 +5449,7 @@ public class KVMAgentCommands {
     public static class DetachVolumeCacheCmd extends AgentCommand implements HasThreadContext {
         public String instanceUuid;
         public VolumeTO volume;
+        public String sendCommandUrl;
     }
 
     // ========================================================================
