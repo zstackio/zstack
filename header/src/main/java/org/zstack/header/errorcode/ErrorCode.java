@@ -29,6 +29,10 @@ public class ErrorCode implements Serializable, Cloneable {
     @NoJsonSchema
     private String[] formatArgs;
 
+    public ErrorCodeDiagnostic toDiagnostic() {
+        return ErrorCodeDiagnosticHelper.toDiagnostic(this);
+    }
+
     public String getMessage() {
         return message;
     }
