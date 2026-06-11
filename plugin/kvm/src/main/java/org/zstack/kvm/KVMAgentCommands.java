@@ -2423,6 +2423,8 @@ public class KVMAgentCommands {
         // cpuid hypervisor feature
         @GrayVersion(value = "5.0.0")
         private boolean cpuHypervisorFeature = true;
+        @GrayVersion(value = "5.5.28")
+        private Boolean cpuHardwareVirtualization;
         @GrayVersion(value = "5.0.0")
         private List<String> oemStrings = new ArrayList<>();
 
@@ -2979,6 +2981,14 @@ public class KVMAgentCommands {
 
         public void setCpuHypervisorFeature(boolean cpuHypervisorFeature) {
             this.cpuHypervisorFeature = cpuHypervisorFeature;
+        }
+
+        public Boolean getCpuHardwareVirtualization() {
+            return cpuHardwareVirtualization;
+        }
+
+        public void setCpuHardwareVirtualization(Boolean cpuHardwareVirtualization) {
+            this.cpuHardwareVirtualization = cpuHardwareVirtualization;
         }
 
         public boolean isHypervClock() {

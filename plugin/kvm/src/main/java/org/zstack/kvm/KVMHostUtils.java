@@ -4,6 +4,9 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.db.Q;
+import org.zstack.header.image.ImagePlatform;
+import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageVO_;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.tag.SystemTagVO;
@@ -19,6 +22,7 @@ import org.zstack.utils.logging.CLoggerImpl;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
+import javax.persistence.Tuple;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -175,6 +179,44 @@ public class KVMHostUtils {
         long extraVmCount = vmCount - LIBVIRT_RESTART_ECHO_TIMEOUT_VM_THRESHOLD;
         long extraSeconds = Math.min(extraVmCount * LIBVIRT_RESTART_ECHO_TIMEOUT_PER_VM_SECONDS, maxExtraSeconds);
         return TimeUnit.SECONDS.toMillis(defaultTimeoutSeconds + extraSeconds);
+    }
+
+    public static boolean isWindowsVm(String platform, String guestOsType) {
+        return isWindowsVm(platform, guestOsType, null);
+    }
+
+    public static boolean isWindowsVm(String platform, String guestOsType, String imageGuestOsType) {
+        if (ImagePlatform.isType(platform, ImagePlatform.Windows, ImagePlatform.WindowsVirtio)) {
+            return true;
+        }
+
+        // The VM guestOsType is authoritative after creation; image guestOsType is only a fallback.
+        String effectiveGuestOsType = guestOsType == null ? imageGuestOsType : guestOsType;
+        return effectiveGuestOsType != null && effectiveGuestOsType.toLowerCase(Locale.ROOT).contains("windows");
+    }
+
+    public static Boolean isWindowsVmByUuid(String vmUuid) {
+        Tuple vm = Q.New(VmInstanceVO.class)
+                .select(VmInstanceVO_.platform, VmInstanceVO_.guestOsType, VmInstanceVO_.imageUuid)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .findTuple();
+        if (vm == null) {
+            return null;
+        }
+
+        String guestOsType = vm.get(1, String.class);
+        String imageGuestOsType = null;
+        if (guestOsType == null) {
+            String imageUuid = vm.get(2, String.class);
+            if (imageUuid != null) {
+                imageGuestOsType = Q.New(ImageVO.class)
+                        .select(ImageVO_.guestOsType)
+                        .eq(ImageVO_.uuid, imageUuid)
+                        .findValue();
+            }
+        }
+
+        return isWindowsVm(vm.get(0, String.class), guestOsType, imageGuestOsType);
     }
 
     public static boolean shouldContinueReconnectOnAnsibleFailure(boolean isNewAdded, ErrorCode errorCode) {

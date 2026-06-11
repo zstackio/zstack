@@ -1,8 +1,8 @@
 package org.zstack.kvm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.header.vm.ArchiveResourceConfigBundle;
 import org.zstack.header.vm.ResourceConfigMemorySnapshotExtensionPoint;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
 import java.util.ArrayList;
@@ -20,6 +20,17 @@ public class KvmResourceConfigExtension implements ResourceConfigMemorySnapshotE
         bundle.setIdentity(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         bundle.setValue(rcf.getResourceConfigValue(KVMGlobalConfig.NESTED_VIRTUALIZATION, resourceUuid, String.class));
         bundleList.add(bundle);
+
+        if (Boolean.TRUE.equals(KVMHostUtils.isWindowsVmByUuid(resourceUuid))) {
+            Boolean cpuHardwareVirtualization = rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION,
+                    resourceUuid, Boolean.class);
+            ArchiveResourceConfigBundle.ResourceConfigBundle cpuHardwareVirtualizationBundle =
+                    new ArchiveResourceConfigBundle.ResourceConfigBundle();
+            cpuHardwareVirtualizationBundle.setResourceUuid(resourceUuid);
+            cpuHardwareVirtualizationBundle.setIdentity(KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.getIdentity());
+            cpuHardwareVirtualizationBundle.setValue(cpuHardwareVirtualization.toString());
+            bundleList.add(cpuHardwareVirtualizationBundle);
+        }
         return bundleList;
     }
 }
