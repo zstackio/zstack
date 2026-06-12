@@ -43,3 +43,10 @@ cn: John Steinbeck
 sn: Steinbeck
 uid: jsteinbeck
 userPassword: password
+
+dn: ou=referral test,dc=example,dc=com
+objectClass: extensibleObject
+objectClass: referral
+objectClass: top
+objectClass: person
+ref: ldap://localhost:10389/dc=example,dc=com

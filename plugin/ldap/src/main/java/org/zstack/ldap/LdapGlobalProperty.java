@@ -13,4 +13,10 @@ public class LdapGlobalProperty {
 
     @GlobalProperty(name = "Ldap.addServer.readTimeout", defaultValue = "5000")
     public static int LDAP_ADD_SERVER_READ_TIMEOUT;
+
+    @GlobalProperty(name = "Ldap.referral", defaultValue = "follow")
+    public static String LDAP_REFERRAL;
+
+    @GlobalProperty(name = "Ldap.connect.pool", defaultValue = "false")
+    public static boolean LDAP_CONNECT_POOL;
 }
