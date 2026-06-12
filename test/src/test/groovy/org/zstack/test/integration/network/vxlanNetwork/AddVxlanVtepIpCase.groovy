@@ -162,6 +162,22 @@ class AddVxlanVtepIpCase extends SubCase {
                 .eq(VtepVO_.poolUuid, pool.uuid)
                 .eq(VtepVO_.vtepIp, "2001:db8:ffff::10")
                 .isExists()
+
+        def fullLengthPool = createL2VxlanNetworkPool {
+            name = "TestVxlanPoolFullLengthIpv6"
+            zoneUuid = zone.uuid
+        } as L2VxlanNetworkPoolInventory
+
+        createVxlanVtep {
+            hostUuid = host1.uuid
+            poolUuid = fullLengthPool.uuid
+            vtepIp = "fd00:1234:5678:9abc:def0:1234:5678:9abc"
+        }
+        assert Q.New(VtepVO.class)
+                .eq(VtepVO_.hostUuid, host1.uuid)
+                .eq(VtepVO_.poolUuid, fullLengthPool.uuid)
+                .eq(VtepVO_.vtepIp, "fd00:1234:5678:9abc:def0:1234:5678:9abc")
+                .isExists()
     }
 
     void testVxlanVtepIpChanged() {
