@@ -8,23 +8,11 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
-import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneMsg;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
-import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO_;
-import org.zstack.header.zone.ManagementNetworkIpVersionManager;
-import org.zstack.header.zone.ManagementNetworkIpVersionResourceExtensionPoint;
 import org.zstack.storage.ceph.backup.*;
 import org.zstack.storage.ceph.primary.*;
 import org.zstack.utils.CharacterUtils;
-import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -41,19 +29,13 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 /**
  * Created by frank on 7/29/2015.
  */
-public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor,
-        ManagementNetworkIpVersionResourceExtensionPoint {
+public class CephApiInterceptor implements ApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(CephApiInterceptor.class);
 
-    private static final String CEPH_PRIMARY_STORAGE_RESOURCE_TYPE = "ceph primary storage";
-    private static final String CEPH_PRIMARY_STORAGE_MON_RESOURCE_TYPE = "ceph primary storage mon";
-    private static final String CEPH_BACKUP_STORAGE_MON_RESOURCE_TYPE = "ceph backup storage mon";
     @Autowired
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private static final String MON_URL_FORMAT = "sshUsername:sshPassword@hostname:[sshPort]/?[monPort=]";
 
@@ -77,10 +59,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
             validate((APIAddCephPrimaryStoragePoolMsg) msg);
         } else if (msg instanceof APIUpdateCephPrimaryStoragePoolMsg) {
             validate((APIUpdateCephPrimaryStoragePoolMsg) msg);
-        } else if (msg instanceof APIAttachPrimaryStorageToClusterMsg) {
-            validate((APIAttachPrimaryStorageToClusterMsg) msg);
-        } else if (msg instanceof APIAttachBackupStorageToZoneMsg) {
-            validate((APIAttachBackupStorageToZoneMsg) msg);
         }
         
         return msg;
@@ -157,7 +135,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
 
     private void validate(APIAddMonToCephPrimaryStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
-        validatePrimaryStorageMonUrls(msg.getPrimaryStorageUuid(), msg.getMonUrls(), ORG_ZSTACK_STORAGE_CEPH_10026);
         List<String> hostnames = msg.getMonUrls().stream()
                 .map(MonUri::new)
                 .map(MonUri::getHostname)
@@ -170,7 +147,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
 
     private void validate(APIAddMonToCephBackupStorageMsg msg) {
         checkMonUrls(msg.getMonUrls());
-        validateBackupStorageMonUrls(msg.getBackupStorageUuid(), msg.getMonUrls(), ORG_ZSTACK_STORAGE_CEPH_10027);
 
         List<String> hostnames = msg.getMonUrls().stream()
                 .map(MonUri::new)
@@ -191,10 +167,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         q.add(CephBackupStorageMonVO_.uuid, Op.EQ, msg.getMonUuid());
         String bsUuid = q.findValue();
         msg.setBackupStorageUuid(bsUuid);
-        if (msg.getHostname() != null) {
-            validateBackupStorageEndpoint(bsUuid, msg.getHostname(), CEPH_BACKUP_STORAGE_MON_RESOURCE_TYPE, msg.getMonUuid(),
-                    ORG_ZSTACK_STORAGE_CEPH_10028);
-        }
     }
 
     private void validate(APIUpdateCephPrimaryStorageMonMsg msg) {
@@ -208,10 +180,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         q.add(CephPrimaryStorageMonVO_.uuid, Op.EQ, msg.getMonUuid());
         String psUuid = q.findValue();
         msg.setPrimaryStorageUuid(psUuid);
-        if (msg.getHostname() != null) {
-            validatePrimaryStorageEndpoint(psUuid, msg.getHostname(), CEPH_PRIMARY_STORAGE_MON_RESOURCE_TYPE, msg.getMonUuid(),
-                    ORG_ZSTACK_STORAGE_CEPH_10029);
-        }
     }
 
     private void checkMonUrls(List<String> monUrls) {
@@ -248,8 +216,6 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         }
 
         checkMonUrls(msg.getMonUrls());
-        validateMonUrlsInZone(msg.getZoneUuid(), msg.getMonUrls(), CEPH_PRIMARY_STORAGE_RESOURCE_TYPE, msg.getName(),
-                ORG_ZSTACK_STORAGE_CEPH_10030);
         checkExistingPrimaryStorage(msg.getMonUrls());
     }
 
@@ -282,132 +248,4 @@ public class CephApiInterceptor implements ApiMessageInterceptor, GlobalApiMessa
         checkExistingBackupStorage(msg.getMonUrls());
     }
 
-    private void validate(APIAttachPrimaryStorageToClusterMsg msg) {
-        String type = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.type)
-                .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
-                .findValue();
-        if (!CephConstants.CEPH_PRIMARY_STORAGE_TYPE.equals(type)) {
-            return;
-        }
-
-        String zoneUuid = Q.New(ClusterVO.class)
-                .select(ClusterVO_.zoneUuid)
-                .eq(ClusterVO_.uuid, msg.getClusterUuid())
-                .findValue();
-        validateCephPrimaryStorageMonsInZone(msg.getPrimaryStorageUuid(), zoneUuid, ORG_ZSTACK_STORAGE_CEPH_10031);
-    }
-
-    private void validate(APIAttachBackupStorageToZoneMsg msg) {
-        validateCephBackupStorageMonsInZone(msg.getBackupStorageUuid(), msg.getZoneUuid(), ORG_ZSTACK_STORAGE_CEPH_10032);
-    }
-
-    private void validatePrimaryStorageMonUrls(String primaryStorageUuid, List<String> monUrls, String errorCode) {
-        String zoneUuid = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.zoneUuid)
-                .eq(PrimaryStorageVO_.uuid, primaryStorageUuid)
-                .findValue();
-        validateMonUrlsInZone(zoneUuid, monUrls, "ceph primary storage", primaryStorageUuid, errorCode);
-    }
-
-    private void validateBackupStorageMonUrls(String backupStorageUuid, List<String> monUrls, String errorCode) {
-        List<String> zoneUuids = Q.New(BackupStorageZoneRefVO.class)
-                .select(BackupStorageZoneRefVO_.zoneUuid)
-                .eq(BackupStorageZoneRefVO_.backupStorageUuid, backupStorageUuid)
-                .listValues();
-        for (String zoneUuid : zoneUuids) {
-            validateMonUrlsInZone(zoneUuid, monUrls, "ceph backup storage", backupStorageUuid, errorCode);
-        }
-    }
-
-    private void validatePrimaryStorageEndpoint(String primaryStorageUuid, String endpoint, String resourceType,
-                                                String resourceIdentity, String errorCode) {
-        String zoneUuid = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.zoneUuid)
-                .eq(PrimaryStorageVO_.uuid, primaryStorageUuid)
-                .findValue();
-        managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, endpoint, resourceType, resourceIdentity, errorCode);
-    }
-
-    private void validateBackupStorageEndpoint(String backupStorageUuid, String endpoint, String resourceType,
-                                               String resourceIdentity, String errorCode) {
-        List<String> zoneUuids = Q.New(BackupStorageZoneRefVO.class)
-                .select(BackupStorageZoneRefVO_.zoneUuid)
-                .eq(BackupStorageZoneRefVO_.backupStorageUuid, backupStorageUuid)
-                .listValues();
-        for (String zoneUuid : zoneUuids) {
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, endpoint, resourceType, resourceIdentity, errorCode);
-        }
-    }
-
-    private void validateMonUrlsInZone(String zoneUuid, List<String> monUrls, String resourceType,
-                                       String resourceIdentity, String errorCode) {
-        for (String monUrl : monUrls) {
-            MonUri uri = new MonUri(monUrl);
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, uri.getHostname(),
-                    resourceType, resourceIdentity, errorCode);
-        }
-    }
-
-    private void validateCephPrimaryStorageMonsInZone(String primaryStorageUuid, String zoneUuid, String errorCode) {
-        List<CephPrimaryStorageMonVO> mons = Q.New(CephPrimaryStorageMonVO.class)
-                .eq(CephPrimaryStorageMonVO_.primaryStorageUuid, primaryStorageUuid)
-                .list();
-        for (CephPrimaryStorageMonVO mon : mons) {
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, mon.getHostname(),
-                    CEPH_PRIMARY_STORAGE_MON_RESOURCE_TYPE, mon.getUuid(), errorCode);
-        }
-    }
-
-    private void validateCephBackupStorageMonsInZone(String backupStorageUuid, String zoneUuid, String errorCode) {
-        List<CephBackupStorageMonVO> mons = Q.New(CephBackupStorageMonVO.class)
-                .eq(CephBackupStorageMonVO_.backupStorageUuid, backupStorageUuid)
-                .list();
-        for (CephBackupStorageMonVO mon : mons) {
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, mon.getHostname(),
-                    CEPH_BACKUP_STORAGE_MON_RESOURCE_TYPE, mon.getUuid(), errorCode);
-        }
-    }
-
-    @Override
-    public void validateExistingResourcesInZone(String zoneUuid, String ipVersion) {
-        List<String> primaryStorageUuids = Q.New(PrimaryStorageVO.class)
-                .select(PrimaryStorageVO_.uuid)
-                .eq(PrimaryStorageVO_.zoneUuid, zoneUuid)
-                .listValues();
-        if (!primaryStorageUuids.isEmpty()) {
-            List<CephPrimaryStorageMonVO> primaryMons = Q.New(CephPrimaryStorageMonVO.class)
-                    .in(CephPrimaryStorageMonVO_.primaryStorageUuid, primaryStorageUuids)
-                    .list();
-            for (CephPrimaryStorageMonVO mon : primaryMons) {
-                managementNetworkIpVersionManager.validateEndpointMatchesIpVersion(zoneUuid, ipVersion, mon.getHostname(),
-                        CEPH_PRIMARY_STORAGE_MON_RESOURCE_TYPE, mon.getUuid(), ORG_ZSTACK_STORAGE_CEPH_10033);
-            }
-        }
-
-        List<String> backupStorageUuids = Q.New(BackupStorageZoneRefVO.class)
-                .select(BackupStorageZoneRefVO_.backupStorageUuid)
-                .eq(BackupStorageZoneRefVO_.zoneUuid, zoneUuid)
-                .listValues();
-        if (backupStorageUuids.isEmpty()) {
-            return;
-        }
-        List<CephBackupStorageMonVO> backupMons = Q.New(CephBackupStorageMonVO.class)
-                .in(CephBackupStorageMonVO_.backupStorageUuid, backupStorageUuids)
-                .list();
-        for (CephBackupStorageMonVO mon : backupMons) {
-            managementNetworkIpVersionManager.validateEndpointMatchesIpVersion(zoneUuid, ipVersion, mon.getHostname(),
-                    CEPH_BACKUP_STORAGE_MON_RESOURCE_TYPE, mon.getUuid(), ORG_ZSTACK_STORAGE_CEPH_10034);
-        }
-    }
-
-    @Override
-    public List<Class> getMessageClassToIntercept() {
-        return CollectionDSL.list(APIAttachPrimaryStorageToClusterMsg.class, APIAttachBackupStorageToZoneMsg.class);
-    }
-
-    @Override
-    public InterceptorPosition getPosition() {
-        return InterceptorPosition.END;
-    }
 }

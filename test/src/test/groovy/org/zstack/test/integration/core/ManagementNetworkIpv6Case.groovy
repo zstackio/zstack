@@ -5,6 +5,7 @@ import org.zstack.appliancevm.ApplianceVmFacadeImpl
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.Platform
+import org.zstack.header.apimediator.ApiMessageInterceptionException
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -75,6 +76,9 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     @Override
     void setup() {
+        DEPLOY_DB = false
+        API_PORTAL = false
+        INCLUDE_CORE_SERVICES = false
     }
 
     @Override
@@ -110,6 +114,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testManagementCidrIpVersionOverload()
         testManagementServerIdPersisted()
         testNfsIpv6UrlParsing()
+        testNfsUrlFormatValidation()
         testCephIpv6MonUrlParsing()
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
         testVxlanVtepIpv6Validation()
@@ -404,6 +409,19 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV4_URL) == NFS_EXPORT_PATH
         assert NfsApiParamChecker.getNfsHostFromUrl(NFS_IPV6_URL) == IPV6
         assert NfsApiParamChecker.getNfsPathFromUrl(NFS_IPV6_URL) == NFS_EXPORT_PATH
+    }
+
+    void testNfsUrlFormatValidation() {
+        NfsApiParamChecker.validateNfsUrlFormat(NFS_IPV4_URL)
+        NfsApiParamChecker.validateNfsUrlFormat(NFS_IPV6_URL)
+
+        expect(ApiMessageInterceptionException.class) {
+            NfsApiParamChecker.validateNfsUrlFormat("${IPV6}:${NFS_EXPORT_PATH}")
+        }
+
+        expect(ApiMessageInterceptionException.class) {
+            NfsApiParamChecker.validateNfsUrlFormat("[${IPV6}:${NFS_EXPORT_PATH}")
+        }
     }
 
     void testCephIpv6MonUrlParsing() {

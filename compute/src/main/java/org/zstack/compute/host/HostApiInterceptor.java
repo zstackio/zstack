@@ -11,11 +11,8 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
-import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -43,8 +40,6 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof HostMessage) {
@@ -131,23 +126,11 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_HOST_10112, "there has been a host having managementIp[%s]", msg.getManagementIp()));
             }
 
-            String zoneUuid = Q.New(HostVO.class)
-                    .select(HostVO_.zoneUuid)
-                    .eq(HostVO_.uuid, msg.getUuid())
-                    .findValue();
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, msg.getManagementIp(),
-                    "host", msg.getUuid(), ORG_ZSTACK_COMPUTE_HOST_10130);
         }
     }
 
     private void validate(APIAddHostMsg msg) {
         validateManagementEndpoint(msg);
-        String zoneUuid = Q.New(ClusterVO.class)
-                .select(ClusterVO_.zoneUuid)
-                .eq(ClusterVO_.uuid, msg.getClusterUuid())
-                .findValue();
-        managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, msg.getManagementIp(),
-                "host", msg.getName(), ORG_ZSTACK_COMPUTE_HOST_10130);
     }
 
     static void validateManagementEndpoint(APIAddHostMsg msg) {

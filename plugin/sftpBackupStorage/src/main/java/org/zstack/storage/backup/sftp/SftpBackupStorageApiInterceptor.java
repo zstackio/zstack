@@ -13,16 +13,11 @@ import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.query.QueryCondition;
 import org.zstack.header.query.QueryOp;
-import org.zstack.header.storage.backup.APIAttachBackupStorageToZoneMsg;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO;
-import org.zstack.header.storage.backup.BackupStorageZoneRefVO_;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
-import org.zstack.header.zone.ManagementNetworkIpVersionManager;
-import org.zstack.header.zone.ManagementNetworkIpVersionResourceExtensionPoint;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.Arrays;
@@ -35,16 +30,11 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 /**
  */
-public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor,
-        ManagementNetworkIpVersionResourceExtensionPoint {
-    private static final String SFTP_BACKUP_STORAGE_RESOURCE_TYPE = "sftp backup storage";
-
+public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
-    @Autowired
-    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -56,8 +46,6 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
             validate((APIUpdateSftpBackupStorageMsg) msg);
         } else if (msg instanceof APICreateRootVolumeTemplateFromRootVolumeMsg) {
             validate((APICreateRootVolumeTemplateFromRootVolumeMsg) msg);
-        } else if (msg instanceof APIAttachBackupStorageToZoneMsg) {
-            validate((APIAttachBackupStorageToZoneMsg) msg);
         }
 
         return msg;
@@ -87,7 +75,6 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
     private void validate(APIUpdateSftpBackupStorageMsg msg) {
         if (msg.getHostname() != null) {
             validateHostname(msg.getHostname(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10028);
-            validateUpdatedHostnameWithAttachedZones(msg);
         }
     }
 
@@ -121,31 +108,6 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
         }
     }
 
-    private void validate(APIAttachBackupStorageToZoneMsg msg) {
-        String hostname = Q.New(SftpBackupStorageVO.class)
-                .select(SftpBackupStorageVO_.hostname)
-                .eq(SftpBackupStorageVO_.uuid, msg.getBackupStorageUuid())
-                .findValue();
-        if (hostname == null) {
-            return;
-        }
-
-        managementNetworkIpVersionManager.validateEndpointInZone(msg.getZoneUuid(), hostname,
-                SFTP_BACKUP_STORAGE_RESOURCE_TYPE, msg.getBackupStorageUuid(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10025);
-    }
-
-    private void validateUpdatedHostnameWithAttachedZones(APIUpdateSftpBackupStorageMsg msg) {
-        List<String> zoneUuids = Q.New(BackupStorageZoneRefVO.class)
-                .select(BackupStorageZoneRefVO_.zoneUuid)
-                .eq(BackupStorageZoneRefVO_.backupStorageUuid, msg.getUuid())
-                .listValues();
-
-        for (String zoneUuid : zoneUuids) {
-            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, msg.getHostname(),
-                    SFTP_BACKUP_STORAGE_RESOURCE_TYPE, msg.getUuid(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10026);
-        }
-    }
-
     private void validateHostname(String hostname, String errorCode) {
         if (!IPv6NetworkUtils.isValidManagementEndpoint(hostname)) {
             throw new ApiMessageInterceptionException(argerr(errorCode,
@@ -154,28 +116,8 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
     }
 
     @Override
-    public void validateExistingResourcesInZone(String zoneUuid, String ipVersion) {
-        List<String> backupStorageUuids = Q.New(BackupStorageZoneRefVO.class)
-                .select(BackupStorageZoneRefVO_.backupStorageUuid)
-                .eq(BackupStorageZoneRefVO_.zoneUuid, zoneUuid)
-                .listValues();
-        if (backupStorageUuids.isEmpty()) {
-            return;
-        }
-
-        List<SftpBackupStorageVO> sftpBackupStorages = Q.New(SftpBackupStorageVO.class)
-                .in(SftpBackupStorageVO_.uuid, backupStorageUuids)
-                .list();
-
-        for (SftpBackupStorageVO sftp : sftpBackupStorages) {
-            managementNetworkIpVersionManager.validateEndpointMatchesIpVersion(zoneUuid, ipVersion, sftp.getHostname(),
-                    SFTP_BACKUP_STORAGE_RESOURCE_TYPE, sftp.getUuid(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10027);
-        }
-    }
-
-    @Override
     public List<Class> getMessageClassToIntercept() {
-        return asList(APICreateRootVolumeTemplateFromRootVolumeMsg.class, APIAttachBackupStorageToZoneMsg.class);
+        return asList(APICreateRootVolumeTemplateFromRootVolumeMsg.class);
     }
 
     @Override

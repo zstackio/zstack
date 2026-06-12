@@ -43,6 +43,8 @@ public class NfsApiParamChecker {
 
     public void checkUrl(String zoneUuid, List<String> systemTags, String url) {
         DebugUtils.Assert(url != null, "URL cannot be null !!!");
+        validateNfsUrlFormat(url);
+
         SimpleQuery<PrimaryStorageVO> q = dbf.createQuery(PrimaryStorageVO.class);
         q.add(PrimaryStorageVO_.type, Op.EQ, NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE);
         q.add(PrimaryStorageVO_.url, Op.EQ, url);
@@ -60,6 +62,30 @@ public class NfsApiParamChecker {
         validateUrl(systemTags, getNfsHostFromUrl(url));
     }
 
+    public static void validateNfsUrlFormat(String url) {
+        if (StringUtils.isBlank(url)) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007, "invalid NFS URL[%s], expected host:/path or [IPv6]:/path", url));
+        }
+
+        if (isAmbiguousRawIpv6Url(url)) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007,
+                    "ambiguous raw IPv6 NFS URL[%s], use bracketed IPv6 syntax like [IPv6]:/path", url));
+        }
+
+        if (StringUtils.isBlank(getNfsHostFromUrl(url)) || StringUtils.isBlank(getNfsPathFromUrl(url))) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_10007, "invalid NFS URL[%s], expected host:/path or [IPv6]:/path", url));
+        }
+    }
+
+    private static boolean isAmbiguousRawIpv6Url(String url) {
+        if (url.startsWith(IPV6_URL_HOST_PREFIX)) {
+            return false;
+        }
+
+        int pathStart = url.indexOf("/");
+        String hostPart = pathStart > 0 ? url.substring(0, pathStart) : url;
+        return StringUtils.countMatches(hostPart, NFS_URL_SEPARATOR) > 1;
+    }
 
     private void validateUrl(List<String> systemTags, String ipAddr) {
         if (systemTags != null) {

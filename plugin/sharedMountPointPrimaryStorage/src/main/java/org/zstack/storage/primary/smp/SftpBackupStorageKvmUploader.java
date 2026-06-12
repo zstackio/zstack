@@ -9,11 +9,20 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_STORAGE_PRIMARY_SMP_10012;
 
 /**
  * @ Author : yh.w
@@ -25,6 +34,8 @@ public class SftpBackupStorageKvmUploader extends BackupStorageKvmUploader {
     private CloudBus bus;
     @Autowired
     protected DatabaseFacade dbf;
+    @Autowired
+    private SMPPrimaryStorageFactory primaryStorageFactory;
 
     private PrimaryStorageInventory pinv;
     private String bsUuid;
@@ -63,7 +74,20 @@ public class SftpBackupStorageKvmUploader extends BackupStorageKvmUploader {
                 cmd.sshPort = r.getSshPort();
                 cmd.primaryStorageUuid = pinv.getUuid();
 
-                new KvmAgentCommandDispatcher(pinv.getUuid()).go(UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, cmd, KvmBackend.AgentRsp.class, new ReturnValueCompletion<KvmBackend.AgentRsp>(completion) {
+                KvmAgentCommandDispatcher dispatcher;
+                try {
+                    dispatcher = KvmAgentCommandDispatcher.createForOperation(
+                            pinv.getUuid(),
+                            "smp-sftp-upload",
+                            getCandidateHostUuids(),
+                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsUuid, r.getHostname())),
+                            ORG_ZSTACK_STORAGE_PRIMARY_SMP_10012);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
+
+                dispatcher.go(UPLOAD_BITS_TO_SFTP_BACKUPSTORAGE_PATH, cmd, KvmBackend.AgentRsp.class, new ReturnValueCompletion<KvmBackend.AgentRsp>(completion) {
                     @Override
                     public void success(KvmBackend.AgentRsp returnValue) {
                         completion.success(bsPath);
@@ -76,5 +100,13 @@ public class SftpBackupStorageKvmUploader extends BackupStorageKvmUploader {
                 });
             }
         });
+    }
+
+    private List<String> getCandidateHostUuids() {
+        List<String> ret = new ArrayList<String>();
+        for (HostInventory host : primaryStorageFactory.getConnectedHostForOperation(pinv)) {
+            ret.add(host.getUuid());
+        }
+        return ret;
     }
 }

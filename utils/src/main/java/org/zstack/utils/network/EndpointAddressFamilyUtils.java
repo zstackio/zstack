@@ -2,7 +2,9 @@ package org.zstack.utils.network;
 
 import org.apache.commons.lang.StringUtils;
 
-public class ManagementNetworkIpVersionUtils {
+import java.net.InetAddress;
+
+public class EndpointAddressFamilyUtils {
     public static final String IPV4 = "ipv4";
     public static final String IPV6 = "ipv6";
 
@@ -15,34 +17,24 @@ public class ManagementNetworkIpVersionUtils {
     private static final String USER_INFO_SEPARATOR = "@";
     private static final String IPV6_SCOPE_SEPARATOR = "%";
 
-    public static boolean isValidIpVersion(String ipVersion) {
-        return normalizeIpVersion(ipVersion) != null;
-    }
-
-    public static String normalizeIpVersion(String ipVersion) {
-        if (StringUtils.isBlank(ipVersion)) {
-            return null;
-        }
-
-        String normalizedIpVersion = ipVersion.trim().toLowerCase();
-        if (IPV4.equals(normalizedIpVersion) || IPV6.equals(normalizedIpVersion)) {
-            return normalizedIpVersion;
-        }
-
-        return null;
-    }
-
-    public static String getEndpointIpVersion(String endpoint) {
+    public static String getEndpointAddressFamily(String endpoint) {
         String host = extractEndpointHost(endpoint);
         if (NetworkUtils.isIpv4Address(host)) {
             return IPV4;
         }
 
-        if (IPv6NetworkUtils.isIpv6Address(host)) {
+        if (IPv6NetworkUtils.isIpv6Address(stripIpv6Scope(host))) {
             return IPV6;
         }
 
         return null;
+    }
+
+    public static boolean isHostnameEndpoint(String endpoint) {
+        String host = extractEndpointHost(endpoint);
+        return StringUtils.isNotBlank(host)
+                && !NetworkUtils.isIpv4Address(host)
+                && !IPv6NetworkUtils.isIpv6Address(stripIpv6Scope(host));
     }
 
     public static boolean isIpv6LinkLocalEndpoint(String endpoint) {
@@ -51,9 +43,27 @@ public class ManagementNetworkIpVersionUtils {
             return false;
         }
 
-        int scopeIndex = host.indexOf(IPV6_SCOPE_SEPARATOR);
-        String address = scopeIndex >= 0 ? host.substring(0, scopeIndex) : host;
-        return IPv6NetworkUtils.isLinkLocalAddress(address);
+        return IPv6NetworkUtils.isLinkLocalAddress(stripIpv6Scope(host));
+    }
+
+    public static boolean isRemoteUsableIp(String ip) {
+        if (StringUtils.isBlank(ip)) {
+            return false;
+        }
+
+        if (NetworkUtils.isIpv4Address(ip) || IPv6NetworkUtils.isIpv6Address(stripIpv6Scope(ip))) {
+            try {
+                InetAddress address = InetAddress.getByName(stripIpv6Scope(ip));
+                return !address.isLinkLocalAddress()
+                        && !address.isLoopbackAddress()
+                        && !address.isAnyLocalAddress()
+                        && !address.isMulticastAddress();
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+        return false;
     }
 
     public static String extractEndpointHost(String endpoint) {
@@ -81,7 +91,7 @@ public class ManagementNetworkIpVersionUtils {
             hostBeforePath = hostBeforePath.substring(0, pathIndex);
         }
 
-        if (IPv6NetworkUtils.isIpv6Address(hostBeforePath)) {
+        if (IPv6NetworkUtils.isIpv6Address(stripIpv6Scope(hostBeforePath))) {
             return hostBeforePath;
         }
 
@@ -101,5 +111,14 @@ public class ManagementNetworkIpVersionUtils {
     private static String extractBracketIpv6Host(String value) {
         int end = value.indexOf(IPV6_HOST_SUFFIX);
         return end > 0 ? value.substring(IPV6_HOST_PREFIX.length(), end) : value;
+    }
+
+    private static String stripIpv6Scope(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        int scopeIndex = host.indexOf(IPV6_SCOPE_SEPARATOR);
+        return scopeIndex >= 0 ? host.substring(0, scopeIndex) : host;
     }
 }

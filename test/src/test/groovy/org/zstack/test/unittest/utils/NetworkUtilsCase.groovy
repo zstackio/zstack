@@ -2,7 +2,7 @@ package org.zstack.test.unittest.utils
 
 import org.junit.Test
 import org.zstack.storage.ceph.MonUri
-import org.zstack.utils.network.ManagementNetworkIpVersionUtils
+import org.zstack.utils.network.EndpointAddressFamilyUtils
 import org.zstack.utils.network.NetworkUtils
 /**
  * Created by mingjian.deng on 2017/7/20.
@@ -41,19 +41,17 @@ class NetworkUtilsCase {
     }
 
     @Test
-    void testManagementEndpointIpVersion() {
-        assert ManagementNetworkIpVersionUtils.normalizeIpVersion("IPv4") == ManagementNetworkIpVersionUtils.IPV4
-        assert ManagementNetworkIpVersionUtils.normalizeIpVersion("ipv6") == ManagementNetworkIpVersionUtils.IPV6
-        assert ManagementNetworkIpVersionUtils.normalizeIpVersion("dual") == null
-        assert ManagementNetworkIpVersionUtils.getEndpointIpVersion("172.24.1.10") == ManagementNetworkIpVersionUtils.IPV4
-        assert ManagementNetworkIpVersionUtils.getEndpointIpVersion("172.24.1.10:/data") == ManagementNetworkIpVersionUtils.IPV4
-        assert ManagementNetworkIpVersionUtils.getEndpointIpVersion("[fd00:172:24::10]:/data") == ManagementNetworkIpVersionUtils.IPV6
-        assert ManagementNetworkIpVersionUtils.getEndpointIpVersion("http://[fd00:172:24::10]:8080/path") == ManagementNetworkIpVersionUtils.IPV6
-        assert ManagementNetworkIpVersionUtils.getEndpointIpVersion("storage.example.com:/data") == null
-        assert ManagementNetworkIpVersionUtils.isIpv6LinkLocalEndpoint("[fe80::10]:/data")
-        assert ManagementNetworkIpVersionUtils.isIpv6LinkLocalEndpoint("http://[fe80::10%eth0]:8080/path")
-        assert !ManagementNetworkIpVersionUtils.isIpv6LinkLocalEndpoint("[fd00:172:24::10]:/data")
-        assert !ManagementNetworkIpVersionUtils.isIpv6LinkLocalEndpoint("fe80.example.com:/data")
+    void testEndpointAddressFamily() {
+        assert EndpointAddressFamilyUtils.getEndpointAddressFamily("172.24.1.10") == EndpointAddressFamilyUtils.IPV4
+        assert EndpointAddressFamilyUtils.getEndpointAddressFamily("172.24.1.10:/data") == EndpointAddressFamilyUtils.IPV4
+        assert EndpointAddressFamilyUtils.getEndpointAddressFamily("[fd00:172:24::10]:/data") == EndpointAddressFamilyUtils.IPV6
+        assert EndpointAddressFamilyUtils.getEndpointAddressFamily("http://[fd00:172:24::10]:8080/path") == EndpointAddressFamilyUtils.IPV6
+        assert EndpointAddressFamilyUtils.getEndpointAddressFamily("storage.example.com:/data") == null
+        assert EndpointAddressFamilyUtils.isHostnameEndpoint("storage.example.com:/data")
+        assert EndpointAddressFamilyUtils.isIpv6LinkLocalEndpoint("[fe80::10]:/data")
+        assert EndpointAddressFamilyUtils.isIpv6LinkLocalEndpoint("http://[fe80::10%eth0]:8080/path")
+        assert !EndpointAddressFamilyUtils.isIpv6LinkLocalEndpoint("[fd00:172:24::10]:/data")
+        assert !EndpointAddressFamilyUtils.isIpv6LinkLocalEndpoint("fe80.example.com:/data")
     }
 
     @Test

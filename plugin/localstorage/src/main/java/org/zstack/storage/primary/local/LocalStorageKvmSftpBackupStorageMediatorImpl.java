@@ -10,6 +10,7 @@ import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
@@ -18,11 +19,14 @@ import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KvmOperationEndpointSelector;
+import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
 
 import java.util.List;
+import java.util.Arrays;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
@@ -200,6 +204,17 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.storagePath =  pinv.getUrl();
 
+                try {
+                    KvmOperationEndpointSelector.validateFixedHost(
+                            "localstorage-sftp-download",
+                            hostUuid,
+                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsinv.getUuid(), greply.getHostname())),
+                            ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10062);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
+
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);
                 msg.setPath(DOWNLOAD_BIT_PATH);
@@ -248,6 +263,17 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 cmd.setSshPort(r.getSshPort());
                 cmd.setUsername(r.getUsername());
                 cmd.storagePath = pinv.getUrl();
+
+                try {
+                    KvmOperationEndpointSelector.validateFixedHost(
+                            "localstorage-sftp-upload",
+                            hostUuid,
+                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsinv.getUuid(), r.getHostname())),
+                            ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10063);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);

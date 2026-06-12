@@ -19,8 +19,6 @@
 		</zstack:plugin>
 	</bean>
 
-	<bean id="ManagementNetworkIpVersionManager" class="org.zstack.compute.zone.ManagementNetworkIpVersionManagerImpl" />
-
 	<bean id="ZoneApiInterceptor" class="org.zstack.compute.zone.ZoneApiInterceptor">
 		<zstack:plugin>
 			<zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />

@@ -24,6 +24,8 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KvmOperationEndpointSelector;
+import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint;
 import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -61,6 +63,28 @@ public class KvmAgentCommandDispatcher {
         hostUuids = new ArrayList<String>();
         hostUuids.add(hostUuid);
         this.primaryStorageUuid = psUuid;
+    }
+
+    public KvmAgentCommandDispatcher(String psUuid, List<String> selectedHostUuids) {
+        this.primaryStorageUuid = psUuid;
+        hostUuids = selectedHostUuids == null ? new ArrayList<String>() : new ArrayList<String>(selectedHostUuids);
+        if (hostUuids.isEmpty()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_SMP_10011, "cannot find any selected host to perform the operation for shared mount point primary storage[uuid:%s]",
+                    this.primaryStorageUuid));
+        }
+    }
+
+    public static KvmAgentCommandDispatcher createForOperation(String psUuid, String operation,
+                                                               List<String> candidateHostUuids,
+                                                               List<Endpoint> endpoints,
+                                                               String errorCode) {
+        return new KvmAgentCommandDispatcher(psUuid,
+                KvmOperationEndpointSelector.filterHostUuids(operation, candidateHostUuids, endpoints, errorCode));
+    }
+
+    public KvmAgentCommandDispatcher(String psUuid, String operation, List<Endpoint> endpoints, String errorCode) {
+        this.primaryStorageUuid = psUuid;
+        hostUuids = KvmOperationEndpointSelector.filterHostUuids(operation, findConnectedHosts(50), endpoints, errorCode);
     }
 
     public KvmAgentCommandDispatcher(String psUuid) {

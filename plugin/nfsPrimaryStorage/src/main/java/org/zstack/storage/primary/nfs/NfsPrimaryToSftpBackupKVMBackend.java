@@ -9,6 +9,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
@@ -19,6 +20,8 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
+import org.zstack.kvm.KvmOperationEndpointSelector;
+import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint;
 import org.zstack.storage.backup.BackupStoragePathMaker;
 import org.zstack.storage.backup.sftp.*;
 import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands.*;
@@ -53,6 +56,13 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
     public static final String UPLOAD_TO_SFTP_PATH = "/nfsprimarystorage/uploadtosftpbackupstorage";
     public static final String DOWNLOAD_FROM_SFTP_PATH = "/nfsprimarystorage/downloadfromsftpbackupstorage";
 
+    private List<Endpoint> getCopyEndpoints(PrimaryStorageInventory pinv, BackupStorageInventory bsinv, String backupStorageEndpoint) {
+        return list(
+                Endpoint.primaryStorage("nfs primary storage", pinv.getUuid(), pinv.getUrl()),
+                Endpoint.backupStorage("sftp backup storage", bsinv.getUuid(), backupStorageEndpoint)
+        );
+    }
+
     @Override
     public String getSupportedPrimaryStorageType() {
         return NfsPrimaryStorageConstant.NFS_PRIMARY_STORAGE_TYPE;
@@ -81,8 +91,18 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
                     return;
                 }
 
-                HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv).get(0);
                 final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
+                HostInventory host;
+                try {
+                    host = KvmOperationEndpointSelector.selectOne(
+                            "nfs-sftp-download",
+                            primaryStorageFactory.getConnectedHostForOperation(pinv),
+                            getCopyEndpoints(pinv, bsinv, greply.getHostname()),
+                            ORG_ZSTACK_STORAGE_PRIMARY_NFS_10013);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
                 DownloadBitsFromSftpBackupStorageCmd cmd = new DownloadBitsFromSftpBackupStorageCmd();
                 cmd.setHostname(greply.getHostname());
                 cmd.setUsername(greply.getUsername());
@@ -138,7 +158,17 @@ public class NfsPrimaryToSftpBackupKVMBackend implements NfsPrimaryToBackupStora
             }
 
             private void upload(final String hostname, String sshKey, int sshPort, String username) {
-                final HostInventory host = primaryStorageFactory.getConnectedHostForOperation(pinv).get(0);
+                final HostInventory host;
+                try {
+                    host = KvmOperationEndpointSelector.selectOne(
+                            "nfs-sftp-upload",
+                            primaryStorageFactory.getConnectedHostForOperation(pinv),
+                            getCopyEndpoints(pinv, bsinv, hostname),
+                            ORG_ZSTACK_STORAGE_PRIMARY_NFS_10014);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
                 UploadToSftpCmd cmd = new UploadToSftpCmd();
                 cmd.setBackupStorageHostName(hostname);
                 cmd.setBackupStorageUserName(username);
