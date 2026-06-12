@@ -14,11 +14,13 @@ public class ResourceInventory {
     protected String uuid;
     private String resourceName;
     private String resourceType;
+    private String concreteResourceType;
 
     public static ResourceInventory valueOf(ResourceVO vo) {
         ResourceInventory inv = new ResourceInventory();
         inv.setResourceName(vo.getResourceName());
         inv.setResourceType(vo.getResourceType());
+        inv.setConcreteResourceType(vo.getConcreteResourceType());
         inv.setUuid(vo.getUuid());
         return inv;
     }
@@ -53,5 +55,13 @@ public class ResourceInventory {
 
     public void setResourceType(String resourceType) {
         this.resourceType = resourceType;
+    }
+
+    public String getConcreteResourceType() {
+        return concreteResourceType;
+    }
+
+    public void setConcreteResourceType(String concreteResourceType) {
+        this.concreteResourceType = concreteResourceType;
     }
 }
