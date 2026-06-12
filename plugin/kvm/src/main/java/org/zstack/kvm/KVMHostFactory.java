@@ -613,6 +613,17 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
 
+        resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.getIdentity());
+        resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
+            Boolean isWindowsVm = KVMHostUtils.isWindowsVmByUuid(resourceUuid);
+            if (isWindowsVm == null || isWindowsVm) {
+                return;
+            }
+
+            throw new GlobalConfigException(String.format("ResourceConfig [category:%s, name:%s] only supports Windows VM, but vm[uuid:%s] is not Windows",
+                    KVMGlobalConfig.CATEGORY, KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION.getName(), resourceUuid));
+        });
+
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_RECONNECT_ME, ReconnectMeCmd.class, new SyncHttpCallHandler<ReconnectMeCmd>() {
             @Override
             public String handleSyncHttpCall(ReconnectMeCmd cmd) {

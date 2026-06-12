@@ -4707,6 +4707,23 @@ public class KVMHost extends HostBase implements Host {
         cmd.setCpuHypervisorFeature(rcf.getResourceConfigValue(KVMGlobalConfig.VM_CPU_HYPERVISOR_FEATURE,
                 spec.getVmInventory().getUuid(),
                 Boolean.class));
+        String imageGuestOsType = spec.getImageSpec() == null || spec.getImageSpec().getInventory() == null ?
+                null : spec.getImageSpec().getInventory().getGuestOsType();
+        if (KVMHostUtils.isWindowsVm(platform, spec.getVmInventory().getGuestOsType(), imageGuestOsType)) {
+            Boolean cpuHardwareVirtualization = rcf.getResourceConfigValue(
+                    KVMGlobalConfig.VM_CPU_HARDWARE_VIRTUALIZATION,
+                    spec.getVmInventory().getUuid(),
+                    Boolean.class);
+            if (Boolean.FALSE.equals(cpuHardwareVirtualization)) {
+                if (KVMConstant.CPU_MODE_NONE.equals(vmCpuMode)) {
+                    logger.info(String.format("skip disabling cpu hardware virtualization for vm[uuid:%s] because vm.cpuMode is none",
+                            spec.getVmInventory().getUuid()));
+                } else {
+                    // Only false is sent; true and null keep the kvmagent default CPU feature behavior.
+                    cmd.setCpuHardwareVirtualization(cpuHardwareVirtualization);
+                }
+            }
+        }
 
         VirtualDeviceInfo memBalloon = new VirtualDeviceInfo();
         memBalloon.setResourceUuid(vidm.MEM_BALLOON_UUID);
