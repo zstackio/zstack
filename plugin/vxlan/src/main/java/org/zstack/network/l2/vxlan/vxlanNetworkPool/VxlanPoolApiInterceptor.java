@@ -97,6 +97,14 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVxlanVtepMsg msg) {
+        String vtepIp = normalizeVtepIp(msg.getVtepIp());
+        msg.setVtepIp(vtepIp);
+        if (!isValidVtepIp(vtepIp)) {
+            throw new ApiMessageInterceptionException(argerr(
+                    ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10034,
+                    "%s is not a valid VTEP IP address", vtepIp));
+        }
+
         long count = Q.New(VtepVO.class).eq(VtepVO_.hostUuid, msg.getHostUuid()).eq(VtepVO_.poolUuid, msg.getPoolUuid()).count();
         if (count > 0) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10018, "vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",
