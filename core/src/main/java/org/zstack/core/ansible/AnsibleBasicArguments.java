@@ -21,8 +21,9 @@ public class AnsibleBasicArguments implements Serializable {
     @SerializedName("remote_user")
     private String remoteUser;
     @NoLogging
-    @SerializedName("remote_pass")
     private String remotePass;
+    @NoLogging
+    private String remote_pass;
     @SerializedName("remote_port")
     private String remotePort;
     @SerializedName("zstack_repo")
@@ -34,6 +35,14 @@ public class AnsibleBasicArguments implements Serializable {
 
     public void setZstackRepo(String zstackRepo) {
         this.zstackRepo = zstackRepo;
+    }
+
+    public String getRemote_pass() {
+        return remote_pass;
+    }
+
+    public void setRemote_pass(String remote_pass) {
+        this.remote_pass = remote_pass;
     }
 
     public String getPipUrl() {
@@ -74,6 +83,7 @@ public class AnsibleBasicArguments implements Serializable {
 
     public void setRemotePass(String remotePass) {
         this.remotePass = remotePass;
+        this.remote_pass = remotePass;
     }
 
     public String getRemotePort() {
