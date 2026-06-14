@@ -26,10 +26,6 @@ import java.util.stream.Collectors;
 @EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = LoadBalancerVO.class, myField = "loadBalancerUuid", targetField = "uuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerVmNicRefVO.class, myField = "uuid", targetField = "listenerUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerCertificateRefVO.class, myField = "uuid", targetField = "listenerUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerACLRefVO.class, myField = "uuid", targetField = "listenerUuid"),
-                @EntityGraph.Neighbour(type = LoadBalancerListenerServerGroupRefVO.class, myField = "uuid", targetField = "listenerUuid")
         }
 )
 public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount {
