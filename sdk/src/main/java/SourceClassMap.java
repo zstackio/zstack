@@ -851,6 +851,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory");
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
+			put("org.zstack.zwatch.alarm.AlarmResourceStateInventory", "org.zstack.sdk.zwatch.alarm.AlarmResourceStateInventory");
 			put("org.zstack.zwatch.alarm.AlarmState", "org.zstack.sdk.zwatch.alarm.AlarmState");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
 			put("org.zstack.zwatch.alarm.AlertDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlertDataAckInventory");
@@ -1757,6 +1758,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory", "org.zstack.zwatch.alarm.AlarmDataAckInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
+			put("org.zstack.sdk.zwatch.alarm.AlarmResourceStateInventory", "org.zstack.zwatch.alarm.AlarmResourceStateInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmState", "org.zstack.zwatch.alarm.AlarmState");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
 			put("org.zstack.sdk.zwatch.alarm.AlertDataAckInventory", "org.zstack.zwatch.alarm.AlertDataAckInventory");

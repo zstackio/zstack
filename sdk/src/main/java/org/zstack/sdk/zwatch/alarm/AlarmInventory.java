@@ -110,6 +110,22 @@ public class AlarmInventory  {
         return this.enableRecovery;
     }
 
+    public java.lang.Integer recoveryDuration;
+    public void setRecoveryDuration(java.lang.Integer recoveryDuration) {
+        this.recoveryDuration = recoveryDuration;
+    }
+    public java.lang.Integer getRecoveryDuration() {
+        return this.recoveryDuration;
+    }
+
+    public java.lang.Integer recoveryThreshold;
+    public void setRecoveryThreshold(java.lang.Integer recoveryThreshold) {
+        this.recoveryThreshold = recoveryThreshold;
+    }
+    public java.lang.Integer getRecoveryThreshold() {
+        return this.recoveryThreshold;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
