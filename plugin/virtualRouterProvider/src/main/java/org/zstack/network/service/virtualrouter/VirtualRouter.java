@@ -463,7 +463,7 @@ public class VirtualRouter extends ApplianceVmBase {
                         if (replies.size() == steps.size()) {
                             changeApplianceVmStatus(ApplianceVmStatus.Disconnected);
                         }
-                        
+
                         bus.reply(msg, replies.get(0));
                         chain.next();
                     }
@@ -913,10 +913,6 @@ public class VirtualRouter extends ApplianceVmBase {
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                if (oldStatus == ApplianceVmStatus.Connected) {
-                    fireDisconnectedCanonicalEvent(errCode);
-                }
-
                 completion.fail(errCode);
             }
         }).start();
