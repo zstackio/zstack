@@ -80,6 +80,13 @@ public class VolumeEncryptedInitialExtension implements PreInstantiateVolumeExte
             return;
         }
 
+        // A backup or snapshot temporary image can already provide the target root
+        // volume key. Keep that key as the source of truth; falling back to the
+        // origin root would overwrite it or fail if the origin key binding is gone.
+        if (volumeEncryptedResourceKeyBackend.checkVolumeKeyProviderAttached(volume.getUuid())) {
+            return;
+        }
+
         String originVolumeUuid = ((InstantiateTemporaryRootVolumeMsg) msg).getOriginVolumeUuid();
         if (StringUtils.isBlank(originVolumeUuid)) {
             return;
