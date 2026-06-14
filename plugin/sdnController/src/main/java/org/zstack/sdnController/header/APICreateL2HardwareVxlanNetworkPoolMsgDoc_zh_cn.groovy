@@ -24,7 +24,7 @@ doc {
 				column {
 					name "sdnControllerUuid"
 					enclosedIn "params"
-					desc ""
+					desc "SDN控制器UUID"
 					location "body"
 					type "String"
 					optional false
@@ -60,7 +60,7 @@ doc {
 				column {
 					name "physicalInterface"
 					enclosedIn "params"
-					desc ""
+					desc "物理网卡"
 					location "body"
 					type "String"
 					optional false
@@ -69,7 +69,7 @@ doc {
 				column {
 					name "type"
 					enclosedIn "params"
-					desc ""
+					desc "二层网络类型"
 					location "body"
 					type "String"
 					optional true
@@ -78,7 +78,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID。若指定，二层网络会使用该字段值作为UUID"
 					location "body"
 					type "String"
 					optional true
@@ -96,7 +96,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -105,7 +105,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
@@ -119,7 +119,7 @@ doc {
 					type "String"
 					optional true
 					since "4.1.2"
-					values ("LinuxBridge","OvsDpdk")
+					values ("LinuxBridge","OvsDpdk","MacVlan")
 				}
 			}
         }

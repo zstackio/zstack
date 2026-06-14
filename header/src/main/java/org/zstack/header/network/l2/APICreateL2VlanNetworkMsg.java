@@ -1,8 +1,6 @@
 package org.zstack.header.network.l2;
 
 import org.springframework.http.HttpMethod;
-import org.zstack.header.message.APIEvent;
-import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.tag.TagResourceType;
@@ -69,7 +67,7 @@ public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
     public String getType() {
         return L2NetworkConstant.L2_VLAN_NETWORK_TYPE;
     }
- 
+
     public static APICreateL2VlanNetworkMsg __example__() {
         APICreateL2VlanNetworkMsg msg = new APICreateL2VlanNetworkMsg();
 
@@ -80,10 +78,5 @@ public class APICreateL2VlanNetworkMsg extends APICreateL2NetworkMsg {
         msg.setPhysicalInterface("eth0");
 
         return msg;
-    }
-
-    @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
-        return new Result(rsp.isSuccess() ? ((APICreateL2VlanNetworkEvent)rsp).getInventory().getUuid() : "", L2NetworkVO.class);
     }
 }

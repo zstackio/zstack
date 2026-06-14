@@ -1,30 +1,17 @@
 package org.zstack.sdnController.header;
 
-import org.zstack.header.message.APIEvent;
+import org.zstack.header.network.l2.APICreateL2NetworkEvent;
 import org.zstack.header.rest.RestResponse;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 
 @RestResponse(allTo = "inventory")
-public class APICreateL2HardwareVxlanNetworkEvent extends APIEvent {
-    /**
-     * @desc see :ref:`L2VlanNetworkInventory`
-     */
-    private L2VxlanNetworkInventory inventory;
-
+public class APICreateL2HardwareVxlanNetworkEvent extends APICreateL2NetworkEvent {
     public APICreateL2HardwareVxlanNetworkEvent(String apiId) {
         super(apiId);
     }
 
-    public L2VxlanNetworkInventory getInventory() {
-        return inventory;
-    }
-
     public APICreateL2HardwareVxlanNetworkEvent() {
         super(null);
-    }
-
-    public void setInventory(L2VxlanNetworkInventory inventory) {
-        this.inventory = inventory;
     }
 
     public static APICreateL2HardwareVxlanNetworkEvent __example__() {

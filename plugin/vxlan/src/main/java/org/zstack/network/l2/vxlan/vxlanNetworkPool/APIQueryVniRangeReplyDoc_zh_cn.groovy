@@ -5,7 +5,7 @@ import org.zstack.network.l2.vxlan.vxlanNetworkPool.VniRangeInventory
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "VNI范围清单列表"
 
 	field {
 		name "success"

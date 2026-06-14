@@ -4,7 +4,7 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "删除remote vxlan隧道端点清单"
+	title "操作范围结果"
 
 	field {
 		name "success"

@@ -3,11 +3,11 @@ package org.zstack.network.l2.vxlan.vxlanNetworkPool
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.APICreateVniRangeEvent
 
 doc {
-    title "CreateVniRange"
+    title "创建VNI范围(CreateVniRange)d"
 
     category "network.l2"
 
-    desc """在这里填写API描述"""
+    desc """创建VNI范围"""
 
     rest {
         request {
@@ -42,7 +42,7 @@ doc {
 				column {
 					name "startVni"
 					enclosedIn "params"
-					desc ""
+					desc "起始VNI"
 					location "body"
 					type "Integer"
 					optional false
@@ -51,7 +51,7 @@ doc {
 				column {
 					name "endVni"
 					enclosedIn "params"
-					desc ""
+					desc "结束VNI"
 					location "body"
 					type "Integer"
 					optional false
@@ -69,7 +69,7 @@ doc {
 				column {
 					name "resourceUuid"
 					enclosedIn "params"
-					desc ""
+					desc "资源UUID"
 					location "body"
 					type "String"
 					optional true
@@ -78,7 +78,7 @@ doc {
 				column {
 					name "systemTags"
 					enclosedIn ""
-					desc ""
+					desc "系统标签"
 					location "body"
 					type "List"
 					optional true
@@ -87,7 +87,7 @@ doc {
 				column {
 					name "userTags"
 					enclosedIn ""
-					desc ""
+					desc "用户标签"
 					location "body"
 					type "List"
 					optional true
