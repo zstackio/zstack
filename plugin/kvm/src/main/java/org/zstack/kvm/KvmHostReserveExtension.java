@@ -15,10 +15,19 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.RecalculateHostCapacityMsg;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.SizeUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.logging.CLogger;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  */
 public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoint, Component {
+    private static CLogger logger = Utils.getLogger(KvmHostReserveExtension.class);
+
     private ReservedHostCapacity reserve = new ReservedHostCapacity();
 
     @Autowired
@@ -38,6 +47,29 @@ public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoi
         String reserveMem = rcf.getResourceConfigValue(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuid, String.class);
         hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem));
         return hc;
+    }
+
+    @Override
+    public Map<String, ReservedHostCapacity> getReservedHostsCapacity(List<String> hostUuids) {
+        Map<String, ReservedHostCapacity> results = new HashMap<>();
+        Map<String, String> values = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuids, String.class);
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("KvmHostReserveExtension get reserved memory capacity for hosts %s, resource config values are %s", hostUuids, JSONObjectUtil.toJsonString(values)));
+        }
+
+        values.forEach((hostUuid, reserveMem) -> {
+            ReservedHostCapacity hc = new ReservedHostCapacity();
+            hc.setReservedCpuCapacity(reserve.getReservedCpuCapacity());
+            hc.setReservedMemoryCapacity(SizeUtils.sizeStringToBytes(reserveMem));
+            results.put(hostUuid, hc);
+        });
+
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("KvmHostReserveExtension returns %s for hosts %s", JSONObjectUtil.toJsonString(results), hostUuids));
+        }
+
+        return results;
     }
 
     @Override
