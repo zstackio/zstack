@@ -463,6 +463,19 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long virtualSize;
     }
 
+    public static class KVMHostImageStoreEncryptedDownloadCmd implements Serializable {
+        public String psUuid;
+        public String hostname;
+        public String backupStorageInstallPath;
+        public String primaryStorageInstallPath;
+        public int concurrency;
+        public String keyProviderUuid;
+        public Integer keyVersion;
+        public String cipher;
+        @NoLogging
+        public String encryptedDek;
+    }
+
     public static class KVMHostEncryptInPlaceCmd implements Serializable {
         public String psUuid;
         @NoLogging
@@ -1420,6 +1433,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HOST_LUKS_ENCRYPT_IN_PLACE_PATH = "/ceph/primarystorage/kvmhost/encryptinplace";
     public static final String KVM_HOST_LUKS_RESIZE_PATH = "/ceph/primarystorage/kvmhost/luksresize";
     public static final String KVM_HOST_LUKS_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert";
+    public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_DOWNLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encrypteddownload";
     public static final String FLATTEN_PATH = "/ceph/primarystorage/volume/flatten";
     public static final String SFTP_DOWNLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/download";
     public static final String SFTP_UPLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/upload";
