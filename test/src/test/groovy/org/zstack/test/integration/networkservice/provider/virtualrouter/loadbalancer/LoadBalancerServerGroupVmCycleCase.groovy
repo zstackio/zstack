@@ -246,49 +246,23 @@ class LoadBalancerServerGroupVmCycleCase extends SubCase{
             return rsp
         }
 
-        /* stop vm will refresh lb backedn */
+        /* stop vm will not refresh lb backedn */
         stopVmInstance {
             uuid = vm2.uuid
         }
-        assert refreshLbCmd != null
-        assert refreshLbCmd.lbs.size() == 2
-        for (VirtualRouterLoadBalancerBackend.LbTO t : refreshLbCmd.lbs) {
-            if (t.listenerUuid == lb22.uuid) {
-                assert t.nicIps.size() == 1
-                assert t.nicIps.get(0) == nic1.ip
-            } else {
-                assert t.nicIps.size() == 1
-                assert t.nicIps.get(0) == nic3.ip
-            }
-        }
+        assert refreshLbCmd == null
 
-        /* start vm will refresh lb backend */
+        /* start vm will not refresh lb backend */
         startVmInstance {
             uuid = vm2.uuid
         }
-        assert refreshLbCmd != null
-        assert refreshLbCmd.lbs.size() == 2
-        for (VirtualRouterLoadBalancerBackend.LbTO t : refreshLbCmd.lbs) {
-            if (t.listenerUuid == lb22.uuid) {
-                assert t.nicIps.size() == 2
-            } else {
-                assert t.nicIps.size() == 2
-            }
-        }
+        assert refreshLbCmd == null
 
-        /* start vm will refresh lb backend */
+        /* start vm will not refresh lb backend */
         rebootVmInstance {
             uuid = vm2.uuid
         }
-        assert refreshLbCmd != null
-        assert refreshLbCmd.lbs.size() == 2
-        for (VirtualRouterLoadBalancerBackend.LbTO t : refreshLbCmd.lbs) {
-            if (t.listenerUuid == lb22.uuid) {
-                assert t.nicIps.size() == 2
-            } else {
-                assert t.nicIps.size() == 2
-            }
-        }
+        assert refreshLbCmd == null
 
         /* destroy vm will refresh lb backend */
         destroyVmInstance {
@@ -332,7 +306,7 @@ class LoadBalancerServerGroupVmCycleCase extends SubCase{
         }
         assert refreshLbCmd == null
 
-        /* start  will refrevrsh lb backend */
+        /* start  will refresh lb backend */
         startVmInstance {
             uuid = vr.uuid
         }
