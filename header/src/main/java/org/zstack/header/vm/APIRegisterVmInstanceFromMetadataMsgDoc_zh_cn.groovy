@@ -27,8 +27,17 @@ doc {
 					desc "元数据文件在主存储上的路径"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "5.0.0"
+				}
+				column {
+					name "metadata"
+					enclosedIn "params"
+					desc "VM metadata JSON content, mutually exclusive with metadataPath"
+					location "body"
+					type "String"
+					optional true
+					since "5.1.0"
 				}
 				column {
 					name "primaryStorageUuid"

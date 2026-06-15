@@ -22,8 +22,11 @@ import java.util.concurrent.TimeUnit;
 )
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 1)
 public class APIRegisterVmInstanceFromMetadataMsg extends APIMessage {
-    @APIParam(nonempty = true, maxLength = 2048)
+    @APIParam(required = false, nonempty = true, maxLength = 2048)
     private String metadataPath;
+
+    @APIParam(required = false, nonempty = true)
+    private String metadata;
 
     @APIParam(resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
@@ -46,6 +49,14 @@ public class APIRegisterVmInstanceFromMetadataMsg extends APIMessage {
 
     public void setMetadataPath(String metadataPath) {
         this.metadataPath = metadataPath;
+    }
+
+    public String getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(String metadata) {
+        this.metadata = metadata;
     }
 
     public String getPrimaryStorageUuid() {
