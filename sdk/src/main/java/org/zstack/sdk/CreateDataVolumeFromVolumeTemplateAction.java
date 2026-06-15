@@ -41,6 +41,9 @@ public class CreateDataVolumeFromVolumeTemplateAction extends AbstractAction {
     public java.lang.String hostUuid;
 
     @Param(required = false)
+    public java.lang.Boolean encrypted;
+
+    @Param(required = false)
     public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
