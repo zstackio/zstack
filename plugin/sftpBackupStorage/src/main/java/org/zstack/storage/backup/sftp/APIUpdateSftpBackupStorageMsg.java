@@ -24,6 +24,8 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
     private String password;
     @APIParam(maxLength = 255, required = false)
     private String hostname;
+    @APIParam(maxLength = 255, required = false)
+    private String ipv6Endpoint;
     @APIParam(numberRange = {1, 65535}, required = false)
     private Integer sshPort;
 
@@ -40,6 +42,14 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getIpv6Endpoint() {
+        return ipv6Endpoint;
+    }
+
+    public void setIpv6Endpoint(String ipv6Endpoint) {
+        this.ipv6Endpoint = ipv6Endpoint;
     }
 
     public String getUsername() {
@@ -63,6 +73,7 @@ public class APIUpdateSftpBackupStorageMsg extends APIUpdateBackupStorageMsg {
         msg.setUsername("tester");
         msg.setSshPort(8000);
         msg.setHostname("192.168.0.1");
+        msg.setIpv6Endpoint("2001:db8::8");
         msg.setPassword("test1234");
         msg.setUuid("76d39c6862b840a3aa4568d83db99022");
 

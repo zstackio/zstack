@@ -1,11 +1,6 @@
 package org.zstack.storage.backup.sftp;
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SimpleQuery;
-import org.zstack.core.db.SimpleQuery.Op;
-import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -31,11 +26,6 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 /**
  */
 public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, GlobalApiMessageInterceptor {
-    @Autowired
-    private DatabaseFacade dbf;
-    @Autowired
-    private ErrorFacade errf;
-
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIAddSftpBackupStorageMsg) {
@@ -75,6 +65,11 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
     private void validate(APIUpdateSftpBackupStorageMsg msg) {
         if (msg.getHostname() != null) {
             validateHostname(msg.getHostname(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10028);
+            validateEndpointNotDuplicated(msg.getUuid(), msg.getHostname(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10028);
+        }
+        if (msg.getIpv6Endpoint() != null) {
+            validateIpv6Endpoint(msg.getIpv6Endpoint(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10028);
+            validateEndpointNotDuplicated(msg.getUuid(), msg.getIpv6Endpoint(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10028);
         }
     }
 
@@ -96,11 +91,13 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
 
     private void validate(APIAddSftpBackupStorageMsg msg) {
         validateHostname(msg.getHostname(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10029);
+        if (msg.getIpv6Endpoint() != null) {
+            validateIpv6Endpoint(msg.getIpv6Endpoint(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10029);
+        }
 
-        SimpleQuery<SftpBackupStorageVO> q = dbf.createQuery(SftpBackupStorageVO.class);
-        q.add(SftpBackupStorageVO_.hostname, Op.EQ, msg.getHostname());
-        if (q.isExists()) {
-            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_BACKUP_SFTP_10023, "duplicate backup storage. There has been a sftp backup storage[hostname:%s] existing", msg.getHostname()));
+        validateEndpointNotDuplicated(null, msg.getHostname(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10023);
+        if (msg.getIpv6Endpoint() != null) {
+            validateEndpointNotDuplicated(null, msg.getIpv6Endpoint(), ORG_ZSTACK_STORAGE_BACKUP_SFTP_10023);
         }
         String dir = msg.getUrl();
         if (dir.startsWith("/proc")||dir.startsWith("/dev") || dir.startsWith("/sys")) {
@@ -113,6 +110,29 @@ public class SftpBackupStorageApiInterceptor implements ApiMessageInterceptor, G
             throw new ApiMessageInterceptionException(argerr(errorCode,
                     "hostname[%s] is not a valid IPv4 address, IPv6 address, or hostname", hostname));
         }
+    }
+
+    private void validateIpv6Endpoint(String endpoint, String errorCode) {
+        if (!IPv6NetworkUtils.isValidManagementIpv6Address(endpoint)) {
+            throw new ApiMessageInterceptionException(argerr(errorCode,
+                    "ipv6Endpoint[%s] is not a valid remote IPv6 address", endpoint));
+        }
+    }
+
+    private void validateEndpointNotDuplicated(String selfUuid, String endpoint, String errorCode) {
+        if (isEndpointDuplicated(selfUuid, endpoint, true) || isEndpointDuplicated(selfUuid, endpoint, false)) {
+            throw new ApiMessageInterceptionException(operr(errorCode,
+                    "duplicate backup storage endpoint. There has been a sftp backup storage endpoint[%s] existing", endpoint));
+        }
+    }
+
+    private boolean isEndpointDuplicated(String selfUuid, String endpoint, boolean hostnameColumn) {
+        Q q = Q.New(SftpBackupStorageVO.class)
+                .eq(hostnameColumn ? SftpBackupStorageVO_.hostname : SftpBackupStorageVO_.ipv6Endpoint, endpoint);
+        if (selfUuid != null) {
+            q.notEq(SftpBackupStorageVO_.uuid, selfUuid);
+        }
+        return q.isExists();
     }
 
     @Override

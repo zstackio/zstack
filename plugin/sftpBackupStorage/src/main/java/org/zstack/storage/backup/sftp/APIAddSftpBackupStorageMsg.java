@@ -64,6 +64,8 @@ import org.zstack.header.storage.backup.APIAddBackupStorageMsg;
 public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     @APIParam(maxLength = 255, emptyString = false)
     private String hostname;
+    @APIParam(maxLength = 255, required = false)
+    private String ipv6Endpoint;
     @APIParam(maxLength = 255)
     private String username;
     @APIParam(maxLength = 255, password = true)
@@ -84,6 +86,12 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
     }
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+    public String getIpv6Endpoint() {
+        return ipv6Endpoint;
+    }
+    public void setIpv6Endpoint(String ipv6Endpoint) {
+        this.ipv6Endpoint = ipv6Endpoint;
     }
     public String getUsername() {
         return username;
@@ -111,6 +119,7 @@ public class APIAddSftpBackupStorageMsg extends APIAddBackupStorageMsg {
         msg.setName("Sftp-Test");
         msg.setUrl("/data/sftp-data");
         msg.setHostname("192.168.1.8");
+        msg.setIpv6Endpoint("2001:db8::8");
         msg.setUsername("admin");
         msg.setPassword("test1234");
 

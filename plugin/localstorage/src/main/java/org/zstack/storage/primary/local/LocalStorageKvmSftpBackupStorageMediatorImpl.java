@@ -195,25 +195,26 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 }
 
                 final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
+                Endpoint selectedEndpoint;
+                try {
+                    selectedEndpoint = KvmOperationEndpointSelector.selectTargetEndpointForFixedHost(
+                            "localstorage-sftp-download",
+                            hostUuid,
+                            list(),
+                            KvmOperationEndpointSelector.backupStorageEndpoints("sftp backup storage", bsinv.getUuid(), greply.getEndpointCandidates(), greply.getHostname()),
+                            ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10062);
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
                 SftpDownloadBitsCmd cmd = new SftpDownloadBitsCmd();
-                cmd.setHostname(greply.getHostname());
+                cmd.setHostname(selectedEndpoint.getAddress());
                 cmd.setUsername(greply.getUsername());
                 cmd.setSshKey(greply.getSshKey());
                 cmd.setSshPort(greply.getSshPort());
                 cmd.setBackupStorageInstallPath(backupStorageInstallPath);
                 cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
                 cmd.storagePath =  pinv.getUrl();
-
-                try {
-                    KvmOperationEndpointSelector.validateFixedHost(
-                            "localstorage-sftp-download",
-                            hostUuid,
-                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsinv.getUuid(), greply.getHostname())),
-                            ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10062);
-                } catch (OperationFailureException e) {
-                    completion.fail(e.getErrorCode());
-                    return;
-                }
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setHostUuid(hostUuid);
@@ -232,7 +233,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         SftpDownloadBitsRsp rsp = kr.toResponse(SftpDownloadBitsRsp.class);
                         if (!rsp.isSuccess()) {
                             completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10062, "failed to download bits from the SFTP backup storage[hostname:%s, path: %s] to the local primary storage[uuid:%s, path: %s], %s",
-                                    greply.getHostname(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
+                                    selectedEndpoint.getAddress(), backupStorageInstallPath, pinv.getUuid(), primaryStorageInstallPath, rsp.getError()));
                         } else {
                             completion.success();
                         }
@@ -255,25 +256,26 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                 }
 
                 final GetSftpBackupStorageDownloadCredentialReply r = reply.castReply();
-                SftpUploadBitsCmd cmd = new SftpUploadBitsCmd();
-                cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
-                cmd.setBackupStorageInstallPath(backupStorageInstallPath);
-                cmd.setHostname(r.getHostname());
-                cmd.setSshKey(r.getSshKey());
-                cmd.setSshPort(r.getSshPort());
-                cmd.setUsername(r.getUsername());
-                cmd.storagePath = pinv.getUrl();
-
+                Endpoint selectedEndpoint;
                 try {
-                    KvmOperationEndpointSelector.validateFixedHost(
+                    selectedEndpoint = KvmOperationEndpointSelector.selectTargetEndpointForFixedHost(
                             "localstorage-sftp-upload",
                             hostUuid,
-                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsinv.getUuid(), r.getHostname())),
+                            list(),
+                            KvmOperationEndpointSelector.backupStorageEndpoints("sftp backup storage", bsinv.getUuid(), r.getEndpointCandidates(), r.getHostname()),
                             ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10063);
                 } catch (OperationFailureException e) {
                     completion.fail(e.getErrorCode());
                     return;
                 }
+                SftpUploadBitsCmd cmd = new SftpUploadBitsCmd();
+                cmd.setPrimaryStorageInstallPath(primaryStorageInstallPath);
+                cmd.setBackupStorageInstallPath(backupStorageInstallPath);
+                cmd.setHostname(selectedEndpoint.getAddress());
+                cmd.setSshKey(r.getSshKey());
+                cmd.setSshPort(r.getSshPort());
+                cmd.setUsername(r.getUsername());
+                cmd.storagePath = pinv.getUrl();
 
                 KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
                 msg.setCommand(cmd);
@@ -292,7 +294,7 @@ public class LocalStorageKvmSftpBackupStorageMediatorImpl implements LocalStorag
                         SftpUploadBitsRsp rsp = kr.toResponse(SftpUploadBitsRsp.class);
                         if (!rsp.isSuccess()) {
                             completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10063, "failed to upload bits from the local storage[uuid:%s, path:%s] to the SFTP backup storage[hostname:%s, path:%s], %s",
-                                            pinv.getUuid(), primaryStorageInstallPath, r.getHostname(), backupStorageInstallPath, rsp.getError()));
+                                            pinv.getUuid(), primaryStorageInstallPath, selectedEndpoint.getAddress(), backupStorageInstallPath, rsp.getError()));
                             return;
                         }
 

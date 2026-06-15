@@ -39,6 +39,7 @@ import org.zstack.utils.ssh.SshException;
 import javax.persistence.Query;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.zstack.core.Platform.err;
@@ -629,10 +630,32 @@ public class SftpBackupStorage extends BackupStorageBase {
 
         String key = asf.getPrivateKey();
         reply.setHostname(getSelf().getHostname());
+        reply.setEndpointCandidates(buildEndpointCandidates());
         reply.setUsername(getSelf().getUsername());
         reply.setSshKey(key);
         reply.setSshPort(getSelf().getSshPort());
         bus.reply(msg, reply);
+    }
+
+    private List<BackupStorageEndpointCandidate> buildEndpointCandidates() {
+        List<BackupStorageEndpointCandidate> candidates = new ArrayList<BackupStorageEndpointCandidate>();
+        candidates.add(BackupStorageEndpointCandidate.copyTarget(
+                getSelf().getHostname(),
+                null,
+                BackupStorageEndpointCandidate.SOURCE_CONFIGURED_HOSTNAME,
+                "ssh",
+                getSelf().getSshPort(),
+                true));
+        if (getSelf().getIpv6Endpoint() != null) {
+            candidates.add(BackupStorageEndpointCandidate.copyTarget(
+                    getSelf().getIpv6Endpoint(),
+                    null,
+                    BackupStorageEndpointCandidate.SOURCE_CONFIGURED_IPV6_ENDPOINT,
+                    "ssh",
+                    getSelf().getSshPort(),
+                    false));
+        }
+        return candidates;
     }
 
     private void handle(final APIReconnectSftpBackupStorageMsg msg) {
@@ -676,6 +699,9 @@ public class SftpBackupStorage extends BackupStorageBase {
         }
         if (umsg.getHostname() != null) {
             vo.setHostname(umsg.getHostname());
+        }
+        if (umsg.getIpv6Endpoint() != null) {
+            vo.setIpv6Endpoint(umsg.getIpv6Endpoint());
         }
         if (umsg.getSshPort() != null && umsg.getSshPort() > 0 && umsg.getSshPort() <= 65535) {
             vo.setSshPort(umsg.getSshPort());

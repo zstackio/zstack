@@ -39,17 +39,26 @@ doc {
 					optional true
 					since "0.6"
 				}
-				column {
-					name "hostname"
-					enclosedIn "updateSftpBackupStorage"
-					desc "镜像服务器所在的物理机地址"
-					location "body"
-					type "String"
-					optional true
-					since "0.6"
-				}
-				column {
-					name "sshPort"
+					column {
+						name "hostname"
+						enclosedIn "updateSftpBackupStorage"
+						desc "镜像服务器所在的物理机地址"
+						location "body"
+						type "String"
+						optional true
+						since "0.6"
+					}
+					column {
+						name "ipv6Endpoint"
+						enclosedIn "updateSftpBackupStorage"
+						desc "镜像服务器IPv6访问地址"
+						location "body"
+						type "String"
+						optional true
+						since "5.5.28"
+					}
+					column {
+						name "sshPort"
 					enclosedIn "updateSftpBackupStorage"
 					desc "镜像服务器所在物理机的登录端口"
 					location "body"

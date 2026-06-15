@@ -8,6 +8,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.storage.backup.BackupStorageEndpointCandidate;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.network.EndpointAddressFamilyUtils;
 
@@ -67,6 +68,11 @@ public class KvmOperationEndpointSelector {
                     "backupStorageCredential.hostname", NETWORK_PLANE_STORAGE_COPY);
         }
 
+        public static Endpoint backupStorage(String resourceType, String resourceIdentity, String address, String endpointSource) {
+            return new Endpoint(ROLE_BACKUP_STORAGE, resourceType, resourceIdentity, address,
+                    endpointSource, NETWORK_PLANE_STORAGE_COPY);
+        }
+
         public String getResourceRole() {
             return resourceRole;
         }
@@ -99,6 +105,40 @@ public class KvmOperationEndpointSelector {
         public String toString() {
             return String.format("{resourceRole:%s,resourceType:%s,resourceIdentity:%s,address:%s,addressFamily:%s,endpointSource:%s,networkPlane:%s}",
                     resourceRole, resourceType, resourceIdentity, address, getAddressFamily(), endpointSource, networkPlane);
+        }
+    }
+
+    public static class Selection {
+        private final List<HostInventory> selectedHosts;
+        private final Endpoint selectedBackupStorageEndpoint;
+
+        private Selection(List<HostInventory> selectedHosts, Endpoint selectedBackupStorageEndpoint) {
+            this.selectedHosts = selectedHosts;
+            this.selectedBackupStorageEndpoint = selectedBackupStorageEndpoint;
+        }
+
+        public List<HostInventory> getSelectedHosts() {
+            return selectedHosts;
+        }
+
+        public HostInventory getSelectedHost() {
+            return selectedHosts.get(0);
+        }
+
+        public List<String> getSelectedHostUuids() {
+            List<String> ret = new ArrayList<String>();
+            for (HostInventory host : selectedHosts) {
+                ret.add(host.getUuid());
+            }
+            return ret;
+        }
+
+        public Endpoint getSelectedBackupStorageEndpoint() {
+            return selectedBackupStorageEndpoint;
+        }
+
+        public String getSelectedBackupStorageAddress() {
+            return selectedBackupStorageEndpoint == null ? null : selectedBackupStorageEndpoint.getAddress();
         }
     }
 
@@ -179,6 +219,148 @@ public class KvmOperationEndpointSelector {
         }
     }
 
+    public static Selection selectForTargetEndpoint(String operation, List<HostInventory> candidates,
+                                                    List<Endpoint> requiredEndpoints,
+                                                    List<Endpoint> backupStorageEndpointCandidates,
+                                                    String errorCode) {
+        if (candidates == null || candidates.isEmpty()) {
+            throw new OperationFailureException(buildError(operation, candidates,
+                    mergeEndpoints(requiredEndpoints, backupStorageEndpointCandidates), errorCode, null));
+        }
+
+        if (backupStorageEndpointCandidates == null || backupStorageEndpointCandidates.isEmpty()) {
+            throw new OperationFailureException(buildError(operation, candidates,
+                    requiredEndpoints, errorCode, null));
+        }
+
+        for (HostInventory candidate : candidates) {
+            Endpoint targetEndpoint = selectTargetEndpointForHost(candidate, requiredEndpoints, backupStorageEndpointCandidates);
+            if (targetEndpoint != null) {
+                List<Endpoint> endpoints = mergeEndpoints(requiredEndpoints, Arrays.asList(targetEndpoint));
+                return new Selection(filter(operation, candidates, endpoints, errorCode), targetEndpoint);
+            }
+        }
+
+        throw new OperationFailureException(buildError(operation, candidates,
+                mergeEndpoints(requiredEndpoints, backupStorageEndpointCandidates), errorCode, null));
+    }
+
+    public static Endpoint selectTargetEndpointForFixedHost(String operation, String hostUuid,
+                                                           List<Endpoint> requiredEndpoints,
+                                                           List<Endpoint> backupStorageEndpointCandidates,
+                                                           String errorCode) {
+        HostVO vo = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .find();
+        if (vo == null) {
+            throw new OperationFailureException(buildError(operation, new ArrayList<HostInventory>(),
+                    mergeEndpoints(requiredEndpoints, backupStorageEndpointCandidates), errorCode, hostUuid));
+        }
+
+        HostInventory host = HostInventory.valueOf(vo);
+        if (backupStorageEndpointCandidates == null || backupStorageEndpointCandidates.isEmpty()) {
+            throw new OperationFailureException(buildError(operation, Arrays.asList(host),
+                    requiredEndpoints, errorCode, hostUuid));
+        }
+
+        Endpoint targetEndpoint = selectTargetEndpointForHost(host, requiredEndpoints, backupStorageEndpointCandidates);
+        if (targetEndpoint != null) {
+            return targetEndpoint;
+        }
+
+        throw new OperationFailureException(buildError(operation, Arrays.asList(host),
+                mergeEndpoints(requiredEndpoints, backupStorageEndpointCandidates), errorCode, hostUuid));
+    }
+
+    public static List<Endpoint> backupStorageEndpoints(String resourceType, String resourceIdentity,
+                                                        List<BackupStorageEndpointCandidate> candidates) {
+        List<Endpoint> ret = new ArrayList<Endpoint>();
+        if (candidates == null) {
+            return ret;
+        }
+
+        for (BackupStorageEndpointCandidate candidate : candidates) {
+            if (candidate == null || StringUtils.isBlank(candidate.getAddress())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(candidate.getRole()) &&
+                    !BackupStorageEndpointCandidate.ROLE_STORAGE_IMAGE_TRANSFER.equals(candidate.getRole())) {
+                continue;
+            }
+            if (StringUtils.isNotBlank(candidate.getProtocol()) && !"ssh".equals(candidate.getProtocol())) {
+                continue;
+            }
+
+            ret.add(Endpoint.backupStorage(resourceType, resourceIdentity, candidate.getAddress(), candidate.getSource()));
+        }
+
+        return ret;
+    }
+
+    public static List<Endpoint> backupStorageEndpoints(String resourceType, String resourceIdentity,
+                                                        List<BackupStorageEndpointCandidate> candidates,
+                                                        String legacyAddress) {
+        List<Endpoint> ret = backupStorageEndpoints(resourceType, resourceIdentity, candidates);
+        if (ret.isEmpty() && StringUtils.isNotBlank(legacyAddress)) {
+            ret.add(Endpoint.backupStorage(resourceType, resourceIdentity, legacyAddress));
+        }
+        return ret;
+    }
+
+    private static List<Endpoint> mergeEndpoints(List<Endpoint> requiredEndpoints, List<Endpoint> targetEndpoints) {
+        List<Endpoint> ret = new ArrayList<Endpoint>();
+        if (requiredEndpoints != null) {
+            ret.addAll(requiredEndpoints);
+        }
+        if (targetEndpoints != null) {
+            ret.addAll(targetEndpoints);
+        }
+        return ret;
+    }
+
+    private static Endpoint selectTargetEndpointForHost(HostInventory host, List<Endpoint> requiredEndpoints,
+                                                        List<Endpoint> targetEndpoints) {
+        if (host == null || targetEndpoints == null) {
+            return null;
+        }
+
+        Set<String> preferredFamilies = getRequiredFamilies(requiredEndpoints);
+        Endpoint selected = null;
+        int selectedScore = Integer.MAX_VALUE;
+        for (Endpoint targetEndpoint : targetEndpoints) {
+            if (targetEndpoint == null) {
+                continue;
+            }
+
+            List<Endpoint> endpoints = mergeEndpoints(requiredEndpoints, Arrays.asList(targetEndpoint));
+            Set<String> requiredFamilies = getRequiredFamilies(endpoints);
+            if (!requiredFamilies.isEmpty() && !hostMatches(host.getUuid(), host.getManagementIp(), requiredFamilies)) {
+                continue;
+            }
+
+            int score = getTargetEndpointPreferenceScore(targetEndpoint, preferredFamilies);
+            if (selected == null || score < selectedScore) {
+                selected = targetEndpoint;
+                selectedScore = score;
+            }
+        }
+
+        return selected;
+    }
+
+    private static int getTargetEndpointPreferenceScore(Endpoint targetEndpoint, Set<String> preferredFamilies) {
+        String family = targetEndpoint.getAddressFamily();
+        if (family != null && preferredFamilies != null && preferredFamilies.contains(family)) {
+            return 0;
+        }
+
+        if (family != null) {
+            return 1;
+        }
+
+        return 2;
+    }
+
     private static Set<String> getRequiredFamilies(List<Endpoint> endpoints) {
         Set<String> requiredFamilies = new LinkedHashSet<String>();
         if (endpoints == null) {
@@ -212,10 +394,12 @@ public class KvmOperationEndpointSelector {
         Set<String> families = new LinkedHashSet<String>();
         addAddressFamily(families, managementIp);
 
-        String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(hostUuid, HostSystemTags.EXTRA_IPS_TOKEN);
-        if (StringUtils.isNotBlank(extraIps)) {
-            for (String ip : extraIps.split(",")) {
-                addAddressFamily(families, ip);
+        if (StringUtils.isNotBlank(hostUuid)) {
+            String extraIps = HostSystemTags.EXTRA_IPS.getTokenByResourceUuid(hostUuid, HostSystemTags.EXTRA_IPS_TOKEN);
+            if (StringUtils.isNotBlank(extraIps)) {
+                for (String ip : extraIps.split(",")) {
+                    addAddressFamily(families, ip);
+                }
             }
         }
 

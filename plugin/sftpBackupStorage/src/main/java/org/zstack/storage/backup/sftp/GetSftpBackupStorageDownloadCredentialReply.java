@@ -1,11 +1,15 @@
 package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.backup.BackupStorageEndpointCandidate;
+
+import java.util.List;
 
 public class GetSftpBackupStorageDownloadCredentialReply extends MessageReply {
     private String sshKey;
     private String username;
     private String hostname;
+    private List<BackupStorageEndpointCandidate> endpointCandidates;
     private int sshPort;
     public String getUsername() {
         return username;
@@ -32,5 +36,13 @@ public class GetSftpBackupStorageDownloadCredentialReply extends MessageReply {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public List<BackupStorageEndpointCandidate> getEndpointCandidates() {
+        return endpointCandidates;
+    }
+
+    public void setEndpointCandidates(List<BackupStorageEndpointCandidate> endpointCandidates) {
+        this.endpointCandidates = endpointCandidates;
     }
 }

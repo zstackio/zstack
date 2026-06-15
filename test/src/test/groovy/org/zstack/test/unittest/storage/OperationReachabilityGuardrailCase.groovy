@@ -6,30 +6,38 @@ class OperationReachabilityGuardrailCase {
     @Test
     void testOpenSourceP0CopyPathsSelectBeforeDispatch() {
         assertSourceContains("plugin/nfsPrimaryStorage/src/main/java/org/zstack/storage/primary/nfs/NfsPrimaryToSftpBackupKVMBackend.java", [
-                "KvmOperationEndpointSelector.selectOne(",
+                "KvmOperationEndpointSelector.selectForTargetEndpoint(",
                 "\"nfs-sftp-download\"",
                 "\"nfs-sftp-upload\"",
                 "Endpoint.primaryStorage(\"nfs primary storage\"",
-                "Endpoint.backupStorage(\"sftp backup storage\"",
+                "KvmOperationEndpointSelector.backupStorageEndpoints(\"sftp backup storage\"",
+                "getEndpointCandidates()",
+                "selection.getSelectedBackupStorageAddress()",
                 "msg.setHostUuid(host.getUuid())",
         ])
         assertSourceContains("plugin/sharedMountPointPrimaryStorage/src/main/java/org/zstack/storage/primary/smp/SftpBackupStorageKvmDownloader.java", [
-                "KvmAgentCommandDispatcher.createForOperation(",
+                "KvmOperationEndpointSelector.selectForTargetEndpoint(",
                 "\"smp-sftp-download\"",
-                "getCandidateHostUuids()",
-                "Endpoint.backupStorage(\"sftp backup storage\"",
+                "KvmOperationEndpointSelector.backupStorageEndpoints(\"sftp backup storage\"",
+                "greply.getEndpointCandidates()",
+                "new KvmAgentCommandDispatcher(pinv.getUuid(), selection.getSelectedHostUuids())",
+                "selection.getSelectedBackupStorageAddress()",
         ])
         assertSourceContains("plugin/sharedMountPointPrimaryStorage/src/main/java/org/zstack/storage/primary/smp/SftpBackupStorageKvmUploader.java", [
-                "KvmAgentCommandDispatcher.createForOperation(",
+                "KvmOperationEndpointSelector.selectForTargetEndpoint(",
                 "\"smp-sftp-upload\"",
-                "getCandidateHostUuids()",
-                "Endpoint.backupStorage(\"sftp backup storage\"",
+                "KvmOperationEndpointSelector.backupStorageEndpoints(\"sftp backup storage\"",
+                "r.getEndpointCandidates()",
+                "new KvmAgentCommandDispatcher(pinv.getUuid(), selection.getSelectedHostUuids())",
+                "selection.getSelectedBackupStorageAddress()",
         ])
         assertSourceContains("plugin/localstorage/src/main/java/org/zstack/storage/primary/local/LocalStorageKvmSftpBackupStorageMediatorImpl.java", [
-                "KvmOperationEndpointSelector.validateFixedHost(",
+                "KvmOperationEndpointSelector.selectTargetEndpointForFixedHost(",
                 "\"localstorage-sftp-download\"",
                 "\"localstorage-sftp-upload\"",
-                "Endpoint.backupStorage(\"sftp backup storage\"",
+                "KvmOperationEndpointSelector.backupStorageEndpoints(\"sftp backup storage\"",
+                "getEndpointCandidates()",
+                "selectedEndpoint.getAddress()",
         ])
     }
 

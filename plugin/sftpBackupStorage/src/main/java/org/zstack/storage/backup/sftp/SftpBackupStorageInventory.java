@@ -14,12 +14,14 @@ import java.util.List;
 @PythonClassInventory
 public class SftpBackupStorageInventory extends BackupStorageInventory {
     public String hostname;
+    public String ipv6Endpoint;
     public String username;
     public Integer sshPort;
 
     protected SftpBackupStorageInventory(SftpBackupStorageVO vo) {
         super(vo);
         hostname = vo.getHostname();
+        ipv6Endpoint = vo.getIpv6Endpoint();
         username = vo.getUsername();
         sshPort = vo.getSshPort();
     }
@@ -47,6 +49,14 @@ public class SftpBackupStorageInventory extends BackupStorageInventory {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getIpv6Endpoint() {
+        return ipv6Endpoint;
+    }
+
+    public void setIpv6Endpoint(String ipv6Endpoint) {
+        this.ipv6Endpoint = ipv6Endpoint;
     }
 
     public String getUsername() {

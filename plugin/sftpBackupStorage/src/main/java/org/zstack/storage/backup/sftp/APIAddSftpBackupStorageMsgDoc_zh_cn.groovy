@@ -21,17 +21,26 @@ doc {
             
 			params {
 
-				column {
-					name "hostname"
-					enclosedIn "params"
-					desc "服务器主机地址"
-					location "body"
-					type "String"
-					optional false
-					since "0.6"
-				}
-				column {
-					name "username"
+					column {
+						name "hostname"
+						enclosedIn "params"
+						desc "服务器主机地址"
+						location "body"
+						type "String"
+						optional false
+						since "0.6"
+					}
+					column {
+						name "ipv6Endpoint"
+						enclosedIn "params"
+						desc "服务器IPv6访问地址"
+						location "body"
+						type "String"
+						optional true
+						since "5.5.28"
+					}
+					column {
+						name "username"
 					enclosedIn "params"
 					desc "服务器 SSH 用户名 (用于 Ansible 部署)"
 					location "body"

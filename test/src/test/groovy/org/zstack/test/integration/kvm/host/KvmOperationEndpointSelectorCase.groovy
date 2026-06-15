@@ -5,6 +5,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
+import org.zstack.header.storage.backup.BackupStorageEndpointCandidate
 import org.zstack.kvm.KvmOperationEndpointSelector
 import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint
 import org.zstack.storage.primary.smp.KvmAgentCommandDispatcher
@@ -49,6 +50,8 @@ class KvmOperationEndpointSelectorCase extends SubCase {
             prepareHosts()
             testLiteralEndpointFamilyFiltersCandidates()
             testHostnameEndpointDoesNotStaticFilterCandidates()
+            testTargetEndpointCandidatesSelectAddressReachableByActor()
+            testFixedHostSelectsReachableTargetEndpoint()
             testCopyOperationDiagnosticContractIncludesActorsAndResources()
             testFixedHostMismatchRaisesStructuredDiagnostic()
             testDispatcherUsesProvidedCandidateHostUuids()
@@ -124,6 +127,41 @@ class KvmOperationEndpointSelectorCase extends SubCase {
                 ORG_ZSTACK_KVM_10000)
 
         assert selectedUuids(selected) == [ipv4Host.uuid, ipv6Host.uuid, dualStackHost.uuid]
+    }
+
+    void testTargetEndpointCandidatesSelectAddressReachableByActor() {
+        List<org.zstack.header.host.HostInventory> candidates = headerHosts(ipv6Host, ipv4Host, dualStackHost)
+        List<BackupStorageEndpointCandidate> endpointCandidates = [
+                BackupStorageEndpointCandidate.copyTarget("172.24.1.11", null, BackupStorageEndpointCandidate.SOURCE_CONFIGURED_HOSTNAME, "ssh", 22, true),
+                BackupStorageEndpointCandidate.copyTarget("fd00:172:24::11", null, BackupStorageEndpointCandidate.SOURCE_CONFIGURED_IPV6_ENDPOINT, "ssh", 22, false)
+        ]
+
+        KvmOperationEndpointSelector.Selection selection = KvmOperationEndpointSelector.selectForTargetEndpoint(
+                "nfs-sftp-download",
+                candidates,
+                [Endpoint.primaryStorage("nfs primary storage", "ps", "[fd00:172:24::10]:/data")],
+                KvmOperationEndpointSelector.backupStorageEndpoints("sftp backup storage", "bs", endpointCandidates, "ignored.example.com"),
+                ORG_ZSTACK_KVM_10000)
+
+        assert selection.selectedHost.uuid == ipv6Host.uuid
+        assert selection.selectedBackupStorageAddress == "fd00:172:24::11"
+        assert selection.selectedBackupStorageEndpoint.endpointSource == BackupStorageEndpointCandidate.SOURCE_CONFIGURED_IPV6_ENDPOINT
+        assert selectedUuids(selection.selectedHosts) == [ipv6Host.uuid, dualStackHost.uuid]
+    }
+
+    void testFixedHostSelectsReachableTargetEndpoint() {
+        Endpoint selected = KvmOperationEndpointSelector.selectTargetEndpointForFixedHost(
+                "localstorage-sftp-download",
+                ipv4Host.uuid,
+                [],
+                [
+                        Endpoint.backupStorage("sftp backup storage", "bs", "fd00:172:24::11", BackupStorageEndpointCandidate.SOURCE_CONFIGURED_IPV6_ENDPOINT),
+                        Endpoint.backupStorage("sftp backup storage", "bs", "172.24.1.11", BackupStorageEndpointCandidate.SOURCE_CONFIGURED_HOSTNAME)
+                ],
+                ORG_ZSTACK_KVM_10000)
+
+        assert selected.address == "172.24.1.11"
+        assert selected.endpointSource == BackupStorageEndpointCandidate.SOURCE_CONFIGURED_HOSTNAME
     }
 
     void testCopyOperationDiagnosticContractIncludesActorsAndResources() {

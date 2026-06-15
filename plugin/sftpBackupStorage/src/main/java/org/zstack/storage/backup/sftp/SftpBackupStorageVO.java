@@ -22,6 +22,8 @@ public class SftpBackupStorageVO extends BackupStorageVO {
     @Column
     private String hostname;
     @Column
+    private String ipv6Endpoint;
+    @Column
     private String username;
     @Column
     @Convert(converter = PasswordConverter.class)
@@ -42,6 +44,14 @@ public class SftpBackupStorageVO extends BackupStorageVO {
 
     public void setHostname(String hostname) {
         this.hostname = hostname;
+    }
+
+    public String getIpv6Endpoint() {
+        return ipv6Endpoint;
+    }
+
+    public void setIpv6Endpoint(String ipv6Endpoint) {
+        this.ipv6Endpoint = ipv6Endpoint;
     }
 
     public String getUsername() {

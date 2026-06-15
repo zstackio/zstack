@@ -14,7 +14,9 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageConstant;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
+import org.zstack.kvm.KvmOperationEndpointSelector;
 import org.zstack.kvm.KvmOperationEndpointSelector.Endpoint;
+import org.zstack.kvm.KvmOperationEndpointSelector.Selection;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 
@@ -66,27 +68,28 @@ public class SftpBackupStorageKvmDownloader extends BackupStorageKvmDownloader {
                 }
 
                 final GetSftpBackupStorageDownloadCredentialReply greply = reply.castReply();
+                Selection selection;
+                KvmAgentCommandDispatcher dispatcher;
+                try {
+                    selection = KvmOperationEndpointSelector.selectForTargetEndpoint(
+                            "smp-sftp-download",
+                            primaryStorageFactory.getConnectedHostForOperation(pinv),
+                            new ArrayList<Endpoint>(),
+                            KvmOperationEndpointSelector.backupStorageEndpoints("sftp backup storage", bsUuid, greply.getEndpointCandidates(), greply.getHostname()),
+                            ORG_ZSTACK_STORAGE_PRIMARY_SMP_10012);
+                    dispatcher = new KvmAgentCommandDispatcher(pinv.getUuid(), selection.getSelectedHostUuids());
+                } catch (OperationFailureException e) {
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
                 KvmBackend.SftpDownloadBitsCmd cmd = new KvmBackend.SftpDownloadBitsCmd();
-                cmd.hostname = greply.getHostname();
+                cmd.hostname = selection.getSelectedBackupStorageAddress();
                 cmd.username = greply.getUsername();
                 cmd.sshKey = greply.getSshKey();
                 cmd.sshPort = greply.getSshPort();
                 cmd.backupStorageInstallPath = bsPath;
                 cmd.primaryStorageInstallPath = psPath;
                 cmd.primaryStorageUuid = pinv.getUuid();
-
-                KvmAgentCommandDispatcher dispatcher;
-                try {
-                    dispatcher = KvmAgentCommandDispatcher.createForOperation(
-                            pinv.getUuid(),
-                            "smp-sftp-download",
-                            getCandidateHostUuids(),
-                            Arrays.asList(Endpoint.backupStorage("sftp backup storage", bsUuid, greply.getHostname())),
-                            ORG_ZSTACK_STORAGE_PRIMARY_SMP_10012);
-                } catch (OperationFailureException e) {
-                    completion.fail(e.getErrorCode());
-                    return;
-                }
 
                 dispatcher.go(DOWNLOAD_BITS_FROM_SFTP_BACKUPSTORAGE_PATH, cmd, KvmBackend.AgentRsp.class, new ReturnValueCompletion<KvmBackend.AgentRsp>(completion) {
                     @Override
