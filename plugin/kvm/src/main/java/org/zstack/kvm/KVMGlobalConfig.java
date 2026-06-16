@@ -126,7 +126,7 @@ public class KVMGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable memory auto balloon")
-    @BindResourceConfig({VmInstanceVO.class})
+    @BindResourceConfig({VmInstanceVO.class, HostVO.class, ClusterVO.class})
     public static GlobalConfig MEMORY_AUTO_BALLOON = new GlobalConfig(CATEGORY, "memory.auto.balloon");
 
     @GlobalConfigValidation(validValues = {"true", "false", "none"})
