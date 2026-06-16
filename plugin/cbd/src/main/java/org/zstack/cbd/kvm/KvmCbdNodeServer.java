@@ -91,7 +91,7 @@ public class KvmCbdNodeServer implements Component, KvmSetupSelfFencerExtensionP
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        nodeSvc.deployClient(host, new Completion(trigger) {
+                        nodeSvc.deployClient(host, null, new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();

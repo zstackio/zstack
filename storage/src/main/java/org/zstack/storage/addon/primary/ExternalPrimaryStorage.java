@@ -130,17 +130,27 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
 
         List<HostInventory> hostInventories = HostInventory.valueOf(hosts);
-        // Deploy-client is idempotent. Hosts prepared before an attach failure are left for
+        List<String> protocols = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, self.getUuid())
+                .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
+                .listValues();
+
+        // one deploy pass per host covers the baseline client plus every exposed
+        // protocol's data path. Hosts prepared before an attach failure are left for
         // the next attach or reconnect to overwrite.
         new While<>(hostInventories).each((host, compl) -> {
-            node.deployClient(host, new Completion(compl) {
+            node.deployClient(host, protocols, new Completion(compl) {
                 @Override
                 public void success() {
+                    protocols.forEach(p -> factory.updateHostProtocolStatus(self.getUuid(), host.getUuid(), p,
+                            PrimaryStorageHostStatus.Connected));
                     compl.done();
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    protocols.forEach(p -> factory.updateHostProtocolStatus(self.getUuid(), host.getUuid(), p,
+                            PrimaryStorageHostStatus.Disconnected));
                     compl.addError(errorCode);
                     compl.allDone();
                 }
@@ -2381,6 +2391,43 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             storageVO.getOutputProtocols().add(ref);
             dbf.updateAndRefresh(storageVO);
         }
-        super.doAddProtocol(msg, completion);
+
+        List<HostVO> hostVOs = SQL.New("select h from HostVO h, PrimaryStorageClusterRefVO ref" +
+                " where h.clusterUuid = ref.clusterUuid" +
+                " and ref.primaryStorageUuid = :psUuid" +
+                " and h.status = :hostStatus", HostVO.class)
+                .param("psUuid", msg.getUuid())
+                .param("hostStatus", HostStatus.Connected)
+                .list();
+        if (hostVOs.isEmpty()) {
+            super.doAddProtocol(msg, completion);
+            return;
+        }
+
+        new While<>(HostInventory.valueOf(hostVOs)).each((host, compl) ->
+                node.deployClient(host, Collections.singletonList(msg.getOutputProtocol()), new Completion(compl) {
+                    @Override
+                    public void success() {
+                        factory.updateHostProtocolStatus(msg.getUuid(), host.getUuid(), msg.getOutputProtocol(),
+                                PrimaryStorageHostStatus.Connected);
+                        compl.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        factory.updateHostProtocolStatus(msg.getUuid(), host.getUuid(), msg.getOutputProtocol(),
+                                PrimaryStorageHostStatus.Disconnected);
+                        logger.warn(String.format("failed to prepare host[%s] for protocol[%s] on primary storage[uuid:%s]: %s",
+                                host.getUuid(), msg.getOutputProtocol(), msg.getUuid(), errorCode.getDetails()));
+                        compl.done();
+                    }
+                })
+        ).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                // protocol is already registered; host preparation self-heals on the next ping
+                ExternalPrimaryStorage.super.doAddProtocol(msg, completion);
+            }
+        });
     }
 }

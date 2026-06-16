@@ -13,4 +13,8 @@
         <name>org.zstack.header.storage.addon.primary.APIDiscoverExternalPrimaryStorageMsg</name>
         <serviceId>externalPrimaryStorage</serviceId>>
     </message>
+    <message>
+        <name>org.zstack.header.storage.addon.primary.APIQueryExternalPrimaryStorageHostProtocolRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>

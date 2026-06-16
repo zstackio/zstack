@@ -616,6 +616,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             }
         }
 
+        if (vo.getProtocol() == null) {
+            String protocolTag = msg.getSystemTag(VolumeSystemTags.VOLUME_PROTOCOL::isMatch);
+            if (protocolTag != null) {
+                vo.setProtocol(VolumeSystemTags.VOLUME_PROTOCOL.getTokenByTag(protocolTag, VolumeSystemTags.VOLUME_PROTOCOL_TOKEN));
+            }
+        }
+
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.beforeCreateVolume(VolumeInventory.valueOf(vo));
@@ -1030,6 +1037,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setType(VolumeType.Data);
         vo.setStatus(VolumeStatus.NotInstantiated);
         vo.setAccountUuid(msg.getAccountUuid());
+        vo.setProtocol(msg.getProtocol());
 
         if (msg.getSystemTags() != null) {
             Iterator<String> iterators = msg.getSystemTags().iterator();
@@ -1040,6 +1048,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     iterators.remove();
                     break;
                 }
+            }
+        }
+
+        if (vo.getProtocol() == null) {
+            String protocolTag = msg.getSystemTag(VolumeSystemTags.VOLUME_PROTOCOL::isMatch);
+            if (protocolTag != null) {
+                vo.setProtocol(VolumeSystemTags.VOLUME_PROTOCOL.getTokenByTag(protocolTag, VolumeSystemTags.VOLUME_PROTOCOL_TOKEN));
             }
         }
 
@@ -1123,6 +1138,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         cmsg.setDescription(msg.getDescription());
+        cmsg.setProtocol(msg.getProtocol());
         cmsg.setApiMsg(msg);
         bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
         bus.send(cmsg, new CloudBusCallBack(msg) {

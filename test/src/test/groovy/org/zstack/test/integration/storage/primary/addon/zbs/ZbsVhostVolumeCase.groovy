@@ -2,9 +2,18 @@ package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.header.identity.AccountConstant
+import org.zstack.header.message.MessageReply
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO_
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
+import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
+import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.header.storage.backup.UploadImageToRemoteTargetMsg
 import org.zstack.header.storage.backup.UploadImageToRemoteTargetReply
 import org.zstack.header.vm.VmInstanceState
@@ -12,6 +21,11 @@ import org.zstack.header.volume.VolumeAO_
 import org.zstack.header.volume.VolumeProtocol
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
+import org.zstack.header.volume.CreateVolumeMsg
+import org.zstack.header.volume.CreateVolumeReply
+import org.zstack.header.volume.VolumeType
+import org.zstack.storage.volume.VolumeSystemTags
+import org.zstack.header.volume.VolumeConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
@@ -24,7 +38,10 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Covers the ZBS Vhost output-protocol branches of ZbsStorageController that the
@@ -43,6 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 class ZbsVhostVolumeCase extends SubCase {
     EnvSpec env
+    CloudBus bus
     PrimaryStorageInventory ps
     DiskOfferingInventory diskOffering
     ClusterInventory cluster
@@ -143,10 +161,18 @@ class ZbsVhostVolumeCase extends SubCase {
             instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
             l3 = env.inventoryByName("l3") as L3NetworkInventory
+            bus = bean(CloudBus.class)
 
             testDefaultOutputProtocolIsVhost()
             testVhostDataVolumeCreateDeleteLifecycle()
+            testChangeVolumeProtocol()
+            testCreateDataVolumeWithExplicitProtocol()
+            testCreateDataVolumeWithProtocolSystemTag()
+            testVolumeProtocolSystemTagConsumedIntoVolume()
+            testUnknownVolumeProtocolSystemTagRejected()
+            testUnknownRootVolumeProtocolSystemTagRejected()
             testVhostVmStartActivationChain()
+            testAddProtocolPreparesHostsAndRecordsProtocolRefs()
         }
     }
 
@@ -199,6 +225,203 @@ class ZbsVhostVolumeCase extends SubCase {
                 .isExists()
     }
 
+    // a PS can expose multiple output protocols; APIChangeVolumeProtocolMsg switches
+    // an idle volume between them offline (persist VolumeVO.protocol; next activate
+    // builds the new path). validates the target protocol is one the PS exposes.
+    void testChangeVolumeProtocol() {
+        // PS starts with Vhost only; add CBD so the volume can switch to it
+        addStorageProtocol {
+            uuid = ps.uuid
+            outputProtocol = VolumeProtocol.CBD.toString()
+        }
+
+        VolumeInventory vol = createDataVolume {
+            name = "switch-data"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+        assert vol.protocol == VolumeProtocol.Vhost.toString()
+
+        changeVolumeProtocol {
+            volumeUuid = vol.uuid
+            protocol = VolumeProtocol.CBD.toString()
+        }
+        def proto = Q.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, vol.uuid)
+                .select(VolumeAO_.protocol)
+                .findValue()
+        assert proto == VolumeProtocol.CBD.toString() : \
+                "volume protocol not switched to CBD: actual=${proto}"
+
+        // switching to a protocol the PS does not expose must be rejected
+        expect(AssertionError.class) {
+            changeVolumeProtocol {
+                volumeUuid = vol.uuid
+                protocol = VolumeProtocol.NBD.toString()
+            }
+        }
+
+        // switching to the protocol it already uses must be rejected
+        expect(AssertionError.class) {
+            changeVolumeProtocol {
+                volumeUuid = vol.uuid
+                protocol = VolumeProtocol.CBD.toString()
+            }
+        }
+
+        deleteDataVolume { uuid = vol.uuid }
+        expungeDataVolume { uuid = vol.uuid }
+    }
+
+    // create-time protocol selection: an explicit protocol on the create request
+    // overrides the PS default (Vhost here) and must be one the PS exposes. mirror of
+    // APIChangeVolumeProtocolMsg validation so create and change agree on outputProtocols.
+    void testCreateDataVolumeWithExplicitProtocol() {
+        // CBD was added to the PS by testChangeVolumeProtocol; default is still Vhost.
+        // asking for CBD explicitly must win over the Vhost default.
+        VolumeInventory vol = createDataVolume {
+            name = "explicit-cbd"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+            protocol = VolumeProtocol.CBD.toString()
+        } as VolumeInventory
+        assert vol.protocol == VolumeProtocol.CBD.toString() : \
+                "explicit create protocol ignored: expected=CBD actual=${vol.protocol}"
+
+        deleteDataVolume { uuid = vol.uuid }
+        expungeDataVolume { uuid = vol.uuid }
+
+        // a protocol the PS does not expose must be rejected at create, same as change
+        expect(AssertionError.class) {
+            createDataVolume {
+                name = "explicit-nbd"
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+                protocol = VolumeProtocol.NBD.toString()
+            }
+        }
+    }
+
+    // the standalone APICreateDataVolume path (handle(CreateDataVolumeMsg)) is a
+    // separate entry point from VmAllocateVolumeFlow's createVolume(): it carries its
+    // own systemTag consume. an ephemeral volumeProtocol::{protocol} tag on the create
+    // request must be read into VolumeVO.protocol just like the explicit protocol field,
+    // and must never persist as a resident tag (createTags skips ephemeral tags).
+    void testCreateDataVolumeWithProtocolSystemTag() {
+        // CBD is exposed on the PS (added by testChangeVolumeProtocol); the systemTag
+        // asks for CBD, overriding the Vhost default exactly like the explicit field.
+        String protocolTag = VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): VolumeProtocol.CBD.toString()])
+
+        VolumeInventory vol = createDataVolume {
+            name = "systag-data-cbd"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+            systemTags = [protocolTag]
+        } as VolumeInventory
+        assert vol.protocol == VolumeProtocol.CBD.toString() : \
+                "systemTag protocol not consumed on standalone create: expected=CBD actual=${vol.protocol}"
+        assert !VolumeSystemTags.VOLUME_PROTOCOL.hasTag(vol.uuid) : \
+                "ephemeral volumeProtocol tag must not persist on ${vol.uuid}"
+
+        deleteDataVolume { uuid = vol.uuid }
+        expungeDataVolume { uuid = vol.uuid }
+
+        // a bogus protocol token on the standalone create must be rejected at API time
+        // by the same enum guard, proving the field-fallback reaches validateVolumeProtocol.
+        expectApiFailure({
+            createDataVolume {
+                name = "systag-data-bogus"
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+                systemTags = [VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                        [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): "BOGUS"])]
+            }
+        }) {
+            assert JSONObjectUtil.toJsonString(delegate).contains("unsupported volume protocol") : \
+                    "standalone create rejected for the wrong reason: ${JSONObjectUtil.toJsonString(delegate)}"
+        }
+    }
+
+    // the Cloud VM-create path provides no DiskAO, so a per-volume protocol can only
+    // ride in as a volumeProtocol::{protocol} ephemeral system tag. VmAllocateVolumeFlow
+    // folds those tags into the CreateVolumeMsg of each volume, and createVolume reads the
+    // token into VolumeVO.protocol; being ephemeral, the framework never persists it as a
+    // resident tag. drive CreateVolumeMsg directly to prove that convergence point: CBD
+    // here overrides the PS Vhost default, exactly like an explicit create protocol would.
+    void testVolumeProtocolSystemTagConsumedIntoVolume() {
+        String protocolTag = VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): VolumeProtocol.CBD.toString()])
+
+        CreateVolumeMsg msg = new CreateVolumeMsg()
+        msg.setName("systag-cbd")
+        msg.setSize(SizeUnit.GIGABYTE.toByte(1))
+        msg.setFormat("qcow2")
+        msg.setVolumeType(VolumeType.Data.toString())
+        msg.setPrimaryStorageUuid(ps.uuid)
+        msg.setAccountUuid(AccountConstant.INITIAL_SYSTEM_ADMIN_UUID)
+        msg.setSystemTags([protocolTag])
+        bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID)
+
+        CreateVolumeReply reply = syncSend(msg) as CreateVolumeReply
+        assert reply.isSuccess() : "raw CreateVolumeMsg failed: ${reply.error}"
+        // reply.inventory is org.zstack.header.volume.VolumeInventory; keep it dynamic
+        // so the org.zstack.sdk.* star import does not coerce it to the SDK type.
+        def vol = reply.inventory
+        assert vol.protocol == VolumeProtocol.CBD.toString() : \
+                "systemTag protocol not consumed: expected=CBD actual=${vol.protocol}"
+        assert !VolumeSystemTags.VOLUME_PROTOCOL.hasTag(vol.uuid) : \
+                "volumeProtocol tag must be stripped after consume, still present on ${vol.uuid}"
+
+        // this volume was minted NotInstantiated via a raw CreateVolumeMsg (installPath
+        // null), so the normal expunge path would call deactivateAndDeleteVolume on the
+        // external PS with a null installPath. drop the synthetic fixture row directly
+        // instead of exercising that delete-on-PS flow.
+        SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, vol.uuid).hardDelete()
+    }
+
+    // the enum guard runs in VolumeApiInterceptor before any allocation flow, reading
+    // the protocol tag straight off APICreateVmInstanceMsg.dataVolumeSystemTags. a bad
+    // protocol token must be rejected at API time, not silently set on the volume.
+    void testUnknownVolumeProtocolSystemTagRejected() {
+        expectApiFailure({
+            createVmInstance {
+                name = "bad-protocol-vm"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = ps.uuid
+                dataVolumeSystemTags = [VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                        [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): "BOGUS"])]
+            }
+        }) {
+            // assert it failed on OUR guard, not some unrelated admission error
+            assert JSONObjectUtil.toJsonString(delegate).contains("unsupported volume protocol") : \
+                    "rejected for the wrong reason: ${JSONObjectUtil.toJsonString(delegate)}"
+        }
+    }
+
+    // the root disk has no DiskAO either; its per-volume protocol rides in via
+    // rootVolumeSystemTags. the same enum guard must scan that list (not just the data
+    // tags), or a bad root protocol slips past API admission while a bad data one is
+    // caught - an asymmetry the validator must not have.
+    void testUnknownRootVolumeProtocolSystemTagRejected() {
+        expectApiFailure({
+            createVmInstance {
+                name = "bad-root-protocol-vm"
+                instanceOfferingUuid = instanceOffering.uuid
+                imageUuid = image.uuid
+                l3NetworkUuids = [l3.uuid]
+                primaryStorageUuidForRootVolume = ps.uuid
+                rootVolumeSystemTags = [VolumeSystemTags.VOLUME_PROTOCOL.instantiateTag(
+                        [(VolumeSystemTags.VOLUME_PROTOCOL_TOKEN): "BOGUS"])]
+            }
+        }) {
+            assert JSONObjectUtil.toJsonString(delegate).contains("unsupported volume protocol") : \
+                    "root protocol rejected for the wrong reason: ${JSONObjectUtil.toJsonString(delegate)}"
+        }
+    }
+
     // full VM-start chain. a Vhost root volume forces the framework to activate the
     // volume on the host before boot, routing through ZbsStorageController:
     //   activate(Vhost) -> KVMHostAsyncHttpCallMsg(VHOST_ACTIVATE_PATH) -> socketPath
@@ -241,10 +464,21 @@ class ZbsVhostVolumeCase extends SubCase {
                     "activate cmd controllerName malformed: ${cmd.controllerName}"
             assert cmd.socketDir == ZbsConstants.VHOST_SOCKET_DIR : \
                     "activate cmd socketDir expected=${ZbsConstants.VHOST_SOCKET_DIR} actual=${cmd.socketDir}"
+            // auto-deploy params: the agent lazily ensures the SPDK target from these.
+            // cores left null lets the agent compute them; coreCount carries the default.
+            assert cmd.image != null : "activate cmd missing target image for lazy deploy"
+            assert cmd.coreCount != null && cmd.coreCount > 0 : \
+                    "activate cmd missing coreCount for agent-computed cores: ${cmd.coreCount}"
             activateCalled.set(true)
             def rsp = new ZbsStorageController.VhostActivateRsp()
             rsp.socketPath = cmd.socketDir + "/" + cmd.controllerName
             return rsp
+        }
+
+        // vm destroy deactivates the vhost volume on the host; without a handler the
+        // 404 makes the destroy teardown flaky
+        env.simulator(ZbsStorageController.VHOST_DEACTIVATE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.VhostActivateRsp()
         }
 
         // end of the chain: the VM boots with a vhost-user-blk root disk whose path is
@@ -295,5 +529,154 @@ class ZbsVhostVolumeCase extends SubCase {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
         }
+    }
+
+    // adding an output protocol on a PS with connected hosts must prepare every
+    // host for the protocol (Vhost -> deploy the SPDK target over
+    // VHOST_TARGET_ENSURE_PATH) and record per-protocol connectivity rows that the
+    // frontend reads through QueryExternalPrimaryStorageHostProtocolRef. the
+    // host-level ref row keeps the legacy folded all-protocol semantics.
+    void testAddProtocolPreparesHostsAndRecordsProtocolRefs() {
+        HostInventory host = env.inventoryByName("kvm-1") as HostInventory
+
+        AtomicBoolean ensureCalled = new AtomicBoolean(false)
+        AtomicBoolean vhostTargetHealthy = new AtomicBoolean(true)
+
+        env.simulator(ZbsStorageController.VHOST_TARGET_ENSURE_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.VhostActivateCmd.class)
+            assert cmd.image != null : "ensure cmd missing target image for lazy deploy"
+            ensureCalled.set(true)
+            return new ZbsStorageController.CheckHostStorageConnectionRsp()
+        }
+        env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new ZbsStorageController.VhostTargetHealthRsp()
+            rsp.healthy = vhostTargetHealthy.get()
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                def vrsp = new ZbsStorageController.CreateVolumeRsp()
+                vrsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}".toString()
+                return vrsp
+            }
+            return rsp
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        // mimic a storage from before vhost support: drop the Vhost protocol row,
+        // then add it back through the API, which must prepare the connected hosts
+        SQL.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, VolumeProtocol.Vhost.toString())
+                .delete()
+
+        addStorageProtocol {
+            uuid = ps.uuid
+            outputProtocol = VolumeProtocol.Vhost.toString()
+        }
+
+        assert ensureCalled.get() : \
+                "addStorageProtocol(Vhost) did not reach VHOST_TARGET_ENSURE_PATH on the connected host"
+
+        // the protocol row write is fire-and-forget behind the PS queue
+        retryInSecs {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        // frontend contract: per-protocol connectivity is queryable
+        def refs = queryExternalPrimaryStorageHostProtocolRef {
+            conditions = ["primaryStorageUuid=${ps.uuid}".toString()]
+        } as List
+        assert refs.find { it.protocol == VolumeProtocol.Vhost.toString() && it.hostUuid == host.uuid } != null : \
+                "query api returned no Vhost connectivity row: ${refs}"
+
+        // periodic pings drive the per-protocol health reports; shorten the
+        // interval so the status flips below land within the retry windows
+        updateGlobalConfig {
+            category = "host"
+            name = "ping.interval"
+            value = 1
+        }
+
+        // every reported protocol gets its own connectivity row on ping
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.CBD.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        // a dead vhost target flips its own protocol row while the CBD row keeps
+        // its own state; the host-level row folds all protocols (legacy
+        // semantics) so it goes Disconnected too
+        vhostTargetHealthy.set(false)
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                    .isExists()
+        }
+        assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.CBD.toString())
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                .isExists() : "the CBD row must keep its own state independent of the vhost target"
+        retryInSecs(30) {
+            assert Q.New(PrimaryStorageHostRefVO.class)
+                    .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(PrimaryStorageHostRefVO_.hostUuid, host.uuid)
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
+                    .isExists()
+        }
+
+        // the target recovers: rows self-heal on the next report
+        vhostTargetHealthy.set(true)
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+            assert Q.New(PrimaryStorageHostRefVO.class)
+                    .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(PrimaryStorageHostRefVO_.hostUuid, host.uuid)
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+    }
+
+    private MessageReply syncSend(org.zstack.header.message.Message msg) {
+        AtomicReference<MessageReply> ref = new AtomicReference<>()
+        CountDownLatch done = new CountDownLatch(1)
+        bus.send(msg, new CloudBusCallBack(null) {
+            @Override
+            void run(MessageReply reply) {
+                ref.set(reply)
+                done.countDown()
+            }
+        })
+        assert done.await(30, TimeUnit.SECONDS) : "timed out waiting for ${msg.class.simpleName} reply"
+        return ref.get()
     }
 }
