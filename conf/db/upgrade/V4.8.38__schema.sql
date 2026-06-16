@@ -9,3 +9,7 @@ WHERE sp.primaryStorageUuid = ps.uuid
   AND ps.type = 'SharedBlock'
   AND sp.volumeType = 'Memory'
   AND sp.primaryStorageInstallPath LIKE '/dev/%';
+
+DELETE FROM `SystemTagVO`
+WHERE `resourceUuid` IN (SELECT uuid FROM HostCapacityVO WHERE cpuSockets != 1)
+  AND tag LIKE "cpuProcessorNum::%";
