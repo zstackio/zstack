@@ -3366,6 +3366,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_STORAGE_DEVICE_10048 = "ORG_ZSTACK_STORAGE_DEVICE_10048";
 
+    public static final String ORG_ZSTACK_STORAGE_DEVICE_10049 = "ORG_ZSTACK_STORAGE_DEVICE_10049";
+
     public static final String ORG_ZSTACK_CORE_GC_10000 = "ORG_ZSTACK_CORE_GC_10000";
 
     public static final String ORG_ZSTACK_CORE_GC_10001 = "ORG_ZSTACK_CORE_GC_10001";
@@ -5535,6 +5537,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_BAREMETAL2_GATEWAY_10085 = "ORG_ZSTACK_BAREMETAL2_GATEWAY_10085";
 
     public static final String ORG_ZSTACK_BAREMETAL2_GATEWAY_10086 = "ORG_ZSTACK_BAREMETAL2_GATEWAY_10086";
+
+    public static final String ORG_ZSTACK_BAREMETAL2_GATEWAY_10087 = "ORG_ZSTACK_BAREMETAL2_GATEWAY_10087";
 
     public static final String ORG_ZSTACK_BAREMETAL2_DPU_10000 = "ORG_ZSTACK_BAREMETAL2_DPU_10000";
 
