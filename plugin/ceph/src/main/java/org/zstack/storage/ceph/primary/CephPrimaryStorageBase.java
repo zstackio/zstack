@@ -807,6 +807,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         String srcPath;
         String dstPath;
         boolean shareable;
+        boolean skipIfExisting;
     }
 
     public static class CpRsp extends AgentResponse {
@@ -2380,12 +2381,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         private void copyFromImageCache(FlowTrigger trigger) {
-                            copyToCache(trigger, ImageCacheUtil.getImageCachePath(sourceCache.toInventory()));
+                            String destPoolName = getPoolNameFromCephInstallUrl(dstPath);
+                            boolean imageShouldExistsOnCephBs = destPoolName != null && destPoolName.equals(Q.New(CephBackupStorageVO.class)
+                                    .eq(CephBackupStorageVO_.fsid, getSelf().getFsid())
+                                    .select(CephBackupStorageVO_.poolName)
+                                    .findValue());
+                            copyToCache(trigger, ImageCacheUtil.getImageCachePath(sourceCache.toInventory()), imageShouldExistsOnCephBs);
                         }
 
 
                         private void createFromVolumeSnapshot(FlowTrigger trigger) {
-                            copyToCache(trigger, snapshot.getPrimaryStorageInstallPath());
+                            copyToCache(trigger, snapshot.getPrimaryStorageInstallPath(), false);
                         }
 
                         private void downloadFromBackupStorage(FlowTrigger trigger) {
@@ -2425,16 +2431,17 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         }
 
                         private void copyFromCephBackupStorage(FlowTrigger trigger, String backupStorageInstallPath) {
-                            copyToCache(trigger, backupStorageInstallPath);
+                            copyToCache(trigger, backupStorageInstallPath, false);
                         }
 
-                        private void copyToCache(FlowTrigger trigger, String srcPath) {
-                            deleteOnRollback = true;
+                        private void copyToCache(FlowTrigger trigger, String srcPath, boolean skipIfExisting) {
+                            deleteOnRollback = !skipIfExisting;
                             CpCmd cmd = new CpCmd();
                             cmd.resourceUuid = image.getInventory().getUuid();
                             cmd.srcPath = srcPath;
                             cmd.dstPath = dstPath;
                             cmd.shareable = false;
+                            cmd.skipIfExisting = skipIfExisting;
                             httpCall(CP_PATH, cmd, CpRsp.class, new ReturnValueCompletion<CpRsp>(trigger) {
                                 @Override
                                 public void success(CpRsp rsp) {
