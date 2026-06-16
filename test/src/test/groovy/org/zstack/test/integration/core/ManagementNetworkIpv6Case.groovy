@@ -43,6 +43,8 @@ class ManagementNetworkIpv6Case extends SubCase {
     private static final String INVALID_IP = "not-an-ip!!"
     private static final String MANAGEMENT_SERVER_ID = "1234567890abcdef1234567890abcdef"
     private static final String NEW_MANAGEMENT_SERVER_ID = "abcdef1234567890abcdef1234567890"
+    private static final String MANAGEMENT_SERVER_FINGERPRINT = "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    private static final String NEW_MANAGEMENT_SERVER_FINGERPRINT = "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
     private static final String NFS_EXPORT_PATH = "/export/nfs"
     private static final String NFS_IPV4_URL = "${IPV4}:${NFS_EXPORT_PATH}"
     private static final String NFS_IPV6_URL = "[${IPV6}]:${NFS_EXPORT_PATH}"
@@ -327,7 +329,8 @@ class ManagementNetworkIpv6Case extends SubCase {
             String generatedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
                     stateFile,
-                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
             assert generatedId == MANAGEMENT_SERVER_ID
             Properties properties = new Properties()
             propertiesFile.withInputStream { properties.load(it) }
@@ -335,18 +338,55 @@ class ManagementNetworkIpv6Case extends SubCase {
             Properties state = new Properties()
             stateFile.withInputStream { state.load(it) }
             assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == MANAGEMENT_SERVER_FINGERPRINT
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY) != null
 
             String persistedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
                     stateFile,
-                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>)
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
             assert persistedId == MANAGEMENT_SERVER_ID
+
+            stateFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${MANAGEMENT_SERVER_ID}\n"
+            String upgradedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
+            assert upgradedId == MANAGEMENT_SERVER_ID
+            state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == MANAGEMENT_SERVER_FINGERPRINT
+
+            String regeneratedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> NEW_MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
+            assert regeneratedId == NEW_MANAGEMENT_SERVER_ID
+            state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == NEW_MANAGEMENT_SERVER_ID
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == NEW_MANAGEMENT_SERVER_FINGERPRINT
+
+            stateFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${MANAGEMENT_SERVER_ID}\n"
+            String legacyIdWithoutFingerprint = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> null } as Supplier<String>)
+            assert legacyIdWithoutFingerprint == MANAGEMENT_SERVER_ID
+            state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == null
 
             propertiesFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${NEW_MANAGEMENT_SERVER_ID}\n"
             String configuredId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
                     stateFile,
-                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>)
+                    { -> MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
             assert configuredId == NEW_MANAGEMENT_SERVER_ID
         } finally {
             propertiesFile.delete()

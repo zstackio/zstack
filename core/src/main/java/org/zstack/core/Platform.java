@@ -1,5 +1,6 @@
 package org.zstack.core;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.RandomStringUtils;
@@ -101,11 +102,21 @@ public class Platform {
     private static final String JAVA_TMP_DIR_PROPERTY = "java.io.tmpdir";
     private static final String UNIT_TEST_DATA_DIR_NAME = "zstack-unit-test";
     private static final String MANAGEMENT_SERVER_ID_STATE_FILE_NAME = "management-server-id.properties";
+    private static final String MANAGEMENT_SERVER_FINGERPRINT_VERSION = "1";
+    private static final String MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM = "sha256:";
+    private static final List<String> MANAGEMENT_SERVER_FINGERPRINT_SOURCE_FILES = Arrays.asList(
+            "/etc/machine-id",
+            "/sys/class/dmi/id/product_uuid",
+            "/sys/class/dmi/id/product_serial",
+            "/sys/class/dmi/id/board_serial"
+    );
     private static final String ZSTACK_UUID_PATTERN = "[0-9a-fA-F]{32}";
     private static EncryptRSA rsa = new EncryptRSA();
     private static Map<String, Double> errorCounter = new HashMap<>();
 
     public static final String MANAGEMENT_SERVER_ID_PROPERTY = "managementServerId";
+    public static final String MANAGEMENT_SERVER_FINGERPRINT_PROPERTY = "managementServerFingerprint";
+    public static final String MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY = "managementServerFingerprintVersion";
     public static final String COMPONENT_CLASSPATH_HOME = "componentsHome";
     public static final String FAKE_UUID = "THIS_IS_A_FAKE_UUID";
 
@@ -731,6 +742,10 @@ public class Platform {
     }
 
     public static synchronized String loadOrCreateManagementServerId(File propertiesFile, File stateFile, Supplier<String> idSupplier) {
+        return loadOrCreateManagementServerId(propertiesFile, stateFile, idSupplier, Platform::getManagementServerFingerprint);
+    }
+
+    public static synchronized String loadOrCreateManagementServerId(File propertiesFile, File stateFile, Supplier<String> idSupplier, Supplier<String> fingerprintSupplier) {
         Properties properties = loadProperties(propertiesFile);
 
         String configuredId = properties.getProperty(MANAGEMENT_SERVER_ID_PROPERTY);
@@ -739,11 +754,17 @@ public class Platform {
             return configuredId;
         }
 
+        String currentFingerprint = fingerprintSupplier.get();
         Properties state = loadProperties(stateFile);
         String persistedId = state.getProperty(MANAGEMENT_SERVER_ID_PROPERTY);
         if (isValidManagementServerId(persistedId)) {
-            System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, persistedId);
-            return persistedId;
+            if (canReusePersistedManagementServerId(state, currentFingerprint)) {
+                ensureManagementServerFingerprint(stateFile, state, currentFingerprint);
+                System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, persistedId);
+                return persistedId;
+            }
+
+            logger.warn(String.format("management server id state file[%s] fingerprint does not match current machine, regenerate management server id", stateFile.getAbsolutePath()));
         }
 
         String generatedId = idSupplier.get();
@@ -752,6 +773,7 @@ public class Platform {
         }
 
         state.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
+        setManagementServerFingerprint(state, currentFingerprint);
         saveManagementServerId(stateFile, state);
         System.setProperty(MANAGEMENT_SERVER_ID_PROPERTY, generatedId);
         return generatedId;
@@ -779,6 +801,87 @@ public class Platform {
         }
 
         return new File(dataDir, MANAGEMENT_SERVER_ID_STATE_FILE_NAME);
+    }
+
+    private static boolean canReusePersistedManagementServerId(Properties state, String currentFingerprint) {
+        if (StringUtils.isBlank(currentFingerprint)) {
+            return true;
+        }
+
+        String persistedFingerprint = state.getProperty(MANAGEMENT_SERVER_FINGERPRINT_PROPERTY);
+        String persistedFingerprintVersion = state.getProperty(MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY);
+        if (StringUtils.isBlank(persistedFingerprint) || !MANAGEMENT_SERVER_FINGERPRINT_VERSION.equals(persistedFingerprintVersion)) {
+            return true;
+        }
+
+        return currentFingerprint.equals(persistedFingerprint);
+    }
+
+    private static void ensureManagementServerFingerprint(File stateFile, Properties state, String currentFingerprint) {
+        if (StringUtils.isBlank(currentFingerprint)) {
+            return;
+        }
+
+        String persistedFingerprint = state.getProperty(MANAGEMENT_SERVER_FINGERPRINT_PROPERTY);
+        String persistedFingerprintVersion = state.getProperty(MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY);
+        if (currentFingerprint.equals(persistedFingerprint) && MANAGEMENT_SERVER_FINGERPRINT_VERSION.equals(persistedFingerprintVersion)) {
+            return;
+        }
+
+        setManagementServerFingerprint(state, currentFingerprint);
+        saveManagementServerId(stateFile, state);
+    }
+
+    private static void setManagementServerFingerprint(Properties state, String fingerprint) {
+        if (StringUtils.isBlank(fingerprint)) {
+            state.remove(MANAGEMENT_SERVER_FINGERPRINT_PROPERTY);
+            state.remove(MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY);
+            return;
+        }
+
+        state.setProperty(MANAGEMENT_SERVER_FINGERPRINT_PROPERTY, fingerprint);
+        state.setProperty(MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY, MANAGEMENT_SERVER_FINGERPRINT_VERSION);
+    }
+
+    private static String getManagementServerFingerprint() {
+        List<String> identities = new ArrayList<>();
+        for (String path : MANAGEMENT_SERVER_FINGERPRINT_SOURCE_FILES) {
+            String identity = readMachineIdentity(path);
+            if (identity != null) {
+                identities.add(String.format("%s=%s", path, identity));
+            }
+        }
+
+        if (identities.isEmpty()) {
+            logger.warn("cannot calculate management server fingerprint because no stable machine identity source is available");
+            return null;
+        }
+
+        return MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM + DigestUtils.sha256Hex(StringUtils.join(identities, "\n"));
+    }
+
+    private static String readMachineIdentity(String path) {
+        File file = new File(path);
+        if (!file.isFile() || !file.canRead()) {
+            return null;
+        }
+
+        try {
+            String identity = FileUtils.readFileToString(file).trim().toLowerCase();
+            return isUsableMachineIdentity(identity) ? identity : null;
+        } catch (IOException e) {
+            logger.warn(String.format("unable to read machine identity file[%s], skip it", path), e);
+            return null;
+        }
+    }
+
+    private static boolean isUsableMachineIdentity(String identity) {
+        if (StringUtils.isBlank(identity)) {
+            return false;
+        }
+
+        String normalized = identity.replace("-", "");
+        return !StringUtils.containsOnly(normalized, "0") && !StringUtils.containsOnly(normalized, "f");
     }
 
     private static boolean isValidManagementServerId(String id) {
