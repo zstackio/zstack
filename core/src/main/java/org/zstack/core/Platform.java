@@ -791,7 +791,7 @@ public class Platform {
         return properties;
     }
 
-    private static File getManagementServerIdStateFile() {
+    public static File getManagementServerIdStateFile() {
         String dataDir = System.getProperty(DATA_DIR_PROPERTY);
         if (dataDir == null && Boolean.parseBoolean(System.getProperty(UNIT_TEST_ON_PROPERTY))) {
             dataDir = new File(System.getProperty(JAVA_TMP_DIR_PROPERTY), UNIT_TEST_DATA_DIR_NAME).getAbsolutePath();

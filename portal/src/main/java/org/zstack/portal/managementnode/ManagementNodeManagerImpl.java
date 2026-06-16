@@ -527,8 +527,8 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                             if (ManagementNodeManagerImpl.this.isDuplicatedActiveManagementServerId(existing, ip, databaseFacade.getCurrentSqlTime())) {
                                 throw new CloudRuntimeException(String.format(
                                         "duplicated management server id[%s] detected, current management.server.ip[%s], existing management node hostName[%s]. " +
-                                                "Please remove /var/lib/zstack/management-server-id.properties on the cloned or peer management node and restart it",
-                                        uuid, ip, existing.getHostName()));
+                                                "Please remove %s on the cloned or peer management node and restart it",
+                                        uuid, ip, existing.getHostName(), Platform.getManagementServerIdStateFile().getAbsolutePath()));
                             }
 
                             sql(ManagementNodeVO.class).eq(ManagementNodeVO_.uuid, uuid).hardDelete();

@@ -111,6 +111,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testManagementCidrCommandOutputParsing()
         testManagementCidrIpVersionOverload()
         testManagementServerIdPersisted()
+        testManagementServerIdStateFileUsesConfiguredDataDir()
         testNfsIpv6UrlParsing()
         testCephIpv6MonUrlParsing()
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
@@ -396,6 +397,23 @@ class ManagementNetworkIpv6Case extends SubCase {
             } else {
                 System.setProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY, oldValue)
             }
+        }
+    }
+
+    void testManagementServerIdStateFileUsesConfiguredDataDir() {
+        String oldDataDir = System.getProperty("dataDir")
+        File dataDir = File.createTempDir()
+        try {
+            System.setProperty("dataDir", dataDir.absolutePath)
+
+            assert Platform.getManagementServerIdStateFile() == new File(dataDir, "management-server-id.properties")
+        } finally {
+            if (oldDataDir == null) {
+                System.clearProperty("dataDir")
+            } else {
+                System.setProperty("dataDir", oldDataDir)
+            }
+            dataDir.deleteDir()
         }
     }
 
