@@ -523,6 +523,14 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
                             String ip = Platform.getManagementServerIp();
                             String uuid = Platform.getManagementServerId();
 
+                            ManagementNodeVO existing = findByUuid(uuid, ManagementNodeVO.class);
+                            if (ManagementNodeManagerImpl.this.isDuplicatedActiveManagementServerId(existing, ip, databaseFacade.getCurrentSqlTime())) {
+                                throw new CloudRuntimeException(String.format(
+                                        "duplicated management server id[%s] detected, current management.server.ip[%s], existing management node hostName[%s]. " +
+                                                "Please remove %s on the cloned or peer management node and restart it",
+                                        uuid, ip, existing.getHostName(), Platform.getManagementServerIdStateFile().getAbsolutePath()));
+                            }
+
                             sql(ManagementNodeVO.class).eq(ManagementNodeVO_.uuid, uuid).hardDelete();
 
                             ManagementNodeVO vo = new ManagementNodeVO();
@@ -723,6 +731,17 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
             connectionTimeoutExecutor.shutdown();
         }
+    }
+
+    private boolean isDuplicatedActiveManagementServerId(ManagementNodeVO existing, String currentHostName, Timestamp currentTime) {
+        if (existing == null || StringUtils.equals(existing.getHostName(), currentHostName) || existing.getHeartBeat() == null) {
+            return false;
+        }
+
+        long heartbeatExpirationMillis = TimeUnit.SECONDS.toMillis(
+                (long) (PortalGlobalProperty.MAX_HEARTBEAT_FAILURE + 1)
+                        * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class));
+        return currentTime.getTime() - existing.getHeartBeat().getTime() <= heartbeatExpirationMillis;
     }
 
     private ManagementNodeVO node() {
