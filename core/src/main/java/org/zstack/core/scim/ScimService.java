@@ -51,13 +51,14 @@ public class ScimService {
         verifyBearer(request);
         String method = normalizeMethod(request);
         validateMaxLength(resourceType, "resource type", MAX_RESOURCE_TYPE_LENGTH);
-        validateMaxLength(pathResourceId, "resource id", MAX_RESOURCE_ID_LENGTH);
+        validateMaxLength(pathResourceId, "resource uuid", MAX_RESOURCE_ID_LENGTH);
         String clientId = validateMaxLength(optionalHeader(request, ScimConstant.HEADER_CLIENT_ID,
                 ScimConstant.DEFAULT_CLIENT_ID), ScimConstant.HEADER_CLIENT_ID, MAX_CLIENT_ID_LENGTH);
         String eventId = validateMaxLength(requiredHeader(request, ScimConstant.HEADER_EVENT_ID),
                 ScimConstant.HEADER_EVENT_ID, MAX_EVENT_ID_LENGTH);
         long resourceVersion = parseResourceVersion(requiredHeader(request, ScimConstant.HEADER_RESOURCE_VERSION));
-        verifySignature(request, clientId, eventId, resourceVersion, method, resourceType, pathResourceId, body);
+        String timestamp = requiredHeader(request, ScimConstant.HEADER_TIMESTAMP);
+        verifySignature(request, clientId, eventId, resourceVersion, timestamp, method, resourceType, pathResourceId, body);
 
         String canonicalType = resourceHandler.normalizeResourceType(resourceType);
         validateMaxLength(canonicalType, "canonical resource type", MAX_RESOURCE_TYPE_LENGTH);
@@ -65,10 +66,15 @@ public class ScimService {
         rejectSensitivePayloadKeys(bodyMap);
         ScimPayload payload = mapper.convertValue(bodyMap, ScimPayload.class);
         rejectSensitivePayloadKeys(payload.attributes);
-        String resourceId = validateMaxLength(firstNotBlank(pathResourceId, payload.uuid, payload.id, payload.externalId),
-                "resource id", MAX_RESOURCE_ID_LENGTH);
+        String pathResourceUuid = normalizeOptionalUuid(pathResourceId, "path resource uuid");
+        String payloadUuid = normalizeOptionalUuid(payload.uuid, "payload uuid");
+        if (!isBlank(pathResourceUuid) && !isBlank(payloadUuid) && !pathResourceUuid.equals(payloadUuid)) {
+            throw new ScimException(400, "path resource uuid and payload uuid must match");
+        }
+        String resourceId = validateMaxLength(firstNotBlank(pathResourceUuid, payloadUuid),
+                "resource uuid", MAX_RESOURCE_ID_LENGTH);
         if (isBlank(resourceId)) {
-            throw new ScimException(400, "resource id is required");
+            throw new ScimException(400, "resource uuid is required");
         }
 
         ScimOperation operation = toOperation(method);
@@ -110,7 +116,7 @@ public class ScimService {
     }
 
     private void verifyBearer(HttpServletRequest request) {
-        String expected = ScimGlobalProperty.SCIM_RECEIVER_TOKEN;
+        String expected = ScimGlobalConfig.RECEIVER_TOKEN.value();
         if (isBlank(expected)) {
             throw new ScimException(401, "SCIM receiver token is not configured");
         }
@@ -173,8 +179,8 @@ public class ScimService {
     }
 
     private void verifySignature(HttpServletRequest request, String clientId, String eventId, long resourceVersion,
-                                 String method, String resourceType, String pathResourceId, String body) {
-        String secret = ScimGlobalProperty.SCIM_RECEIVER_SIGNATURE_SECRET;
+                                 String timestamp, String method, String resourceType, String pathResourceId, String body) {
+        String secret = ScimGlobalConfig.RECEIVER_SIGNATURE_SECRET.value();
         if (isBlank(secret)) {
             throw new ScimException(401, "SCIM signature secret is not configured");
         }
@@ -182,7 +188,7 @@ public class ScimService {
         if (isBlank(actual)) {
             throw new ScimException(401, "missing SCIM signature");
         }
-        String base = signatureBase(clientId, method, resourceType, pathResourceId, eventId, resourceVersion, body);
+        String base = signatureBase(clientId, method, resourceType, pathResourceId, eventId, resourceVersion, timestamp, body);
         String expected = "sha256=" + hmacSha256(secret, base);
         if (!constantTimeEquals(expected, actual.trim())) {
             throw new ScimException(401, "invalid SCIM signature");
@@ -303,18 +309,30 @@ public class ScimService {
     private String hmacSha256(String secret, String base) {
         try {
             Mac mac = Mac.getInstance("HmacSHA256");
-            mac.init(new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), "HmacSHA256"));
+            mac.init(new SecretKeySpec(signatureKey(secret), "HmacSHA256"));
             return hex(mac.doFinal(base.getBytes(StandardCharsets.UTF_8)));
         } catch (Exception e) {
             throw new ScimException(500, "failed to calculate signature");
         }
     }
 
+    private byte[] signatureKey(String secret) {
+        return sha256Bytes("ziam-scim-signature\n" + secret);
+    }
+
     private String sha256(String value) {
         try {
-            return hex(MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8)));
+            return hex(sha256Bytes(value));
         } catch (Exception e) {
             throw new ScimException(500, "failed to calculate payload hash");
+        }
+    }
+
+    private byte[] sha256Bytes(String value) {
+        try {
+            return MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            throw new ScimException(500, "failed to calculate sha256");
         }
     }
 
@@ -347,6 +365,22 @@ public class ScimService {
         return value;
     }
 
+    private String normalizeOptionalUuid(String value, String name) {
+        if (isBlank(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        String compact = trimmed.replace("-", "");
+        if (!compact.matches("[0-9a-fA-F]{32}")) {
+            throw new ScimException(400, String.format("%s must be a UUID", name));
+        }
+        if (trimmed.indexOf('-') >= 0 &&
+                !trimmed.matches("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}")) {
+            throw new ScimException(400, String.format("%s must be a UUID", name));
+        }
+        return compact.toLowerCase(Locale.ROOT);
+    }
+
     private String trimError(RuntimeException e) {
         String message = e.getMessage();
         if (isBlank(message)) {
@@ -356,14 +390,22 @@ public class ScimService {
     }
 
     private String signatureBase(String clientId, String method, String resourceType, String pathResourceId,
-                                 String eventId, long resourceVersion, String body) {
+                                 String eventId, long resourceVersion, String timestamp, String body) {
         return clientId + "\n" +
-                method + "\n" +
+                method.toUpperCase(Locale.ROOT) + "\n" +
                 nullToEmpty(resourceType) + "\n" +
-                nullToEmpty(pathResourceId) + "\n" +
+                signaturePathResourceId(method, pathResourceId) + "\n" +
                 eventId + "\n" +
                 resourceVersion + "\n" +
+                timestamp.trim() + "\n" +
                 body;
+    }
+
+    private String signaturePathResourceId(String method, String pathResourceId) {
+        if ("POST".equalsIgnoreCase(method)) {
+            return "";
+        }
+        return nullToEmpty(pathResourceId);
     }
 
     private String lockName(String clientId, String resourceType, String resourceId) {
