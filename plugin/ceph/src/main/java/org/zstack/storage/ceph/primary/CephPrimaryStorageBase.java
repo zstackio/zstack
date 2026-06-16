@@ -1794,9 +1794,25 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         // Encrypted variant: forward to the dest KVM host so qemu-img can open
         // a one-shot key-agent channel from encryptedDek.
         if (Boolean.TRUE.equals(msg.getVolume().getEncrypted())) {
-            if (msg.getDestHost() == null || StringUtils.isBlank(msg.getDestHost().getUuid())) {
+            HostInventory destHost = msg.getDestHost();
+            String destHostUuid = destHost == null ? null : destHost.getUuid();
+            if (StringUtils.isBlank(destHostUuid)) {
+                try {
+                    destHostUuid = findConnectedHostForCephLuks();
+                    HostVO selectedHost = dbf.findByUuid(destHostUuid, HostVO.class);
+                    if (selectedHost != null) {
+                        msg.setDestHost(HostInventory.valueOf(selectedHost));
+                    }
+                } catch (OperationFailureException e) {
+                    reply.setError(e.getErrorCode());
+                    bus.reply(msg, reply);
+                    return;
+                }
+            }
+            if (StringUtils.isBlank(destHostUuid)) {
                 reply.setError(operr(
-                        "ceph LUKS createempty requires destHost; volume[uuid:%s] has none", volumeUuid));
+                        "ceph LUKS createempty requires a connected KVM host attached to primary storage[uuid:%s]; volume[uuid:%s] has none",
+                        self.getUuid(), volumeUuid));
                 bus.reply(msg, reply);
                 return;
             }
@@ -1805,8 +1821,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             kcmd.installPath = installPath;
             kcmd.size = volumeSize;
             kcmd.encryptedDek = volumeEncryptedSecretHelper.prepareLuksEnvelopeDekOnHost(
-                    msg.getDestHost().getUuid(), volumeUuid);
-            httpCallToKvmHost(msg.getDestHost().getUuid(),
+                    destHostUuid, volumeUuid);
+            httpCallToKvmHost(destHostUuid,
                     KVM_HOST_LUKS_CREATE_EMPTY_PATH, kcmd, KVMHostLuksRsp.class,
                     new ReturnValueCompletion<KVMHostLuksRsp>(msg) {
                         @Override
