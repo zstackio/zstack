@@ -4426,6 +4426,10 @@ public class KVMHost extends HostBase implements Host {
         if (spec.isCreatePaused()) {
             cmd.setCreatePaused(true);
         }
+        if (ImageArchitecture.aarch64.toString().equals(architecture)) {
+            Boolean pmuEnabled = rcf.getResourceConfigValue(VmGlobalConfig.VM_PMU, spec.getVmInventory().getUuid(), Boolean.class);
+            cmd.setPmu(Boolean.TRUE.equals(pmuEnabled));
+        }
         cmd.setAcpi(true);
         String vmArchPlatformRelease = String.format("%s_%s_%s", spec.getVmInventory().getArchitecture(), spec.getVmInventory().getPlatform(), spec.getVmInventory().getGuestOsType());
         if (allGuestOsCharacter.containsKey(vmArchPlatformRelease)) {
