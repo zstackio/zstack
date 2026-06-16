@@ -2,11 +2,13 @@ package org.zstack.test.integration.core.cloudbus
 
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBusCallBack
+import org.zstack.core.cloudbus.CloudBusGlobalProperty
 import org.zstack.core.cloudbus.CloudBusIN
 import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.core.thread.AsyncThread
 import org.zstack.header.AbstractService
 import org.zstack.header.errorcode.ErrorCodeList
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.message.Message
 import org.zstack.header.message.MessageReply
 import org.zstack.testlib.SkipTestSuite
@@ -76,6 +78,8 @@ class CloudBusCase extends SubCase{
                 def r = new MessageReply()
                 r.setError(errf.stringToOperationError("fake first error", [operr("origin error")]))
                 bus.reply(msg, r)
+            } else if (msg instanceof FakeNeedReplyMessage4) {
+                // no reply
             }
         }
 
@@ -126,6 +130,28 @@ class CloudBusCase extends SubCase{
         assert r.error instanceof ErrorCodeList
         assert r.error.causes[0] instanceof ErrorCodeList
         assert r.error.causes[0].causes[0] instanceof ErrorCodeList
+
+        CloudBusGlobalProperty.SYNC_CALL_TIMEOUT = TimeUnit.MINUTES.toMillis(1)
+        def msg4 = new FakeNeedReplyMessage4()
+        bus.makeTargetServiceIdByResourceUuid(msg4, servId, Platform.getUuid())
+        def reply = bus.call(msg4)
+        assert !reply.isSuccess()
+        assert reply.getError().isError(SysErrors.TIMEOUT)
+
+        List<Message> msgs = new ArrayList<>()
+        for (final def i in (1..5)) {
+            def m = new FakeNeedReplyMessage4()
+            bus.makeTargetServiceIdByResourceUuid(m, servId, Platform.getUuid())
+            msgs.add(m)
+        }
+        def messageReplies = bus.call(msgs)
+        assert messageReplies.size() == 5
+        for (final def rr in messageReplies) {
+            assert !rr.isSuccess()
+            assert rr.getError().isError(SysErrors.TIMEOUT)
+        }
+
+        CloudBusGlobalProperty.SYNC_CALL_TIMEOUT = TimeUnit.MINUTES.toMillis(15)
     }
 
     @Override
