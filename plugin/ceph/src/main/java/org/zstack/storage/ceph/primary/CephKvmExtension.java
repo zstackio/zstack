@@ -25,11 +25,11 @@ import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.kvm.KVMHostFactory;
 import org.zstack.storage.ceph.CephConstants;
+import org.zstack.storage.primary.CheckHostStorageConnectionMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 

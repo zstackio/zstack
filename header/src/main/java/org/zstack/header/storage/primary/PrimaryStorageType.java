@@ -23,6 +23,8 @@ public class PrimaryStorageType {
     private PrimaryStorageFindBackupStorage primaryStorageFindBackupStorage;
     private  boolean supportCreateVolumeSnapshotCheckCapacity = true;
 
+    private boolean supportCheckHostStatus=false;
+
     public boolean isSupportSharedVolume() {
         return supportSharedVolume;
     }
@@ -195,5 +197,13 @@ public class PrimaryStorageType {
 
     public void setSupportCreateVolumeSnapshotCheckCapacity(boolean supportCreateVolumeSnapshotCheckCapacity) {
         this.supportCreateVolumeSnapshotCheckCapacity = supportCreateVolumeSnapshotCheckCapacity;
+    }
+
+    public boolean isSupportCheckHostStatus(){
+        return supportCheckHostStatus;
+    }
+
+    public void setSupportCheckHostStatus(boolean supportCheckHostStatus) {
+        this.supportCheckHostStatus = supportCheckHostStatus;
     }
 }
