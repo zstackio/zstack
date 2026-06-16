@@ -15217,6 +15217,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_V2V_10038 = "ORG_ZSTACK_V2V_10038";
 
+    public static final String ORG_ZSTACK_V2V_10039 = "ORG_ZSTACK_V2V_10039";
+
+    public static final String ORG_ZSTACK_V2V_10040 = "ORG_ZSTACK_V2V_10040";
+
     public static final String ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_10000 = "ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_10000";
 
     public static final String ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_10001 = "ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_10001";
