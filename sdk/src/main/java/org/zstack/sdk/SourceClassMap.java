@@ -365,6 +365,7 @@ public class SourceClassMap {
 			put("org.zstack.license.UKeyInventory", "org.zstack.sdk.UKeyInventory");
 			put("org.zstack.license.UKeyStatus", "org.zstack.sdk.UKeyStatus");
 			put("org.zstack.license.entity.LicenseHistoryInventory", "org.zstack.sdk.license.entity.LicenseHistoryInventory");
+			put("org.zstack.license.entity.LicenseUsageDetailView", "org.zstack.sdk.license.entity.LicenseUsageDetailView");
 			put("org.zstack.license.entity.LicenseUsageResult", "org.zstack.sdk.license.entity.LicenseUsageResult");
 			put("org.zstack.license.entity.LicenseUsageView", "org.zstack.sdk.license.entity.LicenseUsageView");
 			put("org.zstack.license.entity.UpdateLicenseView", "org.zstack.sdk.license.entity.UpdateLicenseView");
@@ -1280,6 +1281,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.keyprovider.api.RekeyProviderResult", "org.zstack.crypto.keyprovider.api.RekeyProviderResult");
 			put("org.zstack.sdk.keyprovider.api.RekeySkippedResource", "org.zstack.crypto.keyprovider.api.RekeySkippedResource");
 			put("org.zstack.sdk.license.entity.LicenseHistoryInventory", "org.zstack.license.entity.LicenseHistoryInventory");
+			put("org.zstack.sdk.license.entity.LicenseUsageDetailView", "org.zstack.license.entity.LicenseUsageDetailView");
 			put("org.zstack.sdk.license.entity.LicenseUsageResult", "org.zstack.license.entity.LicenseUsageResult");
 			put("org.zstack.sdk.license.entity.LicenseUsageView", "org.zstack.license.entity.LicenseUsageView");
 			put("org.zstack.sdk.license.entity.UpdateLicenseView", "org.zstack.license.entity.UpdateLicenseView");
