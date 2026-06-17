@@ -98,6 +98,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.message.OperationChecker;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -108,6 +109,8 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2727,15 +2730,36 @@ public class KVMHost extends HostBase implements Host {
     }
 
     public static String buildAgentUrl(String host, String path) {
-        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-        ub.scheme(KVMGlobalProperty.AGENT_URL_SCHEME);
-        ub.host(KVMHostUtils.formatHostForUrl(host));
-        ub.port(KVMGlobalProperty.AGENT_PORT);
-        if (!"".equals(KVMGlobalProperty.AGENT_URL_ROOT_PATH)) {
-            ub.path(KVMGlobalProperty.AGENT_URL_ROOT_PATH);
+        try {
+            return new URI(
+                    KVMGlobalProperty.AGENT_URL_SCHEME,
+                    null,
+                    IPv6NetworkUtils.stripHostUrlBrackets(host),
+                    KVMGlobalProperty.AGENT_PORT,
+                    joinAgentPath(KVMGlobalProperty.AGENT_URL_ROOT_PATH, path),
+                    null,
+                    null).toString();
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format("failed to build KVM agent url for host[%s], path[%s]", host, path), e);
         }
-        ub.path(path);
-        return ub.build().toUriString();
+    }
+
+    private static String joinAgentPath(String rootPath, String path) {
+        if (rootPath == null || rootPath.isEmpty()) {
+            return path;
+        }
+        if (path == null || path.isEmpty()) {
+            return rootPath.startsWith("/") ? rootPath : "/" + rootPath;
+        }
+
+        String normalizedRootPath = rootPath.startsWith("/") ? rootPath : "/" + rootPath;
+        if (normalizedRootPath.endsWith("/") && path.startsWith("/")) {
+            return normalizedRootPath + path.substring(1);
+        }
+        if (!normalizedRootPath.endsWith("/") && !path.startsWith("/")) {
+            return normalizedRootPath + "/" + path;
+        }
+        return normalizedRootPath + path;
     }
 
     private String buildUrl(String path) {
