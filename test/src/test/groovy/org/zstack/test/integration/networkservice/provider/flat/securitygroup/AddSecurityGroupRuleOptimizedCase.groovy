@@ -172,7 +172,8 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         errorRule.protocol = "TCP"
         errorRule.startPort = null
         errorRule.endPort = null
-        errorRule.dstPortRange = "1,2,3,4,5,6-7,8-10,11-12"
+        // The current security group allows a maximum of 50 ports (ver:5.4.0)
+        errorRule.dstPortRange = "1,2,3,4,5,6,7,8,9,10,11,12,13,14-16,17"
         expect(AssertionError) {
             addSecurityGroupRule {
                 securityGroupUuid = sg1.uuid
