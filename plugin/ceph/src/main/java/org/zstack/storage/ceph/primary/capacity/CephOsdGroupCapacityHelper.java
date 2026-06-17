@@ -1,6 +1,7 @@
 package org.zstack.storage.ceph.primary.capacity;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -238,7 +239,7 @@ public class CephOsdGroupCapacityHelper {
         for (String poolName : poolNames) {
             String installPathPrefix = String.format("ceph://%s", poolName);
             long volSize = volumes.parallelStream()
-                    .filter(v -> v.getInstallPath() != null && v.getInstallPath()
+                    .filter(v -> Strings.isNotEmpty(v.getInstallPath()) && v.getInstallPath()
                             .substring(0, v.getInstallPath().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(VolumeVO::getSize)
@@ -246,7 +247,7 @@ public class CephOsdGroupCapacityHelper {
                     .reduce(0L, Long::sum);
 
             long imageCacheSize = imageCaches.parallelStream()
-                    .filter(v -> v.getInstallUrl() != null && v.getInstallUrl()
+                    .filter(v -> Strings.isNotEmpty(v.getInstallUrl()) && v.getInstallUrl()
                             .substring(0, v.getInstallUrl().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(ImageCacheVO::getSize)
@@ -254,7 +255,7 @@ public class CephOsdGroupCapacityHelper {
                     .reduce(0L, Long::sum);
 
             long snapShotSize = snapshots.parallelStream()
-                    .filter(v -> v.getPrimaryStorageInstallPath() != null && v.getPrimaryStorageInstallPath()
+                    .filter(v -> Strings.isNotEmpty(v.getPrimaryStorageInstallPath()) && v.getPrimaryStorageInstallPath()
                             .substring(0, v.getPrimaryStorageInstallPath().lastIndexOf("/"))
                             .equals((installPathPrefix)))
                     .map(VolumeSnapshotVO::getSize)

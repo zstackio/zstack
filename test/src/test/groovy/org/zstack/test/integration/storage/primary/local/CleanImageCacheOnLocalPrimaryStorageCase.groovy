@@ -12,6 +12,7 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.ApplianceVmInventory
+import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
@@ -90,6 +91,11 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
                     availableCapacity = SizeUnit.GIGABYTE.toByte(100)
                 }
 
+                nfsPrimaryStorage {
+                    name = "nfs"
+                    url = "localhost:/test"
+                }
+
                 cluster {
                     name = "cluster"
                     hypervisorType = "KVM"
@@ -101,7 +107,15 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
                         password = "password"
                     }
 
+                    kvm {
+                        name = "kvm2"
+                        managementIp = "127.0.0.2"
+                        username = "root"
+                        password = "password"
+                    }
+
                     attachPrimaryStorage("local-ps")
+                    attachPrimaryStorage("nfs")
                     attachL2Network("l2")
                 }
 
@@ -157,6 +171,7 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
             vm {
                 name = "vm"
                 useInstanceOffering("instanceOffering")
+                usePrimaryStorage("local-ps")
                 useCluster("cluster")
                 useImage("image1")
                 useL3Networks("l3")
@@ -164,6 +179,27 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
                 useHost("kvm")
             }
 
+            vm {
+                name = "vm2"
+                useInstanceOffering("instanceOffering")
+                usePrimaryStorage("nfs")
+                useCluster("cluster")
+                useImage("image1")
+                useL3Networks("l3")
+                useRootDiskOffering("diskOffering")
+                useHost("kvm")
+            }
+
+            vm {
+                name = "vm3"
+                useInstanceOffering("instanceOffering")
+                usePrimaryStorage("local-ps")
+                useCluster("cluster")
+                useImage("image1")
+                useL3Networks("l3")
+                useRootDiskOffering("diskOffering")
+                useHost("kvm2")
+            }
         }
     }
 
@@ -178,9 +214,16 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
         PrimaryStorageInventory localps = env.inventoryByName("local-ps")
         ImageInventory image1 = env.inventoryByName("image1")
         ImageInventory vrImage = env.inventoryByName("vr")
+        HostInventory host1 = env.inventoryByName("kvm") as HostInventory
+        HostInventory host2 = env.inventoryByName("kvm2") as HostInventory
 
-        ImageCacheVO c = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid,image1.getUuid()).find()
-        assert c != null
+        assert Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.primaryStorageUuid, localps.uuid)
+                .eq(ImageCacheVO_.imageUuid,image1.getUuid()).count() == 2L
+        ImageCacheVO c = Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.primaryStorageUuid, localps.uuid)
+                .like(ImageCacheVO_.installUrl, String.format("%%%s%%", host1.uuid))
+                .eq(ImageCacheVO_.imageUuid,image1.getUuid()).find()
 
         def checked = false
         def cmdTemp
@@ -207,14 +250,35 @@ class CleanImageCacheOnLocalPrimaryStorageCase extends SubCase{
 
         PrimaryStorageGlobalConfig.IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL.updateValue(1)
         retryInSecs {
-            assert Q.New(ImageCacheShadowVO.class).eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
-            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image1.getUuid()).find() == null
+            assert Q.New(ImageCacheShadowVO.class)
+                    .eq(ImageCacheShadowVO_.primaryStorageUuid, localps.uuid)
+                    .eq(ImageCacheShadowVO_.imageUuid, image1.getUuid()).find() == null
+            assert Q.New(ImageCacheVO.class).select(ImageCacheVO_.installUrl)
+                    .eq(ImageCacheVO_.primaryStorageUuid, localps.uuid)
+                    .eq(ImageCacheVO_.imageUuid, image1.getUuid()).findValue().contains(host2.uuid)
         }
 
         ApplianceVmInventory vr = queryApplianceVm {}[0] as ApplianceVmInventory
         destroyVmInstance {
             uuid = vr.uuid
         }
+
+        sleep(TimeUnit.SECONDS.toMillis(1))
+
+        assert !Q.New(ImageCacheShadowVO.class)
+                .eq(ImageCacheShadowVO_.imageUuid, vrImage.getUuid())
+                .isExists()
+        assert Q.New(ImageCacheVO.class)
+                .eq(ImageCacheVO_.imageUuid, vrImage.getUuid())
+                .isExists()
+
+        deleteImage {
+            uuid = vrImage.uuid
+        }
+        expungeImage {
+            imageUuid = vrImage.uuid
+        }
+
         retryInSecs {
             assert !Q.New(ImageCacheShadowVO.class)
                     .eq(ImageCacheShadowVO_.imageUuid, vrImage.getUuid())
