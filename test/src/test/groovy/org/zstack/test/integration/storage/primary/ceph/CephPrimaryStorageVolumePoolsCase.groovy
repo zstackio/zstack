@@ -398,6 +398,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
 
             assert cpCmd != null
             assert cpCmd.dstPath.contains(NEW_ROOT_POOL_NAME)
+            assert !cpCmd.skipIfExisting
             assert cloneCmd != null
             assert cloneCmd.srcPath.contains(NEW_ROOT_POOL_NAME)
 
