@@ -5465,8 +5465,14 @@ public class KVMHost extends HostBase implements Host {
                                 return;
                             }
                             String timestampOutput = timeRet.getStdout().replaceAll("\r|\n","");
+                            long currentTimeSeconds = new Date().getTime() / 1000;
+                            long timestampSeconds = Long.parseLong(timestampOutput);
 
-                            long diff = (new Date().getTime() / 1000) - Long.parseLong(timestampOutput);
+                            if (currentTimeSeconds < timestampSeconds) {
+                                logger.warn(String.format("Current time is earlier than the timestamp. Possible clock synchronization issue. Current: %d, Timestamp: %d", currentTimeSeconds, timestampSeconds));
+                            }
+
+                            long diff = Math.abs(currentTimeSeconds - timestampSeconds);
                             logger.debug(String.format("hostOutput is %s ,The time difference is %d(s) ", hostOutput, diff));
 
                             if (diff < HostGlobalConfig.PING_HOST_INTERVAL.value(int.class)) {
