@@ -199,6 +199,8 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
         assert KVMHost.buildAgentUrl(IPV6, KVMConstant.CLEAN_FIRMWARE_FLASH) ==
                 "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/clean/firmware/flash"
+        assert KVMHost.buildAgentUrl(IPV6, "/storagedevice/iscsi/login") ==
+                "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/storagedevice/iscsi/login"
         assert KVMHost.buildAgentUrl(IPV4, KVMConstant.KVM_MIGRATE_VM_PATH) ==
                 "http://192.168.1.10:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
     }
