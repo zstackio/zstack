@@ -2,6 +2,24 @@ use zstack;
 
 DELIMITER $$
 
+DROP PROCEDURE IF EXISTS `fixLicenseHistoryNullHash` $$
+
+CREATE PROCEDURE `fixLicenseHistoryNullHash`()
+BEGIN
+    IF EXISTS ( SELECT 1
+                FROM INFORMATION_SCHEMA.COLUMNS
+                WHERE table_name = 'LicenseHistoryVO'
+                    AND table_schema = 'zstack'
+                    AND column_name = 'hash') THEN
+        UPDATE `zstack`.`LicenseHistoryVO`
+        SET `hash` = 'unknown'
+        WHERE `hash` IS NULL;
+    END IF;
+END$$
+
+CALL `fixLicenseHistoryNullHash`() $$
+DROP PROCEDURE IF EXISTS `fixLicenseHistoryNullHash` $$
+
 DROP FUNCTION IF EXISTS `Json_getKeyValue` $$
 
 CREATE FUNCTION `Json_getKeyValue`(
