@@ -349,6 +349,10 @@ public class VmInstanceSpec implements Serializable {
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private boolean skipIpAllocation = false;
 
+    // if true, implementation will be required to offer debug info during operation
+    private boolean debug;
+    private VmCreationStrategy strategy;
+
     public List<String> getRequiredClusterUuids() {
         return requiredClusterUuids;
     }
@@ -835,6 +839,22 @@ public class VmInstanceSpec implements Serializable {
 
     public void setAllocatedPrimaryStorageUuidForDataVolume(String allocatedPrimaryStorageUuidForDataVolume) {
         this.allocatedPrimaryStorageUuidForDataVolume = allocatedPrimaryStorageUuidForDataVolume;
+    }
+
+    public boolean isDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public VmCreationStrategy getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(VmCreationStrategy strategy) {
+        this.strategy = strategy;
     }
 
     public String getVolumeFormatFromImage() {
