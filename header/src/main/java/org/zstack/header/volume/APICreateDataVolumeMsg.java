@@ -72,12 +72,23 @@ public class APICreateDataVolumeMsg extends APICreateMessage implements APIAudit
     @APIParam(required = false, resourceType = PrimaryStorageVO.class)
     private String primaryStorageUuid;
 
+    @APIParam(required = false)
+    private String protocol;
+
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;
     }
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public String getName() {

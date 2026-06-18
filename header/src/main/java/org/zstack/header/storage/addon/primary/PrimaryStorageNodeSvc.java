@@ -23,7 +23,9 @@ public interface PrimaryStorageNodeSvc {
 
     List<String> getActiveVolumesLocation(HostInventory h);
 
-    void deployClient(HostInventory h, Completion comp);
+    // protocols lists every output protocol the host should be prepared for in one
+    // pass; empty/null means a baseline deploy (CBD client registration only)
+    void deployClient(HostInventory h, List<String> protocols, Completion comp);
 
     void activateHeartbeatVolume(HostInventory h, ReturnValueCompletion<HeartbeatVolumeTopology> comp);
 

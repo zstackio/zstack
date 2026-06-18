@@ -15,6 +15,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -112,6 +114,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
     public static final String VHOST_TARGET_ENSURE_PATH = "/zbs/primarystorage/vhost/target/ensure";
+    public static final String VHOST_TARGET_HEALTH_PATH = "/zbs/primarystorage/vhost/target/health";
     public static final String VHOST_ACTIVATE_PATH = "/zbs/primarystorage/vhost/activate";
     public static final String VHOST_DEACTIVATE_PATH = "/zbs/primarystorage/vhost/deactivate";
     public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
@@ -191,8 +194,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     private void fillVhostTargetParams(VhostActivateCmd cmd) {
         cmd.image = ZbsGlobalProperty.VHOST_TARGET_IMAGE;
-        cmd.cores = ZbsGlobalProperty.VHOST_TARGET_CORES;
+        // empty cores lets the agent compute them from the host cpu count
+        cmd.cores = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_CORES) ? null : ZbsGlobalProperty.VHOST_TARGET_CORES;
+        cmd.coreCount = ZbsGlobalProperty.VHOST_TARGET_CORE_COUNT;
         cmd.hugepageNr = ZbsGlobalProperty.VHOST_HUGEPAGE_NR;
+        cmd.imageTar = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_IMAGE_TAR) ? null : ZbsGlobalProperty.VHOST_TARGET_IMAGE_TAR;
+        cmd.imageUrl = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_IMAGE_URL) ? null : ZbsGlobalProperty.VHOST_TARGET_IMAGE_URL;
         cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
     }
 
@@ -320,7 +327,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void deployClient(HostInventory h, Completion comp) {
+    public void deployClient(HostInventory h, List<String> protocols, Completion comp) {
+        // baseline (CBD client registration on the ZBS cluster + libcbd on the host)
+        // always runs. Vhost additionally deploys the SPDK target on the KVM host.
+        boolean deployVhostTarget = protocols != null && protocols.contains(VolumeProtocol.Vhost.toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("deploy-zbs-client-on-host-%s", h.getUuid()));
         chain.then(new ShareFlow() {
@@ -391,6 +401,47 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         });
                     }
                 });
+
+                if (deployVhostTarget) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "deploy-vhost-target";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            VhostActivateCmd cmd = new VhostActivateCmd();
+                            fillVhostTargetParams(cmd);
+
+                            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                            msg.setCommand(cmd);
+                            msg.setHostUuid(h.getUuid());
+                            msg.setPath(VHOST_TARGET_ENSURE_PATH);
+                            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    // the SPDK target is also deployed lazily on the first vhost
+                                    // volume activate, so preparing it here is best-effort: a
+                                    // failure must not block client deploy / storage attach.
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to deploy vhost target on host[%s], will retry on first vhost activate: %s",
+                                                h.getUuid(), reply.getError().getDetails()));
+                                        trigger.next();
+                                        return;
+                                    }
+
+                                    KVMHostAsyncHttpCallReply hreply = reply.castReply();
+                                    CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
+                                    if (!rsp.isSuccess()) {
+                                        logger.warn(String.format("failed to deploy vhost target on host[%s], will retry on first vhost activate: %s",
+                                                h.getUuid(), rsp.getError()));
+                                    }
+
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(comp) {
                     @Override
@@ -919,6 +970,46 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
                 NodeHealthy healthy = new NodeHealthy();
                 healthy.setHealthy(VolumeProtocol.CBD, rsp.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
+
+                // vhost volumes don't ride the cbd heartbeat; their data path is the
+                // host's SPDK target container, so it needs its own health probe.
+                if (!supportsVhost()) {
+                    comp.success(healthy);
+                    return;
+                }
+                checkVhostTargetHealthy(host, healthy, comp);
+            }
+        });
+    }
+
+    private boolean supportsVhost() {
+        return Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, self.getUuid())
+                .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, VolumeProtocol.Vhost.toString())
+                .isExists();
+    }
+
+    private void checkVhostTargetHealthy(HostInventory host, NodeHealthy healthy, ReturnValueCompletion<NodeHealthy> comp) {
+        VhostTargetHealthCmd cmd = new VhostTargetHealthCmd();
+        cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(VHOST_TARGET_HEALTH_PATH);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(comp) {
+            @Override
+            public void run(MessageReply reply) {
+                boolean targetHealthy = false;
+                if (reply.isSuccess()) {
+                    VhostTargetHealthRsp rsp = reply.<KVMHostAsyncHttpCallReply>castReply()
+                            .toResponse(VhostTargetHealthRsp.class);
+                    targetHealthy = rsp.isSuccess() && rsp.healthy;
+                }
+                // report only; reconnecting the host redeploys the target via deployClient
+                healthy.setHealthy(VolumeProtocol.Vhost, targetHealthy ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -2183,14 +2274,25 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class VhostActivateCmd extends AgentCommand {
         public String image;
         public String cores;
+        public Integer coreCount;
         public Integer hugepageNr;
         public String socketDir;
         public String controlSock;
         public String clientConf;
         public String imageTar;
+        public String imageUrl;
         public String installPath;
         public String controllerName;
         public String bdevName;
+    }
+
+    public static class VhostTargetHealthCmd extends AgentCommand {
+        public String socketDir;
+        public String controlSock;
+    }
+
+    public static class VhostTargetHealthRsp extends AgentResponse {
+        public boolean healthy;
     }
 
     public static class VhostActivateRsp extends AgentResponse {

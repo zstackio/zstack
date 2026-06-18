@@ -211,7 +211,15 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         new While<>(extPss).each((extPs, compl) -> {
             logger.debug(String.format("deploying client for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
                     extPs.getUuid(), extPs.getName(), context.getInventory().getUuid(), context.getInventory().getName()));
-            extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), new Completion(compl) {
+
+            // one deploy pass redeploys the baseline client plus every exposed
+            // protocol's data path (e.g. the vhost SPDK target) on reconnect
+            List<String> protocols = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
+                    .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
+                    .listValues();
+
+            extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), protocols, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
@@ -234,6 +242,9 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             extPsFactory.getControllerSvc(extPs.getUuid()).reportNodeHealthy(host, new ReturnValueCompletion<NodeHealthy>(compl) {
                 @Override
                 public void success(NodeHealthy returnValue) {
+                    returnValue.getHealthy().forEach((p, h) -> updateHostProtocolRef(host.getUuid(), extPs.getUuid(),
+                            p.toString(), h == StorageHealthy.Ok ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected));
+
                     ErrorCode err = null;
                     PrimaryStorageHostStatus status;
                     // TODO add multi protocol support
@@ -275,6 +286,10 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 }
             });
         }).run(completion);
+    }
+
+    private void updateHostProtocolRef(String hostUuid, String psUuid, String protocol, PrimaryStorageHostStatus status) {
+        extPsFactory.updateHostProtocolStatus(psUuid, hostUuid, protocol, status);
     }
 
     @Override
