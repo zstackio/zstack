@@ -19,6 +19,8 @@ public class VolumeCacheInventory implements Serializable {
     private String installPath;
     private VolumeCacheMode cacheMode;
     private VolumeCacheStatus status;
+    private Long virtualSize;
+    private Long actualSize;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -89,6 +91,22 @@ public class VolumeCacheInventory implements Serializable {
 
     public void setStatus(VolumeCacheStatus status) {
         this.status = status;
+    }
+
+    public Long getVirtualSize() {
+        return virtualSize;
+    }
+
+    public void setVirtualSize(Long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+
+    public Long getActualSize() {
+        return actualSize;
+    }
+
+    public void setActualSize(Long actualSize) {
+        this.actualSize = actualSize;
     }
 
     public Timestamp getCreateDate() {

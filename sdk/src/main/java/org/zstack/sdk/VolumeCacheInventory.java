@@ -53,6 +53,22 @@ public class VolumeCacheInventory  {
         return this.status;
     }
 
+    public java.lang.Long virtualSize;
+    public void setVirtualSize(java.lang.Long virtualSize) {
+        this.virtualSize = virtualSize;
+    }
+    public java.lang.Long getVirtualSize() {
+        return this.virtualSize;
+    }
+
+    public java.lang.Long actualSize;
+    public void setActualSize(java.lang.Long actualSize) {
+        this.actualSize = actualSize;
+    }
+    public java.lang.Long getActualSize() {
+        return this.actualSize;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
