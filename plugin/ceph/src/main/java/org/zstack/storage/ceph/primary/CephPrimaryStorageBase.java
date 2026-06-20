@@ -476,6 +476,23 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String encryptedDek;
     }
 
+    public static class KVMHostImageStoreEncryptedUploadCmd implements Serializable {
+        public String psUuid;
+        public String hostname;
+        public String primaryStorageInstallPath;
+        public String imageUuid;
+        public String description;
+        public int concurrency;
+        @NoLogging
+        public String encryptedDek;
+    }
+
+    public static class KVMHostImageStoreEncryptedUploadRsp extends KVMAgentCommands.AgentResponse {
+        public String backupStorageInstallPath;
+        public Long size;
+        public Long actualSize;
+    }
+
     public static class KVMHostEncryptInPlaceCmd implements Serializable {
         public String psUuid;
         @NoLogging
@@ -1434,6 +1451,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HOST_LUKS_RESIZE_PATH = "/ceph/primarystorage/kvmhost/luksresize";
     public static final String KVM_HOST_LUKS_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert";
     public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_DOWNLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encrypteddownload";
+    public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_UPLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encryptedupload";
     public static final String FLATTEN_PATH = "/ceph/primarystorage/volume/flatten";
     public static final String SFTP_DOWNLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/download";
     public static final String SFTP_UPLOAD_PATH = "/ceph/primarystorage/sftpbackupstorage/upload";
@@ -5209,6 +5227,9 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         param.primaryStorageUuid = msg.getPrimaryStorageUuid();
         param.primaryStorageInstallPath = msg.getPrimaryStorageInstallPath();
         param.backupStorageInstallPath = msg.getBackupStorageInstallPath();
+        param.encrypted = msg.getEncrypted();
+        param.encryptedDek = msg.getEncryptedDek();
+        param.encryptedHostUuid = msg.getEncryptedHostUuid();
         mediator.param = param;
         mediator.upload(new ReturnValueCompletion<String>(msg) {
             @Override
