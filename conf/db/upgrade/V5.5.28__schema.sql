@@ -134,8 +134,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `uuid`                    VARCHAR(32)   NOT NULL,
-    `hostUuid`                VARCHAR(32)   DEFAULT NULL,
-    `sourceRoot`              VARCHAR(2048) DEFAULT NULL,
+    `hostUuid`                VARCHAR(32)   NOT NULL,
+    `sourceRoot`              VARCHAR(2048) NOT NULL,
     `physicalTotalBytes`      BIGINT        DEFAULT NULL,
     `physicalAvailableBytes`  BIGINT        DEFAULT NULL,
     `policyUsedBytes`         BIGINT        DEFAULT NULL,
@@ -159,8 +159,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `uuid`                 VARCHAR(32)   NOT NULL,
-    `hostUuid`             VARCHAR(32)   DEFAULT NULL,
-    `sourceRoot`           VARCHAR(2048) DEFAULT NULL,
+    `hostUuid`             VARCHAR(32)   NOT NULL,
+    `sourceRoot`           VARCHAR(2048) NOT NULL,
     `enabled`              TINYINT(1)    DEFAULT NULL,
     `maxSizeBytes`         BIGINT        DEFAULT NULL,
     `highWatermarkPercent` INT           DEFAULT NULL,
