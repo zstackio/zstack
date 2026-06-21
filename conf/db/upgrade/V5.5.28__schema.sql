@@ -97,3 +97,104 @@ CALL ADD_COLUMN('ModelServiceTemplateVO', 'acceleratorType', 'VARCHAR(255)', 1, 
 CALL ADD_COLUMN('ModelServiceTemplateVO', 'imageNamePattern', 'VARCHAR(2048)', 1, NULL);
 CALL CREATE_INDEX('ModelServiceTemplateVO', 'idxModelServiceTemplateModelServiceUuid', 'modelServiceUuid');
 CALL DELETE_INDEX('ModelServiceTemplateVO', 'ukModelServiceCpuArch');
+
+-- Host Model Cache control-plane state for VM/cloud-host model service deployments.
+CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheVO` (
+    `uuid`              VARCHAR(32)   NOT NULL,
+    `hostUuid`          VARCHAR(32)   DEFAULT NULL,
+    `modelCenterUuid`   VARCHAR(32)   DEFAULT NULL,
+    `modelUuid`         VARCHAR(32)   DEFAULT NULL,
+    `sourceRoot`        VARCHAR(2048) DEFAULT NULL,
+    `sourcePath`        VARCHAR(2048) DEFAULT NULL,
+    `sizeBytes`         BIGINT        DEFAULT NULL,
+    `sourceMtime`       BIGINT        DEFAULT NULL,
+    `checksum`          VARCHAR(255)  DEFAULT NULL,
+    `contentVersion`    VARCHAR(255)  DEFAULT NULL,
+    `identityHash`      VARCHAR(255)  DEFAULT NULL,
+    `status`            VARCHAR(32)   DEFAULT NULL,
+    `desiredRefCount`   BIGINT        NOT NULL DEFAULT 0,
+    `runningRefCount`   BIGINT        NOT NULL DEFAULT 0,
+    `reservationUuid`   VARCHAR(32)   DEFAULT NULL,
+    `waiterCount`       INT           DEFAULT NULL,
+    `lastAccessDate`    TIMESTAMP     NULL DEFAULT NULL,
+    `lastSyncDate`      TIMESTAMP     NULL DEFAULT NULL,
+    `failurePhase`      VARCHAR(64)   DEFAULT NULL,
+    `failureCode`       VARCHAR(64)   DEFAULT NULL,
+    `failureMessage`    MEDIUMTEXT    DEFAULT NULL,
+    `createDate`        TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate`        TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukAiHostModelCacheVOHostIdentity` (`hostUuid`, `identityHash`),
+    KEY `idxAiHostModelCacheVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    KEY `idxAiHostModelCacheVOModel` (`modelUuid`),
+    KEY `idxAiHostModelCacheVOStatus` (`status`),
+    CONSTRAINT `fkAiHostModelCacheVOHostEO`
+        FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
+    `uuid`                    VARCHAR(32)   NOT NULL,
+    `hostUuid`                VARCHAR(32)   DEFAULT NULL,
+    `sourceRoot`              VARCHAR(2048) DEFAULT NULL,
+    `physicalTotalBytes`      BIGINT        DEFAULT NULL,
+    `physicalAvailableBytes`  BIGINT        DEFAULT NULL,
+    `policyUsedBytes`         BIGINT        DEFAULT NULL,
+    `unmanagedUsedBytesEstimate` BIGINT     DEFAULT NULL,
+    `policyReservedBytes`     BIGINT        DEFAULT NULL,
+    `policyMaxSizeBytes`      BIGINT        DEFAULT NULL,
+    `effectiveAvailableBytes` BIGINT        DEFAULT NULL,
+    `highWatermarkBytes`      BIGINT        DEFAULT NULL,
+    `lowWatermarkBytes`       BIGINT        DEFAULT NULL,
+    `status`                  VARCHAR(32)   DEFAULT NULL,
+    `statusReason`            VARCHAR(1024) DEFAULT NULL,
+    `lastSyncDate`            TIMESTAMP     NULL DEFAULT NULL,
+    `createDate`              TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate`              TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukAiHostCacheStorageVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    KEY `idxAiHostCacheStorageVOStatus` (`status`),
+    CONSTRAINT `fkAiHostCacheStorageVOHostEO`
+        FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
+    `uuid`                 VARCHAR(32)   NOT NULL,
+    `hostUuid`             VARCHAR(32)   DEFAULT NULL,
+    `sourceRoot`           VARCHAR(2048) DEFAULT NULL,
+    `enabled`              TINYINT(1)    DEFAULT NULL,
+    `maxSizeBytes`         BIGINT        DEFAULT NULL,
+    `highWatermarkPercent` INT           DEFAULT NULL,
+    `lowWatermarkPercent`  INT           DEFAULT NULL,
+    `disabledReason`       VARCHAR(1024) DEFAULT NULL,
+    `createDate`           TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate`           TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukAiHostModelCachePolicyVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    CONSTRAINT `fkAiHostModelCachePolicyVOHostEO`
+        FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheReservationVO` (
+    `uuid`              VARCHAR(32)   NOT NULL,
+    `hostUuid`          VARCHAR(32)   DEFAULT NULL,
+    `sourceRoot`        VARCHAR(2048) DEFAULT NULL,
+    `modelUuid`         VARCHAR(32)   DEFAULT NULL,
+    `modelCenterUuid`   VARCHAR(32)   DEFAULT NULL,
+    `ownerType`         VARCHAR(32)   DEFAULT NULL,
+    `ownerResourceUuid` VARCHAR(32)   DEFAULT NULL,
+    `reservedBytes`     BIGINT        DEFAULT NULL,
+    `status`            VARCHAR(32)   DEFAULT NULL,
+    `expiredDate`       TIMESTAMP     NULL DEFAULT NULL,
+    `createDate`        TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate`        TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    KEY `idxAiHostModelCacheReservationVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    KEY `idxAiHostModelCacheReservationVOOwner` (`ownerType`, `ownerResourceUuid`),
+    KEY `idxAiHostModelCacheReservationVOStatus` (`status`),
+    CONSTRAINT `fkAiHostModelCacheReservationVOHostEO`
+        FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('VmModelMountVO', 'cacheUuid', 'VARCHAR(32)', 1, NULL);
+CALL CREATE_INDEX('VmModelMountVO', 'idxVmModelMountVOCacheUuid', 'cacheUuid');
+CALL ADD_CONSTRAINT('VmModelMountVO', 'fkVmModelMountVOAiHostModelCacheVO', 'cacheUuid', 'AiHostModelCacheVO', 'uuid', 'SET NULL');

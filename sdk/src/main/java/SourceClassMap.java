@@ -11,6 +11,13 @@ public class SourceClassMap {
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.accessKey.AccessKeyType", "org.zstack.sdk.AccessKeyType");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
+			put("org.zstack.ai.entity.AiHostCacheStorageInventory", "org.zstack.sdk.AiHostCacheStorageInventory");
+			put("org.zstack.ai.entity.AiHostCacheStorageStatus", "org.zstack.sdk.AiHostCacheStorageStatus");
+			put("org.zstack.ai.entity.AiHostModelCacheFailureCode", "org.zstack.sdk.AiHostModelCacheFailureCode");
+			put("org.zstack.ai.entity.AiHostModelCacheFailurePhase", "org.zstack.sdk.AiHostModelCacheFailurePhase");
+			put("org.zstack.ai.entity.AiHostModelCacheInventory", "org.zstack.sdk.AiHostModelCacheInventory");
+			put("org.zstack.ai.entity.AiHostModelCachePolicyInventory", "org.zstack.sdk.AiHostModelCachePolicyInventory");
+			put("org.zstack.ai.entity.AiHostModelCacheStatus", "org.zstack.sdk.AiHostModelCacheStatus");
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
@@ -933,6 +940,13 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
 			put("org.zstack.sdk.AgentVersionInventory", "org.zstack.core.upgrade.AgentVersionInventory");
+			put("org.zstack.sdk.AiHostCacheStorageInventory", "org.zstack.ai.entity.AiHostCacheStorageInventory");
+			put("org.zstack.sdk.AiHostCacheStorageStatus", "org.zstack.ai.entity.AiHostCacheStorageStatus");
+			put("org.zstack.sdk.AiHostModelCacheFailureCode", "org.zstack.ai.entity.AiHostModelCacheFailureCode");
+			put("org.zstack.sdk.AiHostModelCacheFailurePhase", "org.zstack.ai.entity.AiHostModelCacheFailurePhase");
+			put("org.zstack.sdk.AiHostModelCacheInventory", "org.zstack.ai.entity.AiHostModelCacheInventory");
+			put("org.zstack.sdk.AiHostModelCachePolicyInventory", "org.zstack.ai.entity.AiHostModelCachePolicyInventory");
+			put("org.zstack.sdk.AiHostModelCacheStatus", "org.zstack.ai.entity.AiHostModelCacheStatus");
 			put("org.zstack.sdk.AiSiNoSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.AliyunDiskInventory", "org.zstack.header.aliyun.storage.disk.AliyunDiskInventory");
