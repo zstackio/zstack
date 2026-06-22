@@ -79,3 +79,22 @@ END $$
 DELIMITER ;
 CALL addPciDeviceMdevSpecRefUniqueKey();
 DROP PROCEDURE IF EXISTS addPciDeviceMdevSpecRefUniqueKey;
+
+-- ZCF-4158: Store SCIM event application state.
+CREATE TABLE IF NOT EXISTS `zstack`.`ScimEventVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE COMMENT 'uuid',
+    `clientId` varchar(128) NOT NULL DEFAULT 'default',
+    `eventId` varchar(255) NOT NULL,
+    `resourceType` varchar(64) NOT NULL,
+    `resourceId` varchar(255) NOT NULL,
+    `resourceVersion` bigint NOT NULL,
+    `operation` varchar(32) NOT NULL,
+    `status` varchar(32) NOT NULL,
+    `payloadHash` varchar(128) DEFAULT NULL,
+    `errorMessage` text DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukScimEventVOClientEvent` (`clientId`, `eventId`),
+    KEY `idxScimEventVOResourceVersion` (`clientId`, `resourceType`, `resourceId`, `resourceVersion`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
