@@ -34,6 +34,9 @@ public class AttachScsiLunToVmInstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean disableMultiPathAttach = false;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean encrypted;
+
     @Param(required = false)
     public java.util.List systemTags;
 

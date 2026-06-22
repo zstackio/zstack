@@ -5,6 +5,8 @@ ALTER TABLE `zstack`.`VolumeEO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAU
 ALTER TABLE `zstack`.`VolumeSnapshotEO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
 ALTER TABLE `zstack`.`VolumeBackupVO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
 ALTER TABLE `zstack`.`VmInstanceEO` ADD COLUMN `vmEncryption` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `zstack`.`LunVO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
+ALTER TABLE `zstack`.`ScsiLunVmInstanceRefVO` ADD COLUMN `encrypted` tinyint(1) NOT NULL DEFAULT 0;
 
 UPDATE `zstack`.`VolumeBackupVO` vb
 SET vb.`encrypted` = 1
@@ -30,6 +32,13 @@ SELECT uuid, name, description, type, volumeUuid, format, treeUuid, parentUuid,
        fullSnapshot, encrypted, volumeType, state, status, createDate, lastOpDate
 FROM `zstack`.`VolumeSnapshotEO`
 WHERE deleted IS NULL;
+
+DROP VIEW IF EXISTS `zstack`.`ScsiLunVO`;
+CREATE VIEW `zstack`.`ScsiLunVO` AS
+SELECT uuid, name, wwid, vendor, model, wwn, serial, type, hctl, path, size,
+       state, source, multipathDeviceUuid, encrypted, createDate, lastOpDate
+FROM `zstack`.`LunVO`
+WHERE source IN ('iSCSI', 'fiberChannel');
 
 DROP VIEW IF EXISTS `zstack`.`VmInstanceVO`;
 CREATE VIEW `zstack`.`VmInstanceVO` AS

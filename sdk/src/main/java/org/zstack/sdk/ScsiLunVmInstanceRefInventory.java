@@ -52,4 +52,12 @@ public class ScsiLunVmInstanceRefInventory  {
         return this.attachMultipath;
     }
 
+    public boolean encrypted;
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+    public boolean getEncrypted() {
+        return this.encrypted;
+    }
+
 }

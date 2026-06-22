@@ -99,6 +99,7 @@
     <bean id="VolumeInPlaceEncryptor" class="org.zstack.storage.volume.VolumeInPlaceEncryptor"/>
 
     <bean id="VolumeEncryptedSecretHelper" class="org.zstack.storage.encrypt.VolumeEncryptedSecretHelper"/>
+    <bean id="LunEncryptedSecretHelper" class="org.zstack.storage.encrypt.LunEncryptedSecretHelper"/>
     <bean id="VolumeEncryptedTrashCleanupHelper" class="org.zstack.storage.encrypt.VolumeEncryptedTrashCleanupHelper"/>
 
     <bean id="VolumeSnapshotEncryptionHelper" class="org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper"/>

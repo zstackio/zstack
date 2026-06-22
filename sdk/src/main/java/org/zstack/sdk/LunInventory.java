@@ -118,6 +118,14 @@ public class LunInventory  {
         return this.source;
     }
 
+    public boolean encrypted;
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+    public boolean getEncrypted() {
+        return this.encrypted;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
