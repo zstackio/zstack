@@ -8,7 +8,4 @@ public class MediatorUploadParam implements MediatorParam {
     public String primaryStorageInstallPath;
     public String backupStorageInstallPath;
     public String backupStorageUuid;
-    public Boolean encrypted;
-    public String encryptedDek;
-    public String encryptedHostUuid;
 }

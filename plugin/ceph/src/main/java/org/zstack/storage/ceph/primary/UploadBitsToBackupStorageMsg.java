@@ -12,9 +12,6 @@ public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements Pr
     private String backupStorageUuid;
     private String backupStorageInstallPath;
     private String imageUuid;
-    private Boolean encrypted;
-    private String encryptedDek;
-    private String encryptedHostUuid;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -55,29 +52,5 @@ public class UploadBitsToBackupStorageMsg extends NeedReplyMessage implements Pr
 
     public void setImageUuid(String imageUuid) {
         this.imageUuid = imageUuid;
-    }
-
-    public Boolean getEncrypted() {
-        return encrypted;
-    }
-
-    public void setEncrypted(Boolean encrypted) {
-        this.encrypted = encrypted;
-    }
-
-    public String getEncryptedDek() {
-        return encryptedDek;
-    }
-
-    public void setEncryptedDek(String encryptedDek) {
-        this.encryptedDek = encryptedDek;
-    }
-
-    public String getEncryptedHostUuid() {
-        return encryptedHostUuid;
-    }
-
-    public void setEncryptedHostUuid(String encryptedHostUuid) {
-        this.encryptedHostUuid = encryptedHostUuid;
     }
 }

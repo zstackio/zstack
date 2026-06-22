@@ -34,7 +34,6 @@ import org.zstack.header.configuration.userconfig.DiskOfferingUserConfigValidato
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfig;
 import org.zstack.header.configuration.userconfig.InstanceOfferingUserConfigValidator;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -42,7 +41,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostCanonicalEvents;
-import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
@@ -60,7 +58,6 @@ import org.zstack.storage.ceph.*;
 import org.zstack.storage.ceph.primary.KVMCephVolumeTO.MonInfo;
 import org.zstack.storage.ceph.primary.capacity.CephOsdGroupCapacityHelper;
 import org.zstack.storage.ceph.primary.capacity.CephPrimaryCapacityUpdater;
-import org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper;
 import org.zstack.storage.snapshot.MarkRootVolumeAsSnapshotExtension;
 import org.zstack.storage.snapshot.PostMarkRootVolumeAsSnapshotExtension;
 import org.zstack.tag.SystemTagCreator;
@@ -119,8 +116,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     private StorageTrash trash;
     @Autowired
     private EventFacade evtf;
-    @Autowired
-    private VolumeSnapshotEncryptionHelper snapshotEncryptionHelper;
 
     private Future imageCacheCleanupThread;
 
@@ -573,18 +568,11 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
     @Override
     public WorkflowTemplate createTemplateFromVolumeSnapshot(final ParamIn paramIn) {
         WorkflowTemplate template = new WorkflowTemplate();
-        template.setCreateTemporaryTemplate(new Flow() {
+        template.setCreateTemporaryTemplate(new NoRollbackFlow() {
             String __name__ = "create-temporary-template";
-
-            String temporaryInstallPath;
 
             @Override
             public void run(final FlowTrigger trigger, final Map data) {
-                if (Boolean.TRUE.equals(paramIn.getSnapshot().getEncrypted())) {
-                    createEncryptedTemporaryTemplate(trigger, data);
-                    return;
-                }
-
                 SyncVolumeSizeMsg msg = new SyncVolumeSizeMsg();
                 msg.setVolumeUuid(paramIn.getSnapshot().getVolumeUuid());
                 bus.makeTargetServiceIdByResourceUuid(msg, VolumeConstant.SERVICE_ID, paramIn.getSnapshot().getVolumeUuid());
@@ -602,68 +590,6 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                         }
                     }
                 });
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                if (StringUtils.isNotBlank(temporaryInstallPath)) {
-                    DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                    msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                    msg.setInstallPath(temporaryInstallPath);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
-                    bus.send(msg);
-                }
-
-                trigger.rollback();
-            }
-
-            private void createEncryptedTemporaryTemplate(final FlowTrigger trigger, final Map data) {
-                String hostUuid = findConnectedHostForCephLuks(paramIn.getPrimaryStorageUuid());
-                String encryptedDek;
-                try {
-                    encryptedDek = snapshotEncryptionHelper.prepareTemporarySnapshotImageEncryptedDek(
-                            hostUuid,
-                            paramIn.getSnapshot().getUuid(),
-                            paramIn.getImage().getUuid(),
-                            true);
-                } catch (OperationFailureException e) {
-                    trigger.fail(e.getErrorCode());
-                    return;
-                }
-                if (StringUtils.isBlank(encryptedDek)) {
-                    trigger.fail(operr("cannot prepare LUKS encryptedDek for encrypted temporary snapshot image[uuid:%s] from snapshot[uuid:%s] on host[uuid:%s]",
-                            paramIn.getImage().getUuid(), paramIn.getSnapshot().getUuid(), hostUuid));
-                    return;
-                }
-
-                temporaryInstallPath = makeTemporaryTemplateInstallPath(paramIn);
-                CephPrimaryStorageBase.KVMHostLuksCloneCmd cmd = new CephPrimaryStorageBase.KVMHostLuksCloneCmd();
-                cmd.psUuid = paramIn.getPrimaryStorageUuid();
-                cmd.srcPath = paramIn.getSnapshot().getPrimaryStorageInstallPath();
-                cmd.dstPath = temporaryInstallPath;
-                cmd.encryptedDek = encryptedDek;
-
-                httpCallToKvmHost(hostUuid,
-                        CephPrimaryStorageBase.KVM_HOST_LUKS_CLONE_PATH,
-                        cmd,
-                        CephPrimaryStorageBase.KVMHostLuksRsp.class,
-                        new ReturnValueCompletion<CephPrimaryStorageBase.KVMHostLuksRsp>(trigger) {
-                            @Override
-                            public void success(CephPrimaryStorageBase.KVMHostLuksRsp rsp) {
-                                ParamOut out = (ParamOut) data.get(ParamOut.class);
-                                out.setActualSize(rsp.actualSize == null ? paramIn.getSnapshot().getSize() : rsp.actualSize);
-                                out.setSize(paramIn.getSnapshot().getSize());
-                                data.put("cephEncryptedTemporaryInstallPath", temporaryInstallPath);
-                                data.put("cephEncryptedDek", encryptedDek);
-                                data.put("cephEncryptedHostUuid", hostUuid);
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
             }
         });
 
@@ -685,18 +611,13 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
                 }
 
                 String bsInstallPath = ((BackupStorageAskInstallPathReply)ar).getInstallPath();
-                String encryptedTemporaryInstallPath = (String) data.get("cephEncryptedTemporaryInstallPath");
 
                 UploadBitsToBackupStorageMsg msg = new UploadBitsToBackupStorageMsg();
                 msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                msg.setPrimaryStorageInstallPath(encryptedTemporaryInstallPath == null ?
-                        paramIn.getSnapshot().getPrimaryStorageInstallPath() : encryptedTemporaryInstallPath);
+                msg.setPrimaryStorageInstallPath(paramIn.getSnapshot().getPrimaryStorageInstallPath());
                 msg.setBackupStorageUuid(paramIn.getBackupStorageUuid());
                 msg.setBackupStorageInstallPath(bsInstallPath);
                 msg.setImageUuid(paramIn.getImage().getUuid());
-                msg.setEncrypted(paramIn.getSnapshot().getEncrypted());
-                msg.setEncryptedDek((String) data.get("cephEncryptedDek"));
-                msg.setEncryptedHostUuid((String) data.get("cephEncryptedHostUuid"));
                 bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
                 bus.send(msg, new CloudBusCallBack(trigger) {
                     @Override
@@ -727,89 +648,9 @@ public class CephPrimaryStorageFactory implements PrimaryStorageFactory, CephCap
             }
         });
 
-        template.setDeleteTemporaryTemplate(new NoRollbackFlow() {
-            String __name__ = "delete-temporary-template";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                String temporaryInstallPath = (String) data.get("cephEncryptedTemporaryInstallPath");
-                if (StringUtils.isBlank(temporaryInstallPath)) {
-                    trigger.next();
-                    return;
-                }
-
-                DeleteVolumeBitsOnPrimaryStorageMsg msg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                msg.setPrimaryStorageUuid(paramIn.getPrimaryStorageUuid());
-                msg.setInstallPath(temporaryInstallPath);
-                bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, paramIn.getPrimaryStorageUuid());
-                bus.send(msg);
-                trigger.next();
-            }
-        });
+        template.setDeleteTemporaryTemplate(new NopeFlow());
 
         return template;
-    }
-
-    private String makeTemporaryTemplateInstallPath(ParamIn paramIn) {
-        String installPath = paramIn.getSnapshot().getPrimaryStorageInstallPath();
-        String path = installPath.startsWith("ceph://") ? installPath.substring("ceph://".length()) : installPath;
-        int idx = path.indexOf("/");
-        if (idx < 0) {
-            throw new OperationFailureException(operr("invalid ceph snapshot install path[%s]", installPath));
-        }
-
-        return String.format("ceph://%s/%s", path.substring(0, idx), paramIn.getImage().getUuid());
-    }
-
-    private String findConnectedHostForCephLuks(String primaryStorageUuid) {
-        List<String> connectedHostUuids = Q.New(PrimaryStorageHostRefVO.class)
-                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, primaryStorageUuid)
-                .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
-                .select(PrimaryStorageHostRefVO_.hostUuid)
-                .listValues();
-        String hostUuid = connectedHostUuids.isEmpty() ? null : Q.New(HostVO.class)
-                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
-                .in(HostVO_.uuid, connectedHostUuids)
-                .select(HostVO_.uuid)
-                .limit(1)
-                .findValue();
-        if (StringUtils.isBlank(hostUuid)) {
-            throw new OperationFailureException(operr(
-                    "cannot find a connected KVM host attached to ceph primary storage[uuid:%s] to run LUKS RBD operation",
-                    primaryStorageUuid));
-        }
-        return hostUuid;
-    }
-
-    private <T extends AgentResponse> void httpCallToKvmHost(String hostUuid, String path, Object cmd, Class<T> retClass,
-                                                             ReturnValueCompletion<T> completion) {
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setPath(path);
-        msg.setHostUuid(hostUuid);
-        msg.setNoStatusCheck(true);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
-        bus.send(msg, new CloudBusCallBack(completion) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    completion.fail(reply.getError());
-                    return;
-                }
-
-                KVMHostAsyncHttpCallReply kreply = reply.castReply();
-                T rsp = kreply.toResponse(retClass);
-                if (rsp == null) {
-                    completion.fail(operr("kvm host[uuid:%s] returned null reply for ceph luks path[%s]", hostUuid, path));
-                    return;
-                }
-                if (!rsp.isSuccess()) {
-                    completion.fail(operr("kvm host[uuid:%s] ceph luks path[%s] failed", hostUuid, path).withException(rsp.getError()));
-                    return;
-                }
-                completion.success(rsp);
-            }
-        });
     }
 
     @Override
