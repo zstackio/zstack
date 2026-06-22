@@ -11,6 +11,7 @@ public class IPv6Constants {
     public static final String SLAAC = "SLAAC";
     public static final String Stateless_DHCP = "Stateless-DHCP";
     public static final String Stateful_DHCP = "Stateful-DHCP";
+    public static final String IPV6_ANY_ADDRESS = "::";
 
     public static final int IPV6_STATELESS_PREFIX_LEN = 64;
 

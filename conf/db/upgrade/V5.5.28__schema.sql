@@ -12,3 +12,6 @@ WHERE NOT EXISTS (
       AND st.type = 'System'
       AND st.tag LIKE 'managementNetwork::ipVersion::%'
 );
+
+ALTER TABLE `zstack`.`ConsoleProxyAgentVO` ADD COLUMN `consoleProxyOverriddenIpv4` varchar(255) DEFAULT NULL;
+ALTER TABLE `zstack`.`ConsoleProxyAgentVO` ADD COLUMN `consoleProxyOverriddenIpv6` varchar(255) DEFAULT NULL;

@@ -126,10 +126,32 @@ class ConsoleProxyCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testSelectConsoleProxyByClientIpVersion()
             testConsoleProxyCleanupOnGuestShutdown()
             testUpdateConsoleProxyAgent()
             testConsoleProxyGC()
         }
+    }
+
+    void testSelectConsoleProxyByClientIpVersion() {
+        def selectConsoleProxyHostname = ConsoleManagerImpl.class.getDeclaredMethod("selectConsoleProxyHostname",
+                String.class, String.class, String.class, String.class, Boolean.TYPE, String.class, String.class, String.class)
+        selectConsoleProxyHostname.accessible = true
+
+        assert selectConsoleProxyHostname.invoke(null, "172.24.1.8", "0.0.0.0",
+                "172.24.1.10", "2001:db8::100", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "172.24.1.10"
+        assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "0.0.0.0",
+                "172.24.1.10", "2001:db8::100", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "[2001:db8::100]"
+        assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "0.0.0.0",
+                "172.24.1.10", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "[2001:db8::2]"
+        assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "172.24.1.10",
+                "", "", false, "172.24.1.1", "172.24.1.2", "2001:db8::2") == "[2001:db8::2]"
+        assert selectConsoleProxyHostname.invoke(null, "Unknown", "172.24.1.10",
+                "", "", false, "2001:db8::1", "172.24.1.2", "2001:db8::2") == "[2001:db8::2]"
+        assert selectConsoleProxyHostname.invoke(null, "172.24.1.8", "2001:db8::100",
+                "", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "10.0.0.2"
+        assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "console.example.com",
+                "", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "console.example.com"
     }
 
     void testConsoleProxyGC() {
@@ -207,9 +229,13 @@ class ConsoleProxyCase extends SubCase {
         updateConsoleProxyAgent {
             uuid = agent.uuid
             consoleProxyOverriddenIp = "127.0.0.2"
+            consoleProxyOverriddenIpv4 = "127.0.0.3"
+            consoleProxyOverriddenIpv6 = "[2001:db8::200]"
         }
         agent = dbf.reload(agent)
         assert agent.consoleProxyOverriddenIp == "127.0.0.2"
+        assert agent.consoleProxyOverriddenIpv4 == "127.0.0.3"
+        assert agent.consoleProxyOverriddenIpv6 == "2001:db8::200"
         
         updateConsoleProxyAgent {
             uuid = agent.uuid
@@ -231,6 +257,8 @@ class ConsoleProxyCase extends SubCase {
 
         assert Platform.getGlobalProperties().get("consoleProxyOverriddenIp") == '127.0.0.1'
         assert CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP == '127.0.0.1'
+        assert CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV4 == '127.0.0.3'
+        assert CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV6 == '2001:db8::200'
         //When the console port is 0 (empty), the default CoreGlobalProperty port 4900 is set
         assert Platform.getGlobalProperties().get("consoleProxyPort") == '4900'
         assert CoreGlobalProperty.CONSOLE_PROXY_PORT == 4900
@@ -254,6 +282,8 @@ class ConsoleProxyCase extends SubCase {
             conditions = ["uuid=${agent.uuid}".toString()]
         } as List<ConsoleProxyAgentInventory>
         assert agents[0].consoleProxyOverriddenIp == ipv6ConsoleProxyIp
+        assert agents[0].consoleProxyOverriddenIpv4 == "127.0.0.3"
+        assert agents[0].consoleProxyOverriddenIpv6 == "2001:db8::200"
         def selectConsoleProxyHostname = ConsoleManagerImpl.class.getDeclaredMethod("selectConsoleProxyHostname", String.class, Boolean.TYPE, String.class)
         selectConsoleProxyHostname.accessible = true
         assert selectConsoleProxyHostname.invoke(null, ipv6ConsoleProxyIp, false, "127.0.0.1") == "[${ipv6ConsoleProxyIp}]"

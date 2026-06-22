@@ -32,6 +32,10 @@ public class CoreGlobalProperty {
     public static String PID_FILE_PATH;
     @GlobalProperty(name = "consoleProxyOverriddenIp", defaultValue = "0.0.0.0")
     public static String CONSOLE_PROXY_OVERRIDDEN_IP;
+    @GlobalProperty(name = "consoleProxyOverriddenIpv4", defaultValue = "")
+    public static String CONSOLE_PROXY_OVERRIDDEN_IPV4;
+    @GlobalProperty(name = "consoleProxyOverriddenIpv6", defaultValue = "")
+    public static String CONSOLE_PROXY_OVERRIDDEN_IPV6;
     @GlobalProperty(name = "exposeSimulatorType", defaultValue = "false")
     public static boolean EXPOSE_SIMULATOR_TYPE;
     @GlobalProperty(name = "exitJVMOnStop", defaultValue = "true")

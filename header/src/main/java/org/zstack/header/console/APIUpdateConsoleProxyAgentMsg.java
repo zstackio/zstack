@@ -18,6 +18,10 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
     private String uuid;
     @APIParam
     private String consoleProxyOverriddenIp;
+    @APIParam(required = false)
+    private String consoleProxyOverriddenIpv4;
+    @APIParam(required = false)
+    private String consoleProxyOverriddenIpv6;
     @APIParam(required = false, numberRange={1, 65535})
     private Integer consoleProxyPort;
 
@@ -45,10 +49,28 @@ public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements Console
         this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
     }
 
+    public String getConsoleProxyOverriddenIpv4() {
+        return consoleProxyOverriddenIpv4;
+    }
+
+    public void setConsoleProxyOverriddenIpv4(String consoleProxyOverriddenIpv4) {
+        this.consoleProxyOverriddenIpv4 = consoleProxyOverriddenIpv4;
+    }
+
+    public String getConsoleProxyOverriddenIpv6() {
+        return consoleProxyOverriddenIpv6;
+    }
+
+    public void setConsoleProxyOverriddenIpv6(String consoleProxyOverriddenIpv6) {
+        this.consoleProxyOverriddenIpv6 = consoleProxyOverriddenIpv6;
+    }
+
     public static APIUpdateConsoleProxyAgentMsg __example__() {
         APIUpdateConsoleProxyAgentMsg msg = new APIUpdateConsoleProxyAgentMsg();
         msg.setUuid(uuid());
         msg.setConsoleProxyOverriddenIp("127.0.0.1");
+        msg.setConsoleProxyOverriddenIpv4("127.0.0.1");
+        msg.setConsoleProxyOverriddenIpv6("2001:db8::100");
         msg.setConsoleProxyPort(4789);
         return msg;
     }
