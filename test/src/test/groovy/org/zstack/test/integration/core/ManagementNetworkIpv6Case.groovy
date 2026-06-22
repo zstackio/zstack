@@ -345,6 +345,7 @@ class ManagementNetworkIpv6Case extends SubCase {
             assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
             assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == MANAGEMENT_SERVER_FINGERPRINT
             assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY) != null
+            String currentFingerprintVersion = state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY)
 
             String persistedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
@@ -364,6 +365,24 @@ class ManagementNetworkIpv6Case extends SubCase {
             stateFile.withInputStream { state.load(it) }
             assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == MANAGEMENT_SERVER_FINGERPRINT
 
+            stateFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${MANAGEMENT_SERVER_ID}\n" +
+                    "${Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY}=${MANAGEMENT_SERVER_FINGERPRINT}\n" +
+                    "${Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY}=1\n"
+            String migratedId = Platform.loadOrCreateManagementServerId(
+                    propertiesFile,
+                    stateFile,
+                    { -> NEW_MANAGEMENT_SERVER_ID } as Supplier<String>,
+                    { -> NEW_MANAGEMENT_SERVER_FINGERPRINT } as Supplier<String>)
+            assert migratedId == MANAGEMENT_SERVER_ID
+            state = new Properties()
+            stateFile.withInputStream { state.load(it) }
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_ID_PROPERTY) == MANAGEMENT_SERVER_ID
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY) == NEW_MANAGEMENT_SERVER_FINGERPRINT
+            assert state.getProperty(Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY) == currentFingerprintVersion
+
+            stateFile.text = "${Platform.MANAGEMENT_SERVER_ID_PROPERTY}=${MANAGEMENT_SERVER_ID}\n" +
+                    "${Platform.MANAGEMENT_SERVER_FINGERPRINT_PROPERTY}=${MANAGEMENT_SERVER_FINGERPRINT}\n" +
+                    "${Platform.MANAGEMENT_SERVER_FINGERPRINT_VERSION_PROPERTY}=${currentFingerprintVersion}\n"
             String regeneratedId = Platform.loadOrCreateManagementServerId(
                     propertiesFile,
                     stateFile,
