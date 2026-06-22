@@ -98,6 +98,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testConsoleVncUriIpv6()
         testConsoleProxyListenHostByProxyIpVersion()
         testCoreManagementUrlsIpv6()
+        testApplianceVmAgentUrlsIpv6()
         testKvmAgentUrlsIpv6()
         testRestFacadeIpv6Urls()
         testSshTargetUsesRawIpv6Host()
