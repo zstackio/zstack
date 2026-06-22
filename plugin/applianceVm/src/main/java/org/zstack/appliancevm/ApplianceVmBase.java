@@ -39,6 +39,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.RangeSet.Range;
 import org.zstack.utils.function.Function;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.*;
 
@@ -47,6 +48,8 @@ import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public abstract class ApplianceVmBase extends VmInstanceBase implements ApplianceVm {
+    private static final String AGENT_BASE_URL_FORMAT = "%s://%s:%s";
+
     @Autowired
     private RESTFacade restf;
     
@@ -220,14 +223,9 @@ public abstract class ApplianceVmBase extends VmInstanceBase implements Applianc
     }
 
     public static String buildAgentUrl(String hostname, String subPath, int port) {
-        UriComponentsBuilder ub = UriComponentsBuilder.newInstance();
-        ub.scheme(ApplianceVmGlobalProperty.AGENT_URL_SCHEME);
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
-            ub.host("localhost");
-        } else {
-            ub.host(hostname);
-        }
-        ub.port(port);
+        String agentHost = CoreGlobalProperty.UNIT_TEST_ON ? "localhost" : IPv6NetworkUtils.formatHostForUrl(hostname);
+        String baseUrl = String.format(AGENT_BASE_URL_FORMAT, ApplianceVmGlobalProperty.AGENT_URL_SCHEME, agentHost, port);
+        UriComponentsBuilder ub = UriComponentsBuilder.fromUriString(baseUrl);
         if (!"".equals(ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH)) {
             ub.path(ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH);
         }

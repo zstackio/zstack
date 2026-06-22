@@ -1,9 +1,12 @@
 package org.zstack.test.integration.core
 
 import org.zstack.appliancevm.ApplianceVmConstant
+import org.zstack.appliancevm.ApplianceVmBase
 import org.zstack.appliancevm.ApplianceVmFacadeImpl
+import org.zstack.appliancevm.ApplianceVmGlobalProperty
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
+import org.zstack.core.CoreGlobalProperty
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
@@ -192,6 +195,32 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
         assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
         assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
+    }
+
+    void testApplianceVmAgentUrlsIpv6() {
+        boolean oldUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
+        String oldScheme = ApplianceVmGlobalProperty.AGENT_URL_SCHEME
+        String oldRootPath = ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH
+        try {
+            CoreGlobalProperty.UNIT_TEST_ON = false
+            ApplianceVmGlobalProperty.AGENT_URL_SCHEME = "http"
+            ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH = ""
+
+            assert ApplianceVmBase.buildAgentUrl(IPV6, ApplianceVmConstant.ECHO_PATH, REST_PORT) ==
+                    "http://[2001:db8::1]:8080/appliancevm/echo"
+            assert ApplianceVmBase.buildAgentUrl(IPV4, ApplianceVmConstant.ECHO_PATH, REST_PORT) ==
+                    "http://192.168.1.10:8080/appliancevm/echo"
+            assert ApplianceVmBase.buildAgentUrl("observability.example.com", ApplianceVmConstant.ECHO_PATH, REST_PORT) ==
+                    "http://observability.example.com:8080/appliancevm/echo"
+
+            ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH = "/zstack"
+            assert ApplianceVmBase.buildAgentUrl(IPV6, ApplianceVmConstant.ECHO_PATH, REST_PORT) ==
+                    "http://[2001:db8::1]:8080/zstack/appliancevm/echo"
+        } finally {
+            CoreGlobalProperty.UNIT_TEST_ON = oldUnitTestOn
+            ApplianceVmGlobalProperty.AGENT_URL_SCHEME = oldScheme
+            ApplianceVmGlobalProperty.AGENT_URL_ROOT_PATH = oldRootPath
+        }
     }
 
     void testKvmAgentUrlsIpv6() {
