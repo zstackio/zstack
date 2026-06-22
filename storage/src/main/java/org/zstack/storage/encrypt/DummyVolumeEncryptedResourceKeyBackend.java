@@ -57,11 +57,6 @@ public class DummyVolumeEncryptedResourceKeyBackend implements VolumeEncryptedRe
     }
 
     @Override
-    public boolean checkBackupKeyProviderAttached(String backupUuid) {
-        return false;
-    }
-
-    @Override
     public void copyVolumeKeyToSnapshot(String volumeUuid, String snapshotUuid) {
         logger.debug(String.format("ignore copy volume[uuid:%s] key to snapshot[uuid:%s]", volumeUuid, snapshotUuid));
     }
@@ -89,16 +84,6 @@ public class DummyVolumeEncryptedResourceKeyBackend implements VolumeEncryptedRe
     @Override
     public void copyVolumeKeyToBackup(String volumeUuid, String backupUuid) {
         logger.debug(String.format("ignore copy volume[uuid:%s] key to backup[uuid:%s]", volumeUuid, backupUuid));
-    }
-
-    @Override
-    public void copyBackupKeyToTemporarySnapshotImage(String backupUuid, String imageUuid) {
-        logger.debug(String.format("ignore copy backup[uuid:%s] key to temporary snapshot image[uuid:%s]", backupUuid, imageUuid));
-    }
-
-    @Override
-    public void copyBackupKeyToVolume(String backupUuid, String volumeUuid) {
-        logger.debug(String.format("ignore copy backup[uuid:%s] key to volume[uuid:%s]", backupUuid, volumeUuid));
     }
 
     @Override

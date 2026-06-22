@@ -40,8 +40,6 @@ public interface VolumeEncryptedResourceKeyBackend {
 
     boolean checkTemporarySnapshotImageKeyProviderAttached(String imageUuid);
 
-    boolean checkBackupKeyProviderAttached(String backupUuid);
-
     void copyVolumeKeyToSnapshot(String volumeUuid, String snapshotUuid);
 
     void copySnapshotKeyToVolume(String snapshotUuid, String volumeUuid);
@@ -53,10 +51,6 @@ public interface VolumeEncryptedResourceKeyBackend {
     void copyTemporarySnapshotImageKeyToVolume(String imageUuid, String volumeUuid);
 
     void copyVolumeKeyToBackup(String volumeUuid, String backupUuid);
-
-    void copyBackupKeyToTemporarySnapshotImage(String backupUuid, String imageUuid);
-
-    void copyBackupKeyToVolume(String backupUuid, String volumeUuid);
 
     /**
      * Global default key provider uuid, or null (e.g. NONE / crypto not installed).
