@@ -19,6 +19,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
@@ -37,7 +38,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class ConsoleProxyBase implements ConsoleProxy {
     private static final CLogger logger = Utils.getLogger(ConsoleProxyBase.class);
     static final String ANY_IPV4_ADDRESS = "0.0.0.0";
-    static final String ANY_IPV6_ADDRESS = "::";
+    static final String ANY_IPV6_ADDRESS = IPv6Constants.IPV6_ANY_ADDRESS;
     private ConsoleProxyInventory self;
 
     @Autowired

@@ -29,6 +29,12 @@ public class ConsoleProxyAgentVO {
     private String consoleProxyOverriddenIp;
 
     @Column
+    private String consoleProxyOverriddenIpv4;
+
+    @Column
+    private String consoleProxyOverriddenIpv6;
+
+    @Column
     private Integer consoleProxyPort;
 
     @Column
@@ -83,6 +89,22 @@ public class ConsoleProxyAgentVO {
 
     public void setConsoleProxyOverriddenIp(String consoleProxyOverriddenIp) {
         this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
+    }
+
+    public String getConsoleProxyOverriddenIpv4() {
+        return consoleProxyOverriddenIpv4;
+    }
+
+    public void setConsoleProxyOverriddenIpv4(String consoleProxyOverriddenIpv4) {
+        this.consoleProxyOverriddenIpv4 = consoleProxyOverriddenIpv4;
+    }
+
+    public String getConsoleProxyOverriddenIpv6() {
+        return consoleProxyOverriddenIpv6;
+    }
+
+    public void setConsoleProxyOverriddenIpv6(String consoleProxyOverriddenIpv6) {
+        this.consoleProxyOverriddenIpv6 = consoleProxyOverriddenIpv6;
     }
 
     public Integer getConsoleProxyPort() {

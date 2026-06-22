@@ -14,6 +14,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -66,8 +67,22 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIUpdateConsoleProxyAgentMsg msg) {
         // consoleProxyOverriddenIp default value is 0.0.0.0
-        if (msg.getConsoleProxyOverriddenIp().trim().equals("")) {
+        msg.setConsoleProxyOverriddenIp(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIp()));
+        if (msg.getConsoleProxyOverriddenIp() == null) {
             msg.setConsoleProxyOverriddenIp("0.0.0.0");
         }
+        if (msg.getConsoleProxyOverriddenIp().equals("")) {
+            msg.setConsoleProxyOverriddenIp("0.0.0.0");
+        }
+        msg.setConsoleProxyOverriddenIpv4(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv4()));
+        msg.setConsoleProxyOverriddenIpv6(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv6()));
+    }
+
+    private String normalizeOptionalConsoleProxyHost(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        return IPv6NetworkUtils.stripHostUrlBrackets(host.trim());
     }
 }
