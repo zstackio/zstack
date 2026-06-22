@@ -2,6 +2,7 @@ package org.zstack.core;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.LocaleUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.StringUtils;
@@ -102,13 +103,27 @@ public class Platform {
     private static final String JAVA_TMP_DIR_PROPERTY = "java.io.tmpdir";
     private static final String UNIT_TEST_DATA_DIR_NAME = "zstack-unit-test";
     private static final String MANAGEMENT_SERVER_ID_STATE_FILE_NAME = "management-server-id.properties";
-    private static final String MANAGEMENT_SERVER_FINGERPRINT_VERSION = "1";
+    private static final String MANAGEMENT_SERVER_FINGERPRINT_VERSION = "2";
     private static final String MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM = "sha256:";
-    private static final List<String> MANAGEMENT_SERVER_FINGERPRINT_SOURCE_FILES = Arrays.asList(
-            "/etc/machine-id",
-            "/sys/class/dmi/id/product_uuid",
-            "/sys/class/dmi/id/product_serial",
-            "/sys/class/dmi/id/board_serial"
+    private static final String SUDO_COMMAND = "/usr/bin/sudo";
+    private static final String DMIDECODE_COMMAND = "/usr/sbin/dmidecode";
+    private static final int DMIDECODE_COMMAND_TIMEOUT_SECONDS = 3;
+    private static final int DMI_SOURCE_NAME_INDEX = 0;
+    private static final int DMI_SOURCE_FILE_INDEX = 1;
+    private static final int DMI_SOURCE_COMMAND_ARG_INDEX = 2;
+    private static final String[][] MANAGEMENT_SERVER_FINGERPRINT_DMI_SOURCES = {
+            {"dmi:system-uuid", "/sys/class/dmi/id/product_uuid", "system-uuid"},
+            {"dmi:system-serial-number", "/sys/class/dmi/id/product_serial", "system-serial-number"},
+            {"dmi:baseboard-serial-number", "/sys/class/dmi/id/board_serial", "baseboard-serial-number"}
+    };
+    private static final List<String> UNUSABLE_MACHINE_IDENTITIES = Arrays.asList(
+            "none",
+            "unknown",
+            "not specified",
+            "to be filled by o.e.m.",
+            "to be filled by oem",
+            "default string",
+            "system serial number"
     );
     private static final String ZSTACK_UUID_PATTERN = "[0-9a-fA-F]{32}";
     private static EncryptRSA rsa = new EncryptRSA();
@@ -845,15 +860,18 @@ public class Platform {
 
     private static String getManagementServerFingerprint() {
         List<String> identities = new ArrayList<>();
-        for (String path : MANAGEMENT_SERVER_FINGERPRINT_SOURCE_FILES) {
-            String identity = readMachineIdentity(path);
+        for (String[] source : MANAGEMENT_SERVER_FINGERPRINT_DMI_SOURCES) {
+            String identity = readMachineIdentity(source[DMI_SOURCE_FILE_INDEX]);
+            if (identity == null) {
+                identity = readDmiMachineIdentity(source[DMI_SOURCE_COMMAND_ARG_INDEX]);
+            }
             if (identity != null) {
-                identities.add(String.format("%s=%s", path, identity));
+                identities.add(String.format("%s=%s", source[DMI_SOURCE_NAME_INDEX], identity));
             }
         }
 
         if (identities.isEmpty()) {
-            logger.warn("cannot calculate management server fingerprint because no stable machine identity source is available");
+            logger.warn("cannot calculate management server fingerprint because no stable DMI identity source is available");
             return null;
         }
 
@@ -867,12 +885,65 @@ public class Platform {
         }
 
         try {
-            String identity = FileUtils.readFileToString(file).trim().toLowerCase();
-            return isUsableMachineIdentity(identity) ? identity : null;
+            return normalizeMachineIdentity(FileUtils.readFileToString(file));
         } catch (IOException e) {
             logger.warn(String.format("unable to read machine identity file[%s], skip it", path), e);
             return null;
         }
+    }
+
+    private static String readDmiMachineIdentity(String dmiString) {
+        File dmidecode = new File(DMIDECODE_COMMAND);
+        File sudo = new File(SUDO_COMMAND);
+        if (!dmidecode.isFile() || !sudo.isFile() || !sudo.canExecute()) {
+            return null;
+        }
+
+        Process process = null;
+        try {
+            process = new ProcessBuilder(SUDO_COMMAND, "-n", DMIDECODE_COMMAND, "-s", dmiString).start();
+            if (!process.waitFor(DMIDECODE_COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                logger.warn(String.format("unable to read DMI machine identity[%s] before timeout, skip it", dmiString));
+                return null;
+            }
+
+            String output = IOUtils.toString(process.getInputStream(), "UTF-8");
+            String error = IOUtils.toString(process.getErrorStream(), "UTF-8");
+            if (process.exitValue() != 0) {
+                logger.debug(String.format("unable to read DMI machine identity[%s], exit code[%s], output[%s], error[%s], skip it",
+                        dmiString, process.exitValue(), output.trim(), error.trim()));
+                return null;
+            }
+
+            return normalizeMachineIdentity(output);
+        } catch (IOException e) {
+            logger.debug(String.format("unable to read DMI machine identity[%s], skip it", dmiString), e);
+            return null;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            logger.warn(String.format("interrupted when reading DMI machine identity[%s], skip it", dmiString), e);
+            return null;
+        } finally {
+            if (process != null && process.isAlive()) {
+                process.destroyForcibly();
+            }
+        }
+    }
+
+    private static String normalizeMachineIdentity(String output) {
+        if (StringUtils.isBlank(output)) {
+            return null;
+        }
+
+        for (String line : StringUtils.split(output, "\r\n")) {
+            String identity = line.trim().toLowerCase();
+            if (isUsableMachineIdentity(identity)) {
+                return identity;
+            }
+        }
+
+        return null;
     }
 
     private static boolean isUsableMachineIdentity(String identity) {
@@ -880,7 +951,11 @@ public class Platform {
             return false;
         }
 
-        String normalized = identity.replace("-", "");
+        if (UNUSABLE_MACHINE_IDENTITIES.contains(identity)) {
+            return false;
+        }
+
+        String normalized = StringUtils.deleteWhitespace(identity).replace("-", "").replace(":", "");
         return !StringUtils.containsOnly(normalized, "0") && !StringUtils.containsOnly(normalized, "f");
     }
 
