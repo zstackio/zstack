@@ -895,7 +895,7 @@ public class Platform {
     private static String readDmiMachineIdentity(String dmiString) {
         File dmidecode = new File(DMIDECODE_COMMAND);
         File sudo = new File(SUDO_COMMAND);
-        if (!dmidecode.isFile() || !dmidecode.canExecute() || !sudo.isFile() || !sudo.canExecute()) {
+        if (!dmidecode.isFile() || !sudo.isFile() || !sudo.canExecute()) {
             return null;
         }
 
