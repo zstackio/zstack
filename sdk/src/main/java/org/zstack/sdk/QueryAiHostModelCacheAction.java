@@ -17,10 +17,10 @@ public class QueryAiHostModelCacheAction extends QueryAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -33,9 +33,9 @@ public class QueryAiHostModelCacheAction extends QueryAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.QueryAiHostModelCacheResult value = res.getResult(org.zstack.sdk.QueryAiHostModelCacheResult.class);
-        ret.value = value == null ? new org.zstack.sdk.QueryAiHostModelCacheResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.QueryAiHostModelCacheResult() : value; 
 
         return ret;
     }

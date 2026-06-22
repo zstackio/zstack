@@ -17,10 +17,10 @@ public class RefreshAiHostModelCacheAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -53,9 +53,9 @@ public class RefreshAiHostModelCacheAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.RefreshAiHostModelCacheResult value = res.getResult(org.zstack.sdk.RefreshAiHostModelCacheResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshAiHostModelCacheResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.RefreshAiHostModelCacheResult() : value; 
 
         return ret;
     }
