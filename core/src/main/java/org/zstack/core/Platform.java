@@ -1121,7 +1121,7 @@ public class Platform {
         return getManagementServerIpOnManagementInterface(IPv6Constants.IPv6);
     }
 
-    private static String getManagementServerIp4() {
+    public static String getManagementServerIp4() {
         String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
         if (ip != null) {
             return ip;

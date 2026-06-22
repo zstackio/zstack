@@ -117,7 +117,9 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                         CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV4,
                         CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV6,
                         CoreGlobalProperty.UNIT_TEST_ON,
-                        Platform.getManagementServerIp());
+                        Platform.getManagementServerIp(),
+                        Platform.getManagementServerIp4(),
+                        Platform.getManagementServerIp6());
                 if (ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND.equals(bkd.getConsoleBackendType()) && consoleProxyHostname == null) {
                     evt.setError(operr(ORG_ZSTACK_CONSOLE_10014, "cannot select a console proxy address for client IP[%s]. Configure a console proxy address that supports the client IP version, or access from a supported IP version", msg.getClientIp()));
                     evt.setSuccess(false);
@@ -164,16 +166,20 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
     }
 
     static String selectConsoleProxyHostname(String clientIp, String overriddenIp, String overriddenIpv4, String overriddenIpv6,
-                                            boolean unitTestOn, String managementServerIp) {
+                                            boolean unitTestOn, String managementServerIp, String managementServerIp4,
+                                            String managementServerIp6) {
         int clientIpVersion = getIpVersion(clientIp);
         if (clientIpVersion == IPv6Constants.NONE) {
-            return selectConsoleProxyHostname(overriddenIp, unitTestOn, managementServerIp);
+            clientIpVersion = getIpVersion(managementServerIp);
+            if (clientIpVersion == IPv6Constants.NONE) {
+                return selectConsoleProxyHostname(overriddenIp, unitTestOn, managementServerIp);
+            }
         }
 
         String fallbackHostname = unitTestOn ? UNIT_TEST_CONSOLE_PROXY_HOST : managementServerIp;
         String[] candidateHosts = clientIpVersion == IPv6Constants.IPv4 ?
-                new String[]{overriddenIpv4, overriddenIp, fallbackHostname} :
-                new String[]{overriddenIpv6, overriddenIp, fallbackHostname};
+                new String[]{overriddenIpv4, overriddenIp, managementServerIp4, fallbackHostname} :
+                new String[]{overriddenIpv6, overriddenIp, managementServerIp6, fallbackHostname};
 
         // Prefer family-specific override, then legacy override, then MN IP.
         for (String host : candidateHosts) {

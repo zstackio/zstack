@@ -135,19 +135,23 @@ class ConsoleProxyCase extends SubCase {
 
     void testSelectConsoleProxyByClientIpVersion() {
         def selectConsoleProxyHostname = ConsoleManagerImpl.class.getDeclaredMethod("selectConsoleProxyHostname",
-                String.class, String.class, String.class, String.class, Boolean.TYPE, String.class)
+                String.class, String.class, String.class, String.class, Boolean.TYPE, String.class, String.class, String.class)
         selectConsoleProxyHostname.accessible = true
 
         assert selectConsoleProxyHostname.invoke(null, "172.24.1.8", "0.0.0.0",
-                "172.24.1.10", "2001:db8::100", false, "10.0.0.1") == "172.24.1.10"
+                "172.24.1.10", "2001:db8::100", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "172.24.1.10"
         assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "0.0.0.0",
-                "172.24.1.10", "2001:db8::100", false, "10.0.0.1") == "[2001:db8::100]"
+                "172.24.1.10", "2001:db8::100", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "[2001:db8::100]"
         assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "0.0.0.0",
-                "172.24.1.10", "", false, "10.0.0.1") == null
+                "172.24.1.10", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "[2001:db8::2]"
+        assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "172.24.1.10",
+                "", "", false, "172.24.1.1", "172.24.1.2", "2001:db8::2") == "[2001:db8::2]"
+        assert selectConsoleProxyHostname.invoke(null, "Unknown", "172.24.1.10",
+                "", "", false, "2001:db8::1", "172.24.1.2", "2001:db8::2") == "[2001:db8::2]"
         assert selectConsoleProxyHostname.invoke(null, "172.24.1.8", "2001:db8::100",
-                "", "", false, "10.0.0.1") == "10.0.0.1"
+                "", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "10.0.0.2"
         assert selectConsoleProxyHostname.invoke(null, "2001:db8::8", "console.example.com",
-                "", "", false, "10.0.0.1") == "console.example.com"
+                "", "", false, "10.0.0.1", "10.0.0.2", "2001:db8::2") == "console.example.com"
     }
 
     void testConsoleProxyGC() {
