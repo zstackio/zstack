@@ -66,6 +66,24 @@ doc {
 					optional true
 					since "4.1.0"
 				}
+				column {
+					name "consoleProxyOverriddenIpv4"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.16"
+				}
+				column {
+					name "consoleProxyOverriddenIpv6"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.16"
+				}
 			}
         }
 
