@@ -15,7 +15,7 @@ public class ProgressGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig PROGRESS_ON = new GlobalConfig(CATEGORY, "progress.on");
     @GlobalConfigValidation(numberGreaterThan = 0)
-    public static GlobalConfig PROGRESS_TTL = new GlobalConfig(CATEGORY, "progress.ttl");
+    public static GlobalConfig PROGRESS_TTL_SECONDS = new GlobalConfig(CATEGORY, "progress.ttl");
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig CLEANUP_THREAD_INTERVAL = new GlobalConfig(CATEGORY, "progress.cleanupThreadInterval");
 }
