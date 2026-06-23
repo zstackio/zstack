@@ -12,6 +12,7 @@ import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
 import org.zstack.core.rest.RESTFacadeImpl
+import org.zstack.core.search.SearchBackendConstant
 import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
 import org.zstack.kvm.KVMConsoleHypervisorBackend
@@ -125,6 +126,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testKvmExtraIpCidrSelection()
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
+        testZsha2SearchBackendSelection()
     }
 
     void testSelectManagementServerIpDualStackPolicy() {
@@ -300,6 +302,11 @@ class ManagementNetworkIpv6Case extends SubCase {
     void testJGroupsInitialHostsIpv4Regression() {
         assert Platform.formatJGroupsInitialHosts(IPV4, "192.168.1.11", JGROUP_PORT) ==
                 "192.168.1.10[7805],192.168.1.11[7805]"
+    }
+
+    void testZsha2SearchBackendSelection() {
+        assert Platform.selectHibernateSearchBackend(false) == SearchBackendConstant.JGROUPS_BACKEND
+        assert Platform.selectHibernateSearchBackend(true) == SearchBackendConstant.ZSTACK_ZSHA2_JGROUPS_BACKEND
     }
 
     void testIpv6NetworkCidr() {
