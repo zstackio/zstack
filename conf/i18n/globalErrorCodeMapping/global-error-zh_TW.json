@@ -2961,6 +2961,7 @@
   "ORG_ZSTACK_CRYPTO_AUTH_10019": "从數据库獲取完整性密碼失敗，因为 [%s] 未生成完整性密碼",
   "ORG_ZSTACK_VHOST_KVM_10000": "vhostuser磁碟仅支持virtio模式，請检查镜像平台是否包含virtio驱動程序",
   "ORG_ZSTACK_VHOST_KVM_10001": "vhost-user磁碟不支持virtio-scsi模式，請關閉virtio-scsi模式",
+  "ORG_ZSTACK_VHOST_KVM_10002": "無法在線掛載vhost資料磁碟：該執行中雲主機未啟用共享記憶體。兩種方式：1) 關機後再掛載；2) 將全域配置 generate.config.vhost.required 設為 auto 或 true 後重啟該雲主機（會停用該雲主機的記憶體超分配）",
   "ORG_ZSTACK_NETWORK_L3_10029": "%s 不是一個有效的IPv6地址",
   "ORG_ZSTACK_USBDEVICE_10005": "PassThrough 只支持在運行中的主機 VM 上使用",
   "ORG_ZSTACK_ALIYUN_ECS_10019": "只有管理員可以将參數 [onlyZstack] 設置为 false",
