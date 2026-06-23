@@ -22,6 +22,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.errorcode.GlobalErrorCodeI18nService;
 import org.zstack.core.propertyvalidator.ValidatorTool;
 import org.zstack.core.search.SearchGlobalProperty;
+import org.zstack.core.search.SearchBackendConstant;
 import org.zstack.core.statemachine.StateMachine;
 import org.zstack.core.statemachine.StateMachineImpl;
 import org.zstack.core.thread.ThreadFacade;
@@ -482,7 +483,9 @@ public class Platform {
             }
         }
 
-        if (ZSha2Helper.isMNHaEnvironment()) {
+        boolean mnHaEnvironment = ZSha2Helper.isMNHaEnvironment();
+        String searchBackend = SearchBackendConstant.JGROUPS_BACKEND;
+        if (mnHaEnvironment) {
             // jgroup configuration is required in multi node environment
             // if failed to get zsha2 info, this method thrown exception to stop management node from startup
             // so there is no need to handle exceptions
@@ -497,7 +500,7 @@ public class Platform {
                     info.getNodeip(), info.getPeerip(), Integer.parseInt(SearchGlobalProperty.JGroupInfinispanPort));
             SearchGlobalProperty.JGroupBackendInitialHosts = formatJGroupsInitialHosts(
                     info.getNodeip(), info.getPeerip(), Integer.parseInt(SearchGlobalProperty.JGroupBackendPort));
-            if (getGlobalProperty("JGroup.TcppingInitialHosts") == null) {
+            if (getGlobalProperty("JGroup.InfinispanInitialHosts") == null) {
                 System.setProperty("JGroup.InfinispanInitialHosts", SearchGlobalProperty.JGroupInfinispanInitialHosts);
                 logger.debug(String.format("default JGroup.InfinispanInitialHosts to JGroup.InfinispanInitialHosts [%s]", SearchGlobalProperty.JGroupInfinispanInitialHosts));
             }
@@ -505,25 +508,39 @@ public class Platform {
                 System.setProperty("JGroup.BackendInitialHosts", SearchGlobalProperty.JGroupBackendInitialHosts);
                 logger.debug(String.format("default JGroup.BackendInitialHosts to JGroup.BackendInitialHosts [%s]", SearchGlobalProperty.JGroupBackendInitialHosts));
             }
+            searchBackend = selectHibernateSearchBackend(true);
         }
         if (getGlobalProperty("JGroup.Address") == null) {
             String serverIp = getCanonicalServerIp();
             System.setProperty("JGroup.Address", serverIp);
             logger.debug(String.format("default JGroup.Address to JGroup.Address [%s]", serverIp));
         }
-        if (ZSha2Helper.isMNHaEnvironment()) {
+        if (mnHaEnvironment) {
             SearchGlobalProperty.JGroupFlushBypass = "false";
             SearchGlobalProperty.JGroupJoinTimeout = "5000";
         } else {
             SearchGlobalProperty.ExclusiveIndexUse = "true";
         }
 
+        if (mnHaEnvironment || getGlobalProperty(SearchBackendConstant.SEARCH_BACKEND_PROPERTY) == null) {
+            System.setProperty(SearchBackendConstant.SEARCH_BACKEND_PROPERTY, searchBackend);
+            logger.debug(String.format("default %s to %s [%s]", SearchBackendConstant.SEARCH_BACKEND_PROPERTY,
+                    SearchBackendConstant.SEARCH_BACKEND_PROPERTY, searchBackend));
+        }
         System.setProperty("Exclusive.indexUse", SearchGlobalProperty.ExclusiveIndexUse);
         System.setProperty("JGroup.FlushBypass", SearchGlobalProperty.JGroupFlushBypass);
         System.setProperty("JGroup.JoinTimeout", SearchGlobalProperty.JGroupJoinTimeout);
         logger.debug(String.format("default Exclusive.indexUse to Exclusive.indexUse [%s]", SearchGlobalProperty.ExclusiveIndexUse));
         logger.debug(String.format("default JGroup.FlushBypass to JGroup.FlushBypass [%s]", SearchGlobalProperty.JGroupFlushBypass));
         logger.debug(String.format("default JGroup.JoinTimeout to JGroup.JoinTimeout [%s]", SearchGlobalProperty.JGroupJoinTimeout));
+    }
+
+    public static String selectHibernateSearchBackend(boolean mnHaEnvironment) {
+        if (!mnHaEnvironment) {
+            return SearchBackendConstant.JGROUPS_BACKEND;
+        }
+
+        return SearchBackendConstant.ZSTACK_ZSHA2_JGROUPS_BACKEND;
     }
 
     static {
