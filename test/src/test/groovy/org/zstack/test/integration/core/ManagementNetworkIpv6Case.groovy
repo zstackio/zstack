@@ -126,6 +126,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testKvmExtraIpCidrSelection()
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
+        testZsha2SearchBackendSelection()
     }
 
     void testSelectManagementServerIpDualStackPolicy() {
