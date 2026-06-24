@@ -32,5 +32,19 @@ class CheckSchemaUpgradeCase extends SubCase {
 
     @Override
     void test() {
+        testLoadBalancerListenerDataPlaneUpgradeSchema()
+    }
+
+    void testLoadBalancerListenerDataPlaneUpgradeSchema() {
+        String upgradeSchemaDir = Paths.get("../conf/db/upgrade").toAbsolutePath().normalize().toString()
+        File schema = new File(upgradeSchemaDir + "/V5.5.31__schema.sql")
+        assert schema.exists()
+
+        String sql = schema.text
+        assert sql.contains("CALL ADD_COLUMN('LoadBalancerListenerVO', 'data_plane', 'VARCHAR(32)', 1, NULL)")
+        assert sql.contains("CALL ADD_COLUMN('LoadBalancerListenerVO', 'forward_mode', 'VARCHAR(32)', 1, NULL)")
+        assert sql.contains("WHERE protocol = 'udp' AND data_plane IS NULL")
+        assert sql.contains("SET data_plane = 'haproxy'")
+        assert sql.contains("WHERE data_plane IS NULL")
     }
 }

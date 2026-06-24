@@ -111,6 +111,13 @@ public class LoadBalancerConstants {
     public static final int PROTOCOL_HTTP_DEFAULT_PORT = 80;
     public static final int PROTOCOL_HTTPS_DEFAULT_PORT = 443;
 
+    public static final String DATA_PLANE_HAPROXY = "haproxy";
+    public static final String DATA_PLANE_IPVS = "ipvs";
+
+    public static final String FORWARD_MODE_FULL_NAT = "full_nat";
+    public static final String FORWARD_MODE_NAT = "nat";
+    public static final String FORWARD_MODE_DR = "dr";
+
     public static final int DNS_PORT = 53;
     public static final int SSH_PORT = 22;
     public static final int ZVR_PORT = 7272;

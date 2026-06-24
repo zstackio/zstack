@@ -38,6 +38,8 @@ public class LoadBalancerListenerInventory implements Serializable {
     private Integer loadBalancerPort;
     private String securityPolicyType;
     private String protocol;
+    private String dataPlane;
+    private String forwardMode;
     private String serverGroupUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -55,6 +57,11 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setInstancePort(vo.getInstancePort());
         inv.setLoadBalancerPort(vo.getLoadBalancerPort());
         inv.setProtocol(vo.getProtocol());
+        if (LoadBalancerConstants.LB_PROTOCOL_TCP.equals(vo.getProtocol()) &&
+                LoadBalancerConstants.DATA_PLANE_IPVS.equals(vo.getDataPlane())) {
+            inv.setDataPlane(vo.getDataPlane());
+            inv.setForwardMode(vo.getForwardMode());
+        }
         inv.setSecurityPolicyType(vo.getSecurityPolicyType());
         inv.setName(vo.getName());
         inv.setDescription(vo.getDescription());
@@ -162,6 +169,22 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getDataPlane() {
+        return dataPlane;
+    }
+
+    public void setDataPlane(String dataPlane) {
+        this.dataPlane = dataPlane;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public String getSecurityPolicyType() {

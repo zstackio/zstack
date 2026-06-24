@@ -787,6 +787,38 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
+        if (msg.getDataPlane() == null) {
+            msg.setDataPlane(LoadBalancerConstants.DATA_PLANE_HAPROXY);
+        }
+
+        if (LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane())) {
+            if (!LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "data plane [%s] only supports tcp listener", msg.getDataPlane()));
+            }
+
+            if (msg.getForwardMode() == null) {
+                msg.setForwardMode(LoadBalancerConstants.FORWARD_MODE_FULL_NAT);
+            }
+
+            if (!LoadBalancerConstants.FORWARD_MODE_FULL_NAT.equals(msg.getForwardMode())) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "TCP IPVS only supports forwardMode[%s] in current version, but got [%s]",
+                                LoadBalancerConstants.FORWARD_MODE_FULL_NAT, msg.getForwardMode()));
+            }
+
+        } else {
+            if (!LoadBalancerConstants.DATA_PLANE_HAPROXY.equals(msg.getDataPlane())) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "invalid dataPlane[%s], valid dataPlanes are [haproxy, ipvs]", msg.getDataPlane()));
+            }
+
+            if (msg.getForwardMode() != null) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "forwardMode is only supported when dataPlane is ipvs"));
+            }
+        }
+
         List<String> healthCheckTargets = getSystemTagTokens(msg, LoadBalancerSystemTags.HEALTH_TARGET,
                 LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
         if (healthCheckTargets.size() > 1) {
