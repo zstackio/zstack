@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.agents.zcenter.accounts.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetLoginProceduresAction extends AbstractAction {
+public class CreateSessionForZCenterAccountAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetLoginProceduresAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.GetLoginProceduresResult value;
+        public org.zstack.sdk.agents.zcenter.accounts.api.CreateSessionForZCenterAccountResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,11 +25,11 @@ public class GetLoginProceduresAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String username;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountUuid;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String loginType;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String accountName;
 
     @Param(required = false, validValues = {"Local","OpenLdap","WindowsAD","CAS","OAuth2","ZCenter"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String source;
@@ -40,11 +40,23 @@ public class GetLoginProceduresAction extends AbstractAction {
     @Param(required = false)
     public java.util.List userTags;
 
-    @NonAPIParam
-    public boolean isSuppressCredentialCheck = true;
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
 
     @Param(required = false)
     public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
 
 
     private Result makeResult(ApiResult res) {
@@ -54,8 +66,8 @@ public class GetLoginProceduresAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.GetLoginProceduresResult value = res.getResult(org.zstack.sdk.GetLoginProceduresResult.class);
-        ret.value = value == null ? new org.zstack.sdk.GetLoginProceduresResult() : value; 
+        org.zstack.sdk.agents.zcenter.accounts.api.CreateSessionForZCenterAccountResult value = res.getResult(org.zstack.sdk.agents.zcenter.accounts.api.CreateSessionForZCenterAccountResult.class);
+        ret.value = value == null ? new org.zstack.sdk.agents.zcenter.accounts.api.CreateSessionForZCenterAccountResult() : value; 
 
         return ret;
     }
@@ -84,11 +96,11 @@ public class GetLoginProceduresAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/login/procedures";
-        info.needSession = false;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.httpMethod = "POST";
+        info.path = "/zcenter/accounts/sessions";
+        info.needSession = true;
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 
