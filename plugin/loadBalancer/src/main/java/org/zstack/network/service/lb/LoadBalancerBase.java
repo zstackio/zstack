@@ -1836,6 +1836,8 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setDataPlane(msg.getDataPlane());
+        vo.setForwardMode(LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane()) ? msg.getForwardMode() : null);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo = dbf.persistAndRefresh(vo);

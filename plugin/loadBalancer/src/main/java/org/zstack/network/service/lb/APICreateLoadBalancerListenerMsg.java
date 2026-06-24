@@ -53,6 +53,10 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private List<String> aclUuids;
     @APIParam(validValues = {"white","black"}, required = false)
     private String aclType = LoadBalancerAclType.black.toString();
+    @APIParam(validValues = {LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.DATA_PLANE_IPVS}, required = false)
+    private String dataPlane;
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT}, required = false)
+    private String forwardMode;
     @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
@@ -178,6 +182,22 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setAclType(String aclType) {
         this.aclType = aclType;
+    }
+
+    public String getDataPlane() {
+        return dataPlane;
+    }
+
+    public void setDataPlane(String dataPlane) {
+        this.dataPlane = dataPlane;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public String getSecurityPolicyType() {
