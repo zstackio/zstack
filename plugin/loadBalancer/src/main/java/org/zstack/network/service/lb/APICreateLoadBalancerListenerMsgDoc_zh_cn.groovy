@@ -225,6 +225,26 @@ doc {
 					optional true
 					since "5.0.0"
 				}
+				column {
+					name "dataPlane"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+					values ("haproxy","ipvs")
+				}
+				column {
+					name "forwardMode"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+					values ("full_nat")
+				}
 			}
         }
 

@@ -267,6 +267,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         int instancePort;
         int loadBalancerPort;
         String mode;
+        String dataPlane;
+        String forwardMode;
         List<String> parameters;
         String certificateUuid;
         String securityPolicyType;
@@ -460,6 +462,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setMode(String mode) {
             this.mode = mode;
+        }
+
+        public String getDataPlane() {
+            return dataPlane;
+        }
+
+        public void setDataPlane(String dataPlane) {
+            this.dataPlane = dataPlane;
+        }
+
+        public String getForwardMode() {
+            return forwardMode;
+        }
+
+        public void setForwardMode(String forwardMode) {
+            this.forwardMode = forwardMode;
         }
 
         public String getCertificateUuid() {
@@ -898,6 +916,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setLbUuid(l.getLoadBalancerUuid());
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
+                to.setDataPlane(l.getDataPlane());
+                to.setForwardMode(l.getForwardMode());
                 if (vip != null) {
                     to.setVip(vip.getIp());
                 }

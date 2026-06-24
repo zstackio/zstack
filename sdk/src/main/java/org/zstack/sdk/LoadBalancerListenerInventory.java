@@ -68,6 +68,22 @@ public class LoadBalancerListenerInventory  {
         return this.protocol;
     }
 
+    public java.lang.String dataPlane;
+    public void setDataPlane(java.lang.String dataPlane) {
+        this.dataPlane = dataPlane;
+    }
+    public java.lang.String getDataPlane() {
+        return this.dataPlane;
+    }
+
+    public java.lang.String forwardMode;
+    public void setForwardMode(java.lang.String forwardMode) {
+        this.forwardMode = forwardMode;
+    }
+    public java.lang.String getForwardMode() {
+        return this.forwardMode;
+    }
+
     public java.lang.String serverGroupUuid;
     public void setServerGroupUuid(java.lang.String serverGroupUuid) {
         this.serverGroupUuid = serverGroupUuid;

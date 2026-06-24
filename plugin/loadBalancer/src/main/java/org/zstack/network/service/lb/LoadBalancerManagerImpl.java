@@ -740,8 +740,11 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                         .eq(LoadBalancerListenerVO_.uuid, resourceUuid)
                         .find();
                 if (listener != null) {
+                    boolean isTcpIpvsListener = LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol()) &&
+                            LoadBalancerConstants.DATA_PLANE_IPVS.equals(listener.getDataPlane());
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(protocol) &&
-                            !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol())) {
+                            !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol()) &&
+                            !isTcpIpvsListener) {
                         throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10014, "invalid health target[%s], health check protocol none is only supported by udp listener", systemTag));
                     }
                 }
