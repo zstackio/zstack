@@ -480,6 +480,12 @@ public class VolumeEncryptedSecretHelper {
         if (StringUtils.equals(destSecretUuid, sourceSecretUuid)) {
             return destSecretUuid;
         }
+        if (StringUtils.isNotBlank(destSecretUuid)) {
+            logger.info(String.format(
+                    "replace stale migration LUKS secret on destination host[uuid:%s], vm[uuid:%s], volume[uuid:%s], keyVersion[%s], staleSecretUuid:%s, sourceSecretUuid:%s",
+                    dstHostUuid, vmUuid, volUuid, keyVersion, destSecretUuid, sourceSecretUuid));
+            deleteSecretOnHostBestEffort(dstHostUuid, vmUuid, volUuid, keyVersion);
+        }
 
         String kpUuid = volumeEncryptedResourceKeyBackend.findKeyProviderUuidByVolume(volUuid);
         return defineSecretFromBinding(dstHostUuid, vmUuid, volUuid, kpUuid, sourceSecretUuid);
