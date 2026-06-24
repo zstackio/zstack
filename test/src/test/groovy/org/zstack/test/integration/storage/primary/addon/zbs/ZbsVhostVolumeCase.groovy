@@ -51,8 +51,8 @@ import java.util.concurrent.atomic.AtomicReference
  *  - protocol assignment: PS defaultOutputProtocol=Vhost propagates to volumes
  *  - delete path: getActiveClients(Vhost) reached through volume trash/expunge
  *  - full VM-start chain: createVm(Vhost root) -> activate(Vhost) over
- *    VHOST_ACTIVATE_PATH -> getActivePath(Vhost) -> StartVmCmd with a vhost-user-blk
- *    root volume (deviceType=vhost, installPath=the SPDK unix socket)
+ *    CREATE_VHOST_BDEV_PATH (zbs PS agent) -> getActivePath(Vhost) -> StartVmCmd with a
+ *    vhost-user-blk root volume (deviceType=vhost, installPath=the SPDK unix socket)
  *
  * Regression guard for gaps that escaped to the real environment: a missing Vhost
  * branch in getActiveClients ("not supported protocol[Vhost] for active") and the
@@ -424,8 +424,8 @@ class ZbsVhostVolumeCase extends SubCase {
 
     // full VM-start chain. a Vhost root volume forces the framework to activate the
     // volume on the host before boot, routing through ZbsStorageController:
-    //   activate(Vhost) -> KVMHostAsyncHttpCallMsg(VHOST_ACTIVATE_PATH) -> socketPath
-    //   getActivePath(Vhost) -> VHOST_SOCKET_DIR/<controllerName>
+    //   activate(Vhost) -> httpCall(CREATE_VHOST_BDEV_PATH) on the zbs PS agent -> socketPath
+    //   getActivePath(Vhost) -> VHOST_SOCKET_DIR/<bdevName>
     // and landing a vhost-user-blk disk in StartVmCmd. this path only ran end-to-end
     // on a live host before; the unit case keeps it covered.
     void testVhostVmStartActivationChain() {
@@ -445,6 +445,12 @@ class ZbsVhostVolumeCase extends SubCase {
             return rsp
         }
 
+        // host-connect/attach ensures the SPDK target via the zbs PS agent; register the
+        // simulator before attach so deploy-on-attach is exercised, not a tolerated 404.
+        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.AgentResponse()
+        }
+
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
@@ -455,30 +461,32 @@ class ZbsVhostVolumeCase extends SubCase {
             b.reply(msg, new UploadImageToRemoteTargetReply())
         }
 
-        // the activate request the controller sends to the host SPDK target plugin.
-        // mirror the agent: socketPath = socketDir/controllerName, so it matches
-        // getActivePath(Vhost) = buildVhostSocketPath(installPath).
-        env.simulator(ZbsStorageController.VHOST_ACTIVATE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.VhostActivateCmd.class)
-            assert cmd.controllerName != null && cmd.controllerName.startsWith(ZbsConstants.VHOST_CONTROLLER_NAME_PREFIX) : \
-                    "activate cmd controllerName malformed: ${cmd.controllerName}"
-            assert cmd.socketDir == ZbsConstants.VHOST_SOCKET_DIR : \
-                    "activate cmd socketDir expected=${ZbsConstants.VHOST_SOCKET_DIR} actual=${cmd.socketDir}"
-            // auto-deploy params: the agent lazily ensures the SPDK target from these.
-            // cores left null lets the agent compute them; coreCount carries the default.
-            assert cmd.image != null : "activate cmd missing target image for lazy deploy"
-            assert cmd.coreCount != null && cmd.coreCount > 0 : \
-                    "activate cmd missing coreCount for agent-computed cores: ${cmd.coreCount}"
+        // activate(Vhost) now creates the bdev through the zbs PS agent, which SSHes to the
+        // compute host via zbsadm. mirror the agent: the socket is named after the bdev under
+        // VHOST_SOCKET_DIR, matching getActivePath(Vhost) = buildVhostSocketPath(installPath).
+        env.simulator(ZbsStorageController.CREATE_VHOST_BDEV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVhostBdevCmd.class)
+            assert cmd.bdevName != null && cmd.bdevName.startsWith(ZbsConstants.VHOST_BDEV_NAME_PREFIX) : \
+                    "create-bdev cmd bdevName malformed: ${cmd.bdevName}"
+            // zbsadm SSHes to the compute host, so the cmd must carry its IP + SSH creds
+            assert cmd.hostIp != null : "create-bdev cmd missing target host IP for zbsadm SSH"
+            assert cmd.sshPassword != null : "create-bdev cmd missing host SSH password"
+            // zbsadm create-bdev opens <logicalPool>/<volume>; the controller splits the zbs
+            // install path so the physical pool is not needed (no MDS round-trip on activate)
+            assert cmd.logicalPool == "lpool1" : \
+                    "create-bdev cmd logicalPool expected=lpool1 actual=${cmd.logicalPool}"
+            assert cmd.volume != null && !cmd.volume.isEmpty() : \
+                    "create-bdev cmd missing volume name: ${cmd.volume}"
             activateCalled.set(true)
-            def rsp = new ZbsStorageController.VhostActivateRsp()
-            rsp.socketPath = cmd.socketDir + "/" + cmd.controllerName
+            def rsp = new ZbsStorageController.CreateVhostBdevRsp()
+            rsp.socketPath = ZbsConstants.VHOST_SOCKET_DIR + "/" + cmd.bdevName
             return rsp
         }
 
-        // vm destroy deactivates the vhost volume on the host; without a handler the
-        // 404 makes the destroy teardown flaky
-        env.simulator(ZbsStorageController.VHOST_DEACTIVATE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            return new ZbsStorageController.VhostActivateRsp()
+        // vm destroy deactivates the vhost volume (delete-bdev via the zbs PS agent);
+        // without a handler the 404 makes the destroy teardown flaky
+        env.simulator(ZbsStorageController.DELETE_VHOST_BDEV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.AgentResponse()
         }
 
         // end of the chain: the VM boots with a vhost-user-blk root disk whose path is
@@ -505,7 +513,7 @@ class ZbsVhostVolumeCase extends SubCase {
         assert vm.state == VmInstanceState.Running.toString() : \
                 "vhost VM did not reach Running: state=${vm.state}"
         assert activateCalled.get() : \
-                "activate(Vhost) over VHOST_ACTIVATE_PATH was never invoked during VM start"
+                "activate(Vhost) over CREATE_VHOST_BDEV_PATH was never invoked during VM start"
         assert startedWithVhostRoot.get() : \
                 "StartVmCmd was not built with a vhost-user-blk root volume"
 
@@ -532,8 +540,8 @@ class ZbsVhostVolumeCase extends SubCase {
     }
 
     // adding an output protocol on a PS with connected hosts must prepare every
-    // host for the protocol (Vhost -> deploy the SPDK target over
-    // VHOST_TARGET_ENSURE_PATH) and record per-protocol connectivity rows that the
+    // host for the protocol (Vhost -> deploy the SPDK target via the zbs PS agent
+    // over DEPLOY_VHOST_PATH) and record per-protocol connectivity rows that the
     // frontend reads through QueryExternalPrimaryStorageHostProtocolRef. the
     // host-level ref row keeps the legacy folded all-protocol semantics.
     void testAddProtocolPreparesHostsAndRecordsProtocolRefs() {
@@ -542,15 +550,15 @@ class ZbsVhostVolumeCase extends SubCase {
         AtomicBoolean ensureCalled = new AtomicBoolean(false)
         AtomicBoolean vhostTargetHealthy = new AtomicBoolean(true)
 
-        env.simulator(ZbsStorageController.VHOST_TARGET_ENSURE_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.VhostActivateCmd.class)
-            assert cmd.image != null : "ensure cmd missing target image for lazy deploy"
+        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployVhostCmd.class)
+            assert cmd.hostIp != null : "deploy cmd missing target host IP for zbsadm SSH"
             ensureCalled.set(true)
-            return new ZbsStorageController.CheckHostStorageConnectionRsp()
+            return new ZbsStorageController.AgentResponse()
         }
         env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def rsp = new ZbsStorageController.VhostTargetHealthRsp()
-            rsp.healthy = vhostTargetHealthy.get()
+            rsp.targetRunning = vhostTargetHealthy.get()
             return rsp
         }
         env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
@@ -581,7 +589,7 @@ class ZbsVhostVolumeCase extends SubCase {
         }
 
         assert ensureCalled.get() : \
-                "addStorageProtocol(Vhost) did not reach VHOST_TARGET_ENSURE_PATH on the connected host"
+                "addStorageProtocol(Vhost) did not reach DEPLOY_VHOST_PATH on the zbs PS agent"
 
         // the protocol row write is fire-and-forget behind the PS queue
         retryInSecs {

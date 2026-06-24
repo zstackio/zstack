@@ -113,11 +113,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
-    public static final String VHOST_TARGET_ENSURE_PATH = "/zbs/primarystorage/vhost/target/ensure";
     public static final String VHOST_TARGET_HEALTH_PATH = "/zbs/primarystorage/vhost/target/health";
-    public static final String VHOST_ACTIVATE_PATH = "/zbs/primarystorage/vhost/activate";
-    public static final String VHOST_DEACTIVATE_PATH = "/zbs/primarystorage/vhost/deactivate";
     public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
+    // zbsadm-driven vhost paths handled by the zbs PS agent (it SSHes from the admin
+    // node to the compute host via zbsadm), replacing the compute-side KVM-host paths.
+    public static final String DEPLOY_VHOST_PATH = "/zbs/primarystorage/vhost/deploy";
+    public static final String DESTROY_VHOST_PATH = "/zbs/primarystorage/vhost/destroy";
+    public static final String CREATE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/create";
+    public static final String DELETE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/delete";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -158,61 +161,43 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     private void activateVhostVolume(String installPath, HostInventory h, ReturnValueCompletion<ActiveVolumeTO> comp) {
-        VhostActivateCmd cmd = new VhostActivateCmd();
-        fillVhostTargetParams(cmd);
-        cmd.installPath = stripScheme(installPath);
-        cmd.controllerName = buildVhostControllerName(installPath);
+        KVMHostVO host = getKvmHost(h);
+        if (host == null) {
+            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
+            return;
+        }
+
+        CreateVhostBdevCmd cmd = new CreateVhostBdevCmd();
+        fillVhostHostParams(cmd, h, host);
+        // zbsadm create-bdev opens <logicalPool>/<volume> via libcbd (it appends the
+        // marker zbsadm strips); the physical pool is not needed, so split the zbs path.
+        String relativePath = stripScheme(installPath);
+        int slash = relativePath.indexOf('/');
+        cmd.logicalPool = relativePath.substring(0, slash);
+        cmd.volume = relativePath.substring(slash + 1);
         cmd.bdevName = buildVhostBdevName(installPath);
 
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-        msg.setCommand(cmd);
-        msg.setHostUuid(h.getUuid());
-        msg.setPath(VHOST_ACTIVATE_PATH);
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-        bus.send(msg, new CloudBusCallBack(comp) {
+        httpCall(CREATE_VHOST_BDEV_PATH, cmd, CreateVhostBdevRsp.class, new ReturnValueCompletion<CreateVhostBdevRsp>(comp) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    comp.fail(reply.getError());
-                    return;
-                }
-
-                KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                VhostActivateRsp rsp = hreply.toResponse(VhostActivateRsp.class);
-                if (!rsp.isSuccess()) {
-                    comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "failed to activate vhost volume[%s] on host[%s]: %s",
-                            installPath, h.getUuid(), rsp.getError()));
-                    return;
-                }
-
+            public void success(CreateVhostBdevRsp rsp) {
                 VhostVolumeTO to = new VhostVolumeTO();
-                to.setInstallPath(rsp.getSocketPath());
+                to.setInstallPath(rsp.socketPath);
                 comp.success(to);
             }
-        });
-    }
 
-    private void fillVhostTargetParams(VhostActivateCmd cmd) {
-        cmd.image = ZbsGlobalProperty.VHOST_TARGET_IMAGE;
-        // empty cores lets the agent compute them from the host cpu count
-        cmd.cores = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_CORES) ? null : ZbsGlobalProperty.VHOST_TARGET_CORES;
-        cmd.coreCount = ZbsGlobalProperty.VHOST_TARGET_CORE_COUNT;
-        cmd.hugepageNr = ZbsGlobalProperty.VHOST_HUGEPAGE_NR;
-        cmd.imageTar = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_IMAGE_TAR) ? null : ZbsGlobalProperty.VHOST_TARGET_IMAGE_TAR;
-        cmd.imageUrl = StringUtils.isEmpty(ZbsGlobalProperty.VHOST_TARGET_IMAGE_URL) ? null : ZbsGlobalProperty.VHOST_TARGET_IMAGE_URL;
-        cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
     }
 
     private static String stripScheme(String installPath) {
         return installPath.replaceFirst(ZbsConstants.SCHEME_PREFIX, "");
     }
 
-    // controller/bdev names derive from installPath (deactivate has no volume uuid),
-    // hashed to keep the socket path within the 108-byte unix-socket limit.
-    private static String buildVhostControllerName(String installPath) {
-        return ZbsConstants.VHOST_CONTROLLER_NAME_PREFIX + installPathHash(installPath);
-    }
-
+    // bdev name derives from installPath (deactivate has no volume uuid), hashed to
+    // keep the socket path within the 108-byte unix-socket limit.
     private static String buildVhostBdevName(String installPath) {
         return ZbsConstants.VHOST_BDEV_NAME_PREFIX + installPathHash(installPath);
     }
@@ -222,38 +207,45 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     private static String buildVhostSocketPath(String installPath) {
-        return ZbsConstants.VHOST_SOCKET_DIR + "/" + buildVhostControllerName(installPath);
+        return ZbsConstants.VHOST_SOCKET_DIR + "/" + buildVhostBdevName(installPath);
+    }
+
+    private KVMHostVO getKvmHost(HostInventory h) {
+        return Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+    }
+
+    // zbsadm runs on the zbs PS (admin) node and SSHes to the compute host, so every
+    // vhost command carries that host's IP + SSH credentials from its KVMHostVO.
+    private void fillVhostHostParams(VhostHostCmd cmd, HostInventory h, KVMHostVO host) {
+        cmd.hostIp = h.getManagementIp();
+        cmd.sshPort = host.getPort();
+        cmd.sshUsername = host.getUsername();
+        cmd.sshPassword = host.getPassword();
     }
 
     @Override
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
-            VhostDeactivateCmd cmd = new VhostDeactivateCmd();
-            cmd.controllerName = buildVhostControllerName(installPath);
+            KVMHostVO host = getKvmHost(h);
+            if (host == null) {
+                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
+                return;
+            }
+
+            DeleteVhostBdevCmd cmd = new DeleteVhostBdevCmd();
+            fillVhostHostParams(cmd, h, host);
             cmd.bdevName = buildVhostBdevName(installPath);
-            cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
 
-            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-            msg.setCommand(cmd);
-            msg.setHostUuid(h.getUuid());
-            msg.setPath(VHOST_DEACTIVATE_PATH);
-            msg.setNoStatusCheck(true);
-            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-            bus.send(msg, new CloudBusCallBack(comp) {
+            // delete-bdev is idempotent: deactivating an already-gone bdev still succeeds.
+            httpCall(DELETE_VHOST_BDEV_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(comp) {
                 @Override
-                public void run(MessageReply reply) {
-                    if (!reply.isSuccess()) {
-                        comp.fail(reply.getError());
-                        return;
-                    }
-
-                    VhostActivateRsp rsp = ((KVMHostAsyncHttpCallReply) reply.castReply()).toResponse(VhostActivateRsp.class);
-                    if (!rsp.isSuccess()) {
-                        comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "failed to deactivate vhost volume[%s] on host[%s]: %s",
-                                installPath, h.getUuid(), rsp.getError()));
-                        return;
-                    }
+                public void success(AgentResponse rsp) {
                     comp.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    comp.fail(errorCode);
                 }
             });
             return;
@@ -408,34 +400,28 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            VhostActivateCmd cmd = new VhostActivateCmd();
-                            fillVhostTargetParams(cmd);
+                            KVMHostVO host = getKvmHost(h);
+                            if (host == null) {
+                                logger.warn(String.format("cannot found kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
+                                trigger.next();
+                                return;
+                            }
 
-                            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                            msg.setCommand(cmd);
-                            msg.setHostUuid(h.getUuid());
-                            msg.setPath(VHOST_TARGET_ENSURE_PATH);
-                            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                            bus.send(msg, new CloudBusCallBack(trigger) {
+                            DeployVhostCmd cmd = new DeployVhostCmd();
+                            fillVhostHostParams(cmd, h, host);
+
+                            httpCall(DEPLOY_VHOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                                 @Override
-                                public void run(MessageReply reply) {
-                                    // the SPDK target is also deployed lazily on the first vhost
-                                    // volume activate, so preparing it here is best-effort: a
-                                    // failure must not block client deploy / storage attach.
-                                    if (!reply.isSuccess()) {
-                                        logger.warn(String.format("failed to deploy vhost target on host[%s], will retry on first vhost activate: %s",
-                                                h.getUuid(), reply.getError().getDetails()));
-                                        trigger.next();
-                                        return;
-                                    }
+                                public void success(AgentResponse rsp) {
+                                    trigger.next();
+                                }
 
-                                    KVMHostAsyncHttpCallReply hreply = reply.castReply();
-                                    CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
-                                    if (!rsp.isSuccess()) {
-                                        logger.warn(String.format("failed to deploy vhost target on host[%s], will retry on first vhost activate: %s",
-                                                h.getUuid(), rsp.getError()));
-                                    }
-
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    // best-effort: a vhost-target deploy failure must not block client
+                                    // deploy / storage attach. The host can be reconnected to redeploy.
+                                    logger.warn(String.format("failed to deploy vhost target on host[%s]: %s",
+                                            h.getUuid(), errorCode.getDetails()));
                                     trigger.next();
                                 }
                             });
@@ -990,8 +976,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     private void checkVhostTargetHealthy(HostInventory host, NodeHealthy healthy, ReturnValueCompletion<NodeHealthy> comp) {
+        // probe the target where it lives: the host's kvmagent checks the zbsadm
+        // SPDK container + its admin socket locally (no SSH, no password). this is a
+        // connectivity check (live target -> Connected, no/dead target -> Disconnected),
+        // distinct from the self-fencing check which treats "no target" as not-broken.
         VhostTargetHealthCmd cmd = new VhostTargetHealthCmd();
-        cmd.socketDir = ZbsConstants.VHOST_SOCKET_DIR;
+        cmd.containerName = ZbsConstants.VHOST_TARGET_CONTAINER_PREFIX + host.getManagementIp();
+        cmd.controlSock = ZbsConstants.VHOST_SOCKET_DIR + "/" + ZbsConstants.VHOST_ADMIN_SOCK_NAME;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1002,14 +993,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         bus.send(msg, new CloudBusCallBack(comp) {
             @Override
             public void run(MessageReply reply) {
-                boolean targetHealthy = false;
+                boolean targetRunning = false;
                 if (reply.isSuccess()) {
                     VhostTargetHealthRsp rsp = reply.<KVMHostAsyncHttpCallReply>castReply()
                             .toResponse(VhostTargetHealthRsp.class);
-                    targetHealthy = rsp.isSuccess() && rsp.healthy;
+                    targetRunning = rsp.isSuccess() && rsp.targetRunning;
                 }
-                // report only; reconnecting the host redeploys the target via deployClient
-                healthy.setHealthy(VolumeProtocol.Vhost, targetHealthy ? StorageHealthy.Ok : StorageHealthy.Failed);
+                healthy.setHealthy(VolumeProtocol.Vhost, targetRunning ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -2271,47 +2261,44 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static class UpdateHostDependencyRsp extends AgentResponse {
     }
 
-    public static class VhostActivateCmd extends AgentCommand {
-        public String image;
-        public String cores;
-        public Integer coreCount;
-        public Integer hugepageNr;
-        public String socketDir;
-        public String controlSock;
-        public String clientConf;
-        public String imageTar;
-        public String imageUrl;
-        public String installPath;
-        public String controllerName;
+    // zbsadm-driven vhost commands sent to the zbs PS agent; it SSHes to the compute
+    // host identified by hostIp using the supplied SSH credentials.
+    public static class VhostHostCmd extends AgentCommand {
+        public String hostIp;
+        public int sshPort;
+        public String sshUsername;
+        public String sshPassword;
+    }
+
+    public static class DeployVhostCmd extends VhostHostCmd {
+    }
+
+    public static class DestroyVhostCmd extends VhostHostCmd {
+    }
+
+    public static class CreateVhostBdevCmd extends VhostHostCmd {
+        // logical pool + volume name (no physical pool): zbsadm create-bdev opens the
+        // volume via libcbd as <logicalPool>/<volume>, so the physical pool is not needed.
+        public String logicalPool;
+        public String volume;
+        public String bdevName;
+    }
+
+    public static class CreateVhostBdevRsp extends AgentResponse {
+        public String socketPath;
+    }
+
+    public static class DeleteVhostBdevCmd extends VhostHostCmd {
         public String bdevName;
     }
 
     public static class VhostTargetHealthCmd extends AgentCommand {
-        public String socketDir;
+        public String containerName;
         public String controlSock;
     }
 
     public static class VhostTargetHealthRsp extends AgentResponse {
-        public boolean healthy;
-    }
-
-    public static class VhostActivateRsp extends AgentResponse {
-        private String socketPath;
-
-        public String getSocketPath() {
-            return socketPath;
-        }
-
-        public void setSocketPath(String socketPath) {
-            this.socketPath = socketPath;
-        }
-    }
-
-    public static class VhostDeactivateCmd extends AgentCommand {
-        public String controllerName;
-        public String bdevName;
-        public String socketDir;
-        public String controlSock;
+        public boolean targetRunning;
     }
 
     public static class VhostResizeCmd extends AgentCommand {

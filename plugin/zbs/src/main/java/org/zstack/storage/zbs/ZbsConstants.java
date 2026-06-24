@@ -21,9 +21,14 @@ public interface ZbsConstants {
     String MEGABYTE_UNIT = "M";
     String DEFAULT_GIGABYTE_UNIT = null;
 
-    // vhost: SPDK target runs as a container on the compute node, exposing a
-    // vhost-user-blk unix socket at <VHOST_SOCKET_DIR>/<controller name>.
-    String VHOST_SOCKET_DIR = "/var/tmp/vhost-sockets";
+    // vhost: zbsadm deploys the SPDK target container on the compute node and
+    // exposes a vhost-user-blk unix socket at <VHOST_SOCKET_DIR>/<bdev name>
+    // (zbsadm names the socket after the bdev, so there is no separate controller).
+    String VHOST_SOCKET_DIR = "/var/zbsvhost/sockets";
     String VHOST_CONTROLLER_NAME_PREFIX = "zbs-vhost-";
     String VHOST_BDEV_NAME_PREFIX = "zbs-bdev-";
+    // zbsadm runs the SPDK target container as zbsvhost-<host ip> and its admin RPC
+    // socket at <VHOST_SOCKET_DIR>/admin.sock; the host-local health probe checks both.
+    String VHOST_TARGET_CONTAINER_PREFIX = "zbsvhost-";
+    String VHOST_ADMIN_SOCK_NAME = "admin.sock";
 }
