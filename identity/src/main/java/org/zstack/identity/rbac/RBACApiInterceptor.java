@@ -3,6 +3,7 @@ package org.zstack.identity.rbac;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -17,7 +18,9 @@ import org.zstack.header.identity.role.api.APIAddPolicyStatementsToRoleMsg;
 import org.zstack.header.identity.role.api.APICreateRoleMsg;
 import org.zstack.header.identity.role.api.APIDeleteRoleMsg;
 import org.zstack.header.identity.role.api.APIUpdateRoleMsg;
+import org.zstack.header.identity.role.api.RoleMessage;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.resource.ResourceSourceConstant;
 import org.zstack.identity.CheckIfSessionCanOperationAdminPermission;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -42,7 +45,34 @@ public class RBACApiInterceptor implements ApiMessageInterceptor {
             validate((APICreateRoleMsg) msg);
         } 
 
+        rejectScimRoleMutation(msg);
         return msg;
+    }
+
+    private void rejectScimRoleMutation(APIMessage msg) {
+        if (!(msg instanceof RoleMessage) || msg instanceof APICreateRoleMsg) {
+            return;
+        }
+
+        String roleUuid = ((RoleMessage) msg).getRoleUuid();
+        if (roleUuid == null || roleUuid.trim().isEmpty()) {
+            return;
+        }
+        roleUuid = roleUuid.trim();
+
+        Long count = SQL.New("select count(vo) from ResourceSourceRefVO vo" +
+                        " where vo.resourceUuid = :resourceUuid" +
+                        " and vo.resourceType = :resourceType" +
+                        " and vo.sourceType = :sourceType" +
+                        " and vo.syncType = :syncType", Long.class)
+                .param("resourceUuid", roleUuid)
+                .param("resourceType", RoleVO.class.getSimpleName())
+                .param("sourceType", ResourceSourceConstant.SOURCE_TYPE_ZIAM)
+                .param("syncType", ResourceSourceConstant.SYNC_TYPE_SCIM)
+                .find();
+        if (count != null && count > 0) {
+            throw new ApiMessageInterceptionException(argerr("Role[uuid:%s] is managed by SCIM and cannot be modified locally", roleUuid));
+        }
     }
 
     private void validate(APICreateRoleMsg msg) {

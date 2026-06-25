@@ -7,6 +7,10 @@ import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQL;
+import org.zstack.core.config.GlobalConfig;
+import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
+import org.zstack.core.thread.Task;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.scim.ScimConstant;
 import org.zstack.header.scim.ScimEventVO;
 import org.zstack.header.scim.ScimException;
@@ -14,6 +18,9 @@ import org.zstack.header.scim.ScimOperation;
 import org.zstack.header.scim.ScimPayload;
 import org.zstack.header.scim.ScimResourceHandler;
 import org.zstack.header.scim.ScimResult;
+import org.zstack.header.resource.ResourceSourceConstant;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -27,8 +34,10 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 public class ScimService {
+    private static final CLogger logger = Utils.getLogger(ScimService.class);
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final int MAX_CLIENT_ID_LENGTH = 128;
     private static final int MAX_EVENT_ID_LENGTH = 255;
@@ -45,45 +54,131 @@ public class ScimService {
     private DatabaseFacade dbf;
     @Autowired
     private ScimResourceHandler resourceHandler;
+    @Autowired
+    private ThreadFacade thdf;
+    private final GlobalConfigUpdateExtensionPoint cleanupWhenDisabledExtension = this::cleanupWhenDisabled;
+    private final ReentrantReadWriteLock receiverStateLock = new ReentrantReadWriteLock();
+    private volatile GlobalConfig registeredReceiverEnabledConfig;
+
+    public void init() {
+        ensureReceiverEnabledExtensionRegistered();
+        if (!isEnabled(ScimGlobalConfig.RECEIVER_ENABLED.value())) {
+            submitStartupCleanup();
+        }
+    }
+
+    private void ensureReceiverEnabledExtensionRegisteredIfNeeded() {
+        GlobalConfig receiverEnabled = ScimGlobalConfig.RECEIVER_ENABLED;
+        // Lock-free fast path: concurrent misses are harmless because the synchronized slow path de-duplicates registration.
+        if (registeredReceiverEnabledConfig == receiverEnabled
+                && receiverEnabled.getLocalUpdateExtensions().contains(cleanupWhenDisabledExtension)
+                && receiverEnabled.getUpdateExtensions().contains(cleanupWhenDisabledExtension)) {
+            return;
+        }
+        ensureReceiverEnabledExtensionRegistered();
+    }
+
+    private synchronized void ensureReceiverEnabledExtensionRegistered() {
+        GlobalConfig receiverEnabled = ScimGlobalConfig.RECEIVER_ENABLED;
+        if (registeredReceiverEnabledConfig == receiverEnabled
+                && receiverEnabled.getLocalUpdateExtensions().contains(cleanupWhenDisabledExtension)
+                && receiverEnabled.getUpdateExtensions().contains(cleanupWhenDisabledExtension)) {
+            return;
+        }
+
+        if (!receiverEnabled.getLocalUpdateExtensions().contains(cleanupWhenDisabledExtension)) {
+            receiverEnabled.installLocalUpdateExtension(cleanupWhenDisabledExtension);
+        }
+        if (!receiverEnabled.getUpdateExtensions().contains(cleanupWhenDisabledExtension)) {
+            receiverEnabled.installUpdateExtension(cleanupWhenDisabledExtension);
+        }
+        registeredReceiverEnabledConfig = receiverEnabled;
+    }
+
+    private void submitStartupCleanup() {
+        thdf.submit(new Task<Void>() {
+            @Override
+            public String getName() {
+                return "scim-startup-cleanup";
+            }
+
+            @Override
+            public Void call() {
+                try {
+                    cleanupScimResourcesIfPresent();
+                } catch (RuntimeException e) {
+                    logger.warn("failed to cleanup SCIM resources on startup", e);
+                }
+                return null;
+            }
+        });
+    }
+
+    private void cleanupWhenDisabled(GlobalConfig oldConfig, GlobalConfig newConfig) {
+        if (isEnabled(oldConfig.value()) && !isEnabled(newConfig.value())) {
+            cleanupScimResourcesIfPresent();
+        }
+    }
+
+    private void cleanupScimResourcesIfPresent() {
+        receiverStateLock.writeLock().lock();
+        try {
+            Long count = SQL.New("select count(vo) from ResourceSourceRefVO vo where vo.syncType = :syncType", Long.class)
+                    .param("syncType", ResourceSourceConstant.SYNC_TYPE_SCIM)
+                    .find();
+            if (count != null && count > 0) {
+                resourceHandler.cleanupResources(ResourceSourceConstant.SYNC_TYPE_SCIM);
+            }
+        } finally {
+            receiverStateLock.writeLock().unlock();
+        }
+    }
 
     public ScimResult apply(HttpServletRequest request, String resourceType, String pathResourceId, String rawBody) {
-        String body = rawBody == null ? "" : rawBody;
-        verifyBearer(request);
-        String method = normalizeMethod(request);
-        validateMaxLength(resourceType, "resource type", MAX_RESOURCE_TYPE_LENGTH);
-        validateMaxLength(pathResourceId, "resource uuid", MAX_RESOURCE_ID_LENGTH);
-        String clientId = validateMaxLength(optionalHeader(request, ScimConstant.HEADER_CLIENT_ID,
-                ScimConstant.DEFAULT_CLIENT_ID), ScimConstant.HEADER_CLIENT_ID, MAX_CLIENT_ID_LENGTH);
-        String eventId = validateMaxLength(requiredHeader(request, ScimConstant.HEADER_EVENT_ID),
-                ScimConstant.HEADER_EVENT_ID, MAX_EVENT_ID_LENGTH);
-        long resourceVersion = parseResourceVersion(requiredHeader(request, ScimConstant.HEADER_RESOURCE_VERSION));
-        String timestamp = requiredHeader(request, ScimConstant.HEADER_TIMESTAMP);
-        verifySignature(request, clientId, eventId, resourceVersion, timestamp, method, resourceType, pathResourceId, body);
-
-        String canonicalType = resourceHandler.normalizeResourceType(resourceType);
-        validateMaxLength(canonicalType, "canonical resource type", MAX_RESOURCE_TYPE_LENGTH);
-        Map<String, Object> bodyMap = parseBody(body);
-        rejectSensitivePayloadKeys(bodyMap);
-        ScimPayload payload = mapper.convertValue(bodyMap, ScimPayload.class);
-        rejectSensitivePayloadKeys(payload.attributes);
-        String pathResourceUuid = normalizeOptionalUuid(pathResourceId, "path resource uuid");
-        String payloadUuid = normalizeOptionalUuid(payload.uuid, "payload uuid");
-        if (!isBlank(pathResourceUuid) && !isBlank(payloadUuid) && !pathResourceUuid.equals(payloadUuid)) {
-            throw new ScimException(400, "path resource uuid and payload uuid must match");
-        }
-        String resourceId = validateMaxLength(firstNotBlank(pathResourceUuid, payloadUuid),
-                "resource uuid", MAX_RESOURCE_ID_LENGTH);
-        if (isBlank(resourceId)) {
-            throw new ScimException(400, "resource uuid is required");
-        }
-
-        ScimOperation operation = toOperation(method);
-        GLock lock = new GLock(lockName(clientId, canonicalType, resourceId), LOCK_TIMEOUT_SECONDS);
-        lock.lock();
+        ensureReceiverEnabledExtensionRegisteredIfNeeded();
+        receiverStateLock.readLock().lock();
         try {
-            return applyLocked(clientId, eventId, canonicalType, resourceId, resourceVersion, operation, body, payload);
+            String body = rawBody == null ? "" : rawBody;
+            verifyEnabled();
+            verifyBearer(request);
+            String method = normalizeMethod(request);
+            validateMaxLength(resourceType, "resource type", MAX_RESOURCE_TYPE_LENGTH);
+            validateMaxLength(pathResourceId, "resource uuid", MAX_RESOURCE_ID_LENGTH);
+            String clientId = validateMaxLength(optionalHeader(request, ScimConstant.HEADER_CLIENT_ID,
+                    ScimConstant.DEFAULT_CLIENT_ID), ScimConstant.HEADER_CLIENT_ID, MAX_CLIENT_ID_LENGTH);
+            String eventId = validateMaxLength(requiredHeader(request, ScimConstant.HEADER_EVENT_ID),
+                    ScimConstant.HEADER_EVENT_ID, MAX_EVENT_ID_LENGTH);
+            long resourceVersion = parseResourceVersion(requiredHeader(request, ScimConstant.HEADER_RESOURCE_VERSION));
+            String timestamp = requiredHeader(request, ScimConstant.HEADER_TIMESTAMP);
+            verifySignature(request, clientId, eventId, resourceVersion, timestamp, method, resourceType, pathResourceId, body);
+
+            String canonicalType = resourceHandler.normalizeResourceType(resourceType);
+            validateMaxLength(canonicalType, "canonical resource type", MAX_RESOURCE_TYPE_LENGTH);
+            Map<String, Object> bodyMap = parseBody(body);
+            rejectSensitivePayloadKeys(bodyMap);
+            ScimPayload payload = mapper.convertValue(bodyMap, ScimPayload.class);
+            rejectSensitivePayloadKeys(payload.attributes);
+            String pathResourceUuid = normalizeOptionalUuid(pathResourceId, "path resource uuid");
+            String payloadUuid = normalizeOptionalUuid(payload.uuid, "payload uuid");
+            if (!isBlank(pathResourceUuid) && !isBlank(payloadUuid) && !pathResourceUuid.equals(payloadUuid)) {
+                throw new ScimException(400, "path resource uuid and payload uuid must match");
+            }
+            String resourceId = validateMaxLength(firstNotBlank(pathResourceUuid, payloadUuid),
+                    "resource uuid", MAX_RESOURCE_ID_LENGTH);
+            if (isBlank(resourceId)) {
+                throw new ScimException(400, "resource uuid is required");
+            }
+
+            ScimOperation operation = toOperation(method);
+            GLock lock = new GLock(lockName(clientId, canonicalType, resourceId), LOCK_TIMEOUT_SECONDS);
+            lock.lock();
+            try {
+                return applyLocked(clientId, eventId, canonicalType, resourceId, resourceVersion, operation, body, payload);
+            } finally {
+                lock.unlock();
+            }
         } finally {
-            lock.unlock();
+            receiverStateLock.readLock().unlock();
         }
     }
 
@@ -128,6 +223,16 @@ public class ScimService {
         if (!constantTimeEquals(expected, token)) {
             throw new ScimException(401, "invalid bearer token");
         }
+    }
+
+    private void verifyEnabled() {
+        if (!isEnabled(ScimGlobalConfig.RECEIVER_ENABLED.value())) {
+            throw new ScimException(403, "SCIM receiver is disabled");
+        }
+    }
+
+    private boolean isEnabled(String value) {
+        return Boolean.parseBoolean(value);
     }
 
     private String requiredHeader(HttpServletRequest request, String name) {

@@ -6,4 +6,5 @@ public enum RoleType {
 	Predefined,
 	CreatedBySystem,
 	PredefinedBySystem,
+	None,
 }

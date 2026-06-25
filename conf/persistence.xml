@@ -90,6 +90,7 @@
         <class>org.zstack.header.identity.SessionVO</class>
         <class>org.zstack.header.identity.AccountVO</class>
         <class>org.zstack.header.identity.AccountResourceRefVO</class>
+        <class>org.zstack.header.resource.ResourceSourceRefVO</class>
         <class>org.zstack.header.identity.UserVO</class>
         <class>org.zstack.header.identity.PolicyVO</class>
         <class>org.zstack.header.identity.UserPolicyRefVO</class>
