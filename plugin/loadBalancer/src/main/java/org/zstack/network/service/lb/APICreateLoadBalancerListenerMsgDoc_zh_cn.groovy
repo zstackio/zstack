@@ -243,7 +243,7 @@ doc {
 					type "String"
 					optional true
 					since "5.5.28"
-					values ("full_nat")
+					values ("full_nat","nat","dr")
 				}
 			}
         }
