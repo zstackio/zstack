@@ -20,20 +20,12 @@ public class LicenseAuthorizedCapacityInventory  {
         return this.nodeUuid;
     }
 
-    public java.lang.String resourceUuid;
-    public void setResourceUuid(java.lang.String resourceUuid) {
-        this.resourceUuid = resourceUuid;
+    public java.lang.String prodInfo;
+    public void setProdInfo(java.lang.String prodInfo) {
+        this.prodInfo = prodInfo;
     }
-    public java.lang.String getResourceUuid() {
-        return this.resourceUuid;
-    }
-
-    public java.lang.String resourceInfo;
-    public void setResourceInfo(java.lang.String resourceInfo) {
-        this.resourceInfo = resourceInfo;
-    }
-    public java.lang.String getResourceInfo() {
-        return this.resourceInfo;
+    public java.lang.String getProdInfo() {
+        return this.prodInfo;
     }
 
     public java.lang.String quotaType;
@@ -60,12 +52,44 @@ public class LicenseAuthorizedCapacityInventory  {
         return this.licenseType;
     }
 
-    public java.lang.String type;
-    public void setType(java.lang.String type) {
-        this.type = type;
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
     }
-    public java.lang.String getType() {
-        return this.type;
+    public java.lang.String getState() {
+        return this.state;
+    }
+
+    public java.lang.String issueTime;
+    public void setIssueTime(java.lang.String issueTime) {
+        this.issueTime = issueTime;
+    }
+    public java.lang.String getIssueTime() {
+        return this.issueTime;
+    }
+
+    public java.lang.String expireTime;
+    public void setExpireTime(java.lang.String expireTime) {
+        this.expireTime = expireTime;
+    }
+    public java.lang.String getExpireTime() {
+        return this.expireTime;
+    }
+
+    public java.lang.Long localUsed;
+    public void setLocalUsed(java.lang.Long localUsed) {
+        this.localUsed = localUsed;
+    }
+    public java.lang.Long getLocalUsed() {
+        return this.localUsed;
+    }
+
+    public java.lang.Long otherUsed;
+    public void setOtherUsed(java.lang.Long otherUsed) {
+        this.otherUsed = otherUsed;
+    }
+    public java.lang.Long getOtherUsed() {
+        return this.otherUsed;
     }
 
     public java.sql.Timestamp createDate;

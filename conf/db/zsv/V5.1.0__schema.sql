@@ -115,7 +115,7 @@ CALL CREATE_INDEX('AccountVO', 'idxAccountVOname', 'name');
 CALL DELETE_INDEX('AccountVO', 'name');
 ALTER TABLE `zstack`.`AccountVO` ADD CONSTRAINT `uqAccountVOSourceName` UNIQUE (`source`, `name`);
 
--- Feature: ZCenter License & License Client | ZSV-12274
+-- Feature: ZCenter License & License Client | ZSV-12274, ZSV-12506
 
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
     `uuid` char(32) NOT NULL UNIQUE,
@@ -134,12 +134,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedNodeVO` (
 CREATE TABLE IF NOT EXISTS `zstack`.`LicenseAuthorizedCapacityVO` (
     `id` bigint unsigned NOT NULL UNIQUE AUTO_INCREMENT,
     `nodeUuid` char(32) NOT NULL,
-    `resourceUuid` char(32) DEFAULT NULL,
-    `resourceInfo` text DEFAULT NULL,
+    `prodInfo` varchar(255) NOT NULL,
     `quotaType` varchar(64) NOT NULL,
-    `quota` bigint unsigned DEFAULT 0,
+    `quota` bigint unsigned NOT NULL DEFAULT 0,
     `licenseType` varchar(64) NOT NULL,
-    `type` varchar(64) NOT NULL,
+    `state` varchar(64) NOT NULL DEFAULT 'active',
+    `issueTime` bigint unsigned NOT NULL DEFAULT 0,
+    `expireTime` bigint unsigned NOT NULL DEFAULT 0,
+    `localUsed` bigint unsigned NOT NULL DEFAULT 0,
+    `otherUsed` bigint unsigned NOT NULL DEFAULT 0,
     `lastOpDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
     PRIMARY KEY (`id`),
