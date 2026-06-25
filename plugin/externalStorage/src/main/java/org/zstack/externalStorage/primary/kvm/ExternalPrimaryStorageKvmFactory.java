@@ -38,6 +38,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -63,19 +64,6 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                         " and ref.clusterUuid = :cuuid", ExternalPrimaryStorageVO.class)
                 .param("cuuid", clusterUuid)
                 .list();
-    }
-
-    private Map<String, PrimaryStorageHostStatus> getHostStatus(List<ExternalPrimaryStorageVO> extPss) {
-        return Q.New(PrimaryStorageHostRefVO.class)
-                .select(PrimaryStorageHostRefVO_.hostUuid, PrimaryStorageHostRefVO_.status)
-                .in(PrimaryStorageHostRefVO_.primaryStorageUuid,
-                        extPss.stream().map(ExternalPrimaryStorageVO::getUuid).collect(Collectors.toList()))
-                .listTuple().stream()
-                .collect(Collectors.toMap(
-                        t -> t.get(0, String.class),
-                        t -> t.get(1, PrimaryStorageHostStatus.class),
-                        (o, n) -> n
-                ));
     }
 
     @Override
@@ -235,33 +223,37 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
     }
 
     private void checkHostStatus(KVMHostInventory host, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
-        Map<String, PrimaryStorageHostStatus> hostStatus = getHostStatus(extPss);
         new While<>(extPss).each((extPs, compl) -> {
             logger.debug(String.format("checking host status for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
                     extPs.getUuid(), extPs.getName(), host.getUuid(), host.getName()));
             extPsFactory.getControllerSvc(extPs.getUuid()).reportNodeHealthy(host, new ReturnValueCompletion<NodeHealthy>(compl) {
                 @Override
                 public void success(NodeHealthy returnValue) {
-                    returnValue.getHealthy().forEach((p, h) -> updateHostProtocolRef(host.getUuid(), extPs.getUuid(),
-                            p.toString(), h == StorageHealthy.Ok ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected));
+                    Map<String, PrimaryStorageHostStatus> protocolStatuses = new HashMap<>();
+                    returnValue.getHealthy().forEach((protocol, healthy) -> protocolStatuses.put(protocol.toString(),
+                            healthy == StorageHealthy.Ok ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected));
 
-                    ErrorCode err = null;
-                    PrimaryStorageHostStatus status;
-                    // TODO add multi protocol support
-                    if (returnValue.getHealthy().values().stream().allMatch(h -> h == StorageHealthy.Ok)) {
-                        status = PrimaryStorageHostStatus.Connected;
-                    } else {
-                        status = PrimaryStorageHostStatus.Disconnected;
-                        err = operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000, "external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
-                                ((ExternalPrimaryStorageVO) extPs).getUuid(), ((ExternalPrimaryStorageVO) extPs).getName(), returnValue.getHealthy());
-                        compl.addError(err);
-                    }
+                    ErrorCode unhealthy = returnValue.getHealthy().values().stream().anyMatch(h -> h == StorageHealthy.Ok)
+                            ? null
+                            : operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000,
+                                    "external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
+                                    extPs.getUuid(), extPs.getName(), returnValue.getHealthy());
 
-                    if (hostStatus.get(extPs.getUuid()) != status) {
-                        updateHostStatus(host.getUuid(), extPs.getUuid(), status, err, compl);
-                    } else {
-                        compl.done();
-                    }
+                    UpdatePrimaryStorageHostProtocolStatusMsg msg = new UpdatePrimaryStorageHostProtocolStatusMsg();
+                    msg.setPrimaryStorageUuid(extPs.getUuid());
+                    msg.setHostUuid(host.getUuid());
+                    msg.setProtocolStatuses(protocolStatuses);
+                    msg.setReason(unhealthy);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, extPs.getUuid());
+                    bus.send(msg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (unhealthy != null) {
+                                compl.addError(unhealthy);
+                            }
+                            compl.done();
+                        }
+                    });
                 }
 
                 @Override
@@ -269,27 +261,8 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                     compl.addError(errorCode);
                     compl.done();
                 }
-
-                private void updateHostStatus(String hostUuid, String psUuid, PrimaryStorageHostStatus status, ErrorCode reason, NoErrorCompletion completion) {
-                    UpdatePrimaryStorageHostStatusMsg msg = new UpdatePrimaryStorageHostStatusMsg();
-                    msg.setPrimaryStorageUuid(psUuid);
-                    msg.setHostUuid(hostUuid);
-                    msg.setStatus(status);
-                    msg.setReason(reason);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
-                    bus.send(msg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            completion.done();
-                        }
-                    });
-                }
             });
         }).run(completion);
-    }
-
-    private void updateHostProtocolRef(String hostUuid, String psUuid, String protocol, PrimaryStorageHostStatus status) {
-        extPsFactory.updateHostProtocolStatus(psUuid, hostUuid, protocol, status);
     }
 
     @Override
