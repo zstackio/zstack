@@ -8,6 +8,7 @@ import org.zstack.core.validation.ConditionalValidation;
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.agent.CancelCommand;
 import org.zstack.header.core.validation.Validation;
+import org.zstack.header.host.HostBlockDeviceStruct;
 import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
@@ -1324,7 +1325,7 @@ public class KVMAgentCommands {
 
         // for vDPA & dpdkvhostuserclient nic
         private String srcPath;
-        
+
         private Boolean cleanTraffic;
 
         private Boolean isolated;
@@ -5367,6 +5368,150 @@ public class KVMAgentCommands {
 
         public void setMemoryUsage(long memoryUsage) {
             this.memoryUsage = memoryUsage;
+        }
+    }
+
+    // ========================================================================
+    // Volume Cache — Command Definitions
+    // ========================================================================
+
+    public static class InitPoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+        public List<String> devices;
+    }
+
+    public static class ConnectPoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+    }
+
+    public static class ExtendPoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+        public List<String> devices;
+    }
+
+    public static class DeletePoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+    }
+
+    public static class CheckPoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+    }
+
+    public static class GetPoolCapacityCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+    }
+
+    public static class GCPoolCmd extends AgentCommand {
+        public String poolUuid;
+        public String mountPoint;
+        public boolean force;
+        public List<String> inUseCacheUuids;
+    }
+
+    public static class AllocateCacheCmd extends AgentCommand {
+        public String poolUuid;
+        public VolumeTO volume;
+    }
+
+    public static class DeleteCacheCmd extends AgentCommand {
+        public String poolUuid;
+        public VolumeTO volume;
+    }
+
+    public static class FlushCacheCmd extends AgentCommand implements HasThreadContext {
+        public String poolUuid;
+        public VolumeTO volume;
+        public String sendCommandUrl;
+    }
+
+    public static class GetCacheCapacityCmd extends AgentCommand {
+        public String poolUuid;
+        public VolumeTO volume;
+    }
+
+    public static class AttachVolumeCacheCmd extends AgentCommand {
+        public String instanceUuid;
+        public VolumeTO volume;
+    }
+
+    public static class DetachVolumeCacheCmd extends AgentCommand implements HasThreadContext {
+        public String instanceUuid;
+        public VolumeTO volume;
+        public String sendCommandUrl;
+    }
+
+    // ========================================================================
+    // Volume Cache — Response Definitions
+    // ========================================================================
+
+    public static class PoolRsp extends AgentResponse {
+        public String poolUuid;
+        public String mountPoint;
+    }
+
+    public static class PoolHealthRsp extends AgentResponse {
+        public Boolean healthy;
+        public String reason;
+    }
+
+    public static class PoolCapacityRsp extends AgentResponse {
+        public Long total;
+        public Long used;
+        public Long available;
+        public Long allocated;
+        public Long dirty;
+    }
+
+    public static class CacheRsp extends AgentResponse {
+        public String installPath;
+        public Long virtualSize;
+        public Long actualSize;
+    }
+
+    public static class GCPoolRsp extends AgentResponse {
+        public List<String> gcFiles;
+        public Integer gcCount;
+    }
+
+    public static class AttachVolumeCacheRsp extends AgentResponse {
+    }
+
+    public static class DetachVolumeCacheRsp extends AgentResponse {
+    }
+
+    public static class GetBlockDevicesCmd extends AgentCommand {
+        private boolean includeInUse;
+
+        public boolean isIncludeInUse() {
+            return includeInUse;
+        }
+
+        public void setIncludeInUse(boolean includeInUse) {
+            this.includeInUse = includeInUse;
+        }
+    }
+
+    public static class GetBlockDevicesRsp extends AgentResponse {
+        private List<HostBlockDeviceStruct> blockDevices;
+
+        public List<HostBlockDeviceStruct> getBlockDevices() {
+            return blockDevices;
+        }
+
+        public void setBlockDevices(List<HostBlockDeviceStruct> blockDevices) {
+            this.blockDevices = blockDevices;
         }
     }
 

@@ -188,6 +188,8 @@ public abstract class HostBase extends AbstractHost {
             handle((APIPowerResetHostMsg) msg);
         } else if (msg instanceof APIGetHostPowerStatusMsg) {
             handle((APIGetHostPowerStatusMsg) msg);
+        } else if (msg instanceof APIGetBlockDevicesMsg) {
+            handle((APIGetBlockDevicesMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
@@ -208,6 +210,27 @@ public abstract class HostBase extends AbstractHost {
                     event.setError(r.getError());
                 } else {
                     event.setInventory(r.getInventory());
+                }
+                bus.publish(event);
+            }
+        });
+    }
+
+    private void handle(APIGetBlockDevicesMsg msg) {
+        APIGetBlockDevicesEvent event = new APIGetBlockDevicesEvent(msg.getId());
+        GetBlockDevicesOnHostMsg gmsg = new GetBlockDevicesOnHostMsg();
+        gmsg.setHostUuid(msg.getHostUuid());
+        gmsg.setIncludeInUse(msg.isIncludeInUse());
+        bus.makeTargetServiceIdByResourceUuid(gmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(gmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    event.setSuccess(false);
+                    event.setError(reply.getError());
+                } else {
+                    GetBlockDevicesOnHostReply r = reply.castReply();
+                    event.setBlockDevices(r.getBlockDevices());
                 }
                 bus.publish(event);
             }

@@ -47,6 +47,15 @@ public class HostAllocatorSpec {
      * value as-is.
      */
     private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
+    private LinkedHashMap opaque;
+
+    public LinkedHashMap getOpaque() {
+        return opaque;
+    }
+
+    public void setOpaque(LinkedHashMap opaque) {
+        this.opaque = opaque;
+    }
 
     public AllocationScene getAllocationScene() {
         return allocationScene;
@@ -278,6 +287,9 @@ public class HostAllocatorSpec {
         spec.setPurpose(msg.getPurpose());
         if (msg.getSystemTags() != null && !msg.getSystemTags().isEmpty()){
             spec.setSystemTags(new ArrayList<String>(msg.getSystemTags()));
+        }
+        if (msg.getOpaque() != null) {
+            spec.setOpaque(new LinkedHashMap(msg.getOpaque()));
         }
 
         return spec;

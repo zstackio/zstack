@@ -38,6 +38,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
      * LIST_CANDIDATES on admin permission.
      */
     private HostAllocationPurpose purpose = HostAllocationPurpose.ALLOCATE;
+    private LinkedHashMap opaque;
 
     public List<Set<String>> getOptionalPrimaryStorageUuids() {
         return optionalPrimaryStorageUuids;
@@ -230,4 +231,8 @@ public class AllocateHostMsg extends NeedReplyMessage {
     public void setPurpose(HostAllocationPurpose purpose) {
         this.purpose = purpose == null ? HostAllocationPurpose.ALLOCATE : purpose;
     }
+
+    public LinkedHashMap getOpaque() { return opaque; }
+
+    public void setOpaque(LinkedHashMap opaque) { this.opaque = opaque; }
 }
