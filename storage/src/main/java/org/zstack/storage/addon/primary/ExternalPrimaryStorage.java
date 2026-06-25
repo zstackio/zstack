@@ -20,6 +20,7 @@ import org.zstack.core.trash.TrashType;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -142,17 +143,27 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             node.deployClient(host, protocols, new Completion(compl) {
                 @Override
                 public void success() {
-                    protocols.forEach(p -> factory.updateHostProtocolStatus(self.getUuid(), host.getUuid(), p,
-                            PrimaryStorageHostStatus.Connected));
-                    compl.done();
+                    Map<String, PrimaryStorageHostStatus> statuses = new HashMap<>();
+                    protocols.forEach(p -> statuses.put(p, PrimaryStorageHostStatus.Connected));
+                    updateHostProtocolStatus(host.getUuid(), statuses, null, new NoErrorCompletion(compl) {
+                        @Override
+                        public void done() {
+                            compl.done();
+                        }
+                    });
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    protocols.forEach(p -> factory.updateHostProtocolStatus(self.getUuid(), host.getUuid(), p,
-                            PrimaryStorageHostStatus.Disconnected));
-                    compl.addError(errorCode);
-                    compl.allDone();
+                    Map<String, PrimaryStorageHostStatus> statuses = new HashMap<>();
+                    protocols.forEach(p -> statuses.put(p, PrimaryStorageHostStatus.Disconnected));
+                    updateHostProtocolStatus(host.getUuid(), statuses, errorCode, new NoErrorCompletion(compl) {
+                        @Override
+                        public void done() {
+                            compl.addError(errorCode);
+                            compl.allDone();
+                        }
+                    });
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
@@ -326,6 +337,37 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     @Override
     protected void handle(UpdatePrimaryStorageHostStatusMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return String.format("update-host-status-on-primary-storage-%s", self.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                applyHostStatus(msg);
+                bus.reply(msg, new UpdatePrimaryStorageHostStatusReply());
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    // single writer of the (host, primary storage) status: refresh every supplied protocol ref, then
+    // fold them into the aggregate ref as any-connected so a host stays usable while any protocol is up.
+    private void applyHostStatus(UpdatePrimaryStorageHostStatusMsg msg) {
+        PrimaryStorageHostStatus status = msg.getStatus();
+        if (msg instanceof UpdatePrimaryStorageHostProtocolStatusMsg) {
+            UpdatePrimaryStorageHostProtocolStatusMsg pmsg = (UpdatePrimaryStorageHostProtocolStatusMsg) msg;
+            pmsg.getProtocolStatuses().forEach((protocol, protocolStatus) ->
+                    factory.updateHostProtocolStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), protocol, protocolStatus));
+            status = aggregateHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid());
+        }
+
         ExternalPrimaryStorageHostRefVO ref = Q.New(ExternalPrimaryStorageHostRefVO.class)
                 .eq(ExternalPrimaryStorageHostRefVO_.hostUuid, msg.getHostUuid())
                 .eq(ExternalPrimaryStorageHostRefVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
@@ -336,9 +378,31 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             ref = new ExternalHostIdGetter(999).getOrAllocateHostIdRef(msg.getHostUuid(), msg.getPrimaryStorageUuid());
         }
 
-        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), msg.getStatus(), msg.getReason());
-        UpdatePrimaryStorageHostStatusReply reply = new UpdatePrimaryStorageHostStatusReply();
-        bus.reply(msg, reply);
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), status, msg.getReason());
+    }
+
+    private void updateHostProtocolStatus(String hostUuid, Map<String, PrimaryStorageHostStatus> protocolStatuses, ErrorCode reason, NoErrorCompletion completion) {
+        UpdatePrimaryStorageHostProtocolStatusMsg msg = new UpdatePrimaryStorageHostProtocolStatusMsg();
+        msg.setPrimaryStorageUuid(self.getUuid());
+        msg.setHostUuid(hostUuid);
+        msg.setProtocolStatuses(protocolStatuses);
+        msg.setReason(reason);
+        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, self.getUuid());
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                completion.done();
+            }
+        });
+    }
+
+    private PrimaryStorageHostStatus aggregateHostStatus(String psUuid, String hostUuid) {
+        boolean anyConnected = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, psUuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, hostUuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                .isExists();
+        return anyConnected ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected;
     }
 
     @Override
@@ -2408,18 +2472,28 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 node.deployClient(host, Collections.singletonList(msg.getOutputProtocol()), new Completion(compl) {
                     @Override
                     public void success() {
-                        factory.updateHostProtocolStatus(msg.getUuid(), host.getUuid(), msg.getOutputProtocol(),
-                                PrimaryStorageHostStatus.Connected);
-                        compl.done();
+                        updateHostProtocolStatus(host.getUuid(),
+                                Collections.singletonMap(msg.getOutputProtocol(), PrimaryStorageHostStatus.Connected),
+                                null, new NoErrorCompletion(compl) {
+                                    @Override
+                                    public void done() {
+                                        compl.done();
+                                    }
+                                });
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        factory.updateHostProtocolStatus(msg.getUuid(), host.getUuid(), msg.getOutputProtocol(),
-                                PrimaryStorageHostStatus.Disconnected);
                         logger.warn(String.format("failed to prepare host[%s] for protocol[%s] on primary storage[uuid:%s]: %s",
                                 host.getUuid(), msg.getOutputProtocol(), msg.getUuid(), errorCode.getDetails()));
-                        compl.done();
+                        updateHostProtocolStatus(host.getUuid(),
+                                Collections.singletonMap(msg.getOutputProtocol(), PrimaryStorageHostStatus.Disconnected),
+                                errorCode, new NoErrorCompletion(compl) {
+                                    @Override
+                                    public void done() {
+                                        compl.done();
+                                    }
+                                });
                     }
                 })
         ).run(new WhileDoneCompletion(completion) {

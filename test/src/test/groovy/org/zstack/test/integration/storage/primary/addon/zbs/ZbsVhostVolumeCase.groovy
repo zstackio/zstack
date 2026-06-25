@@ -543,7 +543,9 @@ class ZbsVhostVolumeCase extends SubCase {
     // host for the protocol (Vhost -> deploy the SPDK target via the zbs PS agent
     // over DEPLOY_VHOST_PATH) and record per-protocol connectivity rows that the
     // frontend reads through QueryExternalPrimaryStorageHostProtocolRef. the
-    // host-level ref row keeps the legacy folded all-protocol semantics.
+    // host-level ref row is any-protocol-connected: it stays Connected while at
+    // least one protocol (e.g. CBD) is up, so a dead vhost target alone does not
+    // cut the host off from the storage.
     void testAddProtocolPreparesHostsAndRecordsProtocolRefs() {
         HostInventory host = env.inventoryByName("kvm-1") as HostInventory
 
@@ -626,9 +628,9 @@ class ZbsVhostVolumeCase extends SubCase {
                     .isExists()
         }
 
-        // a dead vhost target flips its own protocol row while the CBD row keeps
-        // its own state; the host-level row folds all protocols (legacy
-        // semantics) so it goes Disconnected too
+        // a dead vhost target flips only its own protocol row; the CBD row keeps
+        // its own state, and the host-level row stays Connected because the
+        // aggregate is any-protocol-connected (CBD alone keeps the host usable)
         vhostTargetHealthy.set(false)
         retryInSecs(30) {
             assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
@@ -648,8 +650,8 @@ class ZbsVhostVolumeCase extends SubCase {
             assert Q.New(PrimaryStorageHostRefVO.class)
                     .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
                     .eq(PrimaryStorageHostRefVO_.hostUuid, host.uuid)
-                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Disconnected)
-                    .isExists()
+                    .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists() : "host-level ref stays Connected while CBD is up: aggregate is any-protocol-connected, not all"
         }
 
         // the target recovers: rows self-heal on the next report
