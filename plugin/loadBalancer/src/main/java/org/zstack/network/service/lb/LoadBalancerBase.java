@@ -2336,6 +2336,9 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
                 }
 
+                final String oldHealthCheckTimeout = LoadBalancerSystemTags.HEALTH_TIMEOUT.getTokenByResourceUuid(
+                        msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN);
+
                 if (msg.getHealthCheckInterval() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
                 }
@@ -2359,6 +2362,10 @@ public class LoadBalancerBase {
 
                 if (msg.getUnhealthyThreshold() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold());
+                }
+
+                if (msg.getHealthCheckTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, msg.getHealthCheckTimeout());
                 }
 
                 if (msg.getMaxConnection() != null) {
@@ -2488,6 +2495,17 @@ public class LoadBalancerBase {
                                                 )));
                                     } else {
                                         LoadBalancerSystemTags.BALANCER_ACL.delete(msg.getUuid());
+                                    }
+                                }
+                                if (msg.getHealthCheckTimeout() != null) {
+                                    logger.warn(String.format( "rollback health check timeout for listener [uuid:%s]", msg.getUuid()));
+                                    if (oldHealthCheckTimeout != null) {
+                                        LoadBalancerSystemTags.HEALTH_TIMEOUT.update(msg.getUuid(),
+                                                LoadBalancerSystemTags.HEALTH_TIMEOUT.instantiateTag(map(
+                                                        e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, oldHealthCheckTimeout)
+                                                )));
+                                    } else {
+                                        LoadBalancerSystemTags.HEALTH_TIMEOUT.delete(msg.getUuid());
                                     }
                                 }
                             } else {

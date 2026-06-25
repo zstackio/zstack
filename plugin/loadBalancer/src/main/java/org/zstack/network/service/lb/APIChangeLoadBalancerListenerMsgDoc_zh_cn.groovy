@@ -95,6 +95,15 @@ doc {
 					since "3.4"
 				}
 				column {
+					name "healthCheckTimeout"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查超时时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.28"
+				}
+				column {
 					name "healthCheckProtocol"
 					enclosedIn "changeLoadBalancerListener"
 					desc "负载均衡健康检查协议"
