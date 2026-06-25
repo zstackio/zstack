@@ -14,6 +14,7 @@ import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBack
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.virtualrouter.VirtualRouterSimulatorConfig;
 import org.zstack.test.Api;
+import org.zstack.test.ApiSender;
 import org.zstack.test.ApiSenderException;
 import org.zstack.test.DBUtil;
 import org.zstack.test.WebBeanConstructor;
@@ -322,5 +323,37 @@ public class TestVirtualRouterLb13 {
             }
         });
         Assert.assertNotNull(tval);
+
+        final Integer changedHealthTimeout = 12;
+        final String changedHealthTimeoutTag = LoadBalancerSystemTags.HEALTH_TIMEOUT.instantiateTag(
+                map(e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, changedHealthTimeout))
+        );
+        APIChangeLoadBalancerListenerMsg cmsg = new APIChangeLoadBalancerListenerMsg();
+        cmsg.setUuid(l2.getUuid());
+        cmsg.setHealthCheckTimeout(changedHealthTimeout);
+        cmsg.setSession(session);
+        ApiSender sender = new ApiSender();
+        vconfig.refreshLbCmds.clear();
+        sender.send(cmsg, APIChangeLoadBalancerListenerEvent.class);
+
+        String changedTimeout = LoadBalancerSystemTags.HEALTH_TIMEOUT.getTokenByResourceUuid(l2.getUuid(),
+                LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN);
+        Assert.assertEquals(changedHealthTimeout, Integer.valueOf(changedTimeout));
+
+        cmd = vconfig.refreshLbCmds.get(vconfig.refreshLbCmds.size() - 1);
+        to = CollectionUtils.find(cmd.getLbs(), new Function<LbTO, LbTO>() {
+            @Override
+            public LbTO call(LbTO arg) {
+                return arg.getListenerUuid().equals(l2.getUuid()) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(to);
+        tval = CollectionUtils.find(to.getParameters(), new Function<String, String>() {
+            @Override
+            public String call(String arg) {
+                return arg.equals(changedHealthTimeoutTag) ? arg : null;
+            }
+        });
+        Assert.assertNotNull(JSONObjectUtil.toJsonString(to), tval);
     }
 }
