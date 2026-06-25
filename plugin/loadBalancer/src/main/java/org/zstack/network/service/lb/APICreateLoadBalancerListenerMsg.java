@@ -55,7 +55,7 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String aclType = LoadBalancerAclType.black.toString();
     @APIParam(validValues = {LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.DATA_PLANE_IPVS}, required = false)
     private String dataPlane;
-    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT, LoadBalancerConstants.FORWARD_MODE_NAT, LoadBalancerConstants.FORWARD_MODE_DR}, required = false)
     private String forwardMode;
     @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,

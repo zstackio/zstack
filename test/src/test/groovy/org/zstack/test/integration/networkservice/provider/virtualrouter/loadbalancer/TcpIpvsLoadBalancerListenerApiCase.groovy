@@ -228,13 +228,16 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
         assertCreateListenerError(11085, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
-        assertCreateListenerError(11086, LoadBalancerConstants.LB_PROTOCOL_TCP,
+        CreateLoadBalancerListenerAction.Result natResult = assertCreateListenerError(11086, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_NAT)
-        assertCreateListenerError(11087, LoadBalancerConstants.LB_PROTOCOL_TCP,
+        assert natResult.error.details.contains("TCP IPVS only supports forwardMode[full_nat]")
+
+        CreateLoadBalancerListenerAction.Result drResult = assertCreateListenerError(11087, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_DR)
+        assert drResult.error.details.contains("TCP IPVS only supports forwardMode[full_nat]")
     }
 
-    void assertCreateListenerError(int port, String protocol, String dataPlane, String forwardMode) {
+    CreateLoadBalancerListenerAction.Result assertCreateListenerError(int port, String protocol, String dataPlane, String forwardMode) {
         CreateLoadBalancerListenerAction action = new CreateLoadBalancerListenerAction()
         action.name = "tcp-ipvs-invalid-${port}"
         action.loadBalancerUuid = lb.uuid
@@ -247,6 +250,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
 
         CreateLoadBalancerListenerAction.Result result = action.call()
         assert result.error != null
+        return result
     }
 
     String getApiResultString(ApiResult result) {
