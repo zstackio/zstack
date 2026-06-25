@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `statusReason` varchar(1024) DEFAULT NULL,
     `lastSyncDate` timestamp NULL DEFAULT NULL,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukAiHostCacheStorageVOHostSourceRoot` (`hostUuid`, `sourceRoot`(512)),
+    UNIQUE KEY `ukAiHostCacheStorageVOHostSourceRoot` (`hostUuid`, `sourceRoot`(191)),
     KEY `idxAiHostCacheStorageVOHostUuid` (`hostUuid`),
     CONSTRAINT `fkAiHostCacheStorageVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -131,7 +131,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `lowWatermarkPercent` int DEFAULT NULL,
     `disabledReason` varchar(1024) DEFAULT NULL,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukAiHostModelCachePolicyVOHostSourceRoot` (`hostUuid`, `sourceRoot`(512)),
+    UNIQUE KEY `ukAiHostModelCachePolicyVOHostSourceRoot` (`hostUuid`, `sourceRoot`(191)),
     KEY `idxAiHostModelCachePolicyVOHostUuid` (`hostUuid`),
     CONSTRAINT `fkAiHostModelCachePolicyVOHostEO` FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
