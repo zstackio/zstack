@@ -25,6 +25,12 @@ public class GetLicenseAddOnsAction extends AbstractAction {
         }
     }
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean localOnly = false;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public boolean licenseServerOnly = false;
+
     @Param(required = false)
     public java.util.List systemTags;
 

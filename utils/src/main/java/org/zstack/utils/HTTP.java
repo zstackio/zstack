@@ -245,7 +245,7 @@ public class HTTP {
 
             try (Response rsp = call()) {
                 String body = rsp.body().string();
-                if (rsp.isSuccessful()) {
+                if (!rsp.isSuccessful()) {
                     throw new HTTPFailureException(rsp.code(), body);
                 }
 

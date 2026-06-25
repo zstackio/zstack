@@ -28,8 +28,14 @@ public class RegisterLicenseServerAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String ip;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer port;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map loginParams;
+
+    @Param(required = false, validValues = {"Normal","ChaosForever"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String protocol = "Normal";
 
     @Param(required = false)
     public java.util.List systemTags;
