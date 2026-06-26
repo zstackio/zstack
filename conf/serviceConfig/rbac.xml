@@ -21,6 +21,11 @@
     </message>
 
     <message>
+        <name>org.zstack.header.resource.APIQueryResourceSourceRefMsg</name>
+        <serviceId>query</serviceId>
+    </message>
+
+    <message>
         <name>org.zstack.header.identity.role.api.APIChangeRoleStateMsg</name>
     </message>
 

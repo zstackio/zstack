@@ -1,8 +1,11 @@
 package org.zstack.header.identity.role;
 
+import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.Where;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.identity.OwnedByAccount;
 import org.zstack.header.identity.PolicyVO;
+import org.zstack.header.resource.ResourceSourceRefVO;
 import org.zstack.header.vo.BaseResource;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ResourceVO;
@@ -45,6 +48,12 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
     @OneToMany(fetch = FetchType.EAGER)
     @JoinColumn(name = "roleUuid", insertable = false, updatable = false)
     private Set<RolePolicyRefVO> policies = new HashSet<>();
+
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "resourceUuid", referencedColumnName = "uuid", insertable = false, updatable = false)
+    @Where(clause = "resourceType = 'RoleVO'")
+    @BatchSize(size = 50)
+    private Set<ResourceSourceRefVO> sourceRefs = new HashSet<>();
 
     @Transient
     private String accountUuid;
@@ -111,6 +120,14 @@ public class RoleVO extends ResourceVO implements OwnedByAccount {
 
     public void setPolicies(Set<RolePolicyRefVO> policies) {
         this.policies = policies;
+    }
+
+    public Set<ResourceSourceRefVO> getSourceRefs() {
+        return sourceRefs;
+    }
+
+    public void setSourceRefs(Set<ResourceSourceRefVO> sourceRefs) {
+        this.sourceRefs = sourceRefs;
     }
 
     public RoleType getType() {

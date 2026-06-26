@@ -356,6 +356,7 @@ public class SourceClassMap {
 			put("org.zstack.header.protocol.Neighbor", "org.zstack.sdk.Neighbor");
 			put("org.zstack.header.protocol.NetworkRouterAreaRefInventory", "org.zstack.sdk.NetworkRouterAreaRefInventory");
 			put("org.zstack.header.protocol.RouterAreaInventory", "org.zstack.sdk.RouterAreaInventory");
+			put("org.zstack.header.resource.ResourceSourceRefInventory", "org.zstack.sdk.ResourceSourceRefInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupInventory", "org.zstack.sdk.SchedulerJobGroupInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupJobRefInventory", "org.zstack.sdk.SchedulerJobGroupJobRefInventory");
 			put("org.zstack.header.scheduler.SchedulerJobGroupSchedulerTriggerRefInventory", "org.zstack.sdk.SchedulerJobGroupSchedulerTriggerRefInventory");
@@ -1462,6 +1463,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ResourceConfigStruct", "org.zstack.resourceconfig.ResourceConfigStruct");
 			put("org.zstack.sdk.ResourceExternalBackupInfo", "org.zstack.externalbackup.ResourceExternalBackupInfo");
 			put("org.zstack.sdk.ResourceInventory", "org.zstack.header.vo.ResourceInventory");
+			put("org.zstack.sdk.ResourceSourceRefInventory", "org.zstack.header.resource.ResourceSourceRefInventory");
 			put("org.zstack.sdk.ResourceSpending", "org.zstack.billing.ResourceSpending");
 			put("org.zstack.sdk.ResourceStackInventory", "org.zstack.header.cloudformation.ResourceStackInventory");
 			put("org.zstack.sdk.ResourceStruct", "org.zstack.cloudformation.template.struct.ResourceStruct");
