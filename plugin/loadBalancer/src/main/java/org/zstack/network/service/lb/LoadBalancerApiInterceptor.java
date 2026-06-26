@@ -728,16 +728,46 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         });
     }
 
-    private boolean isHealthCheckProtocolNotSupportedByListenerProtocol(String listenerProtocol, String healthCheckProtocol) {
+    private boolean isHealthCheckProtocolNotSupportedByListenerProtocol(String listenerProtocol, String dataPlane, String healthCheckProtocol) {
         boolean isUdpListener = LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerProtocol);
+        boolean isTcpIpvsListener = isTcpIpvsListener(listenerProtocol, dataPlane);
         boolean isUdpHealthCheck = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(healthCheckProtocol);
+        boolean isTcpHealthCheck = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(healthCheckProtocol);
         boolean isNoneHealthCheck = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(healthCheckProtocol);
 
         if (isUdpListener) {
             return !(isUdpHealthCheck || isNoneHealthCheck);
         }
 
+        if (isTcpIpvsListener) {
+            return !(isTcpHealthCheck || isNoneHealthCheck);
+        }
+
         return isUdpHealthCheck || isNoneHealthCheck;
+    }
+
+    private String getListenerDataPlane(String listenerUuid) {
+        LoadBalancerListenerVO listener = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
+                .find();
+        return listener == null || listener.getDataPlane() == null ? DATA_PLANE_HAPROXY : listener.getDataPlane();
+    }
+
+    private boolean isTcpIpvsListener(String listenerProtocol, String dataPlane) {
+        return LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listenerProtocol) &&
+                DATA_PLANE_IPVS.equals(dataPlane);
+    }
+
+    private boolean hasHttpHealthCheckParameters(APICreateLoadBalancerListenerMsg msg) {
+        return msg.getHealthCheckMethod() != null ||
+                msg.getHealthCheckURI() != null ||
+                msg.getHealthCheckHttpCode() != null;
+    }
+
+    private boolean hasHttpHealthCheckParameters(APIChangeLoadBalancerListenerMsg msg) {
+        return msg.getHealthCheckMethod() != null ||
+                msg.getHealthCheckURI() != null ||
+                msg.getHealthCheckHttpCode() != null;
     }
 
     private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
@@ -767,6 +797,36 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         return ts.length == 2 &&
                 LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(ts[0]) &&
                 !"default".equals(ts[1]);
+    }
+
+    private boolean isValidHealthCheckProtocolInTarget(String protocol) {
+        return LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(protocol);
+    }
+
+    private void normalizeChangeHealthCheckTarget(APIChangeLoadBalancerListenerMsg msg) {
+        String target = msg.getHealthCheckTarget();
+        if (target == null || !target.contains(":")) {
+            return;
+        }
+
+        String[] ts = target.split(":");
+        if (ts.length != 2 || !isValidHealthCheckProtocolInTarget(ts[0])) {
+            throw new ApiMessageInterceptionException(
+                    argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10100, "healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                            target));
+        }
+
+        if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "the health check protocol [%s] conflicts with health check target [%s]",
+                            msg.getHealthCheckProtocol(), target));
+        }
+
+        msg.setHealthCheckProtocol(ts[0]);
+        msg.setHealthCheckTarget(ts[1]);
     }
 
     private void validate(APICreateLoadBalancerListenerMsg msg) {
@@ -818,6 +878,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                         operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "forwardMode is only supported when dataPlane is ipvs"));
             }
         }
+        String dataPlane = msg.getDataPlane();
 
         List<String> healthCheckTargets = getSystemTagTokens(msg, LoadBalancerSystemTags.HEALTH_TARGET,
                 LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
@@ -850,7 +911,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        if (isHealthCheckProtocolNotSupportedByListenerProtocol(msg.getProtocol(), msg.getHealthCheckProtocol())) {
+        if (isTcpIpvsListener(msg.getProtocol(), dataPlane) &&
+                (hasHttpHealthCheckParameters(msg) || hasTag(msg, LoadBalancerSystemTags.HEALTH_PARAMETER))) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support http health check parameters"));
+        }
+
+        if (isHealthCheckProtocolNotSupportedByListenerProtocol(msg.getProtocol(), dataPlane, msg.getHealthCheckProtocol())) {
             throw new ApiMessageInterceptionException(
                     operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10062, "the listener with protocol [%s] doesn't support this health check:[%s]",
                             msg.getProtocol(), msg.getHealthCheckProtocol()));
@@ -1338,6 +1405,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIChangeLoadBalancerListenerMsg msg) {
+        normalizeChangeHealthCheckTarget(msg);
         String target = msg.getHealthCheckTarget();
         if (target != null) {
             if (!LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT.equals(target)) {
@@ -1489,6 +1557,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class).
                                            eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).find();
+        String dataPlane = getListenerDataPlane(msg.getLoadBalancerListenerUuid());
 
         if (msg.getSecurityPolicyType() != null) {
             if (!listenerVO.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
@@ -1515,8 +1584,13 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                             effectiveHealthCheckTarget));
         }
 
+        if (isTcpIpvsListener(listenerVO.getProtocol(), dataPlane) && hasHttpHealthCheckParameters(msg)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support http health check parameters"));
+        }
+
         if (msg.getHealthCheckProtocol() != null) {
-            if (isHealthCheckProtocolNotSupportedByListenerProtocol(listenerVO.getProtocol(), msg.getHealthCheckProtocol())) {
+            if (isHealthCheckProtocolNotSupportedByListenerProtocol(listenerVO.getProtocol(), dataPlane, msg.getHealthCheckProtocol())) {
                 throw new ApiMessageInterceptionException(
                         operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10120, "the listener with protocol [%s] doesn't support this health check:[%s]",
                                 listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
