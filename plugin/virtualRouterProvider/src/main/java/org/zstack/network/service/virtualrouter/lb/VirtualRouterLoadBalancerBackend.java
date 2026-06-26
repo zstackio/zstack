@@ -250,6 +250,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
                 throw new CloudRuntimeException("not support separate vr with multiple networks vpc!");
             }
+            return vrInventory;
         }
 
         DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
