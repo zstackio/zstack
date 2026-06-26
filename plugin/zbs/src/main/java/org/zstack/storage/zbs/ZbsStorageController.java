@@ -31,6 +31,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostAO_;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.MessageReply;
@@ -163,7 +164,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private void activateVhostVolume(String installPath, HostInventory h, ReturnValueCompletion<ActiveVolumeTO> comp) {
         KVMHostVO host = getKvmHost(h);
         if (host == null) {
-            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
+            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
             return;
         }
 
@@ -172,9 +173,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         // zbsadm create-bdev opens <logicalPool>/<volume> via libcbd (it appends the
         // marker zbsadm strips); the physical pool is not needed, so split the zbs path.
         String relativePath = stripScheme(installPath);
-        int slash = relativePath.indexOf('/');
-        cmd.logicalPool = relativePath.substring(0, slash);
-        cmd.volume = relativePath.substring(slash + 1);
+        cmd.logicalPool = ZbsHelper.getPoolFromVolumePath(installPath);
+        cmd.volume = relativePath.substring(relativePath.indexOf('/') + 1);
         cmd.bdevName = buildVhostBdevName(installPath);
 
         httpCall(CREATE_VHOST_BDEV_PATH, cmd, CreateVhostBdevRsp.class, new ReturnValueCompletion<CreateVhostBdevRsp>(comp) {
@@ -228,7 +228,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
             KVMHostVO host = getKvmHost(h);
             if (host == null) {
-                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
+                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
                 return;
             }
 
@@ -402,7 +402,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         public void run(FlowTrigger trigger, Map data) {
                             KVMHostVO host = getKvmHost(h);
                             if (host == null) {
-                                logger.warn(String.format("cannot found kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
+                                logger.warn(String.format("cannot find kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
                                 trigger.next();
                                 return;
                             }
@@ -993,13 +993,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         bus.send(msg, new CloudBusCallBack(comp) {
             @Override
             public void run(MessageReply reply) {
-                boolean targetRunning = false;
+                boolean targetHealthy = false;
                 if (reply.isSuccess()) {
                     VhostTargetHealthRsp rsp = reply.<KVMHostAsyncHttpCallReply>castReply()
                             .toResponse(VhostTargetHealthRsp.class);
-                    targetRunning = rsp.isSuccess() && rsp.targetRunning;
+                    targetHealthy = rsp.isSuccess() && rsp.targetRunning;
                 }
-                healthy.setHealthy(VolumeProtocol.Vhost, targetRunning ? StorageHealthy.Ok : StorageHealthy.Failed);
+                // report only; reconnecting the host redeploys the target via deployClient
+                healthy.setHealthy(VolumeProtocol.Vhost, targetHealthy ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -2267,6 +2268,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public String hostIp;
         public int sshPort;
         public String sshUsername;
+        @NoLogging
         public String sshPassword;
     }
 
