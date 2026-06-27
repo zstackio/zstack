@@ -345,7 +345,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
             @Override
             public void run(SyncTaskChain chain) {
-                applyHostStatus(msg);
+                aggregateAndApplyHostStatus(msg);
                 bus.reply(msg, new UpdatePrimaryStorageHostStatusReply());
                 chain.next();
             }
@@ -359,7 +359,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
     // single writer of the (host, primary storage) status: refresh every supplied protocol ref, then
     // fold them into the aggregate ref as any-connected so a host stays usable while any protocol is up.
-    private void applyHostStatus(UpdatePrimaryStorageHostStatusMsg msg) {
+    private void aggregateAndApplyHostStatus(UpdatePrimaryStorageHostStatusMsg msg) {
         PrimaryStorageHostStatus status = msg.getStatus();
         if (msg instanceof UpdatePrimaryStorageHostProtocolStatusMsg) {
             UpdatePrimaryStorageHostProtocolStatusMsg pmsg = (UpdatePrimaryStorageHostProtocolStatusMsg) msg;
@@ -378,7 +378,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             ref = new ExternalHostIdGetter(999).getOrAllocateHostIdRef(msg.getHostUuid(), msg.getPrimaryStorageUuid());
         }
 
-        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), status, msg.getReason());
+        // a Connected aggregate must not carry a single-protocol failure reason into the change event
+        ErrorCode reason = status == PrimaryStorageHostStatus.Connected ? null : msg.getReason();
+        updatePrimaryStorageHostStatus(msg.getPrimaryStorageUuid(), msg.getHostUuid(), status, reason);
     }
 
     private void updateHostProtocolStatus(String hostUuid, Map<String, PrimaryStorageHostStatus> protocolStatuses, ErrorCode reason, NoErrorCompletion completion) {

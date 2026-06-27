@@ -25,7 +25,6 @@ public interface ZbsConstants {
     // exposes a vhost-user-blk unix socket at <VHOST_SOCKET_DIR>/<bdev name>
     // (zbsadm names the socket after the bdev, so there is no separate controller).
     String VHOST_SOCKET_DIR = "/var/zbsvhost/sockets";
-    String VHOST_CONTROLLER_NAME_PREFIX = "zbs-vhost-";
     String VHOST_BDEV_NAME_PREFIX = "zbs-bdev-";
     // zbsadm runs the SPDK target container as zbsvhost-<host ip> and its admin RPC
     // socket at <VHOST_SOCKET_DIR>/admin.sock; the host-local health probe checks both.

@@ -41,6 +41,7 @@ import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -233,6 +234,8 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                     returnValue.getHealthy().forEach((protocol, healthy) -> protocolStatuses.put(protocol.toString(),
                             healthy == StorageHealthy.Ok ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected));
 
+                    recoverDisconnectedProtocols(extPs, host, returnValue);
+
                     ErrorCode unhealthy = returnValue.getHealthy().values().stream().anyMatch(h -> h == StorageHealthy.Ok)
                             ? null
                             : operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000,
@@ -263,6 +266,77 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 }
             });
         }).run(completion);
+    }
+
+    // doubling retry window per (primary storage, host, protocol); mirrors the kvm ping-skip
+    private final Map<String, ProtocolRecovery> protocolRecoveryByKey = new ConcurrentHashMap<>();
+    private static final int PROTOCOL_RECOVERY_MAX_SKIP = 64;
+
+    private static class ProtocolRecovery {
+        int failures;
+        int skip;
+    }
+
+    private String recoveryKey(String psUuid, String hostUuid, String protocol) {
+        return psUuid + "/" + hostUuid + "/" + protocol;
+    }
+
+    // re-run the idempotent deployClient for the due disconnected protocols (same call host-connect uses);
+    // a recovered protocol clears its backoff and flips back to Connected on the next health ping.
+    private void recoverDisconnectedProtocols(ExternalPrimaryStorageVO extPs, HostInventory host, NodeHealthy healthy) {
+        List<String> due = new ArrayList<>();
+        healthy.getHealthy().forEach((protocol, status) -> {
+            String key = recoveryKey(extPs.getUuid(), host.getUuid(), protocol.toString());
+            if (status == StorageHealthy.Ok) {
+                protocolRecoveryByKey.remove(key);
+                return;
+            }
+            if (dueForRecovery(key)) {
+                due.add(protocol.toString());
+            }
+        });
+        if (due.isEmpty()) {
+            return;
+        }
+        PrimaryStorageNodeSvc node = extPsFactory.getNodeSvc(extPs.getUuid());
+        if (node == null) {
+            return;
+        }
+        node.deployClient(host, due, new Completion(null) {
+            @Override
+            public void success() {
+                logger.debug(String.format("re-established disconnected protocols%s on host[uuid:%s] for external primary storage[uuid:%s]",
+                        due, host.getUuid(), extPs.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to re-establish disconnected protocols%s on host[uuid:%s] for external primary storage[uuid:%s]: %s",
+                        due, host.getUuid(), extPs.getUuid(), errorCode.getDetails()));
+            }
+        });
+    }
+
+    // attempt now then widen the window, or skip a round; compute() keeps the per-key update atomic.
+    private boolean dueForRecovery(String key) {
+        boolean[] due = {false};
+        protocolRecoveryByKey.compute(key, (k, state) -> {
+            if (state == null) {
+                state = new ProtocolRecovery();
+            }
+            if (state.skip > 0) {
+                state.skip--;
+                due[0] = false;
+            } else {
+                state.failures++;
+                // cap the exponent so 1<<failures cannot overflow into a tiny/negative window
+                int exp = Math.min(state.failures, 30);
+                state.skip = Math.min(1 << exp, PROTOCOL_RECOVERY_MAX_SKIP);
+                due[0] = true;
+            }
+            return state;
+        });
+        return due[0];
     }
 
     @Override

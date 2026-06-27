@@ -173,6 +173,7 @@ class ZbsVhostVolumeCase extends SubCase {
             testUnknownRootVolumeProtocolSystemTagRejected()
             testVhostVmStartActivationChain()
             testAddProtocolPreparesHostsAndRecordsProtocolRefs()
+            testProtocolRecoveryBackoff()
         }
     }
 
@@ -450,6 +451,10 @@ class ZbsVhostVolumeCase extends SubCase {
         env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
             return new ZbsStorageController.AgentResponse()
         }
+        // host-connect first prepares the compute host for the SPDK target (hugepages + docker)
+        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.AgentResponse()
+        }
 
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
@@ -551,11 +556,20 @@ class ZbsVhostVolumeCase extends SubCase {
 
         AtomicBoolean ensureCalled = new AtomicBoolean(false)
         AtomicBoolean vhostTargetHealthy = new AtomicBoolean(true)
+        AtomicBoolean redeployedWhileDown = new AtomicBoolean(false)
 
         env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployVhostCmd.class)
             assert cmd.hostIp != null : "deploy cmd missing target host IP for zbsadm SSH"
             ensureCalled.set(true)
+            // only count a redeploy as "while down" when the target is actually down, so the
+            // deploy-on-attach (target healthy) cannot race the down-window assertion
+            if (!vhostTargetHealthy.get()) {
+                redeployedWhileDown.set(true)
+            }
+            return new ZbsStorageController.AgentResponse()
+        }
+        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
             return new ZbsStorageController.AgentResponse()
         }
         env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -630,7 +644,10 @@ class ZbsVhostVolumeCase extends SubCase {
 
         // a dead vhost target flips only its own protocol row; the CBD row keeps
         // its own state, and the host-level row stays Connected because the
-        // aggregate is any-protocol-connected (CBD alone keeps the host usable)
+        // aggregate is any-protocol-connected (CBD alone keeps the host usable).
+        // reset the marker BEFORE entering the down window so a ping firing between
+        // the two writes cannot have its redeploy record wiped
+        redeployedWhileDown.set(false)
         vhostTargetHealthy.set(false)
         retryInSecs(30) {
             assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
@@ -639,6 +656,13 @@ class ZbsVhostVolumeCase extends SubCase {
                     .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
                     .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Disconnected)
                     .isExists()
+        }
+
+        // pingtrack self-heal: while the target reads down, the periodic health check
+        // best-effort redeploys it via DEPLOY_VHOST_PATH, no host reconnect needed
+        retryInSecs(30) {
+            assert redeployedWhileDown.get() : \
+                    "periodic ping did not self-heal: DEPLOY_VHOST_PATH not re-issued while vhost target was down"
         }
         assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
                 .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
@@ -667,6 +691,123 @@ class ZbsVhostVolumeCase extends SubCase {
                     .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid)
                     .eq(PrimaryStorageHostRefVO_.hostUuid, host.uuid)
                     .eq(PrimaryStorageHostRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+    }
+
+    // framework-layer recovery backoff: recovery lives in the external primary storage health check
+    // (ExternalPrimaryStorageKvmFactory), which re-runs deployClient for a disconnected protocol on a
+    // doubling retry window keyed per (ps, host, protocol). a protocol that keeps failing to recover
+    // must NOT be redeployed every ping; the window doubles per attempt and a recovered protocol
+    // clears it. the controller owns no recovery rhythm of its own (recovery reuses deployClient).
+    void testProtocolRecoveryBackoff() {
+        HostInventory host = env.inventoryByName("kvm-1") as HostInventory
+
+        AtomicBoolean vhostDown = new AtomicBoolean(false)
+        // distinct wall-clock seconds in which a recovery redeploy fired WHILE the target is down.
+        // gating on vhostDown drops the deploy-on-attach; per-second dedup collapses the framework's
+        // multi-MDS fan-out of one round into one second. the doubling backoff keeps this set sparse;
+        // without backoff there would be a redeploy every ping second.
+        Set<Long> redeploySeconds = Collections.synchronizedSet(new HashSet<Long>())
+
+        // the recovery deploy always fails here, so the backoff window keeps doubling
+        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            if (vhostDown.get()) {
+                redeploySeconds.add((System.currentTimeMillis() / 1000) as Long)
+            }
+            throw new RuntimeException("vhost target redeploy fails on purpose")
+        }
+        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.AgentResponse()
+        }
+        env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new ZbsStorageController.VhostTargetHealthRsp()
+            rsp.targetRunning = !vhostDown.get()
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                def vrsp = new ZbsStorageController.CreateVolumeRsp()
+                vrsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}".toString()
+                return vrsp
+            }
+            return rsp
+        }
+
+        updateGlobalConfig {
+            category = "host"
+            name = "ping.interval"
+            value = 1
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        // target healthy first: periodic pings report Vhost Connected; this also clears any stale
+        // backoff entry left for this (ps, host, Vhost) key by an earlier test in the suite
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        // target goes down: the framework re-drives recovery, but backs off over time
+        long downStartMs = System.currentTimeMillis()
+        vhostDown.set(true)
+
+        retryInSecs(30) {
+            assert !redeploySeconds.isEmpty() : "framework never re-drove recovery for the down vhost target"
+        }
+
+        // let the doubling backoff play out across many ping rounds
+        Thread.sleep(24000)
+        long downSecs = (System.currentTimeMillis() - downStartMs) / 1000
+        assert downSecs >= 20 : "down window too short to judge backoff: ${downSecs}s"
+        // retried after the first attempt (progression, not one-shot)
+        assert redeploySeconds.size() >= 2 : \
+                "framework did not retry the still-down target: seconds=${redeploySeconds}"
+        // sparse: the doubling window keeps redeploys far below one-per-second over the window
+        assert redeploySeconds.size() <= 12 : \
+                "framework recovery backoff did not throttle: redeployed in ${redeploySeconds.size()} " +
+                "distinct seconds over ${downSecs}s down (doubling window should keep it sparse): ${redeploySeconds}"
+
+        // target recovers: health flips Vhost back to Connected and the backoff entry clears
+        vhostDown.set(false)
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        // prove recovery actually reset the backoff: a fresh outage must redeploy promptly again
+        // (immediate first attempt), not sit out the large window left by the previous outage
+        redeploySeconds.clear()
+        vhostDown.set(true)
+        retryInSecs(15) {
+            assert !redeploySeconds.isEmpty() : \
+                    "recovery did not reset the backoff: a fresh outage did not redeploy within 15s"
+        }
+        vhostDown.set(false)
+        retryInSecs(30) {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
                     .isExists()
         }
 

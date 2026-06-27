@@ -31,6 +31,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostAO_;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.MessageReply;
@@ -114,6 +115,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
     public static final String VHOST_TARGET_HEALTH_PATH = "/zbs/primarystorage/vhost/target/health";
+    // kvmagent prepares the compute host for the SPDK target (hugepages + docker) before zbsadm deploys it.
+    public static final String PREPARE_VHOST_TARGET_ENV_PATH = "/zbs/primarystorage/vhost/target/prepareenv";
     public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
     // zbsadm-driven vhost paths handled by the zbs PS agent (it SSHes from the admin
     // node to the compute host via zbsadm), replacing the compute-side KVM-host paths.
@@ -163,7 +166,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private void activateVhostVolume(String installPath, HostInventory h, ReturnValueCompletion<ActiveVolumeTO> comp) {
         KVMHostVO host = getKvmHost(h);
         if (host == null) {
-            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
+            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
             return;
         }
 
@@ -172,9 +175,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         // zbsadm create-bdev opens <logicalPool>/<volume> via libcbd (it appends the
         // marker zbsadm strips); the physical pool is not needed, so split the zbs path.
         String relativePath = stripScheme(installPath);
-        int slash = relativePath.indexOf('/');
-        cmd.logicalPool = relativePath.substring(0, slash);
-        cmd.volume = relativePath.substring(slash + 1);
+        cmd.logicalPool = ZbsHelper.getPoolFromVolumePath(installPath);
+        cmd.volume = relativePath.substring(relativePath.indexOf('/') + 1);
         cmd.bdevName = buildVhostBdevName(installPath);
 
         httpCall(CREATE_VHOST_BDEV_PATH, cmd, CreateVhostBdevRsp.class, new ReturnValueCompletion<CreateVhostBdevRsp>(comp) {
@@ -228,7 +230,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         if (VolumeProtocol.Vhost.toString().equals(protocol)) {
             KVMHostVO host = getKvmHost(h);
             if (host == null) {
-                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot found kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
+                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
                 return;
             }
 
@@ -396,13 +398,48 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                 if (deployVhostTarget) {
                     flow(new NoRollbackFlow() {
+                        String __name__ = "prepare-vhost-target-env";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            // the SPDK target needs hugepages + docker on the compute host; zbsadm
+                            // only checks them, so ensure them here first. best-effort: a failure
+                            // must not block client deploy / storage attach.
+                            PrepareVhostTargetEnvCmd cmd = new PrepareVhostTargetEnvCmd();
+
+                            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                            msg.setCommand(cmd);
+                            msg.setHostUuid(h.getUuid());
+                            msg.setPath(PREPARE_VHOST_TARGET_ENV_PATH);
+                            msg.setNoStatusCheck(true);
+                            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
+                                                h.getUuid(), reply.getError().getDetails()));
+                                    } else {
+                                        AgentResponse rsp = reply.<KVMHostAsyncHttpCallReply>castReply().toResponse(AgentResponse.class);
+                                        if (!rsp.isSuccess()) {
+                                            logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
+                                                    h.getUuid(), rsp.getError()));
+                                        }
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
                         String __name__ = "deploy-vhost-target";
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             KVMHostVO host = getKvmHost(h);
                             if (host == null) {
-                                logger.warn(String.format("cannot found kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
+                                logger.warn(String.format("cannot find kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
                                 trigger.next();
                                 return;
                             }
@@ -993,13 +1030,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         bus.send(msg, new CloudBusCallBack(comp) {
             @Override
             public void run(MessageReply reply) {
-                boolean targetRunning = false;
+                boolean targetHealthy = false;
                 if (reply.isSuccess()) {
                     VhostTargetHealthRsp rsp = reply.<KVMHostAsyncHttpCallReply>castReply()
                             .toResponse(VhostTargetHealthRsp.class);
-                    targetRunning = rsp.isSuccess() && rsp.targetRunning;
+                    targetHealthy = rsp.isSuccess() && rsp.targetRunning;
                 }
-                healthy.setHealthy(VolumeProtocol.Vhost, targetRunning ? StorageHealthy.Ok : StorageHealthy.Failed);
+                // report only; recovery is driven by the external primary storage health check
+                healthy.setHealthy(VolumeProtocol.Vhost, targetHealthy ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -2267,6 +2305,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public String hostIp;
         public int sshPort;
         public String sshUsername;
+        @NoLogging
         public String sshPassword;
     }
 
@@ -2274,6 +2313,10 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class DestroyVhostCmd extends VhostHostCmd {
+    }
+
+    // prepares the compute host for the SPDK target (hugepages + docker); handled by the host's kvmagent.
+    public static class PrepareVhostTargetEnvCmd extends AgentCommand {
     }
 
     public static class CreateVhostBdevCmd extends VhostHostCmd {
