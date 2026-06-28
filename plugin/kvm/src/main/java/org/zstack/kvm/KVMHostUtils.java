@@ -19,6 +19,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.logging.CLoggerImpl;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.ssh.SshShell;
 
@@ -145,6 +146,10 @@ public class KVMHostUtils {
     public static String collectHostIps(String hostUuid, String managementIp,
                                         String username, String password, int sshPort) {
         return collectHostIps(newSsh(managementIp, username, password, sshPort), hostUuid, managementIp);
+    }
+
+    public static String formatHostForUrl(String host) {
+        return IPv6NetworkUtils.formatHostForUrl(host);
     }
 
     // ZSTAC-84446: force ansible re-run + libvirtd restart only when operator opted in

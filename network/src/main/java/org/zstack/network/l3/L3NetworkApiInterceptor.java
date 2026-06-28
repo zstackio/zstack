@@ -444,10 +444,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         }
 
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
-
-        if (l3Vo.getCategory().equals(L3NetworkCategory.System)) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10034, "can not add ip range, because system network doesn't support ipv6 yet"));
-        }
+        validateManagementNetworkIpRangeVersion(l3Vo, IPv6Constants.IPv6);
 
         List<NormalIpRangeVO> rangeVOS = Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid()).eq(NormalIpRangeVO_.ipVersion, IPv6Constants.IPv6).list();
         if (rangeVOS != null && !rangeVOS.isEmpty()) {
@@ -626,6 +623,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(IpRangeInventory ipr) {
         L3NetworkVO l3Vo = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
+        validateManagementNetworkIpRangeVersion(l3Vo, IPv6Constants.IPv4);
 
         if (ipr.getIpRangeType() == IpRangeType.AddressPool && l3Vo.getCategory() != L3NetworkCategory.Public) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10049, "l3 network [uuid %s: name %s] is not a public network, address pool range can not be added", l3Vo.getUuid(), l3Vo.getName()));
@@ -771,6 +769,29 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         } else if (ipr.getIpRangeType() == IpRangeType.AddressPool) {
             validateAddressPool(ipr);
         }
+    }
+
+    private void validateManagementNetworkIpRangeVersion(L3NetworkVO l3Vo, int newIpVersion) {
+        if (l3Vo.getCategory() != L3NetworkCategory.System) {
+            return;
+        }
+
+        int existingIpVersion = newIpVersion == IPv6Constants.IPv4 ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
+        boolean hasExistingIpRange = Q.New(IpRangeVO.class)
+                .eq(IpRangeVO_.l3NetworkUuid, l3Vo.getUuid())
+                .eq(IpRangeVO_.ipVersion, existingIpVersion)
+                .isExists();
+        if (!hasExistingIpRange) {
+            return;
+        }
+
+        throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10082,
+                "management network l3[uuid:%s] cannot mix IPv4 and IPv6 IP ranges; existing IP version is %s, new IP version is %s",
+                l3Vo.getUuid(), getIpVersionName(existingIpVersion), getIpVersionName(newIpVersion)));
+    }
+
+    private String getIpVersionName(int ipVersion) {
+        return ipVersion == IPv6Constants.IPv6 ? "IPv6" : "IPv4";
     }
 
     private void validate(APIAddIpRangeMsg msg) {

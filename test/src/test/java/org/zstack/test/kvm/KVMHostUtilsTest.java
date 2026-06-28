@@ -127,6 +127,13 @@ public class KVMHostUtilsTest {
     }
 
     @Test
+    public void unionIps_keepsIpv6ExtraIpsForTlsCert() {
+        Assert.assertEquals("172.25.115.196,172.26.115.213,2026:3:3:1::26:7f3e",
+                KVMHostUtils.unionIps("172.25.115.196,172.26.115.213", "172.25.115.196",
+                        "172.26.115.213,2026:3:3:1::26:7f3e", null, Collections.emptySet()));
+    }
+
+    @Test
     public void unionIps_noExtraTagYieldsDetectedOnly() {
         Assert.assertEquals("192.168.1.10,172.17.0.1",
                 KVMHostUtils.unionIps("192.168.1.10,172.17.0.1", "192.168.1.10",

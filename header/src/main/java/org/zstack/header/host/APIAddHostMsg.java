@@ -19,7 +19,7 @@ public abstract class APIAddHostMsg extends APICreateMessage implements AddHostM
     @APIParam(required = false, maxLength = 2048)
     private String description;
     /**
-     * @desc IPv4 address or DNS name of management nic
+     * @desc IPv4 address, IPv6 address, or DNS name of management nic
      */
     @APIParam(emptyString = false)
     private String managementIp;

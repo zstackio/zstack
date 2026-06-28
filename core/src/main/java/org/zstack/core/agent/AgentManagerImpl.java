@@ -26,6 +26,7 @@ import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -45,6 +46,11 @@ import static org.zstack.utils.StringDSL.ln;
  */
 public class AgentManagerImpl extends AbstractService implements AgentManager {
     private static final CLogger logger = Utils.getLogger(AgentManagerImpl.class);
+    private static final String HTTP_URL_FORMAT = "http://%s:%s%s";
+
+    public static String buildAgentUrl(String ip, int port, String path) {
+        return String.format(HTTP_URL_FORMAT, IPv6NetworkUtils.formatHostForUrl(ip), port, path);
+    }
 
     @Autowired
     private CloudBus bus;
@@ -113,7 +119,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
         chain.setName(String.format("continue-connect-agent-server-%s:%s", msg.getIp(), msg.getAgentPort()));
         chain.then(new ShareFlow() {
             private String url(String path) {
-                return String.format("http://%s:%s%s", msg.getIp(), msg.getAgentPort(), path);
+                return buildAgentUrl(msg.getIp(), msg.getAgentPort(), path);
             }
 
             @Override

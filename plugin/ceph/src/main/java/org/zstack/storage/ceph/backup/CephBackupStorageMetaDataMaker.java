@@ -30,6 +30,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -51,8 +52,12 @@ public class CephBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
     @Autowired
     private CloudBus bus;
 
-    protected  String buildUrl( String hostName, Integer monPort,String subPath) {
-        return String.format("http://%s:%s%s", hostName, monPort, subPath);
+    public static String buildAgentUrl(String hostName, Integer monPort, String subPath) {
+        return IPv6NetworkUtils.buildHttpUrl(hostName, monPort) + subPath;
+    }
+
+    protected String buildUrl(String hostName, Integer monPort, String subPath) {
+        return buildAgentUrl(hostName, monPort, subPath);
     }
 
     @Transactional

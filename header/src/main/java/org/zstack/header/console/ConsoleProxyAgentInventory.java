@@ -16,6 +16,8 @@ public class ConsoleProxyAgentInventory {
     private String description;
     private String managementIp;
     private String consoleProxyOverriddenIp;
+    private String consoleProxyOverriddenIpv4;
+    private String consoleProxyOverriddenIpv6;
     private Integer consoleProxyPort;
     private String type;
     private String status;
@@ -30,6 +32,8 @@ public class ConsoleProxyAgentInventory {
         inv.setDescription(vo.getDescription());
         inv.setManagementIp(vo.getManagementIp());
         inv.setConsoleProxyOverriddenIp(vo.getConsoleProxyOverriddenIp());
+        inv.setConsoleProxyOverriddenIpv4(vo.getConsoleProxyOverriddenIpv4());
+        inv.setConsoleProxyOverriddenIpv6(vo.getConsoleProxyOverriddenIpv6());
         inv.setConsoleProxyPort(vo.getConsoleProxyPort());
         inv.setCreateDate(vo.getCreateDate());
         inv.setLastOpDate(vo.getLastOpDate());
@@ -124,5 +128,21 @@ public class ConsoleProxyAgentInventory {
 
     public void setConsoleProxyOverriddenIp(String consoleProxyOverriddenIp) {
         this.consoleProxyOverriddenIp = consoleProxyOverriddenIp;
+    }
+
+    public String getConsoleProxyOverriddenIpv4() {
+        return consoleProxyOverriddenIpv4;
+    }
+
+    public void setConsoleProxyOverriddenIpv4(String consoleProxyOverriddenIpv4) {
+        this.consoleProxyOverriddenIpv4 = consoleProxyOverriddenIpv4;
+    }
+
+    public String getConsoleProxyOverriddenIpv6() {
+        return consoleProxyOverriddenIpv6;
+    }
+
+    public void setConsoleProxyOverriddenIpv6(String consoleProxyOverriddenIpv6) {
+        this.consoleProxyOverriddenIpv6 = consoleProxyOverriddenIpv6;
     }
 }

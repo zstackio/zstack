@@ -16,6 +16,7 @@ import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
@@ -40,6 +41,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class AnsibleRunner {
     private static final CLogger logger = Utils.getLogger(AnsibleRunner.class);
+    static final String HTTP_URL_FORMAT = "http://%s:%d%s";
+    static final String PYPI_SIMPLE_PATH = "/zstack/static/pypi/simple";
 
     @Autowired
     private AnsibleFacade asf;
@@ -390,9 +393,9 @@ public class AnsibleRunner {
                 deployArguments = new AnsibleBasicArguments();
             }
 
-            deployArguments.setPipUrl(String.format("http://%s:%d/zstack/static/pypi/simple", restf.getHostName(), port));
+            deployArguments.setPipUrl(buildPipUrl(restf.getHostName(), port));
             deployArguments.setTrustedHost(restf.getHostName());
-            deployArguments.setYumServer(String.format("%s:%d", restf.getHostName(), port));
+            deployArguments.setYumServer(IPv6NetworkUtils.formatHostPort(restf.getHostName(), port));
             deployArguments.setRemoteUser(username);
             if (password != null && !password.isEmpty()) {
                 deployArguments.setRemotePass(password);
@@ -413,6 +416,10 @@ public class AnsibleRunner {
             throw new CloudRuntimeException(e);
         }
 
+    }
+
+    public static String buildPipUrl(String hostname, int port) {
+        return String.format(HTTP_URL_FORMAT, IPv6NetworkUtils.formatHostForUrl(hostname), port, PYPI_SIMPLE_PATH);
     }
 
 

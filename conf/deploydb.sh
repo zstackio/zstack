@@ -8,6 +8,16 @@ password="$2"
 host="$3"
 port="$4"
 zstack_user_password="$5"
+mysql_host="$host"
+
+case "$mysql_host" in
+  \[*\]) mysql_host="${mysql_host#\[}"; mysql_host="${mysql_host%\]}" ;;
+esac
+
+jdbc_host="$mysql_host"
+case "$jdbc_host" in
+  *:*) jdbc_host="[$jdbc_host]" ;;
+esac
 
 base=`dirname $0`
 
@@ -30,7 +40,7 @@ if command -v greatdb &> /dev/null; then
 fi
 
 mysql_run() {
-    $MYSQL --user=$user --password=$password --host=$host --port=$port "$@"
+    $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port "$@"
 }
 
 if command -v greatdb &> /dev/null; then
@@ -67,7 +77,7 @@ mkdir -p $flyway_sql
 cp $base/db/V0.6__schema.sql $flyway_sql
 cp $base/db/upgrade/* $flyway_sql
 
-url="jdbc:mysql://$host:$port/zstack"
+url="jdbc:mysql://$jdbc_host:$port/zstack"
 
 bash $flyway -user=$user -password=$password -url=$url clean
 
@@ -81,7 +91,7 @@ eval "rm -f $flyway_sql/*"
 
 cp $base/db/V0.6__schema_buildin_httpserver.sql $flyway_sql
 
-url="jdbc:mysql://$host:$port/zstack_rest"
+url="jdbc:mysql://$jdbc_host:$port/zstack_rest"
 bash $flyway -user=$user -password=$password -url=$url clean
 bash $flyway -user=$user -password=$password -url=$url migrate
 
@@ -92,7 +102,7 @@ hostname=`hostname`
 [ -z $zstack_user_password ] && zstack_user_password=''
 
 if command -v greatdb &> /dev/null; then
-  $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+  $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port << EOF
     drop user if exists zstack;
     drop user if exists zstack_rest;
     create user if not exists 'zstack'@'localhost' identified by "$zstack_user_password";
@@ -110,7 +120,7 @@ EOF
 else
   db_version=`$MYSQL --version | awk '/Distrib/{print $5}' |awk -F'.' '{print $1}'`
   if [ $db_version -ge 10 ];then
-      $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+      $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port << EOF
   drop user if exists zstack;
   drop user if exists zstack_rest;
   create user 'zstack' identified by "$zstack_user_password";
@@ -122,7 +132,7 @@ else
   flush privileges;
 EOF
   else
-      $MYSQL --user=$user --password=$password --host=$host --port=$port << EOF
+      $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port << EOF
   grant usage on *.* to 'zstack'@'localhost';
   grant usage on *.* to 'zstack'@'%';
   drop user zstack;
@@ -137,4 +147,3 @@ EOF
 EOF
   fi
 fi
-

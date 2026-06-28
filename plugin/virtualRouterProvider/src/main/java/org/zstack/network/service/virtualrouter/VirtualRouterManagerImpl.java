@@ -52,6 +52,8 @@ import org.zstack.header.query.AddExpandedQueryExtensionPoint;
 import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.query.QueryBelongFilter;
+import org.zstack.header.rest.RESTConstant;
+import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.tag.*;
 import org.zstack.header.vm.*;
 import org.zstack.identity.Account;
@@ -119,6 +121,9 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 	private NetworkServiceProviderInventory virtualRouterProvider;
 	private final Map<String, VirtualRouterHypervisorBackend> hypervisorBackends = new HashMap<String, VirtualRouterHypervisorBackend>();
     private final Map<String, Integer> vrParallelismDegrees = new ConcurrentHashMap<String, Integer>();
+
+    @Autowired
+    private RESTFacade restf;
 
     private List<String> virtualRouterPostCreateFlows;
     private List<String> virtualRouterPostStartFlows;
@@ -961,7 +966,7 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
         } else {
-            ub.host(mgmtNicIp);
+            ub.host(IPv6NetworkUtils.formatHostForUrl(mgmtNicIp));
         }
 
         ub.port(VirtualRouterGlobalProperty.AGENT_PORT);
@@ -971,6 +976,34 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         ub.path(subPath);
 
         return ub.build().toUriString();
+    }
+
+    @Override
+    public Map<String, String> buildAgentCallbackUrlHeaders(String mgmtNicIp) {
+        return Collections.singletonMap(RESTConstant.CALLBACK_URL, restf.buildCallbackUrl(selectManagementIpForAgent(mgmtNicIp)));
+    }
+
+    private String selectManagementIpForAgent(String agentIp) {
+        String routeSourceIp = Platform.getRouteSourceIp(agentIp);
+        if (routeSourceIp != null) {
+            return routeSourceIp;
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(agentIp)) {
+            return Platform.getManagementServerIps().stream()
+                    .filter(IPv6NetworkUtils::isIpv6Address)
+                    .findFirst()
+                    .orElse(Platform.getManagementServerIp());
+        }
+
+        if (NetworkUtils.isIpv4Address(agentIp)) {
+            return Platform.getManagementServerIps().stream()
+                    .filter(NetworkUtils::isIpv4Address)
+                    .findFirst()
+                    .orElse(Platform.getManagementServerIp());
+        }
+
+        return Platform.getManagementServerIp();
     }
 
 	private void buildWorkFlowBuilder() {
@@ -2868,50 +2901,6 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
 
     @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
-        if (ApplianceVmConstant.APPLIANCE_VM_TYPE.equals(vm.getType())) {
-            VirtualRouterVmVO vrVo = Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vm.getUuid()).find();
-            if (vrVo == null) {
-                completion.success();
-                return;
-            }
-            VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vrVo);
-            List<VmNicInventory> vfNics = inv.getVmNics().stream()
-                    .filter(nic -> !Objects.equals(nic.getType(), VmInstanceConstant.VIRTUAL_NIC_TYPE))
-                    .collect(Collectors.toList());
-            if (vrVo.isHaEnabled() && !vfNics.isEmpty()) {
-                List<VirtualRouterHaGroupExtensionPoint> exps = pluginRgty.getExtensionList(VirtualRouterHaGroupExtensionPoint.class);
-                if (exps.isEmpty()) {
-                    completion.success();
-                    return;
-                }
-                String peerUuid = exps.get(0).getPeerUuid(vrVo.getUuid());
-                if (peerUuid == null) {
-                    completion.success();
-                    return;
-                }
-                if (ApplianceVmHaStatus.Master.equals(vrVo.getHaStatus()) &&
-                        ApplianceVmStatus.Connected.equals(vrVo.getStatus()) &&
-                        Q.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.status, ApplianceVmStatus.Connected)
-                                .eq(VirtualRouterVmVO_.uuid, peerUuid).isExists()) {
-                    logger.debug(String.format("demote ha master before migrate, virtual router[uuid:%s]", vrVo.getUuid()));
-                    VirtualRouterAsyncHttpCallMsg msg = new VirtualRouterAsyncHttpCallMsg();
-                    msg.setVmInstanceUuid(vrVo.getUuid());
-                    msg.setCommand(new VirtualRouterCommands.AgentCommand());
-                    msg.setCheckStatus(true);
-                    msg.setPath(VirtualRouterConstant.VR_HA_MASTER_DEMOTE);
-                    bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vrVo.getUuid());
-                    bus.send(msg, new CloudBusCallBack(null) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(reply.getError().toString());
-                            }
-                            completion.success();
-                        }
-                    });
-                }
-            }
-        }
         completion.success();
     }
 }

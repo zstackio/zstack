@@ -25,6 +25,7 @@ import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
 import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.header.zone.ZoneVO_;
 import org.zstack.utils.network.NetworkUtils;
@@ -46,6 +47,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * To change this template use File | Settings | File Templates.
  */
 public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
+    private static final String PRIMARY_STORAGE_RESOURCE_TYPE = "primary storage";
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -56,6 +59,8 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     private PluginRegistry pluginRegistry;
     @Autowired
     private PrimaryStorageManagerImpl primaryStorageManager;
+    @Autowired
+    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof PrimaryStorageMessage) {
@@ -82,6 +87,10 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             validate((APIAddStorageProtocolMsg) msg);
         } else if (msg instanceof APIAddExternalPrimaryStorageMsg) {
             validate((APIAddExternalPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIAddPrimaryStorageMsg) {
+            validate((APIAddPrimaryStorageMsg) msg);
+        } else if (msg instanceof APIUpdatePrimaryStorageMsg) {
+            validate((APIUpdatePrimaryStorageMsg) msg);
         }
 
         setServiceId(msg);
@@ -91,6 +100,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddExternalPrimaryStorageMsg msg) {
         String config = msg.getConfig();
         if (config == null || config.trim().isEmpty()) {
+            validate((APIAddPrimaryStorageMsg) msg);
             return;
         }
         try {
@@ -99,6 +109,33 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_PRIMARY_10053,
                     "config is not a valid JSON object: %s", e.getMessage()));
         }
+
+        validate((APIAddPrimaryStorageMsg) msg);
+    }
+
+    private void validate(APIAddPrimaryStorageMsg msg) {
+        if (PrimaryStorageConstants.LOCAL_STORAGE_TYPE.equals(msg.getType())) {
+            return;
+        }
+
+        managementNetworkIpVersionManager.validateEndpointInZone(msg.getZoneUuid(), msg.getUrl(),
+                PRIMARY_STORAGE_RESOURCE_TYPE, msg.getName(), ORG_ZSTACK_STORAGE_PRIMARY_10055);
+    }
+
+    private void validate(APIUpdatePrimaryStorageMsg msg) {
+        if (msg.getUrl() == null) {
+            return;
+        }
+
+        PrimaryStorageVO vo = Q.New(PrimaryStorageVO.class)
+                .eq(PrimaryStorageVO_.uuid, msg.getUuid())
+                .find();
+        if (PrimaryStorageConstants.LOCAL_STORAGE_TYPE.equals(vo.getType())) {
+            return;
+        }
+
+        managementNetworkIpVersionManager.validateEndpointInZone(vo.getZoneUuid(), msg.getUrl(),
+                PRIMARY_STORAGE_RESOURCE_TYPE, msg.getUuid(), ORG_ZSTACK_STORAGE_PRIMARY_10057);
     }
 
     private void validate(APIAddStorageProtocolMsg msg) {
@@ -217,6 +254,19 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
                 .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
                 .select(PrimaryStorageVO_.type)
                 .findValue();
+
+        if (!PrimaryStorageConstants.LOCAL_STORAGE_TYPE.equals(primaryStorageType)) {
+            String zoneUuid = Q.New(ClusterVO.class)
+                    .eq(ClusterVO_.uuid, msg.getClusterUuid())
+                    .select(ClusterVO_.zoneUuid)
+                    .findValue();
+            String url = Q.New(PrimaryStorageVO.class)
+                    .eq(PrimaryStorageVO_.uuid, msg.getPrimaryStorageUuid())
+                    .select(PrimaryStorageVO_.url)
+                    .findValue();
+            managementNetworkIpVersionManager.validateEndpointInZone(zoneUuid, url,
+                    PRIMARY_STORAGE_RESOURCE_TYPE, msg.getPrimaryStorageUuid(), ORG_ZSTACK_STORAGE_PRIMARY_10055);
+        }
 
         List<StorageAttachClusterMetric> storageAttachClusterMetrics =
                 new ArrayList<>(pluginRegistry.getExtensionList(StorageAttachClusterMetric.class));

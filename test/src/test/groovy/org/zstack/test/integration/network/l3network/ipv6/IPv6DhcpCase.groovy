@@ -112,6 +112,7 @@ class IPv6DhcpCase extends SubCase {
         assert dhcpInfo.endIp == ipr.getEndIp()
         assert dhcpInfo.ipVersion == IPv6Constants.IPv6
         assert dhcpInfo.enableRa
+        assert dhcpInfo.vmUuid == vm.uuid
         assert pcmds.size() == 1
         FlatDhcpBackend.PrepareDhcpCmd pcmd = pcmds.get(0)
         assert pcmd.ipVersion == IPv6Constants.IPv6
@@ -198,6 +199,7 @@ class IPv6DhcpCase extends SubCase {
                 assert dhcpInfo.ip == ip4.ip
                 assert dhcpInfo.gateway == ip4.gateway
             }
+            assert dhcpInfo.vmUuid == vm.uuid
         }
 
         pcmds = Collections.synchronizedList(new ArrayList())
@@ -242,9 +244,9 @@ class IPv6DhcpCase extends SubCase {
                 assert dhcpInfo.ip == ip4.ip
                 assert dhcpInfo.gateway == ip4.gateway
             }
+            assert dhcpInfo.vmUuid == vm.uuid
         }
     }
 
 
 }
-

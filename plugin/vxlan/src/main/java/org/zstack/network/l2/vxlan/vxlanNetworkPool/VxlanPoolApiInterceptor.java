@@ -17,6 +17,7 @@ import org.zstack.network.l2.vxlan.vtep.VtepVO_;
 import org.zstack.network.l2.vxlan.vxlanNetwork.APICreateL2VxlanNetworkMsg;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.HashMap;
@@ -56,31 +57,54 @@ public class VxlanPoolApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APICreateVxlanPoolRemoteVtepMsg msg) {
-        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
-        if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10015, "%s:is not ipv4", msg.getRemoteVtepIp()));
+        String remoteVtepIp = normalizeVtepIp(msg.getRemoteVtepIp());
+        msg.setRemoteVtepIp(remoteVtepIp);
+        if (!isValidVtepIp(remoteVtepIp)) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10032, "%s is not a valid IP address", remoteVtepIp));
         }
 
         SimpleQuery<VtepVO> rqv = dbf.createQuery(VtepVO.class);
         rqv.add(VtepVO_.clusterUuid, SimpleQuery.Op.EQ, msg.getClusterUuid());
         rqv.add(VtepVO_.poolUuid, SimpleQuery.Op.EQ, msg.getL2NetworkUuid());
-        rqv.add(VtepVO_.vtepIp, SimpleQuery.Op.EQ, msg.getRemoteVtepIp());
+        rqv.add(VtepVO_.vtepIp, SimpleQuery.Op.EQ, remoteVtepIp);
         long count = rqv.count();
         if (count > 0) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10016, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep", msg.getRemoteVtepIp(), msg.getL2NetworkUuid(), msg.getClusterUuid()));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10016, "ip[%s] l2NetworkUuid[%s] clusterUuid[%s] ip exist in local vtep", remoteVtepIp, msg.getL2NetworkUuid(), msg.getClusterUuid()));
         }
 
     }
 
     private void validate(APIDeleteVxlanPoolRemoteVtepMsg msg) {
-        boolean isIpv4 = NetworkUtils.isIpv4Address(msg.getRemoteVtepIp());
-        if (!isIpv4) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10017, "%s:is not ipv4", msg.getRemoteVtepIp()));
+        String remoteVtepIp = normalizeVtepIp(msg.getRemoteVtepIp());
+        msg.setRemoteVtepIp(remoteVtepIp);
+        if (!isValidVtepIp(remoteVtepIp)) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10033, "%s is not a valid IP address", remoteVtepIp));
         }
 
     }
 
+    public static boolean isValidVtepIp(String vtepIp) {
+        return NetworkUtils.isIpAddress(normalizeVtepIp(vtepIp));
+    }
+
+    public static String normalizeVtepIp(String vtepIp) {
+        if (vtepIp == null) {
+            return null;
+        }
+
+        String ip = vtepIp.trim();
+        return IPv6NetworkUtils.isIpv6Address(ip) ? IPv6NetworkUtils.getIpv6AddressCanonicalString(ip) : ip;
+    }
+
     private void validate(APICreateVxlanVtepMsg msg) {
+        String vtepIp = normalizeVtepIp(msg.getVtepIp());
+        msg.setVtepIp(vtepIp);
+        if (!isValidVtepIp(vtepIp)) {
+            throw new ApiMessageInterceptionException(argerr(
+                    ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10034,
+                    "%s is not a valid VTEP IP address", vtepIp));
+        }
+
         long count = Q.New(VtepVO.class).eq(VtepVO_.hostUuid, msg.getHostUuid()).eq(VtepVO_.poolUuid, msg.getPoolUuid()).count();
         if (count > 0) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L2_VXLAN_VXLANNETWORKPOOL_10018, "vxlan vtep address for host [uuid : %s] and pool [uuid : %s] pair already existed",

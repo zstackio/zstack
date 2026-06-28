@@ -212,11 +212,6 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10030, "management network[uuid:%s] is not in the same zone[uuid:%s] this offering is going to create",
                             msg.getManagementNetworkUuid(), msg.getZoneUuid()));
         }
-        /* mgt network does not support ipv6 yet, TODO, will be implemented soon */
-        if (mgtL3.getIpVersions().contains(IPv6Constants.IPv6) && !mgtL3.getIpVersions().contains(IPv6Constants.IPv4)) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10031, "can not create virtual router offering, because management network doesn't support ipv6 yet"));
-        }
-
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
             checkIfManagementNetworkReachable(msg.getManagementNetworkUuid());
         }

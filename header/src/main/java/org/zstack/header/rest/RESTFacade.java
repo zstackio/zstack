@@ -91,6 +91,14 @@ public interface RESTFacade {
 
     String getCallbackUrl();
 
+    /**
+     * Builds an async REST callback URL using the specified callback host name or IP address.
+     *
+     * @param hostName callback host name or IP address
+     * @return callback URL reachable by agents
+     */
+    String buildCallbackUrl(String hostName);
+
     String getHostName();
 
     int getPort();

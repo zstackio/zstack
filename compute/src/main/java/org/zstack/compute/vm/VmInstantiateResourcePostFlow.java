@@ -28,11 +28,13 @@ public class VmInstantiateResourcePostFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private final List<PostVmInstantiateResourceExtensionPoint> extensions = pluginRgty.getExtensionList(PostVmInstantiateResourceExtensionPoint.class);
-
+    private List<PostVmInstantiateResourceExtensionPoint> getExtensions() {
+        return pluginRgty.getExtensionList(PostVmInstantiateResourceExtensionPoint.class);
+    }
 
     public void run(FlowTrigger trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<PostVmInstantiateResourceExtensionPoint> extensions = getExtensions();
         for (PostVmInstantiateResourceExtensionPoint ext : extensions) {
             ext.postBeforeInstantiateVmResource(spec);
         }
@@ -64,7 +66,7 @@ public class VmInstantiateResourcePostFlow implements Flow {
     @Override
     public void rollback(FlowRollback trigger, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        rollbackExtensions(extensions.iterator(), spec, trigger);
+        rollbackExtensions(getExtensions().iterator(), spec, trigger);
     }
 
     private void rollbackExtensions(final Iterator<PostVmInstantiateResourceExtensionPoint> iterator, final VmInstanceSpec spec, final FlowRollback trigger) {

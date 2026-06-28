@@ -34,6 +34,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ManagementNetworkIpVersionStorageExtension" class="org.zstack.storage.ManagementNetworkIpVersionStorageExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zone.ManagementNetworkIpVersionResourceExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="DefaultPrimaryStorageAllocatorFactory"
           class="org.zstack.storage.primary.DefaultPrimaryStorageAllocatorFactory">
         <property name="allocatorFlowNames">

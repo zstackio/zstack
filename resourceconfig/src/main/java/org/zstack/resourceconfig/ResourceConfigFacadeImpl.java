@@ -2,6 +2,7 @@ package org.zstack.resourceconfig;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
@@ -29,6 +30,8 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     private CloudBus bus;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private EventFacade evtf;
     @Autowired
     private GlobalConfigFacade gcf;
 
@@ -240,6 +243,9 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     }
 
     private void initResourceConfig() {
-        resourceConfigs.values().forEach(ResourceConfig::init);
+        resourceConfigs.values().forEach(config -> {
+            config.wire(dbf, evtf);
+            config.init();
+        });
     }
 }

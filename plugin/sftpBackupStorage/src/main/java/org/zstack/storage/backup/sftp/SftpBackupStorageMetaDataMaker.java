@@ -34,6 +34,7 @@ import org.zstack.utils.DebugUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.TypedQuery;
 import java.util.*;
@@ -66,7 +67,7 @@ public class SftpBackupStorageMetaDataMaker implements AddImageExtensionPoint, A
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             ub.host("localhost");
         } else {
-            ub.host(hostName);
+            ub.host(IPv6NetworkUtils.formatHostForUrl(hostName));
         }
 
         ub.port(SftpBackupStorageGlobalProperty.AGENT_PORT);
