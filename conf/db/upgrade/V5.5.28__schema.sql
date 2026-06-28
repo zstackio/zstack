@@ -82,10 +82,10 @@ SET g.`zoneUuid` = inferred.`zoneUuid`
 WHERE g.`zoneUuid` IS NULL
   AND inferred.`zoneCount` = 1;
 
-CALL ADD_CONSTRAINT('ModelVO', 'fkModelVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'RESTRICT');
-CALL ADD_CONSTRAINT('ModelServiceVO', 'fkModelServiceVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'RESTRICT');
-CALL ADD_CONSTRAINT('DatasetVO', 'fkDatasetVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'RESTRICT');
-CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'RESTRICT');
+CALL ADD_CONSTRAINT('ModelVO', 'fkModelVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'CASCADE');
+CALL ADD_CONSTRAINT('ModelServiceVO', 'fkModelServiceVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'CASCADE');
+CALL ADD_CONSTRAINT('DatasetVO', 'fkDatasetVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'CASCADE');
+CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupVOZoneVO', 'zoneUuid', 'ZoneEO', 'uuid', 'CASCADE');
 
 -- ZSTAC-84111: Persist Zaku health state on NativeClusterVO for query and manual recovery.
 CALL ADD_COLUMN('NativeClusterVO', 'zakuHealthStatus', 'VARCHAR(32)', 1, 'Unknown');
@@ -255,7 +255,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayVO` (
     KEY `idxAIBusinessGatewayVONativeClusterUuid` (`nativeClusterUuid`),
     KEY `idxAIBusinessGatewayVOModelServiceNetworkUuid` (`modelServiceNetworkUuid`),
     CONSTRAINT `fkAIBusinessGatewayVOOffering` FOREIGN KEY (`offeringUuid`) REFERENCES `zstack`.`AIBusinessGatewayOfferingVO` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fkAIBusinessGatewayVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (`uuid`) ON DELETE RESTRICT,
+    CONSTRAINT `fkAIBusinessGatewayVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkAIBusinessGatewayVOClusterEO` FOREIGN KEY (`clusterUuid`) REFERENCES `zstack`.`ClusterEO` (`uuid`) ON DELETE SET NULL,
     CONSTRAINT `fkAIBusinessGatewayVOModelServiceL3` FOREIGN KEY (`modelServiceNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT,
     CONSTRAINT `fkAIBusinessGatewayVODeveloperL3` FOREIGN KEY (`developerAccessNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT
@@ -289,13 +289,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterBusinessNetworkProfileVO` (
     KEY `idxModelCenterBusinessNetworkProfileVONativeClusterUuid` (`nativeClusterUuid`),
     KEY `idxModelCenterBusinessNetworkProfileVOBusinessGatewayUuid` (`businessGatewayUuid`),
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVOModelCenter` FOREIGN KEY (`modelCenterUuid`) REFERENCES `zstack`.`ModelCenterVO` (`uuid`) ON DELETE CASCADE,
-    CONSTRAINT `fkModelCenterBusinessNetworkProfileVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (`uuid`) ON DELETE RESTRICT,
+    CONSTRAINT `fkModelCenterBusinessNetworkProfileVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVOClusterEO` FOREIGN KEY (`clusterUuid`) REFERENCES `zstack`.`ClusterEO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVOModelServiceL3` FOREIGN KEY (`modelServiceNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT,
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVODeveloperL3` FOREIGN KEY (`developerAccessNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT,
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVOStorageL3` FOREIGN KEY (`storageNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE SET NULL,
-    CONSTRAINT `fkModelCenterBusinessNetworkProfileVOBusinessGateway` FOREIGN KEY (`businessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE RESTRICT,
-    CONSTRAINT `fkModelCenterBusinessNetworkProfileVODeveloperGateway` FOREIGN KEY (`developerAccessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE RESTRICT
+    CONSTRAINT `fkModelCenterBusinessNetworkProfileVOBusinessGateway` FOREIGN KEY (`businessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkModelCenterBusinessNetworkProfileVODeveloperGateway` FOREIGN KEY (`developerAccessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL ADD_COLUMN('ModelServiceInstanceGroupVO', 'businessNetworkProfileUuid', 'VARCHAR(32)', 1, NULL);
