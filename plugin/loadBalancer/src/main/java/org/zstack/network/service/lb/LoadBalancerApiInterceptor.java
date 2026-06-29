@@ -740,6 +740,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         return isUdpHealthCheck || isNoneHealthCheck;
     }
 
+    private boolean isIpvsListener(String listenerProtocol, String dataPlane) {
+        return (LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listenerProtocol) ||
+                LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listenerProtocol)) &&
+                DATA_PLANE_IPVS.equals(dataPlane);
+    }
     private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
         if (healthCheckTarget == null) {
             return null;
@@ -792,9 +797,9 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         }
 
         if (LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane())) {
-            if (!LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
+            if (!isIpvsListener(msg.getProtocol(), msg.getDataPlane())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "data plane [%s] only supports tcp listener", msg.getDataPlane()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "data plane [%s] only supports tcp and udp listener", msg.getDataPlane()));
             }
 
             if (msg.getForwardMode() == null) {
@@ -803,7 +808,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
             if (!LoadBalancerConstants.FORWARD_MODE_FULL_NAT.equals(msg.getForwardMode())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "TCP IPVS only supports forwardMode[%s] in current version, but got [%s]",
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "IPVS only supports forwardMode[%s] in current version, but got [%s]",
                                 LoadBalancerConstants.FORWARD_MODE_FULL_NAT, msg.getForwardMode()));
             }
 

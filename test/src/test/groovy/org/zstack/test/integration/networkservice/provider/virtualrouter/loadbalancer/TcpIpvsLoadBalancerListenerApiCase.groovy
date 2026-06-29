@@ -139,6 +139,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             testTcpHaproxyDefaultDataPlane()
             testTcpIpvsFullNatListener()
             testTcpIpvsDefaultForwardMode()
+            testUdpIpvsFullNatListener()
             testTcpIpvsCreateValidation()
         }
     }
@@ -221,20 +222,40 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert listener.forwardMode == LoadBalancerConstants.FORWARD_MODE_FULL_NAT
     }
 
+    void testUdpIpvsFullNatListener() {
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            delegate.name = "udp-ipvs-full-nat"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_UDP
+            delegate.loadBalancerPort = 11083
+            delegate.instancePort = 8080
+            delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+            delegate.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+        }
+
+        assert listener.dataPlane == LoadBalancerConstants.DATA_PLANE_IPVS
+        assert listener.forwardMode == LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+
+        LoadBalancerListenerVO vo = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listener.uuid)
+                .find()
+        assert vo.protocol == LoadBalancerConstants.LB_PROTOCOL_UDP
+        assert vo.dataPlane == LoadBalancerConstants.DATA_PLANE_IPVS
+        assert vo.forwardMode == LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+    }
+
     void testTcpIpvsCreateValidation() {
-        assertCreateListenerError(11083, LoadBalancerConstants.LB_PROTOCOL_HTTP,
-                LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
-        assertCreateListenerError(11084, LoadBalancerConstants.LB_PROTOCOL_UDP,
+        assertCreateListenerError(11084, LoadBalancerConstants.LB_PROTOCOL_HTTP,
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
         assertCreateListenerError(11085, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
         CreateLoadBalancerListenerAction.Result natResult = assertCreateListenerError(11086, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_NAT)
-        assert natResult.error.details.contains("TCP IPVS only supports forwardMode[full_nat]")
+        assert natResult.error.details.contains("IPVS only supports forwardMode[full_nat]")
 
         CreateLoadBalancerListenerAction.Result drResult = assertCreateListenerError(11087, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_DR)
-        assert drResult.error.details.contains("TCP IPVS only supports forwardMode[full_nat]")
+        assert drResult.error.details.contains("IPVS only supports forwardMode[full_nat]")
     }
 
     CreateLoadBalancerListenerAction.Result assertCreateListenerError(int port, String protocol, String dataPlane, String forwardMode) {
