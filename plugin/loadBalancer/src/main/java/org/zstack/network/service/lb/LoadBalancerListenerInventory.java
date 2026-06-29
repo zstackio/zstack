@@ -57,7 +57,8 @@ public class LoadBalancerListenerInventory implements Serializable {
         inv.setInstancePort(vo.getInstancePort());
         inv.setLoadBalancerPort(vo.getLoadBalancerPort());
         inv.setProtocol(vo.getProtocol());
-        if (LoadBalancerConstants.LB_PROTOCOL_TCP.equals(vo.getProtocol()) &&
+        if ((LoadBalancerConstants.LB_PROTOCOL_TCP.equals(vo.getProtocol()) ||
+                LoadBalancerConstants.LB_PROTOCOL_UDP.equals(vo.getProtocol())) &&
                 LoadBalancerConstants.DATA_PLANE_IPVS.equals(vo.getDataPlane())) {
             inv.setDataPlane(vo.getDataPlane());
             inv.setForwardMode(vo.getForwardMode());
