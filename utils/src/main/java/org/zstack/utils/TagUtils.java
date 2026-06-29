@@ -46,7 +46,7 @@ public class TagUtils {
         List<String> t = new ArrayList<String>();
         t.addAll(splitTagFields(fmt));
 
-        if (fmt.indexOf(TAG_DELIMITER) == -1) {
+        if (fmt.indexOf(TAG_DELIMITER) == -1 && !isTokenField(fmt)) {
             return fmt.equals(tag);
         }
 
@@ -84,7 +84,7 @@ public class TagUtils {
                     continue;
                 }
 
-                int end = indexOfDelimiterOutsideToken(tag, offset);
+                int end = findTokenEnd(fmtFields, tag, offset, i + 1);
                 if (end < 0) {
                     return null;
                 }
@@ -145,22 +145,13 @@ public class TagUtils {
         return fields;
     }
 
-    private static int indexOfDelimiterOutsideToken(String tag, int offset) {
-        int braceDepth = 0;
-        for (int i = offset; i < tag.length(); i++) {
-            char current = tag.charAt(i);
-            if (current == TOKEN_START) {
-                braceDepth++;
-            } else if (current == TOKEN_END && braceDepth > 0) {
-                braceDepth--;
-            }
-
-            if (braceDepth == 0 && tag.startsWith(TAG_DELIMITER, i)) {
-                return i;
-            }
+    private static int findTokenEnd(List<String> fmtFields, String tag, int offset, int nextFieldIndex) {
+        String nextField = fmtFields.get(nextFieldIndex);
+        if (isTokenField(nextField)) {
+            return tag.indexOf(TAG_DELIMITER, offset);
         }
 
-        return -1;
+        return tag.indexOf(TAG_DELIMITER + nextField, offset);
     }
 
     public static Map<String, String> parseIfMatch(String fmt, String tag) {

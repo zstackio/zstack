@@ -101,7 +101,7 @@ public class SshShell {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (tempPasswordFile != null && tempPasswordFile.delete()) {
+            if (tempPasswordFile != null && tempPasswordFile.exists() && !tempPasswordFile.delete()) {
                 logger.warn(String.format("failed to delete file[%s]", tempPasswordFile));
             }
         }
@@ -163,7 +163,7 @@ public class SshShell {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (tempPasswordFile != null && tempPasswordFile.delete()) {
+            if (tempPasswordFile != null && tempPasswordFile.exists() && !tempPasswordFile.delete()) {
                 logger.warn(String.format("failed to delete file[%s]", tempPasswordFile));
             }
         }

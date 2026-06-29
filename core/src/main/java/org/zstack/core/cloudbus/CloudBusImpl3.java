@@ -142,7 +142,7 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     public static final String HTTP_BASE_URL = "/cloudbus";
     private static final String HTTP_URL_FORMAT = "http://%s:%s%s";
-    private static final String HTTP_CONTEXT_URL_FORMAT = "http://%s:%s/%s/%s";
+    private static final String HTTP_CONTEXT_URL_FORMAT = "http://%s:%s/%s%s";
     public static final FutureCompletion SEND_CONFIRMED = new FutureCompletion(null);
 
     public static String buildCloudBusUrl(String ip, int port, String contextPath) {

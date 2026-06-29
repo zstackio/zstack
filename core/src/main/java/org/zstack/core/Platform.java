@@ -92,7 +92,8 @@ public class Platform {
     private static final String IPV4_ADDRESS_COMMAND = "ip -4 add";
     private static final String IPV6_ADDRESS_COMMAND = "ip -6 addr";
     private static final String DEFAULT_ROUTE_COMMAND = "/sbin/ip route";
-    private static final String DEFAULT_ROUTE_MARK = "default via";
+    private static final String DEFAULT_IPV6_ROUTE_COMMAND = "/sbin/ip -6 route";
+    private static final String DEFAULT_ROUTE_MARK = "default";
     private static final String JGROUPS_INITIAL_HOST_FORMAT = "%s[%s],%s[%s]";
     private static final int IP_ADDRESS_COMMAND_CIDR_INDEX = 1;
     private static final int IP_ADDRESS_COMMAND_MIN_TOKEN_COUNT = 2;
@@ -1001,13 +1002,18 @@ public class Platform {
         File tmp = new File(propertiesFile.getAbsolutePath() + TEMP_FILE_SUFFIX);
         try (FileOutputStream outputStream = new FileOutputStream(tmp)) {
             properties.store(outputStream, "ZStack properties");
-            try {
-                Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
-            } catch (IOException e) {
-                Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            }
         } catch (IOException e) {
             throw new CloudRuntimeException(e);
+        }
+
+        try {
+            Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            try {
+                Files.move(tmp.toPath(), propertiesFile.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } catch (IOException ex) {
+                throw new CloudRuntimeException(ex);
+            }
         } finally {
             if (tmp.exists()) {
                 tmp.delete();
@@ -1171,28 +1177,20 @@ public class Platform {
             return normalizeManagementIp(ip);
         }
 
-        Linux.ShellResult ret = Linux.shell(DEFAULT_ROUTE_COMMAND);
-        String defaultLine = null;
-        for (String s : ret.getStdout().split("\n")) {
-            if (s.contains(DEFAULT_ROUTE_MARK)) {
-                defaultLine = s;
-                break;
-            }
+        String routeCommand = DEFAULT_ROUTE_COMMAND;
+        String defaultLine = findDefaultRouteLine(routeCommand);
+        if (defaultLine == null) {
+            routeCommand = DEFAULT_IPV6_ROUTE_COMMAND;
+            defaultLine = findDefaultRouteLine(routeCommand);
         }
 
-        String err = "cannot get management server ip of this machine. there are three ways to get the ip.\n1) search for 'management.server.ip' java property\n2) search for 'ZSTACK_MANAGEMENT_SERVER_IP' environment variable\n3) search for default route printed out by '/sbin/ip route'\nhowever, all above methods failed";
+        String err = "cannot get management server ip of this machine. there are three ways to get the ip.\n1) search for 'management.server.ip' java property\n2) search for 'ZSTACK_MANAGEMENT_SERVER_IP' environment variable\n3) search for default route printed out by '/sbin/ip route' or '/sbin/ip -6 route'\nhowever, all above methods failed";
         if (defaultLine == null) {
             throw new CloudRuntimeException(err);
         }
 
         try {
-            Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-            for (NetworkInterface iface : Collections.list(nets)) {
-                String name = iface.getName();
-                if (defaultLine.contains(name)) {
-                    ip = selectManagementServerIp(Collections.list(iface.getInetAddresses()));
-                }
-            }
+            ip = selectManagementServerIpFromDefaultRoute(defaultLine);
         } catch (SocketException e) {
             throw new CloudRuntimeException(e);
         }
@@ -1201,8 +1199,38 @@ public class Platform {
             throw new CloudRuntimeException(err);
         }
 
-        logger.info(String.format("get management IP[%s] from default route[/sbin/ip route]", ip));
+        logger.info(String.format("get management IP[%s] from default route[%s]", ip, routeCommand));
         return ip;
+    }
+
+    private static String findDefaultRouteLine(String routeCommand) {
+        Linux.ShellResult ret = Linux.shell(routeCommand);
+        for (String s : ret.getStdout().split("\n")) {
+            String line = s.trim();
+            if (line.equals(DEFAULT_ROUTE_MARK) || line.startsWith(DEFAULT_ROUTE_MARK + " ")) {
+                return line;
+            }
+        }
+
+        return null;
+    }
+
+    private static String selectManagementServerIpFromDefaultRoute(String defaultLine) throws SocketException {
+        String[] tokens = defaultLine.split("\\s+");
+        String deviceName = null;
+        for (int i = 0; i < tokens.length - 1; i++) {
+            if ("dev".equals(tokens[i])) {
+                deviceName = tokens[i + 1];
+                break;
+            }
+        }
+
+        if (deviceName == null) {
+            return null;
+        }
+
+        NetworkInterface iface = NetworkInterface.getByName(deviceName);
+        return iface == null ? null : selectManagementServerIp(Collections.list(iface.getInetAddresses()));
     }
 
     public static String getManagementServerIp6() {

@@ -71,9 +71,6 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
         if (msg.getConsoleProxyOverriddenIp() == null) {
             msg.setConsoleProxyOverriddenIp("0.0.0.0");
         }
-        if (msg.getConsoleProxyOverriddenIp().equals("")) {
-            msg.setConsoleProxyOverriddenIp("0.0.0.0");
-        }
         msg.setConsoleProxyOverriddenIpv4(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv4()));
         msg.setConsoleProxyOverriddenIpv6(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv6()));
     }
@@ -83,6 +80,7 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
             return null;
         }
 
-        return IPv6NetworkUtils.stripHostUrlBrackets(host.trim());
+        String normalized = IPv6NetworkUtils.stripHostUrlBrackets(host.trim());
+        return normalized.isEmpty() ? null : normalized;
     }
 }

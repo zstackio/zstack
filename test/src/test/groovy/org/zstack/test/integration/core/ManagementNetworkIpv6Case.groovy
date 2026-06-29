@@ -196,6 +196,7 @@ class ManagementNetworkIpv6Case extends SubCase {
 
     void testCoreManagementUrlsIpv6() {
         assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
+        assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "zstack") == "http://[2001:db8::1]:8080/zstack/cloudbus"
         assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
         assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
     }
@@ -330,7 +331,12 @@ class ManagementNetworkIpv6Case extends SubCase {
     }
 
     void testManagementCidrIpVersionOverload() {
-        assert Platform.getManagementServerCidr(IPv6Constants.IPv4) == Platform.getManagementServerCidr(Platform.getManagementServerIp())
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip4": IPV4,
+        ]) {
+            assert Platform.getManagementServerCidr(IPv6Constants.IPv4) == Platform.getManagementServerCidr(IPV4)
+        }
     }
 
     void testManagementServerIpsReadSecondaryProperties() {
@@ -575,6 +581,13 @@ class ManagementNetworkIpv6Case extends SubCase {
         String migrateCidrTag = "cluster::migrate::network::cidr::${VXLAN_IPV6_CIDR}"
         assert TagUtils.isMatch(migrateCidrFormat, migrateCidrTag)
         assert TagUtils.parseIfMatch(migrateCidrFormat, migrateCidrTag)["migrateCidr"] == VXLAN_IPV6_CIDR
+
+        assert TagUtils.parseIfMatch("{cidr}", VXLAN_IPV6_CIDR)["cidr"] == VXLAN_IPV6_CIDR
+
+        String middleCidrFormat = "foo::{cidr}::bar"
+        String middleCidrTag = "foo::${VXLAN_IPV6_CIDR}::bar"
+        assert TagUtils.isMatch(middleCidrFormat, middleCidrTag)
+        assert TagUtils.parseIfMatch(middleCidrFormat, middleCidrTag)["cidr"] == VXLAN_IPV6_CIDR
     }
 
     void testKvmExtraIpCidrSelection() {

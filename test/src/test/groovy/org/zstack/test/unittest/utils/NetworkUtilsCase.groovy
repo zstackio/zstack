@@ -63,5 +63,8 @@ class NetworkUtilsCase {
         assert uri.hostname == "fd00:172:24::10"
         assert uri.sshPort == 2222
         assert uri.monPort == 6789
+
+        uri = new MonUri("root:password@[fd00:172:24:0:0:0:0:10]:2222/?monPort=6789")
+        assert uri.hostname == "fd00:172:24::10"
     }
 }

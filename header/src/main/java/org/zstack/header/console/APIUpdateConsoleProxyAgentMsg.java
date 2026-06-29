@@ -16,7 +16,7 @@ import org.zstack.header.rest.RestRequest;
 public class APIUpdateConsoleProxyAgentMsg extends APIMessage implements ConsoleProxyAgentMessage {
     @APIParam(resourceType = ConsoleProxyAgentVO.class)
     private String uuid;
-    @APIParam
+    @APIParam(required = false)
     private String consoleProxyOverriddenIp;
     @APIParam(required = false)
     private String consoleProxyOverriddenIpv4;

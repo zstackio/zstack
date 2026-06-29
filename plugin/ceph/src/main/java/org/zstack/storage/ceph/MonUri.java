@@ -5,6 +5,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -92,7 +93,7 @@ public class MonUri {
                                 " in format of %s", url, MON_URL_FORMAT)
                 );
             }
-            hostname = stripIpv6Brackets(hostname);
+            hostname = normalizeHostname(hostname);
 
             sshPort = uri.getPort() == -1 ? sshPort : uri.getPort();
             if (sshPort < 1 || sshPort > 65535) {
@@ -113,6 +114,11 @@ public class MonUri {
         }
 
         return host;
+    }
+
+    private static String normalizeHostname(String host) {
+        host = stripIpv6Brackets(host);
+        return IPv6NetworkUtils.isIpv6Address(host) ? IPv6NetworkUtils.normalizeIpv6(host) : host;
     }
 
     public int getSshPort() {
