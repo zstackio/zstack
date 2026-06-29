@@ -30,7 +30,9 @@ class ApiHelperGenerator {
                 }
 
                 return """
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 """
             }()
 

@@ -3,11 +3,11 @@ package org.zstack.sdk;
 
 
 public class QueryAiHostModelCacheResult {
-    public java.util.List inventories;
-    public void setInventories(java.util.List inventories) {
+    public java.util.List<org.zstack.sdk.AiHostModelCacheInventory> inventories;
+    public void setInventories(java.util.List<org.zstack.sdk.AiHostModelCacheInventory> inventories) {
         this.inventories = inventories;
     }
-    public java.util.List getInventories() {
+    public java.util.List<org.zstack.sdk.AiHostModelCacheInventory> getInventories() {
         return this.inventories;
     }
 
