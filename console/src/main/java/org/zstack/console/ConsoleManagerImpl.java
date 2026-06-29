@@ -8,6 +8,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -45,7 +46,7 @@ import static org.zstack.core.Platform.operr;
  * To change this template use File | Settings | File Templates.
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
-        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint {
+        VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, KvmReportVmShutdownFromGuestEventExtensionPoint {
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -255,6 +256,27 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 //TODO
                 logger.warn(errorCode.toString());
                 completion.success();
+            }
+        });
+    }
+
+    @Override
+    public void kvmReportVmShutdownEvent(String vmUuid) {
+        VmInstanceVO vmvo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
+        if (vmvo == null) {
+            return;
+        }
+
+        VmInstanceInventory inv = VmInstanceInventory.valueOf(vmvo);
+        getBackend().deleteConsoleSession(inv, new Completion(null) {
+            @Override
+            public void success() {
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format(
+                        "failed to delete console session for vm[uuid:%s] on guest shutdown, because %s", vmUuid, errorCode));
             }
         });
     }
