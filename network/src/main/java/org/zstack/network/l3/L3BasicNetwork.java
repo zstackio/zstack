@@ -64,6 +64,7 @@ import java.math.BigInteger;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.utils.CollectionDSL.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -159,8 +160,34 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(APIAddIpRangeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                doAddIpRange(msg, chain);
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return "add-ip-range";
+            }
+        });
+    }
+
+    private void doAddIpRange(APIAddIpRangeMsg msg, SyncTaskChain chain) {
         IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+        ErrorCode errorCode = validateManagementNetworkIpRangeVersionBeforeCreate(ipr);
+        if (errorCode != null) {
+            evt.setError(errorCode);
+            bus.publish(evt);
+            chain.next();
+            return;
+        }
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
         factory.createIpRange(Collections.singletonList(ipr), msg, new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
@@ -171,14 +198,39 @@ public class L3BasicNetwork implements L3Network {
                 setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
                 evt.setInventory(inv);
                 bus.publish(evt);
+                chain.next();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
                 bus.publish(evt);
+                chain.next();
             }
         });
+    }
+
+    private ErrorCode validateManagementNetworkIpRangeVersionBeforeCreate(IpRangeInventory ipr) {
+        if (self.getCategory() != L3NetworkCategory.System) {
+            return null;
+        }
+
+        int existingIpVersion = ipr.getIpVersion() == IPv6Constants.IPv4 ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
+        boolean hasExistingIpRange = Q.New(IpRangeVO.class)
+                .eq(IpRangeVO_.l3NetworkUuid, self.getUuid())
+                .eq(IpRangeVO_.ipVersion, existingIpVersion)
+                .isExists();
+        if (!hasExistingIpRange) {
+            return null;
+        }
+
+        return argerr(ORG_ZSTACK_NETWORK_L3_10082,
+                "management network l3[uuid:%s] cannot mix IPv4 and IPv6 IP ranges; existing IP version is %s, new IP version is %s",
+                self.getUuid(), getIpVersionName(existingIpVersion), getIpVersionName(ipr.getIpVersion()));
+    }
+
+    private String getIpVersionName(int ipVersion) {
+        return ipVersion == IPv6Constants.IPv6 ? "IPv6" : "IPv4";
     }
 
     private void handleLocalMessage(Message msg) {
