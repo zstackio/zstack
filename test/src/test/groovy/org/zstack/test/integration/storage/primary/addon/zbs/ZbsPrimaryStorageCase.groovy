@@ -6,6 +6,8 @@ import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply
@@ -194,6 +196,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsPing()
             testCheckHostStorageConnection()
             testNegativeScenario()
+            testDeleteVolumeTriesNextMdsAfterSyncFailure()
             testAddExternalPrimaryStorageWithMalformedJsonRejectedByInterceptor()
             testDataVolumeNegativeScenario()
             testDecodeMdsUriWithSpecialPassword()
@@ -895,6 +898,35 @@ class ZbsPrimaryStorageCase extends SubCase {
             assert getUsedCapacity("lpool2") == usedCapPoolBefore
             assert getUsedCapacity() == usedCapPsBefore
         }
+    }
+
+    void testDeleteVolumeTriesNextMdsAfterSyncFailure() {
+        AtomicInteger getVolumeClientsCallCount = new AtomicInteger(0)
+        List<String> getVolumeClientsMds = Collections.synchronizedList(new ArrayList<>())
+        env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetVolumeClientsCmd.class)
+            getVolumeClientsMds.add(cmd.addr)
+            if (getVolumeClientsCallCount.incrementAndGet() == 1) {
+                throw new OperationFailureException(new ErrorCode("TEST.1000", "test error", "simulated MDS network failure"))
+            }
+
+            return new ZbsStorageController.GetVolumeClientsRsp()
+        }
+
+        VolumeInventory volume = createDataVolume {
+            name = "delete-after-mds-sync-failure"
+            diskOfferingUuid = diskOffering.uuid
+            primaryStorageUuid = ps.uuid
+        } as VolumeInventory
+
+        deleteVolume(volume.uuid)
+
+        assert getVolumeClientsCallCount.get() == 2 :
+                "deleteVolume expunge should retry GET_VOLUME_CLIENTS on next MDS after sync failure: expectedCalls=2 actualCalls=${getVolumeClientsCallCount.get()} mds=${getVolumeClientsMds}"
+        assert getVolumeClientsMds.toSet().size() == 2 :
+                "deleteVolume expunge should use two different MDS nodes after first sync failure: expectedDistinctMds=2 actualMds=${getVolumeClientsMds}"
+
+        env.cleanSimulatorHandlers()
     }
 
     void testNegativeScenario() {
