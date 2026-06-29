@@ -9,12 +9,12 @@ import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
-import org.zstack.core.db.SQL;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigVO;
+import org.zstack.resourceconfig.ResourceConfigVO_;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,12 +76,11 @@ public class VmCpuVendorKvmStartVmExtension implements KVMStartVmExtensionPoint,
             KVMGlobalConfig.NESTED_VIRTUALIZATION.updateValue(CPU_MODE_HOST_PASSTHROUGH);
         }
 
-        String sql = "select rc from ResourceConfigVO rc where rc.name = :name " +
-                "and rc.category = :category and rc.value = :value";
-        List<ResourceConfigVO> rcs = SQL.New(sql).
-                param("name", "vm.cpuMode").
-                param("category", KVMGlobalConfig.CATEGORY).
-                param("value", CPU_MODE_HYGON_CUSTOMIZED).list();
+        List<ResourceConfigVO> rcs = Q.New(ResourceConfigVO.class)
+                .eq(ResourceConfigVO_.name, "vm.cpuMode")
+                .eq(ResourceConfigVO_.category, KVMGlobalConfig.CATEGORY)
+                .eq(ResourceConfigVO_.value, CPU_MODE_HYGON_CUSTOMIZED)
+                .list();
 
         if (!rcs.isEmpty()) {
             rcs.forEach(rc -> rc.setValue(CPU_MODE_HOST_PASSTHROUGH));

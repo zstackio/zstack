@@ -19,6 +19,8 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.sql.Timestamp;
@@ -35,6 +37,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class ConsoleProxyBase implements ConsoleProxy {
     private static final CLogger logger = Utils.getLogger(ConsoleProxyBase.class);
+    static final String ANY_IPV4_ADDRESS = "0.0.0.0";
+    static final String ANY_IPV6_ADDRESS = IPv6Constants.IPV6_ANY_ADDRESS;
     private ConsoleProxyInventory self;
 
     @Autowired
@@ -79,7 +83,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setTargetSchema(targetSchema);
         cmd.setTargetHostname(targetHostname);
         cmd.setTargetPort(targetPort);
-        cmd.setProxyHostname("0.0.0.0");
+        cmd.setProxyHostname(selectProxyListenHostname(self.getProxyHostname()));
         if (ConsoleConstants.HTTP_SCHEMA.equals(targetSchema)) {
             cmd.setProxyPort(CoreGlobalProperty.HTTP_CONSOLE_PROXY_PORT);
         } else {
@@ -123,6 +127,10 @@ public class ConsoleProxyBase implements ConsoleProxy {
                 return ConsoleProxyCommands.EstablishProxyRsp.class;
             }
         });
+    }
+
+    public static String selectProxyListenHostname(String proxyHostname) {
+        return IPv6NetworkUtils.isIpv6Address(proxyHostname) ? ANY_IPV6_ADDRESS : ANY_IPV4_ADDRESS;
     }
 
     void doEstablishDirectConsoleConnection(ConsoleUrl consoleUrl, final ReturnValueCompletion<ConsoleProxyInventory> completion) {

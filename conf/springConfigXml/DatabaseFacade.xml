@@ -78,7 +78,7 @@
                 <prop key="hibernate.search.default.directory_provider">infinispan</prop>
                 <prop key="hibernate.search.infinispan.configuration_resourcename">searchConfig/default-infinispan.xml</prop>
                 <prop key="hibernate.search.default.exclusive_index_use">${Exclusive.indexUse:false}</prop>
-                <prop key="hibernate.search.default.worker.backend">jgroups</prop>
+                <prop key="hibernate.search.default.worker.backend">${Search.backend:jgroups}</prop>
                 <prop key="hibernate.search.services.jgroups.configurationFile">searchConfig/jgroup-backend-tcp.xml</prop>
                 <!--<prop key="hibernate.search.default.indexBase">${Search.indexBaseDir:/var/lib/zstack/search/indexes}</prop>-->
                 <!--disable automatic index update

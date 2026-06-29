@@ -36,6 +36,22 @@ public class ConsoleProxyAgentInventory  {
         return this.consoleProxyOverriddenIp;
     }
 
+    public java.lang.String consoleProxyOverriddenIpv4;
+    public void setConsoleProxyOverriddenIpv4(java.lang.String consoleProxyOverriddenIpv4) {
+        this.consoleProxyOverriddenIpv4 = consoleProxyOverriddenIpv4;
+    }
+    public java.lang.String getConsoleProxyOverriddenIpv4() {
+        return this.consoleProxyOverriddenIpv4;
+    }
+
+    public java.lang.String consoleProxyOverriddenIpv6;
+    public void setConsoleProxyOverriddenIpv6(java.lang.String consoleProxyOverriddenIpv6) {
+        this.consoleProxyOverriddenIpv6 = consoleProxyOverriddenIpv6;
+    }
+    public java.lang.String getConsoleProxyOverriddenIpv6() {
+        return this.consoleProxyOverriddenIpv6;
+    }
+
     public java.lang.Integer consoleProxyPort;
     public void setConsoleProxyPort(java.lang.Integer consoleProxyPort) {
         this.consoleProxyPort = consoleProxyPort;

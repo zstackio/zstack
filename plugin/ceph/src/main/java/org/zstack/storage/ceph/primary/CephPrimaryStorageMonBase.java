@@ -26,6 +26,7 @@ import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.storage.ceph.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
@@ -506,7 +507,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         cmd.testImagePath = String.format("%s/zshb.ps.%s.%s", poolName, self.getUuid(), self.getMonAddr());
         cmd.monUuid = getSelf().getUuid();
         cmd.primaryStorageUuid = getSelf().getPrimaryStorageUuid();
-        cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
+        cmd.monAddr = IPv6NetworkUtils.formatHostPort(getSelf().getMonAddr(), getSelf().getMonPort());
 
         restf.asyncJsonPost(CephAgentUrl.primaryStorageUrl(self.getHostname(), PING_PATH),
                 cmd, new JsonAsyncRESTCallback<PingRsp>(completion) {

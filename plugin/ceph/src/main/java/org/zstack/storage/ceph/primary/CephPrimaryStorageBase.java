@@ -87,6 +87,7 @@ import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.io.Serializable;
@@ -4822,7 +4823,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         cmd.monUrls = CollectionUtils.transformToList(getSelf().getMons(), new Function<String, CephPrimaryStorageMonVO>() {
             @Override
             public String call(CephPrimaryStorageMonVO arg) {
-                return String.format("%s:%s", arg.getMonAddr(), arg.getMonPort());
+                return IPv6NetworkUtils.formatHostPort(arg.getMonAddr(), arg.getMonPort());
             }
         });
         cmd.strategy = param.getStrategy();
@@ -4992,7 +4993,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         .eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, self.getUuid())
                         .listValues())
                 .monUrls(CollectionUtils.transformToList(getSelf().getMons(), (Function<String, CephPrimaryStorageMonVO>) arg
-                        -> String.format("%s:%s", arg.getMonAddr(), arg.getMonPort())));
+                        -> IPv6NetworkUtils.formatHostPort(arg.getMonAddr(), arg.getMonPort())));
 
         List<KVMHostAsyncHttpCallMsg> msgs = CollectionUtils.transformToList(hostUuids, (Function<KVMHostAsyncHttpCallMsg, String>) huuid -> {
             KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -6006,7 +6007,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 final String extraIps = CephMonSystemTags.EXTRA_IPS
                         .getTokenByResourceUuid(mon.getUuid(), CephMonSystemTags.EXTRA_IPS_TOKEN);
                 Optional.ofNullable(extraIps).ifPresent(it -> ips.addAll(Arrays.asList(it.split(","))));
-                List<String> cidrIps = NetworkUtils.filterIpv4sInCidr(ips, migrateCidr);
+                List<String> cidrIps = NetworkUtils.filterIpsInCidr(ips, migrateCidr);
                 if (!cidrIps.isEmpty()) {
                     monMigrateIpMap.put(mon.getUuid(), cidrIps.get(0));
                 }

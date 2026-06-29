@@ -1836,6 +1836,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         public List<HostRouteInfo> hostRoutes;
         public String nicType;
         public String vlanId;
+        public String vmUuid;
     }
 
     public static class ApplyDhcpCmd extends KVMAgentCommands.AgentCommand {
@@ -2063,6 +2064,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                 info.mtu = arg.getMtu();
                 info.hostRoutes = getL3NetworkHostRoute(arg.getL3Network().getUuid());
                 info.vmMultiGateway = multiGateway;
+                info.vmUuid = arg.getVmUuid();
                 if ((arg.getIpVersion() == IPv6Constants.DUAL_STACK  || arg.getIpVersion() == IPv6Constants.IPv6)
                         && !IPv6Constants.SLAAC.equals(arg.getRaMode())) {
                     info.ip6 = arg.getIp6();

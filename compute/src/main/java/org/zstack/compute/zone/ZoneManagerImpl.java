@@ -20,9 +20,13 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.tag.AbstractSystemTagOperationJudger;
+import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagValidator;
 import org.zstack.header.zone.*;
 import org.zstack.search.SearchQuery;
 import org.zstack.tag.TagManager;
+import org.zstack.utils.network.ManagementNetworkIpVersionUtils;
 import org.zstack.utils.ObjectUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -51,9 +55,13 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     private TagManager tagMgr;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ManagementNetworkIpVersionManagerImpl managementNetworkIpVersionManager;
 
     private Map<String, ZoneFactory> zoneFactories = Collections.synchronizedMap(new HashMap<String, ZoneFactory>());
     private static final Set<Class> allowedMessageAfterSoftDeletion = new HashSet<Class>();
+    private static final String DEFAULT_MANAGEMENT_NETWORK_IP_VERSION_TAG =
+            String.format("managementNetwork::ipVersion::%s", ManagementNetworkIpVersionUtils.IPV4);
 
     static {
         allowedMessageAfterSoftDeletion.add(ZoneDeletionMsg.class);
@@ -156,8 +164,20 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
         }.execute();
 
         tagMgr.createTagsFromAPICreateMessage(msg, finalVO.getUuid(), ZoneVO.class.getSimpleName());
+        createDefaultManagementNetworkIpVersionTagIfAbsent(finalVO.getUuid());
 
         return ZoneInventory.valueOf(finalVO);
+    }
+
+    private void createDefaultManagementNetworkIpVersionTagIfAbsent(String zoneUuid) {
+        if (ZoneSystemTags.MANAGEMENT_NETWORK_IP_VERSION.getTagInventory(zoneUuid) != null) {
+            return;
+        }
+
+        tagMgr.createNonInherentSystemTag(
+                zoneUuid,
+                DEFAULT_MANAGEMENT_NETWORK_IP_VERSION_TAG,
+                ZoneVO.class.getSimpleName());
     }
 
     private void createZone(APICreateZoneMsg msg, ReturnValueCompletion<ZoneInventory> completion) {
@@ -225,6 +245,31 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     @Override
     public boolean start() {
         populateExtensions();
+        ZoneSystemTags.MANAGEMENT_NETWORK_IP_VERSION.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                managementNetworkIpVersionManager.validateZoneIpVersionTagValue(resourceUuid, systemTag);
+            }
+        });
+        ZoneSystemTags.MANAGEMENT_NETWORK_IP_VERSION.installJudger(new AbstractSystemTagOperationJudger() {
+            @Override
+            public void tagPreCreated(SystemTagInventory tag) {
+                managementNetworkIpVersionManager.validateZoneIpVersionTag(
+                        tag.getResourceUuid(), tag.getTag());
+            }
+
+            @Override
+            public void tagPreUpdated(SystemTagInventory old, SystemTagInventory newTag) {
+                managementNetworkIpVersionManager.validateZoneIpVersionTag(
+                        newTag.getResourceUuid(), newTag.getTag(), old.getUuid());
+            }
+
+            @Override
+            public void tagPreDeleted(SystemTagInventory tag) {
+                managementNetworkIpVersionManager.validateZoneCompatibleWithExistingResources(
+                        tag.getResourceUuid(), ManagementNetworkIpVersionUtils.IPV4);
+            }
+        });
         return true;
     }
 

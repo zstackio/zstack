@@ -39,7 +39,7 @@ public class ZSha2Helper {
         ZSha2Info info = JSONObjectUtil.toObject(result.getStdout(), ZSha2Info.class);
 
         info.setMaster(ShellUtils.runAndReturn(String.format(
-                "ip addr show %s | grep -q '[^0-9]%s[^0-9]'", info.getNic(), info.getDbvip())).isReturnCode(0));
+                "ip addr show %s | grep -q ' %s/'", info.getNic(), info.getDbvip())).isReturnCode(0));
         return info;
     }
 

@@ -31,7 +31,7 @@ public class DeleteVxlanPoolRemoteVtepAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
-    @Param(required = true, maxLength = 15, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 39, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String remoteVtepIp;
 
     @Param(required = false)

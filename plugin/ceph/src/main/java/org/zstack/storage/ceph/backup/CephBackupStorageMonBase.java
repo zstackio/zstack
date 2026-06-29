@@ -28,6 +28,7 @@ import org.zstack.storage.backup.BackupStorageGlobalConfig;
 import org.zstack.storage.ceph.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
@@ -494,7 +495,7 @@ public class CephBackupStorageMonBase extends CephMonBase {
         }
 
         PingCmd cmd = new PingCmd();
-        cmd.monAddr = String.format("%s:%s", getSelf().getMonAddr(), getSelf().getMonPort());
+        cmd.monAddr = IPv6NetworkUtils.formatHostPort(getSelf().getMonAddr(), getSelf().getMonPort());
         cmd.testImagePath = String.format("%s/zshb.bs.%s.%s", poolName, self.getUuid(), self.getMonAddr());
         cmd.monUuid = getSelf().getUuid();
         cmd.backupStorageUuid = getSelf().getBackupStorageUuid();

@@ -4,6 +4,9 @@ import org.apache.commons.collections.list.SynchronizedList
 import org.springframework.http.HttpEntity
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
+import org.zstack.network.l2.vxlan.vtep.VtepVO
+import org.zstack.network.l2.vxlan.vtep.VtepVO_
+import org.zstack.core.db.Q
 import org.zstack.sdk.*
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
@@ -93,6 +96,7 @@ class AddVxlanVtepIpCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testCreateVxlanVtepIpValidation()
             testVxlanVtepIpChanged()
             testCreateVxlanPoll()
         }
@@ -101,6 +105,79 @@ class AddVxlanVtepIpCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testCreateVxlanVtepIpValidation() {
+        def zone = env.inventoryByName("zone") as ZoneInventory
+        def host1 = env.inventoryByName("kvm1") as KVMHostInventory
+        def host2 = env.inventoryByName("kvm2") as KVMHostInventory
+
+        def pool = createL2VxlanNetworkPool {
+            name = "TestVxlanPoolValidation"
+            zoneUuid = zone.uuid
+        } as L2VxlanNetworkPoolInventory
+
+        expect(AssertionError.class) {
+            createVxlanVtep {
+                hostUuid = host1.uuid
+                poolUuid = pool.uuid
+                vtepIp = "not-an-ip"
+            }
+        }
+        assert !Q.New(VtepVO.class)
+                .eq(VtepVO_.poolUuid, pool.uuid)
+                .eq(VtepVO_.vtepIp, "not-an-ip")
+                .isExists()
+
+        expect(AssertionError.class) {
+            createVxlanVtep {
+                hostUuid = host1.uuid
+                poolUuid = pool.uuid
+                vtepIp = "12345::1"
+            }
+        }
+        assert !Q.New(VtepVO.class)
+                .eq(VtepVO_.poolUuid, pool.uuid)
+                .eq(VtepVO_.vtepIp, "12345::1")
+                .isExists()
+
+        createVxlanVtep {
+            hostUuid = host1.uuid
+            poolUuid = pool.uuid
+            vtepIp = "127.1.0.10"
+        }
+        assert Q.New(VtepVO.class)
+                .eq(VtepVO_.hostUuid, host1.uuid)
+                .eq(VtepVO_.poolUuid, pool.uuid)
+                .eq(VtepVO_.vtepIp, "127.1.0.10")
+                .isExists()
+
+        createVxlanVtep {
+            hostUuid = host2.uuid
+            poolUuid = pool.uuid
+            vtepIp = " 2001:0db8:ffff:0000:0000:0000:0000:0010\n"
+        }
+        assert Q.New(VtepVO.class)
+                .eq(VtepVO_.hostUuid, host2.uuid)
+                .eq(VtepVO_.poolUuid, pool.uuid)
+                .eq(VtepVO_.vtepIp, "2001:db8:ffff::10")
+                .isExists()
+
+        def fullLengthPool = createL2VxlanNetworkPool {
+            name = "TestVxlanPoolFullLengthIpv6"
+            zoneUuid = zone.uuid
+        } as L2VxlanNetworkPoolInventory
+
+        createVxlanVtep {
+            hostUuid = host1.uuid
+            poolUuid = fullLengthPool.uuid
+            vtepIp = "fd00:1234:5678:9abc:def0:1234:5678:9abc"
+        }
+        assert Q.New(VtepVO.class)
+                .eq(VtepVO_.hostUuid, host1.uuid)
+                .eq(VtepVO_.poolUuid, fullLengthPool.uuid)
+                .eq(VtepVO_.vtepIp, "fd00:1234:5678:9abc:def0:1234:5678:9abc")
+                .isExists()
     }
 
     void testVxlanVtepIpChanged() {

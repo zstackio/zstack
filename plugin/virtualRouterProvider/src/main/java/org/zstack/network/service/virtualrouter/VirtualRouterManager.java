@@ -11,12 +11,21 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmNicInventory;
 
 import java.util.List;
+import java.util.Map;
 
 public interface VirtualRouterManager {
 
     VirtualRouterHypervisorBackend getHypervisorBackend(HypervisorType hypervisorType);
 	
     String buildUrl(String mgmtNicIp, String subPath);
+
+    /**
+     * Builds async REST callback headers for virtual router agent requests.
+     *
+     * @param mgmtNicIp virtual router management NIC IP address used to select the callback IP family
+     * @return HTTP headers carrying the callback URL for agent requests
+     */
+    Map<String, String> buildAgentCallbackUrlHeaders(String mgmtNicIp);
 
     List<String> selectL3NetworksNeedingSpecificNetworkService(List<String> candidate, NetworkServiceType nsType);
 

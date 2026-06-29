@@ -34,6 +34,9 @@ public class SetIpOnHostNetworkInterfaceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String netmask;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,128L}, noTrim = false)
+    public java.lang.Integer prefixLength;
+
     @Param(required = false)
     public java.util.List systemTags;
 

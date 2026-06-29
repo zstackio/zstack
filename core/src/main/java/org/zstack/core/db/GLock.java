@@ -53,6 +53,13 @@ public class GLock {
         dataSource = dbf.getDataSource();
     }
 
+    public GLock(String name, long timeout, DatabaseFacade dbf) {
+        this.name = name;
+        this.timeout = timeout;
+        this.dbf = dbf;
+        dataSource = dbf.getDataSource();
+    }
+
     public boolean isAlsoUseMemoryLock() {
         return alsoUseMemoryLock;
     }

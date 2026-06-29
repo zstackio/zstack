@@ -78,6 +78,11 @@ public class GlobalConfig {
         return evtf;
     }
 
+    void wire(DatabaseFacade dbf, EventFacade evtf) {
+        this.dbf = dbf;
+        this.evtf = evtf;
+    }
+
     @Override
     public String toString() {
         return JSONObjectUtil.toJsonString(map(

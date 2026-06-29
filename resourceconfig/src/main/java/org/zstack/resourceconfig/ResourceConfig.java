@@ -57,6 +57,11 @@ public class ResourceConfig {
         return result;
     }
 
+    void wire(DatabaseFacade dbf, EventFacade evtf) {
+        this.dbf = dbf;
+        this.evtf = evtf;
+    }
+
     public void installLocalUpdateExtension(ResourceConfigUpdateExtensionPoint ext) {
         localUpdateExtensions.add(ext);
     }

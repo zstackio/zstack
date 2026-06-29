@@ -6,6 +6,7 @@ import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
@@ -22,6 +23,7 @@ import static org.zstack.utils.path.PathUtil.*;
  */
 public class SshShell {
     private static final CLogger logger = Utils.getLogger(SshShell.class);
+    private static final String SSH_TARGET_FORMAT = "%s@%s";
 
     private String hostname;
     private String username;
@@ -44,6 +46,14 @@ public class SshShell {
         DebugUtils.Assert(password != null || privateKey != null, "password and privateKey must have at least one set");
     }
 
+    public static String formatSshTarget(String username, String hostname) {
+        return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.stripHostUrlBrackets(hostname));
+    }
+
+    public static String formatScpTarget(String username, String hostname) {
+        return String.format(SSH_TARGET_FORMAT, username, IPv6NetworkUtils.formatHostForUrl(hostname));
+    }
+
     public SshResult runCommand(String cmd) {
         return runCommand(cmd, false);
     }
@@ -62,13 +72,13 @@ public class SshShell {
             if (privateKey != null) {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
-                ssh = String.format("ssh -q %s-i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
-                        pseudoTtyOption, tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, username, hostname, cmd);
+                ssh = String.format("ssh -q %s-i %s -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s '%s'",
+                        pseudoTtyOption, tempPasswordFile.getAbsolutePath(), sshTimeoutOptions(), port, formatSshTarget(username, hostname), cmd);
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
-                ssh = String.format("sshpass -f%s ssh -q %s-o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s@%s '%s'",
-                        tempPasswordFile.getAbsolutePath(), pseudoTtyOption, sshTimeoutOptions(), port, username, hostname, cmd);
+                ssh = String.format("sshpass -f%s ssh -q %s-o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no %s -p %s %s '%s'",
+                        tempPasswordFile.getAbsolutePath(), pseudoTtyOption, sshTimeoutOptions(), port, formatSshTarget(username, hostname), cmd);
             }
 
             if (logger.isTraceEnabled()) {
@@ -91,7 +101,7 @@ public class SshShell {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (tempPasswordFile != null && tempPasswordFile.delete()) {
+            if (tempPasswordFile != null && tempPasswordFile.exists() && !tempPasswordFile.delete()) {
                 logger.warn(String.format("failed to delete file[%s]", tempPasswordFile));
             }
         }
@@ -106,32 +116,32 @@ public class SshShell {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, privateKey);
                 ssh = ln(
-                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no {5} -p {1} -T {2}@{3} << 'EOF'",
+                        "ssh -q -i {0} -o UserKnownHostsFile=/dev/null -o PasswordAuthentication=no -o StrictHostKeyChecking=no {4} -p {1} -T {2} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
-                        "{4}",
+                        "{3}",
                         "EOT",
                         "bash $s",
                         "ret=$?",
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script, sshTimeoutOptions());
+                ).format(tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), script, sshTimeoutOptions());
             } else {
                 tempPasswordFile = File.createTempFile("zstack", "tmp");
                 writeSecretFile(tempPasswordFile, password);
                 ssh = ln(
-                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no {5} -p {1} -T {2}@{3} << 'EOF'",
+                        "sshpass -f{0} ssh -q -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no -o StrictHostKeyChecking=no {4} -p {1} -T {2} << 'EOF'",
                         "s=`mktemp`",
                         "cat << 'EOT' > $s",
-                        "{4}",
+                        "{3}",
                         "EOT",
                         "bash $s",
                         "ret=$?",
                         "rm -f $s",
                         "exit $ret",
                         "EOF"
-                ).format(tempPasswordFile.getAbsolutePath(), port, username, hostname, script, sshTimeoutOptions());
+                ).format(tempPasswordFile.getAbsolutePath(), port, formatSshTarget(username, hostname), script, sshTimeoutOptions());
             }
 
             if (logger.isTraceEnabled()) {
@@ -153,7 +163,7 @@ public class SshShell {
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (tempPasswordFile != null && tempPasswordFile.delete()) {
+            if (tempPasswordFile != null && tempPasswordFile.exists() && !tempPasswordFile.delete()) {
                 logger.warn(String.format("failed to delete file[%s]", tempPasswordFile));
             }
         }
@@ -226,7 +236,6 @@ public class SshShell {
     public void setWithSudo(Boolean withSudo) {
         this.withSudo = withSudo;
     }
-
     public int getConnectTimeoutSeconds() {
         return connectTimeoutSeconds;
     }

@@ -106,7 +106,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                         cmd.setUuid(vr.getUuid());
                         cmd.setRestartDnsmasqAfterNumberOfSIGUSER1(VirtualRouterGlobalConfig.RESTART_DNSMASQ_COUNT.value(Integer.class));
                         if (timeout == null) {
-                            restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                            restf.asyncJsonPost(url, cmd, vrMgr.buildAgentCallbackUrlHeaders(mgmtNic.getIp()), new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     trigger.fail(err);
@@ -127,7 +127,7 @@ public class VirtualRouterDeployAgentFlow extends NoRollbackFlow {
                                 }
                             });
                         } else {
-                            restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
+                            restf.asyncJsonPost(url, cmd, vrMgr.buildAgentCallbackUrlHeaders(mgmtNic.getIp()), new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
                                     trigger.fail(err);

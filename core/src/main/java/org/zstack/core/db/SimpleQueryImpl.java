@@ -76,6 +76,12 @@ public class SimpleQueryImpl<T> implements SimpleQuery<T> {
         _builder = _dbf.getCriteriaBuilder();
     }
 
+    SimpleQueryImpl(Class<T> vo, DatabaseFacade dbf) {
+        _entityClass = vo;
+        _dbf = dbf;
+        _builder = _dbf.getCriteriaBuilder();
+    }
+
     @Override
     public SimpleQuery<T> select(SingularAttribute... attrs) {
         for (int i=0; i<attrs.length; i++) {

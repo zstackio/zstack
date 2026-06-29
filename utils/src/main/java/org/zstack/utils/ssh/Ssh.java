@@ -345,10 +345,11 @@ public class Ssh {
 
             @Override
             public String getCommand() {
+                String target = SshShell.formatScpTarget(username, hostname);
                 if (download) {
-                    return String.format("scp -P %d %s@%s:%s %s", port, username, hostname, src, dst);
+                    return String.format("scp -P %d %s:%s %s", port, target, src, dst);
                 } else {
-                    return String.format("scp -P %d %s %s@%s:%s", port, src, username, hostname, dst);
+                    return String.format("scp -P %d %s %s:%s", port, src, target, dst);
                 }
             }
 

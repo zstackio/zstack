@@ -31,10 +31,16 @@ import org.zstack.header.message.Message;
 import org.zstack.header.vm.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CONSOLE_10014;
 
 /**
  * Created with IntelliJ IDEA.
@@ -44,6 +50,9 @@ import java.util.Map;
  */
 public class ConsoleManagerImpl extends AbstractService implements ConsoleManager, VmInstanceMigrateExtensionPoint, ManagementNodeChangeListener,
         VmReleaseResourceExtensionPoint, SessionLogoutExtensionPoint, PostVmInstantiateResourceExtensionPoint, KvmReportVmShutdownFromGuestEventExtensionPoint {
+    static final String ANY_IPV4_ADDRESS = "0.0.0.0";
+    static final String ANY_IPV6_ADDRESS = IPv6Constants.IPV6_ANY_ADDRESS;
+    static final String UNIT_TEST_CONSOLE_PROXY_HOST = "127.0.0.1";
     private static CLogger logger = Utils.getLogger(ConsoleManagerImpl.class);
 
     @Autowired
@@ -102,11 +111,28 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
             public void run(final SyncTaskChain chain) {
                 VmInstanceVO vmvo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
                 ConsoleBackend bkd = getBackend();
+                final String consoleProxyHostname = selectConsoleProxyHostname(
+                        msg.getClientIp(),
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP,
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV4,
+                        CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV6,
+                        CoreGlobalProperty.UNIT_TEST_ON,
+                        Platform.getManagementServerIp(),
+                        Platform.getManagementServerIp4(),
+                        Platform.getManagementServerIp6());
+                if (ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND.equals(bkd.getConsoleBackendType()) && consoleProxyHostname == null) {
+                    evt.setError(operr(ORG_ZSTACK_CONSOLE_10014, "cannot select a console proxy address for client IP[%s]. Configure a console proxy address that supports the client IP version, or access from a supported IP version", msg.getClientIp()));
+                    evt.setSuccess(false);
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
                 bkd.grantConsoleAccess(msg.getSession(), VmInstanceInventory.valueOf(vmvo), new ReturnValueCompletion<ConsoleInventory>(chain) {
                     @Override
                     public void success(ConsoleInventory returnValue) {
-                        if (ConsoleConstants.HTTP_SCHEMA.equals(returnValue.getScheme())) {
-                            overriddenConsoleProxyIP(returnValue);
+                        if (ConsoleConstants.HTTP_SCHEMA.equals(returnValue.getScheme()) && consoleProxyHostname != null) {
+                            returnValue.setHostname(consoleProxyHostname);
                         }
 
                         evt.setInventory(returnValue);
@@ -124,20 +150,82 @@ public class ConsoleManagerImpl extends AbstractService implements ConsoleManage
                 });
             }
 
-            private void overriddenConsoleProxyIP(ConsoleInventory consoleInventory) {
-                if (!"0.0.0.0".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP) &&
-                        !"".equals(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP)) {
-                    consoleInventory.setHostname(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP);
-                } else {
-                    consoleInventory.setHostname(CoreGlobalProperty.UNIT_TEST_ON ? "127.0.0.1" : Platform.getManagementServerIp());
-                }
-            }
-
             @Override
             public String getName() {
                 return getSyncSignature();
             }
         });
+    }
+
+    static String selectConsoleProxyHostname(String overriddenIp, boolean unitTestOn, String managementServerIp) {
+        String hostname = normalizeConsoleProxyHost(overriddenIp);
+        if (hostname == null) {
+            hostname = unitTestOn ? UNIT_TEST_CONSOLE_PROXY_HOST : managementServerIp;
+        }
+        return IPv6NetworkUtils.formatHostForUrl(hostname);
+    }
+
+    static String selectConsoleProxyHostname(String clientIp, String overriddenIp, String overriddenIpv4, String overriddenIpv6,
+                                            boolean unitTestOn, String managementServerIp, String managementServerIp4,
+                                            String managementServerIp6) {
+        int clientIpVersion = getIpVersion(clientIp);
+        if (clientIpVersion == IPv6Constants.NONE) {
+            clientIpVersion = getIpVersion(managementServerIp);
+            if (clientIpVersion == IPv6Constants.NONE) {
+                return selectConsoleProxyHostname(overriddenIp, unitTestOn, managementServerIp);
+            }
+        }
+
+        String fallbackHostname = unitTestOn ? UNIT_TEST_CONSOLE_PROXY_HOST : managementServerIp;
+        String[] candidateHosts = clientIpVersion == IPv6Constants.IPv4 ?
+                new String[]{overriddenIpv4, overriddenIp, managementServerIp4, fallbackHostname} :
+                new String[]{overriddenIpv6, overriddenIp, managementServerIp6, fallbackHostname};
+
+        // Prefer family-specific override, then legacy override, then MN IP.
+        for (String host : candidateHosts) {
+            String normalizedHost = normalizeConsoleProxyHost(host);
+            if (normalizedHost == null) {
+                continue;
+            }
+
+            int hostIpVersion = getIpVersion(normalizedHost);
+            if (hostIpVersion == IPv6Constants.NONE || hostIpVersion == clientIpVersion) {
+                return IPv6NetworkUtils.formatHostForUrl(normalizedHost);
+            }
+        }
+
+        return null;
+    }
+
+    private static String normalizeConsoleProxyHost(String host) {
+        if (host == null) {
+            return null;
+        }
+
+        String normalizedHost = IPv6NetworkUtils.stripHostUrlBrackets(host.trim());
+        // Empty and any-address values mean the console proxy address is unset.
+        if (normalizedHost.isEmpty() || ANY_IPV4_ADDRESS.equals(normalizedHost) || ANY_IPV6_ADDRESS.equals(normalizedHost)) {
+            return null;
+        }
+
+        return normalizedHost;
+    }
+
+    private static int getIpVersion(String ip) {
+        if (ip == null) {
+            return IPv6Constants.NONE;
+        }
+
+        String normalizedIp = IPv6NetworkUtils.stripHostUrlBrackets(ip.trim());
+        if (NetworkUtils.isIpv4Address(normalizedIp)) {
+            return IPv6Constants.IPv4;
+        }
+
+        if (IPv6NetworkUtils.isIpv6Address(normalizedIp)) {
+            return IPv6Constants.IPv6;
+        }
+
+        return IPv6Constants.NONE;
     }
 
     @Override

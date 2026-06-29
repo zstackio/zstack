@@ -10,6 +10,7 @@ import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshCmdHelper;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
@@ -30,8 +31,11 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private String callbackIp = Platform.getManagementServerIp();
     private int callBackPort = Platform.getManagementNodeServicePort();
 
-    private static StringDSL.StringWrapper script = ln(
-            "cat /dev/null | nc {2} {1} || echo {0} | sudo -S nmap -sS -P0 -n -p {1} {2} 2>/dev/null | grep \"1 host up\""
+    private static final String EMPTY_COMMAND_OPTION = "";
+    private static final String IPV6_COMMAND_OPTION = "-6 ";
+    private static final String HOST_UP_PATTERN = "1 host up";
+    private static final StringDSL.StringWrapper CALLBACK_CHECK_SCRIPT = ln(
+            "cat /dev/null | nc {3}{2} {1} || echo {0} | sudo -S nmap {4}-sS -P0 -n -p {1} {2} 2>/dev/null | grep \"{5}\""
     );
 
     @Override
@@ -49,13 +53,20 @@ public class CallBackNetworkChecker implements AnsibleChecker {
      * if failed, use nmap to try again.
      */
     private ErrorCode useNcatAndNmapToTestConnection(Ssh ssh) {
-        String srcScript = script.format(SshCmdHelper.shellQuote(password), callBackPort, callbackIp);
+        String srcScript = buildCallbackCheckScript(SshCmdHelper.shellQuote(password), callBackPort, callbackIp);
 
         ssh.sudoCommand(srcScript);
         SshResult ret = ssh.run();
         ret.raiseExceptionIfFailed();
 
         return null;
+    }
+
+    public static String buildCallbackCheckScript(String password, int port, String callbackIp) {
+        String callbackHost = IPv6NetworkUtils.stripHostUrlBrackets(callbackIp);
+        String ipVersionOption = IPv6NetworkUtils.isIpv6Address(callbackHost) ? IPV6_COMMAND_OPTION : EMPTY_COMMAND_OPTION;
+
+        return CALLBACK_CHECK_SCRIPT.format(password, port, callbackHost, ipVersionOption, ipVersionOption, HOST_UP_PATTERN);
     }
 
     @Override

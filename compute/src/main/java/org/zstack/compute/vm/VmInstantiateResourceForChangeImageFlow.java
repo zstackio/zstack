@@ -25,8 +25,9 @@ public class VmInstantiateResourceForChangeImageFlow implements Flow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    private final List<ChangeVmImageExtensionPoint> extensions = pluginRgty.getExtensionList(ChangeVmImageExtensionPoint.class);
-
+    private List<ChangeVmImageExtensionPoint> getExtensions() {
+        return pluginRgty.getExtensionList(ChangeVmImageExtensionPoint.class);
+    }
 
     private void runExtensions(final Iterator<ChangeVmImageExtensionPoint> it, final VmInstanceSpec spec, final FlowTrigger chain) {
         if (!it.hasNext()) {
@@ -53,6 +54,7 @@ public class VmInstantiateResourceForChangeImageFlow implements Flow {
     @Override
     public void run(FlowTrigger chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        List<ChangeVmImageExtensionPoint> extensions = getExtensions();
         for (ChangeVmImageExtensionPoint extp : extensions) {
             try {
                 extp.preBeforeInstantiateVmResource(spec);
@@ -89,6 +91,6 @@ public class VmInstantiateResourceForChangeImageFlow implements Flow {
     @Override
     public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        rollbackExtensions(extensions.iterator(), spec, chain);
+        rollbackExtensions(getExtensions().iterator(), spec, chain);
     }
 }

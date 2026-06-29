@@ -27,14 +27,12 @@ public class PrimaryStorageFeatureAllocatorFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    protected final List<PrimaryStorageFeatureAllocatorExtensionPoint> featureExtensions = pluginRgty.getExtensionList(PrimaryStorageFeatureAllocatorExtensionPoint.class);;
-
     @Override
     public void run(FlowTrigger trigger, Map data) {
         PrimaryStorageAllocationSpec spec = (PrimaryStorageAllocationSpec) data.get(PrimaryStorageConstant.AllocatorParams.SPEC);
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(PrimaryStorageConstant.AllocatorParams.CANDIDATES);
         List<PrimaryStorageVO> ret;
-        for (PrimaryStorageFeatureAllocatorExtensionPoint extp : featureExtensions) {
+        for (PrimaryStorageFeatureAllocatorExtensionPoint extp : pluginRgty.getExtensionList(PrimaryStorageFeatureAllocatorExtensionPoint.class)) {
             ret = extp.allocatePrimaryStorage(spec.getRequiredFeatures(), candidates);
             if (ret == null) {
                 continue;

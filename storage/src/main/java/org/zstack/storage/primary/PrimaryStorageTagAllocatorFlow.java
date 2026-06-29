@@ -39,8 +39,9 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
     @Autowired
     private PluginRegistry pluginRgty;
 
-    protected final List<PrimaryStorageTagAllocatorExtensionPoint> tagExtensions = pluginRgty.getExtensionList(PrimaryStorageTagAllocatorExtensionPoint.class);;
-
+    protected List<PrimaryStorageTagAllocatorExtensionPoint> getTagExtensions() {
+        return pluginRgty.getExtensionList(PrimaryStorageTagAllocatorExtensionPoint.class);
+    }
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -71,7 +72,7 @@ public class PrimaryStorageTagAllocatorFlow extends NoRollbackFlow {
 
     protected List<PrimaryStorageVO> callTagExtensions(List<SystemTagInventory> tags, List<PrimaryStorageVO> candidates) {
         List<PrimaryStorageVO> ret;
-        for (PrimaryStorageTagAllocatorExtensionPoint extp : tagExtensions) {
+        for (PrimaryStorageTagAllocatorExtensionPoint extp : getTagExtensions()) {
             ret = extp.allocatePrimaryStorage(tags, candidates);
             if (ret == null) {
                 continue;

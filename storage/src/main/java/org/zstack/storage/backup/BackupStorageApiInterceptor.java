@@ -11,6 +11,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.*;
+import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 
 import java.util.List;
 
@@ -25,12 +26,16 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * To change this template use File | Settings | File Templates.
  */
 public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
+    private static final String BACKUP_STORAGE_RESOURCE_TYPE = "backup storage";
+
     @Autowired
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof BackupStorageMessage) {
@@ -127,6 +132,10 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         if (q.isExists()) {
             throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_BACKUP_10006, "backup storage[uuid:%s] has been attached to zone[uuid:%s]", msg.getBackupStorageUuid(), msg.getZoneUuid()));
         }
+
+        BackupStorageVO vo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
+        managementNetworkIpVersionManager.validateEndpointInZone(msg.getZoneUuid(), vo.getUrl(),
+                BACKUP_STORAGE_RESOURCE_TYPE, msg.getBackupStorageUuid(), ORG_ZSTACK_STORAGE_BACKUP_10134);
     }
 
     private void validate(final APIGetTrashOnBackupStorageMsg msg) {

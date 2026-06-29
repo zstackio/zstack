@@ -36,7 +36,7 @@ doc {
 					desc "新的控制台代理IP"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "2.3"
 				}
 				column {
@@ -65,6 +65,24 @@ doc {
 					type "Integer"
 					optional true
 					since "4.1.0"
+				}
+				column {
+					name "consoleProxyOverriddenIpv4"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.16"
+				}
+				column {
+					name "consoleProxyOverriddenIpv6"
+					enclosedIn "updateConsoleProxyAgent"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.16"
 				}
 			}
         }

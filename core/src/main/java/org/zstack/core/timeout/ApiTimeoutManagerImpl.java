@@ -5,7 +5,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.*;
-import org.zstack.core.db.Q;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -36,6 +37,8 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     private GlobalConfigFacade gcf;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private DatabaseFacade dbf;
     @Autowired
     private Timer timer;
 
@@ -221,9 +224,9 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     private String getTimeoutGlobalConfigValue(Class clz, GlobalConfigVO vo) {
         // once global config already exists, use its default value as
         // auto generated value and do not use legacy timeout
-        if (Q.New(GlobalConfigVO.class)
-                .eq(GlobalConfigVO_.category, vo.getCategory())
-                .eq(GlobalConfigVO_.name, vo.getName()).isExists()) {
+        if (dbf.createQuery(GlobalConfigVO.class)
+                .add(GlobalConfigVO_.category, SimpleQuery.Op.EQ, vo.getCategory())
+                .add(GlobalConfigVO_.name, SimpleQuery.Op.EQ, vo.getName()).isExists()) {
             return vo.getDefaultValue();
         }
 
