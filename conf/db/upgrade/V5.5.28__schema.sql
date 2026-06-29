@@ -14,6 +14,8 @@ WHERE (vm.`platform` IN ('Windows', 'WindowsVirtio')
         AND rc.`name` = 'vm.cpu.hardwareVirtualization'
   );
 
+ALTER TABLE `zstack`.`DRSVmMigrationActivityVO` MODIFY COLUMN `result` TEXT DEFAULT NULL;
+
 UPDATE `zstack`.`PciDeviceMdevSpecRefVO` keepRef
 JOIN (
     SELECT `pciDeviceUuid`, `mdevSpecUuid`, MAX(`id`) AS `keepId`, MAX(`effective`) AS `effective`
