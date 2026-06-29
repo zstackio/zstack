@@ -11,7 +11,6 @@ import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.storage.primary.PrimaryStorageConstants;
 import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.header.zone.ManagementNetworkIpVersionResourceExtensionPoint;
-import org.zstack.utils.network.ManagementNetworkIpVersionUtils;
 
 import java.util.List;
 
@@ -57,10 +56,6 @@ public class ManagementNetworkIpVersionStorageExtension implements ManagementNet
                 .list();
 
         for (BackupStorageVO bs : backupStorages) {
-            if (ManagementNetworkIpVersionUtils.getEndpointIpVersion(bs.getUrl()) == null) {
-                continue;
-            }
-
             managementNetworkIpVersionManager.validateEndpointMatchesIpVersion(zoneUuid, ipVersion, bs.getUrl(),
                     BACKUP_STORAGE_RESOURCE_TYPE, bs.getUuid(), ORG_ZSTACK_STORAGE_BACKUP_10135);
         }

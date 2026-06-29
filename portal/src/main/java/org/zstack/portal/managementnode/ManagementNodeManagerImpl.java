@@ -734,8 +734,11 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
     }
 
     private boolean isDuplicatedActiveManagementServerId(ManagementNodeVO existing, String currentHostName, Timestamp currentTime) {
-        if (existing == null || StringUtils.equals(existing.getHostName(), currentHostName) || existing.getHeartBeat() == null) {
+        if (existing == null || StringUtils.equals(existing.getHostName(), currentHostName)) {
             return false;
+        }
+        if (existing.getHeartBeat() == null) {
+            return true;
         }
 
         long heartbeatExpirationMillis = TimeUnit.SECONDS.toMillis(

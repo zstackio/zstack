@@ -12,7 +12,6 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.backup.*;
 import org.zstack.header.zone.ManagementNetworkIpVersionManager;
-import org.zstack.utils.network.ManagementNetworkIpVersionUtils;
 
 import java.util.List;
 
@@ -135,10 +134,6 @@ public class BackupStorageApiInterceptor implements ApiMessageInterceptor {
         }
 
         BackupStorageVO vo = dbf.findByUuid(msg.getBackupStorageUuid(), BackupStorageVO.class);
-        if (ManagementNetworkIpVersionUtils.getEndpointIpVersion(vo.getUrl()) == null) {
-            return;
-        }
-
         managementNetworkIpVersionManager.validateEndpointInZone(msg.getZoneUuid(), vo.getUrl(),
                 BACKUP_STORAGE_RESOURCE_TYPE, msg.getBackupStorageUuid(), ORG_ZSTACK_STORAGE_BACKUP_10134);
     }
