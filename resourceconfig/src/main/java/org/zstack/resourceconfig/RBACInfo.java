@@ -13,6 +13,9 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .targetResources(ResourceVO.class)
+                .normalAPIs(
+                        APIGetResourceConfigMsg.class
+                )
                 .communityAvailable()
                 .zsvBasicAvailable()
                 .zsvProAvailable()
