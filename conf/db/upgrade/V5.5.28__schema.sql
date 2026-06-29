@@ -136,6 +136,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `uuid`                    VARCHAR(32)   NOT NULL,
     `hostUuid`                VARCHAR(32)   NOT NULL,
     `sourceRoot`              VARCHAR(2048) NOT NULL,
+    `sourceRootIdentity`      VARCHAR(64)   NOT NULL,
     `physicalTotalBytes`      BIGINT        DEFAULT NULL,
     `physicalAvailableBytes`  BIGINT        DEFAULT NULL,
     `policyUsedBytes`         BIGINT        DEFAULT NULL,
@@ -151,16 +152,34 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `createDate`              TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate`              TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukAiHostCacheStorageVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    UNIQUE KEY `ukAiHostCacheStorageVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`),
     KEY `idxAiHostCacheStorageVOStatus` (`status`),
     CONSTRAINT `fkAiHostCacheStorageVOHostEO`
         FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('AiHostCacheStorageVO', 'sourceRootIdentity', 'VARCHAR(64)', 1, NULL);
+UPDATE `zstack`.`AiHostCacheStorageVO`
+SET `sourceRootIdentity` = SHA2(IFNULL(`sourceRoot`, ''), 256)
+WHERE `sourceRootIdentity` IS NULL OR `sourceRootIdentity` = '';
+ALTER TABLE `zstack`.`AiHostCacheStorageVO` MODIFY COLUMN `sourceRootIdentity` VARCHAR(64) NOT NULL;
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+                     WHERE table_schema = 'zstack'
+                       AND table_name = 'AiHostCacheStorageVO'
+                       AND index_name = 'ukAiHostCacheStorageVOHostRootIdentity');
+SET @sql = IF(@index_exists = 0,
+              'ALTER TABLE `zstack`.`AiHostCacheStorageVO` ADD UNIQUE KEY `ukAiHostCacheStorageVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`)',
+              'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+CALL DELETE_INDEX('AiHostCacheStorageVO', 'ukAiHostCacheStorageVOHostRoot');
+
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `uuid`                 VARCHAR(32)   NOT NULL,
     `hostUuid`             VARCHAR(32)   NOT NULL,
     `sourceRoot`           VARCHAR(2048) NOT NULL,
+    `sourceRootIdentity`   VARCHAR(64)   NOT NULL,
     `enabled`              TINYINT(1)    DEFAULT NULL,
     `maxSizeBytes`         BIGINT        DEFAULT NULL,
     `highWatermarkPercent` INT           DEFAULT NULL,
@@ -169,10 +188,27 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `createDate`           TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate`           TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukAiHostModelCachePolicyVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    UNIQUE KEY `ukAiHostModelCachePolicyVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`),
     CONSTRAINT `fkAiHostModelCachePolicyVOHostEO`
         FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('AiHostModelCachePolicyVO', 'sourceRootIdentity', 'VARCHAR(64)', 1, NULL);
+UPDATE `zstack`.`AiHostModelCachePolicyVO`
+SET `sourceRootIdentity` = SHA2(IFNULL(`sourceRoot`, ''), 256)
+WHERE `sourceRootIdentity` IS NULL OR `sourceRootIdentity` = '';
+ALTER TABLE `zstack`.`AiHostModelCachePolicyVO` MODIFY COLUMN `sourceRootIdentity` VARCHAR(64) NOT NULL;
+CALL DELETE_INDEX('AiHostModelCachePolicyVO', 'ukAiHostModelCachePolicyVOHostRoot');
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+                     WHERE table_schema = 'zstack'
+                       AND table_name = 'AiHostModelCachePolicyVO'
+                       AND index_name = 'ukAiHostModelCachePolicyVOHostRootIdentity');
+SET @sql = IF(@index_exists = 0,
+              'ALTER TABLE `zstack`.`AiHostModelCachePolicyVO` ADD UNIQUE KEY `ukAiHostModelCachePolicyVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`)',
+              'SELECT 1');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheReservationVO` (
     `uuid`              VARCHAR(32)   NOT NULL,

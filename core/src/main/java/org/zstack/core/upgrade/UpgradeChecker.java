@@ -327,24 +327,25 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             return;
         }
 
-        if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
+        if (Objects.equals(agentVersionVO.getExpectVersion(), expectVersion)
+                && Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
             logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed", agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             return;
         }
 
-        if (!Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
-            String originCurrentVersion = agentVersionVO.getCurrentVersion();
-            agentVersionVO.setCurrentVersion(currentVersion);
-            logger.trace(String.format("Update agent[uuid: %s] version\n" +
-                    "From:\n" +
-                    "expected version: %s, current version: %s\n" +
-                    "To:\n" +
-                    "expected version: %s, current version: %s\n",
-                    agentUuid,
-                    agentVersionVO.getExpectVersion(), originCurrentVersion,
-                    agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
-            dbf.update(agentVersionVO);
-        }
+        String originExpectVersion = agentVersionVO.getExpectVersion();
+        String originCurrentVersion = agentVersionVO.getCurrentVersion();
+        agentVersionVO.setExpectVersion(expectVersion);
+        agentVersionVO.setCurrentVersion(currentVersion);
+        logger.trace(String.format("Update agent[uuid: %s] version\n" +
+                "From:\n" +
+                "expected version: %s, current version: %s\n" +
+                "To:\n" +
+                "expected version: %s, current version: %s\n",
+                agentUuid,
+                originExpectVersion, originCurrentVersion,
+                agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
+        dbf.update(agentVersionVO);
     }
 
     /**
