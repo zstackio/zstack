@@ -66,11 +66,7 @@ public class ConsoleApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIUpdateConsoleProxyAgentMsg msg) {
-        // consoleProxyOverriddenIp default value is 0.0.0.0
         msg.setConsoleProxyOverriddenIp(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIp()));
-        if (msg.getConsoleProxyOverriddenIp() == null) {
-            msg.setConsoleProxyOverriddenIp("0.0.0.0");
-        }
         msg.setConsoleProxyOverriddenIpv4(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv4()));
         msg.setConsoleProxyOverriddenIpv6(normalizeOptionalConsoleProxyHost(msg.getConsoleProxyOverriddenIpv6()));
     }

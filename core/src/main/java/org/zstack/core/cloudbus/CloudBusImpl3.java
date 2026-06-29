@@ -6,6 +6,7 @@ import io.opentelemetry.api.trace.StatusCode;
 import io.opentelemetry.context.Context;
 import io.opentelemetry.context.Scope;
 import io.sentry.Sentry;
+import org.apache.commons.lang.StringUtils;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpEntity;
@@ -147,8 +148,12 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     public static String buildCloudBusUrl(String ip, int port, String contextPath) {
         String host = IPv6NetworkUtils.formatHostForUrl(ip);
-        return contextPath.isEmpty() ? String.format(HTTP_URL_FORMAT, host, port, HTTP_BASE_URL) :
-                String.format(HTTP_CONTEXT_URL_FORMAT, host, port, contextPath, HTTP_BASE_URL);
+        if (StringUtils.isBlank(contextPath)) {
+            return String.format(HTTP_URL_FORMAT, host, port, HTTP_BASE_URL);
+        }
+
+        String normalizedContextPath = StringUtils.stripEnd(StringUtils.stripStart(contextPath, "/"), "/");
+        return String.format(HTTP_CONTEXT_URL_FORMAT, host, port, normalizedContextPath, HTTP_BASE_URL);
     }
 
     private TelemetryFacade telemetryFacade;

@@ -197,6 +197,8 @@ class ManagementNetworkIpv6Case extends SubCase {
     void testCoreManagementUrlsIpv6() {
         assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "") == "http://[2001:db8::1]:8080/cloudbus"
         assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "zstack") == "http://[2001:db8::1]:8080/zstack/cloudbus"
+        assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "/zstack") == "http://[2001:db8::1]:8080/zstack/cloudbus"
+        assert CloudBusImpl3.buildCloudBusUrl(IPV6, REST_PORT, "/zstack/") == "http://[2001:db8::1]:8080/zstack/cloudbus"
         assert AgentManagerImpl.buildAgentUrl(IPV6, REST_PORT, "/agent/echo") == "http://[2001:db8::1]:8080/agent/echo"
         assert AnsibleRunner.buildPipUrl(IPV6, REST_PORT) == "http://[2001:db8::1]:8080/zstack/static/pypi/simple"
     }

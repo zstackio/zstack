@@ -4,6 +4,7 @@ import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.header.errorcode.SysErrors
 import org.zstack.header.host.ConnectHostMsg
 import org.zstack.header.host.ConnectHostReply
 import org.zstack.header.host.CpuArchitecture
@@ -117,7 +118,8 @@ class KvmHostIpv6Case extends SubCase {
         def res = action.call()
 
         assert res.error != null
-        assert res.error.code == ORG_ZSTACK_COMPUTE_HOST_10128
+        assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert res.error.globalErrorCode == ORG_ZSTACK_COMPUTE_HOST_10128
         assert Q.New(HostVO.class).count() == before
 
         action = new AddKVMHostAction()
@@ -131,7 +133,8 @@ class KvmHostIpv6Case extends SubCase {
         res = action.call()
 
         assert res.error != null
-        assert res.error.code == ORG_ZSTACK_COMPUTE_HOST_10129
+        assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert res.error.globalErrorCode == ORG_ZSTACK_COMPUTE_HOST_10129
         assert Q.New(HostVO.class).count() == before
 
         action = new AddKVMHostAction()
@@ -145,7 +148,8 @@ class KvmHostIpv6Case extends SubCase {
         res = action.call()
 
         assert res.error != null
-        assert res.error.code == ORG_ZSTACK_COMPUTE_HOST_10129
+        assert res.error.code == SysErrors.INVALID_ARGUMENT_ERROR.toString()
+        assert res.error.globalErrorCode == ORG_ZSTACK_COMPUTE_HOST_10129
         assert Q.New(HostVO.class).count() == before
     }
 }
