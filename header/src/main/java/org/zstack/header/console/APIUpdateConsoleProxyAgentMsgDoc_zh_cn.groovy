@@ -36,7 +36,7 @@ doc {
 					desc "新的控制台代理IP"
 					location "body"
 					type "String"
-					optional false
+					optional true
 					since "2.3"
 				}
 				column {
