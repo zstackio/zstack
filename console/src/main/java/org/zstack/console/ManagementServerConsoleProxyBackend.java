@@ -603,7 +603,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         if (rst == 0 && ipv4Rst == 0 && ipv6Rst == 0 && portRst == 0) {
                             trigger.next();
                         } else {
-                            trigger.fail(operr(ORG_ZSTACK_CONSOLE_10003, "failed to configure consoleProxyOverriddenIp[code:%d], consoleProxyOverriddenIpv4[code:%d], consoleProxyOverriddenIpv6[code:%d], or consoleProxyPort[code:%d]", rst, ipv4Rst, ipv6Rst, portRst));
+                            trigger.fail(operr(ORG_ZSTACK_CONSOLE_10015, "failed to configure consoleProxyOverriddenIp[code:%d], consoleProxyOverriddenIpv4[code:%d], consoleProxyOverriddenIpv6[code:%d], or consoleProxyPort[code:%d]", rst, ipv4Rst, ipv6Rst, portRst));
                         }
                     }
 
