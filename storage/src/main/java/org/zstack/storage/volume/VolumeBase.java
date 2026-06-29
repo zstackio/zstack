@@ -3420,6 +3420,46 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "after-change-volume-encryption-extensions";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        VolumeInventory inventory = getSelfInventory();
+                        List<VolumeAfterChangeEncryptionExtensionPoint> extensions =
+                                pluginRgty.getExtensionList(VolumeAfterChangeEncryptionExtensionPoint.class);
+                        new While<>(extensions).each((ext, whileCompletion) -> {
+                            try {
+                                ext.volumeAfterChangeEncryption(inventory, targetEncrypted, new Completion(whileCompletion) {
+                                    @Override
+                                    public void success() {
+                                        whileCompletion.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        whileCompletion.addError(errorCode);
+                                        whileCompletion.allDone();
+                                    }
+                                });
+                            } catch (RuntimeException e) {
+                                whileCompletion.addError(operr("failed to run after-change-volume-encryption extension for volume[uuid:%s]: %s",
+                                        self.getUuid(), e.getMessage()));
+                                whileCompletion.allDone();
+                            }
+                        }).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errorCodeList) {
+                                if (errorCodeList.getCauses().isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                }
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "cleanup-old-libvirt-secret";
 
                     @Override
