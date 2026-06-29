@@ -212,10 +212,11 @@ class ConsoleProxyCase extends SubCase {
         }
 
         retryInSecs {
-            gc = queryGCJob {
-                conditions = ["status=${GCStatus.Done}".toString(), "context~=%${vm.uuid}%".toString()]
-            }[0] as GarbageCollectorInventory
-            assert gc.status == GCStatus.Done.toString()
+            List<GarbageCollectorInventory> jobs = queryGCJob {
+                conditions = ["uuid=${gc.uuid}".toString()]
+            } as List<GarbageCollectorInventory>
+            assert jobs.isEmpty() || jobs[0].status == GCStatus.Done.toString()
+            assert Q.New(ConsoleProxyVO.class).eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid).count() == 0
         }
     }
 
