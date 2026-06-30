@@ -7,12 +7,12 @@ import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig
+import org.zstack.portal.managementnode.ManagementNodeManagerImpl
 import org.zstack.portal.managementnode.PortalGlobalProperty
 import org.zstack.testlib.SubCase
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
 
 class ManagementNodeHeartbeatCase extends SubCase {
 
@@ -36,6 +36,7 @@ class ManagementNodeHeartbeatCase extends SubCase {
         dbf = bean(DatabaseFacade.class)
 
         testUnexpectedManagementNodeRecord()
+        testRecreateManagementNodeRecordWithManagedExistingRecord()
     }
 
     void prepareInvalidRecords() {
@@ -62,39 +63,46 @@ class ManagementNodeHeartbeatCase extends SubCase {
         ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.updateValue(1)
         PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 2
 
-        int heartbeatFailureTimeout = ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class) * PortalGlobalProperty.MAX_HEARTBEAT_FAILURE
-        int heartbeatUpdateDelay = 1 * ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
-
-        int waitBeforeClean = heartbeatFailureTimeout + heartbeatUpdateDelay
         int failureInterval = ManagementNodeGlobalConfig.NODE_HEARTBEAT_INTERVAL.value(Integer.class)
 
-        // wait a interval before all nodes failed
-        sleep(TimeUnit.SECONDS.toMillis(waitBeforeClean - failureInterval))
-        long count = dbf.count(ManagementNodeVO.class)
-        assert count == 2
+        try {
+            retryInSecs(failureInterval * 8, failureInterval) {
+                long count = dbf.count(ManagementNodeVO.class)
+                assert count == 1
 
-        // confirm 127.0.0.222 is cleaned at first
-        count = Q.New(ManagementNodeVO.class)
-                .notEq(ManagementNodeVO_.hostName, '127.0.0.222')
-                .count()
-        assert count == 2
+                count = Q.New(ManagementNodeVO.class)
+                        .notIn(ManagementNodeVO_.hostName, ['127.0.0.111', '127.0.0.222'])
+                        .count()
+                assert count == 1
+            }
+        } finally {
+            PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 5
+        }
+    }
 
-        // wait one more interval to wait 127.0.0.111 cleaned
-        // exceed 3s will be added in suspects
-        // next heartbeat will be clean
-        // but hb timestamp is second precision, so it will not be added until 4s.
-        // and cleaned after 5s
-        // so we need to wait more than 5s
-        sleep(TimeUnit.SECONDS.toMillis(failureInterval * 3) + 500)
-        count = dbf.count(ManagementNodeVO.class)
-        assert count == 1
+    void testRecreateManagementNodeRecordWithManagedExistingRecord() {
+        String uuid = Platform.getManagementServerId()
+        String ip = Platform.getManagementServerIp()
+        ManagementNodeVO original = Q.New(ManagementNodeVO.class)
+                .eq(ManagementNodeVO_.uuid, uuid)
+                .find()
+        ManagementNodeState state = original.state
+        Timestamp heartBeat = original.heartBeat
+        int port = original.port
 
-        // confirm 127.0.0.111 is cleaned
-        count = Q.New(ManagementNodeVO.class)
-                .notEq(ManagementNodeVO_.hostName, '127.0.0.111')
-                .count()
-        assert count == 1
+        def method = ManagementNodeManagerImpl.class.getDeclaredMethod("recreateManagementNodeRecord", String.class, String.class)
+        method.setAccessible(true)
+        method.invoke(bean(ManagementNodeManagerImpl.class), ip, uuid)
 
-        PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 5
+        List<ManagementNodeVO> nodes = Q.New(ManagementNodeVO.class)
+                .eq(ManagementNodeVO_.uuid, uuid)
+                .list()
+        assert nodes.size() == 1
+        assert nodes[0].hostName == ip
+
+        nodes[0].state = state
+        nodes[0].heartBeat = heartBeat
+        nodes[0].port = port
+        dbf.update(nodes[0])
     }
 }
