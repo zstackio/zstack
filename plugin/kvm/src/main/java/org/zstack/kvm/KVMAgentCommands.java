@@ -505,6 +505,8 @@ public class KVMAgentCommands {
         private String osRelease;
         @GrayVersion(value = "5.0.0")
         private String qemuImgVersion;
+        @GrayVersion(value = "5.5.28")
+        private String qemuKvmPackageVersion;
         @GrayVersion(value = "5.0.0")
         private String libvirtVersion;
         @GrayVersion(value = "5.0.0")
@@ -621,6 +623,14 @@ public class KVMAgentCommands {
             this.qemuImgVersion = qemuImgVersion;
         }
 
+        public String getQemuKvmPackageVersion() {
+            return qemuKvmPackageVersion;
+        }
+
+        public void setQemuKvmPackageVersion(String qemuKvmPackageVersion) {
+            this.qemuKvmPackageVersion = qemuKvmPackageVersion;
+        }
+
         public List<String> getIpAddresses() {
             return ipAddresses;
         }
@@ -695,6 +705,10 @@ public class KVMAgentCommands {
 
         public String getCpuArchitecture() {
             return cpuArchitecture;
+        }
+
+        public void setCpuArchitecture(String cpuArchitecture) {
+            this.cpuArchitecture = cpuArchitecture;
         }
 
         public String getHostCpuModelName() {

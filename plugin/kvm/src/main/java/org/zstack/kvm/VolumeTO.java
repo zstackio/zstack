@@ -54,6 +54,8 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private String multiQueues;
     private int ioThreadId;
     private String ioThreadPin;
+    // 0 means automatic IOThread VQ Mapping is disabled.
+    private int ioThreads;
     private int controllerIndex;
     private CacheTO cache;
 
@@ -86,6 +88,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         this.multiQueues = other.multiQueues;
         this.ioThreadId = other.ioThreadId;
         this.ioThreadPin = other.ioThreadPin;
+        this.ioThreads = other.ioThreads;
         this.controllerIndex = other.controllerIndex;
         this.cache = other.cache;
     }
@@ -314,6 +317,14 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public String getIoThreadPin() {
         return ioThreadPin;
+    }
+
+    public int getIoThreads() {
+        return ioThreads;
+    }
+
+    public void setIoThreads(int ioThreads) {
+        this.ioThreads = ioThreads;
     }
 
     public int getControllerIndex() {
