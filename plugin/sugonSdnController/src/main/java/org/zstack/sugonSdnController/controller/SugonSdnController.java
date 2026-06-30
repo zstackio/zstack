@@ -63,30 +63,9 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     public void handleMessage(SdnControllerMessage msg) {
         if (msg instanceof SdnControllerPingMsg) {
             handMessage((SdnControllerPingMsg) msg);
-        } else if (msg instanceof SdnControllerEnableDHCPMsg) {
-            handMessage((SdnControllerEnableDHCPMsg) msg);
-        } else if (msg instanceof SdnControllerDisableDHCPMsg) {
-            handMessage((SdnControllerDisableDHCPMsg) msg);
-        } else if (msg instanceof SdnControllerUpdateDHCPMsg) {
-            handMessage((SdnControllerUpdateDHCPMsg) msg);
         } else {
             bus.dealWithUnknownMessage((Message) msg);
         }
-    }
-
-    void handMessage(SdnControllerEnableDHCPMsg msg) {
-        SdnControllerEnableDHCPReply reply = new SdnControllerEnableDHCPReply();
-        bus.reply(msg, reply);
-    }
-
-    void handMessage(SdnControllerDisableDHCPMsg msg) {
-        SdnControllerDisableDHCPReply reply = new SdnControllerDisableDHCPReply();
-        bus.reply(msg, reply);
-    }
-
-    void handMessage(SdnControllerUpdateDHCPMsg msg) {
-        SdnControllerUpdateDHCPReply reply = new SdnControllerUpdateDHCPReply();
-        bus.reply(msg, reply);
     }
 
     void handMessage(SdnControllerPingMsg msg) {
@@ -94,14 +73,14 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
         try {
             Domain domain = (Domain) client.getDomain();
             if (domain == null) {
-                reply.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10002, "get default domain on tf controller failed"));
+                reply.setError(operr("get default domain on tf controller failed"));
             } else {
                 tfZstackPortSync.triggerSyncIfDue(msg.getSdnControllerUuid());
                 reply.setSuccess(true);
             }
         } catch (Exception e) {
             logger.warn("ping tf sdn controller failed", e);
-            reply.setError(operr(ORG_ZSTACK_SUGONSDNCONTROLLER_CONTROLLER_10002, "get default domain on tf controller failed"));
+            reply.setError(operr("get default domain on tf controller failed"));
         }
         bus.reply(msg, reply);
     }
