@@ -21,6 +21,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
+			put("org.zstack.ai.entity.ModelCenterBusinessNetworkProfileInventory", "org.zstack.sdk.ModelCenterBusinessNetworkProfileInventory");
 			put("org.zstack.ai.entity.ModelCenterCapacityInventory", "org.zstack.sdk.ModelCenterCapacityInventory");
 			put("org.zstack.ai.entity.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
 			put("org.zstack.ai.entity.ModelEvalServiceInstanceGroupInventory", "org.zstack.sdk.ModelEvalServiceInstanceGroupInventory");
@@ -1293,6 +1294,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MiniStorageResourceReplicationInventory", "org.zstack.storage.primary.ministorage.MiniStorageResourceReplicationInventory");
 			put("org.zstack.sdk.MiniStorageType", "org.zstack.storage.primary.ministorage.MiniStorageType");
 			put("org.zstack.sdk.MirrorNetworkUsedIpInventory", "org.zstack.header.portMirror.MirrorNetworkUsedIpInventory");
+			put("org.zstack.sdk.ModelCenterBusinessNetworkProfileInventory", "org.zstack.ai.entity.ModelCenterBusinessNetworkProfileInventory");
 			put("org.zstack.sdk.ModelCenterCapacityInventory", "org.zstack.ai.entity.ModelCenterCapacityInventory");
 			put("org.zstack.sdk.ModelCenterInventory", "org.zstack.ai.entity.ModelCenterInventory");
 			put("org.zstack.sdk.ModelCenterServiceInventory", "org.zstack.ai.message.ModelCenterServiceInventory");
