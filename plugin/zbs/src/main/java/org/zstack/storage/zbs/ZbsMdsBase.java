@@ -10,6 +10,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
@@ -76,7 +77,13 @@ public abstract class ZbsMdsBase {
     }
 
     public <T extends AgentResponse> T syncCall(final String path, final Object cmd, final Class<T> retClass, TimeUnit unit, long timeout) {
-        return restf.syncJsonPost(makeHttpPath(self.getAddr(), path), cmd, retClass, unit, timeout);
+        try {
+            return restf.syncJsonPost(makeHttpPath(self.getAddr(), path), cmd, retClass, unit, timeout);
+        } catch (OperationFailureException e) {
+            T ret = JSONObjectUtil.toObject("{}", retClass);
+            ret.setError(e.getErrorCode().getDetails());
+            return ret;
+        }
     }
 
     public <T extends AgentResponse> void httpCall(final String path, final Object cmd, final Class<T> retClass, final ReturnValueCompletion<T> completion) {
