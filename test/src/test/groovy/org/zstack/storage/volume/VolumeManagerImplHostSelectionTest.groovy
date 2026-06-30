@@ -76,6 +76,21 @@ class VolumeManagerImplHostSelectionTest {
         Mockito.verify(hostQuery).add(HostVO_.uuid, SimpleQuery.Op.IN, Arrays.asList("host-connected"))
     }
 
+    @Test
+    void testDisconnectedPsHostRefsDoNotFallback() {
+        Mockito.when(clusterRefQuery.listValue()).thenReturn(Arrays.asList("cluster-uuid"))
+        Mockito.when(hostRefQuery.list()).thenReturn(Arrays.asList(
+                primaryStorageHostRef("host-disconnected-1", PrimaryStorageHostStatus.Disconnected),
+                primaryStorageHostRef("host-disconnected-2", PrimaryStorageHostStatus.Disconnected)
+        ))
+
+        HostInventory inventory = invokeSelectHostForEncryptInPlace()
+
+        assert inventory == null : "encrypt-in-place should not fallback to arbitrary cluster host when PS has only disconnected host refs"
+        Mockito.verify(hostQuery, Mockito.never()).add(HostVO_.uuid, SimpleQuery.Op.IN, Mockito.anyList())
+        Mockito.verify(hostQuery, Mockito.never()).find()
+    }
+
     private HostInventory invokeSelectHostForEncryptInPlace() {
         Method method = VolumeManagerImpl.class.getDeclaredMethod("selectHostForEncryptInPlace", String.class)
         method.accessible = true

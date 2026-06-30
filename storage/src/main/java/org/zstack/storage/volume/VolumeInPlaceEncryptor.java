@@ -13,8 +13,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.storage.primary.DeleteVolumeBitsOnPrimaryStorageMsg;
 import org.zstack.header.storage.primary.EncryptVolumeBitsOnPrimaryStorageMsg;
+import org.zstack.header.storage.primary.EncryptVolumeBitsOnPrimaryStorageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
@@ -24,7 +27,7 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.core.Platform.operr;
 
 /**
- * Performs an in-place LUKS conversion of an existing volume's bits.
+ * Performs a LUKS conversion of an existing volume's bits.
  *
  * <p>This is the single source of truth for the "encrypt-in-place" workflow that was
  * previously duplicated between {@link VolumeBase#handleMessage} (for the
@@ -38,9 +41,9 @@ import static org.zstack.core.Platform.operr;
  *   <li>Materialize a DEK via {@link EncryptedResourceKeyManager#getOrCreateKey}.</li>
  *   <li>Seal the DEK for the target host and pass it as {@code encryptedDek}
  *       to the primary storage backend.</li>
- *   <li>Ask the primary storage backend to LUKS-convert the bits in place via
- *       {@code EncryptVolumeBitsOnPrimaryStorageMsg}. The kvmagent creates any
- *       single-use secret material file locally.</li>
+ *   <li>Ask the primary storage backend to LUKS-convert the bits via
+ *       {@code EncryptVolumeBitsOnPrimaryStorageMsg}. The backend may return a
+ *       replacement install path.</li>
  *   <li>Persist {@code VolumeVO.encrypted = true} after a successful conversion.</li>
  * </ol>
  *
@@ -246,7 +249,7 @@ public class VolumeInPlaceEncryptor {
             return;
         }
 
-        // 4) Ask the PS backend to LUKS-convert the bits in place.
+        // 4) Ask the PS backend to LUKS-convert the bits.
         EncryptVolumeBitsOnPrimaryStorageMsg emsg = new EncryptVolumeBitsOnPrimaryStorageMsg();
         emsg.setPrimaryStorageUuid(psUuid);
         emsg.setHostUuid(ctx.getHostUuid());
@@ -262,15 +265,36 @@ public class VolumeInPlaceEncryptor {
                             r.getError(), completion);
                     return;
                 }
+                EncryptVolumeBitsOnPrimaryStorageReply reply = r.castReply();
+                String newInstallPath = reply.getInstallPath();
+                boolean installPathChanged = StringUtils.isNotBlank(newInstallPath)
+                        && !StringUtils.equals(newInstallPath, installPath);
+                if (installPathChanged) {
+                    volume.setInstallPath(newInstallPath);
+                }
                 // 5) Persist encrypted=true. The short-circuit above guarantees we only
                 //    reach here when the row was previously encrypted=false; this is the
                 //    one and only place the flag flips, ensuring it always reflects the
                 //    on-disk reality.
                 volume.setEncrypted(true);
                 VolumeVO latest = dbf.updateAndRefresh(volume);
+                if (installPathChanged) {
+                    deleteOldVolumeBitsBestEffort(psUuid, volume, installPath);
+                }
                 completion.success(latest);
             }
         });
+    }
+
+    private void deleteOldVolumeBitsBestEffort(String psUuid, VolumeVO volume, String oldInstallPath) {
+        DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
+        dmsg.setPrimaryStorageUuid(psUuid);
+        dmsg.setInstallPath(oldInstallPath);
+        dmsg.setBitsUuid(volume.getUuid());
+        dmsg.setBitsType(VolumeVO.class.getSimpleName());
+        dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
+        bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, psUuid);
+        bus.send(dmsg);
     }
 
     private void failAfterRollingBackMetadata(String volumeUuid,
