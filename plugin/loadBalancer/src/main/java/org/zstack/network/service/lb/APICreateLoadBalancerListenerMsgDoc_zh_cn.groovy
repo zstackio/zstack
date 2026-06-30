@@ -228,7 +228,7 @@ doc {
 				column {
 					name "dataPlane"
 					enclosedIn "params"
-					desc ""
+					desc "监听器使用的数据平面。haproxy 表示使用 HAProxy，ipvs 表示使用 IPVS。"
 					location "body"
 					type "String"
 					optional true
@@ -238,7 +238,7 @@ doc {
 				column {
 					name "forwardMode"
 					enclosedIn "params"
-					desc ""
+					desc "监听器使用 IPVS 数据平面时的转发模式。当前 TCP IPVS 监听器支持 full_nat。"
 					location "body"
 					type "String"
 					optional true
