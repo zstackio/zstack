@@ -81,14 +81,14 @@ class ManagementNodeHeartbeatCase extends SubCase {
     }
 
     void testRecreateManagementNodeRecordWithManagedExistingRecord() {
-        String uuid = Platform.uuid
-        String ip = "127.0.0.1"
-
-        ManagementNodeVO vo = new ManagementNodeVO()
-        vo.setUuid(uuid)
-        vo.setHostName(ip)
-        vo.setState(ManagementNodeState.JOINING)
-        dbf.persist(vo)
+        String uuid = Platform.getManagementServerId()
+        String ip = Platform.getManagementServerIp()
+        ManagementNodeVO original = Q.New(ManagementNodeVO.class)
+                .eq(ManagementNodeVO_.uuid, uuid)
+                .find()
+        ManagementNodeState state = original.state
+        Timestamp heartBeat = original.heartBeat
+        int port = original.port
 
         def method = ManagementNodeManagerImpl.class.getDeclaredMethod("recreateManagementNodeRecord", String.class, String.class)
         method.setAccessible(true)
@@ -100,6 +100,9 @@ class ManagementNodeHeartbeatCase extends SubCase {
         assert nodes.size() == 1
         assert nodes[0].hostName == ip
 
-        dbf.remove(nodes[0])
+        nodes[0].state = state
+        nodes[0].heartBeat = heartBeat
+        nodes[0].port = port
+        dbf.update(nodes[0])
     }
 }
