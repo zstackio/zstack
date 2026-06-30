@@ -510,6 +510,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>zvf</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>zops-plugin</artifactId>
                     <version>${project.version}</version>
                 </dependency>
