@@ -23,8 +23,6 @@ public class ScimEventVO {
     @Column
     private String resourceId;
     @Column
-    private long resourceVersion;
-    @Column
     private String operation;
     @Column
     private String status;
@@ -80,14 +78,6 @@ public class ScimEventVO {
 
     public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
-    }
-
-    public long getResourceVersion() {
-        return resourceVersion;
-    }
-
-    public void setResourceVersion(long resourceVersion) {
-        this.resourceVersion = resourceVersion;
     }
 
     public String getOperation() {

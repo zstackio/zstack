@@ -9,8 +9,6 @@ import org.zstack.core.db.GLock;
 import org.zstack.core.db.SQL;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
-import org.zstack.core.thread.Task;
-import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.scim.ScimConstant;
 import org.zstack.header.scim.ScimEventVO;
 import org.zstack.header.scim.ScimException;
@@ -54,17 +52,12 @@ public class ScimService {
     private DatabaseFacade dbf;
     @Autowired
     private ScimResourceHandler resourceHandler;
-    @Autowired
-    private ThreadFacade thdf;
     private final GlobalConfigUpdateExtensionPoint cleanupWhenDisabledExtension = this::cleanupWhenDisabled;
     private final ReentrantReadWriteLock receiverStateLock = new ReentrantReadWriteLock();
     private volatile GlobalConfig registeredReceiverEnabledConfig;
 
     public void init() {
         ensureReceiverEnabledExtensionRegistered();
-        if (!isEnabled(ScimGlobalConfig.RECEIVER_ENABLED.value())) {
-            submitStartupCleanup();
-        }
     }
 
     private void ensureReceiverEnabledExtensionRegisteredIfNeeded() {
@@ -93,25 +86,6 @@ public class ScimService {
             receiverEnabled.installUpdateExtension(cleanupWhenDisabledExtension);
         }
         registeredReceiverEnabledConfig = receiverEnabled;
-    }
-
-    private void submitStartupCleanup() {
-        thdf.submit(new Task<Void>() {
-            @Override
-            public String getName() {
-                return "scim-startup-cleanup";
-            }
-
-            @Override
-            public Void call() {
-                try {
-                    cleanupScimResourcesIfPresent();
-                } catch (RuntimeException e) {
-                    logger.warn("failed to cleanup SCIM resources on startup", e);
-                }
-                return null;
-            }
-        });
     }
 
     private void cleanupWhenDisabled(GlobalConfig oldConfig, GlobalConfig newConfig) {
@@ -148,9 +122,8 @@ public class ScimService {
                     ScimConstant.DEFAULT_CLIENT_ID), ScimConstant.HEADER_CLIENT_ID, MAX_CLIENT_ID_LENGTH);
             String eventId = validateMaxLength(requiredHeader(request, ScimConstant.HEADER_EVENT_ID),
                     ScimConstant.HEADER_EVENT_ID, MAX_EVENT_ID_LENGTH);
-            long resourceVersion = parseResourceVersion(requiredHeader(request, ScimConstant.HEADER_RESOURCE_VERSION));
             String timestamp = requiredHeader(request, ScimConstant.HEADER_TIMESTAMP);
-            verifySignature(request, clientId, eventId, resourceVersion, timestamp, method, resourceType, pathResourceId, body);
+            verifySignature(request, clientId, eventId, timestamp, method, resourceType, pathResourceId, body);
 
             String canonicalType = resourceHandler.normalizeResourceType(resourceType);
             validateMaxLength(canonicalType, "canonical resource type", MAX_RESOURCE_TYPE_LENGTH);
@@ -173,7 +146,7 @@ public class ScimService {
             GLock lock = new GLock(lockName(clientId, canonicalType, resourceId), LOCK_TIMEOUT_SECONDS);
             lock.lock();
             try {
-                return applyLocked(clientId, eventId, canonicalType, resourceId, resourceVersion, operation, body, payload);
+                return applyLocked(clientId, eventId, canonicalType, resourceId, operation, body, payload);
             } finally {
                 lock.unlock();
             }
@@ -183,19 +156,13 @@ public class ScimService {
     }
 
     private ScimResult applyLocked(String clientId, String eventId, String resourceType, String resourceId,
-                                   long resourceVersion, ScimOperation operation, String body, ScimPayload payload) {
+                                   ScimOperation operation, String body, ScimPayload payload) {
         ScimEventVO existing = findEvent(clientId, eventId);
         if (existing != null) {
             return resultForExistingEvent(existing);
         }
 
-        Long latestVersion = latestAcceptedVersion(clientId, resourceType, resourceId);
-        if (latestVersion != null && resourceVersion <= latestVersion) {
-            throw new ScimException(409,
-                    String.format("resource version[%s] is not newer than current[%s]", resourceVersion, latestVersion));
-        }
-
-        ScimEventVO event = reserveEvent(clientId, eventId, resourceType, resourceId, resourceVersion, operation, body);
+        ScimEventVO event = reserveEvent(clientId, eventId, resourceType, resourceId, operation, body);
         if (!ScimConstant.EVENT_STATUS_PENDING.equals(event.getStatus())) {
             return resultForExistingEvent(event);
         }
@@ -203,7 +170,7 @@ public class ScimService {
         try {
             resourceHandler.applyResource(operation, resourceType, resourceId, payload);
             markEventApplied(event);
-            return ScimResult.applied(clientId, eventId, resourceType, resourceId, resourceVersion, operation.name());
+            return ScimResult.applied(clientId, eventId, resourceType, resourceId, operation.name());
         } catch (RuntimeException e) {
             markEventFailed(event, e);
             throw e;
@@ -271,19 +238,7 @@ public class ScimService {
         }
     }
 
-    private long parseResourceVersion(String value) {
-        try {
-            long version = Long.parseLong(value);
-            if (version <= 0) {
-                throw new ScimException(400, "resource version must be positive");
-            }
-            return version;
-        } catch (NumberFormatException e) {
-            throw new ScimException(400, "invalid resource version");
-        }
-    }
-
-    private void verifySignature(HttpServletRequest request, String clientId, String eventId, long resourceVersion,
+    private void verifySignature(HttpServletRequest request, String clientId, String eventId,
                                  String timestamp, String method, String resourceType, String pathResourceId, String body) {
         String secret = ScimGlobalConfig.RECEIVER_SIGNATURE_SECRET.value();
         if (isBlank(secret)) {
@@ -293,7 +248,7 @@ public class ScimService {
         if (isBlank(actual)) {
             throw new ScimException(401, "missing SCIM signature");
         }
-        String base = signatureBase(clientId, method, resourceType, pathResourceId, eventId, resourceVersion, timestamp, body);
+        String base = signatureBase(clientId, method, resourceType, pathResourceId, eventId, timestamp, body);
         String expected = "sha256=" + hmacSha256(secret, base);
         if (!constantTimeEquals(expected, actual.trim())) {
             throw new ScimException(401, "invalid SCIM signature");
@@ -335,29 +290,14 @@ public class ScimService {
                 .find();
     }
 
-    private Long latestAcceptedVersion(String clientId, String resourceType, String resourceId) {
-        return SQL.New("select max(vo.resourceVersion) from ScimEventVO vo" +
-                        " where vo.clientId = :clientId" +
-                        " and vo.resourceType = :resourceType" +
-                        " and vo.resourceId = :resourceId" +
-                        " and (vo.status = :pending or vo.status = :applied)", Long.class)
-                .param("clientId", clientId)
-                .param("resourceType", resourceType)
-                .param("resourceId", resourceId)
-                .param("pending", ScimConstant.EVENT_STATUS_PENDING)
-                .param("applied", ScimConstant.EVENT_STATUS_APPLIED)
-                .find();
-    }
-
     private ScimEventVO reserveEvent(String clientId, String eventId, String resourceType, String resourceId,
-                                     long version, ScimOperation operation, String body) {
+                                     ScimOperation operation, String body) {
         ScimEventVO vo = new ScimEventVO();
         vo.setUuid(Platform.getUuid());
         vo.setClientId(clientId);
         vo.setEventId(eventId);
         vo.setResourceType(resourceType);
         vo.setResourceId(resourceId);
-        vo.setResourceVersion(version);
         vo.setOperation(operation.name());
         vo.setStatus(ScimConstant.EVENT_STATUS_PENDING);
         vo.setPayloadHash(sha256(body));
@@ -393,7 +333,7 @@ public class ScimService {
     private ScimResult resultForExistingEvent(ScimEventVO event) {
         if (ScimConstant.EVENT_STATUS_APPLIED.equals(event.getStatus())) {
             return ScimResult.duplicate(event.getClientId(), event.getEventId(), event.getResourceType(),
-                    event.getResourceId(), event.getResourceVersion());
+                    event.getResourceId());
         }
         if (ScimConstant.EVENT_STATUS_PENDING.equals(event.getStatus())) {
             throw new ScimException(409, String.format("SCIM event[%s] is being processed", event.getEventId()));
@@ -495,13 +435,12 @@ public class ScimService {
     }
 
     private String signatureBase(String clientId, String method, String resourceType, String pathResourceId,
-                                 String eventId, long resourceVersion, String timestamp, String body) {
+                                 String eventId, String timestamp, String body) {
         return clientId + "\n" +
                 method.toUpperCase(Locale.ROOT) + "\n" +
                 nullToEmpty(resourceType) + "\n" +
                 signaturePathResourceId(method, pathResourceId) + "\n" +
                 eventId + "\n" +
-                resourceVersion + "\n" +
                 timestamp.trim() + "\n" +
                 body;
     }
