@@ -517,30 +517,7 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
 
                 @Override
                 public void run(FlowTrigger trigger, Map data) {
-                    new SQLBatch() {
-                        @Override
-                        protected void scripts() {
-                            String ip = Platform.getManagementServerIp();
-                            String uuid = Platform.getManagementServerId();
-
-                            ManagementNodeVO existing = findByUuid(uuid, ManagementNodeVO.class);
-                            if (ManagementNodeManagerImpl.this.isDuplicatedActiveManagementServerId(existing, ip, databaseFacade.getCurrentSqlTime())) {
-                                throw new CloudRuntimeException(String.format(
-                                        "duplicated management server id[%s] detected, current management.server.ip[%s], existing management node hostName[%s]. " +
-                                                "Please remove %s on the cloned or peer management node and restart it",
-                                        uuid, ip, existing.getHostName(), Platform.getManagementServerIdStateFile().getAbsolutePath()));
-                            }
-
-                            sql(ManagementNodeVO.class).eq(ManagementNodeVO_.uuid, uuid).hardDelete();
-
-                            ManagementNodeVO vo = new ManagementNodeVO();
-                            vo.setHostName(ip);
-                            vo.setUuid(uuid);
-                            persist(vo);
-                            reload(vo);
-                            node = vo;
-                        }
-                    }.execute();
+                    recreateManagementNodeRecord(Platform.getManagementServerIp(), Platform.getManagementServerId());
 
                     trigger.next();
                 }
@@ -684,6 +661,35 @@ public class ManagementNodeManagerImpl extends AbstractService implements Manage
         logger.debug("quited main-loop, start stopping management node");
         stop();
         return true;
+    }
+
+    ManagementNodeVO recreateManagementNodeRecord(String ip, String uuid) {
+        final ManagementNodeVO[] ret = new ManagementNodeVO[1];
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                ManagementNodeVO existing = findByUuid(uuid, ManagementNodeVO.class);
+                if (ManagementNodeManagerImpl.this.isDuplicatedActiveManagementServerId(existing, ip, databaseFacade.getCurrentSqlTime())) {
+                    throw new CloudRuntimeException(String.format(
+                            "duplicated management server id[%s] detected, current management.server.ip[%s], existing management node hostName[%s]. " +
+                                    "Please remove %s on the cloned or peer management node and restart it",
+                            uuid, ip, existing.getHostName(), Platform.getManagementServerIdStateFile().getAbsolutePath()));
+                }
+
+                sql(ManagementNodeVO.class).eq(ManagementNodeVO_.uuid, uuid).hardDelete();
+                databaseFacade.getEntityManager().clear();
+
+                ManagementNodeVO vo = new ManagementNodeVO();
+                vo.setHostName(ip);
+                vo.setUuid(uuid);
+                persist(vo);
+                reload(vo);
+                ret[0] = vo;
+            }
+        }.execute();
+
+        node = ret[0];
+        return node;
     }
 
     private void setupHeartbeat() {

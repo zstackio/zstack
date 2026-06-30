@@ -7,6 +7,7 @@ import org.zstack.header.managementnode.ManagementNodeState
 import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.portal.managementnode.ManagementNodeGlobalConfig
+import org.zstack.portal.managementnode.ManagementNodeManagerImpl
 import org.zstack.portal.managementnode.PortalGlobalProperty
 import org.zstack.testlib.SubCase
 
@@ -36,6 +37,7 @@ class ManagementNodeHeartbeatCase extends SubCase {
         dbf = bean(DatabaseFacade.class)
 
         testUnexpectedManagementNodeRecord()
+        testRecreateManagementNodeRecordWithManagedExistingRecord()
     }
 
     void prepareInvalidRecords() {
@@ -96,5 +98,28 @@ class ManagementNodeHeartbeatCase extends SubCase {
         assert count == 1
 
         PortalGlobalProperty.MAX_HEARTBEAT_FAILURE = 5
+    }
+
+    void testRecreateManagementNodeRecordWithManagedExistingRecord() {
+        String uuid = Platform.uuid
+        String ip = "127.0.0.1"
+
+        ManagementNodeVO vo = new ManagementNodeVO()
+        vo.setUuid(uuid)
+        vo.setHostName(ip)
+        vo.setState(ManagementNodeState.JOINING)
+        dbf.persist(vo)
+
+        def method = ManagementNodeManagerImpl.class.getDeclaredMethod("recreateManagementNodeRecord", String.class, String.class)
+        method.setAccessible(true)
+        method.invoke(bean(ManagementNodeManagerImpl.class), ip, uuid)
+
+        List<ManagementNodeVO> nodes = Q.New(ManagementNodeVO.class)
+                .eq(ManagementNodeVO_.uuid, uuid)
+                .list()
+        assert nodes.size() == 1
+        assert nodes[0].hostName == ip
+
+        dbf.remove(nodes[0])
     }
 }
