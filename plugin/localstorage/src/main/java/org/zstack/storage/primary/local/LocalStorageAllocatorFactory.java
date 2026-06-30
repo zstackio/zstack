@@ -107,7 +107,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
-        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation())) {
+        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateStorage.toString().equals(spec.getVmOperation())) {
             List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
             if (huuids.isEmpty()) {
                 return candidates;
