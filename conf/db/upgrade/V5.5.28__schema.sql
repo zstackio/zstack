@@ -89,7 +89,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ScimEventVO` (
     `eventId` varchar(255) NOT NULL,
     `resourceType` varchar(64) NOT NULL,
     `resourceId` varchar(255) NOT NULL,
-    `resourceVersion` bigint NOT NULL,
     `operation` varchar(32) NOT NULL,
     `status` varchar(32) NOT NULL,
     `payloadHash` varchar(128) DEFAULT NULL,
@@ -97,8 +96,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ScimEventVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukScimEventVOClientEvent` (`clientId`, `eventId`),
-    KEY `idxScimEventVOResourceVersion` (`clientId`, `resourceType`, `resourceId`, `resourceVersion`)
+    UNIQUE KEY `ukScimEventVOClientEvent` (`clientId`, `eventId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `HostCacheStoreVO` (

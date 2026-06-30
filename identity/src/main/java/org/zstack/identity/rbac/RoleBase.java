@@ -55,6 +55,8 @@ public class RoleBase implements Role {
     }
 
     private void handleApiMessage(APIMessage msg) {
+        beforeRoleMutation((RoleMessage) msg);
+
         if (msg instanceof APIDeleteRoleMsg) {
             handle((APIDeleteRoleMsg) msg);
         } else if (msg instanceof APIAttachRoleToAccountMsg) {
@@ -75,6 +77,12 @@ public class RoleBase implements Role {
             handle((APIUpdateRoleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
+        }
+    }
+
+    private void beforeRoleMutation(RoleMessage msg) {
+        for (RoleMutationExtensionPoint ext : pluginRgty.getExtensionList(RoleMutationExtensionPoint.class)) {
+            ext.beforeRoleMutation(self, msg);
         }
     }
 
