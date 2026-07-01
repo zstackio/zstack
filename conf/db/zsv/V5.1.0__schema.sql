@@ -260,3 +260,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ResNotifyWebhookRefVO` (
     CONSTRAINT `fk_ResNotifyWebhookRefVO_ResNotifySubscriptionVO`
         FOREIGN KEY (`uuid`) REFERENCES `ResNotifySubscriptionVO`(`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DELETE shadow FROM ImageCacheShadowVO shadow
+    LEFT JOIN PrimaryStorageEO ps ON shadow.primaryStorageUuid = ps.uuid
+    WHERE ps.uuid IS NULL;
+CALL ADD_CONSTRAINT('ImageCacheShadowVO', 'fkImageCacheShadowVOPrimaryStorageEOCascade', 'primaryStorageUuid', 'PrimaryStorageEO', 'uuid', 'CASCADE');
