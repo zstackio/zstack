@@ -88,8 +88,8 @@ class SugonSdnControllerCase extends SubCase {
             assert syncCount.get() == 1
         }
 
-        sendTfPing(sdn.uuid)
         sleep(500)
+        sendTfPing(sdn.uuid)
         assert syncCount.get() == 1
     }
 

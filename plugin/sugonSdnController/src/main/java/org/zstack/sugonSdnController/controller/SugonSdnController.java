@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
@@ -60,6 +61,7 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
+    @MessageSafe
     public void handleMessage(SdnControllerMessage msg) {
         if (msg instanceof SdnControllerPingMsg) {
             handMessage((SdnControllerPingMsg) msg);
