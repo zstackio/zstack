@@ -25,4 +25,15 @@ public interface PluginManager {
 
     // get plugin class with type
     <T extends PluginDriver> T getPlugin(Class<? extends PluginDriver> pluginClass, String type);
+
+    /**
+     * Create a new independent instance of a plugin driver.
+     * Unlike getPlugin() which returns a shared singleton, this method creates
+     * a fresh instance each time to avoid concurrent state corruption when
+     * multiple callers need isolated driver configurations.
+     *
+     * @param pluginUuid the plugin product key / UUID
+     * @return a new instance of the plugin driver
+     */
+    <T extends PluginDriver> T newDriverInstance(String pluginUuid);
 }

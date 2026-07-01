@@ -300,6 +300,21 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     }
 
     @Override
+    public <T extends PluginDriver> T newDriverInstance(String pluginProductKey) {
+        PluginDriver singleton = pluginInstances.get(pluginProductKey);
+        if (singleton == null) {
+            throw new CloudRuntimeException(String.format("Unsupported plugin %s", pluginProductKey));
+        }
+
+        try {
+            return (T) singleton.getClass().getConstructor().newInstance();
+        } catch (Exception e) {
+            throw new CloudRuntimeException(
+                    String.format("Failed to create new instance of plugin %s", pluginProductKey), e);
+        }
+    }
+
+    @Override
     public void handleMessage(Message msg) {
         if (msg instanceof APIRefreshPluginDriversMsg) {
             handle((APIRefreshPluginDriversMsg) msg);
