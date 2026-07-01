@@ -499,6 +499,8 @@ public class SourceClassMap {
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceState", "org.zstack.sdk.MdevDeviceState");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus", "org.zstack.sdk.MdevDeviceStatus");
 			put("org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType", "org.zstack.sdk.MdevDeviceType");
+			put("org.zstack.platformservice.api.PlatformServiceInstanceInventory", "org.zstack.sdk.platformservice.PlatformServiceInstanceInventory");
+			put("org.zstack.platformservice.api.PlatformServicePackageInventory", "org.zstack.sdk.platformservice.PlatformServicePackageInventory");
 			put("org.zstack.policyRoute.PolicyRouteRuleInventory", "org.zstack.sdk.PolicyRouteRuleInventory");
 			put("org.zstack.policyRoute.PolicyRouteRuleProtocol", "org.zstack.sdk.PolicyRouteRuleProtocol");
 			put("org.zstack.policyRoute.PolicyRouteRuleSetInventory", "org.zstack.sdk.PolicyRouteRuleSetInventory");
@@ -1314,6 +1316,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.managements.common.ManagementNodeStatusView", "org.zstack.managements.entity.common.ManagementNodeStatusView");
 			put("org.zstack.sdk.managements.common.ManagementsStatusView", "org.zstack.managements.entity.common.ManagementsStatusView");
 			put("org.zstack.sdk.managements.ha2.ZSha2StatusView", "org.zstack.managements.entity.ha2.ZSha2StatusView");
+			put("org.zstack.sdk.platformservice.PlatformServiceInstanceInventory", "org.zstack.platformservice.api.PlatformServiceInstanceInventory");
+			put("org.zstack.sdk.platformservice.PlatformServicePackageInventory", "org.zstack.platformservice.api.PlatformServicePackageInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
 			put("org.zstack.sdk.sns.SNSSmsEndpointInventory", "org.zstack.sns.SNSSmsEndpointInventory");
