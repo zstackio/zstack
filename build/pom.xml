@@ -299,6 +299,11 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
+                    <artifactId>zwatch-enterprise</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.zstack</groupId>
                     <artifactId>sns</artifactId>
                     <version>${project.version}</version>
                 </dependency>
