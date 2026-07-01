@@ -758,6 +758,51 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 DATA_PLANE_IPVS.equals(dataPlane);
     }
 
+    private boolean isTcpIpvsListener(String listenerUuid) {
+        LoadBalancerListenerVO listenerVO = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
+                .find();
+        return listenerVO != null && isTcpIpvsListener(listenerVO.getProtocol(),
+                listenerVO.getDataPlane() == null ? DATA_PLANE_HAPROXY : listenerVO.getDataPlane());
+    }
+
+    private boolean hasTcpIpvsListenerOnServerGroup(String serverGroupUuid) {
+        List<String> listenerUuids = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .select(LoadBalancerListenerServerGroupRefVO_.listenerUuid)
+                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, serverGroupUuid)
+                .listValues();
+        return listenerUuids.stream().anyMatch(this::isTcpIpvsListener);
+    }
+
+    private boolean hasIpv6ServerIp(String serverGroupUuid) {
+        List<String> serverIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
+                .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
+                .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, serverGroupUuid)
+                .listValues();
+        return serverIps.stream().anyMatch(IPv6NetworkUtils::isIpv6Address);
+    }
+
+    private void validateTcpIpvsDoesNotUseIpv6Vip(LoadBalancerVO lbVO) {
+        if (lbVO != null && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 vip"));
+        }
+    }
+
+    private void validateTcpIpvsDoesNotUseIpv6ServerGroup(LoadBalancerServerGroupVO groupVO) {
+        if (groupVO != null && groupVO.getIpVersion() != null && IPv6Constants.IPv6 == groupVO.getIpVersion()) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 server group"));
+        }
+    }
+
+    private void validateTcpIpvsDoesNotUseIpv6BackendIp(String ipAddress) {
+        if (IPv6NetworkUtils.isIpv6Address(ipAddress)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 backend server ip"));
+        }
+    }
+
     private boolean hasHttpHealthCheckParameters(APICreateLoadBalancerListenerMsg msg) {
         return msg.getHealthCheckMethod() != null ||
                 msg.getHealthCheckURI() != null ||
@@ -856,6 +901,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(
                         operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "data plane [%s] only supports tcp listener", msg.getDataPlane()));
             }
+            validateTcpIpvsDoesNotUseIpv6Vip(lbVO);
 
             if (msg.getForwardMode() == null) {
                 msg.setForwardMode(LoadBalancerConstants.FORWARD_MODE_FULL_NAT);
@@ -1878,6 +1924,9 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10143, "the server ips [uuid:%s] are already on the load balancer servegroup [uuid:%s]", existingServerIps, msg.getServerGroupUuid()));
             }
 
+            if (hasTcpIpvsListenerOnServerGroup(msg.getServerGroupUuid())) {
+                serverIps.forEach(this::validateTcpIpvsDoesNotUseIpv6BackendIp);
+            }
             if (lbVO.getType() == LoadBalancerType.Shared) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10144, "could not add server ip to share load balancer server group"));
             }
@@ -2002,6 +2051,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 LoadBalancerListenerVO.class);
         LoadBalancerVO lbVO = dbf.findByUuid(loadBalancerUuid, LoadBalancerVO.class);
         LoadBalancerServerGroupVO groupVO = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+        if (isTcpIpvsListener(msg.getlistenerUuid())) {
+            validateTcpIpvsDoesNotUseIpv6Vip(lbVO);
+            validateTcpIpvsDoesNotUseIpv6ServerGroup(groupVO);
+            if (hasIpv6ServerIp(msg.getServerGroupUuid())) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 backend server ip"));
+            }
+        }
         if (listenerVO.getProtocol().equals(LB_PROTOCOL_UDP)) {
             if (!StringUtils.isEmpty(lbVO.getVipUuid()) &&
                     !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {

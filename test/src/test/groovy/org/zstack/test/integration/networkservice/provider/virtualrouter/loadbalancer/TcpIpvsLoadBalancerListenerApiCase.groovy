@@ -5,16 +5,23 @@ import org.zstack.appliancevm.ApplianceVmVO_
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
+import org.zstack.network.service.lb.LoadBalancerAclStatus
+import org.zstack.network.service.lb.LoadBalancerAclType
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerListenerVO
 import org.zstack.network.service.lb.LoadBalancerListenerVO_
+import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.sdk.AccessControlListInventory
+import org.zstack.sdk.AddBackendServerToServerGroupAction
+import org.zstack.sdk.AddServerGroupToLoadBalancerListenerAction
 import org.zstack.sdk.ChangeLoadBalancerListenerAction
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.CreateLoadBalancerListenerAction
@@ -31,6 +38,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.network.IPv6Constants
 import org.springframework.http.HttpEntity
 
 import java.util.concurrent.CopyOnWriteArrayList
@@ -193,10 +201,15 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
     void test() {
         env.create {
             prepareDedicatedLoadBalancer()
+            installRefreshLbCapture()
+            testTcpIpvsIpv6Validation()
             testTcpHaproxyDefaultDataPlane()
             testTcpIpvsFullNatListener()
             testTcpIpvsDefaultForwardMode()
             testTcpIpvsCreateValidation()
+            testTcpIpvsHealthCheckParameterValidation()
+            testTcpHaproxyBackendRefreshPayload()
+            testUdpHaproxyBackendRefreshPayload()
             testTcpIpvsDedicatedListenerBackendRefreshPayload()
         }
     }
@@ -212,6 +225,13 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             delegate.name = "tcp-ipvs-api-lb"
             delegate.vipUuid = vip.uuid
             delegate.systemTags = ["separateVirtualRouterVm"]
+        }
+    }
+
+    void installRefreshLbCapture() {
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            refreshCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
+            return rsp
         }
     }
 
@@ -265,6 +285,95 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert vo.instancePort == 8080
     }
 
+    void testTcpIpvsIpv6Validation() {
+        L3NetworkInventory publicL3 = env.inventoryByName("publicL3") as L3NetworkInventory
+        addIpv6Range {
+            name = "public-ipv6-range"
+            l3NetworkUuid = publicL3.uuid
+            startIp = "2003:2001::0010"
+            endIp = "2003:2001::0020"
+            gateway = "2003:2001::2"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        LoadBalancerServerGroupInventory ipv6Group = createLoadBalancerServerGroup {
+            loadBalancerUuid = lb.uuid
+            name = "tcp-ipvs-ipv6-group-before-listener"
+            ipVersion = IPv6Constants.IPv6
+        }
+
+        LoadBalancerListenerInventory listener = createTcpIpvsListener(
+                "tcp-ipvs-ipv6-validation", 11079, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+
+        AddServerGroupToLoadBalancerListenerAction addIpv6Group = new AddServerGroupToLoadBalancerListenerAction()
+        addIpv6Group.listenerUuid = listener.uuid
+        addIpv6Group.serverGroupUuid = ipv6Group.uuid
+        addIpv6Group.sessionId = adminSession()
+        AddServerGroupToLoadBalancerListenerAction.Result addIpv6GroupResult = addIpv6Group.call()
+        assert addIpv6GroupResult.error != null
+        assert addIpv6GroupResult.error.details.contains("tcp ipvs listener doesn't support ipv6 server group")
+
+        LoadBalancerServerGroupInventory ipv6GroupAfterListener = createLoadBalancerServerGroup {
+            loadBalancerUuid = lb.uuid
+            name = "tcp-ipvs-ipv6-group-after-listener"
+            ipVersion = IPv6Constants.IPv6
+        }
+        AddServerGroupToLoadBalancerListenerAction addIpv6GroupAfterListener = new AddServerGroupToLoadBalancerListenerAction()
+        addIpv6GroupAfterListener.listenerUuid = listener.uuid
+        addIpv6GroupAfterListener.serverGroupUuid = ipv6GroupAfterListener.uuid
+        addIpv6GroupAfterListener.sessionId = adminSession()
+        AddServerGroupToLoadBalancerListenerAction.Result addIpv6GroupAfterListenerResult = addIpv6GroupAfterListener.call()
+        assert addIpv6GroupAfterListenerResult.error != null
+        assert addIpv6GroupAfterListenerResult.error.details.contains("tcp ipvs listener doesn't support ipv6 server group")
+
+        LoadBalancerServerGroupInventory ipv4Group = createLoadBalancerServerGroup {
+            loadBalancerUuid = lb.uuid
+            name = "tcp-ipvs-ipv6-backend-ip-group"
+        }
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            serverGroupUuid = ipv4Group.uuid
+        }
+        AddBackendServerToServerGroupAction addIpv6BackendIp = new AddBackendServerToServerGroupAction()
+        addIpv6BackendIp.serverGroupUuid = ipv4Group.uuid
+        addIpv6BackendIp.servers = [["ipAddress": "2003:2001::12", "weight": "100"]]
+        addIpv6BackendIp.sessionId = adminSession()
+        AddBackendServerToServerGroupAction.Result addIpv6BackendIpResult = addIpv6BackendIp.call()
+        assert addIpv6BackendIpResult.error != null
+        assert addIpv6BackendIpResult.error.details.contains("tcp ipvs listener doesn't support ipv6 backend server ip")
+
+        VipInventory ipv4Vip = createVip {
+            name = "tcp-ipvs-dual-stack-ipv4-vip"
+            l3NetworkUuid = publicL3.uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        VipInventory ipv6Vip = createVip {
+            name = "tcp-ipvs-dual-stack-ipv6-vip"
+            l3NetworkUuid = publicL3.uuid
+            ipVersion = IPv6Constants.IPv6
+        }
+        LoadBalancerInventory dualStackLb = createLoadBalancer {
+            name = "tcp-ipvs-dual-stack-lb"
+            vipUuid = ipv4Vip.uuid
+            ipv6VipUuid = ipv6Vip.uuid
+            systemTags = ["separateVirtualRouterVm"]
+        }
+
+        CreateLoadBalancerListenerAction action = new CreateLoadBalancerListenerAction()
+        action.name = "tcp-ipvs-ipv6-vip-listener"
+        action.loadBalancerUuid = dualStackLb.uuid
+        action.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+        action.loadBalancerPort = 11078
+        action.instancePort = 8080
+        action.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+        action.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+        action.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result result = action.call()
+        assert result.error != null
+        assert result.error.details.contains("tcp ipvs listener doesn't support ipv6 vip")
+    }
+
     void testTcpIpvsDefaultForwardMode() {
         LoadBalancerListenerInventory listener = createLoadBalancerListener {
             delegate.name = "tcp-ipvs-default-forward-mode"
@@ -280,10 +389,16 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
     }
 
     void testTcpIpvsCreateValidation() {
-        assertCreateListenerError(11083, LoadBalancerConstants.LB_PROTOCOL_HTTP,
-                LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
-        assertCreateListenerError(11084, LoadBalancerConstants.LB_PROTOCOL_UDP,
-                LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
+        [
+                [11083, LoadBalancerConstants.LB_PROTOCOL_HTTP],
+                [11084, LoadBalancerConstants.LB_PROTOCOL_UDP],
+                [11088, LoadBalancerConstants.LB_PROTOCOL_HTTPS]
+        ].each { List param ->
+            CreateLoadBalancerListenerAction.Result result = assertCreateListenerError(param[0] as int, param[1] as String,
+                    LoadBalancerConstants.DATA_PLANE_IPVS, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
+            assert result.error.details.contains("data plane [ipvs] only supports tcp listener")
+        }
+
         assertCreateListenerError(11085, LoadBalancerConstants.LB_PROTOCOL_TCP,
                 LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.FORWARD_MODE_FULL_NAT)
         CreateLoadBalancerListenerAction.Result natResult = assertCreateListenerError(11086, LoadBalancerConstants.LB_PROTOCOL_TCP,
@@ -295,11 +410,227 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert drResult.error.details.contains("TCP IPVS only supports forwardMode[full_nat]")
     }
 
-    void testTcpIpvsDedicatedListenerBackendRefreshPayload() {
-        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
-            refreshCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
-            return rsp
+    void testTcpIpvsHealthCheckParameterValidation() {
+        [
+                { CreateLoadBalancerListenerAction action -> action.healthCheckMethod = "GET" },
+                { CreateLoadBalancerListenerAction action -> action.healthCheckURI = "/health" },
+                { CreateLoadBalancerListenerAction action -> action.healthCheckHttpCode = "http_2xx" },
+                { CreateLoadBalancerListenerAction action -> action.healthCheckProtocol = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP; action.healthCheckURI = "/health" },
+                { CreateLoadBalancerListenerAction action -> action.systemTags = ["healthCheckParameter::GET:/health:http_2xx"] }
+        ].eachWithIndex { Closure setter, int index ->
+            CreateLoadBalancerListenerAction.Result result = assertCreateTcpIpvsListenerError(11100 + index, setter)
+            assert result.error.details.contains("tcp ipvs listener doesn't support http health check parameters")
         }
+
+        CreateLoadBalancerListenerAction.Result udpHealthCheckResult = assertCreateTcpIpvsListenerError(11105) { CreateLoadBalancerListenerAction action ->
+            action.healthCheckProtocol = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP
+        }
+        assertUnsupportedHealthCheckError(udpHealthCheckResult.error)
+
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            delegate.name = "tcp-ipvs-health-check-parameters"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            delegate.loadBalancerPort = 11110
+            delegate.instancePort = 8080
+            delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+            delegate.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+            delegate.systemTags = [
+                    "healthCheckTarget::tcp:default",
+                    "healthCheckInterval::2",
+                    "healthCheckTimeout::1",
+                    "healthyThreshold::2",
+                    "unhealthyThreshold::2"
+            ]
+        }
+
+        LoadBalancerServerGroupInventory group = createServerGroupWithVmNics(
+                "tcp-ipvs-health-check-group",
+                [backendVmNic("backend-vm-1", "100")])
+        int createOffset = refreshCmds.size()
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            serverGroupUuid = group.uuid
+        }
+        VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(listener.uuid, healthCheckParameters([
+                healthCheckTarget: "tcp:default",
+                healthCheckInterval: "2",
+                healthCheckTimeout: "1",
+                healthyThreshold: "2",
+                unhealthyThreshold: "2"
+        ]), createOffset)
+        assertTcpIpvsTO(to, listener.uuid, 11110, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+
+        int changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckTarget = "8080"
+        }
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "tcp:8080"
+        assertHealthCheckPayload(listener.uuid, changeOffset, [
+                healthCheckTarget: "tcp:8080",
+                healthCheckInterval: "2",
+                healthCheckTimeout: "1",
+                healthyThreshold: "2",
+                unhealthyThreshold: "2"
+        ])
+
+        changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckInterval = 3
+        }
+        assert LoadBalancerSystemTags.HEALTH_INTERVAL.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN) == "3"
+        assertHealthCheckPayload(listener.uuid, changeOffset, [
+                healthCheckTarget: "tcp:8080",
+                healthCheckInterval: "3",
+                healthCheckTimeout: "1",
+                healthyThreshold: "2",
+                unhealthyThreshold: "2"
+        ])
+
+        changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckTimeout = 2
+        }
+        assert LoadBalancerSystemTags.HEALTH_TIMEOUT.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN) == "2"
+        assertHealthCheckPayload(listener.uuid, changeOffset, [
+                healthCheckTarget: "tcp:8080",
+                healthCheckInterval: "3",
+                healthCheckTimeout: "2",
+                healthyThreshold: "2",
+                unhealthyThreshold: "2"
+        ])
+
+        changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthyThreshold = 3
+        }
+        assert LoadBalancerSystemTags.HEALTHY_THRESHOLD.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN) == "3"
+        assertHealthCheckPayload(listener.uuid, changeOffset, [
+                healthCheckTarget: "tcp:8080",
+                healthCheckInterval: "3",
+                healthCheckTimeout: "2",
+                healthyThreshold: "3",
+                unhealthyThreshold: "2"
+        ])
+
+        changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.unhealthyThreshold = 3
+        }
+        assert LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.getTokenByResourceUuid(listener.uuid,
+                LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN) == "3"
+        assertHealthCheckPayload(listener.uuid, changeOffset, [
+                healthCheckTarget: "tcp:8080",
+                healthCheckInterval: "3",
+                healthCheckTimeout: "2",
+                healthyThreshold: "3",
+                unhealthyThreshold: "3"
+        ])
+
+        [
+                { ChangeLoadBalancerListenerAction action -> action.healthCheckMethod = "GET" },
+                { ChangeLoadBalancerListenerAction action -> action.healthCheckURI = "/health" },
+                { ChangeLoadBalancerListenerAction action -> action.healthCheckHttpCode = "http_2xx" },
+                { ChangeLoadBalancerListenerAction action -> action.healthCheckProtocol = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP; action.healthCheckURI = "/health" }
+        ].each { Closure setter ->
+            ChangeLoadBalancerListenerAction.Result result = assertChangeListenerError(listener.uuid, setter)
+            assert result.error.details.contains("tcp ipvs listener doesn't support http health check parameters")
+        }
+
+        ChangeLoadBalancerListenerAction.Result udpChangeResult = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckProtocol = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP
+        }
+        assertUnsupportedHealthCheckError(udpChangeResult.error)
+
+        ChangeLoadBalancerListenerAction.Result noneSpecificTargetResult = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckTarget = "none:8080"
+        }
+        assert noneSpecificTargetResult.error.details.contains("health check protocol none only supports default target")
+    }
+
+    void testTcpHaproxyBackendRefreshPayload() {
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            delegate.name = "tcp-haproxy-refresh"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            delegate.loadBalancerPort = 11120
+            delegate.instancePort = 8081
+            delegate.systemTags = ["healthCheckTarget::tcp:8081"]
+        }
+
+        assert listener.dataPlane == null
+        assert listener.forwardMode == null
+
+        LoadBalancerListenerVO vo = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listener.uuid)
+                .find()
+        assert vo.dataPlane == LoadBalancerConstants.DATA_PLANE_HAPROXY
+        assert vo.forwardMode == null
+
+        String backendIp1 = backendIp("backend-vm-1")
+        String backendIp2 = backendIp("backend-vm-2")
+        LoadBalancerServerGroupInventory group = createServerGroupWithVmNics(
+                "tcp-haproxy-refresh-group",
+                [backendVmNic("backend-vm-1", "100"), backendVmNic("backend-vm-2", "60")])
+
+        int offset = refreshCmds.size()
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            serverGroupUuid = group.uuid
+        }
+
+        VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(
+                listener.uuid, ["healthCheckTarget::tcp:8081"], offset)
+        assertHaproxyTO(to, listener.uuid, LoadBalancerConstants.LB_PROTOCOL_TCP, 11120, 8081)
+        assertServerGroups(to, [
+                (group.uuid): [(backendIp1): 100L, (backendIp2): 60L]
+        ])
+    }
+
+    void testUdpHaproxyBackendRefreshPayload() {
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            delegate.name = "udp-haproxy-refresh"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_UDP
+            delegate.loadBalancerPort = 11121
+            delegate.instancePort = 8082
+            delegate.systemTags = ["healthCheckTarget::udp:8082"]
+        }
+
+        assert listener.dataPlane == null
+        assert listener.forwardMode == null
+
+        LoadBalancerListenerVO vo = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listener.uuid)
+                .find()
+        assert vo.dataPlane == LoadBalancerConstants.DATA_PLANE_HAPROXY
+        assert vo.forwardMode == null
+
+        String backendIp3 = backendIp("backend-vm-3")
+        String backendIp4 = backendIp("backend-vm-4")
+        LoadBalancerServerGroupInventory group = createServerGroupWithVmNics(
+                "udp-haproxy-refresh-group",
+                [backendVmNic("backend-vm-3", "100"), backendVmNic("backend-vm-4", "70")])
+
+        int offset = refreshCmds.size()
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            serverGroupUuid = group.uuid
+        }
+
+        VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(
+                listener.uuid, ["healthCheckTarget::udp:8082"], offset)
+        assertHaproxyTO(to, listener.uuid, LoadBalancerConstants.LB_PROTOCOL_UDP, 11121, 8082)
+        assertServerGroups(to, [
+                (group.uuid): [(backendIp3): 100L, (backendIp4): 70L]
+        ])
+    }
+
+    void testTcpIpvsDedicatedListenerBackendRefreshPayload() {
         List<KVMAgentCommands.DestroyVmCmd> destroyVmCmds = new CopyOnWriteArrayList<>()
         env.afterSimulator(KVMConstant.KVM_DESTROY_VM_PATH) { rsp, HttpEntity<String> e ->
             destroyVmCmds.add(JSONObjectUtil.toObject(e.body, KVMAgentCommands.DestroyVmCmd.class))
@@ -326,6 +657,9 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assertServerGroups(to, [
                 (group1.uuid): [(backendIp1): 100L]
         ])
+        assert !to.enableFullLog
+
+        testTcpIpvsFullLogPayload(listener)
 
         addBackendServerToServerGroup {
             serverGroupUuid = group1.uuid
@@ -335,6 +669,8 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assertServerGroups(to, [
                 (group1.uuid): [(backendIp1): 100L, (backendIp2): 50L, (backendIp4): 80L]
         ])
+
+        testTcpIpvsWhitelistPayload(group1)
 
         changeLoadBalancerBackendServer {
             serverGroupUuid = group1.uuid
@@ -386,6 +722,110 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert destroyVmCmds.drop(destroyOffset).any { applianceVmUuids.contains(it.uuid) }
     }
 
+    void testTcpIpvsWhitelistPayload(LoadBalancerServerGroupInventory group) {
+        AccessControlListInventory acl = createAccessControlList {
+            name = "tcp-ipvs-white-acl"
+            ipVersion = 4
+        }
+        addAccessControlListEntry {
+            aclUuid = acl.uuid
+            entries = "192.168.10.1,192.168.11.0/24"
+        }
+
+        LoadBalancerListenerInventory createWithWhitelist = createLoadBalancerListener {
+            delegate.name = "tcp-ipvs-white-create"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            delegate.loadBalancerPort = 11091
+            delegate.instancePort = 8080
+            delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+            delegate.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+            delegate.aclStatus = LoadBalancerAclStatus.enable.toString()
+            delegate.aclType = LoadBalancerAclType.white.toString()
+            delegate.aclUuids = [acl.uuid]
+            delegate.systemTags = ["balancerAlgorithm::${LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN}".toString()]
+        }
+        assert createWithWhitelist.aclRefs.size() == 1
+        assert createWithWhitelist.aclRefs[0].aclUuid == acl.uuid
+        assert createWithWhitelist.aclRefs[0].type == LoadBalancerAclType.white.toString()
+
+        int createOffset = refreshCmds.size()
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = createWithWhitelist.uuid
+            serverGroupUuid = group.uuid
+        }
+        assertWhitelistTO(lastLbTOWithParameters(createWithWhitelist.uuid, whitelistParameters(), createOffset),
+                createWithWhitelist.uuid, 11091)
+
+        LoadBalancerListenerInventory changeToWhitelist = createTcpIpvsListener(
+                "tcp-ipvs-white-change", 11092, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = changeToWhitelist.uuid
+            serverGroupUuid = group.uuid
+        }
+        addAccessControlListToLoadBalancer {
+            listenerUuid = changeToWhitelist.uuid
+            aclUuids = [acl.uuid]
+            aclType = LoadBalancerAclType.white.toString()
+        }
+
+        int changeOffset = refreshCmds.size()
+        assertChangeListenerSuccess(changeToWhitelist.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.aclStatus = LoadBalancerAclStatus.enable.toString()
+        }
+        assertWhitelistTO(lastLbTOWithParameters(changeToWhitelist.uuid, whitelistParameters(), changeOffset),
+                changeToWhitelist.uuid, 11092)
+
+        deleteAccessControlList {
+            uuid = acl.uuid
+        }
+    }
+
+    void testTcpIpvsFullLogPayload(LoadBalancerListenerInventory listener) {
+        updateResourceConfig {
+            category = VyosGlobalConfig.CATEGORY
+            name = VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.name
+            resourceUuid = listener.uuid
+            value = "true"
+        }
+
+        int enableOffset = refreshCmds.size()
+        changeBalancerAlgorithm(listener.uuid, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        VirtualRouterLoadBalancerBackend.LbTO to = lastLbTO(listener.uuid, enableOffset)
+        assertTcpIpvsTO(to, listener.uuid, 11090, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        assert to.enableFullLog
+
+        updateResourceConfig {
+            category = VyosGlobalConfig.CATEGORY
+            name = VyosGlobalConfig.ENABLE_LOADBALANCER_FULL_LOG.name
+            resourceUuid = listener.uuid
+            value = "false"
+        }
+
+        int disableOffset = refreshCmds.size()
+        changeBalancerAlgorithm(listener.uuid, LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN)
+        to = lastLbTO(listener.uuid, disableOffset)
+        assertTcpIpvsTO(to, listener.uuid, 11090, LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN)
+        assert !to.enableFullLog
+    }
+
+    void assertHealthCheckPayload(String listenerUuid, int offset, Map<String, String> expected) {
+        VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(listenerUuid, healthCheckParameters(expected), offset)
+        healthCheckParameters(expected).each { String parameter ->
+            assert to.parameters.contains(parameter)
+        }
+    }
+
+    List<String> healthCheckParameters(Map<String, String> values) {
+        return [
+                "healthCheckTarget::${values.healthCheckTarget}".toString(),
+                "healthCheckInterval::${values.healthCheckInterval}".toString(),
+                "healthCheckTimeout::${values.healthCheckTimeout}".toString(),
+                "healthyThreshold::${values.healthyThreshold}".toString(),
+                "unhealthyThreshold::${values.unhealthyThreshold}".toString()
+        ]
+    }
+
     LoadBalancerListenerInventory createTcpIpvsListener(String name, int port, String algorithm) {
         return createLoadBalancerListener {
             delegate.name = name
@@ -435,6 +875,18 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         return to
     }
 
+    VirtualRouterLoadBalancerBackend.LbTO lastLbTOWithParameters(String listenerUuid, List<String> parameters, int offset = 0) {
+        VirtualRouterLoadBalancerBackend.LbTO to = null
+        retryInSecs {
+            assert refreshCmds.size() > offset
+            to = refreshCmds.drop(offset).reverse()
+                    .collectMany { it.lbs }
+                    .find { it.listenerUuid == listenerUuid && parameters.every { p -> it.parameters.contains(p) } }
+            assert to != null
+        }
+        return to
+    }
+
     void assertTcpIpvsTO(VirtualRouterLoadBalancerBackend.LbTO to, String listenerUuid, int port, String algorithm) {
         assert to.listenerUuid == listenerUuid
         assert to.mode == LoadBalancerConstants.LB_PROTOCOL_TCP
@@ -443,6 +895,16 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert to.loadBalancerPort == port
         assert to.instancePort == 8080
         assert to.parameters.contains("balancerAlgorithm::${algorithm}".toString())
+    }
+
+    void assertHaproxyTO(VirtualRouterLoadBalancerBackend.LbTO to, String listenerUuid, String protocol,
+                         int loadBalancerPort, int instancePort) {
+        assert to.listenerUuid == listenerUuid
+        assert to.mode == protocol
+        assert to.dataPlane == null
+        assert to.forwardMode == null
+        assert to.loadBalancerPort == loadBalancerPort
+        assert to.instancePort == instancePort
     }
 
     void assertServerGroups(VirtualRouterLoadBalancerBackend.LbTO to, Map<String, Map<String, Long>> expected) {
@@ -459,6 +921,21 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
                 assert to.parameters.contains("balancerWeight::${ip}::${weight}".toString())
             }
         }
+    }
+
+    void assertWhitelistTO(VirtualRouterLoadBalancerBackend.LbTO to, String listenerUuid, int port) {
+        assertTcpIpvsTO(to, listenerUuid, port, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        whitelistParameters().each { String parameter ->
+            assert to.parameters.contains(parameter)
+        }
+    }
+
+    List<String> whitelistParameters() {
+        return [
+                "accessControlStatus::enable",
+                "aclType::${LoadBalancerAclType.white}".toString(),
+                "aclEntry::192.168.10.1,192.168.11.0/24"
+        ]
     }
 
     void changeBalancerAlgorithm(String listenerUuid, String algorithm) {
@@ -484,6 +961,53 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         CreateLoadBalancerListenerAction.Result result = action.call()
         assert result.error != null
         return result
+    }
+
+    CreateLoadBalancerListenerAction.Result assertCreateTcpIpvsListenerError(int port, Closure setter) {
+        CreateLoadBalancerListenerAction action = new CreateLoadBalancerListenerAction()
+        action.name = "tcp-ipvs-invalid-health-check-${port}"
+        action.loadBalancerUuid = lb.uuid
+        action.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+        action.loadBalancerPort = port
+        action.instancePort = 8080
+        action.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+        action.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+        action.sessionId = adminSession()
+
+        setter.call(action)
+
+        CreateLoadBalancerListenerAction.Result result = action.call()
+        assert result.error != null
+        return result
+    }
+
+    ChangeLoadBalancerListenerAction.Result assertChangeListenerSuccess(String listenerUuid, Closure setter) {
+        ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
+        action.uuid = listenerUuid
+        action.sessionId = adminSession()
+
+        setter.call(action)
+
+        ChangeLoadBalancerListenerAction.Result result = action.call()
+        assert result.error == null
+        return result
+    }
+
+    ChangeLoadBalancerListenerAction.Result assertChangeListenerError(String listenerUuid, Closure setter) {
+        ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
+        action.uuid = listenerUuid
+        action.sessionId = adminSession()
+
+        setter.call(action)
+
+        ChangeLoadBalancerListenerAction.Result result = action.call()
+        assert result.error != null
+        return result
+    }
+
+    void assertUnsupportedHealthCheckError(def error) {
+        assert error.details.contains("doesn't support this health check") ||
+                error.details.contains("不支持此类型")
     }
 
     String getApiResultString(ApiResult result) {
