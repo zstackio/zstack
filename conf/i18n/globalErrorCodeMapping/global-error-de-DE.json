@@ -845,7 +845,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_10026": "Doppelter Schlüssel[%s] mit unterschiedlichen Werten{%s}%",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10170": "Server-IP konnte nicht zur Shared-Load-Balancer-Servergruppe %s hinzugefügt werden",
   "ORG_ZSTACK_ZWATCH_ALARM_10025": "Die Metrik hat nicht das angegebene Label[%s]",
-  "ORG_ZSTACK_ZWATCH_ALARM_10023": "Doppeltes Label definiert für den Alarm mit UUID [uuid:%s]",
+  "ORG_ZSTACK_ZWATCH_ALARM_10023": "Doppeltes Label[key:%s, operator:%s, value:%s] definiert für den Alarm[uuid:%s]",
   "ORG_ZSTACK_ZWATCH_ALARM_10029": "Die Metrik[%s] ist auf Administratoren beschränkt und ist für Ihre aktuelle Benutzerrolle nicht verfügbar.",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10171": "Backend-Server konnte nicht geändert werden, da vmincs und Server-IPs null sind",
   "ORG_ZSTACK_ZWATCH_ALARM_10028": "Namespace[%s] enthält nicht die Metrik[%s]",

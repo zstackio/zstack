@@ -845,7 +845,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_10026": "kunci[%s] duplikat dengan nilai berbeda{%s}%",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10170": "tidak dapat menambahkan IP server ke grup server load balancer bersama %s",
   "ORG_ZSTACK_ZWATCH_ALARM_10025": "metrik tidak memiliki label yang ditentukan[%s]",
-  "ORG_ZSTACK_ZWATCH_ALARM_10023": "label duplikat didefinisikan untuk alarm dengan UUID [uuid:%s]",
+  "ORG_ZSTACK_ZWATCH_ALARM_10023": "label duplikat[key:%s, operator:%s, value:%s] didefinisikan untuk alarm[uuid:%s]",
   "ORG_ZSTACK_ZWATCH_ALARM_10029": "metrik[%s] dibatasi untuk administrator dan tidak tersedia untuk peran pengguna Anda saat ini.",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10171": "tidak dapat memodifikasi server backend karena vmincs dan IP server kosong",
   "ORG_ZSTACK_ZWATCH_ALARM_10028": "namespace[%s] tidak berisi metrik[%s]",

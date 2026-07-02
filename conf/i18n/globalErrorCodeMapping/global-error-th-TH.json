@@ -845,7 +845,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_10026": "รหัสซ้ำ[%s] พร้อมค่าที่แตกต่างกัน{%s}%",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10170": "ไม่สามารถเพิ่ม IP เซิร์ฟเวอร์ไปยังกลุ่มเซิร์ฟเวอร์ load balancer ที่แชร์ได้ %s",
   "ORG_ZSTACK_ZWATCH_ALARM_10025": "เมทริกไม่มีป้ายกำกับที่ระบุ[%s]",
-  "ORG_ZSTACK_ZWATCH_ALARM_10023": "มีการกำหนดป้ายกำกับซ้ำสำหรับ alarm ที่มี UUID [uuid:%s]",
+  "ORG_ZSTACK_ZWATCH_ALARM_10023": "ป้ายกำกับซ้ำ[key:%s, operator:%s, value:%s] สำหรับ alarm[uuid:%s]",
   "ORG_ZSTACK_ZWATCH_ALARM_10029": "เมทริก[%s] จำกัดสำหรับผู้ดูแลระบบและไม่พร้อมใช้งานสำหรับบทบาทผู้ใช้ปัจจุบันของคุณ",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10171": "ไม่สามารถแก้ไขเซิร์ฟเวอร์แบ็กเอนด์ได้เนื่องจาก vmincs และ IP เซิร์ฟเวอร์เป็นค่าว่าง",
   "ORG_ZSTACK_ZWATCH_ALARM_10028": "namespace[%s] ไม่มีเมทริก[%s]",

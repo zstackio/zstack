@@ -204,6 +204,29 @@ ALTER TABLE `zstack`.`ConsoleProxyAgentVO` ADD COLUMN `consoleProxyOverriddenIpv
 ALTER TABLE `zstack`.`AlarmVO` ADD COLUMN `recoveryDuration` int unsigned DEFAULT NULL;
 ALTER TABLE `zstack`.`AlarmVO` ADD COLUMN `recoveryThreshold` int unsigned DEFAULT NULL;
 
+DROP PROCEDURE IF EXISTS addAlarmLabelLookupIndex;
+DELIMITER $$
+CREATE PROCEDURE addAlarmLabelLookupIndex()
+BEGIN
+    DECLARE index_count INT DEFAULT 0;
+
+    SELECT COUNT(*) INTO index_count
+    FROM information_schema.statistics
+    WHERE table_schema = DATABASE()
+      AND table_name = 'AlarmLabelVO'
+      AND index_name = 'idxAlarmLabelVOAlarmUuidKey';
+
+    IF index_count < 1 THEN
+        ALTER TABLE `zstack`.`AlarmLabelVO`
+            ADD INDEX `idxAlarmLabelVOAlarmUuidKey` (`alarmUuid`, `key`);
+    END IF;
+END $$
+DELIMITER ;
+
+CALL addAlarmLabelLookupIndex();
+DROP PROCEDURE IF EXISTS addAlarmLabelLookupIndex;
+CALL DELETE_INDEX('AlarmLabelVO', 'alarmUuid');
+
 CREATE TABLE IF NOT EXISTS `zstack`.`AlarmResourceStateVO` (
     `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT,
     `alarmUuid` varchar(32) NOT NULL,
