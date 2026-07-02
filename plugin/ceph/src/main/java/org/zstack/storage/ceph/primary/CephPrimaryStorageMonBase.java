@@ -198,7 +198,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             callbackChecker.setUsername(getSelf().getSshUsername());
                             callbackChecker.setPassword(getSelf().getSshPassword());
                             callbackChecker.setPort(getSelf().getSshPort());
-                            callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            callbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getHostname()));
                             callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
                             AnsibleRunner runner = new AnsibleRunner();

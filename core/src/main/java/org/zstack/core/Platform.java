@@ -1387,6 +1387,41 @@ public class Platform {
         return null;
     }
 
+    public static String getManagementServerIpForRemote(String remoteIp) {
+        if (StringUtils.isBlank(remoteIp)) {
+            return getManagementServerIp();
+        }
+
+        remoteIp = normalizeManagementIp(remoteIp);
+        return selectManagementServerIpForRemote(remoteIp, getRouteSourceIp(remoteIp));
+    }
+
+    public static String selectManagementServerIpForRemote(String remoteIp, String routeSourceIp) {
+        if (StringUtils.isBlank(remoteIp)) {
+            return getManagementServerIp();
+        }
+
+        remoteIp = normalizeManagementIp(remoteIp);
+        routeSourceIp = normalizeManagementIp(routeSourceIp);
+        if (IPv6NetworkUtils.isIpv6Address(remoteIp)) {
+            if (IPv6NetworkUtils.isIpv6Address(routeSourceIp)) {
+                return routeSourceIp;
+            }
+            String ip6 = getManagementServerIp6();
+            return ip6 == null ? getManagementServerIp() : ip6;
+        }
+
+        if (NetworkUtils.isIpv4Address(remoteIp)) {
+            if (NetworkUtils.isIpv4Address(routeSourceIp)) {
+                return routeSourceIp;
+            }
+            String ip4 = getManagementServerIp4();
+            return ip4 == null ? getManagementServerIp() : ip4;
+        }
+
+        return getManagementServerIp();
+    }
+
     public static String selectManagementServerIp(Collection<InetAddress> addresses) {
         String ipv4 = null;
         String ipv6 = null;

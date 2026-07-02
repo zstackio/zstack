@@ -6083,7 +6083,7 @@ public class KVMHost extends HostBase implements Host {
                         callbackChecker.setUsername(getSelf().getUsername());
                         callbackChecker.setPassword(getSelf().getPassword());
                         callbackChecker.setPort(getSelf().getPort());
-                        callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                        callbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getManagementIp()));
                         callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
                         KvmHostConfigChecker kvmHostConfigChecker = new KvmHostConfigChecker();
@@ -6107,7 +6107,7 @@ public class KVMHost extends HostBase implements Host {
                             hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
                             hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
                             hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
-                            hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIp());
+                            hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getManagementIp()));
                             hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
                             runner.installChecker(hostTcpConnectionCallbackChecker);
                         }

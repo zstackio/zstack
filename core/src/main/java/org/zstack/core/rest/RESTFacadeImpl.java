@@ -50,12 +50,14 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -225,6 +227,31 @@ public class RESTFacadeImpl implements RESTFacade {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(buildBaseUrl(hostName, port, path));
         ub.path(RESTConstant.CALLBACK_PATH);
         return ub.build().toUriString();
+    }
+
+    public static String selectCallbackUrl(String requestUrl, Map<String, String> headers, String defaultCallbackUrl, int port, String path) {
+        if (headers != null && headers.keySet().stream().anyMatch(RESTConstant.CALLBACK_URL::equalsIgnoreCase)) {
+            return defaultCallbackUrl;
+        }
+
+        String host = extractRequestHost(requestUrl);
+        if (host == null) {
+            return defaultCallbackUrl;
+        }
+
+        if (!NetworkUtils.isIpv4Address(host) && !IPv6NetworkUtils.isIpv6Address(host)) {
+            return defaultCallbackUrl;
+        }
+
+        return buildCallbackUrl(Platform.getManagementServerIpForRemote(host), port, path);
+    }
+
+    private static String extractRequestHost(String requestUrl) {
+        try {
+            return IPv6NetworkUtils.stripHostUrlBrackets(new URI(requestUrl).getHost());
+        } catch (URISyntaxException | IllegalArgumentException e) {
+            return null;
+        }
     }
 
     public static String buildSendCommandUrl(String hostName, int port, String path) {
@@ -415,7 +442,7 @@ public class RESTFacadeImpl implements RESTFacade {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.setContentLength(body.length());
         requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
-        requestHeaders.set(RESTConstant.CALLBACK_URL, callbackUrl);
+        requestHeaders.set(RESTConstant.CALLBACK_URL, selectCallbackUrl(url, headers, callbackUrl, port, path));
         MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
         requestHeaders.setContentType(JSON);
         if (headers != null) {
