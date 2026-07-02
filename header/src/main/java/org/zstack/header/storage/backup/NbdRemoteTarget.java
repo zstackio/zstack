@@ -2,6 +2,7 @@ package org.zstack.header.storage.backup;
 
 import org.apache.commons.lang.StringUtils;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -51,7 +52,7 @@ public class NbdRemoteTarget implements RemoteTarget {
     public String getTargetUri(String hostname) {
         StringBuilder uriBuilder = new StringBuilder();
         uriBuilder.append("nbd://");
-        uriBuilder.append(hostname);
+        uriBuilder.append(IPv6NetworkUtils.formatHostForUrl(hostname));
         uriBuilder.append(":").append(this.port);
         if (!StringUtils.isEmpty(this.exportName)) {
             uriBuilder.append("/").append(this.getExportName());
