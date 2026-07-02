@@ -1,9 +1,6 @@
 package org.zstack.test.integration.kvm.capacity
 
 import org.springframework.http.HttpEntity
-import org.zstack.core.db.Q
-import org.zstack.header.allocator.HostCapacityVO
-import org.zstack.header.allocator.HostCapacityVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
@@ -84,7 +81,6 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
         env.afterSimulator(KVMConstant.KVM_HOST_CAPACITY_PATH) { rsp, HttpEntity<String> e ->
             rsp as KVMAgentCommands.HostCapacityResponse
-            rsp.setCpuCoreNum(20)
             rsp.setTotalMemory(SizeUnit.GIGABYTE.toByte(10))
             return rsp
         }
@@ -104,11 +100,6 @@ class CheckHostCapacityWhenAddHostCase extends SubCase {
 
         res = action.call()
         assert res.error == null
-
-        retryInSecs {
-            Integer cpuCoreNum = Q.New(HostCapacityVO.class).eq(HostCapacityVO_.uuid, res.value.getInventory().uuid).select(HostCapacityVO_.cpuCoreNum).findValue()
-            assert cpuCoreNum == 20
-        }
 
         deleteHost {
             uuid = res.value.inventory.uuid

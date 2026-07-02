@@ -28,7 +28,7 @@ public class RequestLicenseCapacityAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
 
-    @Param(required = true, validValues = {"CPU_Socket","CPU_Core","VM","Host","Capacity","None"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"CPU","VM","Host","Capacity","None"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String quotaType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)

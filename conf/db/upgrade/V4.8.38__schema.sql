@@ -1,6 +1,3 @@
-CALL ADD_COLUMN('LicenseHistoryVO', 'quotaType', 'varchar(64)', 1, 'None');
-CALL ADD_COLUMN('HostCapacityVO', 'cpuCoreNum', 'int unsigned', 0, '0');
-
 UPDATE VolumeSnapshotVO AS sp, PrimaryStorageVO AS ps
 SET sp.primaryStorageInstallPath = REPLACE(sp.primaryStorageInstallPath, '/dev/', 'sharedblock://')
 WHERE sp.primaryStorageUuid = ps.uuid
