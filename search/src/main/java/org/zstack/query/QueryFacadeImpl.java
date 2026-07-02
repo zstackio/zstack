@@ -30,6 +30,7 @@ import org.zstack.header.search.SearchConstant;
 import org.zstack.utils.*;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.core.db.EntityMetadata;
 import org.zstack.zql.ZQL;
 import org.zstack.zql.ZQLContext;
 import org.zstack.zql.ZQLQueryReturn;
@@ -482,7 +483,17 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         if (msg.getSortBy() != null) {
-            sb.add(String.format("order by %s %s", msg.getSortBy(), msg.getSortDirection()));
+            String orderBy = String.format("order by %s %s", msg.getSortBy(), msg.getSortDirection());
+            String pkFieldName = getPrimaryKeyFieldNameSafely(targetInventoryClass);
+            if (pkFieldName != null && !msg.getSortBy().equals(pkFieldName)) {
+                orderBy += String.format(", %s asc", pkFieldName);
+            }
+            sb.add(orderBy);
+        } else if (!msg.isCount() && (msg.getLimit() != null || msg.getStart() != null)) {
+            String pkFieldName = getPrimaryKeyFieldNameSafely(targetInventoryClass);
+            if (pkFieldName != null) {
+                sb.add(String.format("order by %s asc", pkFieldName));
+            }
         }
 
         if (msg.getLimit() != null) {
@@ -512,6 +523,24 @@ public class QueryFacadeImpl extends AbstractService implements QueryFacade, Glo
         }
 
         return result;
+    }
+
+    private String getPrimaryKeyFieldNameSafely(Class inventoryClass) {
+        try {
+            ZQLMetadata.InventoryMetadata meta = ZQLMetadata.findInventoryMetadata(
+                    ZQL.queryTargetNameFromInventoryClass(inventoryClass));
+            Class voClass = meta.inventoryAnnotation.mappingVOClass();
+            Field pkField = EntityMetadata.getPrimaryKeyField(voClass);
+            String pkName = pkField.getName();
+            if (!meta.selfInventoryFieldNames.contains(pkName)) {
+                return null;
+            }
+            return pkName;
+        } catch (Exception e) {
+            logger.trace(String.format("cannot resolve PK for %s, skip pagination tiebreaker: %s",
+                    inventoryClass.getSimpleName(), e.getMessage()));
+            return null;
+        }
     }
 
     private QueryBelongFilter validateFilterNameAndGetExp(String filterName) {
