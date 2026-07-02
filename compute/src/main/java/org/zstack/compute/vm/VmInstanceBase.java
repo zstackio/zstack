@@ -1344,6 +1344,31 @@ public class VmInstanceBase extends AbstractVmInstance {
                 });
     }
 
+    private void notifyVmNameChanged(String oldName, String newName) {
+        if (Objects.equals(oldName, newName)) {
+            return;
+        }
+
+        VmInstanceVO latestVm = dbf.findByUuid(self.getUuid(), VmInstanceVO.class);
+        if (latestVm == null) {
+            return;
+        }
+        self = latestVm;
+        final VmInstanceInventory vm = VmInstanceInventory.valueOf(latestVm);
+        String currentName = latestVm.getName();
+        if (Objects.equals(oldName, currentName)) {
+            return;
+        }
+
+        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VmNameChangedExtensionPoint.class),
+                new ForEachFunction<VmNameChangedExtensionPoint>() {
+                    @Override
+                    public void run(VmNameChangedExtensionPoint ext) {
+                        ext.vmNameChanged(vm, oldName, currentName);
+                    }
+                });
+    }
+
     private UsedIpInventory toUsedIpInventory(UsedIpVO ipvo) {
         UsedIpInventory ip = new UsedIpInventory();
         ip.setIp(ipvo.getIp());
@@ -5876,6 +5901,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(FlowTrigger trigger, Map data) {
                 boolean update = false;
                 if (msg.getName() != null) {
+                    String oldName = self.getName();
                     Boolean unique = VmGlobalConfig.UNIQUE_VM_NAME.value(Boolean.class);
                     boolean exists = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.name, msg.getName()).notEq(VmInstanceVO_.uuid, self.getUuid()).isExists();
                     if (unique && exists) {
@@ -5884,6 +5910,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                     self.setName(msg.getName());
                     update = true;
+                    if (!Objects.equals(oldName, msg.getName())) {
+                        extensions.add(() -> notifyVmNameChanged(oldName, msg.getName()));
+                    }
                 }
                 if (msg.getDescription() != null) {
                     self.setDescription(msg.getDescription());
@@ -6149,6 +6178,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
         refreshVO();
+        String oldName = self.getName();
         if (reply.isCpuUpdated()) {
             self.setCpuNum(reply.getCpuUpdatedTo());
         }
@@ -6159,6 +6189,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             self.setName(reply.getNameUpdatedTo());
         }
         dbf.update(self);
+        if (reply.isNameUpdated() && !Objects.equals(oldName, reply.getNameUpdatedTo())) {
+            notifyVmNameChanged(oldName, reply.getNameUpdatedTo());
+        }
     }
 
     @Transactional(readOnly = true)
