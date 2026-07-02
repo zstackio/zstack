@@ -1,6 +1,8 @@
 package org.zstack.core.rest;
 
 import org.apache.http.HttpStatus;
+import org.apache.http.conn.ConnectionKeepAliveStrategy;
+import org.apache.http.impl.client.DefaultConnectionKeepAliveStrategy;
 import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.apache.http.impl.nio.client.HttpAsyncClients;
 import org.apache.http.impl.nio.conn.PoolingNHttpClientConnectionManager;
@@ -160,6 +162,11 @@ public class RESTFacadeImpl implements RESTFacade {
                 CoreGlobalProperty.REST_FACADE_MAX_TOTAL);
     }
 
+    // cap the agent-advertised keep-alive to keepAliveMs; also cap when the agent sends none (duration < 0)
+    static long cappedKeepAlive(long serverDuration, long capMs) {
+        return (serverDuration < 0 || serverDuration > capMs) ? capMs : serverDuration;
+    }
+
     // timeout are in milliseconds
     private static AsyncRestTemplate createAsyncRestTemplate(int readTimeout, int connectTimeout, int maxPerRoute, int maxTotal) {
         PoolingNHttpClientConnectionManager connectionManager;
@@ -172,8 +179,14 @@ public class RESTFacadeImpl implements RESTFacade {
         connectionManager.setDefaultMaxPerRoute(maxPerRoute);
         connectionManager.setMaxTotal(maxTotal);
 
+        // cap client keep-alive below agent socket_timeout so we never reuse a connection the agent already closed
+        final long keepAliveMs = CoreGlobalProperty.REST_FACADE_KEEPALIVE_TIME;
+        ConnectionKeepAliveStrategy keepAliveStrategy = (response, context) ->
+                cappedKeepAlive(DefaultConnectionKeepAliveStrategy.INSTANCE.getKeepAliveDuration(response, context), keepAliveMs);
+
         CloseableHttpAsyncClient httpAsyncClient = HttpAsyncClients.custom()
                 .setConnectionManager(connectionManager)
+                .setKeepAliveStrategy(keepAliveStrategy)
                 .build();
 
         HttpComponentsAsyncClientHttpRequestFactory cf = new HttpComponentsAsyncClientHttpRequestFactory(httpAsyncClient);
