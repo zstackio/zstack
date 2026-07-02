@@ -238,7 +238,7 @@ doc {
 				column {
 					name "forwardMode"
 					enclosedIn "params"
-					desc "监听器使用 IPVS 数据平面时的转发模式。当前 TCP IPVS 监听器支持 full_nat。"
+					desc "监听器使用 IPVS 数据平面时的转发模式。当前 TCP IPVS 监听器支持 full_nat、nat、dr。"
 					location "body"
 					type "String"
 					optional true

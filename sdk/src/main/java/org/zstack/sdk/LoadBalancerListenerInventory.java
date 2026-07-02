@@ -84,6 +84,22 @@ public class LoadBalancerListenerInventory  {
         return this.forwardMode;
     }
 
+    public java.lang.String balancerAlgorithm;
+    public void setBalancerAlgorithm(java.lang.String balancerAlgorithm) {
+        this.balancerAlgorithm = balancerAlgorithm;
+    }
+    public java.lang.String getBalancerAlgorithm() {
+        return this.balancerAlgorithm;
+    }
+
+    public java.lang.Integer maxConnection;
+    public void setMaxConnection(java.lang.Integer maxConnection) {
+        this.maxConnection = maxConnection;
+    }
+    public java.lang.Integer getMaxConnection() {
+        return this.maxConnection;
+    }
+
     public java.lang.String serverGroupUuid;
     public void setServerGroupUuid(java.lang.String serverGroupUuid) {
         this.serverGroupUuid = serverGroupUuid;

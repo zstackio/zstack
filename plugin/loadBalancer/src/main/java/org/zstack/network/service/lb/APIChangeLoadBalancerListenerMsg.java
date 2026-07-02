@@ -95,6 +95,9 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(required = false)
     private List<String> httpCompressAlgos;
 
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT, LoadBalancerConstants.FORWARD_MODE_NAT, LoadBalancerConstants.FORWARD_MODE_DR}, required = false)
+    private String forwardMode;
+
     @APINoSee
     private String loadBalancerUuid;
 
@@ -316,6 +319,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHttpCompressAlgos(List<String> httpCompressAlgos) {
         this.httpCompressAlgos = httpCompressAlgos;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public static APIChangeLoadBalancerListenerMsg __example__() {
