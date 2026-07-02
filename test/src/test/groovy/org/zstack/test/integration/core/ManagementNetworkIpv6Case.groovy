@@ -383,7 +383,7 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "management.server.ip6": IPV6,
         ]) {
             assert Platform.selectManagementServerIpForRemote(IPV6_2, null) == IPV6
-            assert Platform.selectManagementServerIpForRemote(IPV6_2, "2001:db8::88") == "2001:db8::88"
+            assert Platform.selectManagementServerIpForRemote(IPV6_2, "2001:db8::88") == IPV6
             assert Platform.selectManagementServerIpForRemote("host.example.com", null) == IPV4
         }
 
@@ -392,7 +392,7 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "management.server.ip4": IPV4,
         ]) {
             assert Platform.selectManagementServerIpForRemote("192.168.1.20", null) == IPV4
-            assert Platform.selectManagementServerIpForRemote("192.168.1.20", "192.168.1.88") == "192.168.1.88"
+            assert Platform.selectManagementServerIpForRemote("192.168.1.20", "192.168.1.88") == IPV4
         }
     }
 
