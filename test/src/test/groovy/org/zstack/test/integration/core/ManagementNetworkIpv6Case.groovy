@@ -262,6 +262,17 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert SshShell.formatScpTarget("root", "host-01.example.com") == "root@host-01.example.com"
     }
 
+    void testNbdTargetUriUsesBracketedIpv6Host() {
+        def backupTarget = new org.zstack.header.storage.backup.NbdRemoteTarget(IPV6, 10401, "disk0", null)
+        assert backupTarget.getTargetUri() == "nbd://[2001:db8::1]:10401/disk0"
+        assert backupTarget.getTargetUri(IPV4) == "nbd://192.168.1.10:10401/disk0"
+
+        def addonTarget = new org.zstack.header.storage.addon.NbdRemoteTarget()
+        addonTarget.setIp(IPV6)
+        addonTarget.setPort(10401)
+        assert addonTarget.getResourceURI() == "nbd://[2001:db8::1]:10401"
+    }
+
     void testCallbackCheckerUsesIpv6Options() {
         String ipv4Script = CallBackNetworkChecker.buildCallbackCheckScript("password", REST_PORT, IPV4)
         assert ipv4Script.contains("nc ${IPV4} ${REST_PORT}")

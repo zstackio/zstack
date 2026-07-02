@@ -1,5 +1,7 @@
 package org.zstack.header.storage.addon;
 
+import org.zstack.utils.network.IPv6NetworkUtils;
+
 public class NbdRemoteTarget extends BlockRemoteTarget {
     private String ip;
     private int port;
@@ -28,6 +30,6 @@ public class NbdRemoteTarget extends BlockRemoteTarget {
 
     @Override
     public String getResourceURI() {
-        return String.format("nbd://%s:%s", ip, port);
+        return String.format("nbd://%s:%s", IPv6NetworkUtils.formatHostForUrl(ip), port);
     }
 }
