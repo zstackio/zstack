@@ -1862,7 +1862,9 @@ public class LoadBalancerBase {
 
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
-        evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+        LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(vo);
+        inv.applyTcpIpvsSupportedParameterSystemTags(msg.getSystemTags());
+        evt.setInventory(inv);
         bus.publish(evt);
         completion.done();
     }
@@ -2509,7 +2511,9 @@ public class LoadBalancerBase {
                                     }
                                 }
                             } else {
-                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                                LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(lblVo);
+                                inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                                evt.setInventory(inv);
                             }
                             bus.publish(evt);
                         }
@@ -2518,7 +2522,9 @@ public class LoadBalancerBase {
                     chain.next();
                     return;
                 }
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(lblVo);
+                inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                evt.setInventory(inv);
                 bus.publish(evt);
                 chain.next();
             }

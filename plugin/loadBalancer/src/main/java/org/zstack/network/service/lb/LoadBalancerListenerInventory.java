@@ -40,6 +40,8 @@ public class LoadBalancerListenerInventory implements Serializable {
     private String protocol;
     private String dataPlane;
     private String forwardMode;
+    private String balancerAlgorithm;
+    private Integer maxConnection;
     private String serverGroupUuid;
     private Timestamp createDate;
     private Timestamp lastOpDate;
@@ -61,6 +63,13 @@ public class LoadBalancerListenerInventory implements Serializable {
                 LoadBalancerConstants.DATA_PLANE_IPVS.equals(vo.getDataPlane())) {
             inv.setDataPlane(vo.getDataPlane());
             inv.setForwardMode(vo.getForwardMode());
+            inv.setBalancerAlgorithm(LoadBalancerSystemTags.BALANCER_ALGORITHM.getTokenByResourceUuid(
+                    vo.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN));
+            String maxConnection = LoadBalancerSystemTags.MAX_CONNECTION.getTokenByResourceUuid(
+                    vo.getUuid(), LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
+            if (maxConnection != null) {
+                inv.setMaxConnection(Integer.valueOf(maxConnection));
+            }
         }
         inv.setSecurityPolicyType(vo.getSecurityPolicyType());
         inv.setName(vo.getName());
@@ -97,6 +106,35 @@ public class LoadBalancerListenerInventory implements Serializable {
             invs.add(valueOf(vo));
         }
         return invs;
+    }
+
+    public void applyTcpIpvsSupportedParameters(String balancerAlgorithm, Integer maxConnection) {
+        if (!LoadBalancerConstants.LB_PROTOCOL_TCP.equals(protocol) ||
+                !LoadBalancerConstants.DATA_PLANE_IPVS.equals(dataPlane)) {
+            return;
+        }
+
+        if (balancerAlgorithm != null) {
+            setBalancerAlgorithm(balancerAlgorithm);
+        }
+        if (maxConnection != null) {
+            setMaxConnection(maxConnection);
+        }
+    }
+
+    public void applyTcpIpvsSupportedParameterSystemTags(Collection<String> systemTags) {
+        if (systemTags == null || !LoadBalancerConstants.LB_PROTOCOL_TCP.equals(protocol) ||
+                !LoadBalancerConstants.DATA_PLANE_IPVS.equals(dataPlane)) {
+            return;
+        }
+
+        for (String tag : systemTags) {
+            if (tag.startsWith(LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN + "::")) {
+                setBalancerAlgorithm(tag.substring((LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN + "::").length()));
+            } else if (tag.startsWith(LoadBalancerSystemTags.MAX_CONNECTION_TOKEN + "::")) {
+                setMaxConnection(Integer.valueOf(tag.substring((LoadBalancerSystemTags.MAX_CONNECTION_TOKEN + "::").length())));
+            }
+        }
     }
 
     public List<LoadBalancerListenerVmNicRefInventory> getVmNicRefs() {
@@ -185,6 +223,22 @@ public class LoadBalancerListenerInventory implements Serializable {
 
     public void setForwardMode(String forwardMode) {
         this.forwardMode = forwardMode;
+    }
+
+    public String getBalancerAlgorithm() {
+        return balancerAlgorithm;
+    }
+
+    public void setBalancerAlgorithm(String balancerAlgorithm) {
+        this.balancerAlgorithm = balancerAlgorithm;
+    }
+
+    public Integer getMaxConnection() {
+        return maxConnection;
+    }
+
+    public void setMaxConnection(Integer maxConnection) {
+        this.maxConnection = maxConnection;
     }
 
     public String getSecurityPolicyType() {

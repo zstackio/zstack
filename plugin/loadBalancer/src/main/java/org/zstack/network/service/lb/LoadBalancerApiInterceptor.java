@@ -785,21 +785,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private void validateTcpIpvsDoesNotUseIpv6Vip(LoadBalancerVO lbVO) {
         if (lbVO != null && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {
             throw new ApiMessageInterceptionException(
-                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 vip"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10180, "tcp ipvs listener doesn't support ipv6 vip"));
         }
     }
 
     private void validateTcpIpvsDoesNotUseIpv6ServerGroup(LoadBalancerServerGroupVO groupVO) {
         if (groupVO != null && groupVO.getIpVersion() != null && IPv6Constants.IPv6 == groupVO.getIpVersion()) {
             throw new ApiMessageInterceptionException(
-                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 server group"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10181, "tcp ipvs listener doesn't support ipv6 server group"));
         }
     }
 
     private void validateTcpIpvsDoesNotUseIpv6BackendIp(String ipAddress) {
         if (IPv6NetworkUtils.isIpv6Address(ipAddress)) {
             throw new ApiMessageInterceptionException(
-                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 backend server ip"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10182, "tcp ipvs listener doesn't support ipv6 backend server ip"));
         }
     }
 
@@ -899,7 +899,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane())) {
             if (!LB_PROTOCOL_TCP.equals(msg.getProtocol())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "data plane [%s] only supports tcp listener", msg.getDataPlane()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10183, "data plane [%s] only supports tcp listener", msg.getDataPlane()));
             }
             validateTcpIpvsDoesNotUseIpv6Vip(lbVO);
 
@@ -907,21 +907,25 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 msg.setForwardMode(LoadBalancerConstants.FORWARD_MODE_FULL_NAT);
             }
 
-            if (!LoadBalancerConstants.FORWARD_MODE_FULL_NAT.equals(msg.getForwardMode())) {
+            List<String> supportedForwardModes = Arrays.asList(
+                    LoadBalancerConstants.FORWARD_MODE_FULL_NAT,
+                    LoadBalancerConstants.FORWARD_MODE_NAT,
+                    LoadBalancerConstants.FORWARD_MODE_DR);
+            if (!supportedForwardModes.contains(msg.getForwardMode())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "TCP IPVS only supports forwardMode[%s] in current version, but got [%s]",
-                                LoadBalancerConstants.FORWARD_MODE_FULL_NAT, msg.getForwardMode()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10184, "TCP IPVS only supports forwardMode%s, but got [%s]",
+                                supportedForwardModes, msg.getForwardMode()));
             }
 
         } else {
             if (!LoadBalancerConstants.DATA_PLANE_HAPROXY.equals(msg.getDataPlane())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "invalid dataPlane[%s], valid dataPlanes are [haproxy, ipvs]", msg.getDataPlane()));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10185, "invalid dataPlane[%s], valid dataPlanes are [haproxy, ipvs]", msg.getDataPlane()));
             }
 
             if (msg.getForwardMode() != null) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "forwardMode is only supported when dataPlane is ipvs"));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10186, "forwardMode is only supported when dataPlane is ipvs"));
             }
         }
         String dataPlane = msg.getDataPlane();
@@ -960,7 +964,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (isTcpIpvsListener(msg.getProtocol(), dataPlane) &&
                 (hasHttpHealthCheckParameters(msg) || hasTag(msg, LoadBalancerSystemTags.HEALTH_PARAMETER))) {
             throw new ApiMessageInterceptionException(
-                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support http health check parameters"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10187, "tcp ipvs listener doesn't support http health check parameters"));
+        }
+        if (isTcpIpvsListener(msg.getProtocol(), dataPlane) && hasTag(msg, LoadBalancerSystemTags.HEALTH_TIMEOUT)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10189, "tcp ipvs listener doesn't support healthCheckTimeout"));
         }
 
         if (isHealthCheckProtocolNotSupportedByListenerProtocol(msg.getProtocol(), dataPlane, msg.getHealthCheckProtocol())) {
@@ -1031,12 +1039,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 )
         );
 
-        insertTagIfNotExisting(
-                msg, LoadBalancerSystemTags.HEALTH_TIMEOUT,
-                LoadBalancerSystemTags.HEALTH_TIMEOUT.instantiateTag(
-                        map(e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, LoadBalancerGlobalConfig.HEALTH_TIMEOUT.value(Long.class)))
-                )
-        );
+        if (!isTcpIpvsListener(msg.getProtocol(), dataPlane)) {
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.HEALTH_TIMEOUT,
+                    LoadBalancerSystemTags.HEALTH_TIMEOUT.instantiateTag(
+                            map(e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, LoadBalancerGlobalConfig.HEALTH_TIMEOUT.value(Long.class)))
+                    )
+            );
+        }
 
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.UNHEALTHY_THRESHOLD,
@@ -1451,6 +1461,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIChangeLoadBalancerListenerMsg msg) {
+        if (msg.getForwardMode() != null) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10188, "forwardMode cannot be changed after load balancer listener is created"));
+        }
+
         normalizeChangeHealthCheckTarget(msg);
         String target = msg.getHealthCheckTarget();
         if (target != null) {
@@ -1632,7 +1647,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
 
         if (isTcpIpvsListener(listenerVO.getProtocol(), dataPlane) && hasHttpHealthCheckParameters(msg)) {
             throw new ApiMessageInterceptionException(
-                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support http health check parameters"));
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10187, "tcp ipvs listener doesn't support http health check parameters"));
+        }
+        if (isTcpIpvsListener(listenerVO.getProtocol(), dataPlane) && msg.getHealthCheckTimeout() != null) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10189, "tcp ipvs listener doesn't support healthCheckTimeout"));
         }
 
         if (msg.getHealthCheckProtocol() != null) {
@@ -2056,7 +2075,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validateTcpIpvsDoesNotUseIpv6ServerGroup(groupVO);
             if (hasIpv6ServerIp(msg.getServerGroupUuid())) {
                 throw new ApiMessageInterceptionException(
-                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10179, "tcp ipvs listener doesn't support ipv6 backend server ip"));
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10182, "tcp ipvs listener doesn't support ipv6 backend server ip"));
             }
         }
         if (listenerVO.getProtocol().equals(LB_PROTOCOL_UDP)) {
