@@ -155,6 +155,7 @@ public interface KVMConstant {
     String HOST_PHYSICAL_DISK_REMOVE_ALARM_EVENT = "/host/physical/disk/remove/alarm";
     String HOST_PHYSICAL_MEMORY_ECC_ERROR_ALARM_EVENT = "/host/physical/memory/ecc/error/alarm";
     String HOST_PHYSICAL_GPU_REMOVE_ALARM_EVENT = "/host/physical/gpu/remove/alarm";
+    String HOST_VM_EVENT_ALARM = "/host/vm/event/alarm";
     String HOST_STORAGEDEVICE_HBA_STATE_EVENT = "/storagedevice/hba/state/alarm";
     String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH = "/host/process/physicalMemory/usage/alarm";
     String HOST_KVMAGENT_STATUS_PATH = "/host/kvmagent/status";

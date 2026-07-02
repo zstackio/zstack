@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UpdateModelCenterAction extends AbstractAction {
+public class UpdateNativeClusterZakuHealthStatusAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UpdateModelCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UpdateModelCenterResult value;
+        public org.zstack.sdk.UpdateNativeClusterZakuHealthStatusResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -28,41 +28,8 @@ public class UpdateModelCenterAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer managementPort;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceNetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerRegistry;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
+    @Param(required = true, validValues = {"Unknown","Healthy","Unhealthy"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zakuHealthStatus;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -96,8 +63,8 @@ public class UpdateModelCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UpdateModelCenterResult value = res.getResult(org.zstack.sdk.UpdateModelCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UpdateModelCenterResult() : value; 
+        org.zstack.sdk.UpdateNativeClusterZakuHealthStatusResult value = res.getResult(org.zstack.sdk.UpdateNativeClusterZakuHealthStatusResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateNativeClusterZakuHealthStatusResult() : value; 
 
         return ret;
     }
@@ -127,10 +94,10 @@ public class UpdateModelCenterAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/ai/model-centers/{uuid}";
+        info.path = "/container/native/cluster/{uuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "updateModelCenter";
+        info.parameterName = "updateNativeClusterZakuHealthStatus";
         return info;
     }
 

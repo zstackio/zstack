@@ -69,6 +69,14 @@ public class ModelCenterInventory  {
         return this.managementPort;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String storageNetworkUuid;
     public void setStorageNetworkUuid(java.lang.String storageNetworkUuid) {
         this.storageNetworkUuid = storageNetworkUuid;

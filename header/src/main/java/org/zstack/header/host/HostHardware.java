@@ -9,6 +9,7 @@ public enum HostHardware {
     MEMORY,
     DISK,
     GPU,
+    GPU_XID,
     POWERSUPPLY,
     FAN,
     RAID,
