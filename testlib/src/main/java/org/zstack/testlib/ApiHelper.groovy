@@ -15,8 +15,8 @@ abstract class ApiHelper {
         }
     }
     
-        def createDataVolumeFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateDataVolumeFromVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateDataVolumeFromVolumeBackupAction()
+        def createDataVolumeFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateDataVolumeFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateDataVolumeFromVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -42,8 +42,8 @@ abstract class ApiHelper {
     }
 
 
-    def createDataVolumeTemplateFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateDataVolumeTemplateFromVolumeBackupAction()
+    def createDataVolumeTemplateFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateDataVolumeTemplateFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateDataVolumeTemplateFromVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -69,8 +69,8 @@ abstract class ApiHelper {
     }
 
 
-    def createRootVolumeTemplateFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateRootVolumeTemplateFromVolumeBackupAction()
+    def createRootVolumeTemplateFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateRootVolumeTemplateFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateRootVolumeTemplateFromVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -96,8 +96,8 @@ abstract class ApiHelper {
     }
 
 
-    def createVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVmBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateVmBackupAction()
+    def createVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateVmBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateVmBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -123,8 +123,8 @@ abstract class ApiHelper {
     }
 
 
-    def createVmFromVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVmFromVmBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateVmFromVmBackupAction()
+    def createVmFromVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateVmFromVmBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateVmFromVmBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -150,8 +150,8 @@ abstract class ApiHelper {
     }
 
 
-    def createVmFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVmFromVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateVmFromVolumeBackupAction()
+    def createVmFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateVmFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateVmFromVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -177,8 +177,8 @@ abstract class ApiHelper {
     }
 
 
-    def createVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.CreateVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.CreateVolumeBackupAction()
+    def createVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.CreateVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.CreateVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -204,8 +204,8 @@ abstract class ApiHelper {
     }
 
 
-    def deleteVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.DeleteVmBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.DeleteVmBackupAction()
+    def deleteVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.DeleteVmBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.DeleteVmBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -231,8 +231,8 @@ abstract class ApiHelper {
     }
 
 
-    def deleteVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.DeleteVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.DeleteVolumeBackupAction()
+    def deleteVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.DeleteVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.DeleteVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -258,8 +258,8 @@ abstract class ApiHelper {
     }
 
 
-    def queryVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.QueryVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.QueryVolumeBackupAction()
+    def queryVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.QueryVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.QueryVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -287,8 +287,8 @@ abstract class ApiHelper {
     }
 
 
-    def recoverBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.RecoverBackupFromImageStoreBackupStorageAction()
+    def recoverBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.RecoverBackupFromImageStoreBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.RecoverBackupFromImageStoreBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -314,8 +314,8 @@ abstract class ApiHelper {
     }
 
 
-    def recoverVmBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.RecoverVmBackupFromImageStoreBackupStorageAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.RecoverVmBackupFromImageStoreBackupStorageAction()
+    def recoverVmBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.RecoverVmBackupFromImageStoreBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.RecoverVmBackupFromImageStoreBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -341,8 +341,8 @@ abstract class ApiHelper {
     }
 
 
-    def revertVmFromVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.RevertVmFromVmBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.RevertVmFromVmBackupAction()
+    def revertVmFromVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.RevertVmFromVmBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.RevertVmFromVmBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -368,8 +368,8 @@ abstract class ApiHelper {
     }
 
 
-    def revertVolumeFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.RevertVolumeFromVolumeBackupAction()
+    def revertVolumeFromVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.RevertVolumeFromVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.RevertVolumeFromVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -395,8 +395,8 @@ abstract class ApiHelper {
     }
 
 
-    def syncBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.SyncBackupFromImageStoreBackupStorageAction()
+    def syncBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.SyncBackupFromImageStoreBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.SyncBackupFromImageStoreBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -422,8 +422,8 @@ abstract class ApiHelper {
     }
 
 
-    def syncVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVmBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.SyncVmBackupAction()
+    def syncVmBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.SyncVmBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.SyncVmBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -449,8 +449,8 @@ abstract class ApiHelper {
     }
 
 
-    def syncVmBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVmBackupFromImageStoreBackupStorageAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.SyncVmBackupFromImageStoreBackupStorageAction()
+    def syncVmBackupFromImageStoreBackupStorage(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.SyncVmBackupFromImageStoreBackupStorageAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.SyncVmBackupFromImageStoreBackupStorageAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -476,8 +476,8 @@ abstract class ApiHelper {
     }
 
 
-    def syncVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction.class) Closure c) {
-        def a = new org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction()
+    def syncVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.storage.volumebackup.SyncVolumeBackupAction.class) Closure c) {
+        def a = new org.zstack.sdk.storage.volumebackup.SyncVolumeBackupAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
