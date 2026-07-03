@@ -422,7 +422,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public void deployClient(HostInventory h, Completion comp) {
+    public void deployClient(HostInventory h, java.util.List<String> protocols, Completion comp) {
         comp.success();
     }
 

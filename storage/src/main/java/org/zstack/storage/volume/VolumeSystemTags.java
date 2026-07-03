@@ -6,6 +6,7 @@ import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.tag.EphemeralPatternSystemTag;
 import org.zstack.tag.EphemeralSystemTag;
+import org.zstack.tag.EphemeralPatternSystemTag;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 
@@ -51,6 +52,9 @@ public class VolumeSystemTags {
 
     public static String VOLUME_QOS_TOKEN = "qos";
     public static PatternedSystemTag VOLUME_QOS = new PatternedSystemTag(String.format("%s::{%s}", VOLUME_QOS_TOKEN, VOLUME_QOS_TOKEN), VolumeVO.class);
+
+    public static String VOLUME_PROTOCOL_TOKEN = "protocol";
+    public static EphemeralPatternSystemTag VOLUME_PROTOCOL = new EphemeralPatternSystemTag(String.format("volumeProtocol::{%s}", VOLUME_PROTOCOL_TOKEN), VolumeVO.class);
 
     public static SystemTag FAST_REVERT = new SystemTag("fast::revert", VolumeVO.class);
 

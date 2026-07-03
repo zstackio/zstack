@@ -42,6 +42,12 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_;
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.primary.APIChangeVolumeProtocolMsg;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO;
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO_;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.storage.snapshot.ConsistentType;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
@@ -131,6 +137,8 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             validate((APIDeleteDataVolumeMsg) msg);
         } else if (msg instanceof APICreateDataVolumeMsg) {
             validate((APICreateDataVolumeMsg) msg);
+        } else if (msg instanceof APIChangeVolumeProtocolMsg) {
+            validate((APIChangeVolumeProtocolMsg) msg);
         } else if (msg instanceof APIBackupDataVolumeMsg) {
             validate((APIBackupDataVolumeMsg) msg);
         } else if (msg instanceof APIAttachDataVolumeToVmMsg) {
@@ -448,6 +456,20 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
             return null;
         }
 
+        if (volumeVO.getProtocol() != null) {
+            PrimaryStorageHostStatus protocolStatus = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, hostUuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, volumeVO.getPrimaryStorageUuid())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, volumeVO.getProtocol())
+                    .select(ExternalPrimaryStorageHostProtocolRefVO_.status)
+                    .findValue();
+            if (protocolStatus == null || protocolStatus == PrimaryStorageHostStatus.Disconnected) {
+                return operr(ORG_ZSTACK_STORAGE_VOLUME_10066, "Can not attach volume to vm runs on host[uuid: %s] whose protocol[%s] " +
+                        "is disconnected with volume's storage[uuid: %s]", hostUuid, volumeVO.getProtocol(), volumeVO.getPrimaryStorageUuid());
+            }
+            return null;
+        }
+
         PrimaryStorageHostStatus primaryStorageHostStatus = Q.New(PrimaryStorageHostRefVO.class)
                 .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
                 .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, volumeVO.getPrimaryStorageUuid())
@@ -477,6 +499,67 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         } else {
             Long diskSize = Q.New(DiskOfferingVO.class).eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid()).select(DiskOfferingVO_.diskSize).findValue();
             msg.setDiskSize(diskSize);
+        }
+
+        String protocol = msg.getProtocol() != null ? msg.getProtocol() : getProtocolFromSystemTags(msg.getSystemTags());
+        validateVolumeProtocol(protocol, msg.getPrimaryStorageUuid());
+    }
+
+    private String getProtocolFromSystemTags(List<String> systemTags) {
+        if (systemTags == null) {
+            return null;
+        }
+        for (String tag : systemTags) {
+            if (VolumeSystemTags.VOLUME_PROTOCOL.isMatch(tag)) {
+                return VolumeSystemTags.VOLUME_PROTOCOL.getTokenByTag(tag, VolumeSystemTags.VOLUME_PROTOCOL_TOKEN);
+            }
+        }
+        return null;
+    }
+
+    private void validateVolumeProtocol(String protocol, String primaryStorageUuid) {
+        if (protocol == null) {
+            return;
+        }
+        boolean known = Arrays.stream(VolumeProtocol.values()).anyMatch(p -> p.name().equals(protocol));
+        if (!known) {
+            throw new ApiMessageInterceptionException(argerr("unsupported volume protocol[%s]", protocol));
+        }
+        if (primaryStorageUuid == null) {
+            throw new ApiMessageInterceptionException(argerr("primaryStorageUuid is required when protocol[%s] is specified", protocol));
+        }
+        if (!Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, primaryStorageUuid)
+                .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, protocol)
+                .isExists()) {
+            throw new ApiMessageInterceptionException(argerr("primary storage[uuid:%s] does not expose output protocol[%s]", primaryStorageUuid, protocol));
+        }
+    }
+
+    private void validate(APIChangeVolumeProtocolMsg msg) {
+        VolumeVO vol = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, msg.getVolumeUuid()).find();
+        if (vol.getStatus() == VolumeStatus.Deleted) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is deleted, cannot change its protocol", msg.getVolumeUuid()));
+        }
+        if (vol.getPrimaryStorageUuid() == null) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is not on any primary storage, cannot change its protocol", msg.getVolumeUuid()));
+        }
+        if (Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is directly attached to a host, cannot change its protocol", msg.getVolumeUuid()));
+        }
+        if (msg.getProtocol().equals(vol.getProtocol())) {
+            throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] already uses output protocol[%s]", msg.getVolumeUuid(), msg.getProtocol()));
+        }
+        validateVolumeProtocol(msg.getProtocol(), vol.getPrimaryStorageUuid());
+
+        if (vol.getVmInstanceUuid() != null) {
+            VmInstanceState vmState = Q.New(VmInstanceVO.class)
+                    .eq(VmInstanceVO_.uuid, vol.getVmInstanceUuid())
+                    .select(VmInstanceVO_.state).findValue();
+            if (vmState != null && vmState != VmInstanceState.Stopped) {
+                throw new ApiMessageInterceptionException(argerr("volume[uuid:%s] is attached to vm[uuid:%s] in state[%s]; stop the vm before changing protocol",
+                        msg.getVolumeUuid(), vol.getVmInstanceUuid(), vmState));
+            }
         }
     }
 
@@ -662,8 +745,34 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         }
     }
 
+    private void validateVolumeProtocolSystemTags(APICreateVmInstanceMsg msg) {
+        List<String> tags = new ArrayList<>();
+        if (msg.getRootVolumeSystemTags() != null) {
+            tags.addAll(msg.getRootVolumeSystemTags());
+        }
+        if (msg.getDataVolumeSystemTags() != null) {
+            tags.addAll(msg.getDataVolumeSystemTags());
+        }
+        if (msg.getDataVolumeSystemTagsOnIndex() != null) {
+            msg.getDataVolumeSystemTagsOnIndex().values().forEach(tags::addAll);
+        }
+
+        for (String tag : tags) {
+            if (!VolumeSystemTags.VOLUME_PROTOCOL.isMatch(tag)) {
+                continue;
+            }
+            String protocol = VolumeSystemTags.VOLUME_PROTOCOL.getTokenByTag(tag, VolumeSystemTags.VOLUME_PROTOCOL_TOKEN);
+            boolean known = Arrays.stream(VolumeProtocol.values()).anyMatch(p -> p.name().equals(protocol));
+            if (!known) {
+                throw new ApiMessageInterceptionException(argerr("unsupported volume protocol[%s]", protocol));
+            }
+        }
+    }
+
     @Transactional
     protected void validate(APICreateVmInstanceMsg msg) {
+        validateVolumeProtocolSystemTags(msg);
+
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
         }

@@ -594,7 +594,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             uuid = kvm2.uuid
         }
 
-        assert reconnectCalls.contains("deploy:127.0.0.2")
+        assert !reconnectCalls.contains("deploy:127.0.0.2")
         assert reconnectCalls.containsAll(["heartbeat:lpool1", "heartbeat:lpool2"])
         assert reconnectCheckHostStatusCount.get() > 0
 

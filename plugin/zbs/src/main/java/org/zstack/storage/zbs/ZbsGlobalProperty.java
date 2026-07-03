@@ -5,10 +5,6 @@ import org.zstack.core.GlobalPropertyDefinition;
 
 import java.util.List;
 
-/**
- * @author Xingwei Yu
- * @date 2024/3/27 16:43
- */
 @GlobalPropertyDefinition
 public class ZbsGlobalProperty {
     @GlobalProperty(name="Zbs.primaryStorage.ansibleModulePath", defaultValue = "ansible/zbsp")

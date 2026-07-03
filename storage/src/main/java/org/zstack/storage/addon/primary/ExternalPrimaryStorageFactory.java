@@ -371,6 +371,29 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         return nodes.get(primaryStorageUuid);
     }
 
+    public void updateHostProtocolStatus(String psUuid, String hostUuid, String protocol, PrimaryStorageHostStatus newStatus) {
+        ExternalPrimaryStorageHostProtocolRefVO ref = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, psUuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, hostUuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, protocol)
+                .find();
+        if (ref == null) {
+            ref = new ExternalPrimaryStorageHostProtocolRefVO();
+            ref.setPrimaryStorageUuid(psUuid);
+            ref.setHostUuid(hostUuid);
+            ref.setProtocol(protocol);
+            ref.setStatus(newStatus);
+            dbf.persist(ref);
+            logger.debug(String.format("created protocol[%s] connectivity row between primary storage[uuid:%s]" +
+                    " and host[uuid:%s] with status %s", protocol, psUuid, hostUuid, newStatus));
+        } else if (ref.getStatus() != newStatus) {
+            ref.setStatus(newStatus);
+            dbf.update(ref);
+            logger.debug(String.format("change protocol[%s] connectivity between primary storage[uuid:%s]" +
+                    " and host[uuid:%s] to %s", protocol, psUuid, hostUuid, newStatus));
+        }
+    }
+
     private PrimaryStorageNodeSvc getNodeSvcByVolume(VolumeInventory volumeInventory) {
         if (volumeInventory.getPrimaryStorageUuid() == null || volumeInventory.getInstallPath() == null) {
             return null;

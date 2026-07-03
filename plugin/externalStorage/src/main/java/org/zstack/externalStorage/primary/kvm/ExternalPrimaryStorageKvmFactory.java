@@ -38,8 +38,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -63,19 +65,6 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                         " and ref.clusterUuid = :cuuid", ExternalPrimaryStorageVO.class)
                 .param("cuuid", clusterUuid)
                 .list();
-    }
-
-    private Map<String, PrimaryStorageHostStatus> getHostStatus(List<ExternalPrimaryStorageVO> extPss) {
-        return Q.New(PrimaryStorageHostRefVO.class)
-                .select(PrimaryStorageHostRefVO_.hostUuid, PrimaryStorageHostRefVO_.status)
-                .in(PrimaryStorageHostRefVO_.primaryStorageUuid,
-                        extPss.stream().map(ExternalPrimaryStorageVO::getUuid).collect(Collectors.toList()))
-                .listTuple().stream()
-                .collect(Collectors.toMap(
-                        t -> t.get(0, String.class),
-                        t -> t.get(1, PrimaryStorageHostStatus.class),
-                        (o, n) -> n
-                ));
     }
 
     @Override
@@ -211,7 +200,26 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
         new While<>(extPss).each((extPs, compl) -> {
             logger.debug(String.format("deploying client for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
                     extPs.getUuid(), extPs.getName(), context.getInventory().getUuid(), context.getInventory().getName()));
-            extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), new Completion(compl) {
+
+            List<String> protocols = new ArrayList<>(Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
+                    .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
+                    .listValues());
+
+            List<String> connected = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, context.getInventory().getUuid())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .select(ExternalPrimaryStorageHostProtocolRefVO_.protocol)
+                    .listValues();
+            protocols.removeAll(connected);
+
+            if (protocols.isEmpty()) {
+                compl.done();
+                return;
+            }
+
+            extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), protocols, new Completion(compl) {
                 @Override
                 public void success() {
                     compl.done();
@@ -227,30 +235,39 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
     }
 
     private void checkHostStatus(KVMHostInventory host, List<ExternalPrimaryStorageVO> extPss, WhileDoneCompletion completion) {
-        Map<String, PrimaryStorageHostStatus> hostStatus = getHostStatus(extPss);
         new While<>(extPss).each((extPs, compl) -> {
             logger.debug(String.format("checking host status for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
                     extPs.getUuid(), extPs.getName(), host.getUuid(), host.getName()));
             extPsFactory.getControllerSvc(extPs.getUuid()).reportNodeHealthy(host, new ReturnValueCompletion<NodeHealthy>(compl) {
                 @Override
                 public void success(NodeHealthy returnValue) {
-                    ErrorCode err = null;
-                    PrimaryStorageHostStatus status;
-                    // TODO add multi protocol support
-                    if (returnValue.getHealthy().values().stream().allMatch(h -> h == StorageHealthy.Ok)) {
-                        status = PrimaryStorageHostStatus.Connected;
-                    } else {
-                        status = PrimaryStorageHostStatus.Disconnected;
-                        err = operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000, "external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
-                                ((ExternalPrimaryStorageVO) extPs).getUuid(), ((ExternalPrimaryStorageVO) extPs).getName(), returnValue.getHealthy());
-                        compl.addError(err);
-                    }
+                    Map<String, PrimaryStorageHostStatus> protocolStatuses = new HashMap<>();
+                    returnValue.getHealthy().forEach((protocol, healthy) -> protocolStatuses.put(protocol.toString(),
+                            healthy == StorageHealthy.Ok ? PrimaryStorageHostStatus.Connected : PrimaryStorageHostStatus.Disconnected));
 
-                    if (hostStatus.get(extPs.getUuid()) != status) {
-                        updateHostStatus(host.getUuid(), extPs.getUuid(), status, err, compl);
-                    } else {
-                        compl.done();
-                    }
+                    recoverDisconnectedProtocols(extPs, host, returnValue);
+
+                    ErrorCode unhealthy = returnValue.getHealthy().values().stream().anyMatch(h -> h == StorageHealthy.Ok)
+                            ? null
+                            : operr(ORG_ZSTACK_EXTERNALSTORAGE_PRIMARY_KVM_10000,
+                                    "external primary storage[uuid:%s, name:%s] returns unhealthy status: %s",
+                                    extPs.getUuid(), extPs.getName(), returnValue.getHealthy());
+
+                    UpdatePrimaryStorageHostProtocolStatusMsg msg = new UpdatePrimaryStorageHostProtocolStatusMsg();
+                    msg.setPrimaryStorageUuid(extPs.getUuid());
+                    msg.setHostUuid(host.getUuid());
+                    msg.setProtocolStatuses(protocolStatuses);
+                    msg.setReason(unhealthy);
+                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, extPs.getUuid());
+                    bus.send(msg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (unhealthy != null) {
+                                compl.addError(unhealthy);
+                            }
+                            compl.done();
+                        }
+                    });
                 }
 
                 @Override
@@ -258,23 +275,74 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                     compl.addError(errorCode);
                     compl.done();
                 }
-
-                private void updateHostStatus(String hostUuid, String psUuid, PrimaryStorageHostStatus status, ErrorCode reason, NoErrorCompletion completion) {
-                    UpdatePrimaryStorageHostStatusMsg msg = new UpdatePrimaryStorageHostStatusMsg();
-                    msg.setPrimaryStorageUuid(psUuid);
-                    msg.setHostUuid(hostUuid);
-                    msg.setStatus(status);
-                    msg.setReason(reason);
-                    bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, psUuid);
-                    bus.send(msg, new CloudBusCallBack(completion) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            completion.done();
-                        }
-                    });
-                }
             });
         }).run(completion);
+    }
+
+    private final Map<String, ProtocolRecovery> protocolRecoveryByKey = new ConcurrentHashMap<>();
+    private static final int PROTOCOL_RECOVERY_MAX_SKIP = 64;
+
+    private static class ProtocolRecovery {
+        int failures;
+        int skip;
+    }
+
+    private String recoveryKey(String psUuid, String hostUuid, String protocol) {
+        return psUuid + "/" + hostUuid + "/" + protocol;
+    }
+
+    private void recoverDisconnectedProtocols(ExternalPrimaryStorageVO extPs, HostInventory host, NodeHealthy healthy) {
+        List<String> due = new ArrayList<>();
+        healthy.getHealthy().forEach((protocol, status) -> {
+            String key = recoveryKey(extPs.getUuid(), host.getUuid(), protocol.toString());
+            if (status == StorageHealthy.Ok) {
+                protocolRecoveryByKey.remove(key);
+                return;
+            }
+            if (dueForRecovery(key)) {
+                due.add(protocol.toString());
+            }
+        });
+        if (due.isEmpty()) {
+            return;
+        }
+        PrimaryStorageNodeSvc node = extPsFactory.getNodeSvc(extPs.getUuid());
+        if (node == null) {
+            return;
+        }
+        node.deployClient(host, due, new Completion(null) {
+            @Override
+            public void success() {
+                logger.debug(String.format("re-established disconnected protocols%s on host[uuid:%s] for external primary storage[uuid:%s]",
+                        due, host.getUuid(), extPs.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to re-establish disconnected protocols%s on host[uuid:%s] for external primary storage[uuid:%s]: %s",
+                        due, host.getUuid(), extPs.getUuid(), errorCode.getDetails()));
+            }
+        });
+    }
+
+    private boolean dueForRecovery(String key) {
+        boolean[] due = {false};
+        protocolRecoveryByKey.compute(key, (k, state) -> {
+            if (state == null) {
+                state = new ProtocolRecovery();
+            }
+            if (state.skip > 0) {
+                state.skip--;
+                due[0] = false;
+            } else {
+                state.failures++;
+                int exp = Math.min(state.failures, 30);
+                state.skip = Math.min(1 << exp, PROTOCOL_RECOVERY_MAX_SKIP);
+                due[0] = true;
+            }
+            return state;
+        });
+        return due[0];
     }
 
     @Override

@@ -10,6 +10,7 @@ public class CreateDataVolumeMsg extends NeedReplyMessage implements VolumeCreat
     private String primaryStorageUuid;
     private String accountUuid;
     private String resourceUuid;
+    private String protocol;
     private APICreateDataVolumeMsg apiMsg;
 
     public String getPrimaryStorageUuid() {
@@ -18,6 +19,14 @@ public class CreateDataVolumeMsg extends NeedReplyMessage implements VolumeCreat
 
     public void setPrimaryStorageUuid(String primaryStorageUuid) {
         this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public String getProtocol() {
+        return protocol;
+    }
+
+    public void setProtocol(String protocol) {
+        this.protocol = protocol;
     }
 
     public String getName() {

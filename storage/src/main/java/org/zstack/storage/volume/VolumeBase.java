@@ -2396,6 +2396,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIChangeVolumeStateMsg) {
             handle((APIChangeVolumeStateMsg) msg);
+        } else if (msg instanceof APIChangeVolumeProtocolMsg) {
+            handle((APIChangeVolumeProtocolMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotMsg) {
             handle((APICreateVolumeSnapshotMsg) msg);
         } else if (msg instanceof APICreateVolumeSnapshotGroupMsg) {
@@ -3626,6 +3628,22 @@ public class VolumeBase extends AbstractVolume implements Volume {
         VolumeInventory inv = VolumeInventory.valueOf(self);
         APIChangeVolumeStateEvent evt = new APIChangeVolumeStateEvent(msg.getId());
         evt.setInventory(inv);
+        bus.publish(evt);
+    }
+
+    private void handle(APIChangeVolumeProtocolMsg msg) {
+        APIChangeVolumeProtocolEvent evt = new APIChangeVolumeProtocolEvent(msg.getId());
+        int updated = SQL.New("update VolumeVO vol set vol.protocol = :protocol where vol.uuid = :uuid")
+                .param("protocol", msg.getProtocol())
+                .param("uuid", msg.getVolumeUuid())
+                .execute();
+        if (updated == 0) {
+            evt.setError(operr("volume[uuid:%s] no longer exists, cannot change its protocol", msg.getVolumeUuid()));
+            bus.publish(evt);
+            return;
+        }
+        self = dbf.reload(self);
+        evt.setInventory(VolumeInventory.valueOf(self));
         bus.publish(evt);
     }
 
