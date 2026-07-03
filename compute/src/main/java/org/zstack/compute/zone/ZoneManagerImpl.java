@@ -143,6 +143,10 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
         new SQLBatch() {
             @Override
             protected void scripts() {
+                if (msg.getDefault() == null && !q(ZoneVO.class).isExists()) {
+                    finalVO.setDefault(true);
+                }
+
                 if (finalVO.isDefault()) {
                     sql(ZoneVO.class)
                             .set(ZoneVO_.isDefault, false)
@@ -160,7 +164,7 @@ public class ZoneManagerImpl extends AbstractService implements ZoneManager {
     }
 
     private void createZone(APICreateZoneMsg msg, ReturnValueCompletion<ZoneInventory> completion) {
-        if (msg.getDefault() == null || !msg.getDefault()) {
+        if (msg.getDefault() != null && !msg.getDefault()) {
             completion.success(createZoneFromApiMessage(msg));
             return;
         }
