@@ -143,6 +143,7 @@
         <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageSpaceVO</class>
         <class>org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO</class>
         <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostRefVO</class>
+        <class>org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageVO</class>
         <class>org.zstack.storage.ceph.backup.CephBackupStorageMonVO</class>
         <class>org.zstack.storage.ceph.primary.CephPrimaryStorageMonVO</class>

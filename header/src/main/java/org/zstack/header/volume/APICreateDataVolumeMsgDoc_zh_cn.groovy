@@ -102,6 +102,15 @@ doc {
 					optional true
 					since "3.4.0"
 				}
+				column {
+					name "protocol"
+					enclosedIn "params"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+				}
 			}
         }
 

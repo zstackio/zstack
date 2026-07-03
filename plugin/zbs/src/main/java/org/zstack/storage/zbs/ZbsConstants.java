@@ -20,4 +20,9 @@ public interface ZbsConstants {
     String MEGABYTE_SUPPORTED_VERSION = "1.6.1";
     String MEGABYTE_UNIT = "M";
     String DEFAULT_GIGABYTE_UNIT = null;
+
+    String VHOST_SOCKET_DIR = "/var/zbsvhost/sockets";
+    String VHOST_BDEV_NAME_PREFIX = "zbs-bdev-";
+    String VHOST_TARGET_CONTAINER_PREFIX = "zbsvhost-";
+    String VHOST_ADMIN_SOCK_NAME = "admin.sock";
 }

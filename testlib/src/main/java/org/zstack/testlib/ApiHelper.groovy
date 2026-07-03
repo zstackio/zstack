@@ -6902,6 +6902,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeVolumeProtocol(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVolumeProtocolAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeVolumeProtocolAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeVolumeState(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeVolumeStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeVolumeStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -31540,6 +31567,35 @@ abstract class ApiHelper {
 
     def queryExternalBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryExternalBackupAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryExternalBackupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        a.conditions = a.conditions.collect { it.toString() }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryExternalPrimaryStorageHostProtocolRef(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryExternalPrimaryStorageHostProtocolRefAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryExternalPrimaryStorageHostProtocolRefAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

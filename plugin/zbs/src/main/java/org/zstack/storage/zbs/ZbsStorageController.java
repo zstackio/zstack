@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
+import org.zstack.vhost.kvm.VhostVolumeTO;
 import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
@@ -14,6 +15,8 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO;
+import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO_;
 import org.zstack.core.db.SQL;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
@@ -28,6 +31,7 @@ import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.host.HostAO_;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.message.MessageReply;
@@ -110,6 +114,13 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String CHECK_HOST_STORAGE_CONNECTION_PATH = "/zbs/primarystorage/check/host/connection";
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
+    public static final String VHOST_TARGET_HEALTH_PATH = "/zbs/primarystorage/vhost/target/health";
+    public static final String PREPARE_VHOST_TARGET_ENV_PATH = "/zbs/primarystorage/vhost/target/prepareenv";
+    public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
+    public static final String DEPLOY_VHOST_PATH = "/zbs/primarystorage/vhost/deploy";
+    public static final String DESTROY_VHOST_PATH = "/zbs/primarystorage/vhost/destroy";
+    public static final String CREATE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/create";
+    public static final String DELETE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/delete";
 
     private static final StorageCapabilities capabilities = new StorageCapabilities();
 
@@ -135,6 +146,11 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void activate(BaseVolumeInfo v, HostInventory h, boolean shareable, ReturnValueCompletion<ActiveVolumeTO> comp) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            activateVhostVolume(v.getInstallPath(), h, comp);
+            return;
+        }
+
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
 
             comp.success(new CbdVolumeTo());
@@ -144,8 +160,89 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10006, "not supported protocol[%s]", v.getProtocol()));
     }
 
+    private void activateVhostVolume(String installPath, HostInventory h, ReturnValueCompletion<ActiveVolumeTO> comp) {
+        KVMHostVO host = getKvmHost(h);
+        if (host == null) {
+            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to activate vhost volume", h.getUuid()));
+            return;
+        }
+
+        CreateVhostBdevCmd cmd = new CreateVhostBdevCmd();
+        fillVhostHostParams(cmd, h, host);
+        String relativePath = stripScheme(installPath);
+        cmd.logicalPool = ZbsHelper.getPoolFromVolumePath(installPath);
+        cmd.volume = relativePath.substring(relativePath.indexOf('/') + 1);
+        cmd.bdevName = buildVhostBdevName(installPath);
+
+        httpCall(CREATE_VHOST_BDEV_PATH, cmd, CreateVhostBdevRsp.class, new ReturnValueCompletion<CreateVhostBdevRsp>(comp) {
+            @Override
+            public void success(CreateVhostBdevRsp rsp) {
+                VhostVolumeTO to = new VhostVolumeTO();
+                to.setInstallPath(rsp.socketPath);
+                comp.success(to);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                comp.fail(errorCode);
+            }
+        });
+    }
+
+    private static String stripScheme(String installPath) {
+        return installPath.replaceFirst(ZbsConstants.SCHEME_PREFIX, "");
+    }
+
+    private static String buildVhostBdevName(String installPath) {
+        return ZbsConstants.VHOST_BDEV_NAME_PREFIX + installPathHash(installPath);
+    }
+
+    private static String installPathHash(String installPath) {
+        return UUID.nameUUIDFromBytes(stripScheme(installPath).getBytes()).toString().replace("-", "");
+    }
+
+    private static String buildVhostSocketPath(String installPath) {
+        return ZbsConstants.VHOST_SOCKET_DIR + "/" + buildVhostBdevName(installPath);
+    }
+
+    private KVMHostVO getKvmHost(HostInventory h) {
+        return Q.New(KVMHostVO.class).eq(KVMHostVO_.uuid, h.getUuid()).find();
+    }
+
+    private void fillVhostHostParams(VhostHostCmd cmd, HostInventory h, KVMHostVO host) {
+        cmd.hostIp = h.getManagementIp();
+        cmd.sshPort = host.getPort();
+        cmd.sshUsername = host.getUsername();
+        cmd.sshPassword = host.getPassword();
+    }
+
     @Override
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
+        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+            KVMHostVO host = getKvmHost(h);
+            if (host == null) {
+                comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010, "cannot find kvm host[uuid:%s], unable to deactivate vhost volume", h.getUuid()));
+                return;
+            }
+
+            DeleteVhostBdevCmd cmd = new DeleteVhostBdevCmd();
+            fillVhostHostParams(cmd, h, host);
+            cmd.bdevName = buildVhostBdevName(installPath);
+
+            httpCall(DELETE_VHOST_BDEV_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(comp) {
+                @Override
+                public void success(AgentResponse rsp) {
+                    comp.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    comp.fail(errorCode);
+                }
+            });
+            return;
+        }
+
         // not support inactive client yet
         comp.success();
     }
@@ -161,6 +258,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String getActivePath(BaseVolumeInfo v, HostInventory h, boolean shareable) {
+        if (VolumeProtocol.Vhost.toString().equals(v.getProtocol())) {
+            return buildVhostSocketPath(v.getInstallPath());
+        }
         if (VolumeProtocol.CBD.toString().equals(v.getProtocol())) {
             return convertZbsPathToCbdPath(v.getInstallPath(), this::getPhysicalPoolName);
         } else {
@@ -175,30 +275,31 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public List<ActiveVolumeClient> getActiveClients(String installPath, String protocol) {
-        if (VolumeProtocol.CBD.toString().equals(protocol)) {
-            GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
-            cmd.setPath(installPath);
-            GetVolumeClientsRsp rsp = new HttpCaller<>(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class,
-                    null, TimeUnit.SECONDS, 30, true)
-                    .setTryNext(true)
-                    .syncCall();
-            List<ActiveVolumeClient> clients = new ArrayList<>();
-
-            if (!rsp.isSuccess()) {
-                throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10008, rsp.getError()));
-            }
-
-            if (rsp.getClients() != null) {
-                for (ClientInfo clientInfo : rsp.getClients()) {
-                    ActiveVolumeClient client = new ActiveVolumeClient();
-                    client.setManagerIp(clientInfo.getIp());
-                    clients.add(client);
-                }
-            }
-            return clients;
-        } else {
+        if (!VolumeProtocol.CBD.toString().equals(protocol)
+                && !VolumeProtocol.Vhost.toString().equals(protocol)) {
             throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10009, "not supported protocol[%s] for active", protocol));
         }
+
+        GetVolumeClientsCmd cmd = new GetVolumeClientsCmd();
+        cmd.setPath(installPath);
+        GetVolumeClientsRsp rsp = new HttpCaller<>(GET_VOLUME_CLIENTS_PATH, cmd, GetVolumeClientsRsp.class,
+                null, TimeUnit.SECONDS, 30, true)
+                .setTryNext(true)
+                .syncCall();
+        List<ActiveVolumeClient> clients = new ArrayList<>();
+
+        if (!rsp.isSuccess()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ZBS_10008, rsp.getError()));
+        }
+
+        if (rsp.getClients() != null) {
+            for (ClientInfo clientInfo : rsp.getClients()) {
+                ActiveVolumeClient client = new ActiveVolumeClient();
+                client.setManagerIp(clientInfo.getIp());
+                clients.add(client);
+            }
+        }
+        return clients;
     }
 
     @Override
@@ -207,7 +308,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     @Override
-    public void deployClient(HostInventory h, Completion comp) {
+    public void deployClient(HostInventory h, List<String> protocols, Completion comp) {
+        boolean deployVhostTarget = protocols != null && protocols.contains(VolumeProtocol.Vhost.toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("deploy-zbs-client-on-host-%s", h.getUuid()));
         chain.then(new ShareFlow() {
@@ -278,6 +380,71 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         });
                     }
                 });
+
+                if (deployVhostTarget) {
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "prepare-vhost-target-env";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            PrepareVhostTargetEnvCmd cmd = new PrepareVhostTargetEnvCmd();
+
+                            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+                            msg.setCommand(cmd);
+                            msg.setHostUuid(h.getUuid());
+                            msg.setPath(PREPARE_VHOST_TARGET_ENV_PATH);
+                            msg.setNoStatusCheck(true);
+                            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+                            bus.send(msg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
+                                                h.getUuid(), reply.getError().getDetails()));
+                                    } else {
+                                        AgentResponse rsp = reply.<KVMHostAsyncHttpCallReply>castReply().toResponse(AgentResponse.class);
+                                        if (!rsp.isSuccess()) {
+                                            logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
+                                                    h.getUuid(), rsp.getError()));
+                                        }
+                                    }
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+
+                    flow(new NoRollbackFlow() {
+                        String __name__ = "deploy-vhost-target";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            KVMHostVO host = getKvmHost(h);
+                            if (host == null) {
+                                logger.warn(String.format("cannot find kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
+                                trigger.next();
+                                return;
+                            }
+
+                            DeployVhostCmd cmd = new DeployVhostCmd();
+                            fillVhostHostParams(cmd, h, host);
+
+                            httpCall(DEPLOY_VHOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
+                                @Override
+                                public void success(AgentResponse rsp) {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format("failed to deploy vhost target on host[%s]: %s",
+                                            h.getUuid(), errorCode.getDetails()));
+                                    trigger.next();
+                                }
+                            });
+                        }
+                    });
+                }
 
                 done(new FlowDoneHandler(comp) {
                     @Override
@@ -806,6 +973,44 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 CheckHostStorageConnectionRsp rsp = hreply.toResponse(CheckHostStorageConnectionRsp.class);
                 NodeHealthy healthy = new NodeHealthy();
                 healthy.setHealthy(VolumeProtocol.CBD, rsp.isSuccess() ? StorageHealthy.Ok : StorageHealthy.Failed);
+
+                if (!supportsVhost()) {
+                    comp.success(healthy);
+                    return;
+                }
+                checkVhostTargetHealthy(host, healthy, comp);
+            }
+        });
+    }
+
+    private boolean supportsVhost() {
+        return Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, self.getUuid())
+                .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, VolumeProtocol.Vhost.toString())
+                .isExists();
+    }
+
+    private void checkVhostTargetHealthy(HostInventory host, NodeHealthy healthy, ReturnValueCompletion<NodeHealthy> comp) {
+        VhostTargetHealthCmd cmd = new VhostTargetHealthCmd();
+        cmd.containerName = ZbsConstants.VHOST_TARGET_CONTAINER_PREFIX + host.getManagementIp();
+        cmd.controlSock = ZbsConstants.VHOST_SOCKET_DIR + "/" + ZbsConstants.VHOST_ADMIN_SOCK_NAME;
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+        msg.setCommand(cmd);
+        msg.setHostUuid(host.getUuid());
+        msg.setPath(VHOST_TARGET_HEALTH_PATH);
+        msg.setNoStatusCheck(true);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(msg, new CloudBusCallBack(comp) {
+            @Override
+            public void run(MessageReply reply) {
+                boolean targetHealthy = false;
+                if (reply.isSuccess()) {
+                    VhostTargetHealthRsp rsp = reply.<KVMHostAsyncHttpCallReply>castReply()
+                            .toResponse(VhostTargetHealthRsp.class);
+                    targetHealthy = rsp.isSuccess() && rsp.targetRunning;
+                }
+                healthy.setHealthy(VolumeProtocol.Vhost, targetHealthy ? StorageHealthy.Ok : StorageHealthy.Failed);
                 comp.success(healthy);
             }
         });
@@ -2065,6 +2270,52 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class UpdateHostDependencyRsp extends AgentResponse {
+    }
+
+    public static class VhostHostCmd extends AgentCommand {
+        public String hostIp;
+        public int sshPort;
+        public String sshUsername;
+        @NoLogging
+        public String sshPassword;
+    }
+
+    public static class DeployVhostCmd extends VhostHostCmd {
+    }
+
+    public static class DestroyVhostCmd extends VhostHostCmd {
+    }
+
+    public static class PrepareVhostTargetEnvCmd extends AgentCommand {
+    }
+
+    public static class CreateVhostBdevCmd extends VhostHostCmd {
+        public String logicalPool;
+        public String volume;
+        public String bdevName;
+    }
+
+    public static class CreateVhostBdevRsp extends AgentResponse {
+        public String socketPath;
+    }
+
+    public static class DeleteVhostBdevCmd extends VhostHostCmd {
+        public String bdevName;
+    }
+
+    public static class VhostTargetHealthCmd extends AgentCommand {
+        public String containerName;
+        public String controlSock;
+    }
+
+    public static class VhostTargetHealthRsp extends AgentResponse {
+        public boolean targetRunning;
+    }
+
+    public static class VhostResizeCmd extends AgentCommand {
+        public String bdevName;
+        public long sizeMib;
+        public String controlSock;
     }
 
     public static class AgentResponse extends ZbsMdsBase.AgentResponse {

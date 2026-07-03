@@ -503,7 +503,7 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void deployClient(HostInventory h, Completion comp) {
+    public void deployClient(HostInventory h, java.util.List<String> protocols, Completion comp) {
         comp.success();
     }
 

@@ -373,6 +373,7 @@ public class SourceClassMap {
 			put("org.zstack.header.sshkeypair.SshKeyPairInventory", "org.zstack.sdk.SshKeyPairInventory");
 			put("org.zstack.header.sshkeypair.SshPrivateKeyPairInventory", "org.zstack.sdk.SshPrivateKeyPairInventory");
 			put("org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory", "org.zstack.sdk.ExternalBackupStorageInventory");
+			put("org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefInventory", "org.zstack.sdk.ExternalPrimaryStorageHostProtocolRefInventory");
 			put("org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory", "org.zstack.sdk.ExternalPrimaryStorageInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
@@ -1117,6 +1118,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalBackupStorageInventory", "org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory");
+			put("org.zstack.sdk.ExternalPrimaryStorageHostProtocolRefInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefInventory");
 			put("org.zstack.sdk.ExternalPrimaryStorageInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory");
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");

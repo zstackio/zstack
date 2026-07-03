@@ -21,6 +21,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.primary.APIChangeVolumeProtocolMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.volume.APICreateVolumeSnapshotMsg</name>
     </message>
 
