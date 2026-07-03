@@ -2,6 +2,12 @@ package org.zstack.heder.storage.volume.backup;
 
 import org.zstack.sdk.VolumeBackupInventory;
 
+/**
+ * @Deprecated
+ * use {@link org.zstack.sdk.storage.volumebackup.RecoverBackupFromImageStoreBackupStorageResult}.
+ * this class will removed in zsv_5.4.0
+ */
+@Deprecated
 public class RecoverBackupFromImageStoreBackupStorageResult {
     public VolumeBackupInventory inventory;
     public void setInventory(VolumeBackupInventory inventory) {

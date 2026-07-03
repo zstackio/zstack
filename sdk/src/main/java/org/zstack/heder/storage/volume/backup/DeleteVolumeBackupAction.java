@@ -4,6 +4,12 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
+/**
+ * @Deprecated
+ * use {@link org.zstack.sdk.storage.volumebackup.DeleteVolumeBackupAction}.
+ * this class will removed in zsv_5.4.0
+ */
+@Deprecated
 public class DeleteVolumeBackupAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
