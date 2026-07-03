@@ -578,15 +578,6 @@ public class SourceClassMap {
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
-			put("org.zstack.vmware.ESXHostInventory", "org.zstack.sdk.ESXHostInventory");
-			put("org.zstack.vmware.SkippedResources", "org.zstack.sdk.SkippedResources");
-			put("org.zstack.vmware.VCenterBackupStorageInventory", "org.zstack.sdk.VCenterBackupStorageInventory");
-			put("org.zstack.vmware.VCenterClusterInventory", "org.zstack.sdk.VCenterClusterInventory");
-			put("org.zstack.vmware.VCenterDatacenterInventory", "org.zstack.sdk.VCenterDatacenterInventory");
-			put("org.zstack.vmware.VCenterInventory", "org.zstack.sdk.VCenterInventory");
-			put("org.zstack.vmware.VCenterPrimaryStorageInventory", "org.zstack.sdk.VCenterPrimaryStorageInventory");
-			put("org.zstack.vmware.VCenterResourcePoolInventory", "org.zstack.sdk.VCenterResourcePoolInventory");
-			put("org.zstack.vmware.VCenterResourcePoolUsageInventory", "org.zstack.sdk.VCenterResourcePoolUsageInventory");
 			put("org.zstack.vpcfirewall.entity.ActionType", "org.zstack.sdk.ActionType");
 			put("org.zstack.vpcfirewall.entity.FirewallRuleState", "org.zstack.sdk.FirewallRuleState");
 			put("org.zstack.vpcfirewall.entity.IpSetType", "org.zstack.sdk.IpSetType");
@@ -796,7 +787,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.DeviceTO", "org.zstack.storage.device.multipath.DeviceTO");
 			put("org.zstack.sdk.DirectoryInventory", "org.zstack.directory.DirectoryInventory");
 			put("org.zstack.sdk.DiskOfferingInventory", "org.zstack.header.configuration.DiskOfferingInventory");
-			put("org.zstack.sdk.ESXHostInventory", "org.zstack.vmware.ESXHostInventory");
 			put("org.zstack.sdk.EipInventory", "org.zstack.network.service.eip.EipInventory");
 			put("org.zstack.sdk.ElaborationCategory", "org.zstack.core.errorcode.ElaborationCategory");
 			put("org.zstack.sdk.ElaborationCheckResult", "org.zstack.core.errorcode.ElaborationCheckResult");
@@ -1104,7 +1094,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
-			put("org.zstack.sdk.SkippedResources", "org.zstack.vmware.SkippedResources");
 			put("org.zstack.sdk.SlbGroupInventory", "org.zstack.network.service.slb.SlbGroupInventory");
 			put("org.zstack.sdk.SlbGroupL3NetworkRefInventory", "org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory");
 			put("org.zstack.sdk.SlbLoadBalancerInventory", "org.zstack.network.service.slb.SlbLoadBalancerInventory");
@@ -1143,13 +1132,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.UsbDeviceState", "org.zstack.usbDevice.UsbDeviceState");
 			put("org.zstack.sdk.UsedIpInventory", "org.zstack.header.network.l3.UsedIpInventory");
 			put("org.zstack.sdk.UserTagInventory", "org.zstack.header.tag.UserTagInventory");
-			put("org.zstack.sdk.VCenterBackupStorageInventory", "org.zstack.vmware.VCenterBackupStorageInventory");
-			put("org.zstack.sdk.VCenterClusterInventory", "org.zstack.vmware.VCenterClusterInventory");
-			put("org.zstack.sdk.VCenterDatacenterInventory", "org.zstack.vmware.VCenterDatacenterInventory");
-			put("org.zstack.sdk.VCenterInventory", "org.zstack.vmware.VCenterInventory");
-			put("org.zstack.sdk.VCenterPrimaryStorageInventory", "org.zstack.vmware.VCenterPrimaryStorageInventory");
-			put("org.zstack.sdk.VCenterResourcePoolInventory", "org.zstack.vmware.VCenterResourcePoolInventory");
-			put("org.zstack.sdk.VCenterResourcePoolUsageInventory", "org.zstack.vmware.VCenterResourcePoolUsageInventory");
 			put("org.zstack.sdk.VHostAddOn", "org.zstack.kvm.KVMAgentCommands$VHostAddOn");
 			put("org.zstack.sdk.VRouterRouteEntryAO", "org.zstack.vrouterRoute.VRouterRouteEntryAO");
 			put("org.zstack.sdk.VRouterRouteEntryInventory", "org.zstack.vrouterRoute.VRouterRouteEntryInventory");
