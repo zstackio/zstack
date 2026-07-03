@@ -19,6 +19,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
@@ -393,8 +394,16 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         PortForwardingRuleInventory inv = PortForwardingRuleInventory.valueOf(vo);
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
         struct.setReleaseVmNicInfoWhenDetaching(true);
-        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
-                NetworkServiceType.PortForwarding);
+        final NetworkServiceProviderType providerType = getPortForwardingProviderTypeIfEnabled(struct.getGuestL3Network().getUuid());
+        if (providerType == null) {
+            logger.warn(String.format("port forwarding rule[uuid:%s] is attached to vm nic[uuid:%s] on L3[uuid:%s] without PortForwarding service, clean stale binding only",
+                    vo.getUuid(), vo.getVmNicUuid(), struct.getGuestL3Network().getUuid()));
+            detachPortForwardingRuleInDb(vo);
+            PortForwardingRuleVO prvo = dbf.reload(vo);
+            evt.setInventory(PortForwardingRuleInventory.valueOf(prvo));
+            bus.publish(evt);
+            return;
+        }
 
         detachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
             @Override
@@ -418,10 +427,36 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 VmInstanceState.class).param("nicUuid", vmNicUuid).find();
     }
 
+    private NetworkServiceProviderType getPortForwardingProviderType(String l3NetworkUuid) {
+        return nwServiceMgr.getTypeOfNetworkServiceProviderForService(l3NetworkUuid, NetworkServiceType.PortForwarding);
+    }
+
+    private NetworkServiceProviderType getPortForwardingProviderTypeIfEnabled(String l3NetworkUuid) {
+        try {
+            return getPortForwardingProviderType(l3NetworkUuid);
+        } catch (OperationFailureException e) {
+            return null;
+        }
+    }
+
+    private void detachPortForwardingRuleInDb(PortForwardingRuleVO vo) {
+        SQL.New(PortForwardingRuleVO.class).eq(PortForwardingRuleVO_.uuid, vo.getUuid())
+                .set(PortForwardingRuleVO_.vmNicUuid, null)
+                .set(PortForwardingRuleVO_.guestIp, null).update();
+    }
+
     private void handle(final APIAttachPortForwardingRuleMsg msg) {
         final APIAttachPortForwardingRuleEvent evt = new APIAttachPortForwardingRuleEvent(msg.getId());
         PortForwardingRuleVO vo = dbf.findByUuid(msg.getRuleUuid(), PortForwardingRuleVO.class);
         VmNicVO nicvo = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        final NetworkServiceProviderType providerType;
+        try {
+            providerType = getPortForwardingProviderType(nicvo.getL3NetworkUuid());
+        } catch (OperationFailureException e) {
+            evt.setError(e.getErrorCode());
+            bus.publish(evt);
+            return;
+        }
         vo.setVmNicUuid(nicvo.getUuid());
         vo.setGuestIp(nicvo.getIp());
         L3NetworkVO nicL3Vo = dbf.findByUuid(nicvo.getL3NetworkUuid(), L3NetworkVO.class);
@@ -434,9 +469,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             ModifyVipAttributesStruct struct = new ModifyVipAttributesStruct();
             struct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
             struct.setServiceUuid(vo.getUuid());
-            final NetworkServiceProviderType providerType =
-                    nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                            nicvo.getL3NetworkUuid(), NetworkServiceType.PortForwarding);
             struct.setServiceProvider(providerType.toString());
             struct.setPeerL3NetworkUuid(nicvo.getL3NetworkUuid());
             vip.setStruct(struct);
@@ -449,6 +481,7 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    detachPortForwardingRuleInDb(vo);
                     evt.setError(errorCode);
                     bus.publish(evt);
                 }
@@ -457,7 +490,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
-        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(), NetworkServiceType.PortForwarding);
         attachPortForwardingRule(struct, providerType.toString(), new Completion(msg) {
             @Override
             public void success() {
@@ -508,8 +540,29 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
 
         final PortForwardingStruct struct = makePortForwardingStruct(inv);
-        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
-                NetworkServiceType.PortForwarding);
+        final NetworkServiceProviderType providerType = getPortForwardingProviderTypeIfEnabled(struct.getGuestL3Network().getUuid());
+        if (providerType == null) {
+            logger.warn(String.format("port forwarding rule[uuid:%s] is attached to vm nic[uuid:%s] on L3[uuid:%s] without PortForwarding service, release VIP service and delete stale binding",
+                    vo.getUuid(), vo.getVmNicUuid(), struct.getGuestL3Network().getUuid()));
+            ModifyVipAttributesStruct vipStruct = new ModifyVipAttributesStruct();
+            vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
+            vipStruct.setServiceUuid(vo.getUuid());
+            Vip v = new Vip(inv.getVipUuid());
+            v.setStruct(vipStruct);
+            v.release(new Completion(complete) {
+                @Override
+                public void success() {
+                    dbf.remove(vo);
+                    complete.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    complete.fail(errorCode);
+                }
+            });
+            return;
+        }
 
         for (RevokePortForwardingRuleExtensionPoint extp : revokeRuleExts) {
             try {
@@ -565,9 +618,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                         vipStruct.setUseFor(PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE);
                         vipStruct.setServiceUuid(vo.getUuid());
                         if (struct.getGuestL3Network() != null) {
-                            final NetworkServiceProviderType providerType =
-                                    nwServiceMgr.getTypeOfNetworkServiceProviderForService(
-                                            struct.getGuestL3Network().getUuid(), NetworkServiceType.PortForwarding);
                             vipStruct.setServiceProvider(providerType.toString());
                             vipStruct.setPeerL3NetworkUuid(struct.getGuestL3Network().getUuid());
                         }
@@ -734,6 +784,20 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
         }
 
         VipVO vip = dbf.findByUuid(msg.getVipUuid(), VipVO.class);
+        VmNicVO vmNic = msg.getVmNicUuid() == null ? null : dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+        final NetworkServiceProviderType providerType;
+        if (vmNic == null) {
+            providerType = null;
+        } else {
+            try {
+                providerType = getPortForwardingProviderType(vmNic.getL3NetworkUuid());
+            } catch (OperationFailureException e) {
+                evt.setError(e.getErrorCode());
+                bus.publish(evt);
+                syncChain.next();
+                return;
+            }
+        }
         final PortForwardingRuleVO vo = new PortForwardingRuleVO();
         if (msg.getResourceUuid() != null) {
             vo.setUuid(msg.getResourceUuid());
@@ -790,7 +854,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
             return;
         }
 
-        VmNicVO vmNic = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
         SimpleQuery<VmInstanceVO> q = dbf.createQuery(VmInstanceVO.class);
         q.select(VmInstanceVO_.state);
         q.add(VmInstanceVO_.uuid, Op.EQ, vmNic.getVmInstanceUuid());
@@ -833,9 +896,6 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 flow(new NoRollbackFlow() {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(vmNic.getL3NetworkUuid(),
-                                NetworkServiceType.PortForwarding);
-
                         for (AttachPortForwardingRuleExtensionPoint extp : attachRuleExts) {
                             try {
                                 extp.preAttachPortForwardingRule(ruleInv, providerType);
@@ -981,8 +1041,15 @@ public class PortForwardingManagerImpl extends AbstractService implements PortFo
                 }
 
                 PortForwardingStruct struct = makePortForwardingStruct(PortForwardingRuleInventory.valueOf(pf));
-                final NetworkServiceProviderType providerType = nwServiceMgr.getTypeOfNetworkServiceProviderForService(struct.getGuestL3Network().getUuid(),
-                        NetworkServiceType.PortForwarding);
+                final NetworkServiceProviderType providerType = getPortForwardingProviderTypeIfEnabled(struct.getGuestL3Network().getUuid());
+                if (providerType == null) {
+                    logger.warn(String.format("port forwarding rule[uuid:%s] is attached to vm nic[uuid:%s] on L3[uuid:%s] without PortForwarding service, release stale VIP service directly",
+                            pf.getUuid(), pf.getVmNicUuid(), struct.getGuestL3Network().getUuid()));
+                    dbf.remove(pf);
+                    completion.success();
+                    chain.next();
+                    return;
+                }
                 PortForwardingBackend bkd = getPortForwardingBackend(providerType);
                 bkd.revokePortForwardingRule(struct, new Completion(completion) {
                     @Override
