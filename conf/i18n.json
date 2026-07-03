@@ -37021,14 +37021,14 @@
   {
     "raw": "duplicate label[key:%s, operator:%s, value:%s] for the alarm[uuid:%s]",
     "en_US": "duplicate label[key:{0}, operator:{1}, value:{2}] for the alarm[uuid:{3}]",
-    "zh_CN": "报警器[uuid:{2}]已经存在标签[key:{0}, operator:{1}, value:{2}]",
+    "zh_CN": "报警器[uuid:{3}]已经存在标签[key:{0}, operator:{1}, value:{2}]",
     "arguments": [
-      "msg.getKey()",
-      "msg.getOperator()",
-      "msg.getValue()",
-      "msg.getAlarmUuid()"
+      "key",
+      "operator",
+      "value",
+      "alarmUuid"
     ],
-    "line": 296,
+    "line": 314,
     "fileName": "src/main/java/org/zstack/zwatch/alarm/AlarmApiInterceptor.java"
   },
   {

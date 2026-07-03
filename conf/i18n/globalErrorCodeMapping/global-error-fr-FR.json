@@ -845,7 +845,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_10026": "clé en double[%s] avec des valeurs différentes{%s}%",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10170": "impossible d'ajouter l'IP du serveur au groupe de serveurs d'équilibrage de charge partagé %s",
   "ORG_ZSTACK_ZWATCH_ALARM_10025": "la métrique ne possède pas l'étiquette spécifiée[%s]",
-  "ORG_ZSTACK_ZWATCH_ALARM_10023": "étiquette en double définie pour l'alarme avec UUID [uuid:%s]",
+  "ORG_ZSTACK_ZWATCH_ALARM_10023": "étiquette en double[key:%s, operator:%s, value:%s] définie pour l'alarme[uuid:%s]",
   "ORG_ZSTACK_ZWATCH_ALARM_10029": "la métrique[%s] est restreinte aux administrateurs et n'est pas disponible pour votre rôle utilisateur actuel.",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10171": "impossible de modifier le serveur backend car vmincs et les IPs du serveur sont null",
   "ORG_ZSTACK_ZWATCH_ALARM_10028": "l'espace de noms[%s] ne contient pas la métrique[%s]",

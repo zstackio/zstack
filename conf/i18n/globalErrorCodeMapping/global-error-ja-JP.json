@@ -845,7 +845,7 @@
   "ORG_ZSTACK_ZWATCH_ALARM_10026": "重複するキー[%s]が異なる値{%s}を持っています",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10170": "共有ロードバランササーバーグループ%sにサーバーIPを追加できませんでした",
   "ORG_ZSTACK_ZWATCH_ALARM_10025": "メトリクスに、指定されたラベル[%s]がありません",
-  "ORG_ZSTACK_ZWATCH_ALARM_10023": "UUID [uuid:%s]のアラームに重複するラベルが定義されています",
+  "ORG_ZSTACK_ZWATCH_ALARM_10023": "重複するラベル[key:%s, operator:%s, value:%s]がアラーム[uuid:%s]に定義されています",
   "ORG_ZSTACK_ZWATCH_ALARM_10029": "メトリクス[%s]は管理者向けに制限されており、現在のユーザーロールでは利用できません",
   "ORG_ZSTACK_NETWORK_SERVICE_LB_10171": "vmincsとサーバーIPがnullのため、バックエンドサーバーを変更できませんでした",
   "ORG_ZSTACK_ZWATCH_ALARM_10028": "名前空間[%s]にはメトリクス[%s]が含まれていません",
