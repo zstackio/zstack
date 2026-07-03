@@ -41,6 +41,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 class ZbsVhostVolumeCase extends SubCase {
@@ -159,6 +160,7 @@ class ZbsVhostVolumeCase extends SubCase {
             testVhostVmStartActivationChain()
             testAddProtocolPreparesHostsAndRecordsProtocolRefs()
             testProtocolRecoveryBackoff()
+            testReconnectSkipsConnectedProtocolDeploy()
         }
     }
 
@@ -677,6 +679,59 @@ class ZbsVhostVolumeCase extends SubCase {
                     .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
                     .isExists()
         }
+
+        detachPrimaryStorageFromCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+    }
+
+    void testReconnectSkipsConnectedProtocolDeploy() {
+        HostInventory host = env.inventoryByName("kvm-1") as HostInventory
+        AtomicInteger deployCount = new AtomicInteger(0)
+
+        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            deployCount.incrementAndGet()
+            return new ZbsStorageController.AgentResponse()
+        }
+        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            return new ZbsStorageController.AgentResponse()
+        }
+        env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new ZbsStorageController.VhostTargetHealthRsp()
+            rsp.targetRunning = true
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                def vrsp = new ZbsStorageController.CreateVolumeRsp()
+                vrsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}".toString()
+                return vrsp
+            }
+            return rsp
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, host.uuid)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, VolumeProtocol.Vhost.toString())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .isExists()
+        }
+
+        deployCount.set(0)
+        reconnectHost { uuid = host.uuid }
+        Thread.sleep(2000)
+        assert deployCount.get() == 0 : \
+                "reconnect redeployed an already-Connected vhost target ${deployCount.get()} time(s); " +
+                "host-connect must skip protocols already Connected"
 
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = ps.uuid

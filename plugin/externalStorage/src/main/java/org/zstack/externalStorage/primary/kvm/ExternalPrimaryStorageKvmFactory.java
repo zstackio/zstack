@@ -201,10 +201,23 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             logger.debug(String.format("deploying client for external primary storage[uuid:%s, name:%s] on KVM host[uuid:%s, name:%s]",
                     extPs.getUuid(), extPs.getName(), context.getInventory().getUuid(), context.getInventory().getName()));
 
-            List<String> protocols = Q.New(PrimaryStorageOutputProtocolRefVO.class)
+            List<String> protocols = new ArrayList<>(Q.New(PrimaryStorageOutputProtocolRefVO.class)
                     .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
                     .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
+                    .listValues());
+
+            List<String> connected = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, context.getInventory().getUuid())
+                    .eq(ExternalPrimaryStorageHostProtocolRefVO_.status, PrimaryStorageHostStatus.Connected)
+                    .select(ExternalPrimaryStorageHostProtocolRefVO_.protocol)
                     .listValues();
+            protocols.removeAll(connected);
+
+            if (protocols.isEmpty()) {
+                compl.done();
+                return;
+            }
 
             extPsFactory.getNodeSvc(extPs.getUuid()).deployClient(context.getInventory(), protocols, new Completion(compl) {
                 @Override
