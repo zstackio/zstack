@@ -67,6 +67,11 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     private List<Class<? extends Message>> skipVmTracerMessages = new ArrayList<>();
     private List<Class> skipVmTracerReplies = new ArrayList<>();
     private Map<String, Integer> vmInShutdownMap = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Long> orphanedSkipVms = new ConcurrentHashMap<>();
+
+    private long getOrphanTtlMs() {
+        return KVMGlobalConfig.ORPHANED_VM_SKIP_TIMEOUT.value(Long.class) * 1000;
+    }
 
     {
         getReflections().getTypesAnnotatedWith(SkipVmTracer.class).forEach(clz -> {
@@ -195,8 +200,11 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
         // Get vms to skip before send command to host to confirm the vm will be skipped after sync command finished.
         // The problem is if one vm-sync skipped operation is started and finished during vm sync command's handling
         // vm state would still be sync to mn
+        cleanupExpiredOrphanedSkipVms();
+
         Set<String> vmsToSkipSetHostSide = new HashSet<>();
         vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
+        vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
 
         // if the vm is not running on host when sync command executing but started as soon as possible
         // before response handling of vm sync, mgmtSideStates will including the running vm but not result in
@@ -227,6 +235,7 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
 
                     // Get vms to skip after sync result returned.
                     vmsToSkip.values().forEach(vmsToSkipSetHostSide::addAll);
+                    vmsToSkipSetHostSide.addAll(orphanedSkipVms.keySet());
 
                     Collection<String> vmUuidsInDeleteVmGC = DeleteVmGC.queryVmInGC(host.getUuid(), ret.getStates().keySet());
 
@@ -445,7 +454,15 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     @Override
     public void nodeLeft(ManagementNodeInventory inv) {
         vmApis.remove(inv.getUuid());
-        vmsToSkip.remove(inv.getUuid());
+        Set<String> skippedVms = vmsToSkip.remove(inv.getUuid());
+        if (skippedVms != null && !skippedVms.isEmpty()) {
+            long now = System.currentTimeMillis();
+            for (String vmUuid : skippedVms) {
+                orphanedSkipVms.put(vmUuid, now);
+                logger.info(String.format("moved VM[uuid:%s] from departed MN[uuid:%s] skip list to orphaned set" +
+                        " (will expire in %d minutes)", vmUuid, inv.getUuid(), getOrphanTtlMs() / 60000));
+            }
+        }
     }
 
     @Override
@@ -459,6 +476,36 @@ public class KvmVmSyncPingTask extends VmTracer implements KVMPingAgentNoFailure
     }
 
     public boolean isVmDoNotNeedToTrace(String vmUuid) {
-        return vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid));
+        if (vmsToSkip.values().stream().anyMatch(vmsToSkipSet -> vmsToSkipSet.contains(vmUuid))) {
+            return true;
+        }
+
+        Long orphanedAt = orphanedSkipVms.get(vmUuid);
+        if (orphanedAt != null) {
+            if (System.currentTimeMillis() - orphanedAt < getOrphanTtlMs()) {
+                logger.debug(String.format("VM[uuid:%s] is in orphaned skip set, skipping trace", vmUuid));
+                return true;
+            }
+
+            orphanedSkipVms.remove(vmUuid, orphanedAt);
+            logger.info(String.format("orphaned skip entry for VM[uuid:%s] expired after %d minutes, resuming trace",
+                    vmUuid, getOrphanTtlMs() / 60000));
+        }
+
+        return false;
+    }
+
+    private void cleanupExpiredOrphanedSkipVms() {
+        if (orphanedSkipVms.isEmpty()) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        for (Map.Entry<String, Long> entry : orphanedSkipVms.entrySet()) {
+            if (now - entry.getValue() >= getOrphanTtlMs()) {
+                orphanedSkipVms.remove(entry.getKey(), entry.getValue());
+                logger.info(String.format("cleaned up expired orphaned skip entry for VM[uuid:%s]", entry.getKey()));
+            }
+        }
     }
 }
