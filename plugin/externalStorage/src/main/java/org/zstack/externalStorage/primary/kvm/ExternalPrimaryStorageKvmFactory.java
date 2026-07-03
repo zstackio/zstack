@@ -334,6 +334,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
     @Override
     public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, KVMAgentCommands.StartVmCmd cmd) {
         List<VolumeInventory> vols = getManagerExclusiveVolume(spec);
+        ErrorCode[] deactivateErr = new ErrorCode[1];
 
         for (VolumeInventory vol : vols) {
             PrimaryStorageNodeSvc nodeSvc = extPsFactory.getNodeSvc(vol.getPrimaryStorageUuid());
@@ -359,20 +360,31 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                                 clientHost.getUuid(), clientHost.getManagementIp(),
                                 host.getUuid(), host.getManagementIp()));
 
+                        deactivateErr[0] = null;
                         nodeSvc.deactivate(vol.getInstallPath(), vol.getProtocol(), client, new Completion(null) {
                             @Override
                             public void success() {
+                                boolean stillActive = nodeSvc.getActiveClients(vol.getInstallPath(), vol.getProtocol()).stream()
+                                        .anyMatch(c -> client.getManagerIp().equals(c.getManagerIp()));
+                                if (stillActive) {
+                                    deactivateErr[0] = operr("deactivate reported success but volume[uuid:%s, installPath:%s] is still active on host[uuid:%s, ip:%s]",
+                                            vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp());
+                                    return;
+                                }
                                 logger.info(String.format("successfully deactivate volume[uuid:%s, installPath:%s] on host[uuid:%s, ip:%s]",
                                         vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp()));
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                logger.warn(String.format("failed to deactivate volume[uuid:%s, installPath:%s] on host[uuid:%s, ip:%s], add it to blacklist",
-                                        vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp()));
-                                nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), HostInventory.valueOf(clientHost), new NopeCompletion());
+                                deactivateErr[0] = errorCode;
                             }
                         });
+                        if (deactivateErr[0] != null) {
+                            logger.warn(String.format("failed to deactivate volume[uuid:%s, installPath:%s] on host[uuid:%s, ip:%s]: %s, add it to blacklist",
+                                    vol.getUuid(), vol.getInstallPath(), clientHost.getUuid(), clientHost.getManagementIp(), deactivateErr[0].getDetails()));
+                            nodeSvc.blacklist(vol.getInstallPath(), vol.getProtocol(), HostInventory.valueOf(clientHost));
+                        }
                     }
                 }
             });

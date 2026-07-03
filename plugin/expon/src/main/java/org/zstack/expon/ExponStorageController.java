@@ -614,14 +614,13 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
     }
 
     @Override
-    public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
+    public void blacklist(String installPath, String protocol, HostInventory h) {
         logger.debug(String.format("blacklisting volume[path: %s, protocol:%s] on host[uuid:%s, ip:%s]",
                 installPath, protocol, h.getUuid(), h.getManagementIp()));
 
         UssGatewayModule uss = getUssGateway(VolumeProtocol.valueOf(protocol), h.getManagementIp());
         VolumeModule exponVol = apiHelper.getVolume(getVolIdFromPath(installPath));
         apiHelper.addVolumePathToBlacklist(buildExponVolumeBoundPath(uss, exponVol.getVolumeName()));
-        comp.success();
     }
 
     @Override

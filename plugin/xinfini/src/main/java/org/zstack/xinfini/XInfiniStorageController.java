@@ -202,18 +202,23 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     public void deactivate(String installPath, String protocol, HostInventory h, Completion comp) {
         logger.debug(String.format("deactivating volume[path: %s, protocol:%s] on host[uuid:%s, ip:%s]",
                 installPath, protocol, h.getUuid(), h.getManagementIp()));
-        if (VolumeProtocol.Vhost.toString().equals(protocol)) {
-            deactivateVhost(installPath, h);
-            comp.success();
-            return;
-        } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
-            // iscsi target is shared by all hosts, we cannot control one volume on one host for now.
-            deactivateIscsi(installPath, h);
-            comp.success();
+        try {
+            if (VolumeProtocol.Vhost.toString().equals(protocol)) {
+                deactivateVhost(installPath, h);
+            } else if (VolumeProtocol.iSCSI.toString().equals(protocol)) {
+                // iscsi target is shared by all hosts, we cannot control one volume on one host for now.
+                deactivateIscsi(installPath, h);
+            } else {
+                comp.fail(operr("not supported protocol[%s] for deactivate", protocol));
+                return;
+            }
+        } catch (Exception e) {
+            comp.fail(operr("failed to deactivate volume[path:%s, protocol:%s] on host[uuid:%s, ip:%s]: %s",
+                    installPath, protocol, h.getUuid(), h.getManagementIp(), e.getMessage()));
             return;
         }
 
-        comp.fail(operr("not supported protocol[%s] for deactivate", protocol));
+        comp.success();
     }
 
     private void deactivateIscsi(String installPath, HostInventory h) {
@@ -255,7 +260,7 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
             return;
         }
 
-        retry(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
+        retryOrThrow(() -> apiHelper.deleteBdcBdev(bdev.getSpec().getId(), bdc.getSpec().getId()));
     }
 
     @Override
@@ -271,9 +276,10 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
     }
 
     @Override
-    public void blacklist(String installPath, String protocol, HostInventory h, Completion comp) {
-        // todo
-        comp.success();
+    public void blacklist(String installPath, String protocol, HostInventory h) {
+        throw new OperationFailureException(operr("xinfini does not support volume path isolation yet, " +
+                        "abort starting VM on host[uuid:%s, ip:%s] to prevent split-brain on volume[path:%s, protocol:%s]",
+                h.getUuid(), h.getManagementIp(), installPath, protocol));
     }
 
     @Override
@@ -1038,16 +1044,33 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
 
     private void retry(Runnable r, int retry) {
-        while (retry-- > 0) {
+        try {
+            retryOrThrow(r, retry);
+        } catch (RuntimeException ignored) {
+        }
+    }
+
+    private void retryOrThrow(Runnable r) {
+        retryOrThrow(r, 3);
+    }
+
+    private void retryOrThrow(Runnable r, int retry) {
+        RuntimeException lastError = null;
+        for (int i = 0; i < retry; i++) {
             try {
                 r.run();
                 return;
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
+                lastError = e;
                 logger.warn("runnable failed, try ", e);
                 try {
                     TimeUnit.SECONDS.sleep(3);
                 } catch (InterruptedException ignore) {}
             }
+        }
+
+        if (lastError != null) {
+            throw lastError;
         }
     }
 }
