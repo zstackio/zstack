@@ -5818,6 +5818,13 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
+                                if (KVMHostUtils.shouldContinueReconnectOnAnsibleFailure(info.isNewAdded(), errorCode)) {
+                                    logger.warn(String.format(
+                                            "kvm ansible failed to mask libvirt sockets because systemd dbus timed out on existing host[uuid:%s, ip:%s], continue reconnect and verify kvmagent, error: %s",
+                                            self.getUuid(), self.getManagementIp(), errorCode));
+                                    trigger.next();
+                                    return;
+                                }
                                 trigger.fail(errorCode);
                             }
                         });
