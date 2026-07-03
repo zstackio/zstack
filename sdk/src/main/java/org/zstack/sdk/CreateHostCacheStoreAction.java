@@ -37,9 +37,6 @@ public class CreateHostCacheStoreAction extends AbstractAction {
     @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List devices;
 
-    @Param(required = true, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mountPoint;
-
     @Param(required = false)
     public java.lang.String resourceUuid;
 
