@@ -68,14 +68,6 @@ public class LicenseInventory  {
         return this.licenseType;
     }
 
-    public java.lang.String quotaType;
-    public void setQuotaType(java.lang.String quotaType) {
-        this.quotaType = quotaType;
-    }
-    public java.lang.String getQuotaType() {
-        return this.quotaType;
-    }
-
     public java.lang.String expiredDate;
     public void setExpiredDate(java.lang.String expiredDate) {
         this.expiredDate = expiredDate;
