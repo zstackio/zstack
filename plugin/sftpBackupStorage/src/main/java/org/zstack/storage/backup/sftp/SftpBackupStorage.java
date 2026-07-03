@@ -392,7 +392,7 @@ public class SftpBackupStorage extends BackupStorageBase {
         callbackChecker.setUsername(getSelf().getUsername());
         callbackChecker.setPassword(getSelf().getPassword());
         callbackChecker.setPort(getSelf().getSshPort());
-        callbackChecker.setCallbackIp(Platform.getManagementServerIp());
+        callbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getHostname()));
         callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
         AnsibleRunner runner = new AnsibleRunner();

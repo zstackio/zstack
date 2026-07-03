@@ -249,6 +249,26 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:8080/zstack${RESTConstant.COMMAND_CHANNEL_PATH}"
     }
 
+    void testRestFacadeSelectsCallbackUrlByTargetIpVersion() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV6,
+        ]) {
+            String defaultCallbackUrl = "http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
+
+            assert RESTFacadeImpl.selectCallbackUrl(
+                    "http://[${IPV6_2}]:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
+                    "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
+            assert RESTFacadeImpl.selectCallbackUrl(
+                    "http://host.example.com:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
+                    defaultCallbackUrl
+            assert RESTFacadeImpl.selectCallbackUrl(
+                    "http://[${IPV6_2}]:7070/host/ping",
+                    [(RESTConstant.CALLBACK_URL): "http://override.example.com/callback"],
+                    defaultCallbackUrl, REST_PORT, "zstack") == defaultCallbackUrl
+        }
+    }
+
     void testSshTargetUsesRawIpv6Host() {
         assert SshShell.formatSshTarget("root", IPV4) == "root@192.168.1.10"
         assert SshShell.formatSshTarget("root", IPV6) == "root@2001:db8::1"
@@ -365,6 +385,25 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "management.server.ip6": IPV6,
         ]) {
             assert Platform.getManagementServerIps() == [IPV4, IPV6]
+        }
+    }
+
+    void testSelectManagementServerIpForRemote() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV6,
+        ]) {
+            assert Platform.selectManagementServerIpForRemote(IPV6_2, null) == IPV6
+            assert Platform.selectManagementServerIpForRemote(IPV6_2, "2001:db8::88") == IPV6
+            assert Platform.selectManagementServerIpForRemote("host.example.com", null) == IPV4
+        }
+
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV6,
+                "management.server.ip4": IPV4,
+        ]) {
+            assert Platform.selectManagementServerIpForRemote("192.168.1.20", null) == IPV4
+            assert Platform.selectManagementServerIpForRemote("192.168.1.20", "192.168.1.88") == IPV4
         }
     }
 
