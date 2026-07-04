@@ -103,6 +103,9 @@ public class ChangeLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List httpCompressAlgos;
 
+    @Param(required = false, validValues = {"full_nat","nat","dr"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String forwardMode;
+
     @Param(required = false)
     public java.util.List systemTags;
 
