@@ -52,6 +52,10 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_PORT_OFF = new GlobalConfig(CATEGORY, "vmPortOff");
+    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "enable PMU for VM, disabled by default on aarch64 to avoid Kunpeng-920 kernel panic")
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_PMU = new GlobalConfig(CATEGORY, "vm.pmu");
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig EMULATE_HYPERV = new GlobalConfig(CATEGORY, "emulateHyperV");
