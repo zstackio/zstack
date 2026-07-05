@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
@@ -22,10 +23,13 @@ import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.network.l3.L3NetworkSystemTags;
 import org.zstack.sdnController.SdnController;
 import org.zstack.sdnController.SdnControllerL2;
+import org.zstack.sdnController.SdnControllerPingMsg;
+import org.zstack.sdnController.SdnControllerPingReply;
 import org.zstack.sdnController.header.*;
 import org.zstack.sugonSdnController.controller.api.*;
 import org.zstack.sugonSdnController.controller.api.types.*;
 import org.zstack.sugonSdnController.header.APICreateL2TfNetworkMsg;
+import org.zstack.sugonSdnController.network.TfZstackPortSync;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -44,6 +48,8 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     CloudBus bus;
     @Autowired
     DatabaseFacade dbf;
+    @Autowired
+    TfZstackPortSync tfZstackPortSync;
 
     private SdnControllerVO sdnControllerVO;
     private TfHttpClient client;
@@ -55,8 +61,30 @@ public class SugonSdnController implements TfSdnController, SdnController, SdnCo
     }
 
     @Override
+    @MessageSafe
     public void handleMessage(SdnControllerMessage msg) {
-        bus.dealWithUnknownMessage((Message) msg);
+        if (msg instanceof SdnControllerPingMsg) {
+            handMessage((SdnControllerPingMsg) msg);
+        } else {
+            bus.dealWithUnknownMessage((Message) msg);
+        }
+    }
+
+    void handMessage(SdnControllerPingMsg msg) {
+        SdnControllerPingReply reply = new SdnControllerPingReply();
+        try {
+            Domain domain = (Domain) client.getDomain();
+            if (domain == null) {
+                reply.setError(operr("get default domain on tf controller failed"));
+            } else {
+                tfZstackPortSync.triggerSyncIfDue(msg.getSdnControllerUuid());
+                reply.setSuccess(true);
+            }
+        } catch (Exception e) {
+            logger.warn("ping tf sdn controller failed", e);
+            reply.setError(operr("get default domain on tf controller failed"));
+        }
+        bus.reply(msg, reply);
     }
 
     @Override
