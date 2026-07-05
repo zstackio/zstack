@@ -86,6 +86,10 @@ public class SdnControllerBase {
         return "sdn-controller-" + self.getUuid();
     }
 
+    public String getSdnControllerHostSignature(String hostUuid) {
+        return "sdn-controller-" + self.getUuid() + "-host-" + hostUuid;
+    }
+
     protected SdnController getSdnController() {
         SdnControllerFactory factory = sdnMgr.getSdnControllerFactory(self.getVendorType());
         return factory.getSdnController(self);
@@ -427,7 +431,7 @@ public class SdnControllerBase {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getSdnControllerSignature();
+                return getSdnControllerHostSignature(msg.getHostUuid());
             }
 
             @Override
@@ -508,7 +512,7 @@ public class SdnControllerBase {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getSdnControllerSignature();
+                return getSdnControllerHostSignature(msg.getHostUuid());
             }
 
             @Override
@@ -594,7 +598,7 @@ public class SdnControllerBase {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return getSdnControllerSignature();
+                return getSdnControllerHostSignature(msg.getHostUuid());
             }
 
             @Override
