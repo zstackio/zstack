@@ -729,7 +729,15 @@ public class MysqlQueryBuilderImpl3 implements Component, QueryBuilder, GlobalAp
                             throw new IllegalArgumentException(String.format("illegal sortBy[%s], entity[%s] doesn't have this field", msg.getSortBy(), info.entityClass.getName()));
                         }
 
-                        ret = String.format("%s order by %s.%s %s", ret, entityName, msg.getSortBy(), msg.getSortDirection().toUpperCase());
+                        String orderBy = String.format("order by %s.%s %s", entityName, msg.getSortBy(), msg.getSortDirection().toUpperCase());
+                        if (info.primaryKey != null && !msg.getSortBy().equals(info.primaryKey)) {
+                            orderBy += String.format(", %s.%s ASC", entityName, info.primaryKey);
+                        }
+                        ret = String.format("%s %s", ret, orderBy);
+                    } else if (msg.getStart() != null || msg.getLimit() != null) {
+                        if (info.primaryKey != null) {
+                            ret = String.format("%s order by %s.%s ASC", ret, entityName, info.primaryKey);
+                        }
                     }
 
                     if (msg.getGroupBy() != null) {
