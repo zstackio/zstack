@@ -1326,6 +1326,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             VolumeStats volume;
 
             final String bsUuid = image.getBackupStorageRefs().get(0).getBackupStorageUuid();
+            final ExternalPrimaryStorageImageDownloadContext downloadContext = buildImageDownloadContext(image, spec, targetClz);
             final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
                     ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
                     : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
@@ -1336,11 +1337,23 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        spec.setSize(Long.max(image.getActualSize(), image.getSize()));
+                        long defaultSize = Long.max(image.getActualSize(), image.getSize());
+                        try {
+                            spec.setSize(resolveImageDownloadSize(downloadContext, defaultSize));
+                        } catch (OperationFailureException e) {
+                            trigger.fail(e.getErrorCode());
+                            return;
+                        } catch (Exception e) {
+                            trigger.fail(operr("failed to resolve external primary storage image[uuid:%s] download size: %s",
+                                    image.getUuid(), e.getMessage()));
+                            return;
+                        }
                         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats stats) {
                                 volume = stats;
+                                downloadContext.setPrimaryStorageInstallPath(stats.getInstallPath());
+                                downloadContext.setPrimaryStorageSize(stats.getSize());
                                 trigger.next();
                             }
 
@@ -1456,6 +1469,33 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 trigger.next();
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "after-download-extension";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        downloadContext.setPrimaryStorageInstallPath(volume.getInstallPath());
+                        downloadContext.setPrimaryStorageSize(volume.getSize());
+                        runImageDownloadAfterExtensions(downloadContext, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                if (StringUtils.isNotBlank(downloadContext.getPrimaryStorageInstallPath())) {
+                                    volume.setInstallPath(downloadContext.getPrimaryStorageInstallPath());
+                                }
+                                if (downloadContext.getPrimaryStorageSize() != null && downloadContext.getPrimaryStorageSize() > 0) {
+                                    volume.setSize(downloadContext.getPrimaryStorageSize());
+                                }
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
                             }
                         });
                     }
@@ -2123,6 +2163,64 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
         throw new UnsupportedOperationException();
+    }
+
+    private ExternalPrimaryStorageImageDownloadContext buildImageDownloadContext(ImageInventory image, CreateVolumeSpec spec, String targetClz) {
+        ExternalPrimaryStorageImageDownloadContext context = new ExternalPrimaryStorageImageDownloadContext();
+        context.setPrimaryStorageUuid(self.getUuid());
+        context.setPrimaryStorageType(externalVO.getIdentity());
+        context.setBackupStorageUuid(image.getBackupStorageRefs().get(0).getBackupStorageUuid());
+        context.setBackupStorageInstallPath(image.getBackupStorageRefs().get(0).getInstallPath());
+        context.setImageUuid(image.getUuid());
+        context.setImageSize(image.getSize());
+        context.setImageActualSize(image.getActualSize());
+        context.setTargetResourceType(targetClz);
+        context.setTargetResourceUuid(spec.getUuid());
+        return context;
+    }
+
+    private long resolveImageDownloadSize(ExternalPrimaryStorageImageDownloadContext context, long defaultSize) {
+        long size = defaultSize;
+        for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : imageDownloadExtensions(context)) {
+            size = ext.requiredDownloadSize(context, size);
+        }
+        return size;
+    }
+
+    private void runImageDownloadAfterExtensions(ExternalPrimaryStorageImageDownloadContext context, Completion completion) {
+        List<ExternalPrimaryStorageImageDownloadExtensionPoint> extensions = imageDownloadExtensions(context);
+        if (extensions.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(extensions).each((ext, compl) -> ext.afterDownload(context, new Completion(compl) {
+            @Override
+            public void success() {
+                compl.done();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                compl.addError(errorCode);
+                compl.allDone();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    private List<ExternalPrimaryStorageImageDownloadExtensionPoint> imageDownloadExtensions(ExternalPrimaryStorageImageDownloadContext context) {
+        return pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class).stream()
+                .filter(ext -> ext.supports(context))
+                .collect(Collectors.toList());
     }
 
     private void directDeleteBits(String installPath, Completion completion) {

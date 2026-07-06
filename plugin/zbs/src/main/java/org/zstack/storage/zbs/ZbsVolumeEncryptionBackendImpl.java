@@ -13,6 +13,7 @@ import org.zstack.header.storage.addon.primary.CreateVolumeSpec;
 import org.zstack.header.storage.addon.primary.ZbsVolumeEncryptionBackend;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeStats;
+import org.zstack.storage.encrypt.ZbsVolumeEncryptionSizes;
 
 import java.util.UUID;
 
@@ -23,7 +24,6 @@ import static org.zstack.storage.zbs.ZbsHelper.getSizeUnit;
 
 class ZbsVolumeEncryptionBackendImpl implements ZbsVolumeEncryptionBackend {
     private static final String QUERY_SNAPSHOT_PATH = "/zbs/primarystorage/snapshot/query";
-    private static final long LUKS_PAYLOAD_OFFSET = 2068480L;
 
     private final ZbsStorageController controller;
     private final String primaryStorageUuid;
@@ -77,7 +77,7 @@ class ZbsVolumeEncryptionBackendImpl implements ZbsVolumeEncryptionBackend {
         cmd.setLogicalPool(path.logicalPool);
         cmd.setVolume(path.volume);
         cmd.setUnit(getSizeUnit(addonInfo.getClusterInfo().getVersion()));
-        cmd.setSize(alignSizeTo(luksBackingSize(virtualSize), cmd.getUnit()));
+        cmd.setSize(alignSizeTo(ZbsVolumeEncryptionSizes.luksBackingSize(virtualSize), cmd.getUnit()));
         cmd.setSkipIfExisting(false);
 
         controller.httpCall(ZbsStorageController.CREATE_VOLUME_PATH, cmd, ZbsStorageController.CreateVolumeRsp.class,
@@ -205,10 +205,6 @@ class ZbsVolumeEncryptionBackendImpl implements ZbsVolumeEncryptionBackend {
             throw new OperationFailureException(operr("ZBS operation requires active volume path, but got[%s]", installPath));
         }
         return path;
-    }
-
-    private long luksBackingSize(long virtualSize) {
-        return virtualSize + LUKS_PAYLOAD_OFFSET;
     }
 
     public static class QuerySnapshotRsp extends ZbsStorageController.AgentResponse {
