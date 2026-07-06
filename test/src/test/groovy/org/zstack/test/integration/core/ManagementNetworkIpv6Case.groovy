@@ -22,6 +22,7 @@ import org.zstack.kvm.KVMGlobalProperty
 import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags
+import org.zstack.storage.ceph.CephAgentUrl
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
@@ -593,6 +594,15 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:8080/ceph/backupstorage/dumpimagemetadatatofile"
         assert CephBackupStorageMetaDataMaker.buildAgentUrl(IPV4, REST_PORT, "/ceph/backupstorage/dumpimagemetadatatofile") ==
                 "http://192.168.1.10:8080/ceph/backupstorage/dumpimagemetadatatofile"
+    }
+
+    void testCephAgentUrlUsesBracketedIpv6Host() {
+        assert CephAgentUrl.backupStorageUrl(IPV6, "/ceph/backupstorage/echo") ==
+                "http://[2001:db8::1]:7761/ceph/backupstorage/echo"
+        assert CephAgentUrl.primaryStorageUrl(IPV6, "/ceph/primarystorage/echo") ==
+                "http://[2001:db8::1]:7762/ceph/primarystorage/echo"
+        assert CephAgentUrl.backupStorageUrl(IPV4, "/ceph/backupstorage/echo") ==
+                "http://192.168.1.10:7761/ceph/backupstorage/echo"
     }
 
     void testVxlanVtepIpv6Validation() {
