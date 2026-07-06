@@ -48,6 +48,9 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_MAX_PER_ROUTE;
     @GlobalProperty(name = "RESTFacade.maxTotal", defaultValue = "128")
     public static int REST_FACADE_MAX_TOTAL;
+    // client keep-alive cap, must be < agent socket_timeout to avoid reusing a closed connection
+    @GlobalProperty(name = "RESTFacade.keepAliveTimeMillis", defaultValue = "5000")
+    public static int REST_FACADE_KEEPALIVE_TIME;
     /**
      * When set RestServer.maskSensitiveInfo to true, sensitive info will be
      * masked see @NoLogging.
