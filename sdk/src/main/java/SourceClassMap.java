@@ -493,9 +493,6 @@ public class SourceClassMap {
 			put("org.zstack.resourceconfig.APIGetResourceBindableConfigReply$ResourceBindableConfigStruct", "org.zstack.sdk.ResourceBindableConfigStruct");
 			put("org.zstack.resourceconfig.ResourceConfigInventory", "org.zstack.sdk.ResourceConfigInventory");
 			put("org.zstack.resourceconfig.ResourceConfigStruct", "org.zstack.sdk.ResourceConfigStruct");
-			put("org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory");
-			put("org.zstack.sdnController.header.SdnControllerInventory", "org.zstack.sdk.SdnControllerInventory");
-			put("org.zstack.sdnController.header.SdnVniRange", "org.zstack.sdk.SdnVniRange");
 			put("org.zstack.snmp.agent.SnmpAgentInventory", "org.zstack.sdk.SnmpAgentInventory");
 			put("org.zstack.sns.SNSApplicationEndpointInventory", "org.zstack.sdk.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sns.SNSApplicationPlatformInventory", "org.zstack.sdk.sns.SNSApplicationPlatformInventory");
@@ -823,7 +820,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
 			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
-			put("org.zstack.sdk.HardwareL2VxlanNetworkPoolInventory", "org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolInventory");
 			put("org.zstack.sdk.HbaDeviceInventory", "org.zstack.storage.device.hba.HbaDeviceInventory");
 			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
@@ -1069,8 +1065,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
-			put("org.zstack.sdk.SdnControllerInventory", "org.zstack.sdnController.header.SdnControllerInventory");
-			put("org.zstack.sdk.SdnVniRange", "org.zstack.sdnController.header.SdnVniRange");
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");

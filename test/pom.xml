@@ -246,11 +246,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>sdnController</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>longjob</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -266,11 +261,6 @@
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>
-            <artifactId>sugonSdnController</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.zstack</groupId>
             <artifactId>hostNetworkInterface</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -279,10 +269,10 @@
             <artifactId>testlib</artifactId>
             <version>${project.version}</version>
         </dependency>
-	    <dependency>
-	        <groupId>com.github.javaparser</groupId>
-	        <artifactId>javaparser-core</artifactId>
-	    </dependency>
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.jasig.cas.client</groupId>
             <artifactId>cas-client-core</artifactId>

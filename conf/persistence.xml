@@ -198,10 +198,6 @@
         <class>org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO</class>
         <class>org.zstack.header.core.encrypt.EncryptEntityMetadataVO</class>
         <class>org.zstack.storage.ceph.primary.CephOsdGroupVO</class>
-        <class>org.zstack.sdnController.header.SdnControllerVO</class>
-        <class>org.zstack.sdnController.header.HardwareL2VxlanNetworkPoolVO</class>
-        <class>org.zstack.sdnController.header.VxlanHostMappingVO</class>
-        <class>org.zstack.sdnController.header.VxlanClusterMappingVO</class>
         <class>org.zstack.header.volume.VolumeHostRefVO</class>
         <class>org.zstack.directory.DirectoryVO</class>
         <class>org.zstack.directory.ResourceDirectoryRefVO</class>
