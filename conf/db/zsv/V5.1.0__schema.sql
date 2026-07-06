@@ -265,3 +265,47 @@ DELETE shadow FROM ImageCacheShadowVO shadow
     LEFT JOIN PrimaryStorageEO ps ON shadow.primaryStorageUuid = ps.uuid
     WHERE ps.uuid IS NULL;
 CALL ADD_CONSTRAINT('ImageCacheShadowVO', 'fkImageCacheShadowVOPrimaryStorageEOCascade', 'primaryStorageUuid', 'PrimaryStorageEO', 'uuid', 'CASCADE');
+
+-- Feature: Platform Service deployment | ZSV-12505
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PlatformServicePackageVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `name` varchar(255) DEFAULT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `serviceType` varchar(32) NOT NULL,
+    `artifactType` varchar(32) NOT NULL,
+    `imageUuid` char(32) DEFAULT NULL,
+    `status` varchar(32) NOT NULL,
+    `version` varchar(255) DEFAULT NULL,
+    `activeApiId` varchar(255) DEFAULT NULL,
+    `lastError` varchar(4096) DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`uuid`),
+    INDEX `idxPlatformServicePackageVOServiceType` (`serviceType`),
+    INDEX `idxPlatformServicePackageVOImageUuid` (`imageUuid`),
+    INDEX `idxPlatformServicePackageVOStatus` (`status`),
+    INDEX `idxPlatformServicePackageVOActiveApiId` (`activeApiId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`PlatformServiceInstanceVO` (
+    `uuid` char(32) NOT NULL UNIQUE,
+    `name` varchar(255) DEFAULT NULL,
+    `description` varchar(2048) DEFAULT NULL,
+    `serviceType` varchar(32) NOT NULL,
+    `packageUuid` char(32) NOT NULL,
+    `vmInstanceUuid` char(32) DEFAULT NULL,
+    `state` varchar(32) NOT NULL,
+    `healthStatus` varchar(32) NOT NULL,
+    `activeApiId` varchar(255) DEFAULT NULL,
+    `lastError` varchar(4096) DEFAULT NULL,
+    `lastHealthCheckTime` timestamp NULL DEFAULT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`uuid`),
+    INDEX `idxPlatformServiceInstanceVOServiceType` (`serviceType`),
+    INDEX `idxPlatformServiceInstanceVOPackageUuid` (`packageUuid`),
+    INDEX `idxPlatformServiceInstanceVOVmInstanceUuid` (`vmInstanceUuid`),
+    INDEX `idxPlatformServiceInstanceVOState` (`state`),
+    INDEX `idxPlatformServiceInstanceVOActiveApiId` (`activeApiId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
