@@ -399,15 +399,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                                 @Override
                                 public void run(MessageReply reply) {
                                     if (!reply.isSuccess()) {
-                                        logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
-                                                h.getUuid(), reply.getError().getDetails()));
-                                    } else {
-                                        AgentResponse rsp = reply.<KVMHostAsyncHttpCallReply>castReply().toResponse(AgentResponse.class);
-                                        if (!rsp.isSuccess()) {
-                                            logger.warn(String.format("failed to prepare vhost target env on host[%s]: %s",
-                                                    h.getUuid(), rsp.getError()));
-                                        }
+                                        trigger.fail(reply.getError());
+                                        return;
                                     }
+
+                                    AgentResponse rsp = reply.<KVMHostAsyncHttpCallReply>castReply().toResponse(AgentResponse.class);
+                                    if (!rsp.isSuccess()) {
+                                        trigger.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10042, rsp.getError()));
+                                        return;
+                                    }
+
                                     trigger.next();
                                 }
                             });
@@ -437,9 +438,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                                 @Override
                                 public void fail(ErrorCode errorCode) {
-                                    logger.warn(String.format("failed to deploy vhost target on host[%s]: %s",
-                                            h.getUuid(), errorCode.getDetails()));
-                                    trigger.next();
+                                    trigger.fail(errorCode);
                                 }
                             });
                         }

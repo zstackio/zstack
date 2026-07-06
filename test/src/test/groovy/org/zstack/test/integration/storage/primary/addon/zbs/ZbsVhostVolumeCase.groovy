@@ -624,6 +624,12 @@ class ZbsVhostVolumeCase extends SubCase {
             value = 1
         }
 
+        updateGlobalConfig {
+            category = "externalPrimaryStorage"
+            name = "attach.hostDeployFailureRatioThreshold"
+            value = 1
+        }
+
         attachPrimaryStorageToCluster {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid

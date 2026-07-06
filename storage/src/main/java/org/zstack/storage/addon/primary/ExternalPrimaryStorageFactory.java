@@ -18,6 +18,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -171,6 +172,20 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
                     controller.syncConfig(t.get(0, String.class));
                     controller.syncAddonInfo(t.get(1, String.class));
                 }
+            }
+        });
+
+        ExternalPrimaryStorageGlobalConfig.ATTACH_HOST_DEPLOY_FAILURE_RATIO_THRESHOLD.installValidateExtension((category, name, oldValue, newValue) -> {
+            double v;
+            try {
+                v = Double.parseDouble(newValue);
+            } catch (NumberFormatException e) {
+                throw new GlobalConfigException(String.format(
+                        "the value[%s] of %s.%s is not a valid number", newValue, category, name), e);
+            }
+            if (v <= 0 || v > 1) {
+                throw new GlobalConfigException(String.format(
+                        "the value[%s] of %s.%s must be greater than 0 and not greater than 1", newValue, category, name));
             }
         });
 
