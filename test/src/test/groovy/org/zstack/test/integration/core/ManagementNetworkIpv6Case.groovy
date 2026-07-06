@@ -23,6 +23,7 @@ import org.zstack.kvm.KvmHostIpmiPowerExecutor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanPoolApiInterceptor
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanSystemTags
 import org.zstack.storage.ceph.CephAgentUrl
+import org.zstack.storage.ceph.CephGlobalProperty
 import org.zstack.storage.ceph.MonUri
 import org.zstack.storage.ceph.backup.CephBackupStorageMetaDataMaker
 import org.zstack.storage.primary.nfs.NfsApiParamChecker
@@ -121,6 +122,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testNfsIpv6UrlParsing()
         testCephIpv6MonUrlParsing()
         testCephMetadataAgentUrlUsesBracketedIpv6Host()
+        testCephAgentUrlUsesBracketedIpv6Host()
         testVxlanVtepIpv6Validation()
         testVxlanSystemTagMatchesIpv6Cidr()
         testPatternedSystemTagParsesIpv6Token()
@@ -603,6 +605,24 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:7762/ceph/primarystorage/echo"
         assert CephAgentUrl.backupStorageUrl(IPV4, "/ceph/backupstorage/echo") ==
                 "http://192.168.1.10:7761/ceph/backupstorage/echo"
+
+        String oldBackupRootPath = CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH
+        String oldPrimaryRootPath = CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH
+        try {
+            CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH = "/zstack"
+            CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = "/zstack"
+            assert CephAgentUrl.backupStorageUrl(IPV6, "/ceph/backupstorage/echo") ==
+                    "http://[2001:db8::1]:7761/zstack/ceph/backupstorage/echo"
+            assert CephAgentUrl.primaryStorageUrl(IPV6, "/ceph/primarystorage/echo") ==
+                    "http://[2001:db8::1]:7762/zstack/ceph/primarystorage/echo"
+            assert CephAgentUrl.backupStorageUrl(IPV4, "/ceph/backupstorage/echo") ==
+                    "http://192.168.1.10:7761/zstack/ceph/backupstorage/echo"
+            assert CephAgentUrl.primaryStorageUrl(IPV4, "/ceph/primarystorage/echo") ==
+                    "http://192.168.1.10:7762/zstack/ceph/primarystorage/echo"
+        } finally {
+            CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH = oldBackupRootPath
+            CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = oldPrimaryRootPath
+        }
     }
 
     void testVxlanVtepIpv6Validation() {

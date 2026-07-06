@@ -1,6 +1,6 @@
 package org.zstack.storage.ceph;
 
-import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.URLBuilder;
 
 /**
  * Created by xing5 on 2017/9/22.
@@ -17,11 +17,9 @@ public class CephAgentUrl {
     }
 
     private static String agentUrl(String ip, int port, String rootPath, String path) {
-        StringBuilder ub = new StringBuilder(IPv6NetworkUtils.buildHttpUrl(ip, port));
-        if (!"".equals(rootPath)) {
-            ub.append(rootPath);
+        if (rootPath == null || "".equals(rootPath)) {
+            return URLBuilder.buildHttpUrl(ip, port, path);
         }
-        ub.append(path);
-        return ub.toString();
+        return URLBuilder.buildHttpUrl(ip, port, rootPath, path);
     }
 }
