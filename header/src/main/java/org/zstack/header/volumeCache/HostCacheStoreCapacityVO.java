@@ -29,10 +29,13 @@ public class HostCacheStoreCapacityVO {
     private long availableCapacity;
 
     @Column
-    private long allocated;
+    private long totalPhysicalCapacity;
 
     @Column
-    private long dirty;
+    private long availablePhysicalCapacity;
+
+    @Column
+    private long systemUsedCapacity;
 
     public HostCacheStoreCapacityVO() {
     }
@@ -61,19 +64,27 @@ public class HostCacheStoreCapacityVO {
         this.availableCapacity = availableCapacity;
     }
 
-    public long getAllocated() {
-        return allocated;
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
     }
 
-    public void setAllocated(long allocated) {
-        this.allocated = allocated;
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
     }
 
-    public long getDirty() {
-        return dirty;
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
     }
 
-    public void setDirty(long dirty) {
-        this.dirty = dirty;
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
+
+    public long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
     }
 }

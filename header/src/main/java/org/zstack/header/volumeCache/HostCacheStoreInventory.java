@@ -28,12 +28,16 @@ public class HostCacheStoreInventory implements Serializable {
     private long availableCapacity;
 
     @Queryable(mappingClass = HostCacheStoreCapacityInventory.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "allocated"))
-    private long allocated;
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "totalPhysicalCapacity"))
+    private long totalPhysicalCapacity;
 
     @Queryable(mappingClass = HostCacheStoreCapacityInventory.class,
-            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "dirty"))
-    private long dirty;
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "availablePhysicalCapacity"))
+    private long availablePhysicalCapacity;
+
+    @Queryable(mappingClass = HostCacheStoreCapacityInventory.class,
+            joinColumn = @JoinColumn(name = "uuid", referencedColumnName = "systemUsedCapacity"))
+    private long systemUsedCapacity;
 
     private HostCacheStoreState state;
     private HostCacheStoreStatus status;
@@ -52,8 +56,9 @@ public class HostCacheStoreInventory implements Serializable {
         if (vo.getCapacity() != null) {
             inv.setTotalCapacity(vo.getCapacity().getTotalCapacity());
             inv.setAvailableCapacity(vo.getCapacity().getAvailableCapacity());
-            inv.setAllocated(vo.getCapacity().getAllocated());
-            inv.setDirty(vo.getCapacity().getDirty());
+            inv.setTotalPhysicalCapacity(vo.getCapacity().getTotalPhysicalCapacity());
+            inv.setAvailablePhysicalCapacity(vo.getCapacity().getAvailablePhysicalCapacity());
+            inv.setSystemUsedCapacity(vo.getCapacity().getSystemUsedCapacity());
         }
         inv.setState(vo.getState());
         inv.setStatus(vo.getStatus());
@@ -143,20 +148,28 @@ public class HostCacheStoreInventory implements Serializable {
         this.availableCapacity = availableCapacity;
     }
 
-    public long getAllocated() {
-        return allocated;
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
     }
 
-    public void setAllocated(long allocated) {
-        this.allocated = allocated;
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
     }
 
-    public long getDirty() {
-        return dirty;
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
     }
 
-    public void setDirty(long dirty) {
-        this.dirty = dirty;
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
+
+    public long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
     }
 
     public HostCacheStoreState getState() {

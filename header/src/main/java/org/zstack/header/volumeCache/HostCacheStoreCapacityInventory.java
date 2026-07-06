@@ -14,8 +14,9 @@ public class HostCacheStoreCapacityInventory implements Serializable {
     private String uuid;
     private long totalCapacity;
     private long availableCapacity;
-    private long allocated;
-    private long dirty;
+    private long totalPhysicalCapacity;
+    private long availablePhysicalCapacity;
+    private long systemUsedCapacity;
 
     public static HostCacheStoreCapacityInventory valueOf(HostCacheStoreCapacityVO vo) {
         if (vo == null) {
@@ -26,8 +27,9 @@ public class HostCacheStoreCapacityInventory implements Serializable {
         inv.setUuid(vo.getUuid());
         inv.setTotalCapacity(vo.getTotalCapacity());
         inv.setAvailableCapacity(vo.getAvailableCapacity());
-        inv.setAllocated(vo.getAllocated());
-        inv.setDirty(vo.getDirty());
+        inv.setTotalPhysicalCapacity(vo.getTotalPhysicalCapacity());
+        inv.setAvailablePhysicalCapacity(vo.getAvailablePhysicalCapacity());
+        inv.setSystemUsedCapacity(vo.getSystemUsedCapacity());
         return inv;
     }
 
@@ -67,19 +69,27 @@ public class HostCacheStoreCapacityInventory implements Serializable {
         this.availableCapacity = availableCapacity;
     }
 
-    public long getAllocated() {
-        return allocated;
+    public long getTotalPhysicalCapacity() {
+        return totalPhysicalCapacity;
     }
 
-    public void setAllocated(long allocated) {
-        this.allocated = allocated;
+    public void setTotalPhysicalCapacity(long totalPhysicalCapacity) {
+        this.totalPhysicalCapacity = totalPhysicalCapacity;
     }
 
-    public long getDirty() {
-        return dirty;
+    public long getAvailablePhysicalCapacity() {
+        return availablePhysicalCapacity;
     }
 
-    public void setDirty(long dirty) {
-        this.dirty = dirty;
+    public void setAvailablePhysicalCapacity(long availablePhysicalCapacity) {
+        this.availablePhysicalCapacity = availablePhysicalCapacity;
+    }
+
+    public long getSystemUsedCapacity() {
+        return systemUsedCapacity;
+    }
+
+    public void setSystemUsedCapacity(long systemUsedCapacity) {
+        this.systemUsedCapacity = systemUsedCapacity;
     }
 }

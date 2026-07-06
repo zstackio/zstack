@@ -53,14 +53,20 @@ doc {
 		since "5.5.28"
 	}
 	field {
-		name "allocated"
-		desc "主机缓存存储已分配的容量，单位为字节"
+		name "totalPhysicalCapacity"
+		desc "主机缓存存储的物理总容量，单位为字节"
 		type "long"
 		since "5.5.28"
 	}
 	field {
-		name "dirty"
-		desc "主机缓存存储待回收的脏数据容量，单位为字节"
+		name "availablePhysicalCapacity"
+		desc "主机缓存存储的物理可用容量，单位为字节"
+		type "long"
+		since "5.5.28"
+	}
+	field {
+		name "systemUsedCapacity"
+		desc "主机缓存存储中非缓存文件占用的容量，单位为字节"
 		type "long"
 		since "5.5.28"
 	}

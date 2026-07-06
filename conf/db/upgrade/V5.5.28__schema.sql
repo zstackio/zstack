@@ -120,8 +120,9 @@ CREATE TABLE IF NOT EXISTS `HostCacheStoreCapacityVO` (
     `uuid`              VARCHAR(32)    NOT NULL,
     `totalCapacity`     BIGINT         NOT NULL DEFAULT 0,
     `availableCapacity` BIGINT         NOT NULL DEFAULT 0,
-    `allocated`         BIGINT         NOT NULL DEFAULT 0,
-    `dirty`             BIGINT         NOT NULL DEFAULT 0,
+    `totalPhysicalCapacity`     BIGINT NOT NULL DEFAULT 0,
+    `availablePhysicalCapacity` BIGINT NOT NULL DEFAULT 0,
+    `systemUsedCapacity`        BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (`uuid`),
     CONSTRAINT `fkHostCacheStoreCapacityVOHostCacheStoreVO`
     FOREIGN KEY (`uuid`) REFERENCES `HostCacheStoreVO` (`uuid`)
