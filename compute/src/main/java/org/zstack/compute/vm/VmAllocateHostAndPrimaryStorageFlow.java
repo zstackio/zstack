@@ -159,6 +159,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // local + non-local， need to automatically allocate the primary storage
         List<List<String>> psCombos = getPrimaryStorageCombinationFromSpec(spec, localPsUuids, nonLocalPsUuids);
+        if (psCombos.isEmpty()) {
+            trigger.fail(Platform.operr("no primary storage candidate is available"));
+            return;
+        }
         new While<>(psCombos).each((combo, whileCompletion) -> {
             spec.setRequiredPrimaryStorageUuidForRootVolume(combo.get(0));
             spec.setRequiredPrimaryStorageUuidForDataVolume(combo.get(1));
@@ -455,6 +459,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         } else {
             dataPs.add(null);
         }
+        filterPrimaryStorageCandidates(spec, rootPs, autoAllocateRootVolumePs, dataPs, autoAllocateDataVolumePs);
 
         List<List<String>> finalPsCombos = new ArrayList<>();
         if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
@@ -476,6 +481,14 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         rootPs.forEach(r -> dataPs.forEach(d -> finalPsCombos.add(Arrays.asList(r, d))));
         return finalPsCombos;
+    }
+
+    private void filterPrimaryStorageCandidates(VmInstanceSpec spec, List<String> rootPs, boolean rootAutoAllocation,
+                                                List<String> dataPs, boolean dataAutoAllocation) {
+        for (VmAllocatePrimaryStorageExtensionPoint ext :
+                pluginRgty.getExtensionList(VmAllocatePrimaryStorageExtensionPoint.class)) {
+            ext.filterPrimaryStorageCandidates(spec, rootPs, rootAutoAllocation, dataPs, dataAutoAllocation);
+        }
     }
 
     private void sortPrimaryStorages(final List<String> psUuids, String strategy, VmInstanceSpec.ImageSpec imageSpec) {

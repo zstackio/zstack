@@ -477,6 +477,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
                             }
                             amsg.setDiskOfferingUuid(self.getDiskOfferingUuid());
+                            if (self.isEncrypted() && msg.getPrimaryStorageUuid() == null) {
+                                amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
+                            }
 
                             if (msg.getPrimaryStorageUuid() != null) {
                                 bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());

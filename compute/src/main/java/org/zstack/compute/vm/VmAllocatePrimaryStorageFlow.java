@@ -7,6 +7,7 @@ import org.zstack.compute.allocator.HostAllocatorManager;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -24,8 +25,10 @@ import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
 import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageFeature;
 import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
 import org.zstack.header.vm.DiskAO;
+import org.zstack.header.vm.VmAllocatePrimaryStorageExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstanceSpec.VolumeSpec;
@@ -58,12 +61,21 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
     protected ErrorFacade errf;
     @Autowired
     protected HostAllocatorManager hostAllocatorMgr;
+    @Autowired
+    protected PluginRegistry pluginRgty;
 
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final List<AllocatePrimaryStorageSpaceMsg> msgs = new ArrayList<>();
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         HostInventory destHost = spec.getDestHost();
+
+        for (VmAllocatePrimaryStorageExtensionPoint ext :
+                pluginRgty.getExtensionList(VmAllocatePrimaryStorageExtensionPoint.class)) {
+            ext.filterPrimaryStorageCandidates(spec, spec.getCandidatePrimaryStorageUuidsForRootVolume(),
+                    isAutoAllocateRootVolumePrimaryStorage(spec),
+                    spec.getCandidatePrimaryStorageUuidsForDataVolume(), false);
+        }
 
         msgs.add(buildMessageForRootVolume(spec, destHost));
         msgs.addAll(buildMessageForDataVolumes(spec, destHost));
@@ -147,6 +159,9 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setCandidatePrimaryStorageUuids(candidatePs);
             rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
         }
+        if (disk != null && Boolean.TRUE.equals(disk.getEncrypted()) && isAutoAllocateRootVolumePrimaryStorage(spec)) {
+            rmsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
+        }
 
         Set<String> tags = new HashSet<>();
         if (disk != null && disk.getSystemTags() != null) {
@@ -181,6 +196,10 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
             amsg.setDiskOfferingUuid(deprecatedDisk != null ? deprecatedDisk.getDiskOfferingUuid() : null);
 
+            if (deprecatedDisk != null && Boolean.TRUE.equals(deprecatedDisk.getEncrypted())
+                    && isAutoAllocateDataVolumePrimaryStorage(spec, deprecatedDisk)) {
+                amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
+            }
             Set<String> tags = new HashSet<>();
             if (spec.getDataVolumeSystemTags() != null) {
                 tags.addAll(spec.getDataVolumeSystemTags());
@@ -195,6 +214,16 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
 
         return msgs;
+    }
+
+    private boolean isAutoAllocateRootVolumePrimaryStorage(VmInstanceSpec spec) {
+        DiskAO disk = spec.getRootDisk();
+        return (disk == null || disk.getPrimaryStorageUuid() == null)
+                && isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume());
+    }
+
+    private boolean isAutoAllocateDataVolumePrimaryStorage(VmInstanceSpec spec, DiskAO disk) {
+        return disk.getPrimaryStorageUuid() == null && isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume());
     }
 
     @Override
