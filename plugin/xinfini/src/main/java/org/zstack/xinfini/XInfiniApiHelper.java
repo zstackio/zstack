@@ -472,6 +472,11 @@ public class XInfiniApiHelper {
         } else {
             retryUtilResourceDeleted(gReq, GetBdcBdevResponse.class);
         }
+
+        if (!call(gReq, GetBdcBdevResponse.class).resourceIsDeleted()) {
+            throw new OperationFailureException(operr("bdev[id:%s] still exists after deletion polling on bdc[id:%s], " +
+                    "the old storage client may still hold the volume", bdevId, bdcId));
+        }
     }
 
     public VolumeModule rollbackSnapshot(int volId, int snapId) {
