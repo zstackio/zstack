@@ -10,10 +10,6 @@ import java.sql.Timestamp;
 public class SessionInventory implements Serializable {
     private String uuid;
     private String accountUuid;
-    @Deprecated
-    private String userUuid;
-    @Deprecated
-    private String userType;
     private Timestamp expiredDate;
     private Timestamp createDate;
     @APINoSee
@@ -24,17 +20,8 @@ public class SessionInventory implements Serializable {
         inv.setAccountUuid(vo.getAccountUuid());
         inv.setCreateDate(vo.getCreateDate());
         inv.setExpiredDate(vo.getExpiredDate());
-        inv.setUserUuid(vo.getUserUuid());
         inv.setUuid(vo.getUuid());
         return inv;
-    }
-
-    public boolean isAccountSession() {
-        return accountUuid.equals(userUuid);
-    }
-
-    public boolean isUserSession() {
-        return !accountUuid.equals(userUuid);
     }
 
     public String getUuid() {
@@ -51,16 +38,6 @@ public class SessionInventory implements Serializable {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
-    }
-
-    @Deprecated
-    public String getUserUuid() {
-        return userUuid;
-    }
-
-    @Deprecated
-    public void setUserUuid(String userUuid) {
-        this.userUuid = userUuid;
     }
 
     public Timestamp getExpiredDate() {
@@ -85,15 +62,5 @@ public class SessionInventory implements Serializable {
 
     public void setNoSessionEvaluation(boolean noSessionEvaluation) {
         this.noSessionEvaluation = noSessionEvaluation;
-    }
-
-    @Deprecated
-    public String getUserType() {
-        return userType;
-    }
-
-    @Deprecated
-    public void setUserType(String userType) {
-        this.userType = userType;
     }
 }

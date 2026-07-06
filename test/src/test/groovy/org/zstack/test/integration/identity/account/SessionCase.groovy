@@ -141,7 +141,6 @@ class SessionCase extends SubCase {
 
         assert sess2.uuid == sess1.uuid
         assert sess2.accountUuid == sess1.accountUuid
-        assert sess2.userUuid == sess1.userUuid
         /* suppose 30 seconds error */
         assert sess2.expiredDate.getTime() >= now.getTime() + TimeUnit.SECONDS.toMillis(3600)
         assert sess2.expiredDate.getTime() <= now.getTime() + TimeUnit.SECONDS.toMillis(3630L)

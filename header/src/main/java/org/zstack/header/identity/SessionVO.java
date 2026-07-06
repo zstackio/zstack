@@ -23,10 +23,6 @@ public class SessionVO {
     private String accountUuid;
 
     @Column
-    @Deprecated
-    private String userUuid;
-
-    @Column
     private Timestamp expiredDate;
 
     @Column
@@ -46,16 +42,6 @@ public class SessionVO {
 
     public void setAccountUuid(String accountUuid) {
         this.accountUuid = accountUuid;
-    }
-
-    @Deprecated
-    public String getUserUuid() {
-        return userUuid;
-    }
-
-    @Deprecated
-    public void setUserUuid(String userUuid) {
-        this.userUuid = userUuid;
     }
 
     public Timestamp getExpiredDate() {
