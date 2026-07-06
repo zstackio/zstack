@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
+public class AddAIBusinessGatewayOfferingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,15 +12,15 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelCenterBusinessNetworkProfileResult value;
+        public org.zstack.sdk.AddAIBusinessGatewayOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
                 );
             }
-            
+
             return this;
         }
     }
@@ -32,55 +32,25 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelCenterUuid;
+    public java.lang.String imageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String nativeClusterUuid;
-
-    @Param(required = true, validValues = {"VirtualMachine","Container"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String backendType;
+    public java.lang.String instanceOfferingUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String modelServiceNetworkUuid;
+    public java.lang.String managementNetworkUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String businessNetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String developerAccessNetworkUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerDeveloperAccessNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean defaultProfile;
-
-    @Param(required = false, validValues = {"Enabled","Disabled","Error"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gatewayScheme;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gatewayAddress;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer agentPort;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
-    public java.lang.Integer gatewayPort;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String gatewayManagementAddress;
+    public java.lang.Integer listenerPort;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -119,9 +89,9 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-        
-        org.zstack.sdk.AddModelCenterBusinessNetworkProfileResult value = res.getResult(org.zstack.sdk.AddModelCenterBusinessNetworkProfileResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelCenterBusinessNetworkProfileResult() : value; 
+
+        org.zstack.sdk.AddAIBusinessGatewayOfferingResult value = res.getResult(org.zstack.sdk.AddAIBusinessGatewayOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAIBusinessGatewayOfferingResult() : value;
 
         return ret;
     }
@@ -151,7 +121,7 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/ai/model-center-business-network-profiles";
+        info.path = "/ai/business-gateway-offerings";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
