@@ -4730,5 +4730,6 @@
   "ORG_ZSTACK_AI_10162": "ВМ[имя:%s, uuid:%s] должна быть запущена для монтирования/размонтирования модели. Текущее состояние: %s",
   "ORG_ZSTACK_AI_10163": "ВМ[имя:%s, uuid:%s] не запущена ни на одном хосте",
   "ORG_ZSTACK_AI_10164": "Модель[имя:%s, uuid:%s] не предоставлена аккаунту-владельцу этой ВМ (и не является публичной). Для монтирования модель должна быть доступна по тем же правилам, что и ВМ.",
-  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] не найден для модели[имя:%s, uuid:%s]"
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] не найден для модели[имя:%s, uuid:%s]",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
 }
