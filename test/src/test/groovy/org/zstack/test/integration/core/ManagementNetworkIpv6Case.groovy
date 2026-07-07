@@ -599,12 +599,15 @@ class ManagementNetworkIpv6Case extends SubCase {
     }
 
     void testCephAgentUrlUsesBracketedIpv6Host() {
+        int backupStorageAgentPort = CephGlobalProperty.BACKUP_STORAGE_AGENT_PORT
+        int primaryStorageAgentPort = CephGlobalProperty.PRIMARY_STORAGE_AGENT_PORT
+
         assert CephAgentUrl.backupStorageUrl(IPV6, "/ceph/backupstorage/echo") ==
-                "http://[2001:db8::1]:7761/ceph/backupstorage/echo"
+                "http://[2001:db8::1]:${backupStorageAgentPort}/ceph/backupstorage/echo"
         assert CephAgentUrl.primaryStorageUrl(IPV6, "/ceph/primarystorage/echo") ==
-                "http://[2001:db8::1]:7762/ceph/primarystorage/echo"
+                "http://[2001:db8::1]:${primaryStorageAgentPort}/ceph/primarystorage/echo"
         assert CephAgentUrl.backupStorageUrl(IPV4, "/ceph/backupstorage/echo") ==
-                "http://192.168.1.10:7761/ceph/backupstorage/echo"
+                "http://192.168.1.10:${backupStorageAgentPort}/ceph/backupstorage/echo"
 
         String oldBackupRootPath = CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH
         String oldPrimaryRootPath = CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH
@@ -612,13 +615,13 @@ class ManagementNetworkIpv6Case extends SubCase {
             CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH = "/zstack"
             CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = "/zstack"
             assert CephAgentUrl.backupStorageUrl(IPV6, "/ceph/backupstorage/echo") ==
-                    "http://[2001:db8::1]:7761/zstack/ceph/backupstorage/echo"
+                    "http://[2001:db8::1]:${backupStorageAgentPort}/zstack/ceph/backupstorage/echo"
             assert CephAgentUrl.primaryStorageUrl(IPV6, "/ceph/primarystorage/echo") ==
-                    "http://[2001:db8::1]:7762/zstack/ceph/primarystorage/echo"
+                    "http://[2001:db8::1]:${primaryStorageAgentPort}/zstack/ceph/primarystorage/echo"
             assert CephAgentUrl.backupStorageUrl(IPV4, "/ceph/backupstorage/echo") ==
-                    "http://192.168.1.10:7761/zstack/ceph/backupstorage/echo"
+                    "http://192.168.1.10:${backupStorageAgentPort}/zstack/ceph/backupstorage/echo"
             assert CephAgentUrl.primaryStorageUrl(IPV4, "/ceph/primarystorage/echo") ==
-                    "http://192.168.1.10:7762/zstack/ceph/primarystorage/echo"
+                    "http://192.168.1.10:${primaryStorageAgentPort}/zstack/ceph/primarystorage/echo"
         } finally {
             CephGlobalProperty.BACKUP_STORAGE_AGENT_URL_ROOT_PATH = oldBackupRootPath
             CephGlobalProperty.PRIMARY_STORAGE_AGENT_URL_ROOT_PATH = oldPrimaryRootPath
