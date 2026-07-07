@@ -20,24 +20,6 @@ public class SessionInventory  {
         return this.accountUuid;
     }
 
-    @Deprecated
-    public java.lang.String userUuid;
-    public void setUserUuid(java.lang.String userUuid) {
-        this.userUuid = userUuid;
-    }
-    public java.lang.String getUserUuid() {
-        return this.userUuid;
-    }
-
-    @Deprecated
-    public java.lang.String userType;
-    public void setUserType(java.lang.String userType) {
-        this.userType = userType;
-    }
-    public java.lang.String getUserType() {
-        return this.userType;
-    }
-
     public java.sql.Timestamp expiredDate;
     public void setExpiredDate(java.sql.Timestamp expiredDate) {
         this.expiredDate = expiredDate;

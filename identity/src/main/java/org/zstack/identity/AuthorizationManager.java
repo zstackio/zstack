@@ -113,10 +113,9 @@ public class AuthorizationManager implements GlobalApiMessageInterceptor, Compon
             session = evaluateSession(msg);
         }
 
-        logger.trace(String.format("authorizing message[%s] with user[accountUuid:%s, uuid:%s] session",
+        logger.trace(String.format("authorizing message[%s] with user[accountUuid:%s] session",
                 msg.getMessageName(),
-                session.getAccountUuid(),
-                session.getUserUuid()));
+                session.getAccountUuid()));
         return findAuthorizationBackend(session).authorize(msg);
     }
 

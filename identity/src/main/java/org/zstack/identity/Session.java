@@ -88,7 +88,6 @@ public class Session implements Component {
                 SessionVO vo = new SessionVO();
                 vo.setUuid(Platform.getUuid());
                 vo.setAccountUuid(accountUuid);
-                vo.setUserUuid(accountUuid); // for compatibility
                 long expiredTime = getCurrentSqlDate().getTime() + TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.SESSION_TIMEOUT.value(Long.class));
                 vo.setExpiredDate(new Timestamp(expiredTime));
                 persist(vo);
