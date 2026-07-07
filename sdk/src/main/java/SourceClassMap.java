@@ -11,6 +11,7 @@ public class SourceClassMap {
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.accessKey.AccessKeyType", "org.zstack.sdk.AccessKeyType");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
+			put("org.zstack.ai.entity.AIBusinessGatewayInventory", "org.zstack.sdk.AIBusinessGatewayInventory");
 			put("org.zstack.ai.entity.AIBusinessGatewayOfferingInventory", "org.zstack.sdk.AIBusinessGatewayOfferingInventory");
 			put("org.zstack.ai.entity.AiHostCacheStorageInventory", "org.zstack.sdk.AiHostCacheStorageInventory");
 			put("org.zstack.ai.entity.AiHostCacheStorageStatus", "org.zstack.sdk.AiHostCacheStorageStatus");
@@ -922,6 +923,7 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
+			put("org.zstack.sdk.AIBusinessGatewayInventory", "org.zstack.ai.entity.AIBusinessGatewayInventory");
 			put("org.zstack.sdk.AIBusinessGatewayOfferingInventory", "org.zstack.ai.entity.AIBusinessGatewayOfferingInventory");
 			put("org.zstack.sdk.AccessControlListEntryInventory", "org.zstack.header.acl.AccessControlListEntryInventory");
 			put("org.zstack.sdk.AccessControlListInventory", "org.zstack.header.acl.AccessControlListInventory");
