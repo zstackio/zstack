@@ -559,6 +559,33 @@ abstract class ApiHelper {
     }
 
 
+    def addAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def addAccessControlListEntry(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAccessControlListEntryAction.class) Closure c) {
         def a = new org.zstack.sdk.AddAccessControlListEntryAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -2199,6 +2226,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddModelCenterBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -12817,6 +12871,33 @@ abstract class ApiHelper {
     }
 
 
+    def deleteAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteAccessControlList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAccessControlListAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteAccessControlListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15834,6 +15915,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteModelCenterBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -43906,6 +44014,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateAccessControlList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAccessControlListAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAccessControlListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -47166,6 +47301,33 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateModelCenterBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
