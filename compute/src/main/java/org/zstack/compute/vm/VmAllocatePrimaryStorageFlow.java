@@ -19,6 +19,8 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.image.ImageInventory;
+import org.zstack.header.image.ImageBootMode;
+import org.zstack.header.image.ImageVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.BackupStorageVO;
 import org.zstack.header.storage.backup.BackupStorageVO_;
@@ -26,6 +28,7 @@ import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg;
 import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply;
 import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.header.storage.primary.PrimaryStorageFeature;
 import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -37,6 +40,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -80,6 +84,9 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
         rmsg.setSystemTags(spec.getRootVolumeSystemTags());
+        if (isLegacyBootImage(rmsg.getImageUuid())) {
+            rmsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.LEGACY_BOOT));
+        }
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
         msgs.add(rmsg);
 
@@ -168,6 +175,14 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
 
         spec.getVolumeSpecs().clear();
         chain.rollback();
+    }
+
+    private boolean isLegacyBootImage(String imageUuid) {
+        if (imageUuid == null) {
+            return false;
+        }
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(imageUuid, ImageVO.class, VmSystemTags.BOOT_MODE_TOKEN);
+        return bootMode == null || bootMode.equalsIgnoreCase(ImageBootMode.Legacy.name());
     }
 
     private List<String> selectPsTypesFromSpec(final VmInstanceSpec spec) {

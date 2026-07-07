@@ -6,4 +6,5 @@ package org.zstack.header.storage.primary;
  */
 public enum PrimaryStorageFeature {
     SHARED_VOLUME,
+    LEGACY_BOOT,
 }

@@ -41,6 +41,7 @@ import org.zstack.header.vm.cdrom.VmCdRomVO;
 import org.zstack.header.vm.cdrom.VmCdRomVO_;
 import org.zstack.header.volume.VolumeDeletionPolicyManager;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.header.volume.block.BlockVolumeVO;
@@ -1103,7 +1104,7 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
     }
 
     @Override
-    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, List<PrimaryStorageVO> candidates) {
+    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, String requiredProtocol, List<PrimaryStorageVO> candidates) {
         if (requiredFeatures.contains(PrimaryStorageFeature.SHARED_VOLUME)) {
             List<PrimaryStorageVO> excludeCandidates = candidates.stream()
                     .filter(v -> PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE.equals(v.getType()))
@@ -1113,6 +1114,37 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             logger.info(String.format("exclude external primary storage candidates: %s for shared volume feature", excludeCandidates));
 
             candidates.removeAll(excludeCandidates);
+        }
+
+        if (requiredFeatures.contains(PrimaryStorageFeature.LEGACY_BOOT)) {
+            List<PrimaryStorageVO> externalCandidates = candidates.stream()
+                    .filter(v -> PrimaryStorageConstant.EXTERNAL_PRIMARY_STORAGE_TYPE.equals(v.getType()))
+                    .filter(v -> controllers.containsKey(v.getUuid()))
+                    .collect(Collectors.toList());
+
+            if (!externalCandidates.isEmpty()) {
+                Map<String, String> protocolByUuid = requiredProtocol != null ? Collections.emptyMap() :
+                        Q.New(ExternalPrimaryStorageVO.class)
+                                .select(ExternalPrimaryStorageVO_.uuid, ExternalPrimaryStorageVO_.defaultProtocol)
+                                .in(ExternalPrimaryStorageVO_.uuid, externalCandidates.stream().map(PrimaryStorageVO::getUuid).collect(Collectors.toList()))
+                                .listTuple().stream()
+                                .collect(Collectors.toMap(t -> t.get(0, String.class), t -> t.get(1, String.class)));
+
+                List<PrimaryStorageVO> excludeCandidates = externalCandidates.stream()
+                        .filter(v -> {
+                            String protocol = requiredProtocol != null ? requiredProtocol : protocolByUuid.get(v.getUuid());
+                            // only vhost-user-blk exposes the raw logical sector to the guest; other protocols
+                            // go through the qemu block layer which does 512e emulation
+                            return VolumeProtocol.Vhost.toString().equals(protocol)
+                                    && controllers.get(v.getUuid()).reportCapabilities().getMinLogicalSectorSize() > 512;
+                        })
+                        .collect(Collectors.toList());
+
+                logger.info(String.format("exclude external primary storage candidates: %s for legacy boot feature, " +
+                        "they expose a logical sector size larger than 512 bytes on which a Legacy-BIOS image cannot boot", excludeCandidates));
+
+                candidates.removeAll(excludeCandidates);
+            }
         }
 
         return candidates;

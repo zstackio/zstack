@@ -11,5 +11,5 @@ import java.util.Set;
  * @ Date   : Created in 10:49 2025/7/15
  */
 public interface PrimaryStorageFeatureAllocatorExtensionPoint {
-    List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, List<PrimaryStorageVO> candidates);
+    List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, String requiredProtocol, List<PrimaryStorageVO> candidates);
 }

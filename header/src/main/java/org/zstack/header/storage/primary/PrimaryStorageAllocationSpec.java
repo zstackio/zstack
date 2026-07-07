@@ -25,6 +25,15 @@ public class PrimaryStorageAllocationSpec {
     private List<String> excludePrimaryStorageTypes;
     private String backupStorageUuid;
     private Set<PrimaryStorageFeature> requiredFeatures;
+    private String requiredProtocol;
+
+    public String getRequiredProtocol() {
+        return requiredProtocol;
+    }
+
+    public void setRequiredProtocol(String requiredProtocol) {
+        this.requiredProtocol = requiredProtocol;
+    }
 
     public Set<PrimaryStorageFeature> getRequiredFeatures() {
         return requiredFeatures;
