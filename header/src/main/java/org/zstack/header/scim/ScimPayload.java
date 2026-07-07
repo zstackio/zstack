@@ -28,6 +28,8 @@ public class ScimPayload {
     public String virtualIDUuid;
     public String groupUuid;
     public String roleUuid;
+    public String templateRoleUuid;
+    public String externalType;
     public String subjectType;
     public String subjectUuid;
     public String principalType;
