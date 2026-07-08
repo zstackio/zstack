@@ -20,6 +20,7 @@ class ErrorCodeCase extends SubCase {
     @Override
     void test() {
         testErrorCodeDeserializer()
+        testErrorCodeWithClassOpaque()
     }
 
     static void testErrorCodeDeserializer() {
@@ -106,6 +107,16 @@ class ErrorCodeCase extends SubCase {
         assert errorCode instanceof ErrorCode
         assert errorCode.code == "SYS.1000"
         assert errorCode.details == "on purpose"
+    }
+
+    static void testErrorCodeWithClassOpaque() {
+        def e = new org.zstack.header.errorcode.ErrorCode()
+        e.code = "TEST.1001"
+        e.details = "testErrorCodeWithClassOpaque"
+        e.opaque = [:]
+        e.opaque["a"] = ErrorCodeCase.class
+        def text = e.toString()
+        assert text.contains("\"a\":\"${ErrorCodeCase.name}\"")
     }
 
     static ApiResult createApiResult(String text) {
