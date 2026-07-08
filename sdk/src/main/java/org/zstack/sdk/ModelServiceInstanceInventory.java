@@ -1,5 +1,6 @@
 package org.zstack.sdk;
 
+import org.zstack.sdk.ModelServiceLaunchCommandInventory;
 import org.zstack.sdk.VmInstanceInventory;
 
 public class ModelServiceInstanceInventory  {
@@ -82,6 +83,14 @@ public class ModelServiceInstanceInventory  {
     }
     public java.lang.String getJupyterUrl() {
         return this.jupyterUrl;
+    }
+
+    public ModelServiceLaunchCommandInventory launchCommand;
+    public void setLaunchCommand(ModelServiceLaunchCommandInventory launchCommand) {
+        this.launchCommand = launchCommand;
+    }
+    public ModelServiceLaunchCommandInventory getLaunchCommand() {
+        return this.launchCommand;
     }
 
     public java.lang.String vmInstanceUuid;
