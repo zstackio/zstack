@@ -307,6 +307,14 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public Map<String, Long> actualSizes;
     }
 
+    public static class RollbackVolumeEncryptionCmd extends AgentCommand implements Serializable {
+        public String volumeUuid;
+        public List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items;
+    }
+
+    public static class RollbackVolumeEncryptionRsp extends AgentResponse {
+    }
+
     public static class GetPhysicalCapacityCmd extends AgentCommand {
         private String hostUuid;
 
@@ -1097,6 +1105,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String PREFIX_REBASE_BACKING_FILES_PATH = "/localstorage/snapshot/prefixrebasebackingfiles";
     public static final String ENCRYPT_VOLUME_BITS_PATH = "/localstorage/volume/encryptinplace";
     public static final String CONVERT_VOLUME_ENCRYPTION_PATH = "/localstorage/volume/convertencryption";
+    public static final String ROLLBACK_VOLUME_ENCRYPTION_PATH = "/localstorage/volume/convertencryption/rollback";
 
     public LocalStorageKvmBackend() {
     }
@@ -4178,6 +4187,28 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         completion.fail(operr("failed to convert volume[uuid:%s] encryption on local storage host[uuid:%s]: %s",
+                                msg.getVolume().getUuid(), hostUuid, errorCode));
+                    }
+                });
+    }
+
+    @Override
+    void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg, String hostUuid,
+                ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply> completion) {
+        RollbackVolumeEncryptionCmd cmd = new RollbackVolumeEncryptionCmd();
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.items = msg.getItems();
+
+        httpCall(ROLLBACK_VOLUME_ENCRYPTION_PATH, hostUuid, cmd, RollbackVolumeEncryptionRsp.class,
+                new ReturnValueCompletion<RollbackVolumeEncryptionRsp>(completion) {
+                    @Override
+                    public void success(RollbackVolumeEncryptionRsp rsp) {
+                        completion.success(new RollbackVolumeEncryptionOnPrimaryStorageReply());
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(operr("failed to rollback volume[uuid:%s] encryption conversion on local storage host[uuid:%s]: %s",
                                 msg.getVolume().getUuid(), hostUuid, errorCode));
                     }
                 });

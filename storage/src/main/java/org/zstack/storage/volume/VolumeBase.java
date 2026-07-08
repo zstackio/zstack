@@ -3396,8 +3396,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        deleteConvertedVolumeEncryptionBits(conversionContext.get().items);
-                        trigger.rollback();
+                        rollbackVolumeEncryptionOnPrimaryStorage(conversionContext.get().items, trigger);
                     }
                 });
 
@@ -3730,23 +3729,22 @@ public class VolumeBase extends AbstractVolume implements Volume {
         return installPath != null && installPath.startsWith("sharedblock://");
     }
 
-    private void deleteConvertedVolumeEncryptionBits(List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items) {
-        Set<String> sourceInstallPaths = items.stream()
-                .map(ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem::getSourceInstallPath)
-                .collect(Collectors.toSet());
-        for (ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem item : items) {
-            if (sourceInstallPaths.contains(item.getTargetInstallPath())) {
-                continue;
+    private void rollbackVolumeEncryptionOnPrimaryStorage(List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items,
+                                                          FlowRollback trigger) {
+        RollbackVolumeEncryptionOnPrimaryStorageMsg rmsg = new RollbackVolumeEncryptionOnPrimaryStorageMsg();
+        rmsg.setVolume(VolumeInventory.valueOf(self));
+        rmsg.setItems(items);
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(rmsg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to rollback volume[uuid:%s] encryption conversion on primary storage[uuid:%s]: %s",
+                            self.getUuid(), self.getPrimaryStorageUuid(), reply.getError().getReadableDetails()));
+                }
+                trigger.rollback();
             }
-            DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-            dmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-            dmsg.setInstallPath(item.getTargetInstallPath());
-            dmsg.setBitsUuid(item.getResourceUuid());
-            dmsg.setBitsType(item.getResourceType());
-            dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(self.getFormat()).toString());
-            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-            bus.send(dmsg);
-        }
+        });
     }
 
     @Transactional

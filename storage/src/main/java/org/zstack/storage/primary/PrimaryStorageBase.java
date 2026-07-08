@@ -188,6 +188,13 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
         bus.reply(msg, reply);
     }
 
+    protected void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        RollbackVolumeEncryptionOnPrimaryStorageReply reply = new RollbackVolumeEncryptionOnPrimaryStorageReply();
+        reply.setError(operr("primary storage[type:%s, uuid:%s] does not support rollback volume encryption conversion",
+                self.getType(), self.getUuid()));
+        bus.reply(msg, reply);
+    }
+
     public PrimaryStorageBase(PrimaryStorageVO self) {
         this.self = self;
     }
@@ -431,6 +438,8 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             handle((GetVolumeSnapshotEncryptedOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ConvertVolumeEncryptionOnPrimaryStorageMsg) {
             handle((ConvertVolumeEncryptionOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RollbackVolumeEncryptionOnPrimaryStorageMsg) {
+            handle((RollbackVolumeEncryptionOnPrimaryStorageMsg) msg);
         } else if (msg instanceof DeleteVolumeChainOnPrimaryStorageMsg) {
             handle((DeleteVolumeChainOnPrimaryStorageMsg) msg);
         } else if (msg instanceof CleanUpStorageTrashOnPrimaryStorageMsg) {

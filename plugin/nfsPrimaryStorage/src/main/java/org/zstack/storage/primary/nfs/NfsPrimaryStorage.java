@@ -140,6 +140,8 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
             handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ConvertVolumeEncryptionOnPrimaryStorageMsg) {
             handle((ConvertVolumeEncryptionOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RollbackVolumeEncryptionOnPrimaryStorageMsg) {
+            handle((RollbackVolumeEncryptionOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -158,6 +160,30 @@ public class NfsPrimaryStorage extends PrimaryStorageBase {
         backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply>(msg) {
             @Override
             public void success(ConvertVolumeEncryptionOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        RollbackVolumeEncryptionOnPrimaryStorageReply reply = new RollbackVolumeEncryptionOnPrimaryStorageReply();
+        NfsPrimaryStorageBackend backend = getUsableBackend();
+        if (backend == null) {
+            reply.setError(operr("the NFS primary storage[uuid:%s, name:%s] cannot find any usable host to rollback volume[uuid:%s] encryption conversion",
+                    self.getUuid(), self.getName(), msg.getVolume().getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        backend.handle(getSelfInventory(), msg, new ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(RollbackVolumeEncryptionOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 
