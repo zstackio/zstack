@@ -26,6 +26,8 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.*;
+import org.zstack.header.core.trash.InstallPathRecycleVO;
+import org.zstack.header.core.trash.InstallPathRecycleVO_;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -3396,8 +3398,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        deleteConvertedVolumeEncryptionBits(conversionContext.get().items);
-                        trigger.rollback();
+                        rollbackVolumeEncryptionOnPrimaryStorage(conversionContext.get().items, trigger);
                     }
                 });
 
@@ -3591,13 +3592,14 @@ public class VolumeBase extends AbstractVolume implements Volume {
         for (VolumeSnapshotVO snapshot : snapshots) {
             if (StringUtils.isNotBlank(snapshot.getPrimaryStorageInstallPath())) {
                 String sourceTrashPath = makeSourceSnapshotTrashInstallPath(snapshot.getPrimaryStorageInstallPath(), snapshot.getUuid(),
-                        snapshot.isEncrypted(), trashPaths);
+                        snapshot.isEncrypted(), snapshot.getPrimaryStorageUuid(), trashPaths);
                 if (StringUtils.isNotBlank(sourceTrashPath)) {
                     paths.put(snapshot.getPrimaryStorageInstallPath(), sourceTrashPath);
                 }
             }
         }
-        paths.put(self.getInstallPath(), makeSourceTrashInstallPath(self.getInstallPath(), self.getUuid(), self.isEncrypted(), trashPaths));
+        paths.put(self.getInstallPath(), makeSourceTrashInstallPath(self.getInstallPath(), self.getUuid(), self.isEncrypted(),
+                self.getPrimaryStorageUuid(), TrashType.ConvertVolumeEncryption, trashPaths));
         return paths;
     }
 
@@ -3701,25 +3703,48 @@ public class VolumeBase extends AbstractVolume implements Volume {
         return String.format("%s%s/%s", prefix, path.substring(0, poolEnd), resourceUuid);
     }
 
-    private String makeSourceSnapshotTrashInstallPath(String installPath, String resourceUuid, boolean sourceEncrypted, Set<String> trashPaths) {
+    private String makeSourceSnapshotTrashInstallPath(String installPath, String resourceUuid, boolean sourceEncrypted,
+                                                      String primaryStorageUuid, Set<String> trashPaths) {
         if (isCephInstallPath(installPath)) {
             return null;
         }
-        return makeSourceTrashInstallPath(installPath, resourceUuid, sourceEncrypted, trashPaths);
+        return makeSourceTrashInstallPath(installPath, resourceUuid, sourceEncrypted, primaryStorageUuid,
+                TrashType.ConvertVolumeSnapshotEncryption, trashPaths);
     }
 
-    private String makeSourceTrashInstallPath(String installPath, String resourceUuid, boolean sourceEncrypted, Set<String> trashPaths) {
-        String trashPath;
+    private String makeSourceTrashInstallPath(String installPath, String resourceUuid, boolean sourceEncrypted,
+                                              String primaryStorageUuid, TrashType trashType, Set<String> trashPaths) {
+        String fileName = String.format("%s.trash.%s.qcow2",
+                resourceUuid, sourceEncrypted ? "encrypted" : "plain");
+        String trashPath = isCephInstallPath(installPath) ?
+                makeCephVolumeInstallPath(installPath, fileName) :
+                makeSiblingInstallPath(installPath, fileName);
+
+        if (trashPaths.add(trashPath) && !isRecordedTrashInstallPath(primaryStorageUuid, trashType, trashPath)) {
+            return trashPath;
+        }
+
         do {
-            String fileName = String.format("%s.trash.%s.%s.qcow2",
+            fileName = String.format("%s.trash.%s.%s.qcow2",
                     resourceUuid, sourceEncrypted ? "encrypted" : "plain", Platform.getUuid().substring(0, 6));
-            if (isCephInstallPath(installPath)) {
-                trashPath = makeCephVolumeInstallPath(installPath, fileName);
-            } else {
-                trashPath = makeSiblingInstallPath(installPath, fileName);
-            }
-        } while (!trashPaths.add(trashPath));
+            trashPath = isCephInstallPath(installPath) ?
+                    makeCephVolumeInstallPath(installPath, fileName) :
+                    makeSiblingInstallPath(installPath, fileName);
+        } while (!trashPaths.add(trashPath) || isRecordedTrashInstallPath(primaryStorageUuid, trashType, trashPath));
         return trashPath;
+    }
+
+    private boolean isRecordedTrashInstallPath(String primaryStorageUuid, TrashType trashType, String installPath) {
+        if (StringUtils.isBlank(primaryStorageUuid) || StringUtils.isBlank(installPath)) {
+            return false;
+        }
+
+        return Q.New(InstallPathRecycleVO.class)
+                .eq(InstallPathRecycleVO_.storageUuid, primaryStorageUuid)
+                .eq(InstallPathRecycleVO_.storageType, PrimaryStorageVO.class.getSimpleName())
+                .eq(InstallPathRecycleVO_.trashType, trashType.toString())
+                .eq(InstallPathRecycleVO_.installPath, installPath)
+                .isExists();
     }
 
     private boolean isCephInstallPath(String installPath) {
@@ -3730,23 +3755,22 @@ public class VolumeBase extends AbstractVolume implements Volume {
         return installPath != null && installPath.startsWith("sharedblock://");
     }
 
-    private void deleteConvertedVolumeEncryptionBits(List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items) {
-        Set<String> sourceInstallPaths = items.stream()
-                .map(ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem::getSourceInstallPath)
-                .collect(Collectors.toSet());
-        for (ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem item : items) {
-            if (sourceInstallPaths.contains(item.getTargetInstallPath())) {
-                continue;
+    private void rollbackVolumeEncryptionOnPrimaryStorage(List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items,
+                                                          FlowRollback trigger) {
+        RollbackVolumeEncryptionOnPrimaryStorageMsg rmsg = new RollbackVolumeEncryptionOnPrimaryStorageMsg();
+        rmsg.setVolume(VolumeInventory.valueOf(self));
+        rmsg.setItems(items);
+        bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
+        bus.send(rmsg, new CloudBusCallBack(trigger) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to rollback volume[uuid:%s] encryption conversion on primary storage[uuid:%s]: %s",
+                            self.getUuid(), self.getPrimaryStorageUuid(), reply.getError().getReadableDetails()));
+                }
+                trigger.rollback();
             }
-            DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-            dmsg.setPrimaryStorageUuid(self.getPrimaryStorageUuid());
-            dmsg.setInstallPath(item.getTargetInstallPath());
-            dmsg.setBitsUuid(item.getResourceUuid());
-            dmsg.setBitsType(item.getResourceType());
-            dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(self.getFormat()).toString());
-            bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
-            bus.send(dmsg);
-        }
+        });
     }
 
     @Transactional

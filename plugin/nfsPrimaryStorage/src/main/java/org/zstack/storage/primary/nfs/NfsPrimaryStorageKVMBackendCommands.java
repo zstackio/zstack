@@ -549,6 +549,14 @@ public class NfsPrimaryStorageKVMBackendCommands {
         public Map<String, Long> actualSizes;
     }
 
+    public static class RollbackVolumeEncryptionCmd extends NfsPrimaryStorageAgentCommand implements Serializable {
+        public String volumeUuid;
+        public List<ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem> items;
+    }
+
+    public static class RollbackVolumeEncryptionRsp extends NfsPrimaryStorageAgentResponse {
+    }
+
     public static class DeleteCmd extends NfsPrimaryStorageAgentCommand {
         private boolean folder;
         private String installPath;

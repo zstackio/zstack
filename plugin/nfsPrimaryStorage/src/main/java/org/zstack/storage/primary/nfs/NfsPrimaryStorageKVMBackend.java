@@ -140,6 +140,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     public static final String CREATE_VOLUME_FROM_TEMPLATE_PATH = "/nfsprimarystorage/sftp/createvolumefromtemplate";
     public static final String ENCRYPT_VOLUME_BITS_PATH = "/nfsprimarystorage/volume/encryptinplace";
     public static final String CONVERT_VOLUME_ENCRYPTION_PATH = "/nfsprimarystorage/volume/convertencryption";
+    public static final String ROLLBACK_VOLUME_ENCRYPTION_PATH = "/nfsprimarystorage/volume/convertencryption/rollback";
     public static final String GET_QCOW2_HASH_VALUE_PATH = "/nfsprimarystorage/getqcow2hash";
     public static final String WRITE_VM_METADATA_PATH = "/nfsprimarystorage/vm/metadata/write";
 
@@ -2383,6 +2384,40 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 ConvertVolumeEncryptionOnPrimaryStorageReply r = new ConvertVolumeEncryptionOnPrimaryStorageReply();
                 r.setActualSizes(rsp.actualSizes);
                 completion.success(r);
+            }
+        });
+    }
+
+    @Override
+    public void handle(PrimaryStorageInventory inv, RollbackVolumeEncryptionOnPrimaryStorageMsg msg,
+                       ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply> completion) {
+        HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        RollbackVolumeEncryptionCmd cmd = new RollbackVolumeEncryptionCmd();
+        cmd.setUuid(inv.getUuid());
+        cmd.volumeUuid = msg.getVolume().getUuid();
+        cmd.items = msg.getItems();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(ROLLBACK_VOLUME_ENCRYPTION_PATH);
+        hmsg.setHostUuid(host.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, host.getUuid());
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                RollbackVolumeEncryptionRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(RollbackVolumeEncryptionRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr("failed to rollback volume[uuid:%s] encryption conversion on NFS primary storage[uuid:%s] via host[uuid:%s]: %s",
+                            msg.getVolume().getUuid(), inv.getUuid(), host.getUuid(), rsp.getError()));
+                    return;
+                }
+
+                completion.success(new RollbackVolumeEncryptionOnPrimaryStorageReply());
             }
         });
     }

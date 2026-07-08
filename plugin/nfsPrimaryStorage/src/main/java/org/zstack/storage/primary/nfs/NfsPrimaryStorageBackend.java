@@ -56,6 +56,8 @@ public interface NfsPrimaryStorageBackend {
 
     void handle(PrimaryStorageInventory inv, ConvertVolumeEncryptionOnPrimaryStorageMsg msg, ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply> completion);
 
+    void handle(PrimaryStorageInventory inv, RollbackVolumeEncryptionOnPrimaryStorageMsg msg, ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply> completion);
+
     void getPhysicalCapacity(PrimaryStorageInventory inv, ReturnValueCompletion<PhysicalCapacityUsage> completion);
 
     void checkIsBitsExisting(PrimaryStorageInventory inv, String installPath, ReturnValueCompletion<Boolean> completion);

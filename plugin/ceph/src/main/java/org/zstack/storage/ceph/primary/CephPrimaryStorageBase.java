@@ -464,6 +464,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long virtualSize;
     }
 
+    public static class KVMHostLuksRollbackConvertCmd implements Serializable {
+        public String psUuid;
+        public String installPath;
+        public String targetInstallPath;
+        public String sourceTrashInstallPath;
+    }
+
     public static class KVMHostImageStoreEncryptedDownloadCmd implements Serializable {
         public String psUuid;
         public String hostname;
@@ -1454,6 +1461,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HOST_LUKS_ENCRYPT_IN_PLACE_PATH = "/ceph/primarystorage/kvmhost/encryptinplace";
     public static final String KVM_HOST_LUKS_RESIZE_PATH = "/ceph/primarystorage/kvmhost/luksresize";
     public static final String KVM_HOST_LUKS_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert";
+    public static final String KVM_HOST_LUKS_ROLLBACK_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert/rollback";
     public static final String LUKS_REPLACE_VOLUME_PATH = "/ceph/primarystorage/volume/luksreplace";
     public static final String LUKS_SWAP_IN_PLACE_PATH = "/ceph/primarystorage/volume/luksswapinplace";
     public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_DOWNLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encrypteddownload";
@@ -3669,6 +3677,64 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                         bus.reply(msg, reply);
                                     }
                                 });
+                    }
+                });
+    }
+
+    @Override
+    protected void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        RollbackVolumeEncryptionOnPrimaryStorageReply reply = new RollbackVolumeEncryptionOnPrimaryStorageReply();
+        if (msg.getItems() == null || msg.getItems().size() != 1) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion requires volume snapshots to be merged before rollback; volume[uuid:%s] has %s rollback items",
+                    msg.getVolume().getUuid(), msg.getItems() == null ? 0 : msg.getItems().size()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem item = msg.getItems().get(0);
+        if (!VolumeVO.class.getSimpleName().equals(item.getResourceType())) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion only supports the active volume after snapshots are merged, but got resource[type:%s, uuid:%s]",
+                    item.getResourceType(), item.getResourceUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (StringUtils.isBlank(item.getSourceInstallPath()) || item.getSourceInstallPath().contains("@")) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion requires an active RBD source path, but got source path[%s]",
+                    item.getSourceInstallPath()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String hostUuid;
+        try {
+            hostUuid = findConnectedHostForCephLuks();
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        KVMHostLuksRollbackConvertCmd kcmd = new KVMHostLuksRollbackConvertCmd();
+        kcmd.psUuid = self.getUuid();
+        kcmd.installPath = item.getSourceInstallPath();
+        kcmd.targetInstallPath = item.getTargetInstallPath();
+        kcmd.sourceTrashInstallPath = item.getSourceTrashInstallPath();
+
+        httpCallToKvmHost(hostUuid, KVM_HOST_LUKS_ROLLBACK_CONVERT_PATH, kcmd, KVMHostLuksRsp.class,
+                new ReturnValueCompletion<KVMHostLuksRsp>(msg) {
+                    @Override
+                    public void fail(ErrorCode err) {
+                        reply.setError(err);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void success(KVMHostLuksRsp ret) {
+                        bus.reply(msg, reply);
                     }
                 });
     }
