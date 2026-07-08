@@ -130,31 +130,88 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
         }
 
         String resolvedLocale = locale != null ? locale : LocaleUtils.DEFAULT_LOCALE;
+        localizeNestedErrors(error, resolvedLocale);
 
+        String message = null;
         if (error.getGlobalErrorCode() != null) {
-            String message = getLocalizedMessage(error.getGlobalErrorCode(), resolvedLocale, error.getFormatArgs());
-            if (message != null) {
-                error.setMessage(message);
-            }
+            message = getLocalizedMessage(error.getGlobalErrorCode(), resolvedLocale, error.getFormatArgs());
         }
 
-        // guarantee: message is never null
-        if (error.getMessage() == null) {
-            String fallback = error.getDetails() != null ? error.getDetails() : error.getDescription();
-            error.setMessage(fallback != null ? fallback : (error.getCode() != null ? error.getCode() : ""));
+        if (message == null) {
+            message = getLocalizedCauseMessage(error, resolvedLocale);
         }
 
+        if (message == null) {
+            message = error.getDetails() != null ? error.getDetails() : error.getDescription();
+        }
+
+        error.setMessage(message != null ? message : (error.getCode() != null ? error.getCode() : ""));
+    }
+
+    private void localizeNestedErrors(ErrorCode error, String locale) {
         if (error.getCause() != null) {
-            localizeErrorCode(error.getCause(), resolvedLocale);
+            localizeErrorCode(error.getCause(), locale);
         }
 
         if (error instanceof ErrorCodeList) {
             List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
             if (causes != null) {
                 for (ErrorCode cause : causes) {
-                    localizeErrorCode(cause, resolvedLocale);
+                    if (cause != null) {
+                        localizeErrorCode(cause, locale);
+                    }
                 }
             }
         }
+    }
+
+    private String getLocalizedCauseMessage(ErrorCode error, String locale) {
+        if (hasLocalizedTemplate(error.getCause(), locale) && isNotBlank(error.getCause().getMessage())) {
+            return error.getCause().getMessage();
+        }
+
+        if (error instanceof ErrorCodeList) {
+            List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
+            if (causes != null) {
+                for (ErrorCode cause : causes) {
+                    if (hasLocalizedTemplate(cause, locale) && isNotBlank(cause.getMessage())) {
+                        return cause.getMessage();
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private boolean hasLocalizedTemplate(ErrorCode error, String locale) {
+        if (error == null) {
+            return false;
+        }
+
+        if (error.getGlobalErrorCode() != null && getTemplate(error.getGlobalErrorCode(), locale) != null) {
+            return true;
+        }
+
+        if (hasLocalizedTemplate(error.getCause(), locale)) {
+            return true;
+        }
+
+        if (error instanceof ErrorCodeList) {
+            List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
+            if (causes != null) {
+                for (ErrorCode cause : causes) {
+                    if (hasLocalizedTemplate(cause, locale)) {
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isNotBlank(String value) {
+        return value != null && !value.trim().isEmpty();
     }
 }

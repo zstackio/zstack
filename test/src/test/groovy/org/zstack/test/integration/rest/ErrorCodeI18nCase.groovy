@@ -38,6 +38,8 @@ class ErrorCodeI18nCase extends SubCase {
             testServiceFormatsArgs()
             testServiceRecursiveCauseChain()
             testServiceErrorCodeList()
+            testServiceFallbackToLocalizedCauseWhenOuterCodeHasNoTemplate()
+            testServiceKeepsOuterDetailsWhenCauseHasNoTemplate()
             testRestServerSyncApiWithAcceptLanguage()
             testRestServerAsyncApiWithAcceptLanguage()
             testNoAcceptLanguageHeaderFallsBackToEnUS()
@@ -129,6 +131,54 @@ class ErrorCodeI18nCase extends SubCase {
         assert errorList.getMessage().contains("list-uuid")
         assert errorList.getCauses()[0].getMessage().contains("child1-uuid")
         assert errorList.getCauses()[1].getMessage().contains("child2-uuid")
+    }
+
+    void testServiceFallbackToLocalizedCauseWhenOuterCodeHasNoTemplate() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+
+        ErrorCode cause = new ErrorCode()
+        cause.setCode(SysErrors.OPERATION_ERROR.toString())
+        cause.setDetails("当VM平台为OTHER时，DataVolumes和CDROM的数量不能超过3个，目前为4")
+        cause.setGlobalErrorCode("ORG_ZSTACK_KVM_10080")
+        cause.setFormatArgs(["4"] as String[])
+
+        ErrorCode outer = new ErrorCode()
+        outer.setCode("VM.1001")
+        outer.setDescription("Unable to start a vm")
+        outer.setDetails("当VM平台为OTHER时，DataVolumes和CDROM的数量不能超过3个，目前为4")
+        outer.setGlobalErrorCode("ORG_ZSTACK_COMPUTE_VM_10291")
+        outer.setCause(cause)
+
+        i18nService.localizeErrorCode(outer, "en_US")
+
+        assert outer.getMessage() == cause.getMessage()
+        assert outer.getMessage().contains("When the VM platform is Other")
+        assert !outer.getMessage().contains("当VM平台")
+
+        i18nService.localizeErrorCode(outer, "zh_CN")
+
+        assert outer.getMessage() == cause.getMessage()
+        assert outer.getMessage().contains("虚拟机平台")
+    }
+
+    void testServiceKeepsOuterDetailsWhenCauseHasNoTemplate() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+
+        ErrorCode cause = new ErrorCode()
+        cause.setCode(SysErrors.OPERATION_ERROR.toString())
+        cause.setDetails("inner raw details")
+        cause.setGlobalErrorCode("UNMAPPED_CAUSE_CODE")
+
+        ErrorCode outer = new ErrorCode()
+        outer.setCode("VM.1001")
+        outer.setDetails("outer raw details")
+        outer.setGlobalErrorCode("UNMAPPED_OUTER_CODE")
+        outer.setCause(cause)
+
+        i18nService.localizeErrorCode(outer, "en_US")
+
+        assert cause.getMessage() == "inner raw details"
+        assert outer.getMessage() == "outer raw details"
     }
 
     void testRestServerSyncApiWithAcceptLanguage() {
