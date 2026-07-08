@@ -4730,5 +4730,6 @@
   "ORG_ZSTACK_AI_10162": "VM「%s」(UUID: %s)는 모델을 마운트/언마운트하려면 실행 중 상태여야 합니다. 현재 상태: %s",
   "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s)는 어떤 호스트에서도 실행되고 있지 않습니다",
   "ORG_ZSTACK_AI_10164": "모델「%s」(UUID: %s)이(가) 이 VM이 속한 계정에 공유되어 있지 않습니다(또는 공개되지 않음). 마운트하려면 동일한 공유 규칙을 따르세요.",
-  "ORG_ZSTACK_AI_10165": "모델 센터 (UUID: %s)를 찾을 수 없습니다 (관련 모델: 「%s」UUID: %s)"
+  "ORG_ZSTACK_AI_10165": "모델 센터 (UUID: %s)를 찾을 수 없습니다 (관련 모델: 「%s」UUID: %s)",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
 }

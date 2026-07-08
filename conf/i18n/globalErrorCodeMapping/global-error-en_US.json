@@ -4744,6 +4744,7 @@
   "ORG_ZSTACK_AI_10163": "VM[name:%s, uuid:%s] is not running on any host",
   "ORG_ZSTACK_AI_10164": "Model[name:%s, uuid:%s] is not shared to the account that owns this VM (or to public). Mount requires the model to be accessible under the same sharing rules as the VM.",
   "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] not found for Model[name:%s, uuid:%s]",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up",
   "ORG_ZSTACK_NETWORK_ZNS_10043": "failed to allocate DHCPv4 server IP for ZNS L3[uuid:%s]",
   "ORG_ZSTACK_NETWORK_ZNS_10044": "cannot enable DHCP: L3[uuid:%s] has no eligible IpRange (SLAAC excluded)",
   "ORG_ZSTACK_NETWORK_ZNS_10045": "cannot enable DHCP: L3[uuid:%s] has no Cloud-reserved DHCPv4 server IP",

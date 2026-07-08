@@ -4730,5 +4730,6 @@
   "ORG_ZSTACK_AI_10162": "VM[name:%s, uuid:%s] muss zum Mounten/Unmounten des Modells laufen. Aktueller Zustand: %s",
   "ORG_ZSTACK_AI_10163": "VM[name:%s, uuid:%s] läuft auf keinem Host",
   "ORG_ZSTACK_AI_10164": "Modell[name:%s, uuid:%s] ist nicht für das Konto der VM freigegeben (oder öffentlich). Zum Mounten muss das Modell denselben Freigaberegeln wie die VM unterliegen.",
-  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] wurde für das Modell[name:%s, uuid:%s] nicht gefunden"
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] wurde für das Modell[name:%s, uuid:%s] nicht gefunden",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
 }

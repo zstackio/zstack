@@ -4730,5 +4730,6 @@
   "ORG_ZSTACK_AI_10162": "VM[nama:%s, uuid:%s] harus dalam status running untuk mount/unmount model. Status saat ini: %s",
   "ORG_ZSTACK_AI_10163": "VM[nama:%s, uuid:%s] tidak berjalan pada host manapun",
   "ORG_ZSTACK_AI_10164": "Model[nama:%s, uuid:%s] tidak dibagikan ke akun pemilik VM ini (atau ke publik). Mount membutuhkan model yang dapat diakses dengan aturan berbagi yang sama dengan VM.",
-  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] tidak ditemukan untuk Model[nama:%s, uuid:%s]"
+  "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] tidak ditemukan untuk Model[nama:%s, uuid:%s]",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
 }

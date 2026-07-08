@@ -4730,5 +4730,6 @@
   "ORG_ZSTACK_AI_10162": "VM「%s」(UUID: %s) はモデルのマウント/アンマウントには Running 状態である必要があります。現在の状態: %s",
   "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s) はどのホストでも実行されていません",
   "ORG_ZSTACK_AI_10164": "モデル「%s」(UUID: %s) は VM の所属アカウントに共有されていない（または公開されていない）ため、マウントできません。",
-  "ORG_ZSTACK_AI_10165": "モデルセンター (UUID: %s) が見つかりません（関連モデル: 「%s」UUID: %s）"
+  "ORG_ZSTACK_AI_10165": "モデルセンター (UUID: %s) が見つかりません（関連モデル: 「%s」UUID: %s）",
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
 }
