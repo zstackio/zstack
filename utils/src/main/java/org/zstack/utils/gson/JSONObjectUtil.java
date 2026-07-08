@@ -16,17 +16,17 @@ public class JSONObjectUtil {
     private static final Gson prettyGson;
     
     static {
-        gson = new GsonBuilder().registerTypeAdapter(Integer.class, new JsonDeserializer<Integer>() {
-            @Override
-            public Integer deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
-                Long l = jsonElement.getAsLong();
-                if (l > Integer.MAX_VALUE) {
-                    throw new NumberFormatException(String.format("%d is Integer overflow, Integer.MAX_VALUE is %d", l, Integer.MAX_VALUE));
-                } else {
-                    return l.intValue();
-                }
+        gson = new GsonBuilder().registerTypeAdapter(Integer.class, (JsonDeserializer<Integer>) (jsonElement, type, jsonDeserializationContext) -> {
+            Long l = jsonElement.getAsLong();
+            if (l > Integer.MAX_VALUE) {
+                throw new NumberFormatException(String.format("%d is Integer overflow, Integer.MAX_VALUE is %d", l, Integer.MAX_VALUE));
+            } else {
+                return l.intValue();
             }
-        }).setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+        })
+                .registerTypeAdapter(Class.class,
+                        (JsonSerializer<Class<?>>) (aClass, type, context) -> (aClass == null) ? JsonNull.INSTANCE : new JsonPrimitive(aClass.getName()))
+                .setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
                 .disableHtmlEscaping()
                 .create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
