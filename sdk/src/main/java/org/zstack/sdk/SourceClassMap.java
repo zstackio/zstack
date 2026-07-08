@@ -652,6 +652,8 @@ public class SourceClassMap {
 			put("org.zstack.zsv.core.entity.NodeRolesItemView", "org.zstack.sdk.zsv.core.entity.NodeRolesItemView");
 			put("org.zstack.zsv.core.entity.NodeRolesView", "org.zstack.sdk.zsv.core.entity.NodeRolesView");
 			put("org.zstack.zsv.storage.entity.CephPluginConnectionView", "org.zstack.sdk.zsv.storage.entity.CephPluginConnectionView");
+			put("org.zstack.zsv.telemetry.entity.TelemetryConsentView", "org.zstack.sdk.zsv.telemetry.entity.TelemetryConsentView");
+			put("org.zstack.zsv.telemetry.entity.TelemetrySettingView", "org.zstack.sdk.zsv.telemetry.entity.TelemetrySettingView");
 			put("org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam", "org.zstack.sdk.zwatch.alarm.ActionParam");
 			put("org.zstack.zwatch.alarm.AlarmActionInventory", "org.zstack.sdk.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.zwatch.alarm.AlarmDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory");
@@ -1367,6 +1369,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zsv.core.entity.NodeRolesItemView", "org.zstack.zsv.core.entity.NodeRolesItemView");
 			put("org.zstack.sdk.zsv.core.entity.NodeRolesView", "org.zstack.zsv.core.entity.NodeRolesView");
 			put("org.zstack.sdk.zsv.storage.entity.CephPluginConnectionView", "org.zstack.zsv.storage.entity.CephPluginConnectionView");
+			put("org.zstack.sdk.zsv.telemetry.entity.TelemetryConsentView", "org.zstack.zsv.telemetry.entity.TelemetryConsentView");
+			put("org.zstack.sdk.zsv.telemetry.entity.TelemetrySettingView", "org.zstack.zsv.telemetry.entity.TelemetrySettingView");
 			put("org.zstack.sdk.zwatch.alarm.ActionParam", "org.zstack.zwatch.alarm.APICreateAlarmMsg$ActionParam");
 			put("org.zstack.sdk.zwatch.alarm.AlarmActionInventory", "org.zstack.zwatch.alarm.AlarmActionInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory", "org.zstack.zwatch.alarm.AlarmDataAckInventory");
