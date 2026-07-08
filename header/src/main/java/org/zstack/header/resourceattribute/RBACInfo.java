@@ -14,7 +14,7 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .zsvAdvancedAvailable()
+                .communityAvailable()
                 .build();
     }
 

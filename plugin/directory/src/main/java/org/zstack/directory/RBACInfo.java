@@ -16,7 +16,7 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyForAll()
-                .zsvBasicAvailable()
+                .communityAvailable()
                 .zsvProAvailable()
                 .build();
     }
