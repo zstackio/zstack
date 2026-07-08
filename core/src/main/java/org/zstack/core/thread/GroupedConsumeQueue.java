@@ -1,17 +1,25 @@
 package org.zstack.core.thread;
 
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
+
 import java.util.*;
 import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Created by MaJin on 2020/5/25.
  */
 public abstract class GroupedConsumeQueue<T> {
-    private Queue<T> itemPool = new LinkedBlockingQueue<>();
-    private Map<String, DelayedQueue<T>> groupedQueue = new HashMap<>();
+    private static final CLogger logger = Utils.getLogger(GroupedConsumeQueue.class);
 
-    private int maxDelayedTime = 1;
+    private final Queue<T> itemPool = new LinkedBlockingQueue<>();
+    private final Map<String, DelayedQueue<T>> groupedQueue = new HashMap<>();
+    private final Timer timer = new Timer("grouped-consume-queue", true);
+    private final AtomicBoolean started = new AtomicBoolean(false);
+
+    private volatile int maxDelayedTime = 1;
 
     public GroupedConsumeQueue(int maxDelayedTime) {
         this.maxDelayedTime = maxDelayedTime;
@@ -27,18 +35,22 @@ public abstract class GroupedConsumeQueue<T> {
     }
 
     public void start() {
+        if (!started.compareAndSet(false, true)) {
+            return;
+        }
+
         java.util.TimerTask timerTask = new TimerTask() {
             @Override
             public void run() {
                 try {
                     collectItems();
-                } finally {
-                    start();
+                } catch (Throwable t) {
+                    logger.warn("Failed to collect grouped consume queue items", t);
                 }
             }
         };
 
-        new Timer().schedule(timerTask, 1000);
+        timer.schedule(timerTask, 1000, 1000);
     }
 
     public void setMaxDelayedTime(int maxDelayedTime) {
