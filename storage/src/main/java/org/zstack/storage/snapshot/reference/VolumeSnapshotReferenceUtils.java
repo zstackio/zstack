@@ -83,6 +83,14 @@ public class VolumeSnapshotReferenceUtils {
         return null;
     }
 
+    // use getVolumeAllSnapshotsReferencedOtherVolumes or isVolumeDirectlyReferenceByOthers
+    @Deprecated
+    public static List<String> getVolumeSnapshotsReferencedByOtherVolumes(String volumeUuid) {
+        return getVolumeReferenceRef(volumeUuid).stream()
+                .map(VolumeSnapshotReferenceVO::getVolumeSnapshotInstallUrl).distinct()
+                .collect(Collectors.toList());
+    }
+
     // get volume snapshotUuids referenced by other volumes directly or indirectly
     // FIXME split different primary storage snapshot reference
     public static Set<String> getVolumeAllSnapshotsReferencedByOtherVolumes(String volumeUuid) {

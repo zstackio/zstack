@@ -5189,6 +5189,16 @@ public class KVMHost extends HostBase implements Host {
                 errCode = operr("unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
                         self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
             } else {
+                if (rsp.isFirstConnect()) {
+                    long cutoffMillis = rsp.getAgentStartTimeMillis() - TimeUnit.SECONDS.toMillis(60);
+                    int drained = restf.failPendingCallsForResourceBefore(self.getUuid(), cutoffMillis,
+                            operr("kvmagent on host[uuid:%s] restarted at %s, pending HTTP call sent before %s aborted",
+                                    self.getUuid(), rsp.getAgentStartTimeMillis(), cutoffMillis));
+                    if (drained > 0) {
+                        logger.info(String.format("kvmagent on host[uuid:%s] restarted at %d, drained %d pending HTTP call(s)",
+                                self.getUuid(), rsp.getAgentStartTimeMillis(), drained));
+                    }
+                }
                 VersionComparator libvirtVersion = new VersionComparator(rsp.getLibvirtVersion());
                 VersionComparator qemuVersion = new VersionComparator(rsp.getQemuVersion());
                 boolean liveSnapshot = libvirtVersion.compare(KVMConstant.MIN_LIBVIRT_LIVESNAPSHOT_VERSION) >= 0
@@ -5513,7 +5523,7 @@ public class KVMHost extends HostBase implements Host {
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                final String cmd = String.format("curl --connect-timeout 10 %s|| wget --spider -q --connect-timeout=10 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                final String cmd = String.format("curl --connect-timeout 10 --max-time 15 %s|| wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
@@ -5575,10 +5585,10 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
+                                .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
+                                .setHostname(getSelf().getManagementIp());
                         try {
-                            Ssh ssh = new Ssh().setUsername(getSelf().getUsername())
-                                    .setPassword(getSelf().getPassword()).setPort(getSelf().getPort())
-                                    .setHostname(getSelf().getManagementIp());
                             ssh.command(String.format("grep -i ^uuid %s | sed 's/uuid://g'", hostTakeOverFlagPath));
                             SshResult hostRet = ssh.run();
                             if (hostRet.isSshFailure() || hostRet.getReturnCode() != 0) {
@@ -5627,6 +5637,8 @@ public class KVMHost extends HostBase implements Host {
                             logger.warn(e.getMessage(), e);
                             trigger.next();
                             return;
+                        } finally {
+                            ssh.close();
                         }
                     }
                 });
