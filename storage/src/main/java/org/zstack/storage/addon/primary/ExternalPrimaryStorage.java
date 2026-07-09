@@ -62,6 +62,8 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -136,6 +138,11 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
                 .listValues();
 
+        int totalHosts = hostInventories.size();
+        double threshold = ExternalPrimaryStorageGlobalConfig.ATTACH_HOST_DEPLOY_FAILURE_RATIO_THRESHOLD.value(Double.class);
+        AtomicInteger failedCount = new AtomicInteger();
+        Queue<HostInventory> deployedHosts = new ConcurrentLinkedQueue<>();
+
         // the next attach or reconnect to overwrite.
         new While<>(hostInventories).each((host, compl) -> {
             node.deployClient(host, protocols, new Completion(compl) {
@@ -146,6 +153,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     updateHostProtocolStatus(host.getUuid(), statuses, null, new NoErrorCompletion(compl) {
                         @Override
                         public void done() {
+                            deployedHosts.add(host);
                             compl.done();
                         }
                     });
@@ -153,13 +161,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    logger.warn(String.format("host[uuid:%s] failed to deploy client for primary storage[uuid:%s]",
+                            host.getUuid(), self.getUuid()));
                     Map<String, PrimaryStorageHostStatus> statuses = new HashMap<>();
                     protocols.forEach(p -> statuses.put(p, PrimaryStorageHostStatus.Disconnected));
                     updateHostProtocolStatus(host.getUuid(), statuses, errorCode, new NoErrorCompletion(compl) {
                         @Override
                         public void done() {
-                            compl.addError(errorCode);
-                            compl.allDone();
+                            if ((double) failedCount.incrementAndGet() / totalHosts > threshold) {
+                                compl.addError(errorCode);
+                                compl.allDone();
+                                return;
+                            }
+                            compl.done();
                         }
                     });
                 }
@@ -172,7 +186,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     return;
                 }
 
-                activateHeartbeatVolumeForAttach(hostInventories.get(0), completion);
+                activateHeartbeatVolumeForAttach(deployedHosts.peek(), completion);
             }
         });
     }
