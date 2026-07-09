@@ -12,6 +12,6 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class L3NetworkQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig L3_NUM = new GlobalConfig(CATEGORY, L3NetworkQuotaConstant.L3_NUM);
 }

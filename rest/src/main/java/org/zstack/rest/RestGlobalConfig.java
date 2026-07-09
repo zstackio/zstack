@@ -13,7 +13,7 @@ public class RestGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig COMPLETED_API_EXPIRED_PERIOD = new GlobalConfig(CATEGORY, "completedApi.expiredPeriod");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig SCAN_EXPIRED_API_INTERVAL = new GlobalConfig(CATEGORY, "expiredApi.scanInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig CHECK_TIME_ZONE = new GlobalConfig(CATEGORY, "checkTimeZone");

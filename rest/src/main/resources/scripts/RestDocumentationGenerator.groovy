@@ -138,21 +138,21 @@ class RestDocumentationGenerator implements DocumentGenerator {
                             boolean isInteger = (conf != null && conf.type == Integer.class.getName()) ||
                                     (configBef != null && configBef.type() == Integer.class)
 
-                            if (validator.numberGreaterThan() == Long.MIN_VALUE
-                                    && validator.numberLessThan() == Long.MAX_VALUE) {
+                            if (validator.min() == Long.MIN_VALUE
+                                    && validator.max() == Long.MAX_VALUE) {
                                 if (validator.inNumberRange().length != 0) {
                                     validatorMap.put(config.getIdentity(), "["
                                             + validator.inNumberRange().join(" ,") + "]")
                                 } else {
                                     validatorMap.put(config.getIdentity(),
-                                            generateRangeString(isInteger, validator.numberGreaterThan(),
-                                                    validator.numberLessThan()))
+                                            generateRangeString(isInteger, validator.min(),
+                                                    validator.max()))
                                 }
                                 continue
                             }
-                            if (validator.numberGreaterThan() != Long.MIN_VALUE
-                                    && validator.numberLessThan() != Long.MAX_VALUE) {
-                                if (validator.numberGreaterThan() > validator.numberLessThan()) {
+                            if (validator.min() != Long.MIN_VALUE
+                                    && validator.max() != Long.MAX_VALUE) {
+                                if (validator.min() > validator.max()) {
                                     throw new CloudRuntimeException(
                                             String.format("The globalConfigValidation of " +
                                                     "GlobalConfig[%s] is illegal." +
@@ -160,12 +160,12 @@ class RestDocumentationGenerator implements DocumentGenerator {
                                                     config.getName()))
                                 }
                                 validatorMap.put(config.getIdentity(), "["
-                                        + validator.numberGreaterThan().toString() + ", "
-                                        + validator.numberLessThan().toString() + "]")
+                                        + validator.min().toString() + ", "
+                                        + validator.max().toString() + "]")
                             } else {
                                 validatorMap.put(config.getIdentity(),
-                                        generateRangeString(isInteger, validator.numberGreaterThan(),
-                                                validator.numberLessThan()))
+                                        generateRangeString(isInteger, validator.min(),
+                                                validator.max()))
                             }
 
                         } catch (IllegalAccessException e) {
@@ -329,8 +329,8 @@ class RestDocumentationGenerator implements DocumentGenerator {
                 });
 
                 if (at.inNumberRange().length > 0
-                        || at.numberGreaterThan() != Long.MIN_VALUE
-                        || at.numberLessThan() != Long.MAX_VALUE) {
+                        || at.min() != Long.MIN_VALUE
+                        || at.max() != Long.MAX_VALUE) {
                     if (config.getType() != null && TypeUtils.isTypeOf(config.getType(), Long.class, Integer.class)) {
                         throw new CloudRuntimeException(String.format("%s has @GlobalConfigValidation " +
                                 "defined on field[%s.%s] which indicates its numeric type, " +
@@ -346,16 +346,16 @@ class RestDocumentationGenerator implements DocumentGenerator {
                     }
                 }
 
-                if (at.numberLessThan() != Long.MAX_VALUE) {
+                if (at.max() != Long.MAX_VALUE) {
                     config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
                         @Override
                         public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                             try {
                                 long num = Long.parseLong(value)
-                                if (num > at.numberLessThan()) {
+                                if (num > at.max()) {
                                     throw new GlobalConfigException(
-                                            String.format("%s should not greater than %s, but got %s",
-                                                    config.getCanonicalName(), at.numberLessThan(), num))
+                                            String.format("%s.max should be %s, but got %s",
+                                                    config.getCanonicalName(), at.max(), num))
                                 }
                             } catch (NumberFormatException e) {
                                 throw new GlobalConfigException(
@@ -365,16 +365,16 @@ class RestDocumentationGenerator implements DocumentGenerator {
                     })
                 }
 
-                if (at.numberGreaterThan() != Long.MIN_VALUE) {
+                if (at.min() != Long.MIN_VALUE) {
                     config.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
                         @Override
                         public void validateGlobalConfig(String category, String name, String oldValue, String value) throws GlobalConfigException {
                             try {
                                 long num = Long.parseLong(value)
-                                if (num < at.numberGreaterThan()) {
+                                if (num < at.min()) {
                                     throw new GlobalConfigException(
-                                            String.format("%s should not less than %s, but got %s",
-                                                    config.getCanonicalName(), at.numberGreaterThan(), num))
+                                            String.format("%s.min should be %s, but got %s",
+                                                    config.getCanonicalName(), at.min(), num))
                                 }
                             } catch (NumberFormatException e) {
                                 throw new GlobalConfigException(
@@ -801,30 +801,30 @@ class RestDocumentationGenerator implements DocumentGenerator {
         String validatorString = initializer.validatorMap.get(globalConfig.getIdentity())
         Boolean flag = true
         if (md.globalConfig.name != globalConfig.name) {
-            logger.info("name of ${mdPath} is not latest")
+            logger.info("${mdPath}.name: expect ${globalConfig.name}, actual ${md.globalConfig.name}")
             flag = false
         }
         if (md.globalConfig.defaultValue != globalConfig.defaultValue) {
-            logger.info("defaultValue of ${mdPath} is not latest")
+            logger.info("${mdPath}.defaultValue: expect ${globalConfig.defaultValue}, actual ${md.globalConfig.defaultValue}")
             flag = false
         }
         if (StringUtils.trimToEmpty(md.globalConfig.description) != StringUtils.trimToEmpty(globalConfig.description)) {
-            logger.info("desc of ${mdPath} is not latest")
+            logger.info("${mdPath}.description:\n    expect ${globalConfig.description}\n    actual ${md.globalConfig.description}")
                 flag = false
         }
         if (md.globalConfig.type != globalConfig.type) {
             if (globalConfig.type != null) {
-                logger.info("type of ${mdPath} is not latest")
+                logger.info("${mdPath}.type: expect ${globalConfig.type}, actual ${md.globalConfig.type}")
                 flag = false
             }
         }
         if (md.globalConfig.category != globalConfig.category) {
-            logger.info("category of ${mdPath} is not latest")
+            logger.info("${mdPath}.category: expect ${globalConfig.category}, actual ${md.globalConfig.category}")
             flag = false
         }
             List<String> oldClasses = md.globalConfig.resources.sort()
             if (oldClasses != newClasses) {
-                logger.info("classes of ${mdPath} is not latest")
+                logger.info("${mdPath}.classes: expect ${newClasses}, actual ${oldClasses}")
                 flag = false
             }
 
@@ -832,7 +832,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
             boolean useBooleanValidator = (globalConfig.type == "java.lang.Boolean"
                     && md.globalConfig.valueRange == "{true, false}")
             if (validatorString != null || !useBooleanValidator) {
-                logger.info("valueRange of ${mdPath} is not latest")
+                logger.info("${mdPath}.valueRange:\n    expect ${validatorString}\n    actual ${md.globalConfig.valueRange}")
                 flag = false
             }
         }

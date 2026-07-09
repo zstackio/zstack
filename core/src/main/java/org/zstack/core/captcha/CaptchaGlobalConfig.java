@@ -12,11 +12,11 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class CaptchaGlobalConfig {
     public static final String CATEGORY = "captcha";
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(defaultValue = "3600", type = Long.class, description = "The interval management server checks expired captcha, in seconds")
     public static GlobalConfig CAPTCHA_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "captcha.cleanup.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(defaultValue = "300", type = Long.class, description = "Period of validity for a verify code, in minutes")
     public static GlobalConfig CAPTCHA_VALID_PERIOD = new GlobalConfig(CATEGORY, "captcha.valid.period");
 

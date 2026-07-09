@@ -12,10 +12,10 @@ import org.zstack.resourceconfig.BindResourceConfig;
 public class BackupStorageGlobalConfig {
     public static final String CATEGORY = "backupStorage";
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
 
     @GlobalConfigValidation
@@ -25,12 +25,12 @@ public class BackupStorageGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig AUTO_RECONNECT_ON_ERROR = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig AUTO_RECONNECT_ON_ERROR_MAX_ATTEMPT_NUM = new GlobalConfig(CATEGORY, "connection.autoReconnectOnError.maxAttemptsNum");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig MAXIMUM_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.maxFailure");
 
-    @GlobalConfigValidation(numberGreaterThan = -1)
+    @GlobalConfigValidation(min = -1)
     public static GlobalConfig SLEEP_TIME_AFTER_PING_FAILURE = new GlobalConfig(CATEGORY, "ping.sleepPeriodAfterFailure");
 }

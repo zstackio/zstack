@@ -14,13 +14,13 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation(validValues = {"Direct", "Delay", "Never"})
     public static GlobalConfig DELETION_POLICY = new GlobalConfig(CATEGORY, "deletionPolicy");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig DELETION_GARBAGE_COLLECTION_INTERVAL = new GlobalConfig(CATEGORY, "deletion.gcInterval");
 
     @GlobalConfigValidation()
@@ -32,9 +32,9 @@ public class ImageGlobalConfig {
     @GlobalConfigValidation()
     public static GlobalConfig DOWNLOAD_LOCALPATH_CUSTOMFILTER = new GlobalConfig(CATEGORY, "download.localPath.customFilter");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig UPLOAD_FAILURE_TOLERANCE_COUNT = new GlobalConfig(CATEGORY, "upload.failure.tolerance.count");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig UPLOAD_MAX_IDLE_IN_SECONDS = new GlobalConfig(CATEGORY, "upload.max.idle.duration.in.seconds");
 }

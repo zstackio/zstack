@@ -9,7 +9,7 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class SshKeyPairQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     @GlobalConfigDef(type = Integer.class, defaultValue = "20", description = "default ssh key pair quota")
     public static GlobalConfig SSH_KEY_PAIR_NUM = new GlobalConfig(CATEGORY, SshKeyPairQuotaConstant.SSH_KEY_PAIR_NUM);
 }

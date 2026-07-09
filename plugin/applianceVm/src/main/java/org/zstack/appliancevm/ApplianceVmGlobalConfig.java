@@ -3,9 +3,6 @@ package org.zstack.appliancevm;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
-import org.zstack.header.cluster.ClusterVO;
-import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  */
@@ -13,16 +10,16 @@ import org.zstack.resourceconfig.BindResourceConfig;
 public class ApplianceVmGlobalConfig {
     public static final String CATEGORY = "applianceVm";
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "connect.timeout");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig SSH_LOGIN_TIMEOUT = new GlobalConfig(CATEGORY, "ssh.timeout");
     @GlobalConfigValidation
     public static GlobalConfig DEPLOY_AGENT_ON_START = new GlobalConfig(CATEGORY, "agent.deployOnStart");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig BOOTSTRAPINFO_TIMEOUT = new GlobalConfig(CATEGORY, "bootstrapinfo.timeout");
 
-    @GlobalConfigValidation(numberGreaterThan = 300)
+    @GlobalConfigValidation(min = 300)
     public static GlobalConfig DELETE_TIMEOUT = new GlobalConfig(CATEGORY, "deletion.timeout");
     @GlobalConfigValidation
     public static GlobalConfig APPLIANCENUMA = new GlobalConfig(CATEGORY, "applianceVmNuma");
@@ -33,6 +30,6 @@ public class ApplianceVmGlobalConfig {
     @GlobalConfigValidation()
     public static GlobalConfig ENABLE_ABNORMAL_FILE_REPORTER = new GlobalConfig(CATEGORY, "enableAbnormalFileReporter");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig ABNORMAL_FILE_MAX_SIZE = new GlobalConfig(CATEGORY, "abnormalFileMaxSize");
 }

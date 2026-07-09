@@ -15,7 +15,7 @@ public class LogGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig LOG_DELETE_ACCUMULATED_FILE_SIZE = new GlobalConfig(CATEGORY, "log.delete.accumulatedFileSize");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(defaultValue = "30", type = Long.class, description = "sync custom log configuration interval")
     public static GlobalConfig SYNC_CUSTOM_LOG_CONFIGURATION_TASK_INTERVAL = new GlobalConfig(CATEGORY, "log.syncCustomLogConfigurationTaskInterval");
 }
