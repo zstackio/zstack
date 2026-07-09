@@ -11,10 +11,10 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class GCGlobalConfig {
     public static final String CATEGORY = "gc";
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig SCAN_ORPHAN_JOB_INTERVAL = new GlobalConfig(CATEGORY, "orphanJobScanInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig CLEAN_UP_COMPLETED_JOB_INTERVAL = new GlobalConfig(CATEGORY, "cleanUpCompletedJobInterval");
 
     @GlobalConfigValidation

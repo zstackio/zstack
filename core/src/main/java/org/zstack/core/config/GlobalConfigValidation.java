@@ -9,8 +9,8 @@ import java.lang.annotation.Target;
 @Retention(java.lang.annotation.RetentionPolicy.RUNTIME)
 public @interface GlobalConfigValidation {
     long[] inNumberRange() default {};
-    long numberGreaterThan() default Long.MIN_VALUE;
-    long numberLessThan() default Long.MAX_VALUE;
+    long min() default Long.MIN_VALUE;
+    long max() default Long.MAX_VALUE;
     boolean notNull() default true;
     boolean notEmpty() default true;
     String[] validValues() default {};

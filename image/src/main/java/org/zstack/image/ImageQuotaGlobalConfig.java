@@ -11,8 +11,8 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class ImageQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig IMAGE_NUM = new GlobalConfig(CATEGORY, ImageQuotaConstant.IMAGE_NUM);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig IMAGE_SIZE = new GlobalConfig(CATEGORY, ImageQuotaConstant.IMAGE_SIZE);
 }

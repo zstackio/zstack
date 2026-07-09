@@ -13,27 +13,27 @@ import org.zstack.resourceconfig.BindResourceConfig;
 public class PrimaryStorageGlobalConfig {
     public static final String CATEGORY = "primaryStorage";
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig IMAGE_CACHE_GARBAGE_COLLECTOR_INTERVAL = new GlobalConfig(CATEGORY, "imageCache.garbageCollector.interval");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL =
             new GlobalConfig(CATEGORY, "primarystorage.delete.bits.garbageCollector.interval");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PRIMARY_STORAGE_DELETEBITS_TIMES =
             new GlobalConfig(CATEGORY, "primarystorage.delete.bits.times");
     @GlobalConfigValidation
     public static GlobalConfig PRIMARY_STORAGE_DELETEBITS_ON = new GlobalConfig(CATEGORY, "primarystorage.delete.bits.garbage.on");
     @GlobalConfigValidation
     public static GlobalConfig RESERVED_CAPACITY = new GlobalConfig(CATEGORY, "reservedCapacity");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "ping.interval");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PING_PARALLELISM_DEGREE = new GlobalConfig(CATEGORY, "ping.parallelismDegree");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     @BindResourceConfig({PrimaryStorageVO.class})
     public static GlobalConfig PRIMARY_STORAGE_AUTO_DELETE_TRASH = new GlobalConfig(CATEGORY, "primarystorage.auto.delete.trash.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     @BindResourceConfig({PrimaryStorageVO.class})
     public static GlobalConfig TRASH_EXPIRATION_TIME = new GlobalConfig(CATEGORY, "trash.expiration.time");
 
@@ -52,10 +52,10 @@ public class PrimaryStorageGlobalConfig {
     @BindResourceConfig({PrimaryStorageVO.class})
     @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
     public static GlobalConfig UNDO_TEMP_SNAPSHOT = new GlobalConfig(CATEGORY, "undo.tempSnapshot");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(defaultValue = "1", type = Long.class)
     public static GlobalConfig COLLECT_AND_FORECAST_INTERVAL = new GlobalConfig(CATEGORY, "collect.forecast.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PRIMARY_STORAGE_HOST_STATUS_REFRESH_INTERVAL = new GlobalConfig(CATEGORY, "primarystorage.host.status.refresh.interval");
 }

@@ -13,18 +13,18 @@ public class ConsoleGlobalConfig {
     @GlobalConfigValidation(validValues = {"NONE", "TLSV1_1", "TLSV1_2"})
     public static GlobalConfig PROXY_TLS_VERSION = new GlobalConfig(CATEGORY, "proxy.tls.version");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PROXY_IDLE_TIMEOUT = new GlobalConfig(CATEGORY, "proxy.idleTimeout");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig PING_INTERVAL = new GlobalConfig(CATEGORY, "agent.ping.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VNC_TOKEN_TIMEOUT = new GlobalConfig(CATEGORY, "vnc.token.timeout");
 
     @GlobalConfigValidation
     public static GlobalConfig VNC_ALLOW_PORTS_LIST = new GlobalConfig(CATEGORY, "vnc.allow.ports");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig DELETE_CONSOLE_PROXY_RETRY_DELAY = new GlobalConfig(CATEGORY, "delete.consoleproxy.gc.delay");
 }

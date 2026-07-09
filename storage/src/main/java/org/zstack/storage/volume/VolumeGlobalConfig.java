@@ -20,16 +20,16 @@ public class VolumeGlobalConfig {
     @GlobalConfigValidation(validValues = {"Direct","Delay", "Never"})
     public static GlobalConfig VOLUME_DELETION_POLICY = new GlobalConfig(CATEGORY, "deletionPolicy");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VOLUME_EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig VOLUME_EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 600)
+    @GlobalConfigValidation(min = 600)
     public static GlobalConfig REFRESH_VOLUME_SIZE_INTERVAL = new GlobalConfig(CATEGORY, "refreshVolumeSizeInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 100)
+    @GlobalConfigValidation(min = 1, max = 100)
     public static GlobalConfig HOST_COUNT_PER_BATCH_REFRESH_VOLUME_SIZE = new GlobalConfig(CATEGORY, "refreshVolumeSize.hostCountPerBatch");
 
     @GlobalConfigValidation(validValues = {"AllActive", "Monitored", "None"})

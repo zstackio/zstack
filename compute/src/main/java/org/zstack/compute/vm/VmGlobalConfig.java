@@ -20,9 +20,9 @@ public class VmGlobalConfig {
     public static GlobalConfig UPDATE_INSTANCE_OFFERING_TO_NULL_WHEN_DELETING = new GlobalConfig(CATEGORY, "instanceOffering.setNullWhenDeleting");
     @GlobalConfigValidation(validValues = {"Direct","Delay", "Never"})
     public static GlobalConfig VM_DELETION_POLICY = new GlobalConfig(CATEGORY, "deletionPolicy");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_EXPUNGE_PERIOD = new GlobalConfig(CATEGORY, "expungePeriod");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig VM_EXPUNGE_INTERVAL = new GlobalConfig(CATEGORY, "expungeInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig VM_CLEAN_TRAFFIC = new GlobalConfig(CATEGORY, "cleanTraffic");
@@ -43,7 +43,7 @@ public class VmGlobalConfig {
     public static GlobalConfig VM_MAX_VCPU = new GlobalConfig(CATEGORY, "vm.max.vcpu");
     @GlobalConfigValidation
     public static GlobalConfig VM_BOOT_MENU = new GlobalConfig(CATEGORY, "bootMenu");
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 65535)
+    @GlobalConfigValidation(min = 0, max = 65535)
     @BindResourceConfig(value = {VmInstanceVO.class})
     public static GlobalConfig VM_BOOT_MENU_SPLASH_TIMEOUT = new GlobalConfig(CATEGORY, "bootMenuSplashTimeout");
     @GlobalConfigValidation(validValues = {"true", "false"})
@@ -61,10 +61,10 @@ public class VmGlobalConfig {
     @GlobalConfigValidation(validValues = {"true","false"})
     public static GlobalConfig MULTI_VNIC_SUPPORT = new GlobalConfig(CATEGORY, "multivNic.support");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+    @GlobalConfigValidation(min = 0, max = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
     public static GlobalConfig VM_DEFAULT_CD_ROM_NUM = new GlobalConfig(CATEGORY, "vmDefaultCdRomNum");
 
-    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
+    @GlobalConfigValidation(min = 1, max = VmInstanceConstant.MAXIMUM_CDROM_NUMBER)
     public static GlobalConfig MAXIMUM_CD_ROM_NUM = new GlobalConfig(CATEGORY, "maximumCdRomNum");
 
     @GlobalConfigValidation(inNumberRange = {0, 28})
@@ -78,10 +78,10 @@ public class VmGlobalConfig {
     @BindResourceConfig({VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_CRASH_STRATEGY = new GlobalConfig(CATEGORY, "crash.strategy");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_REBOOT_THRESHOLD_DURATION = new GlobalConfig(CATEGORY, "crash.rebootThreshold.duration");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_REBOOT_THRESHOLD_TIMES = new GlobalConfig(CATEGORY, "crash.rebootThreshold.times");
 
     @GlobalConfigValidation(validValues = {"Auto", "All"})
@@ -92,7 +92,7 @@ public class VmGlobalConfig {
     @BindResourceConfig({VmNicVO.class, VmInstanceVO.class, ClusterVO.class})
     public static GlobalConfig VM_NIC_MULTIQUEUE_NUM = new GlobalConfig(CATEGORY, "nicMultiQueueNum");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig UNKNOWN_GC_INTERVAL = new GlobalConfig(CATEGORY, "set.unknown.gc.interval");
 
     @GlobalConfigDef(defaultValue = "Microsoft Hv", type = String.class, description = "set vendor_id")
@@ -150,45 +150,45 @@ public class VmGlobalConfig {
     @GlobalConfigValidation()
     public static GlobalConfig VM_METADATA_LAST_REFRESH_VERSION = new GlobalConfig(CATEGORY, "vm.metadata.lastRefreshVersion");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 100)
+    @GlobalConfigValidation(min = 0, max = 100)
     public static GlobalConfig VM_METADATA_FLUSH_CONCURRENCY = new GlobalConfig(CATEGORY, "vm.metadata.flush.concurrency");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
+    @GlobalConfigValidation(min = 0, max = 300)
     public static GlobalConfig VM_METADATA_FLUSH_POLL_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.flush.pollInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 1000)
+    @GlobalConfigValidation(min = 0, max = 1000)
     public static GlobalConfig VM_METADATA_FLUSH_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.flush.batchSize");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 168)
+    @GlobalConfigValidation(min = 0, max = 168)
     public static GlobalConfig VM_METADATA_CLEANUP_GC_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.cleanup.gc.interval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 10)
+    @GlobalConfigValidation(min = 0, max = 10)
     public static GlobalConfig VM_METADATA_FLUSH_MAX_RETRY = new GlobalConfig(CATEGORY, "vm.metadata.flush.maxRetry");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 120)
+    @GlobalConfigValidation(min = 0, max = 120)
     public static GlobalConfig VM_METADATA_FLUSH_ZOMBIE_CLAIM_THRESHOLD = new GlobalConfig(CATEGORY, "vm.metadata.flush.zombieClaimThreshold");
 
-    @GlobalConfigValidation(numberGreaterThan = 21599, numberLessThan = 172801)
+    @GlobalConfigValidation(min = 21599, max = 172801)
     public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 86400)
+    @GlobalConfigValidation(min = 0, max = 86400)
     public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 1000)
+    @GlobalConfigValidation(min = 0, max = 1000)
     public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_MAX_CYCLES = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryMaxCycles");
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_METADATA_PAYLOAD_REJECT_THRESHOLD = new GlobalConfig(CATEGORY, "vm.metadata.payload.rejectThreshold");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 86400)
+    @GlobalConfigValidation(min = 0, max = 86400)
     public static GlobalConfig VM_METADATA_MAINTENANCE_ORPHAN_CHECK_INTERVAL = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.orphanCheckInterval");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 20)
+    @GlobalConfigValidation(min = 0, max = 20)
     public static GlobalConfig VM_METADATA_MAINTENANCE_STALE_RECOVERY_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.staleRecoveryBatchSize");
 
-    @GlobalConfigValidation(numberGreaterThan = 9, numberLessThan = 201)
+    @GlobalConfigValidation(min = 9, max = 201)
     public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftBatchSize");
 
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 31)
+    @GlobalConfigValidation(min = 0, max = 31)
     public static GlobalConfig VM_METADATA_MAINTENANCE_CONTENT_DRIFT_BATCH_SLEEP_SEC = new GlobalConfig(CATEGORY, "vm.metadata.maintenance.contentDriftBatchSleepSec");
 }

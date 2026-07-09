@@ -11,6 +11,6 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class PortFowardingQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig PF_NUM = new GlobalConfig(CATEGORY, PortForwardingQuotaConstant.PF_NUM);
 }

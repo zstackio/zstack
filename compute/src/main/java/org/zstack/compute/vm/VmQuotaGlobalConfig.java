@@ -11,16 +11,16 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class VmQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_TOTAL_NUM = new GlobalConfig(CATEGORY, VmQuotaConstant.VM_TOTAL_NUM);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_RUNNING_NUM = new GlobalConfig(CATEGORY, VmQuotaConstant.VM_RUNNING_NUM);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_RUNNING_MEMORY_SIZE = new GlobalConfig(CATEGORY, VmQuotaConstant.VM_RUNNING_MEMORY_SIZE);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VM_RUNNING_CPU_NUM = new GlobalConfig(CATEGORY, VmQuotaConstant.VM_RUNNING_CPU_NUM);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig DATA_VOLUME_NUM = new GlobalConfig(CATEGORY, VmQuotaConstant.DATA_VOLUME_NUM);
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VOLUME_SIZE = new GlobalConfig(CATEGORY, VmQuotaConstant.VOLUME_SIZE);
 }
