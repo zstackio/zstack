@@ -28,6 +28,9 @@ public class GetAiHostModelCacheCapacityAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String hostUuid;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String primaryStorageUuid;
+
     @Param(required = false)
     public java.util.List systemTags;
 

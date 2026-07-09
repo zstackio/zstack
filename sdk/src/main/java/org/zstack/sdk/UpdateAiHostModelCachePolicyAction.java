@@ -32,6 +32,9 @@ public class UpdateAiHostModelCachePolicyAction extends AbstractAction {
     public java.lang.String sourceRoot;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String primaryStorageUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean enabled;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

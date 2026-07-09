@@ -38,6 +38,22 @@ public class AiHostModelCacheInventory  {
         return this.modelUuid;
     }
 
+    public java.lang.String primaryStorageUuid;
+    public void setPrimaryStorageUuid(java.lang.String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+    public java.lang.String getPrimaryStorageUuid() {
+        return this.primaryStorageUuid;
+    }
+
+    public java.lang.String primaryStorageName;
+    public void setPrimaryStorageName(java.lang.String primaryStorageName) {
+        this.primaryStorageName = primaryStorageName;
+    }
+    public java.lang.String getPrimaryStorageName() {
+        return this.primaryStorageName;
+    }
+
     public java.lang.String sourceRoot;
     public void setSourceRoot(java.lang.String sourceRoot) {
         this.sourceRoot = sourceRoot;

@@ -28,6 +28,22 @@ public class AiHostModelCachePolicyInventory  {
         return this.sourceRoot;
     }
 
+    public java.lang.String primaryStorageUuid;
+    public void setPrimaryStorageUuid(java.lang.String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+    public java.lang.String getPrimaryStorageUuid() {
+        return this.primaryStorageUuid;
+    }
+
+    public java.lang.String primaryStorageName;
+    public void setPrimaryStorageName(java.lang.String primaryStorageName) {
+        this.primaryStorageName = primaryStorageName;
+    }
+    public java.lang.String getPrimaryStorageName() {
+        return this.primaryStorageName;
+    }
+
     public java.lang.Boolean enabled;
     public void setEnabled(java.lang.Boolean enabled) {
         this.enabled = enabled;
