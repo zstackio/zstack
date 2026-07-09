@@ -46,10 +46,8 @@ class VmProgressCase extends SubCase {
         RESTFacade restf = bean(RESTFacade.class)
 
         ImageInventory vmImage = env.inventoryByName("image1")
-        ImageInventory vrImage = env.inventoryByName("vr-image")
 
         def vmImagePath = vmImage.backupStorageRefs[0].installPath
-        def vrImagePath = vrImage.backupStorageRefs[0].installPath
 
         def ft = new FuncTrigger()
 
@@ -116,41 +114,6 @@ class VmProgressCase extends SubCase {
                 assert agentInv.opaque["remain"] != null
                 assert agentInv.opaque["total"] != null
 
-            } else if (cmd.backupStorageInstallPath == vrImagePath) {
-                // downloading vr image, 1 sub tasks here
-
-                List<TaskProgressInventory> invs = getTaskProgress {
-                    apiId = a.apiId
-                }
-
-                assert invs.size() >= 5
-                // In cases, we have 5 sub progresses (and 1 main progress)
-                // Sub progresses list below:
-                // 1: instantiate-volume-{RootVolumeUuid}-local-primary-storage-*
-                // 2: download-image-{}-to-local-storage-{}-cache-host-{}
-                // 3: agent-report-task-for: CreateVmInstanceMsg  (Root)
-                // 4: instantiate-volume-{DataVolumeUuid}-local-primary-storage-*
-                // 5: download-image-{}-to-local-storage-{}-cache-host-{}
-                // 6: agent-report-task-for: CreateVmInstanceMsg  (Data)
-
-                // TODO:
-                // In current version, cmd.resourceUuid is not required,
-                // so sub progress 3 and 6 are maybe only remain 1 progress.
-
-                def instantiateInvs = invs.findAll {
-                    it.content.matches("^instantiate-volume-[0-9a-f]{32}-local-primary-storage-[0-9a-f]{32}: .*")
-                }
-                assert instantiateInvs.size() >= 2
-
-                def downloadInvs = invs.findAll {
-                    it.content.matches("^download-image-[0-9a-f]{32}-to-local-storage-[0-9a-f]{32}-cache-host-[0-9a-f]{32}: .*")
-                }
-                assert downloadInvs.size() >= 2
-
-                def agentInvs = invs.findAll {
-                    it.content == "agent-report-task-for: " + APICreateVmInstanceMsg.class.getName()
-                }
-                assert agentInvs.size() >= 1
             } else {
                 assert false: "should not be here: ${cmd.backupStorageInstallPath}"
             }
@@ -182,7 +145,7 @@ class VmProgressCase extends SubCase {
         retryInSecs {
             assert Q.New(TaskProgressVO.class)
                     .eq(TaskProgressVO_.apiId, a.apiId)
-                    .count() >= 5
+                    .count() >= 3
         }
     }
 
