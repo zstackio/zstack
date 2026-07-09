@@ -3626,7 +3626,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
         String hostUuid;
         try {
-            hostUuid = findConnectedHostForCephLuks();
+            hostUuid = resolveHostForCephLuks(msg.getHostUuid());
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());
             bus.reply(msg, reply);
@@ -3726,6 +3726,33 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         bus.reply(msg, reply);
                     }
                 });
+    }
+
+    private String resolveHostForCephLuks(String hostUuid) {
+        if (StringUtils.isBlank(hostUuid)) {
+            throw new OperationFailureException(operr(
+                    "convert volume encryption on ceph primary storage[uuid:%s] requires hostUuid",
+                    self.getUuid()));
+        }
+
+        boolean hostAvailable = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.state, HostState.Enabled)
+                .isExists();
+        PrimaryStorageHostStatus refStatus = Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, self.getUuid())
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .select(PrimaryStorageHostRefVO_.status)
+                .findValue();
+        if (!hostAvailable || refStatus != PrimaryStorageHostStatus.Connected) {
+            throw new OperationFailureException(operr(
+                    "host[uuid:%s] is not an enabled connected KVM host attached to ceph primary storage[uuid:%s]",
+                    hostUuid, self.getUuid()));
+        }
+
+        return hostUuid;
     }
 
     @Override

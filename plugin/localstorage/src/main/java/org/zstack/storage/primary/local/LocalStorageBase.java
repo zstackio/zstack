@@ -928,20 +928,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        String hostUuid = StringUtils.isNotBlank(msg.getHostUuid()) ?
-                msg.getHostUuid() : null;
-        if (StringUtils.isBlank(hostUuid)) {
-            try {
-                hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
-            } catch (OperationFailureException e) {
-                reply.setError(e.getErrorCode());
-                bus.reply(msg, reply);
-                return;
-            }
-        }
-        if (StringUtils.isBlank(hostUuid)) {
-            reply.setError(operr("cannot determine host for converting volume[uuid:%s] encryption on local primary storage[uuid:%s]",
-                    msg.getVolume().getUuid(), self.getUuid()));
+        String hostUuid;
+        try {
+            hostUuid = resolveHostForConvertVolumeEncryption(msg);
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
             bus.reply(msg, reply);
             return;
         }
@@ -970,20 +961,11 @@ public class LocalStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        String hostUuid = StringUtils.isNotBlank(msg.getHostUuid()) ?
-                msg.getHostUuid() : null;
-        if (StringUtils.isBlank(hostUuid)) {
-            try {
-                hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
-            } catch (OperationFailureException e) {
-                reply.setError(e.getErrorCode());
-                bus.reply(msg, reply);
-                return;
-            }
-        }
-        if (StringUtils.isBlank(hostUuid)) {
-            reply.setError(operr("cannot determine host for rolling back volume[uuid:%s] encryption conversion on local primary storage[uuid:%s]",
-                    msg.getVolume().getUuid(), self.getUuid()));
+        String hostUuid;
+        try {
+            hostUuid = resolveHostForRollbackVolumeEncryption(msg);
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
             bus.reply(msg, reply);
             return;
         }
@@ -1001,6 +983,74 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private String resolveHostForConvertVolumeEncryption(ConvertVolumeEncryptionOnPrimaryStorageMsg msg) {
+        String hostUuid = msg.getHostUuid();
+        if (StringUtils.isBlank(hostUuid)) {
+            throw new OperationFailureException(operr(
+                    "convert volume encryption on local primary storage[uuid:%s] requires hostUuid for volume[uuid:%s]",
+                    self.getUuid(), msg.getVolume().getUuid()));
+        }
+
+        String actualHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolume().getUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, self.getUuid())
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .findValue();
+        if (StringUtils.isBlank(actualHostUuid) || !hostUuid.equals(actualHostUuid)) {
+            throw new OperationFailureException(operr(
+                    "volume[uuid:%s] on local primary storage[uuid:%s] belongs to host[uuid:%s], cannot convert encryption on host[uuid:%s]",
+                    msg.getVolume().getUuid(), self.getUuid(), actualHostUuid, hostUuid));
+        }
+
+        boolean hostReady = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.state, HostState.Enabled)
+                .isExists();
+        if (!hostReady) {
+            throw new OperationFailureException(operr(
+                    "host[uuid:%s] is not enabled and connected for converting volume[uuid:%s] encryption on local primary storage[uuid:%s]",
+                    hostUuid, msg.getVolume().getUuid(), self.getUuid()));
+        }
+
+        return hostUuid;
+    }
+
+    private String resolveHostForRollbackVolumeEncryption(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        String hostUuid = msg.getHostUuid();
+        if (StringUtils.isBlank(hostUuid)) {
+            throw new OperationFailureException(operr(
+                    "rollback volume encryption on local primary storage[uuid:%s] requires hostUuid for volume[uuid:%s]",
+                    self.getUuid(), msg.getVolume().getUuid()));
+        }
+
+        String actualHostUuid = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceUuid, msg.getVolume().getUuid())
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .eq(LocalStorageResourceRefVO_.primaryStorageUuid, self.getUuid())
+                .select(LocalStorageResourceRefVO_.hostUuid)
+                .findValue();
+        if (StringUtils.isBlank(actualHostUuid) || !hostUuid.equals(actualHostUuid)) {
+            throw new OperationFailureException(operr(
+                    "volume[uuid:%s] on local primary storage[uuid:%s] belongs to host[uuid:%s], cannot rollback encryption conversion on host[uuid:%s]",
+                    msg.getVolume().getUuid(), self.getUuid(), actualHostUuid, hostUuid));
+        }
+
+        boolean hostReady = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.state, HostState.Enabled)
+                .isExists();
+        if (!hostReady) {
+            throw new OperationFailureException(operr(
+                    "host[uuid:%s] is not enabled and connected for rolling back volume[uuid:%s] encryption conversion on local primary storage[uuid:%s]",
+                    hostUuid, msg.getVolume().getUuid(), self.getUuid()));
+        }
+
+        return hostUuid;
     }
 
     private void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg) {
