@@ -2602,14 +2602,15 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                         bus.send(rmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
-                                if (reply.isSuccess()) {
-                                    trigger.next();
-                                } else {
-                                    trigger.fail(reply.getError());
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("failed to resize volume[%s] on ps[%s] but still continue: %s",
+                                            msg.getVolume().getUuid(),
+                                            msg.getVolume().getPrimaryStorageUuid(),
+                                            reply.getError().getReadableDetails()));
                                 }
+                                trigger.next();
                             }
                         });
-                        trigger.next();
                     }
                 });
 
