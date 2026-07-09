@@ -466,6 +466,10 @@ class ZbsVhostVolumeCase extends SubCase {
         env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployVhostCmd.class)
             assert cmd.hostIp != null : "deploy cmd missing target host IP for zbsadm SSH"
+            assert cmd.hugepageSize == ZbsConstants.VHOST_TARGET_HUGEPAGE_SIZE_MB : \
+                    "deploy cmd should pin zbsadm vhost memory size"
+            assert cmd.hugepageDir == null : \
+                    "deploy should choose the 2MB hugepage mount on the target host"
             ensureCalled.set(true)
             if (!vhostTargetHealthy.get()) {
                 redeployedWhileDown.set(true)

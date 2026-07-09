@@ -429,6 +429,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
                             DeployVhostCmd cmd = new DeployVhostCmd();
                             fillVhostHostParams(cmd, h, host);
+                            cmd.hugepageSize = ZbsConstants.VHOST_TARGET_HUGEPAGE_SIZE_MB;
 
                             httpCall(DEPLOY_VHOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
                                 @Override
@@ -2280,6 +2281,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     public static class DeployVhostCmd extends VhostHostCmd {
+        public Integer hugepageSize;
+        public String hugepageDir;
     }
 
     public static class DestroyVhostCmd extends VhostHostCmd {
