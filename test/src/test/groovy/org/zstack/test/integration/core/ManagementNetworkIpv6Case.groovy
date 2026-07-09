@@ -15,6 +15,7 @@ import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.core.search.SearchBackendConstant
 import org.zstack.console.ConsoleProxyBase
 import org.zstack.header.rest.RESTConstant
+import org.zstack.header.rest.RESTFacade
 import org.zstack.kvm.KVMConsoleHypervisorBackend
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMHost
@@ -103,6 +104,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testCoreManagementUrlsIpv6()
         testApplianceVmAgentUrlsIpv6()
         testKvmAgentUrlsIpv6()
+        testKvmCallbackPrecheckUsesTargetAwareCallbackUrl()
         testRestFacadeIpv6Urls()
         testSshTargetUsesRawIpv6Host()
         testScpTargetUsesBracketedIpv6Host()
@@ -241,6 +243,26 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "http://[2001:db8::1]:${KVMGlobalProperty.AGENT_PORT}/storagedevice/iscsi/login"
         assert KVMHost.buildAgentUrl(IPV4, KVMConstant.KVM_MIGRATE_VM_PATH) ==
                 "http://192.168.1.10:${KVMGlobalProperty.AGENT_PORT}/vm/migrate"
+    }
+
+    void testKvmCallbackPrecheckUsesTargetAwareCallbackUrl() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV6,
+        ]) {
+            RESTFacade restf = [
+                    buildCallbackUrl: { String host ->
+                        RESTFacadeImpl.buildCallbackUrl(host, REST_PORT, "zstack")
+                    }
+            ] as RESTFacade
+            String command = KVMHost.buildManagementNodeCallbackCheckCommand(IPV6_2, restf)
+            String callbackUrl = RESTFacadeImpl.buildCallbackUrl(IPV6, REST_PORT, "zstack")
+
+            assert callbackUrl == "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
+            assert command.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
+            assert command.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
+            assert !command.contains("http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
+        }
     }
 
     void testRestFacadeIpv6Urls() {
