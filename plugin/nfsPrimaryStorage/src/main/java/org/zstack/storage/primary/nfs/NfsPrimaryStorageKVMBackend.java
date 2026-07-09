@@ -2382,6 +2382,7 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
 
                 ConvertVolumeEncryptionOnPrimaryStorageReply r = new ConvertVolumeEncryptionOnPrimaryStorageReply();
                 r.setActualSizes(rsp.actualSizes);
+                r.setHostUuid(host.getUuid());
                 completion.success(r);
             }
         });

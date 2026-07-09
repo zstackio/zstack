@@ -52,6 +52,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.encrypt.VolumeBackupEncryptionConversionExtensionHelper;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupOperationValidator;
@@ -113,6 +114,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private VolumeEncryptedResourceKeyBackend volumeEncryptedResourceKeyBackend;
     @Autowired
     private VolumeEncryptedSecretHelper volumeEncryptedSecretHelper;
+    @Autowired
+    private VolumeBackupEncryptionConversionExtensionHelper volumeBackupEncryptionConversionExtensionHelper;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -3319,6 +3322,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
         String sourceSecretHostUuid = sourceEncrypted ? resolveVolumeSecretHostUuid(self) : null;
         String sourceSecretVmUuid = StringUtils.defaultIfBlank(self.getVmInstanceUuid(), self.getUuid());
         AtomicReference<VolumeEncryptionConversionContext> conversionContext = new AtomicReference<>();
+        AtomicReference<List<VolumeBackupEncryptionConversionExtensionHelper.Context>> backupConversionContexts =
+                new AtomicReference<>(Collections.emptyList());
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-volume-%s-encryption-to-%s", self.getUuid(), targetEncrypted));
@@ -3385,6 +3390,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 if (reply.isSuccess()) {
                                     ConvertVolumeEncryptionOnPrimaryStorageReply cr = reply.castReply();
                                     data.put("actualSizes", cr.getActualSizes());
+                                    data.put("conversionHostUuid", cr.getHostUuid());
                                     trigger.next();
                                 } else {
                                     trigger.fail(reply.getError());
@@ -3401,13 +3407,41 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
 
                 flow(new Flow() {
+                    String __name__ = "prepare-volume-backup-encryption-conversion";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        volumeBackupEncryptionConversionExtensionHelper.prepare(getSelfInventory(), targetEncrypted,
+                                (String) data.get("conversionHostUuid"),
+                                new ReturnValueCompletion<List<VolumeBackupEncryptionConversionExtensionHelper.Context>>(trigger) {
+                                    @Override
+                                    public void success(List<VolumeBackupEncryptionConversionExtensionHelper.Context> contexts) {
+                                        backupConversionContexts.set(contexts);
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        volumeBackupEncryptionConversionExtensionHelper.rollback(backupConversionContexts.get(), self.getUuid());
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
                     String __name__ = "update-volume-encryption-in-db";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         VolumeEncryptionConversionContext ctx = conversionContext.get();
                         updateVolumeEncryptionConversionInDb(targetEncrypted, ctx.snapshots, ctx.oldAndNewInstallPaths,
-                                (Map<String, Long>) data.get("actualSizes"));
+                                (Map<String, Long>) data.get("actualSizes"), backupConversionContexts.get());
                         try {
                             refreshVO();
                         } catch (RuntimeException e) {
@@ -3420,6 +3454,16 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
                         trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "cleanup-converted-volume-backup-bits";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        volumeBackupEncryptionConversionExtensionHelper.cleanupCommitted(backupConversionContexts.get(), self.getUuid());
+                        trigger.next();
                     }
                 });
 
@@ -3758,7 +3802,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
     private void updateVolumeEncryptionConversionInDb(boolean targetEncrypted, List<VolumeSnapshotVO> snapshots,
                                                       Map<String, String> oldAndNewInstallPaths,
-                                                      Map<String, Long> actualSizes) {
+                                                      Map<String, Long> actualSizes,
+                                                      List<VolumeBackupEncryptionConversionExtensionHelper.Context> backupConversionContexts) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -3786,6 +3831,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 if (targetEncrypted && !convertedSnapshotInstallPaths.isEmpty()) {
                     volumeEncryptedResourceKeyBackend.copyVolumeKeyRefToSnapshots(self.getUuid(), convertedSnapshotInstallPaths.keySet());
                 }
+
+                volumeBackupEncryptionConversionExtensionHelper.commit(backupConversionContexts);
             }
         }.execute();
     }

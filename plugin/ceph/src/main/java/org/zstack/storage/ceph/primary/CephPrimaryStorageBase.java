@@ -3657,6 +3657,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void success(KVMHostLuksRsp ret) {
+                        reply.setHostUuid(hostUuid);
                         if (ret.actualSize != null) {
                             reply.setActualSizes(Collections.singletonMap(msg.getVolume().getUuid(), ret.actualSize));
                             bus.reply(msg, reply);

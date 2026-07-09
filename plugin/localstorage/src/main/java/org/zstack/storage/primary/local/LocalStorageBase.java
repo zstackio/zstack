@@ -948,6 +948,7 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply>(msg) {
             @Override
             public void success(ConvertVolumeEncryptionOnPrimaryStorageReply returnValue) {
+                returnValue.setHostUuid(hostUuid);
                 bus.reply(msg, returnValue);
             }
 
