@@ -46,6 +46,12 @@ public class UploadPlatformServicePackageAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String backupStorageUuid;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String longJobName;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String longJobDescription;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

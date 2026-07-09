@@ -124,6 +124,14 @@ public class PlatformServicePackageInventory  {
         return this.lastError;
     }
 
+    public java.lang.String uploadFileUrl;
+    public void setUploadFileUrl(java.lang.String uploadFileUrl) {
+        this.uploadFileUrl = uploadFileUrl;
+    }
+    public java.lang.String getUploadFileUrl() {
+        return this.uploadFileUrl;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
