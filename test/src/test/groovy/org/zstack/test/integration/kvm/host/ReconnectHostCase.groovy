@@ -15,8 +15,6 @@ import org.zstack.test.integration.kvm.Env
 import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.Utils
-import org.zstack.utils.logging.CLogger
 
 /**
  * Created by MaJin on 2017-05-01.
@@ -24,8 +22,8 @@ import org.zstack.utils.logging.CLogger
 class ReconnectHostCase extends SubCase {
     EnvSpec env
     HostInventory host
-    private final static CLogger logger = Utils.getLogger(ReconnectHostCase.class)
     static RECONNECT_TIME = 10
+    int originVmCount
 
     @Override
     void setup() {
@@ -40,7 +38,7 @@ class ReconnectHostCase extends SubCase {
     @Override
     void test() {
         env.create {
-            host = env.inventoryByName("kvm")
+            prepare()
             testReconnectHostVmState()
             testReconnectFailureHostVmState()
             testUpdateHostDuringConnecting()
@@ -51,6 +49,15 @@ class ReconnectHostCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void prepare() {
+        host = env.inventoryByName("kvm") as HostInventory
+
+        originVmCount = (queryVmInstance {
+            conditions = ["state=${VmInstanceState.Running}"]
+        } as List<VmInstanceInventory>).size()
+        logger.info("originVmCount = ${originVmCount}".toString())
     }
 
     void testUpdateHostDuringConnecting() {
@@ -116,7 +123,7 @@ class ReconnectHostCase extends SubCase {
                 conditions = ["state=${VmInstanceState.Unknown}"]
             } as List<VmInstanceInventory>
 
-            assert vmInvs.size() == 2
+            assert vmInvs.size() == originVmCount
         }
     }
 
@@ -135,14 +142,12 @@ class ReconnectHostCase extends SubCase {
                     conditions = ["state=${VmInstanceState.Running}"]
                 } as List<VmInstanceInventory>
 
-                assert vmInvs.size() == 2
+                assert vmInvs.size() == originVmCount
             }
         }
     }
 
     void testChangeHostConnectionState() {
-        HostInventory host = env.inventoryByName("kvm")
-
         // set host to disconnected
         SQL.New(HostVO.class)
                 .eq(HostVO_.uuid, host.uuid)

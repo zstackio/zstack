@@ -2,11 +2,7 @@ package org.zstack.test.integration.kvm
 
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.eip.EipConstant
-import org.zstack.network.service.lb.LoadBalancerConstants
-import org.zstack.network.service.portforwarding.PortForwardingConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
-import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.Test
 import org.zstack.utils.data.SizeUnit
@@ -15,15 +11,6 @@ import org.zstack.utils.data.SizeUnit
  * Created by xing5 on 2017/2/22.
  */
 class Env {
-    def DOC = """
-use:
-1. sftp backup storage
-2. local primary storage
-3. virtual router provider
-4. l2 novlan network
-5. security group
-"""
-
     static EnvSpec oneVmBasicEnv() {
         return Test.makeEnv {
             instanceOffering {
@@ -49,12 +36,6 @@ use:
                     architecture = "x86_64"
                     url = "http://zstack.org/download/test.qcow2"
                     virtio = true
-                }
-
-                image {
-                    name = "vr"
-                    architecture = "x86_64"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -90,11 +71,6 @@ use:
                         name = "l3"
 
                         service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
@@ -117,15 +93,6 @@ use:
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr")
                 }
 
                 attachBackupStorage("sftp")
@@ -159,11 +126,6 @@ use:
                 image {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr-image"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -201,11 +163,6 @@ use:
                         name = "l3"
 
                         service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
@@ -228,15 +185,6 @@ use:
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr-image")
                 }
 
                 attachBackupStorage("sftp")
@@ -263,11 +211,6 @@ use:
                 image {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr-image"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -314,11 +257,6 @@ use:
                             types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
                         }
 
-                        service {
-                            provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
-                            types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
-                        }
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -337,15 +275,6 @@ use:
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr-image")
                 }
 
                 attachBackupStorage("sftp")
@@ -372,11 +301,6 @@ use:
                 image {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr-image"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -414,11 +338,6 @@ use:
                         name = "l3"
 
                         service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
@@ -441,15 +360,6 @@ use:
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr-image")
                 }
 
                 attachBackupStorage("sftp")
@@ -649,11 +559,6 @@ use:
                     name = "image"
                     url = "http://zstack.org/download/test.qcow2"
                 }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
-                }
             }
 
             zone {
@@ -687,16 +592,6 @@ use:
                     l3Network {
                         name = "l3-1"
 
-                        service {
-                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(),
-                                     NetworkServiceType.DNS.toString(),
-                                     NetworkServiceType.SNAT.toString(),
-                                     PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE,
-                                     LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING,
-                                     EipConstant.EIP_NETWORK_SERVICE_TYPE]
-                        }
-
                         ip {
                             startIp = "192.168.100.10"
                             endIp = "192.168.100.100"
@@ -707,16 +602,6 @@ use:
 
                     l3Network {
                         name = "l3-2"
-
-                        service {
-                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(),
-                                     NetworkServiceType.DNS.toString(),
-                                     NetworkServiceType.SNAT.toString(),
-                                     PortForwardingConstant.PORTFORWARDING_NETWORK_SERVICE_TYPE,
-                                     LoadBalancerConstants.LB_NETWORK_SERVICE_TYPE_STRING,
-                                     EipConstant.EIP_NETWORK_SERVICE_TYPE]
-                        }
 
                         ip {
                             startIp = "192.168.200.10"
@@ -739,15 +624,6 @@ use:
                 }
 
                 attachBackupStorage("sftp")
-
-                virtualRouterOffering {
-                    name = "vro"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr")
-                }
             }
 
             vm {
