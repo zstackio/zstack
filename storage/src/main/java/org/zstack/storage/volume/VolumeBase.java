@@ -52,6 +52,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageMsg;
 import org.zstack.storage.primary.EstimateVolumeTemplateSizeOnPrimaryStorageReply;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.encrypt.VolumeEncryptionConversionHostLeaseHelper;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupOperationValidator;
@@ -113,6 +114,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private VolumeEncryptedResourceKeyBackend volumeEncryptedResourceKeyBackend;
     @Autowired
     private VolumeEncryptedSecretHelper volumeEncryptedSecretHelper;
+    @Autowired
+    private VolumeEncryptionConversionHostLeaseHelper volumeEncryptionConversionHostLeaseHelper;
 
     public VolumeBase(VolumeVO vo) {
         self = vo;
@@ -3256,10 +3259,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
     }
 
     private void handle(ChangeVolumeEncryptionMsg msg) {
+        String conversionSyncSignature =
+                volumeEncryptionConversionHostLeaseHelper.makeQueueSignature(msg.getVolumeUuid(), syncThreadId);
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadId;
+                return conversionSyncSignature;
             }
 
             @Override
@@ -3319,6 +3324,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         String sourceSecretHostUuid = sourceEncrypted ? resolveVolumeSecretHostUuid(self) : null;
         String sourceSecretVmUuid = StringUtils.defaultIfBlank(self.getVmInstanceUuid(), self.getUuid());
         AtomicReference<VolumeEncryptionConversionContext> conversionContext = new AtomicReference<>();
+        AtomicReference<VolumeEncryptionConversionHostLeaseHelper.LeaseSession> hostLease = new AtomicReference<>();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("change-volume-%s-encryption-to-%s", self.getUuid(), targetEncrypted));
@@ -3338,6 +3344,21 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             return;
                         }
                         trigger.next();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "reserve-volume-encryption-conversion-host";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        volumeEncryptionConversionHostLeaseHelper.reserve(self, trigger, hostLease);
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        volumeEncryptionConversionHostLeaseHelper.release(hostLease.get());
+                        trigger.rollback();
                     }
                 });
 
@@ -3378,6 +3399,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         cmsg.setVolume(VolumeInventory.valueOf(self));
                         cmsg.setTargetEncrypted(targetEncrypted);
                         cmsg.setItems(conversionContext.get().items);
+                        cmsg.setHostUuid(hostLease.get().getHostUuid());
                         bus.makeTargetServiceIdByResourceUuid(cmsg, PrimaryStorageConstant.SERVICE_ID, self.getPrimaryStorageUuid());
                         bus.send(cmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -3499,11 +3521,13 @@ public class VolumeBase extends AbstractVolume implements Volume {
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                volumeEncryptionConversionHostLeaseHelper.release(hostLease.get());
                 completion.success(getSelfInventory());
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                volumeEncryptionConversionHostLeaseHelper.release(hostLease.get());
                 completion.fail(errCode);
             }
         }).start();

@@ -2351,7 +2351,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     @Override
     public void handle(PrimaryStorageInventory inv, ConvertVolumeEncryptionOnPrimaryStorageMsg msg,
                        ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply> completion) {
-        HostInventory host = nfsFactory.getConnectedHostForOperation(inv).get(0);
+        HostInventory host;
+        try {
+            host = resolveHostForConvertVolumeEncryption(inv, msg.getHostUuid());
+        } catch (OperationFailureException e) {
+            completion.fail(e.getErrorCode());
+            return;
+        }
         ConvertVolumeEncryptionCmd cmd = new ConvertVolumeEncryptionCmd();
         cmd.setUuid(inv.getUuid());
         cmd.volumeUuid = msg.getVolume().getUuid();
@@ -2385,6 +2391,38 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 completion.success(r);
             }
         });
+    }
+
+    private HostInventory resolveHostForConvertVolumeEncryption(PrimaryStorageInventory inv, String hostUuid) {
+        if (StringUtils.isBlank(hostUuid)) {
+            throw new OperationFailureException(operr(
+                    "convert volume encryption on NFS primary storage[uuid:%s] requires hostUuid",
+                    inv.getUuid()));
+        }
+
+        HostVO host = Q.New(HostVO.class)
+                .eq(HostVO_.uuid, hostUuid)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.state, HostState.Enabled)
+                .find();
+        if (host == null || !inv.getAttachedClusterUuids().contains(host.getClusterUuid())) {
+            throw new OperationFailureException(operr(
+                    "host[uuid:%s] is not an enabled connected host attached to NFS primary storage[uuid:%s]",
+                    hostUuid, inv.getUuid()));
+        }
+
+        PrimaryStorageHostStatus status = Q.New(PrimaryStorageHostRefVO.class)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, inv.getUuid())
+                .eq(PrimaryStorageHostRefVO_.hostUuid, hostUuid)
+                .select(PrimaryStorageHostRefVO_.status)
+                .findValue();
+        if (status != PrimaryStorageHostStatus.Connected) {
+            throw new OperationFailureException(operr(
+                    "host[uuid:%s] is not connected to NFS primary storage[uuid:%s]",
+                    hostUuid, inv.getUuid()));
+        }
+
+        return HostInventory.valueOf(host);
     }
 
     private String prepareVolumeEncryptedDek(String hostUuid, VolumeInventory volume, boolean required) {

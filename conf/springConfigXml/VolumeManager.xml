@@ -100,6 +100,7 @@
 
     <bean id="VolumeEncryptedSecretHelper" class="org.zstack.storage.encrypt.VolumeEncryptedSecretHelper"/>
     <bean id="VolumeEncryptedTrashCleanupHelper" class="org.zstack.storage.encrypt.VolumeEncryptedTrashCleanupHelper"/>
+    <bean id="VolumeEncryptionConversionHostLeaseHelper" class="org.zstack.storage.encrypt.VolumeEncryptionConversionHostLeaseHelper"/>
 
     <bean id="VolumeSnapshotEncryptionHelper" class="org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper"/>
 
