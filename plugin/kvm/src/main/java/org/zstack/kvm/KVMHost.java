@@ -136,6 +136,10 @@ public class KVMHost extends HostBase implements Host {
     private static final CLogger logger = Utils.getLogger(KVMHost.class);
     private static final ZTester tester = Utils.getTester();
     private static final String EXTRA_IP_SEPARATOR = ",";
+    private static final String MANAGEMENT_NODE_CALLBACK_CHECK_COMMAND =
+            "curl --connect-timeout 10 --max-time 15 %s"
+                    + "|| wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 %s"
+                    + "|| test $? -eq 8";
     protected static OperationChecker allowedOperations = new OperationChecker(true);
     protected static OperationChecker skipOperations = new OperationChecker(true);
     private static final Pattern NUMERIC_VERSION_TOKEN = Pattern.compile("\\d+(?:\\.\\d+)*");
@@ -2893,6 +2897,15 @@ public class KVMHost extends HostBase implements Host {
         } catch (URISyntaxException e) {
             throw new CloudRuntimeException(String.format("failed to build KVM agent url for host[%s], path[%s]", host, path), e);
         }
+    }
+
+    public static String buildManagementNodeCallbackCheckCommand(String callbackUrl) {
+        return String.format(MANAGEMENT_NODE_CALLBACK_CHECK_COMMAND, callbackUrl, callbackUrl);
+    }
+
+    public static String buildManagementNodeCallbackCheckCommand(String hostManagementIp, RESTFacade restf) {
+        String callbackHost = Platform.getManagementServerIpForRemote(hostManagementIp);
+        return buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost));
     }
 
     private static String joinAgentPath(String rootPath, String path) {
@@ -5795,7 +5808,8 @@ public class KVMHost extends HostBase implements Host {
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                final String cmd = String.format("curl --connect-timeout 10 --max-time 15 %s|| wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 %s|| test $? -eq 8", restf.getCallbackUrl(), restf.getCallbackUrl());
+                final String callbackHost = Platform.getManagementServerIpForRemote(getSelf().getManagementIp());
+                final String cmd = buildManagementNodeCallbackCheckCommand(getSelf().getManagementIp(), restf);
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
@@ -5813,7 +5827,7 @@ public class KVMHost extends HostBase implements Host {
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10106, "the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                    " that the KVM host cannot reach the management IP[%s]. %s %s", restf.getHostName(), self.getManagementIp(),
+                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), callbackHost,
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
 
