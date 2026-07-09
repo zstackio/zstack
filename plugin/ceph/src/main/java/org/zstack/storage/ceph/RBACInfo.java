@@ -2,6 +2,7 @@ package org.zstack.storage.ceph;
 
 import org.zstack.header.identity.rbac.RBACDescription;
 import org.zstack.storage.ceph.backup.APIQueryCephBackupStorageMsg;
+import org.zstack.storage.ceph.primary.APIQueryCephPrimaryStoragePoolMsg;
 
 public class RBACInfo implements RBACDescription {
     @Override
@@ -13,7 +14,10 @@ public class RBACInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyForAll()
-                .normalAPIs(APIQueryCephBackupStorageMsg.class)
+                .normalAPIs(
+                        APIQueryCephBackupStorageMsg.class,
+                        APIQueryCephPrimaryStoragePoolMsg.class
+                )
                 .communityAvailable()
                 .zsvBasicAvailable()
                 .zsvProAvailable()
