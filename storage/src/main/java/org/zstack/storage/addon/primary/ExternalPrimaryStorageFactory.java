@@ -4,10 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
-import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventCallback;
-import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -52,6 +49,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -128,11 +126,46 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
             return false;
         }, new APIAddPrimaryStorageEvent());
 
-        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, new EventCallback() {
+        bus.subscribeEvent(e -> {
+            if (e instanceof APIUpdateExternalPrimaryStorageEvent) {
+                APIUpdateExternalPrimaryStorageEvent evt = (APIUpdateExternalPrimaryStorageEvent) e;
+                if (evt.isSuccess() && evt.getInventory() != null) {
+                    logger.debug("receive event, update external ps controller config.");
+                    PrimaryStorageControllerSvc controller = controllers.get(evt.getInventory().getUuid());
+                    ExternalPrimaryStorageVO vo = dbf.findByUuid(evt.getInventory().getUuid(), ExternalPrimaryStorageVO.class);
+                    if (controller != null) {
+                        controller.syncConfig(vo.getConfig());
+                        controller.syncAddonInfo(vo.getAddonInfo());
+                    } else {
+                        saveControllerIfNeed(vo);
+                    }
+                }
+            }
+
+            return false;
+        }, new APIUpdateExternalPrimaryStorageEvent());
+
+        evtf.on(PrimaryStorageCanonicalEvent.PRIMARY_STORAGE_DELETED_PATH, new EventCallback<PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData>() {
             @Override
-            protected void run(Map tokens, Object data) {
-                PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData d = (PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData) data;
-                MultiNodeSingleFlightImpl.unregister(d.getPrimaryStorageUuid());
+            protected void run(Map tokens, PrimaryStorageCanonicalEvent.PrimaryStorageDeletedData data) {
+                MultiNodeSingleFlightImpl.unregister(data.getPrimaryStorageUuid());
+            }
+        });
+        evtf.on(ExternalPrimaryStorageCanonicalEvent.ADDON_INFO_CHANGED_PATH, new EventCallback<ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData>() {
+            @Override
+            protected void run(Map tokens, ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData data) {
+                if (evtf.isFromThisManagementNode(tokens)) {
+                    return;
+                }
+
+                PrimaryStorageControllerSvc controller = controllers.get(data.getUuid());
+                Tuple t = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.config, ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, data.getUuid())
+                        .findTuple();
+                if (controller != null) {
+                    controller.syncConfig(t.get(0, String.class));
+                    controller.syncAddonInfo(t.get(1, String.class));
+                }
             }
         });
 

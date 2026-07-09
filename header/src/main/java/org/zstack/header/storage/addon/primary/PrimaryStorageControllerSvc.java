@@ -9,13 +9,38 @@ import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 public interface PrimaryStorageControllerSvc {
     String getIdentity();
-    void connect(String config, String url, ReturnValueCompletion<LinkedHashMap> comp);
-    void ping(Completion completion);
+
+    /**
+     * connect to storage system, and the AddonInfo may be changed after connection,
+     * report the latest AddonInfo via the completion, ZStack will persist it on all management nodes.
+     * @param config
+     * @param url
+     * @param comp
+     */
+    void connect(String config, String url, ReturnValueCompletion<AddonInfo> comp);
+
+    /**
+     * ping the storage system, and report the latest AddonInfo and result via the completion,
+     * ZStack will persist AddonInfo on all management nodes.
+     * @param completion
+     */
+    void ping(ReturnValueCompletion<PingResult> completion);
+
+    /**
+     * sync the addon info from other management node to this svc
+     * @param addonInfo
+     */
+    void syncAddonInfo(String addonInfo);
+
+    /**
+     * sync the config from other management node to this svc
+     * @param config
+     */
+    void syncConfig(String config);
 
     void reportCapacity(ReturnValueCompletion<StorageCapacity> comp);
     void reportHealthy(ReturnValueCompletion<StorageHealthy> comp);
