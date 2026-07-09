@@ -384,3 +384,27 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ExternalPrimaryStorageHostProtocolRefVO` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8;
 
 CALL DROP_COLUMN('ExternalPrimaryStorageHostRefVO', 'protocol');
+
+-- ZCF-4875: persist pending SCIM relation intents for out-of-order role binding materialization.
+CREATE TABLE IF NOT EXISTS `zstack`.`IAM2ScimRelationIntentVO` (
+    `uuid` varchar(32) NOT NULL,
+    `sourceType` varchar(64) NOT NULL,
+    `syncType` varchar(64) NOT NULL,
+    `externalUuid` varchar(32) NOT NULL,
+    `relationType` varchar(64) NOT NULL,
+    `subjectType` varchar(32) NOT NULL,
+    `subjectUuid` varchar(32) NOT NULL,
+    `objectType` varchar(64) NOT NULL,
+    `objectUuid` varchar(32) NOT NULL,
+    `scopeType` varchar(64) DEFAULT NULL,
+    `scopeUuid` varchar(32) DEFAULT NULL,
+    `enabled` tinyint(1) NOT NULL DEFAULT 1,
+    `attributesJson` varchar(2048) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukIAM2ScimRelationIntentSource` (`sourceType`, `syncType`, `relationType`, `externalUuid`),
+    KEY `idxIAM2ScimRelationIntentSubject` (`relationType`, `subjectType`, `subjectUuid`),
+    KEY `idxIAM2ScimRelationIntentObject` (`relationType`, `objectType`, `objectUuid`),
+    KEY `idxIAM2ScimRelationIntentScope` (`relationType`, `scopeType`, `scopeUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
