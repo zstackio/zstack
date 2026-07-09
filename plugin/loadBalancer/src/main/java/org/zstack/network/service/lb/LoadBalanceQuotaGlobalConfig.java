@@ -11,9 +11,9 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class LoadBalanceQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig LOAD_BALANCER_NUM = new GlobalConfig(CATEGORY, LoadBalanceQuotaConstant.LOAD_BALANCER_NUM);
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig LOAD_BALANCER_LISTENER_NUM = new GlobalConfig(CATEGORY, LoadBalanceQuotaConstant.LOAD_BALANCER_LISTENER_NUM);
 }

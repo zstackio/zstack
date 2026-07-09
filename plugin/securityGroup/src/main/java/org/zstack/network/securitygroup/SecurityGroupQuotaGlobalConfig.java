@@ -11,6 +11,6 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class SecurityGroupQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig SG_NUM = new GlobalConfig(CATEGORY, SecurityGroupQuotaConstant.SG_NUM);
 }

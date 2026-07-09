@@ -34,7 +34,7 @@ public class LdapGlobalConfig {
     @GlobalConfigDef(defaultValue = "NONE", description = "The currently enabled ldap server uuid, or NONE indicates that all ldap servers are currently disabled")
     public static GlobalConfig CURRENT_LDAP_SERVER_UUID = new GlobalConfig(CATEGORY, "current.ldap.server.uuid");
 
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(type = Integer.class, defaultValue = "10000", description = "maximum users sync from ldap server")
     @BindResourceConfig({ThirdPartyAccountSourceVO.class})
     public static GlobalConfig LDAP_MAXIMUM_SYNC_USERS = new GlobalConfig(CATEGORY, "ldap.maximum.sync.users");
