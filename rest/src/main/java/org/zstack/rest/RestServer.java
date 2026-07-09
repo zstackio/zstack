@@ -408,11 +408,10 @@ public class RestServer implements Component, CloudBusEventListener {
 
             writeResponse(response, w, ret.getResult());
         } else {
-            // localize with webhook caller's locale (message already populated by Platform.err)
+            // Localize with webhook caller's locale. Platform.err only prepares
+            // the internal message; response details are localized here.
             String locale = resolveLocale();
-            if (!LocaleUtils.DEFAULT_LOCALE.equals(locale)) {
-                i18nService.localizeErrorCode(evt.getError(), locale);
-            }
+            i18nService.localizeErrorCodeDetails(evt.getError(), locale);
             response.setError(evt.getError());
         }
 
@@ -980,7 +979,7 @@ public class RestServer implements Component, CloudBusEventListener {
         String locale = resolveLocale();
         rsp.setHeader("Content-Language", toLanguageTag(locale));
         if (response.getError() != null) {
-            i18nService.localizeErrorCode(response.getError(), locale);
+            i18nService.localizeErrorCodeDetails(response.getError(), locale);
             response.completeFailure(apiId, locale);
         }
     }

@@ -125,32 +125,48 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
 
     @Override
     public void localizeErrorCode(ErrorCode error, String locale) {
+        localizeErrorCode(error, locale, false);
+    }
+
+    @Override
+    public void localizeErrorCodeDetails(ErrorCode error, String locale) {
+        localizeErrorCode(error, locale, true);
+    }
+
+    private void localizeErrorCode(ErrorCode error, String locale, boolean localizeDetails) {
         if (error == null) {
             return;
         }
 
         String resolvedLocale = locale != null ? locale : LocaleUtils.DEFAULT_LOCALE;
-        localizeNestedErrors(error, resolvedLocale);
+        localizeNestedErrors(error, resolvedLocale, localizeDetails);
 
         String message = null;
+        boolean localized = false;
         if (error.getGlobalErrorCode() != null) {
             message = getLocalizedMessage(error.getGlobalErrorCode(), resolvedLocale, error.getFormatArgs());
+            localized = message != null;
         }
 
         if (message == null) {
             message = getLocalizedCauseMessage(error, resolvedLocale);
+            localized = message != null;
         }
 
         if (message == null) {
             message = error.getDetails() != null ? error.getDetails() : error.getDescription();
         }
 
-        error.setMessage(message != null ? message : (error.getCode() != null ? error.getCode() : ""));
+        String resolvedMessage = message != null ? message : (error.getCode() != null ? error.getCode() : "");
+        error.setMessage(resolvedMessage);
+        if (localizeDetails && localized) {
+            error.setDetails(resolvedMessage);
+        }
     }
 
-    private void localizeNestedErrors(ErrorCode error, String locale) {
+    private void localizeNestedErrors(ErrorCode error, String locale, boolean localizeDetails) {
         if (error.getCause() != null) {
-            localizeErrorCode(error.getCause(), locale);
+            localizeErrorCode(error.getCause(), locale, localizeDetails);
         }
 
         if (error instanceof ErrorCodeList) {
@@ -158,7 +174,7 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
             if (causes != null) {
                 for (ErrorCode cause : causes) {
                     if (cause != null) {
-                        localizeErrorCode(cause, locale);
+                        localizeErrorCode(cause, locale, localizeDetails);
                     }
                 }
             }

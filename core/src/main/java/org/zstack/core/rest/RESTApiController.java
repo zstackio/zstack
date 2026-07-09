@@ -116,13 +116,13 @@ public class RESTApiController {
             if (msg instanceof MessageReply) {
                 MessageReply reply = (MessageReply) msg;
                 if (!reply.isSuccess() && reply.getError() != null) {
-                    i18nService.localizeErrorCode(reply.getError(), locale);
+                    i18nService.localizeErrorCodeDetails(reply.getError(), locale);
                     rsp.setResult(RESTApiDecoder.dump(reply));
                 }
             } else if (msg instanceof APIEvent) {
                 APIEvent evt = (APIEvent) msg;
                 if (!evt.isSuccess() && evt.getError() != null) {
-                    i18nService.localizeErrorCode(evt.getError(), locale);
+                    i18nService.localizeErrorCodeDetails(evt.getError(), locale);
                     rsp.setResult(RESTApiDecoder.dump(evt));
                 }
             }

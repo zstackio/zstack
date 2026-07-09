@@ -23,6 +23,15 @@ public interface GlobalErrorCodeI18nService {
     void localizeErrorCode(ErrorCode error, String locale);
 
     /**
+     * Recursively localize an ErrorCode and its cause chain,
+     * setting both the message and details fields for response payloads.
+     *
+     * @param error the ErrorCode to localize
+     * @param locale the locale key
+     */
+    void localizeErrorCodeDetails(ErrorCode error, String locale);
+
+    /**
      * Get the set of available locale keys loaded from JSON files.
      */
     java.util.Set<String> getAvailableLocales();

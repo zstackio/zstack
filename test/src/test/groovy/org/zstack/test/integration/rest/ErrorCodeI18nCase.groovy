@@ -154,11 +154,26 @@ class ErrorCodeI18nCase extends SubCase {
         assert outer.getMessage() == cause.getMessage()
         assert outer.getMessage().contains("When the VM platform is Other")
         assert !outer.getMessage().contains("当VM平台")
+        assert cause.getDetails().contains("当VM平台")
+        assert outer.getDetails().contains("当VM平台")
 
-        i18nService.localizeErrorCode(outer, "zh_CN")
+        i18nService.localizeErrorCodeDetails(outer, "en_US")
+
+        assert outer.getMessage() == cause.getMessage()
+        assert outer.getMessage().contains("When the VM platform is Other")
+        assert cause.getDetails() == cause.getMessage()
+        assert outer.getDetails() == outer.getMessage()
+        assert !cause.getDetails().contains("当VM平台")
+        assert !outer.getDetails().contains("当VM平台")
+
+        i18nService.localizeErrorCodeDetails(outer, "zh_CN")
 
         assert outer.getMessage() == cause.getMessage()
         assert outer.getMessage().contains("虚拟机平台")
+        assert cause.getDetails() == cause.getMessage()
+        assert outer.getDetails() == outer.getMessage()
+        assert cause.getDetails().contains("虚拟机平台")
+        assert outer.getDetails().contains("虚拟机平台")
     }
 
     void testServiceKeepsOuterDetailsWhenCauseHasNoTemplate() {
@@ -179,6 +194,8 @@ class ErrorCodeI18nCase extends SubCase {
 
         assert cause.getMessage() == "inner raw details"
         assert outer.getMessage() == "outer raw details"
+        assert cause.getDetails() == "inner raw details"
+        assert outer.getDetails() == "outer raw details"
     }
 
     void testRestServerSyncApiWithAcceptLanguage() {
@@ -219,6 +236,10 @@ class ErrorCodeI18nCase extends SubCase {
                 String message = error.get("message") as String
                 assert message.contains("未找到主存储")
                 assert message.contains("test-sync-uuid")
+                String details = error.get("details") as String
+                assert details != null
+                assert details.contains("未找到主存储")
+                assert details.contains("test-sync-uuid")
             } finally {
                 conn.disconnect()
             }
@@ -294,6 +315,10 @@ class ErrorCodeI18nCase extends SubCase {
                             assert jobMessage != null
                             assert jobMessage.contains("未找到主存储")
                             assert jobMessage.contains("test-async-uuid")
+                            String jobDetails = jobError.get("details") as String
+                            assert jobDetails != null
+                            assert jobDetails.contains("未找到主存储")
+                            assert jobDetails.contains("test-async-uuid")
                         } finally {
                             jobConn.disconnect()
                         }
@@ -307,6 +332,9 @@ class ErrorCodeI18nCase extends SubCase {
                     String directMessage = directError.get("message") as String
                     assert directMessage != null
                     assert directMessage.contains("未找到主存储")
+                    String directDetails = directError.get("details") as String
+                    assert directDetails != null
+                    assert directDetails.contains("未找到主存储")
                 }
             } finally {
                 postConn.disconnect()
@@ -356,6 +384,10 @@ class ErrorCodeI18nCase extends SubCase {
                 assert message != null
                 assert message.contains("no primary storage")
                 assert message.contains("test-no-lang")
+                String details = error.get("details") as String
+                assert details != null
+                assert details.contains("no primary storage")
+                assert details.contains("test-no-lang")
             } finally {
                 conn.disconnect()
             }
