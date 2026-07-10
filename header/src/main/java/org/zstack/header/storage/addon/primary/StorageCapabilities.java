@@ -19,6 +19,15 @@ public class StorageCapabilities {
     public List<String> supportedImageFormats;
     private VolumeProtocol defaultIsoActiveProtocol;
     private VolumeProtocol defaultImageExportProtocol;
+    private int minLogicalSectorSize = 512;
+
+    public int getMinLogicalSectorSize() {
+        return minLogicalSectorSize;
+    }
+
+    public void setMinLogicalSectorSize(int minLogicalSectorSize) {
+        this.minLogicalSectorSize = minLogicalSectorSize;
+    }
 
     public boolean isSupportShareableVolume() {
         return supportShareableVolume;

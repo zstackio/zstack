@@ -60,6 +60,7 @@ import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceStartExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.resourceconfig.*;
+import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -830,6 +831,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
         PrimaryStorageAllocationSpec spec = new PrimaryStorageAllocationSpec();
         spec.setPossiblePrimaryStorageTypes(msg.getPossiblePrimaryStorageTypes());
         spec.setRequiredFeatures(msg.getRequiredFeatures());
+        spec.setRequiredProtocol(resolveRequiredProtocol(msg));
         spec.setExcludePrimaryStorageTypes(msg.getExcludePrimaryStorageTypes());
         spec.setImageUuid(msg.getImageUuid());
         spec.setDiskOfferingUuid(msg.getDiskOfferingUuid());
@@ -856,6 +858,14 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
             }
         }
         return spec;
+    }
+
+    private String resolveRequiredProtocol(AllocatePrimaryStorageMsg msg) {
+        String protocolTag = msg.getSystemTag(VolumeSystemTags.VOLUME_PROTOCOL::isMatch);
+        if (protocolTag == null) {
+            return null;
+        }
+        return VolumeSystemTags.VOLUME_PROTOCOL.getTokenByTag(protocolTag, VolumeSystemTags.VOLUME_PROTOCOL_TOKEN);
     }
 
     @Override
@@ -1027,7 +1037,7 @@ public class PrimaryStorageManagerImpl extends AbstractService implements Primar
     }
 
     @Override
-    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, List<PrimaryStorageVO> candidates) {
+    public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures, String requiredProtocol, List<PrimaryStorageVO> candidates) {
         if (requiredFeatures.contains(PrimaryStorageFeature.SHARED_VOLUME)) {
             candidates = candidates.stream()
                     .filter(v -> PrimaryStorageType.getSupportFeaturesTypes(PrimaryStorageType::isSupportSharedVolume)

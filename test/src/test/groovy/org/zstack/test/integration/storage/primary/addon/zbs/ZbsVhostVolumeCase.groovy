@@ -422,6 +422,12 @@ class ZbsVhostVolumeCase extends SubCase {
             return rsp
         }
 
+        createSystemTag {
+            resourceUuid = image.uuid
+            resourceType = org.zstack.header.image.ImageVO.getSimpleName()
+            tag = "bootMode::UEFI"
+        }
+
         VmInstanceInventory vm = createVmInstance {
             name = "vhost-vm"
             instanceOfferingUuid = instanceOffering.uuid

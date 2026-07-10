@@ -142,6 +142,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         capabilities.setSupportedImageFormats(Collections.singletonList(ImageConstant.RAW_FORMAT_STRING));
         capabilities.setDefaultIsoActiveProtocol(VolumeProtocol.CBD);
         capabilities.setDefaultImageExportProtocol(VolumeProtocol.NBD);
+        capabilities.setMinLogicalSectorSize(4096);
     }
 
     @Override

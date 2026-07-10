@@ -33,7 +33,7 @@ public class PrimaryStorageFeatureAllocatorFlow extends NoRollbackFlow {
         List<PrimaryStorageVO> candidates = (List<PrimaryStorageVO>) data.get(PrimaryStorageConstant.AllocatorParams.CANDIDATES);
         List<PrimaryStorageVO> ret;
         for (PrimaryStorageFeatureAllocatorExtensionPoint extp : pluginRgty.getExtensionList(PrimaryStorageFeatureAllocatorExtensionPoint.class)) {
-            ret = extp.allocatePrimaryStorage(spec.getRequiredFeatures(), candidates);
+            ret = extp.allocatePrimaryStorage(spec.getRequiredFeatures(), spec.getRequiredProtocol(), candidates);
             if (ret == null) {
                 continue;
             }
