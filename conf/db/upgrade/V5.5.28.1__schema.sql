@@ -5,6 +5,8 @@
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheVO` (
     `uuid`              VARCHAR(32)   NOT NULL,
     `hostUuid`          VARCHAR(32)   NOT NULL,
+    `primaryStorageUuid` VARCHAR(32)  DEFAULT NULL,
+    `primaryStorageName` VARCHAR(255) DEFAULT NULL,
     `modelCenterUuid`   VARCHAR(32)   DEFAULT NULL,
     `modelUuid`         VARCHAR(32)   DEFAULT NULL,
     `sourceRoot`        VARCHAR(2048) DEFAULT NULL,
@@ -29,15 +31,22 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCacheVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `ukAiHostModelCacheVOHostIdentity` (`hostUuid`, `identityHash`),
     KEY `idxAiHostModelCacheVOHostRoot` (`hostUuid`, `sourceRoot`(255)),
+    KEY `idxAiHostModelCacheVOPrimaryStorage` (`primaryStorageUuid`),
     KEY `idxAiHostModelCacheVOModel` (`modelUuid`),
     KEY `idxAiHostModelCacheVOStatus` (`status`),
     CONSTRAINT `fkAiHostModelCacheVOHostEO`
         FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('AiHostModelCacheVO', 'primaryStorageUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('AiHostModelCacheVO', 'primaryStorageName', 'VARCHAR(255)', 1, NULL);
+CALL CREATE_INDEX('AiHostModelCacheVO', 'idxAiHostModelCacheVOPrimaryStorage', 'primaryStorageUuid');
+
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `uuid`                    VARCHAR(32)   NOT NULL,
     `hostUuid`                VARCHAR(32)   NOT NULL,
+    `primaryStorageUuid`      VARCHAR(32)   DEFAULT NULL,
+    `primaryStorageName`      VARCHAR(255)  DEFAULT NULL,
     `sourceRoot`              VARCHAR(2048) NOT NULL,
     `sourceRootIdentity`      VARCHAR(64)   NOT NULL,
     `physicalTotalBytes`      BIGINT        DEFAULT NULL,
@@ -56,12 +65,16 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostCacheStorageVO` (
     `lastOpDate`              TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `ukAiHostCacheStorageVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`),
+    KEY `idxAiHostCacheStorageVOPrimaryStorage` (`primaryStorageUuid`),
     KEY `idxAiHostCacheStorageVOStatus` (`status`),
     CONSTRAINT `fkAiHostCacheStorageVOHostEO`
         FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL ADD_COLUMN('AiHostCacheStorageVO', 'sourceRootIdentity', 'VARCHAR(64)', 1, NULL);
+CALL ADD_COLUMN('AiHostCacheStorageVO', 'primaryStorageUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('AiHostCacheStorageVO', 'primaryStorageName', 'VARCHAR(255)', 1, NULL);
+CALL CREATE_INDEX('AiHostCacheStorageVO', 'idxAiHostCacheStorageVOPrimaryStorage', 'primaryStorageUuid');
 UPDATE `zstack`.`AiHostCacheStorageVO`
 SET `sourceRootIdentity` = SHA2(IFNULL(`sourceRoot`, ''), 256)
 WHERE `sourceRootIdentity` IS NULL OR `sourceRootIdentity` = '';
@@ -81,6 +94,8 @@ CALL DELETE_INDEX('AiHostCacheStorageVO', 'ukAiHostCacheStorageVOHostRoot');
 CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `uuid`                 VARCHAR(32)   NOT NULL,
     `hostUuid`             VARCHAR(32)   NOT NULL,
+    `primaryStorageUuid`   VARCHAR(32)   DEFAULT NULL,
+    `primaryStorageName`   VARCHAR(255)  DEFAULT NULL,
     `sourceRoot`           VARCHAR(2048) NOT NULL,
     `sourceRootIdentity`   VARCHAR(64)   NOT NULL,
     `enabled`              TINYINT(1)    DEFAULT NULL,
@@ -92,11 +107,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AiHostModelCachePolicyVO` (
     `lastOpDate`           TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `ukAiHostModelCachePolicyVOHostRootIdentity` (`hostUuid`, `sourceRootIdentity`),
+    KEY `idxAiHostModelCachePolicyVOPrimaryStorage` (`primaryStorageUuid`),
     CONSTRAINT `fkAiHostModelCachePolicyVOHostEO`
         FOREIGN KEY (`hostUuid`) REFERENCES `zstack`.`HostEO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CALL ADD_COLUMN('AiHostModelCachePolicyVO', 'sourceRootIdentity', 'VARCHAR(64)', 1, NULL);
+CALL ADD_COLUMN('AiHostModelCachePolicyVO', 'primaryStorageUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('AiHostModelCachePolicyVO', 'primaryStorageName', 'VARCHAR(255)', 1, NULL);
+CALL CREATE_INDEX('AiHostModelCachePolicyVO', 'idxAiHostModelCachePolicyVOPrimaryStorage', 'primaryStorageUuid');
 UPDATE `zstack`.`AiHostModelCachePolicyVO`
 SET `sourceRootIdentity` = SHA2(IFNULL(`sourceRoot`, ''), 256)
 WHERE `sourceRootIdentity` IS NULL OR `sourceRootIdentity` = '';
