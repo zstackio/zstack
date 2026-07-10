@@ -384,10 +384,6 @@ public class SourceClassMap {
 			put("org.zstack.mttyDevice.MttyDeviceState", "org.zstack.sdk.MttyDeviceState");
 			put("org.zstack.mttyDevice.MttyDeviceType", "org.zstack.sdk.MttyDeviceType");
 			put("org.zstack.mttyDevice.MttyDeviceVirtStatus", "org.zstack.sdk.MttyDeviceVirtStatus");
-			put("org.zstack.multicast.router.header.MulticastRouteInventory", "org.zstack.sdk.MulticastRouteInventory");
-			put("org.zstack.multicast.router.header.MulticastRouterInventory", "org.zstack.sdk.MulticastRouterInventory");
-			put("org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory", "org.zstack.sdk.MulticastRouterRendezvousPointInventory");
-			put("org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefInventory", "org.zstack.sdk.MulticastRouterVpcVRouterRefInventory");
 			put("org.zstack.nas.NasFileSystemInventory", "org.zstack.sdk.NasFileSystemInventory");
 			put("org.zstack.nas.NasMountTargetInventory", "org.zstack.sdk.NasMountTargetInventory");
 			put("org.zstack.nas.NasProtocolType", "org.zstack.sdk.NasProtocolType");
@@ -933,10 +929,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MttyDeviceState", "org.zstack.mttyDevice.MttyDeviceState");
 			put("org.zstack.sdk.MttyDeviceType", "org.zstack.mttyDevice.MttyDeviceType");
 			put("org.zstack.sdk.MttyDeviceVirtStatus", "org.zstack.mttyDevice.MttyDeviceVirtStatus");
-			put("org.zstack.sdk.MulticastRouteInventory", "org.zstack.multicast.router.header.MulticastRouteInventory");
-			put("org.zstack.sdk.MulticastRouterInventory", "org.zstack.multicast.router.header.MulticastRouterInventory");
-			put("org.zstack.sdk.MulticastRouterRendezvousPointInventory", "org.zstack.multicast.router.header.MulticastRouterRendezvousPointInventory");
-			put("org.zstack.sdk.MulticastRouterVpcVRouterRefInventory", "org.zstack.multicast.router.header.MulticastRouterVpcVRouterRefInventory");
 			put("org.zstack.sdk.MultipathTopologyStruct", "org.zstack.storage.device.multipath.MultipathTopologyStruct");
 			put("org.zstack.sdk.NasFileSystemInventory", "org.zstack.nas.NasFileSystemInventory");
 			put("org.zstack.sdk.NasMountTargetInventory", "org.zstack.nas.NasMountTargetInventory");
