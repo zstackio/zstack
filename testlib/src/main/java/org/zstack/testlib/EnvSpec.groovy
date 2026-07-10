@@ -186,8 +186,13 @@ class EnvSpec extends ApiHelper implements Node  {
 
     static Closure GLOBAL_DELETE_HOOK
     static List<AllowedDBRemaining> allowedDBRemainingList = []
+    static List<Pair<String, String>> skipResetGlobalConfigs = []
 
     protected ConcurrentLinkedQueue resourcesNeedDeletion = new ConcurrentLinkedQueue()
+
+    static void addSkipResetGlobalConfig(String category, String name) {
+        skipResetGlobalConfigs.add(new Pair<>(category, name))
+    }
 
     static {
         BeanUtils.reflections.getSubTypesOf(AllowedDBRemaining.class).findAll { !Modifier.isAbstract(it.modifiers) }.each {
@@ -565,11 +570,20 @@ class EnvSpec extends ApiHelper implements Node  {
         return results
     }
 
+    boolean shouldSkipResetGlobalConfig(GlobalConfigInventory config) {
+        return skipResetGlobalConfigs.any { it.first() == config.category && it.second() == config.name }
+    }
+
     void resetAllGlobalConfig() {
         logger.debug("Reset all global config started")
+        List<GlobalConfigInventory> changedConfigs = getChangedConfig()
+        List<GlobalConfigInventory> skippedConfigs = changedConfigs.findAll { shouldSkipResetGlobalConfig(it) }
+        if (!skippedConfigs.isEmpty()) {
+            logger.debug("Skip reset global configs: ${skippedConfigs.collect { "${it.category} - ${it.name}" }.join(", ")}")
+        }
         CountDownLatch latch = new CountDownLatch(1)
         List<ErrorCode> errors = []
-        new While<>(getChangedConfig()).each(new While.Do<GlobalConfigInventory>() {
+        new While<>(changedConfigs.findAll { !shouldSkipResetGlobalConfig(it) }).each(new While.Do<GlobalConfigInventory>() {
             @Override
             void accept(GlobalConfigInventory config, WhileCompletion completion) {
                 def ua = new UpdateGlobalConfigAction()
