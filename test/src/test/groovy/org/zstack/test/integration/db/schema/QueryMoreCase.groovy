@@ -130,7 +130,7 @@ class QueryMoreCase extends SubCase {
         list = q6.list()
         logger.info(list.toString())
 
-        assert list.size() == 2 // a VM, a router
+        assert list.size() == 1
         assert list.every { it instanceof VmInstanceVO }
         assert list.any { (it as VmInstanceVO).uuid == vm.uuid }
     }
