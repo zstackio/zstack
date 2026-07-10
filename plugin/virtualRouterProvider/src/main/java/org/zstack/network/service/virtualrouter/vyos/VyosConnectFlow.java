@@ -239,10 +239,12 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         }
                                         VirtualRouterMetadataOperator metadataOperator = new VirtualRouterMetadataOperator();
                                         metadataOperator.updateVirtualRouterMetadata(metadataStruct);
-                                        if (VirtualRouterMetadataOperator.zvrVersionCheck(ret.getZvrVersion())) {
+                                        String managementVersion = metadataOperator.getManagementVersion();
+                                        if (managementVersion != null &&
+                                                VirtualRouterMetadataOperator.zvrVersionCheck(ret.getZvrVersion())) {
                                             upgradeChecker.updateAgentVersion(vrUuid,
                                                     VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE,
-                                                    metadataOperator.getManagementVersion(), ret.getZvrVersion());
+                                                    managementVersion, ret.getZvrVersion());
                                         }
                                         new VirtualRouterSoftwareVersionOperator().updateVirtualRouterSoftwareVersion(versionStruct);
                                         errs.clear();
