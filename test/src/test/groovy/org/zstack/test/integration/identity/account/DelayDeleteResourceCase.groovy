@@ -6,17 +6,14 @@ import org.zstack.header.identity.AccessLevel
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
-import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
-import org.zstack.utils.data.SizeUnit
 
 /**
  * Created by miao on 17-6-7.
@@ -49,11 +46,6 @@ class DelayDeleteResourceCase extends SubCase {
                 image {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -89,11 +81,6 @@ class DelayDeleteResourceCase extends SubCase {
                         name = "l3"
 
                         service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
@@ -116,15 +103,6 @@ class DelayDeleteResourceCase extends SubCase {
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr")
                 }
 
                 attachBackupStorage("sftp")

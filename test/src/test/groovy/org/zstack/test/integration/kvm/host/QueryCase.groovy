@@ -1,8 +1,6 @@
 package org.zstack.test.integration.kvm.host
 
-import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.securitygroup.SecurityGroupConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.testlib.EnvSpec
@@ -20,10 +18,8 @@ class QueryCase extends SubCase{
         spring {
             sftpBackupStorage()
             localStorage()
-            virtualRouter()
             securityGroup()
             kvm()
-
         }
     }
 
@@ -51,11 +47,6 @@ class QueryCase extends SubCase{
                 image {
                     name = "image1"
                     url = "http://zstack.org/download/test.qcow2"
-                }
-
-                image {
-                    name = "vr"
-                    url = "http://zstack.org/download/vr.qcow2"
                 }
             }
 
@@ -91,11 +82,6 @@ class QueryCase extends SubCase{
                         name = "l3"
 
                         service {
-                            provider = VirtualRouterConstant.PROVIDER_TYPE
-                            types = [NetworkServiceType.DHCP.toString(), NetworkServiceType.DNS.toString()]
-                        }
-
-                        service {
                             provider = SecurityGroupConstant.SECURITY_GROUP_PROVIDER_TYPE
                             types = [SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE]
                         }
@@ -118,15 +104,6 @@ class QueryCase extends SubCase{
                             gateway = "12.16.10.1"
                         }
                     }
-                }
-
-                virtualRouterOffering {
-                    name = "vr"
-                    memory = SizeUnit.MEGABYTE.toByte(512)
-                    cpu = 2
-                    useManagementL3Network("pubL3")
-                    usePublicL3Network("pubL3")
-                    useImage("vr")
                 }
 
                 attachBackupStorage("sftp")
