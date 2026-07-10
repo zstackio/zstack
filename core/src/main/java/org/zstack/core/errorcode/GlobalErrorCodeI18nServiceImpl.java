@@ -125,93 +125,135 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
 
     @Override
     public void localizeErrorCode(ErrorCode error, String locale) {
+        localizeErrorCode(error, locale, false);
+    }
+
+    @Override
+    public ErrorCode localizeErrorCodeDetails(ErrorCode error, String locale) {
+        ErrorCode localized = copyErrorCode(error);
+        localizeErrorCode(localized, locale, true);
+        return localized;
+    }
+
+    private LocalizationResult localizeErrorCode(ErrorCode error, String locale, boolean localizeDetails) {
         if (error == null) {
-            return;
+            return LocalizationResult.notLocalized();
         }
 
         String resolvedLocale = locale != null ? locale : LocaleUtils.DEFAULT_LOCALE;
-        localizeNestedErrors(error, resolvedLocale);
+        LocalizationResult causeResult = localizeErrorCode(error.getCause(), resolvedLocale, localizeDetails);
+        List<LocalizationResult> listCauseResults = localizeListCauses(error, resolvedLocale, localizeDetails);
 
         String message = null;
+        boolean localized = false;
+        boolean completelyFormatted = false;
         if (error.getGlobalErrorCode() != null) {
-            message = getLocalizedMessage(error.getGlobalErrorCode(), resolvedLocale, error.getFormatArgs());
+            String template = getTemplate(error.getGlobalErrorCode(), resolvedLocale);
+            if (template != null) {
+                message = formatTemplate(template, error.getFormatArgs());
+                localized = true;
+                completelyFormatted = isTemplateCompletelyFormatted(template, error.getFormatArgs());
+            }
         }
 
         if (message == null) {
-            message = getLocalizedCauseMessage(error, resolvedLocale);
+            LocalizationResult nestedResult = getLocalizedCauseResult(causeResult, listCauseResults);
+            message = nestedResult.message;
+            localized = nestedResult.localized;
+            completelyFormatted = nestedResult.completelyFormatted;
         }
 
         if (message == null) {
             message = error.getDetails() != null ? error.getDetails() : error.getDescription();
         }
 
-        error.setMessage(message != null ? message : (error.getCode() != null ? error.getCode() : ""));
+        String resolvedMessage = message != null ? message : (error.getCode() != null ? error.getCode() : "");
+        error.setMessage(resolvedMessage);
+        if (localizeDetails && localized && completelyFormatted) {
+            error.setDetails(resolvedMessage);
+        }
+        return new LocalizationResult(resolvedMessage, localized, completelyFormatted);
     }
 
-    private void localizeNestedErrors(ErrorCode error, String locale) {
-        if (error.getCause() != null) {
-            localizeErrorCode(error.getCause(), locale);
-        }
-
+    private List<LocalizationResult> localizeListCauses(ErrorCode error, String locale, boolean localizeDetails) {
+        List<LocalizationResult> results = new ArrayList<>();
         if (error instanceof ErrorCodeList) {
             List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
             if (causes != null) {
                 for (ErrorCode cause : causes) {
-                    if (cause != null) {
-                        localizeErrorCode(cause, locale);
-                    }
+                    results.add(localizeErrorCode(cause, locale, localizeDetails));
                 }
             }
         }
+        return results;
     }
 
-    private String getLocalizedCauseMessage(ErrorCode error, String locale) {
-        if (hasLocalizedTemplate(error.getCause(), locale) && isNotBlank(error.getCause().getMessage())) {
-            return error.getCause().getMessage();
+    private LocalizationResult getLocalizedCauseResult(LocalizationResult causeResult,
+                                                        List<LocalizationResult> listCauseResults) {
+        if (causeResult.localized && isNotBlank(causeResult.message)) {
+            return causeResult;
         }
 
-        if (error instanceof ErrorCodeList) {
-            List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
-            if (causes != null) {
-                for (ErrorCode cause : causes) {
-                    if (hasLocalizedTemplate(cause, locale) && isNotBlank(cause.getMessage())) {
-                        return cause.getMessage();
-                    }
-                }
+        for (LocalizationResult result : listCauseResults) {
+            if (result.localized && isNotBlank(result.message)) {
+                return result;
             }
         }
 
-        return null;
+        return LocalizationResult.notLocalized();
     }
 
-    private boolean hasLocalizedTemplate(ErrorCode error, String locale) {
-        if (error == null) {
+    private boolean isTemplateCompletelyFormatted(String template, String[] formatArgs) {
+        try {
+            Object[] args = formatArgs == null ? new Object[0] : formatArgs;
+            String.format(template, args);
+            return true;
+        } catch (IllegalFormatException e) {
             return false;
         }
+    }
 
-        if (error.getGlobalErrorCode() != null && getTemplate(error.getGlobalErrorCode(), locale) != null) {
-            return true;
+    private ErrorCode copyErrorCode(ErrorCode error) {
+        if (error == null) {
+            return null;
         }
 
-        if (hasLocalizedTemplate(error.getCause(), locale)) {
-            return true;
-        }
+        ErrorCode copy = error.copy();
+        copy.setCause(copyErrorCode(error.getCause()));
 
         if (error instanceof ErrorCodeList) {
             List<ErrorCode> causes = ((ErrorCodeList) error).getCauses();
-            if (causes != null) {
+            if (causes == null) {
+                ((ErrorCodeList) copy).setCauses(null);
+            } else {
+                List<ErrorCode> copiedCauses = new ArrayList<>(causes.size());
                 for (ErrorCode cause : causes) {
-                    if (hasLocalizedTemplate(cause, locale)) {
-                        return true;
-                    }
+                    copiedCauses.add(copyErrorCode(cause));
                 }
+                ((ErrorCodeList) copy).setCauses(copiedCauses);
             }
         }
 
-        return false;
+        return copy;
     }
 
     private boolean isNotBlank(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private static class LocalizationResult {
+        private final String message;
+        private final boolean localized;
+        private final boolean completelyFormatted;
+
+        private LocalizationResult(String message, boolean localized, boolean completelyFormatted) {
+            this.message = message;
+            this.localized = localized;
+            this.completelyFormatted = completelyFormatted;
+        }
+
+        private static LocalizationResult notLocalized() {
+            return new LocalizationResult(null, false, false);
+        }
     }
 }

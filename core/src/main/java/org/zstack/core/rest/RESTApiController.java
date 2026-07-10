@@ -47,7 +47,7 @@ public class RESTApiController {
                 return;
             }
             String locale = resolveLocale(req);
-            localizeRestAPIResponse(apiRsp, locale);
+            localizeRestAPIResponse(apiRsp, locale, hasAcceptLanguage(req));
             rsp.setCharacterEncoding("UTF-8");
             PrintWriter writer = rsp.getWriter();
             String res = JSONObjectUtil.toJsonString(apiRsp);
@@ -59,7 +59,8 @@ public class RESTApiController {
         }
     }
 
-    private String handleByMessageType(String body, String clientIp, String clientBrowser, String locale) {
+    private String handleByMessageType(String body, String clientIp, String clientBrowser, String locale,
+                                       boolean localizeDetails) {
         APIMessage amsg = null;
         try {
             amsg = (APIMessage) RESTApiDecoder.loads(body);
@@ -75,7 +76,7 @@ public class RESTApiController {
         } else {
             rsp = restApi.send(amsg);
         }
-        localizeRestAPIResponse(rsp, locale);
+        localizeRestAPIResponse(rsp, locale, localizeDetails);
         return JSONObjectUtil.toJsonString(rsp);
     }
 
@@ -86,7 +87,8 @@ public class RESTApiController {
         String clientBrowser = HttpServletRequestUtils.getClientBrowser(request);
         String locale = resolveLocale(request);
         try {
-            String ret = handleByMessageType(entity.getBody(), clientIp, clientBrowser, locale);
+            String ret = handleByMessageType(entity.getBody(), clientIp, clientBrowser, locale,
+                    hasAcceptLanguage(request));
             response.setStatus(HttpStatus.SC_OK);
             response.setCharacterEncoding("UTF-8");
             PrintWriter writer = response.getWriter();
@@ -106,7 +108,12 @@ public class RESTApiController {
         return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
     }
 
-    private void localizeRestAPIResponse(RestAPIResponse rsp, String locale) {
+    private boolean hasAcceptLanguage(HttpServletRequest req) {
+        String acceptLanguage = req.getHeader("Accept-Language");
+        return acceptLanguage != null && !acceptLanguage.trim().isEmpty();
+    }
+
+    private void localizeRestAPIResponse(RestAPIResponse rsp, String locale, boolean localizeDetails) {
         if (rsp == null || rsp.getResult() == null || locale == null) {
             return;
         }
@@ -116,13 +123,21 @@ public class RESTApiController {
             if (msg instanceof MessageReply) {
                 MessageReply reply = (MessageReply) msg;
                 if (!reply.isSuccess() && reply.getError() != null) {
-                    i18nService.localizeErrorCode(reply.getError(), locale);
+                    if (localizeDetails) {
+                        reply.setError(i18nService.localizeErrorCodeDetails(reply.getError(), locale));
+                    } else {
+                        i18nService.localizeErrorCode(reply.getError(), locale);
+                    }
                     rsp.setResult(RESTApiDecoder.dump(reply));
                 }
             } else if (msg instanceof APIEvent) {
                 APIEvent evt = (APIEvent) msg;
                 if (!evt.isSuccess() && evt.getError() != null) {
-                    i18nService.localizeErrorCode(evt.getError(), locale);
+                    if (localizeDetails) {
+                        evt.setError(i18nService.localizeErrorCodeDetails(evt.getError(), locale));
+                    } else {
+                        i18nService.localizeErrorCode(evt.getError(), locale);
+                    }
                     rsp.setResult(RESTApiDecoder.dump(evt));
                 }
             }
