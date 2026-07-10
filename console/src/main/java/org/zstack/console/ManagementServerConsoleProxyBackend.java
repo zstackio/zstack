@@ -40,6 +40,8 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.ctl.ConfigureCommand;
 import org.zstack.utils.ctl.ZStackCtlResult;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
+import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
@@ -98,6 +100,91 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
         ZStackCtlResult rst = new ConfigureCommand().Configure(String.format("%s=%s", key, value)).exec();
         return rst.isSuccess() ? 0 : 1;
+    }
+
+    public static class ConsoleProxyAddressConfig {
+        String legacy;
+        String ipv4;
+        String ipv6;
+
+        ConsoleProxyAddressConfig(String legacy, String ipv4, String ipv6) {
+            this.legacy = normalizeConsoleProxyAddressValue(legacy);
+            this.ipv4 = normalizeConsoleProxyAddressValue(ipv4);
+            this.ipv6 = normalizeConsoleProxyAddressValue(ipv6);
+        }
+
+        public String getLegacy() {
+            return legacy;
+        }
+
+        public String getIpv4() {
+            return ipv4;
+        }
+
+        public String getIpv6() {
+            return ipv6;
+        }
+    }
+
+    /*
+     * Normalize console proxy addresses for API updates.
+     *
+     * The API is partial-update: null means the caller did not touch the field,
+     * while an empty string means the caller wants to clear it. This method first
+     * merges old values with provided values, then applies compatibility rules:
+     *
+     * - If only the legacy field is explicitly set to an IPv4/IPv6 literal, copy
+     *   it to the same-family field. For example, setting legacy to 172.24.1.10
+     *   also updates consoleProxyOverriddenIpv4 when IPv4-specific is omitted.
+     * - If the legacy field is a hostname, clear IPv4/IPv6-specific fields so
+     *   both IPv4 and IPv6 clients use that hostname.
+     */
+    static ConsoleProxyAddressConfig normalizeForUpdate(ConsoleProxyAgentVO vo, UpdateConsoleProxyAgentMsg msg) {
+        boolean legacyProvided = msg.getConsoleProxyOverriddenIp() != null;
+        boolean ipv4Provided = msg.getConsoleProxyOverriddenIpv4() != null;
+        boolean ipv6Provided = msg.getConsoleProxyOverriddenIpv6() != null;
+        ConsoleProxyAddressConfig config = new ConsoleProxyAddressConfig(
+                legacyProvided ? msg.getConsoleProxyOverriddenIp() : vo.getConsoleProxyOverriddenIp(),
+                ipv4Provided ? msg.getConsoleProxyOverriddenIpv4() : vo.getConsoleProxyOverriddenIpv4(),
+                ipv6Provided ? msg.getConsoleProxyOverriddenIpv6() : vo.getConsoleProxyOverriddenIpv6());
+
+        if (!legacyProvided) {
+            return config;
+        }
+
+        String legacy = normalizeConsoleProxyAddressValue(config.legacy);
+        if (legacy == null || legacy.isEmpty() || "0.0.0.0".equals(legacy) || "::".equals(legacy)) {
+            return config;
+        }
+
+        if (NetworkUtils.isIpv4Address(legacy)) {
+            if (!ipv4Provided) {
+                config.ipv4 = legacy;
+            }
+        } else if (IPv6NetworkUtils.isIpv6Address(legacy)) {
+            if (!ipv6Provided) {
+                config.ipv6 = legacy;
+            }
+        } else {
+            config.ipv4 = "";
+            config.ipv6 = "";
+        }
+
+        return config;
+    }
+
+    /*
+     * Basic value normalization shared by all console proxy address helpers.
+     *
+     * This method does not decide whether the value is a valid endpoint. It only
+     * trims whitespace and removes IPv6 URL brackets so later comparisons see a
+     * stable form; null remains null and an intentionally empty value remains "".
+     */
+    private static String normalizeConsoleProxyAddressValue(String address) {
+        if (address == null) {
+            return null;
+        }
+        return IPv6NetworkUtils.stripHostUrlBrackets(address.trim());
     }
 
     protected ConsoleProxy getConsoleProxy(VmInstanceInventory vm, ConsoleProxyVO vo) {
@@ -542,9 +629,10 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
                         oldProxyIpv4 = vo.getConsoleProxyOverriddenIpv4();
                         oldProxyIpv6 = vo.getConsoleProxyOverriddenIpv6();
                         oldProxyPort = vo.getConsoleProxyPort();
-                        newProxyIp = msg.getConsoleProxyOverriddenIp() == null ? oldProxyIp : msg.getConsoleProxyOverriddenIp();
-                        newProxyIpv4 = msg.getConsoleProxyOverriddenIpv4() == null ? oldProxyIpv4 : msg.getConsoleProxyOverriddenIpv4();
-                        newProxyIpv6 = msg.getConsoleProxyOverriddenIpv6() == null ? oldProxyIpv6 : msg.getConsoleProxyOverriddenIpv6();
+                        ConsoleProxyAddressConfig addressConfig = normalizeForUpdate(vo, msg);
+                        newProxyIp = addressConfig.legacy;
+                        newProxyIpv4 = addressConfig.ipv4;
+                        newProxyIpv6 = addressConfig.ipv6;
                         vo.setConsoleProxyOverriddenIp(newProxyIp);
                         vo.setConsoleProxyOverriddenIpv4(newProxyIpv4);
                         vo.setConsoleProxyOverriddenIpv6(newProxyIpv6);
@@ -582,7 +670,7 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
 
                     @Override
                     public void rollback(FlowRollback trigger, Map data) {
-                        Platform.getGlobalProperties().put("consoleProxyOverriddenIp", oldProxyIp);
+                        Platform.getGlobalProperties().put("consoleProxyOverriddenIp", formatConsoleProxyConfigureValue(oldProxyIp));
                         Platform.getGlobalProperties().put("consoleProxyOverriddenIpv4", formatConsoleProxyConfigureValue(oldProxyIpv4));
                         Platform.getGlobalProperties().put("consoleProxyOverriddenIpv6", formatConsoleProxyConfigureValue(oldProxyIpv6));
                         Platform.getGlobalProperties().put("consoleProxyPort", Integer.toString(oldProxyPort));

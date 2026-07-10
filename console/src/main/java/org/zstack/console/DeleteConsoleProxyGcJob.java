@@ -1,11 +1,13 @@
 package org.zstack.console;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.core.gc.GC;
 import org.zstack.core.gc.GCCompletion;
 import org.zstack.core.gc.TimeBasedGarbageCollector;
 import org.zstack.header.console.ConsoleBackend;
+import org.zstack.header.console.ConsoleConstants;
 import org.zstack.header.console.ConsoleProxyAgentStatus;
 import org.zstack.header.console.ConsoleProxyAgentVO;
 import org.zstack.header.console.ConsoleProxyAgentVO_;
@@ -27,6 +29,37 @@ public class DeleteConsoleProxyGcJob extends TimeBasedGarbageCollector {
     @Autowired
     private ConsoleManager consoleMgr;
 
+    private ConsoleProxyAgentStatus findAgentStatus(String agentIp) {
+        ConsoleProxyAgentStatus status = Q.New(ConsoleProxyAgentVO.class)
+                .select(ConsoleProxyAgentVO_.status)
+                .eq(ConsoleProxyAgentVO_.managementIp, agentIp)
+                .findValue();
+        if (status != null) {
+            return status;
+        }
+
+        status = Q.New(ConsoleProxyAgentVO.class)
+                .select(ConsoleProxyAgentVO_.status)
+                .eq(ConsoleProxyAgentVO_.consoleProxyOverriddenIp, agentIp)
+                .findValue();
+        if (status != null) {
+            return status;
+        }
+
+        status = Q.New(ConsoleProxyAgentVO.class)
+                .select(ConsoleProxyAgentVO_.status)
+                .eq(ConsoleProxyAgentVO_.consoleProxyOverriddenIpv4, agentIp)
+                .findValue();
+        if (status != null) {
+            return status;
+        }
+
+        return Q.New(ConsoleProxyAgentVO.class)
+                .select(ConsoleProxyAgentVO_.status)
+                .eq(ConsoleProxyAgentVO_.consoleProxyOverriddenIpv6, agentIp)
+                .findValue();
+    }
+
     @Override
     protected void triggerNow(GCCompletion completion) {
         ConsoleBackend backend = consoleMgr.getConsoleBackend();
@@ -36,10 +69,13 @@ public class DeleteConsoleProxyGcJob extends TimeBasedGarbageCollector {
             return;
         }
 
-        ConsoleProxyAgentStatus status = Q.New(ConsoleProxyAgentVO.class)
-                .select(ConsoleProxyAgentVO_.status)
-                .eq(ConsoleProxyAgentVO_.consoleProxyOverriddenIp, consoleProxy.getAgentIp())
-                .findValue();
+        ConsoleProxyAgentStatus status = findAgentStatus(consoleProxy.getAgentIp());
+        if (status == null && ConsoleConstants.MANAGEMENT_SERVER_CONSOLE_PROXY_BACKEND.equals(consoleProxy.getAgentType())) {
+            status = Q.New(ConsoleProxyAgentVO.class)
+                    .select(ConsoleProxyAgentVO_.status)
+                    .eq(ConsoleProxyAgentVO_.uuid, Platform.getManagementServerId())
+                    .findValue();
+        }
         if (status == null) {
             logger.debug(String.format("console proxy not found on agent[ip: %s, uuid: %s]," +
                     " assume it has been deleted",
