@@ -474,11 +474,6 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>slb</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
                     <artifactId>billing</artifactId>
                     <version>${project.version}</version>
                 </dependency>
