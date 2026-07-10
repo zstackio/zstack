@@ -429,11 +429,6 @@ public class SourceClassMap {
 			put("org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory", "org.zstack.sdk.LoadBalancerServerGroupServerIpInventory");
 			put("org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory");
 			put("org.zstack.network.service.portforwarding.PortForwardingRuleInventory", "org.zstack.sdk.PortForwardingRuleInventory");
-			put("org.zstack.network.service.slb.SlbGroupInventory", "org.zstack.sdk.SlbGroupInventory");
-			put("org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory", "org.zstack.sdk.SlbGroupL3NetworkRefInventory");
-			put("org.zstack.network.service.slb.SlbLoadBalancerInventory", "org.zstack.sdk.SlbLoadBalancerInventory");
-			put("org.zstack.network.service.slb.SlbOfferingInventory", "org.zstack.sdk.SlbOfferingInventory");
-			put("org.zstack.network.service.slb.SlbVmInstanceInventory", "org.zstack.sdk.SlbVmInstanceInventory");
 			put("org.zstack.network.service.vip.VipInventory", "org.zstack.sdk.VipInventory");
 			put("org.zstack.network.service.vip.VipNetworkServicesRefInventory", "org.zstack.sdk.VipNetworkServicesRefInventory");
 			put("org.zstack.network.service.virtualrouter.APIGetVipUsedPortsReply$VipPortRangeInventory", "org.zstack.sdk.VipPortRangeInventory");
@@ -1090,11 +1085,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ShellResult", "org.zstack.kvm.APIKvmRunShellEvent$ShellResult");
 			put("org.zstack.sdk.ShrinkResult", "org.zstack.header.storage.snapshot.ShrinkResult");
 			put("org.zstack.sdk.SimulatorHostInventory", "org.zstack.header.simulator.SimulatorHostInventory");
-			put("org.zstack.sdk.SlbGroupInventory", "org.zstack.network.service.slb.SlbGroupInventory");
-			put("org.zstack.sdk.SlbGroupL3NetworkRefInventory", "org.zstack.network.service.slb.SlbGroupL3NetworkRefInventory");
-			put("org.zstack.sdk.SlbLoadBalancerInventory", "org.zstack.network.service.slb.SlbLoadBalancerInventory");
-			put("org.zstack.sdk.SlbOfferingInventory", "org.zstack.network.service.slb.SlbOfferingInventory");
-			put("org.zstack.sdk.SlbVmInstanceInventory", "org.zstack.network.service.slb.SlbVmInstanceInventory");
 			put("org.zstack.sdk.SmartDataStruct", "org.zstack.storage.device.localRaid.SmartDataStruct");
 			put("org.zstack.sdk.SnapShotSpendingInventory", "org.zstack.billing.spendingcalculator.snapshot.SnapShotSpendingInventory");
 			put("org.zstack.sdk.SnapshotLeafInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTree$SnapshotLeafInventory");
