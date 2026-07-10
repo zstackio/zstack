@@ -13,6 +13,8 @@ public class ConsoleProxyAgentVO_ {
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> description;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> managementIp;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> consoleProxyOverriddenIp;
+    public static volatile SingularAttribute<ConsoleProxyAgentVO, String> consoleProxyOverriddenIpv4;
+    public static volatile SingularAttribute<ConsoleProxyAgentVO, String> consoleProxyOverriddenIpv6;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, Integer> consoleProxyPort;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> type;
     public static volatile SingularAttribute<ConsoleProxyAgentVO, String> status;

@@ -141,7 +141,8 @@ public class MacOperator {
     }
 
     public static String generateMacWithDeviceIdIp(short deviceId) {
-        String consoleProxyIp = CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP;//Platform.getManagementServerIp();
+        String consoleProxyIp = NetworkUtils.isIpv4Address(CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV4) ?
+                CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IPV4 : CoreGlobalProperty.CONSOLE_PROXY_OVERRIDDEN_IP;
         if (!NetworkUtils.isIpv4Address(consoleProxyIp) || "0.0.0.0".equals(consoleProxyIp)) {
             return generateMacWithDeviceIdRandom(deviceId);
         }
