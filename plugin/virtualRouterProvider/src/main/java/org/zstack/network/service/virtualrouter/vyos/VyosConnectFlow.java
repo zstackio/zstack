@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
@@ -68,6 +69,8 @@ public class VyosConnectFlow extends NoRollbackFlow {
     private ThreadFacade thdf;
     @Autowired
     private AnsibleFacade asf;
+    @Autowired
+    private UpgradeChecker upgradeChecker;
 
     private void debug (String vrMgtIp, String sshUser, int timeout) {
         int sshPort = VirtualRouterGlobalConfig.SSH_PORT.value(Integer.class);
@@ -234,7 +237,13 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                                 creator.create();
                                             }
                                         }
-                                        new VirtualRouterMetadataOperator().updateVirtualRouterMetadata(metadataStruct);
+                                        VirtualRouterMetadataOperator metadataOperator = new VirtualRouterMetadataOperator();
+                                        metadataOperator.updateVirtualRouterMetadata(metadataStruct);
+                                        if (VirtualRouterMetadataOperator.zvrVersionCheck(ret.getZvrVersion())) {
+                                            upgradeChecker.updateAgentVersion(vrUuid,
+                                                    VirtualRouterConstant.VIRTUAL_ROUTER_PROVIDER_TYPE,
+                                                    metadataOperator.getManagementVersion(), ret.getZvrVersion());
+                                        }
                                         new VirtualRouterSoftwareVersionOperator().updateVirtualRouterSoftwareVersion(versionStruct);
                                         errs.clear();
                                         wcompl.allDone();
