@@ -36,13 +36,15 @@ class ErrorCodeI18nCase extends SubCase {
             testServiceLocalizesEnUS()
             testServiceFallbackToEnUS()
             testServiceFormatsArgs()
+            testServiceKeepsRawDetailsWhenFormatArgsAreMissing()
             testServiceRecursiveCauseChain()
             testServiceErrorCodeList()
             testServiceFallbackToLocalizedCauseWhenOuterCodeHasNoTemplate()
             testServiceKeepsOuterDetailsWhenCauseHasNoTemplate()
             testRestServerSyncApiWithAcceptLanguage()
             testRestServerAsyncApiWithAcceptLanguage()
-            testNoAcceptLanguageHeaderFallsBackToEnUS()
+            testAsyncWebhookWithoutAcceptLanguageKeepsRawDetails()
+            testSyncApiWithoutAcceptLanguageKeepsRawDetails()
         }
     }
 
@@ -157,23 +159,42 @@ class ErrorCodeI18nCase extends SubCase {
         assert cause.getDetails().contains("当VM平台")
         assert outer.getDetails().contains("当VM平台")
 
-        i18nService.localizeErrorCodeDetails(outer, "en_US")
+        ErrorCode enLocalized = i18nService.localizeErrorCodeDetails(outer, "en_US")
 
-        assert outer.getMessage() == cause.getMessage()
-        assert outer.getMessage().contains("When the VM platform is Other")
-        assert cause.getDetails() == cause.getMessage()
-        assert outer.getDetails() == outer.getMessage()
-        assert !cause.getDetails().contains("当VM平台")
-        assert !outer.getDetails().contains("当VM平台")
+        assert enLocalized.getMessage() == enLocalized.getCause().getMessage()
+        assert enLocalized.getMessage().contains("When the VM platform is Other")
+        assert enLocalized.getCause().getDetails() == enLocalized.getCause().getMessage()
+        assert enLocalized.getDetails() == enLocalized.getMessage()
+        assert !enLocalized.getCause().getDetails().contains("当VM平台")
+        assert !enLocalized.getDetails().contains("当VM平台")
+        assert cause.getDetails().contains("当VM平台")
+        assert outer.getDetails().contains("当VM平台")
 
-        i18nService.localizeErrorCodeDetails(outer, "zh_CN")
+        ErrorCode zhLocalized = i18nService.localizeErrorCodeDetails(outer, "zh_CN")
 
-        assert outer.getMessage() == cause.getMessage()
-        assert outer.getMessage().contains("虚拟机平台")
-        assert cause.getDetails() == cause.getMessage()
-        assert outer.getDetails() == outer.getMessage()
-        assert cause.getDetails().contains("虚拟机平台")
-        assert outer.getDetails().contains("虚拟机平台")
+        assert zhLocalized.getMessage() == zhLocalized.getCause().getMessage()
+        assert zhLocalized.getMessage().contains("虚拟机平台")
+        assert zhLocalized.getCause().getDetails() == zhLocalized.getCause().getMessage()
+        assert zhLocalized.getDetails() == zhLocalized.getMessage()
+        assert zhLocalized.getCause().getDetails().contains("虚拟机平台")
+        assert zhLocalized.getDetails().contains("虚拟机平台")
+        assert cause.getDetails().contains("当VM平台")
+        assert outer.getDetails().contains("当VM平台")
+    }
+
+    void testServiceKeepsRawDetailsWhenFormatArgsAreMissing() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+
+        ErrorCode error = new ErrorCode()
+        error.setCode(SysErrors.OPERATION_ERROR.toString())
+        error.setDetails("concrete raw details")
+        error.setGlobalErrorCode("ORG_ZSTACK_STORAGE_PRIMARY_10039")
+
+        ErrorCode localized = i18nService.localizeErrorCodeDetails(error, "en_US")
+
+        assert localized.getMessage() == "no primary storage[uuid:%s] exists"
+        assert localized.getDetails() == "concrete raw details"
+        assert error.getDetails() == "concrete raw details"
     }
 
     void testServiceKeepsOuterDetailsWhenCauseHasNoTemplate() {
@@ -284,57 +305,58 @@ class ErrorCodeI18nCase extends SubCase {
                 }
 
                 // Async API returns 202 with location header for job polling
-                if (postCode == 202) {
-                    Map postResponse = JSONObjectUtil.toObject(postBody, LinkedHashMap.class)
-                    String location = postResponse.get("location") as String
-                    assert location != null
+                assert postCode == 202
+                Map postResponse = JSONObjectUtil.toObject(postBody, LinkedHashMap.class)
+                String location = postResponse.get("location") as String
+                assert location != null
 
-                    // Poll the job with Accept-Language header
-                    retryInSecs(5) {
-                        String jobUrl = location.startsWith("http") ? location : "http://127.0.0.1:${WebBeanConstructor.port}${location}"
-                        HttpURLConnection jobConn = (HttpURLConnection) new URL(jobUrl).openConnection()
-                        try {
-                            jobConn.setRequestMethod("GET")
-                            jobConn.setRequestProperty("Authorization", "OAuth ${sessionId}")
-                            jobConn.setRequestProperty("Accept-Language", "zh-CN")
+                String jobUrl = location.startsWith("http") ? location : "http://127.0.0.1:${WebBeanConstructor.port}${location}"
 
-                            int jobCode = jobConn.getResponseCode()
-                            String jobBody
-                            if (jobCode >= 400) {
-                                jobBody = jobConn.getErrorStream()?.text ?: ""
-                            } else {
-                                jobBody = jobConn.getInputStream()?.text ?: ""
-                            }
+                // Poll the job with Accept-Language header
+                retryInSecs(5) {
+                    HttpURLConnection jobConn = (HttpURLConnection) new URL(jobUrl).openConnection()
+                    try {
+                        jobConn.setRequestMethod("GET")
+                        jobConn.setRequestProperty("Authorization", "OAuth ${sessionId}")
+                        jobConn.setRequestProperty("Accept-Language", "zh-CN")
 
-                            // Job should be done (503 for error)
-                            assert jobCode == 503
-                            Map jobResponse = JSONObjectUtil.toObject(jobBody, LinkedHashMap.class)
-                            Map jobError = jobResponse.get("error") as Map
-                            assert jobError != null
-                            String jobMessage = jobError.get("message") as String
-                            assert jobMessage != null
-                            assert jobMessage.contains("未找到主存储")
-                            assert jobMessage.contains("test-async-uuid")
-                            String jobDetails = jobError.get("details") as String
-                            assert jobDetails != null
-                            assert jobDetails.contains("未找到主存储")
-                            assert jobDetails.contains("test-async-uuid")
-                        } finally {
-                            jobConn.disconnect()
+                        int jobCode = jobConn.getResponseCode()
+                        String jobBody
+                        if (jobCode >= 400) {
+                            jobBody = jobConn.getErrorStream()?.text ?: ""
+                        } else {
+                            jobBody = jobConn.getInputStream()?.text ?: ""
                         }
+
+                        // Job should be done (503 for error)
+                        assert jobCode == 503
+                        Map jobResponse = JSONObjectUtil.toObject(jobBody, LinkedHashMap.class)
+                        Map jobError = jobResponse.get("error") as Map
+                        assert jobError != null
+                        String jobMessage = jobError.get("message") as String
+                        assert jobMessage != null
+                        assert jobMessage.contains("未找到主存储")
+                        assert jobMessage.contains("test-async-uuid")
+                        String jobDetails = jobError.get("details") as String
+                        assert jobDetails != null
+                        assert jobDetails.contains("未找到主存储")
+                        assert jobDetails.contains("test-async-uuid")
+                    } finally {
+                        jobConn.disconnect()
                     }
-                } else {
-                    // If returned directly (e.g. 503), check the error
-                    assert postCode == 503
-                    Map directResponse = JSONObjectUtil.toObject(postBody, LinkedHashMap.class)
-                    Map directError = directResponse.get("error") as Map
-                    assert directError != null
-                    String directMessage = directError.get("message") as String
-                    assert directMessage != null
-                    assert directMessage.contains("未找到主存储")
-                    String directDetails = directError.get("details") as String
-                    assert directDetails != null
-                    assert directDetails.contains("未找到主存储")
+                }
+
+                HttpURLConnection rawJobConn = (HttpURLConnection) new URL(jobUrl).openConnection()
+                try {
+                    rawJobConn.setRequestMethod("GET")
+                    rawJobConn.setRequestProperty("Authorization", "OAuth ${sessionId}")
+
+                    assert rawJobConn.getResponseCode() == 503
+                    Map rawJobResponse = JSONObjectUtil.toObject(rawJobConn.getErrorStream().text, LinkedHashMap.class)
+                    Map rawJobError = rawJobResponse.get("error") as Map
+                    assert rawJobError.get("details") == "no primary storage[uuid:test-async-uuid] exists"
+                } finally {
+                    rawJobConn.disconnect()
                 }
             } finally {
                 postConn.disconnect()
@@ -344,11 +366,11 @@ class ErrorCodeI18nCase extends SubCase {
         }
     }
 
-    void testNoAcceptLanguageHeaderFallsBackToEnUS() {
+    void testSyncApiWithoutAcceptLanguageKeepsRawDetails() {
         // Intercept APIQueryZoneMsg and return error with known globalErrorCode
         ErrorCode mockError = new ErrorCode()
         mockError.setCode(SysErrors.INTERNAL.toString())
-        mockError.setDetails("no primary storage[uuid:test-no-lang] exists")
+        mockError.setDetails("raw sync details")
         mockError.setGlobalErrorCode("ORG_ZSTACK_STORAGE_PRIMARY_10039")
         mockError.setFormatArgs(["test-no-lang"] as String[])
 
@@ -386,11 +408,35 @@ class ErrorCodeI18nCase extends SubCase {
                 assert message.contains("test-no-lang")
                 String details = error.get("details") as String
                 assert details != null
-                assert details.contains("no primary storage")
-                assert details.contains("test-no-lang")
+                assert details == "raw sync details"
             } finally {
                 conn.disconnect()
             }
+        } finally {
+            env.cleanMessageHandlers()
+        }
+    }
+
+    void testAsyncWebhookWithoutAcceptLanguageKeepsRawDetails() {
+        ErrorCode asyncError = new ErrorCode()
+        asyncError.setCode(SysErrors.INTERNAL.toString())
+        asyncError.setDetails("raw webhook details")
+        asyncError.setGlobalErrorCode("ORG_ZSTACK_STORAGE_PRIMARY_10039")
+        asyncError.setFormatArgs(["test-webhook-no-lang"] as String[])
+
+        env.message(org.zstack.header.zone.APICreateZoneMsg.class) { msg, bus ->
+            bus.replyErrorByMessageType(msg, asyncError)
+        }
+
+        try {
+            org.zstack.sdk.CreateZoneAction action = new org.zstack.sdk.CreateZoneAction()
+            action.sessionId = adminSession()
+            action.name = "test-webhook-no-lang"
+
+            org.zstack.sdk.CreateZoneAction.Result result = action.call()
+
+            assert result.error != null
+            assert result.error.details == "raw webhook details"
         } finally {
             env.cleanMessageHandlers()
         }

@@ -408,11 +408,15 @@ public class RestServer implements Component, CloudBusEventListener {
 
             writeResponse(response, w, ret.getResult());
         } else {
-            // Localize with webhook caller's locale. Platform.err only prepares
-            // the internal message; response details are localized here.
             String locale = resolveLocale();
-            i18nService.localizeErrorCodeDetails(evt.getError(), locale);
-            response.setError(evt.getError());
+            if (isDetailsLocalizationRequested()) {
+                response.setError(i18nService.localizeErrorCodeDetails(evt.getError(), locale));
+            } else {
+                if (!LocaleUtils.DEFAULT_LOCALE.equals(locale)) {
+                    i18nService.localizeErrorCode(evt.getError(), locale);
+                }
+                response.setError(evt.getError());
+            }
         }
 
         String body = CloudBusGson.toJsonForHttpResponse(response);
@@ -979,7 +983,11 @@ public class RestServer implements Component, CloudBusEventListener {
         String locale = resolveLocale();
         rsp.setHeader("Content-Language", toLanguageTag(locale));
         if (response.getError() != null) {
-            i18nService.localizeErrorCodeDetails(response.getError(), locale);
+            if (isDetailsLocalizationRequested()) {
+                response.setError(i18nService.localizeErrorCodeDetails(response.getError(), locale));
+            } else {
+                i18nService.localizeErrorCode(response.getError(), locale);
+            }
             response.completeFailure(apiId, locale);
         }
     }
@@ -1489,6 +1497,11 @@ public class RestServer implements Component, CloudBusEventListener {
         }
         String acceptLanguage = info.headers.getFirst("Accept-Language");
         return LocaleUtils.resolveLocale(acceptLanguage, i18nService.getAvailableLocales());
+    }
+
+    private boolean isDetailsLocalizationRequested() {
+        RequestInfo info = requestInfo.get();
+        return info != null && StringUtils.isNotBlank(info.headers.getFirst("Accept-Language"));
     }
 
     private void sendReplyResponse(MessageReply reply, Api api, HttpServletResponse rsp, String apiId) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
