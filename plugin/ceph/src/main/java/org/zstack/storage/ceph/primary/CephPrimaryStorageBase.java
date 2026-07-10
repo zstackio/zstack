@@ -459,7 +459,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public String encryptedDek;
         public String installPath;
         public String targetInstallPath;
-        public String sourceTrashInstallPath;
         public boolean targetEncrypted;
         public Long virtualSize;
     }
@@ -490,23 +489,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long actualSize;
     }
 
-    public static class ReplaceLuksRbdCmd extends AgentCommand {
-        public String installPath;
-        public String targetInstallPath;
-        public String temporaryInstallPath;
-        public String sourceTrashInstallPath;
-        public boolean deleteSourceTrash;
-    }
-
-    public static class ReplaceLuksRbdRsp extends AgentResponse {
-        public Long size;
-        public Long actualSize;
-    }
-
     public static class RollbackLuksRbdCmd extends AgentCommand {
-        public String installPath;
         public String targetInstallPath;
-        public String sourceTrashInstallPath;
     }
 
     public static class SwapInPlaceLuksRbdCmd extends AgentCommand {
@@ -1460,7 +1444,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HOST_LUKS_ENCRYPT_IN_PLACE_PATH = "/ceph/primarystorage/kvmhost/encryptinplace";
     public static final String KVM_HOST_LUKS_RESIZE_PATH = "/ceph/primarystorage/kvmhost/luksresize";
     public static final String KVM_HOST_LUKS_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert";
-    public static final String LUKS_REPLACE_VOLUME_PATH = "/ceph/primarystorage/volume/luksreplace";
     public static final String LUKS_ROLLBACK_CONVERT_PATH = "/ceph/primarystorage/volume/luksconvert/rollback";
     public static final String LUKS_SWAP_IN_PLACE_PATH = "/ceph/primarystorage/volume/luksswapinplace";
     public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_DOWNLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encrypteddownload";
@@ -3636,8 +3619,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         KVMHostLuksConvertCmd kcmd = new KVMHostLuksConvertCmd();
         kcmd.psUuid = self.getUuid();
         kcmd.installPath = item.getSourceInstallPath();
-        kcmd.targetInstallPath = makeTemporaryLuksRbdInstallPath(item.getTargetInstallPath(), "converting");
-        kcmd.sourceTrashInstallPath = item.getSourceTrashInstallPath();
+        kcmd.targetInstallPath = item.getTargetInstallPath();
         kcmd.targetEncrypted = msg.isTargetEncrypted();
         kcmd.virtualSize = msg.getVolume().getSize();
         kcmd.encryptedDek = volumeEncryptedSecretHelper.materializeAndSealVolumeDekForHost(hostUuid, msg.getVolume().getUuid());
@@ -3653,16 +3635,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                     @Override
                     public void success(KVMHostLuksRsp ret) {
-                        ReplaceLuksRbdCmd rcmd = new ReplaceLuksRbdCmd();
-                        rcmd.installPath = item.getSourceInstallPath();
-                        rcmd.targetInstallPath = item.getTargetInstallPath();
-                        rcmd.temporaryInstallPath = kcmd.targetInstallPath;
-                        rcmd.sourceTrashInstallPath = item.getSourceTrashInstallPath();
-                        rcmd.deleteSourceTrash = false;
-                        httpCall(LUKS_REPLACE_VOLUME_PATH, rcmd, ReplaceLuksRbdRsp.class,
-                                new ReturnValueCompletion<ReplaceLuksRbdRsp>(msg) {
+                        if (ret.actualSize != null) {
+                            reply.setActualSizes(Collections.singletonMap(msg.getVolume().getUuid(), ret.actualSize));
+                            bus.reply(msg, reply);
+                            return;
+                        }
+
+                        syncVolumeSize(msg.getVolume().getUuid(), item.getTargetInstallPath(),
+                                new ReturnValueCompletion<GetVolumeSizeRsp>(msg) {
                                     @Override
-                                    public void success(ReplaceLuksRbdRsp rsp) {
+                                    public void success(GetVolumeSizeRsp rsp) {
                                         if (rsp.actualSize != null) {
                                             reply.setActualSizes(Collections.singletonMap(msg.getVolume().getUuid(), rsp.actualSize));
                                         }
@@ -3671,8 +3653,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
                                     @Override
                                     public void fail(ErrorCode errorCode) {
-                                        deleteRbdBitsBestEffort(kcmd.targetInstallPath);
-                                        reply.setError(errorCode);
+                                        logger.warn(String.format("failed to sync converted RBD volume[uuid:%s, installPath:%s] size: %s",
+                                                msg.getVolume().getUuid(), item.getTargetInstallPath(), errorCode.getReadableDetails()));
                                         bus.reply(msg, reply);
                                     }
                                 });
@@ -3700,18 +3682,16 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             return;
         }
 
-        if (StringUtils.isBlank(item.getSourceInstallPath()) || item.getSourceInstallPath().contains("@")) {
+        if (StringUtils.isBlank(item.getTargetInstallPath()) || item.getTargetInstallPath().contains("@")) {
             reply.setError(operr(
-                    "ceph rollback volume encryption conversion requires an active RBD source path, but got source path[%s]",
-                    item.getSourceInstallPath()));
+                    "ceph rollback volume encryption conversion requires an active RBD target path, but got target path[%s]",
+                    item.getTargetInstallPath()));
             bus.reply(msg, reply);
             return;
         }
 
         RollbackLuksRbdCmd rcmd = new RollbackLuksRbdCmd();
-        rcmd.installPath = item.getSourceInstallPath();
         rcmd.targetInstallPath = item.getTargetInstallPath();
-        rcmd.sourceTrashInstallPath = item.getSourceTrashInstallPath();
 
         httpCall(LUKS_ROLLBACK_CONVERT_PATH, rcmd, AgentResponse.class,
                 new ReturnValueCompletion<AgentResponse>(msg) {
