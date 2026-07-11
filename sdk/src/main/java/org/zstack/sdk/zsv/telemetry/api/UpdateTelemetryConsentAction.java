@@ -25,7 +25,7 @@ public class UpdateTelemetryConsentAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validValues = {"ENABLE","DISABLE"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"Enabled","Disabled"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String action;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
