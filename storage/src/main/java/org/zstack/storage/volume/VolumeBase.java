@@ -3413,6 +3413,10 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         } catch (RuntimeException e) {
                             logger.warn(String.format("failed to refresh volume[uuid:%s] after encryption conversion DB update: %s",
                                     self.getUuid(), e.getMessage()), e);
+                            VolumeVO latest = dbf.findByUuid(self.getUuid(), VolumeVO.class);
+                            if (latest != null) {
+                                self = latest;
+                            }
                         }
                         trigger.next();
                     }
