@@ -623,9 +623,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CHECK_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                CephPrimaryStorageBase.CheckIsBitsExistingRsp rsp = new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
-                rsp.setExisting(true)
-                return rsp
+                return new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
             }
 
             VFS.vfsHook(CephPrimaryStorageBase.CHECK_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
