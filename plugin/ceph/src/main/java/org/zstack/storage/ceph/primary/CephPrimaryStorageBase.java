@@ -489,6 +489,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         public Long actualSize;
     }
 
+    public static class RollbackLuksRbdCmd extends AgentCommand {
+        public String targetInstallPath;
+    }
+
     public static class SwapInPlaceLuksRbdCmd extends AgentCommand {
         public String installPath;
         public String temporaryInstallPath;
@@ -1440,6 +1444,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     public static final String KVM_HOST_LUKS_ENCRYPT_IN_PLACE_PATH = "/ceph/primarystorage/kvmhost/encryptinplace";
     public static final String KVM_HOST_LUKS_RESIZE_PATH = "/ceph/primarystorage/kvmhost/luksresize";
     public static final String KVM_HOST_LUKS_CONVERT_PATH = "/ceph/primarystorage/kvmhost/luksconvert";
+    public static final String LUKS_ROLLBACK_CONVERT_PATH = "/ceph/primarystorage/volume/luksconvert/rollback";
     public static final String LUKS_SWAP_IN_PLACE_PATH = "/ceph/primarystorage/volume/luksswapinplace";
     public static final String KVM_HOST_IMAGESTORE_ENCRYPTED_DOWNLOAD_PATH = "/ceph/primarystorage/kvmhost/imagestore/encrypteddownload";
     public static final String FLATTEN_PATH = "/ceph/primarystorage/volume/flatten";
@@ -3631,6 +3636,51 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                             return;
                         }
                         convertVolumeEncryptionOnKvmHost(msg, reply, kcmd, hostUuid);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+    }
+
+    @Override
+    protected void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        RollbackVolumeEncryptionOnPrimaryStorageReply reply = new RollbackVolumeEncryptionOnPrimaryStorageReply();
+        if (msg.getItems() == null || msg.getItems().size() != 1) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion requires volume snapshots to be merged; volume[uuid:%s] has %s rollback items",
+                    msg.getVolume().getUuid(), msg.getItems() == null ? 0 : msg.getItems().size()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        ConvertVolumeEncryptionOnPrimaryStorageMsg.VolumeEncryptionConversionItem item = msg.getItems().get(0);
+        if (!VolumeVO.class.getSimpleName().equals(item.getResourceType())) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion only supports the active volume, but got resource[type:%s, uuid:%s]",
+                    item.getResourceType(), item.getResourceUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (StringUtils.isBlank(item.getTargetInstallPath()) || item.getTargetInstallPath().contains("@")) {
+            reply.setError(operr(
+                    "ceph rollback volume encryption conversion requires an active RBD target path, but got target path[%s]",
+                    item.getTargetInstallPath()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        RollbackLuksRbdCmd cmd = new RollbackLuksRbdCmd();
+        cmd.targetInstallPath = item.getTargetInstallPath();
+        httpCall(LUKS_ROLLBACK_CONVERT_PATH, cmd, AgentResponse.class,
+                new ReturnValueCompletion<AgentResponse>(msg) {
+                    @Override
+                    public void success(AgentResponse returnValue) {
+                        bus.reply(msg, reply);
                     }
 
                     @Override

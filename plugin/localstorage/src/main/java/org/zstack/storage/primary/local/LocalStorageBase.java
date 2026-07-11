@@ -912,6 +912,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else if (msg instanceof ConvertVolumeEncryptionOnPrimaryStorageMsg) {
             handle((ConvertVolumeEncryptionOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof RollbackVolumeEncryptionOnPrimaryStorageMsg) {
+            handle((RollbackVolumeEncryptionOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -948,6 +950,48 @@ public class LocalStorageBase extends PrimaryStorageBase {
         bkd.handle(msg, hostUuid, new ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply>(msg) {
             @Override
             public void success(ConvertVolumeEncryptionOnPrimaryStorageReply returnValue) {
+                bus.reply(msg, returnValue);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    protected void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg) {
+        RollbackVolumeEncryptionOnPrimaryStorageReply reply = new RollbackVolumeEncryptionOnPrimaryStorageReply();
+        if (msg.getVolume() == null || StringUtils.isBlank(msg.getVolume().getUuid())) {
+            reply.setError(operr("rollback volume encryption on local primary storage[uuid:%s] requires volume with non-blank uuid",
+                    self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String hostUuid = StringUtils.isNotBlank(msg.getHostUuid()) ?
+                msg.getHostUuid() : null;
+        if (StringUtils.isBlank(hostUuid)) {
+            try {
+                hostUuid = getHostUuidByResourceUuid(msg.getVolume().getUuid());
+            } catch (OperationFailureException e) {
+                reply.setError(e.getErrorCode());
+                bus.reply(msg, reply);
+                return;
+            }
+        }
+        if (StringUtils.isBlank(hostUuid)) {
+            reply.setError(operr("cannot determine host for rolling back volume[uuid:%s] encryption conversion on local primary storage[uuid:%s]",
+                    msg.getVolume().getUuid(), self.getUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        LocalStorageHypervisorBackend bkd = getHypervisorBackendFactoryByHostUuid(hostUuid).getHypervisorBackend(self);
+        bkd.handle(msg, hostUuid, new ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(RollbackVolumeEncryptionOnPrimaryStorageReply returnValue) {
                 bus.reply(msg, returnValue);
             }
 

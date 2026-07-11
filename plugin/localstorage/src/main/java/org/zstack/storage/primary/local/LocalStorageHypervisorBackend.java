@@ -139,4 +139,6 @@ public abstract class LocalStorageHypervisorBackend extends LocalStorageBase {
     abstract void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg, ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply> completion);
 
     abstract void handle(ConvertVolumeEncryptionOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<ConvertVolumeEncryptionOnPrimaryStorageReply> completion);
+
+    abstract void handle(RollbackVolumeEncryptionOnPrimaryStorageMsg msg, String hostUuid, ReturnValueCompletion<RollbackVolumeEncryptionOnPrimaryStorageReply> completion);
 }
