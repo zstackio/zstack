@@ -558,7 +558,19 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
                 GlobalConfig xmlConfig = configsFromXml.get(old.getIdentity());
                 DebugUtils.Assert(xmlConfig != null, String.format("unable to find GlobalConfig[category:%s, name:%s] for linking to %s.%s",
                         old.getCategory(), old.getName(), field.getDeclaringClass().getName(), field.getName()));
-                final GlobalConfig config = old.copy(xmlConfig);
+                final GlobalConfig config;
+                if (old.getEvtf() == null) {
+                    if (xmlConfig.getEvtf() != null) {
+                        config = xmlConfig;
+                    } else {
+                        config = new GlobalConfig();
+                        config.copy(xmlConfig);
+                    }
+                    logger.debug(String.format("GlobalConfig[category: %s, name: %s] static field was initialized before Spring autowiring, relink to autowired instance",
+                            config.getCategory(), config.getName()));
+                } else {
+                    config = old.copy(xmlConfig);
+                }
                 field.set(null, config);
                 // all global config base on Field allConfig which is origin from configsFromXml, so update its value
                 configsFromXml.put(old.getIdentity(), config);
