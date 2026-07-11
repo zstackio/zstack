@@ -623,15 +623,13 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(CephPrimaryStorageBase.CHECK_BITS_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                CephPrimaryStorageBase.CheckIsBitsExistingRsp rsp = new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
-                rsp.setExisting(true)
-                return rsp
+                return new CephPrimaryStorageBase.CheckIsBitsExistingRsp()
             }
 
             VFS.vfsHook(CephPrimaryStorageBase.CHECK_BITS_PATH, espec) { rsp, HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CheckIsBitsExistingCmd.class)
                 VFS vfs = vfs(cmd, spec)
-                vfs.Assert(vfs.isFile(cephPathToVFSPath(cmd.installPath)), "cannot find ${cmd.installPath}")
+                rsp.existing = vfs.exists(cephPathToVFSPath(cmd.installPath))
 
                 return rsp
             }
