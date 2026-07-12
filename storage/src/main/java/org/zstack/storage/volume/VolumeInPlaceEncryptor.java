@@ -21,8 +21,12 @@ import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
+import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
+import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 
@@ -279,22 +283,45 @@ public class VolumeInPlaceEncryptor {
                 volume.setEncrypted(true);
                 VolumeVO latest = dbf.updateAndRefresh(volume);
                 if (installPathChanged) {
-                    deleteOldVolumeBitsBestEffort(psUuid, volume, installPath);
+                    deleteOldVolumeBits(psUuid, latest, installPath, completion);
+                    return;
                 }
                 completion.success(latest);
             }
         });
     }
 
-    private void deleteOldVolumeBitsBestEffort(String psUuid, VolumeVO volume, String oldInstallPath) {
+    void deleteOldVolumeBits(String psUuid, VolumeVO volume, String oldInstallPath,
+                             ReturnValueCompletion<VolumeVO> completion) {
         DeleteVolumeBitsOnPrimaryStorageMsg dmsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
         dmsg.setPrimaryStorageUuid(psUuid);
         dmsg.setInstallPath(oldInstallPath);
         dmsg.setBitsUuid(volume.getUuid());
         dmsg.setBitsType(VolumeVO.class.getSimpleName());
         dmsg.setHypervisorType(VolumeFormat.getMasterHypervisorTypeByVolumeFormat(volume.getFormat()).toString());
+        dmsg.setSize(volume.getSize());
         bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, psUuid);
-        bus.send(dmsg);
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    completion.success(volume);
+                    return;
+                }
+
+                PrimaryStorageDeleteBitGC gc = new PrimaryStorageDeleteBitGC();
+                gc.NAME = String.format("gc-delete-old-bits-volume-%s-on-primary-storage-%s", volume.getUuid(), psUuid);
+                gc.primaryStorageInstallPath = oldInstallPath;
+                gc.primaryStorageUuid = psUuid;
+                gc.volume = volume;
+                gc.submit(PrimaryStorageGlobalConfig.PRIMARY_STORAGE_DELETEBITS_GARBAGE_COLLECTOR_INTERVAL.value(Long.class),
+                        TimeUnit.SECONDS);
+                logger.warn(String.format(
+                        "failed to delete old volume bits[installPath:%s] after encrypting volume[uuid:%s] in place, cleanup GC has been submitted: %s",
+                        oldInstallPath, volume.getUuid(), reply.getError()));
+                completion.success(volume);
+            }
+        });
     }
 
     private void failAfterRollingBackMetadata(String volumeUuid,

@@ -3,11 +3,13 @@ package org.zstack.storage.encrypt;
 import org.zstack.header.log.NoLogging;
 import org.zstack.kvm.KVMAgentCommands;
 
+import java.io.Serializable;
+
 final class ZbsVolumeEncryptionCommands {
     private ZbsVolumeEncryptionCommands() {
     }
 
-    static class KVMHostLuksCloneCmd extends KVMAgentCommands.AgentCommand {
+    static class KVMHostLuksCloneCmd extends KVMAgentCommands.AgentCommand implements Serializable {
         public String psUuid;
         @NoLogging
         public String encryptedDek;
@@ -16,7 +18,7 @@ final class ZbsVolumeEncryptionCommands {
         public Long virtualSizeForLuksClone;
     }
 
-    static class KVMHostLuksCreateEmptyCmd extends KVMAgentCommands.AgentCommand {
+    static class KVMHostLuksCreateEmptyCmd extends KVMAgentCommands.AgentCommand implements Serializable {
         public String psUuid;
         @NoLogging
         public String encryptedDek;
@@ -24,7 +26,7 @@ final class ZbsVolumeEncryptionCommands {
         public long size;
     }
 
-    static class KVMHostEncryptInPlaceCmd extends KVMAgentCommands.AgentCommand {
+    static class KVMHostEncryptInPlaceCmd extends KVMAgentCommands.AgentCommand implements Serializable {
         public String psUuid;
         @NoLogging
         public String encryptedDek;
@@ -32,7 +34,7 @@ final class ZbsVolumeEncryptionCommands {
         public String targetInstallPath;
     }
 
-    static class KVMHostLuksResizeCmd extends KVMAgentCommands.AgentCommand {
+    static class KVMHostLuksResizeCmd extends KVMAgentCommands.AgentCommand implements Serializable {
         public String psUuid;
         @NoLogging
         public String encryptedDek;
