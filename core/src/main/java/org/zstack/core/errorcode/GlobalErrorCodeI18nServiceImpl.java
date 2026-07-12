@@ -7,6 +7,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
+import org.zstack.utils.string.ErrorCodeElaboration;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -20,6 +21,8 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
     private static final String I18N_FOLDER = "i18n" + File.separator + "globalErrorCodeMapping";
     private static final String FILE_PREFIX = "global-error-";
     private static final String FILE_SUFFIX = ".json";
+    private static final String CHINESE_ELABORATION_PREFIX = "错误信息: ";
+    private static final String ENGLISH_ELABORATION_PREFIX = "Error message: ";
 
     // locale -> (globalErrorCode -> template)
     private final Map<String, Map<String, String>> localeMessages = new ConcurrentHashMap<>();
@@ -172,7 +175,40 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
         if (localizeDetails && localized && completelyFormatted) {
             error.setDetails(resolvedMessage);
         }
+        if (localizeDetails) {
+            localizeElaboration(error, resolvedLocale);
+        }
         return new LocalizationResult(resolvedMessage, localized, completelyFormatted);
+    }
+
+    private void localizeElaboration(ErrorCode error, String locale) {
+        if (!isNotBlank(error.getElaboration())) {
+            return;
+        }
+
+        ErrorCodeElaboration messages = error.getMessages();
+        if (messages == null) {
+            return;
+        }
+
+        boolean simplifiedChinese = Locale.SIMPLIFIED_CHINESE.toString().equals(locale);
+        String message = simplifiedChinese ? messages.getMessage_cn() : messages.getMessage_en();
+        if (!isNotBlank(message)) {
+            return;
+        }
+
+        String targetPrefix = simplifiedChinese ? CHINESE_ELABORATION_PREFIX : ENGLISH_ELABORATION_PREFIX;
+        if (isTemplateCompletelyFormatted(message, null)) {
+            error.setElaboration(targetPrefix + message);
+            return;
+        }
+
+        String elaboration = error.getElaboration();
+        if (elaboration.startsWith(CHINESE_ELABORATION_PREFIX)) {
+            error.setElaboration(targetPrefix + elaboration.substring(CHINESE_ELABORATION_PREFIX.length()));
+        } else if (elaboration.startsWith(ENGLISH_ELABORATION_PREFIX)) {
+            error.setElaboration(targetPrefix + elaboration.substring(ENGLISH_ELABORATION_PREFIX.length()));
+        }
     }
 
     private List<LocalizationResult> localizeListCauses(ErrorCode error, String locale, boolean localizeDetails) {

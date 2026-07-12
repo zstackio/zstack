@@ -24,7 +24,7 @@ public interface GlobalErrorCodeI18nService {
 
     /**
      * Create a copy of an ErrorCode and recursively localize its cause chain,
-     * setting both the message and details fields for response payloads.
+     * setting localized message, details, and elaboration fields for response payloads.
      *
      * @param error the ErrorCode to copy and localize
      * @param locale the locale key
