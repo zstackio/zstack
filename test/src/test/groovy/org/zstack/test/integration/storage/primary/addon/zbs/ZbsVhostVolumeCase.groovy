@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostSystemTags
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.db.Q
@@ -45,6 +46,13 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 class ZbsVhostVolumeCase extends SubCase {
+    private static final String HOST_MANAGEMENT_IP = "127.0.0.1"
+    private static final String HOST_EXTRA_IP_1 = "127.0.0.99"
+    private static final String HOST_EXTRA_IP_2 = "127.0.0.11"
+    private static final String UNKNOWN_CLIENT_IP = "127.0.0.9"
+    private static final String SECOND_HOST_MANAGEMENT_IP = "127.0.0.20"
+    private static final int VHOST_CLIENT_PORT = 9001
+
     EnvSpec env
     CloudBus bus
     PrimaryStorageInventory ps
@@ -102,9 +110,12 @@ class ZbsVhostVolumeCase extends SubCase {
 
                     kvm {
                         name = "kvm-1"
-                        managementIp = "127.0.0.1"
+                        managementIp = HOST_MANAGEMENT_IP
                         username = "root"
                         password = "password"
+                        systemTags = [HostSystemTags.EXTRA_IPS.instantiateTag([
+                                (HostSystemTags.EXTRA_IPS_TOKEN): "${HOST_EXTRA_IP_1},${HOST_EXTRA_IP_2}".toString()
+                        ])]
                     }
 
                     attachL2Network("l2")
@@ -172,37 +183,166 @@ class ZbsVhostVolumeCase extends SubCase {
     }
 
     void testVhostDataVolumeCreateDeleteLifecycle() {
-        boolean getClientsCalledForVhost = false
-        String clientIp = "127.0.0.1"
+        AtomicReference<String> trackedInstallPath = new AtomicReference<>()
+        AtomicReference<String> activeClientIp = new AtomicReference<>()
+        AtomicReference<String> deleteBdevTargetIp = new AtomicReference<>()
+        AtomicBoolean getClientsCalled = new AtomicBoolean(false)
+        AtomicBoolean deleteBdevCalled = new AtomicBoolean(false)
+        AtomicBoolean deleteVolumeCalled = new AtomicBoolean(false)
+        AtomicInteger callSequence = new AtomicInteger(0)
+        AtomicInteger deleteBdevOrder = new AtomicInteger(0)
+        AtomicInteger deleteVolumeOrder = new AtomicInteger(0)
+
         env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            getClientsCalledForVhost = true
             def rsp = new ZbsStorageController.GetVolumeClientsRsp()
-            rsp.clients = [new ZbsStorageController.ClientInfo(clientIp, 9001)]
+            if (trackedInstallPath.get() != null) {
+                getClientsCalled.set(true)
+                if (activeClientIp.get() != null) {
+                    rsp.clients = [new ZbsStorageController.ClientInfo(activeClientIp.get(), VHOST_CLIENT_PORT)]
+                }
+            }
             return rsp
         }
 
-        VolumeInventory vol = createDataVolume {
-            name = "vhost-data"
-            diskOfferingUuid = diskOffering.uuid
-            primaryStorageUuid = ps.uuid
-        } as VolumeInventory
-
-        assert vol.protocol == VolumeProtocol.Vhost.toString()
-        assert vol.installPath.startsWith(ZbsConstants.SCHEME_PREFIX)
-
-        deleteDataVolume {
-            uuid = vol.uuid
-        }
-        expungeDataVolume {
-            uuid = vol.uuid
+        env.simulator(ZbsStorageController.DELETE_VHOST_BDEV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeleteVhostBdevCmd.class)
+            if (trackedInstallPath.get() != null) {
+                deleteBdevCalled.set(true)
+                deleteBdevTargetIp.set(cmd.hostIp)
+                deleteBdevOrder.compareAndSet(0, callSequence.incrementAndGet())
+            }
+            return new ZbsStorageController.AgentResponse()
         }
 
-        assert getClientsCalledForVhost : \
-                "getActiveClients(Vhost) did not query the MDS GET_VOLUME_CLIENTS_PATH; " +
-                "the SPDK target registers as a cbd client and must be enumerated like CBD, not short-circuited to empty"
-        assert !Q.New(org.zstack.header.volume.VolumeVO.class)
-                .eq(org.zstack.header.volume.VolumeVO_.uuid, vol.uuid)
-                .isExists()
+        env.preSimulator(ZbsStorageController.DELETE_VOLUME_PATH) { HttpEntity<String> e ->
+            if (trackedInstallPath.get() != null) {
+                deleteVolumeCalled.set(true)
+                deleteVolumeOrder.compareAndSet(0, callSequence.incrementAndGet())
+            }
+        }
+
+        Closure trackClient = { VolumeInventory volume, String clientIp ->
+            trackedInstallPath.set(volume.installPath)
+            activeClientIp.set(clientIp)
+            deleteBdevTargetIp.set(null)
+            getClientsCalled.set(false)
+            deleteBdevCalled.set(false)
+            deleteVolumeCalled.set(false)
+            callSequence.set(0)
+            deleteBdevOrder.set(0)
+            deleteVolumeOrder.set(0)
+        }
+
+        Closure expungeWithResolvedClient = { String volumeName, String clientIp, String clientKind ->
+            VolumeInventory volume = createDataVolume {
+                name = volumeName
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+            } as VolumeInventory
+            assert volume.protocol == VolumeProtocol.Vhost.toString() : \
+                    "${clientKind} lifecycle created the wrong volume protocol: " +
+                    "expected=${VolumeProtocol.Vhost} actual=${volume.protocol} volumeUuid=${volume.uuid}"
+            assert volume.installPath.startsWith(ZbsConstants.SCHEME_PREFIX) : \
+                    "${clientKind} lifecycle created a malformed ZBS installPath: " +
+                    "expectedPrefix=${ZbsConstants.SCHEME_PREFIX} actual=${volume.installPath} volumeUuid=${volume.uuid}"
+
+            trackClient(volume, clientIp)
+            deleteDataVolume { uuid = volume.uuid }
+            expungeDataVolume { uuid = volume.uuid }
+
+            assert getClientsCalled.get() : \
+                    "GET_VOLUME_CLIENTS_PATH was not called for ${clientKind}: " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            assert deleteBdevCalled.get() : \
+                    "DELETE_VHOST_BDEV_PATH was not called for ${clientKind}: " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            assert deleteBdevTargetIp.get() == HOST_MANAGEMENT_IP : \
+                    "DELETE_VHOST_BDEV_PATH targeted the wrong host IP for ${clientKind}: " +
+                    "expectedManagementIp=${HOST_MANAGEMENT_IP} actual=${deleteBdevTargetIp.get()} clientIp=${clientIp}"
+            assert deleteVolumeCalled.get() : \
+                    "DELETE_VOLUME_PATH was not called after deactivating ${clientKind}: " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            assert deleteBdevOrder.get() > 0 && deleteBdevOrder.get() < deleteVolumeOrder.get() : \
+                    "Vhost bdev was not deleted before the ZBS volume for ${clientKind}: " +
+                    "bdevDeleteOrder=${deleteBdevOrder.get()} volumeDeleteOrder=${deleteVolumeOrder.get()} " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            boolean volumeExists = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
+            assert !volumeExists : \
+                    "expunged ${clientKind} volume still exists: expectedExists=false actualExists=${volumeExists} " +
+                    "volumeUuid=${volume.uuid}"
+
+            activeClientIp.set(null)
+            trackedInstallPath.set(null)
+        }
+
+        Closure expungeWithUnresolvedClient = { String volumeName, String clientIp, String clientKind ->
+            VolumeInventory volume = createDataVolume {
+                name = volumeName
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+            } as VolumeInventory
+            trackClient(volume, clientIp)
+            deleteDataVolume { uuid = volume.uuid }
+
+            AssertionError expungeFailure = null
+            try {
+                expungeDataVolume { uuid = volume.uuid }
+            } catch (AssertionError failure) {
+                expungeFailure = failure
+            }
+
+            assert expungeFailure != null : \
+                    "Vhost expunge did not fail closed for ${clientKind}: clientIp=${clientIp} " +
+                    "installPath=${volume.installPath} physicalVolumeDeleted=${deleteVolumeCalled.get()}"
+            assert getClientsCalled.get() : \
+                    "GET_VOLUME_CLIENTS_PATH was not called before rejecting ${clientKind}: " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            assert !deleteBdevCalled.get() : \
+                    "DELETE_VHOST_BDEV_PATH must not target an unresolved ${clientKind}: " +
+                    "clientIp=${clientIp} actualTargetIp=${deleteBdevTargetIp.get()}"
+            assert !deleteVolumeCalled.get() : \
+                    "DELETE_VOLUME_PATH must be blocked when ${clientKind} cannot resolve uniquely: " +
+                    "clientIp=${clientIp} installPath=${volume.installPath}"
+            boolean volumeExists = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
+            assert volumeExists : \
+                    "fail-closed expunge removed the volume record for ${clientKind}: " +
+                    "expectedExists=true actualExists=${volumeExists} volumeUuid=${volume.uuid}"
+
+            activeClientIp.set(null)
+            deleteVolumeCalled.set(false)
+            expungeDataVolume { uuid = volume.uuid }
+            assert deleteVolumeCalled.get() : \
+                    "cleanup expunge did not call DELETE_VOLUME_PATH after clearing ${clientKind}: " +
+                    "installPath=${volume.installPath}"
+            boolean volumeExistsAfterCleanup = Q.New(VolumeVO.class).eq(VolumeVO_.uuid, volume.uuid).isExists()
+            assert !volumeExistsAfterCleanup : \
+                    "cleanup expunge left the ${clientKind} volume behind: " +
+                    "expectedExists=false actualExists=${volumeExistsAfterCleanup} volumeUuid=${volume.uuid}"
+
+            trackedInstallPath.set(null)
+        }
+
+        expungeWithResolvedClient("vhost-extra-ip-data", HOST_EXTRA_IP_2, "host extra IP client")
+        expungeWithResolvedClient("vhost-management-ip-data", HOST_MANAGEMENT_IP, "host management IP client")
+        expungeWithUnresolvedClient("vhost-unknown-ip-data", UNKNOWN_CLIENT_IP, "unknown client IP")
+
+        HostInventory secondHost = addKVMHost {
+            name = "kvm-shared-extra-ip"
+            managementIp = SECOND_HOST_MANAGEMENT_IP
+            username = "root"
+            password = "password"
+            clusterUuid = cluster.uuid
+            systemTags = [HostSystemTags.EXTRA_IPS.instantiateTag([
+                    (HostSystemTags.EXTRA_IPS_TOKEN): HOST_EXTRA_IP_2
+            ])]
+        } as HostInventory
+        try {
+            expungeWithUnresolvedClient("vhost-ambiguous-ip-data", HOST_EXTRA_IP_2, "ambiguous client IP")
+        } finally {
+            activeClientIp.set(null)
+            trackedInstallPath.set(null)
+            deleteHost { uuid = secondHost.uuid }
+        }
     }
 
     void testChangeVolumeProtocol() {

@@ -8,6 +8,7 @@ import org.zstack.cbd.kvm.CbdHeartbeatVolumeTO;
 import org.zstack.cbd.kvm.CbdVolumeTo;
 import org.zstack.vhost.kvm.VhostVolumeTO;
 import org.zstack.compute.host.HostGlobalConfig;
+import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.ansible.AnsibleGlobalProperty;
 import org.zstack.core.asyncbatch.While;
@@ -39,6 +40,8 @@ import org.zstack.header.storage.addon.*;
 import org.zstack.header.storage.addon.primary.*;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.VolumeSnapshotStats;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.header.volume.VolumeStats;
@@ -50,6 +53,7 @@ import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -250,7 +254,78 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deactivate(String installPath, String protocol, ActiveVolumeClient client, Completion comp) {
-        comp.success();
+        if (!VolumeProtocol.Vhost.toString().equals(protocol)) {
+            comp.success();
+            return;
+        }
+
+        String managerIp = client == null ? null : client.getManagerIp();
+        List<KVMHostVO> hosts = findKvmHostsByClientIp(managerIp);
+        if (hosts.size() != 1) {
+            List<String> hostUuids = hosts.stream().map(KVMHostVO::getUuid).sorted().collect(Collectors.toList());
+            comp.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010,
+                    "cannot uniquely resolve kvm host for active volume client[ip:%s, matchedHostUuids:%s], unable to deactivate vhost volume",
+                    managerIp, hostUuids));
+            return;
+        }
+
+        deactivate(installPath, protocol, HostInventory.valueOf(hosts.get(0)), comp);
+    }
+
+    private List<KVMHostVO> findKvmHostsByClientIp(String clientIp) {
+        if (StringUtils.isBlank(clientIp)) {
+            return Collections.emptyList();
+        }
+
+        Map<String, KVMHostVO> hosts = new LinkedHashMap<>();
+        List<KVMHostVO> managementIpHosts = Q.New(KVMHostVO.class)
+                .eq(KVMHostVO_.managementIp, clientIp)
+                .list();
+        for (KVMHostVO host : managementIpHosts) {
+            hosts.put(host.getUuid(), host);
+        }
+
+        Set<String> extraIpHostUuids = findHostUuidsByExtraIp(clientIp);
+        if (!extraIpHostUuids.isEmpty()) {
+            List<KVMHostVO> extraIpHosts = Q.New(KVMHostVO.class)
+                    .in(KVMHostVO_.uuid, extraIpHostUuids)
+                    .list();
+            for (KVMHostVO host : extraIpHosts) {
+                hosts.put(host.getUuid(), host);
+            }
+        }
+
+        return new ArrayList<>(hosts.values());
+    }
+
+    private Set<String> findHostUuidsByExtraIp(String clientIp) {
+        List<SystemTagVO> extraIpTags = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
+                .like(SystemTagVO_.tag,
+                        TagUtils.tagPatternToSqlPattern(HostSystemTags.EXTRA_IPS.getTagFormat()))
+                .list();
+        Set<String> hostUuids = new HashSet<>();
+        for (SystemTagVO tag : extraIpTags) {
+            String extraIps = HostSystemTags.EXTRA_IPS.getTokenByTag(
+                    tag.getTag(), HostSystemTags.EXTRA_IPS_TOKEN);
+            if (containsExactIp(extraIps, clientIp)) {
+                hostUuids.add(tag.getResourceUuid());
+            }
+        }
+        return hostUuids;
+    }
+
+    private boolean containsExactIp(String ips, String targetIp) {
+        if (ips == null) {
+            return false;
+        }
+
+        for (String ip : ips.split(",")) {
+            if (targetIp.equals(ip.trim())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
