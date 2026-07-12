@@ -10,6 +10,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.testlib.WebBeanConstructor
 import org.zstack.utils.gson.JSONObjectUtil
+import org.zstack.utils.string.ErrorCodeElaboration
 
 class ErrorCodeI18nCase extends SubCase {
     EnvSpec env
@@ -41,6 +42,8 @@ class ErrorCodeI18nCase extends SubCase {
             testServiceErrorCodeList()
             testServiceFallbackToLocalizedCauseWhenOuterCodeHasNoTemplate()
             testServiceKeepsOuterDetailsWhenCauseHasNoTemplate()
+            testServiceLocalizesResponseElaboration()
+            testServicePreservesFormattedRegexElaboration()
             testRestServerSyncApiWithAcceptLanguage()
             testRestServerAsyncApiWithAcceptLanguage()
             testAsyncWebhookWithoutAcceptLanguageKeepsRawDetails()
@@ -219,6 +222,40 @@ class ErrorCodeI18nCase extends SubCase {
         assert outer.getDetails() == "outer raw details"
     }
 
+    void testServiceLocalizesResponseElaboration() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+
+        ErrorCodeElaboration messages = new ErrorCodeElaboration()
+        messages.setMessage_cn("该云主机不支持在线添加云盘")
+        messages.setMessage_en("Could not attach volume to the VM online")
+
+        ErrorCode error = new ErrorCode()
+        error.setElaboration("错误信息: 该云主机不支持在线添加云盘")
+        error.setMessages(messages)
+
+        ErrorCode localized = i18nService.localizeErrorCodeDetails(error, "en_US")
+
+        assert localized.getElaboration() == "Error message: Could not attach volume to the VM online"
+        assert error.getElaboration() == "错误信息: 该云主机不支持在线添加云盘"
+    }
+
+    void testServicePreservesFormattedRegexElaboration() {
+        GlobalErrorCodeI18nService i18nService = bean(GlobalErrorCodeI18nService.class)
+
+        ErrorCodeElaboration messages = new ErrorCodeElaboration()
+        messages.setMessage_cn("操作失败：%1\$s")
+        messages.setMessage_en("Operation failed: %1\$s")
+
+        ErrorCode error = new ErrorCode()
+        error.setElaboration("错误信息: failed to execute bash")
+        error.setMessages(messages)
+
+        ErrorCode localized = i18nService.localizeErrorCodeDetails(error, "en_US")
+
+        assert localized.getElaboration() == "Error message: failed to execute bash"
+        assert !localized.getElaboration().contains("%1\$s")
+    }
+
     void testRestServerSyncApiWithAcceptLanguage() {
         // Intercept APIQueryZoneMsg and return error with known globalErrorCode
         ErrorCode mockError = new ErrorCode()
@@ -226,6 +263,11 @@ class ErrorCodeI18nCase extends SubCase {
         mockError.setDetails("no primary storage[uuid:test-sync-uuid] exists")
         mockError.setGlobalErrorCode("ORG_ZSTACK_STORAGE_PRIMARY_10039")
         mockError.setFormatArgs(["test-sync-uuid"] as String[])
+        ErrorCodeElaboration messages = new ErrorCodeElaboration()
+        messages.setMessage_cn("未找到主存储[uuid:test-sync-uuid]")
+        messages.setMessage_en("no primary storage[uuid:test-sync-uuid] exists")
+        mockError.setMessages(messages)
+        mockError.setElaboration("错误信息: 未找到主存储[uuid:test-sync-uuid]")
 
         env.message(APIQueryZoneMsg.class) { APIQueryZoneMsg msg, bus ->
             bus.replyErrorByMessageType(msg, mockError)
@@ -263,6 +305,21 @@ class ErrorCodeI18nCase extends SubCase {
                 assert details.contains("test-sync-uuid")
             } finally {
                 conn.disconnect()
+            }
+
+            HttpURLConnection enConn = (HttpURLConnection) new URL(url).openConnection()
+            try {
+                enConn.setRequestMethod("GET")
+                enConn.setRequestProperty("Authorization", "OAuth ${sessionId}")
+                enConn.setRequestProperty("Accept-Language", "en-US")
+
+                assert enConn.getResponseCode() == 503
+                Map enResponse = JSONObjectUtil.toObject(enConn.getErrorStream().text, LinkedHashMap.class)
+                Map enError = enResponse.get("error") as Map
+                assert enError.get("elaboration") == "Error message: no primary storage[uuid:test-sync-uuid] exists"
+                assert mockError.getElaboration() == "错误信息: 未找到主存储[uuid:test-sync-uuid]"
+            } finally {
+                enConn.disconnect()
             }
         } finally {
             env.cleanMessageHandlers()
