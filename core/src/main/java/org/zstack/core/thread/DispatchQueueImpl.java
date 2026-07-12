@@ -511,18 +511,25 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
             }
         }
 
-        void startThreadIfNeeded() {
+        boolean acquireThreadSlot() {
             if (counter.get() >= maxThreadNum) {
-                int pendingTaskSize = queue.size() - counter.get();
-                logger.debug(String.format(
-                        "Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
-                        syncSignature, maxThreadNum, counter.get(), pendingTaskSize));
-                dumpTaskQueueIfNeeded(pendingTaskSize);
-                return;
+                return false;
             }
 
             resetPendingQueueThreshold();
             counter.incrementAndGet();
+            return true;
+        }
+
+        void reportPendingTasks() {
+            int pendingTaskSize = queue.size();
+            logger.debug(String.format(
+                    "Sync task syncSignature: %s reached maxThreadNum: %s, current: %d, pending queue size: %d",
+                    syncSignature, maxThreadNum, counter.get(), pendingTaskSize));
+            dumpTaskQueueIfNeeded(pendingTaskSize);
+        }
+
+        void startThread() {
             _threadFacade.submitTargetPool(new Task<Void>() {
                 @Override
                 public String getName() {
@@ -596,16 +603,23 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
     private <T> Future<T> doSyncSubmit(final SyncTask<T> syncTask) {
         assert syncTask.getSyncSignature() != null : "How can you submit a sync task without sync signature ???";
 
-        SyncTaskFuture f;
+        SyncTaskFuture f = new SyncTaskFuture(syncTask);
+        SyncTaskQueueWrapper wrapper;
+        boolean startThread;
         synchronized (syncTasks) {
-            SyncTaskQueueWrapper wrapper = syncTasks.get(syncTask.getSyncSignature());
+            wrapper = syncTasks.get(syncTask.getSyncSignature());
             if (wrapper == null) {
                 wrapper = new SyncTaskQueueWrapper();
                 syncTasks.put(syncTask.getSyncSignature(), wrapper);
             }
-            f = new SyncTaskFuture(syncTask);
             wrapper.addTask(f);
-            wrapper.startThreadIfNeeded();
+            startThread = wrapper.acquireThreadSlot();
+        }
+
+        if (startThread) {
+            wrapper.startThread();
+        } else {
+            wrapper.reportPendingTasks();
         }
 
         return f;
@@ -1307,8 +1321,6 @@ class DispatchQueueImpl implements DispatchQueue, DebugSignalHandler {
                         wrapper.counter.intValue(),
                         wrapper.queue.size());
                 ret.put(statistic.getSyncSignature(), statistic);
-
-                logger.warn(JSONObjectUtil.toJsonString(statistic));
             }
         }
 
