@@ -2903,9 +2903,12 @@ public class KVMHost extends HostBase implements Host {
         return String.format(MANAGEMENT_NODE_CALLBACK_CHECK_COMMAND, callbackUrl, callbackUrl);
     }
 
-    public static String buildManagementNodeCallbackCheckCommand(String hostManagementIp, RESTFacade restf) {
-        String callbackHost = Platform.getManagementServerIpForRemote(hostManagementIp);
-        return buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost));
+    public static ErrorableValue<String> buildManagementNodeCallbackCheckCommand(String hostManagementIp, RESTFacade restf) {
+        ErrorableValue<String> callbackHost = Platform.getManagementServerIp(hostManagementIp);
+        if (!callbackHost.isSuccess()) {
+            return ErrorableValue.ofErrorCode(callbackHost.error);
+        }
+        return ErrorableValue.of(buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost.result)));
     }
 
     private static String joinAgentPath(String rootPath, String path) {
@@ -5808,8 +5811,11 @@ public class KVMHost extends HostBase implements Host {
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                final String callbackHost = Platform.getManagementServerIpForRemote(getSelf().getManagementIp());
-                final String cmd = buildManagementNodeCallbackCheckCommand(getSelf().getManagementIp(), restf);
+                ErrorableValue<String> callbackHost = Platform.getManagementServerIp(getSelf().getManagementIp());
+                if (!callbackHost.isSuccess()) {
+                    throw new OperationFailureException(callbackHost.error);
+                }
+                final String cmd = buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost.result));
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
@@ -5827,7 +5833,7 @@ public class KVMHost extends HostBase implements Host {
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10106, "the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), callbackHost,
+                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), callbackHost.result,
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
 
@@ -6063,6 +6069,12 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        ErrorableValue<String> callbackIp = Platform.getManagementServerIp(getSelf().getManagementIp());
+                        if (!callbackIp.isSuccess()) {
+                            trigger.fail(callbackIp.error);
+                            return;
+                        }
+
                         String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                         String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
                         SshFileMd5Checker checker = new SshFileMd5Checker();
@@ -6097,7 +6109,7 @@ public class KVMHost extends HostBase implements Host {
                         callbackChecker.setUsername(getSelf().getUsername());
                         callbackChecker.setPassword(getSelf().getPassword());
                         callbackChecker.setPort(getSelf().getPort());
-                        callbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getManagementIp()));
+                        callbackChecker.setCallbackIp(callbackIp.result);
                         callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
                         KvmHostConfigChecker kvmHostConfigChecker = new KvmHostConfigChecker();
@@ -6121,7 +6133,7 @@ public class KVMHost extends HostBase implements Host {
                             hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
                             hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
                             hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
-                            hostTcpConnectionCallbackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getManagementIp()));
+                            hostTcpConnectionCallbackChecker.setCallbackIp(callbackIp.result);
                             hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
                             runner.installChecker(hostTcpConnectionCallbackChecker);
                         }
@@ -6134,6 +6146,7 @@ public class KVMHost extends HostBase implements Host {
                         }
                         runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                         runner.setTargetIp(getSelf().getManagementIp());
+                        runner.setManagementNodeIp(callbackIp.result);
                         runner.setTargetUuid(getSelf().getUuid());
                         runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
                         runner.setUsername(getSelf().getUsername());
