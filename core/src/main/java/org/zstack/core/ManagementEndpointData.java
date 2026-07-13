@@ -79,14 +79,25 @@ public class ManagementEndpointData {
             return ErrorableValue.of(endpoint);
         }
 
+        if (ha && endpointType != EndpointType.NODE) {
+            return ErrorableValue.ofErrorCode(Platform.operr(ORG_ZSTACK_CORE_PLATFORM_10002,
+                    "cannot select default management %s endpoint: HA default family record is missing or invalid",
+                    endpointName(endpointType)));
+        }
+
         return ErrorableValue.ofErrorCode(Platform.operr(ORG_ZSTACK_CORE_PLATFORM_10001,
                 "cannot select default management %s endpoint because no configured endpoint exists",
                 endpointName(endpointType)));
     }
 
     public String getDefaultEndpoint(EndpointType endpointType) {
-        String ipv4 = getEndpoint(endpointType, IPv6Constants.IPv4);
-        return ipv4 == null ? getEndpoint(endpointType, IPv6Constants.IPv6) : ipv4;
+        Integer defaultFamily = null;
+        if (nodeIps.containsKey(IPv6Constants.IPv4)) {
+            defaultFamily = IPv6Constants.IPv4;
+        } else if (nodeIps.containsKey(IPv6Constants.IPv6)) {
+            defaultFamily = IPv6Constants.IPv6;
+        }
+        return defaultFamily == null ? null : getEndpoint(endpointType, defaultFamily);
     }
 
     private String getEndpoint(EndpointType endpointType, int family) {

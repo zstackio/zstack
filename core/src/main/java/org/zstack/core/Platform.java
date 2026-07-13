@@ -1040,6 +1040,10 @@ public class Platform {
             return endpoint;
         }
 
+        if (hasConfiguredManagementNodeIpProperty()) {
+            throw new CloudRuntimeException("management server IP configuration contains no valid IPv4 or IPv6 address");
+        }
+
         if (managementServerIp == null) {
             managementServerIp = getManagementServerIpInternal();
         }
@@ -1293,6 +1297,12 @@ public class Platform {
             nodeIps.add(ipv6);
         }
         return nodeIps;
+    }
+
+    private static boolean hasConfiguredManagementNodeIpProperty() {
+        return !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP4_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP6_PROPERTY));
     }
 
     private static String getConfiguredManagementServerIp(int ipVersion) {

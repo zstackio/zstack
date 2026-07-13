@@ -398,15 +398,16 @@ public class AnsibleRunner {
             int port = new URI(restf.getBaseUrl()).getPort();
             String selectedManagementNodeIp = managementNodeIp;
             if (selectedManagementNodeIp == null) {
-                selectedManagementNodeIp = restf.getHostName();
-            }
-            if (managementNodeIp == null && NetworkUtils.isIpAddress(targetIp)) {
-                ErrorableValue<String> managementNodeEndpoint = Platform.getManagementServerIp(targetIp);
-                if (!managementNodeEndpoint.isSuccess()) {
-                    completion.fail(managementNodeEndpoint.error);
-                    return;
+                if (NetworkUtils.isIpAddress(targetIp)) {
+                    ErrorableValue<String> managementNodeEndpoint = Platform.getManagementServerIp(targetIp);
+                    if (!managementNodeEndpoint.isSuccess()) {
+                        completion.fail(managementNodeEndpoint.error);
+                        return;
+                    }
+                    selectedManagementNodeIp = managementNodeEndpoint.result;
+                } else {
+                    selectedManagementNodeIp = restf.getHostName();
                 }
-                selectedManagementNodeIp = managementNodeEndpoint.result;
             }
 
             if (deployArguments == null) {
