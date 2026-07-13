@@ -10,9 +10,7 @@ public interface ExternalPrimaryStorageImageDownloadExtensionPoint {
     void beforeDownload(String primaryStorageUuid, String primaryStorageType, ImageInventory image,
                         CreateVolumeSpec spec, String targetResourceType);
 
-    default Flow afterDownloadFlow(String primaryStorageUuid, String primaryStorageType, ImageInventory image,
-                                   CreateVolumeSpec spec, String targetResourceType,
-                                   Supplier<VolumeStats> volumeSupplier) {
-        return null;
-    }
+    Flow afterDownloadFlow(String primaryStorageUuid, String primaryStorageType, ImageInventory image,
+                           CreateVolumeSpec spec, String targetResourceType,
+                           Supplier<VolumeStats> volumeSupplier);
 }
