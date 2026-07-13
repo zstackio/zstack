@@ -1337,7 +1337,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         spec.setSize(Long.max(image.getActualSize(), image.getSize()));
-                        runImageDownloadBeforeExtensions(image, spec, targetClz);
+                        for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class)) {
+                            ext.beforeDownload(self.getUuid(), externalVO.getIdentity(), image, spec, targetClz);
+                        }
                         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats stats) {
@@ -1462,24 +1464,13 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "after-download-extension";
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        runImageDownloadAfterExtensions(image, spec, targetClz, volume, new Completion(trigger) {
-                            @Override
-                            public void success() {
-                                trigger.next();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
-                            }
-                        });
+                for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class)) {
+                    Flow afterDownloadFlow = ext.afterDownloadFlow(
+                            self.getUuid(), externalVO.getIdentity(), image, spec, targetClz, () -> volume);
+                    if (afterDownloadFlow != null) {
+                        flow(afterDownloadFlow);
                     }
-                });
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "create-snapshot-if-needed";
@@ -2143,45 +2134,6 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
     @Override
     protected void handle(GetVolumeSnapshotEncryptedOnPrimaryStorageMsg msg) {
         throw new UnsupportedOperationException();
-    }
-
-    private void runImageDownloadBeforeExtensions(ImageInventory image, CreateVolumeSpec spec, String targetClz) {
-        for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class)) {
-            ext.beforeDownload(self.getUuid(), externalVO.getIdentity(), image, spec, targetClz);
-        }
-    }
-
-    private void runImageDownloadAfterExtensions(ImageInventory image, CreateVolumeSpec spec, String targetClz,
-                                                 VolumeStats volume, Completion completion) {
-        List<ExternalPrimaryStorageImageDownloadExtensionPoint> extensions =
-                pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class);
-        if (extensions.isEmpty()) {
-            completion.success();
-            return;
-        }
-
-        new While<>(extensions).each((ext, compl) -> ext.afterDownload(
-                self.getUuid(), externalVO.getIdentity(), image, spec, targetClz, volume, new Completion(compl) {
-            @Override
-            public void success() {
-                compl.done();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                compl.addError(errorCode);
-                compl.allDone();
-            }
-        })).run(new WhileDoneCompletion(completion) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                }
-            }
-        });
     }
 
     private void directDeleteBits(String installPath, Completion completion) {
