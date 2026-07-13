@@ -493,6 +493,13 @@ class ManagementNetworkIpv6Case extends SubCase {
         ManagementEndpointData legacyEndpoints = new ManagementEndpointData([IPV4], legacyIpv4)
         assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, "192.168.1.20").result == "192.168.1.11"
         assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, "192.168.1.20").result == "192.168.1.100"
+
+        ZSha2Info ipv6OnlyHaRecord = new ZSha2Info()
+        ipv6OnlyHaRecord.setIpv6(new ZSha2Info.HaAddressFamily(nodeIp: "2001:db8::11", peerIp: "2001:db8::12", virtualIp: "2001:db8::100", enabled: true))
+        def missingDefaultIpv4Vip = new ManagementEndpointData([IPV4, IPV6], ipv6OnlyHaRecord)
+                .selectDefault(ManagementEndpointData.EndpointType.VIP)
+        assert !missingDefaultIpv4Vip.success
+        assert missingDefaultIpv4Vip.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10002"
     }
 
     void testManagementServerSecondaryPropertyRejectsWrongAddressFamily() {
