@@ -112,7 +112,6 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             callBackChecker.setUsername(getSelf().getUsername());
                             callBackChecker.setPassword(getSelf().getPassword());
                             callBackChecker.setPort(getSelf().getPort());
-                            callBackChecker.setCallbackIp(Platform.getManagementServerIpForRemote(getSelf().getAddr()));
                             callBackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
                             AnsibleRunner runner = new AnsibleRunner();

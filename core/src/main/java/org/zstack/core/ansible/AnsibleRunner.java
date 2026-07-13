@@ -390,12 +390,6 @@ public class AnsibleRunner {
 
     public void run(ReturnValueCompletion<Boolean> completion) {
         try {
-            if (!forceRun && !isNeedRun()) {
-                completion.success(false);
-                return;
-            }
-
-            int port = new URI(restf.getBaseUrl()).getPort();
             String selectedManagementNodeIp = managementNodeIp;
             if (selectedManagementNodeIp == null) {
                 if (NetworkUtils.isIpAddress(targetIp)) {
@@ -409,6 +403,16 @@ public class AnsibleRunner {
                     selectedManagementNodeIp = restf.getHostName();
                 }
             }
+            if (NetworkUtils.isIpAddress(targetIp)) {
+                updateCheckersManagementNodeIp(selectedManagementNodeIp);
+            }
+
+            if (!forceRun && !isNeedRun()) {
+                completion.success(false);
+                return;
+            }
+
+            int port = new URI(restf.getBaseUrl()).getPort();
 
             if (deployArguments == null) {
                 deployArguments = new AnsibleBasicArguments();
@@ -437,6 +441,16 @@ public class AnsibleRunner {
             throw new CloudRuntimeException(e);
         }
 
+    }
+
+    private void updateCheckersManagementNodeIp(String managementNodeIp) {
+        for (AnsibleChecker checker : checkers) {
+            if (checker instanceof CallBackNetworkChecker) {
+                ((CallBackNetworkChecker) checker).setCallbackIp(managementNodeIp);
+            } else if (checker instanceof SshYumRepoChecker) {
+                ((SshYumRepoChecker) checker).setManagementNodeIp(managementNodeIp);
+            }
+        }
     }
 
     public static String buildPipUrl(String hostname, int port) {

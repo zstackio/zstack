@@ -2,7 +2,10 @@ package org.zstack.test.integration.core.ansible
 
 import org.junit.Test
 import org.zstack.core.ansible.AnsibleGlobalProperty
+import org.zstack.core.ansible.AnsibleChecker
+import org.zstack.core.ansible.AnsibleFacade
 import org.zstack.core.ansible.AnsibleRunner
+import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.PrepareAnsible
 import org.zstack.core.ansible.RunAnsibleMsg
 import org.zstack.core.CoreGlobalProperty
@@ -20,6 +23,7 @@ import org.zstack.header.rest.RESTFacade
 
 import java.lang.reflect.Field
 import java.util.concurrent.atomic.AtomicReference
+import java.util.concurrent.atomic.AtomicInteger
 
 class AnsibleRunnerTargetAwareArgumentsCase {
     private static final String IPV4 = "192.168.1.10"
@@ -31,6 +35,8 @@ class AnsibleRunnerTargetAwareArgumentsCase {
     void test() {
         testTargetAwareEndpointArgumentsUseTheSelectedIpv6Node()
         testMissingFamilyFailsBeforeRunAnsibleDispatch()
+        testMissingFamilyFailsBeforeChecker()
+        testHostnameKeepsConfiguredCallbackIp()
     }
 
     void testTargetAwareEndpointArgumentsUseTheSelectedIpv6Node() {
@@ -70,6 +76,95 @@ class AnsibleRunnerTargetAwareArgumentsCase {
             assert result.get() == null
             assert error.get()?.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10001"
             assert received.get() == null
+        }
+    }
+
+    void testMissingFamilyFailsBeforeChecker() {
+        withManagementServerIpProperties([
+                "management.server.ip": IPV4,
+        ]) {
+            AtomicReference<ErrorCode> error = new AtomicReference<>()
+            AtomicInteger checkerCalls = new AtomicInteger()
+            AnsibleRunner runner = new AnsibleRunner()
+            setField(runner, "restf", [
+                    getBaseUrl : { String.format("http://127.0.0.1:%d", REST_PORT) },
+                    getHostName: { "fallback-management-host" as String },
+            ] as RESTFacade)
+            setField(runner, "asf", [
+                    isModuleChanged: { String ignored -> false },
+            ] as AnsibleFacade)
+            runner.targetIp = IPV6_TARGET
+            runner.playBookName = "imagestorebackupstorage.py"
+            runner.installChecker([
+                    stopAnsible  : { checkerCalls.incrementAndGet(); null },
+                    needDeploy   : { checkerCalls.incrementAndGet(); false },
+                    deleteDestFile: { },
+            ] as AnsibleChecker)
+
+            withErrorFacade {
+                runner.run(new ReturnValueCompletion<Boolean>(null) {
+                    @Override
+                    void success(Boolean returnValue) {
+                    }
+
+                    @Override
+                    void fail(ErrorCode errorCode) {
+                        error.set(errorCode)
+                    }
+                })
+            }
+
+            assert checkerCalls.get() == 0
+            assert error.get()?.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10001"
+        }
+    }
+
+    void testHostnameKeepsConfiguredCallbackIp() {
+        withManagementServerIpProperties([
+                "management.server.ip": IPV4,
+        ]) {
+            AtomicReference<Boolean> result = new AtomicReference<>()
+            CallBackNetworkChecker checker = new CallBackNetworkChecker()
+            checker.callbackIp = "configured-callback-ip"
+            AnsibleRunner runner = new AnsibleRunner()
+            setField(runner, "restf", [
+                    getBaseUrl : { String.format("http://127.0.0.1:%d", REST_PORT) },
+                    getHostName: { "fallback-management-host" as String },
+            ] as RESTFacade)
+            setField(runner, "bus", [
+                    makeTargetServiceIdByResourceUuid: { NeedReplyMessage msg, String serviceId, String resourceUuid -> },
+                    send                              : { NeedReplyMessage msg, CloudBusCallBack callback ->
+                        callback.run(new MessageReply())
+                        return null
+                    }
+            ] as CloudBus)
+            boolean oldUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
+            try {
+                CoreGlobalProperty.UNIT_TEST_ON = true
+                runner.forceRun = true
+                runner.targetIp = "host.example.com"
+                runner.targetUuid = Platform.uuid
+                runner.playBookName = "kvm.yml"
+                runner.username = "root"
+                runner.password = "password"
+                runner.installChecker(checker)
+                runner.run(new ReturnValueCompletion<Boolean>(null) {
+                    @Override
+                    void success(Boolean returnValue) {
+                        result.set(returnValue)
+                    }
+
+                    @Override
+                    void fail(ErrorCode errorCode) {
+                        assert false: errorCode
+                    }
+                })
+            } finally {
+                CoreGlobalProperty.UNIT_TEST_ON = oldUnitTestOn
+            }
+
+            assert result.get() == true
+            assert checker.callbackIp == "configured-callback-ip"
         }
     }
 
