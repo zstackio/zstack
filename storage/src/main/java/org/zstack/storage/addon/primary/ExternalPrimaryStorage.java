@@ -1337,16 +1337,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         spec.setSize(Long.max(image.getActualSize(), image.getSize()));
-                        try {
-                            runImageDownloadBeforeExtensions(image, spec, targetClz);
-                        } catch (OperationFailureException e) {
-                            trigger.fail(e.getErrorCode());
-                            return;
-                        } catch (Exception e) {
-                            trigger.fail(operr("failed to resolve external primary storage image[uuid:%s] download size: %s",
-                                    image.getUuid(), e.getMessage()));
-                            return;
-                        }
+                        runImageDownloadBeforeExtensions(image, spec, targetClz);
                         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats stats) {
