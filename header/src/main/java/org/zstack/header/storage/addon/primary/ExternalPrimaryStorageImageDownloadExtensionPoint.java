@@ -1,11 +1,13 @@
 package org.zstack.header.storage.addon.primary;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.image.ImageInventory;
+import org.zstack.header.volume.VolumeStats;
 
 public interface ExternalPrimaryStorageImageDownloadExtensionPoint {
-    boolean supports(ExternalPrimaryStorageImageDownloadContext context);
+    void beforeDownload(String primaryStorageUuid, String primaryStorageType, ImageInventory image,
+                        CreateVolumeSpec spec, String targetResourceType);
 
-    long requiredDownloadSize(ExternalPrimaryStorageImageDownloadContext context, long defaultSize);
-
-    void afterDownload(ExternalPrimaryStorageImageDownloadContext context, Completion completion);
+    void afterDownload(String primaryStorageUuid, String primaryStorageType, ImageInventory image,
+                       CreateVolumeSpec spec, String targetResourceType, VolumeStats volume, Completion completion);
 }
