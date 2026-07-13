@@ -8,6 +8,7 @@ import org.zstack.utils.zsha2.ZSha2Info
 class ZSha2ManagementEndpointCase {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
+    private static final String IPV4_TARGET = "192.168.1.20"
     private static final String IPV6_TARGET = "2001:db8::20"
 
     @Test
@@ -22,6 +23,9 @@ class ZSha2ManagementEndpointCase {
         ''', ZSha2Info.class)
 
         ManagementEndpointData endpoints = new ManagementEndpointData([IPV4, IPV6], info)
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.NODE, IPV4_TARGET).result == IPV4
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, IPV4_TARGET).result == "192.168.1.11"
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV4_TARGET).result == "192.168.1.100"
         assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.NODE, IPV6_TARGET).result == IPV6
         assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, IPV6_TARGET).result == "2001:db8::11"
         assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_TARGET).result == "2001:db8::100"
