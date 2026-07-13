@@ -29,6 +29,7 @@ import java.lang.reflect.Field
 class DualStackAddKvmHostCase extends SubCase {
     private static final String MN_IPV4 = "192.168.1.10"
     private static final String MN_IPV6 = "2001:db8::1"
+    private static final String HOST_IPV4 = "192.168.1.20"
     private static final String HOST_IPV6 = "2001:db8::10"
     private static final int REST_PORT = 8080
 
@@ -56,20 +57,33 @@ class DualStackAddKvmHostCase extends SubCase {
         env.create {
             dbf = bean(DatabaseFacade.class)
             cluster = env.inventoryByName("cluster") as ClusterInventory
-            updateZoneIpVersionToIpv6(cluster.zoneUuid)
             prepareConnectHostReply()
 
+            updateZoneIpVersion(cluster.zoneUuid, "ipv6")
+            KVMHostInventory ipv6Host
             withManagementServerIpProperties([
                     "management.server.ip" : MN_IPV4,
                     "management.server.ip6": MN_IPV6,
             ]) {
-                addIpv6KvmHost()
+                ipv6Host = addIpv6KvmHost()
                 assertIpv6CallbackPrecheckCommand()
+            }
+
+            deleteHost {
+                uuid = ipv6Host.uuid
+            }
+            updateZoneIpVersion(cluster.zoneUuid, "ipv4")
+            withManagementServerIpProperties([
+                    "management.server.ip" : MN_IPV6,
+                    "management.server.ip4": MN_IPV4,
+            ]) {
+                addIpv4KvmHost()
+                assertIpv4CallbackPrecheckCommand()
             }
         }
     }
 
-    private void updateZoneIpVersionToIpv6(String zoneUuid) {
+    private void updateZoneIpVersion(String zoneUuid, String ipVersion) {
         SystemTagVO currentTag = Q.New(SystemTagVO.class)
                 .eq(SystemTagVO_.resourceUuid, zoneUuid)
                 .eq(SystemTagVO_.resourceType, ZoneVO.simpleName)
@@ -79,7 +93,7 @@ class DualStackAddKvmHostCase extends SubCase {
 
         updateSystemTag {
             uuid = currentTag.uuid
-            tag = "managementNetwork::ipVersion::ipv6"
+            tag = "managementNetwork::ipVersion::${ipVersion}"
         }
     }
 
@@ -95,21 +109,31 @@ class DualStackAddKvmHostCase extends SubCase {
         }
     }
 
-    private void addIpv6KvmHost() {
+    private KVMHostInventory addIpv6KvmHost() {
+        return addKvmHost(HOST_IPV6, "dual-stack-kvm-ipv6")
+    }
+
+    private KVMHostInventory addIpv4KvmHost() {
+        return addKvmHost(HOST_IPV4, "dual-stack-kvm-ipv4")
+    }
+
+    private KVMHostInventory addKvmHost(String managementIp, String name) {
         AddKVMHostAction action = new AddKVMHostAction()
         action.sessionId = adminSession()
         action.resourceUuid = Platform.uuid
         action.clusterUuid = cluster.uuid
-        action.managementIp = HOST_IPV6
-        action.name = "dual-stack-kvm"
+        action.managementIp = managementIp
+        action.name = name
         action.username = "root"
         action.password = "password"
 
         def result = action.call()
 
         assert result.error == null
-        assert (result.value.inventory as KVMHostInventory).managementIp == HOST_IPV6
-        assert Q.New(HostVO.class).eq(HostVO_.managementIp, HOST_IPV6).isExists()
+        KVMHostInventory inventory = result.value.inventory as KVMHostInventory
+        assert inventory.managementIp == managementIp
+        assert Q.New(HostVO.class).eq(HostVO_.managementIp, managementIp).isExists()
+        return inventory
     }
 
     private void assertIpv6CallbackPrecheckCommand() {
@@ -124,6 +148,20 @@ class DualStackAddKvmHostCase extends SubCase {
         assert command.result.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
         assert command.result.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
         assert !command.result.contains("http://${MN_IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
+    }
+
+    private void assertIpv4CallbackPrecheckCommand() {
+        RESTFacade restf = [
+                buildCallbackUrl: { String host -> RESTFacadeImpl.buildCallbackUrl(host, REST_PORT, "zstack") }
+        ] as RESTFacade
+
+        def command = KVMHost.buildManagementNodeCallbackCheckCommand(HOST_IPV4, restf)
+        String callbackUrl = RESTFacadeImpl.buildCallbackUrl(MN_IPV4, REST_PORT, "zstack")
+
+        assert command.success
+        assert command.result.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
+        assert command.result.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
+        assert !command.result.contains("http://[${MN_IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
     }
 
     private void withManagementServerIpProperties(Map<String, String> properties, Closure closure) {

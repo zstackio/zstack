@@ -28,12 +28,14 @@ import java.util.concurrent.atomic.AtomicInteger
 class AnsibleRunnerTargetAwareArgumentsCase {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
+    private static final String IPV4_TARGET = "192.168.1.2"
     private static final String IPV6_TARGET = "2001:db8::2"
     private static final int REST_PORT = 8080
 
     @Test
     void test() {
         testTargetAwareEndpointArgumentsUseTheSelectedIpv6Node()
+        testTargetAwareEndpointArgumentsUseTheSelectedIpv4Node()
         testMissingFamilyFailsBeforeRunAnsibleDispatch()
         testMissingFamilyFailsBeforeChecker()
         testHostnameKeepsConfiguredCallbackIp()
@@ -48,8 +50,9 @@ class AnsibleRunnerTargetAwareArgumentsCase {
                 AtomicReference<RunAnsibleMsg> received = new AtomicReference<>()
                 AtomicReference<Boolean> result = new AtomicReference<>()
                 AtomicReference<ErrorCode> error = new AtomicReference<>()
+                CallBackNetworkChecker checker = new CallBackNetworkChecker()
 
-                runAnsible(IPV6_TARGET, received, result, error)
+                runAnsible(IPV6_TARGET, received, result, error, checker)
 
                 assert result.get() == true
                 assert error.get() == null
@@ -58,7 +61,34 @@ class AnsibleRunnerTargetAwareArgumentsCase {
                 assert arguments.pipUrl == "http://[${IPV6}]:${REST_PORT}/zstack/static/pypi/simple"
                 assert arguments.yumServer == "[${IPV6}]:${REST_PORT}"
                 assert arguments.trustedHost == IPV6
+                assert checker.callbackIp == IPV6
                 assert received.get().targetIp == IPV6_TARGET
+            }
+        }
+    }
+
+    void testTargetAwareEndpointArgumentsUseTheSelectedIpv4Node() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV6,
+                "management.server.ip4": IPV4,
+        ]) {
+            withTemporaryAnsibleInventory {
+                AtomicReference<RunAnsibleMsg> received = new AtomicReference<>()
+                AtomicReference<Boolean> result = new AtomicReference<>()
+                AtomicReference<ErrorCode> error = new AtomicReference<>()
+                CallBackNetworkChecker checker = new CallBackNetworkChecker()
+
+                runAnsible(IPV4_TARGET, received, result, error, checker)
+
+                assert result.get() == true
+                assert error.get() == null
+                assert received.get() != null
+                def arguments = received.get().deployArguments
+                assert arguments.pipUrl == "http://${IPV4}:${REST_PORT}/zstack/static/pypi/simple"
+                assert arguments.yumServer == "${IPV4}:${REST_PORT}"
+                assert arguments.trustedHost == IPV4
+                assert checker.callbackIp == IPV4
+                assert received.get().targetIp == IPV4_TARGET
             }
         }
     }
@@ -169,7 +199,8 @@ class AnsibleRunnerTargetAwareArgumentsCase {
     }
 
     private void runAnsible(String targetIp, AtomicReference<RunAnsibleMsg> received,
-                            AtomicReference<Boolean> result, AtomicReference<ErrorCode> error) {
+                            AtomicReference<Boolean> result, AtomicReference<ErrorCode> error,
+                            AnsibleChecker... checkers) {
         AnsibleRunner runner = new AnsibleRunner()
         setField(runner, "restf", [
                 getBaseUrl : { String.format("http://127.0.0.1:%d", REST_PORT) },
@@ -193,6 +224,7 @@ class AnsibleRunnerTargetAwareArgumentsCase {
             runner.playBookName = "kvm.yml"
             runner.username = "root"
             runner.password = "password"
+            checkers.each { runner.installChecker(it) }
             withErrorFacade {
                 runner.run(new ReturnValueCompletion<Boolean>(null) {
                     @Override
