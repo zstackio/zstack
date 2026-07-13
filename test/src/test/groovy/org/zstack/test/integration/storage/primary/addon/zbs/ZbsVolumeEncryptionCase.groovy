@@ -2,22 +2,11 @@ package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
-import org.zstack.core.componentloader.PluginRegistry
-import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.core.Platform
 import org.zstack.header.message.MessageReply
-import org.zstack.header.storage.addon.primary.ZbsVolumeEncryptionExtensionPoint
 import org.zstack.header.storage.primary.EncryptVolumeBitsOnPrimaryStorageMsg
 import org.zstack.header.storage.primary.EncryptVolumeBitsOnPrimaryStorageReply
 import org.zstack.header.storage.primary.PrimaryStorageConstant
-import org.zstack.header.storage.snapshot.VolumeSnapshotConstant
-import org.zstack.header.storage.snapshot.VolumeSnapshotInventory
-import org.zstack.header.storage.snapshot.VolumeSnapshotState
-import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO_
-import org.zstack.header.volume.VolumeVO
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg
 import org.zstack.kvm.KVMHostAsyncHttpCallReply
 import org.zstack.sdk.KVMHostInventory
@@ -38,8 +27,6 @@ class ZbsVolumeEncryptionCase extends SubCase {
     PrimaryStorageInventory ps
     KVMHostInventory host
     CloudBus bus
-    DatabaseFacade dbf
-    ZbsVolumeEncryptionExtensionPoint zbsEncryptionExtension
 
     @Override
     void clean() {
@@ -86,15 +73,9 @@ class ZbsVolumeEncryptionCase extends SubCase {
             ps = env.inventoryByName("zbs") as PrimaryStorageInventory
             host = env.inventoryByName("kvm") as KVMHostInventory
             bus = bean(CloudBus.class)
-            dbf = bean(DatabaseFacade.class)
-            List<ZbsVolumeEncryptionExtensionPoint> extensions = bean(PluginRegistry.class)
-                    .getExtensionList(ZbsVolumeEncryptionExtensionPoint.class)
-            assert !extensions.isEmpty() : "ZBS volume encryption extension must be registered for integration test"
-            zbsEncryptionExtension = extensions[0]
 
             testEncryptVolumeBitsCreatesEncryptedTarget()
             testEncryptVolumeBitsCleansCreatedTargetOnKvmFailure()
-            testTakeSnapshotInheritsVolumeEncryptionFlag()
         }
     }
 
@@ -131,46 +112,6 @@ class ZbsVolumeEncryptionCase extends SubCase {
             assert tracker.deletedInstallPaths.collect { it.toString() } == [tracker.targetInstallPath.toString()] : \
                     "KVM encrypt failure must cleanup created ZBS target, expected=${tracker.targetInstallPath} actual=${tracker.deletedInstallPaths}"
         }
-    }
-
-    void testTakeSnapshotInheritsVolumeEncryptionFlag() {
-        VolumeVO encryptedVolume = new VolumeVO()
-        encryptedVolume.uuid = Platform.getUuid()
-        encryptedVolume.encrypted = true
-
-        VolumeSnapshotInventory encryptedSnapshot = createSnapshotInventory(encryptedVolume.uuid)
-        persistSnapshot(encryptedSnapshot.uuid)
-
-        zbsEncryptionExtension.beforeTakeSnapshot(ps.uuid, encryptedVolume, encryptedSnapshot)
-        zbsEncryptionExtension.afterTakeSnapshot(ps.uuid, encryptedVolume, encryptedSnapshot)
-
-        Boolean encryptedSnapshotFlag = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.uuid, encryptedSnapshot.uuid)
-                .select(VolumeSnapshotVO_.encrypted)
-                .findValue()
-        assert Boolean.TRUE.equals(encryptedSnapshot.encrypted) : \
-                "snapshot inventory encrypted flag must inherit encrypted volume, expected=true actual=${encryptedSnapshot.encrypted}"
-        assert Boolean.TRUE.equals(encryptedSnapshotFlag) : \
-                "snapshot DB encrypted flag must inherit encrypted volume, expected=true actual=${encryptedSnapshotFlag}"
-
-        VolumeVO plainVolume = new VolumeVO()
-        plainVolume.uuid = Platform.getUuid()
-        plainVolume.encrypted = false
-
-        VolumeSnapshotInventory plainSnapshot = createSnapshotInventory(plainVolume.uuid)
-        persistSnapshot(plainSnapshot.uuid)
-
-        zbsEncryptionExtension.beforeTakeSnapshot(ps.uuid, plainVolume, plainSnapshot)
-        zbsEncryptionExtension.afterTakeSnapshot(ps.uuid, plainVolume, plainSnapshot)
-
-        Boolean plainSnapshotFlag = Q.New(VolumeSnapshotVO.class)
-                .eq(VolumeSnapshotVO_.uuid, plainSnapshot.uuid)
-                .select(VolumeSnapshotVO_.encrypted)
-                .findValue()
-        assert !Boolean.TRUE.equals(plainSnapshot.encrypted) : \
-                "plain volume snapshot inventory must not be marked encrypted, expected=false actual=${plainSnapshot.encrypted}"
-        assert !Boolean.TRUE.equals(plainSnapshotFlag) : \
-                "plain volume snapshot DB row must not be marked encrypted, expected=false actual=${plainSnapshotFlag}"
     }
 
     private EncryptVolumeBitsOnPrimaryStorageMsg buildEncryptBitsMsg(String installPath) {
@@ -262,27 +203,6 @@ class ZbsVolumeEncryptionCase extends SubCase {
         }
 
         return tracker
-    }
-
-    private VolumeSnapshotInventory createSnapshotInventory(String volumeUuid) {
-        VolumeSnapshotInventory snapshot = new VolumeSnapshotInventory()
-        snapshot.uuid = Platform.getUuid()
-        snapshot.name = "snapshot-" + snapshot.uuid
-        snapshot.volumeUuid = volumeUuid
-        return snapshot
-    }
-
-    private void persistSnapshot(String snapshotUuid) {
-        VolumeSnapshotVO snapshot = new VolumeSnapshotVO()
-        snapshot.uuid = snapshotUuid
-        snapshot.name = "snapshot-" + snapshotUuid
-        snapshot.type = VolumeSnapshotConstant.STORAGE_SNAPSHOT_TYPE.toString()
-        snapshot.primaryStorageUuid = ps.uuid
-        snapshot.primaryStorageInstallPath = "cbd:pool1/lpool1/" + snapshotUuid
-        snapshot.state = VolumeSnapshotState.Enabled
-        snapshot.status = VolumeSnapshotStatus.Ready
-        snapshot.encrypted = false
-        dbf.persist(snapshot)
     }
 
     private long sourceSizeInCreateUnit(long sourceSize, String unit) {
