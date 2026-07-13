@@ -7,6 +7,7 @@ import org.zstack.appliancevm.ApplianceVmGlobalProperty
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.CoreGlobalProperty
+import org.zstack.core.ManagementEndpointData
 import org.zstack.core.Platform
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
@@ -31,10 +32,12 @@ import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.testlib.SubCase
 import org.zstack.utils.TagUtils
 import org.zstack.utils.URLBuilder
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
+import org.zstack.utils.zsha2.ZSha2Info
 import org.junit.Test
 
 import java.lang.reflect.Field
@@ -132,6 +135,9 @@ class ManagementNetworkIpv6Case extends SubCase {
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
         testZsha2SearchBackendSelection()
+        testTargetAwareManagementNodeSelectionDoesNotCrossAddressFamily()
+        testDefaultManagementNodeSelectionPrefersIpv4()
+        testHaManagementEndpointSelectionPreservesEndpointKind()
     }
 
     void testSelectManagementServerIpDualStackPolicy() {
@@ -255,13 +261,14 @@ class ManagementNetworkIpv6Case extends SubCase {
                         RESTFacadeImpl.buildCallbackUrl(host, REST_PORT, "zstack")
                     }
             ] as RESTFacade
-            String command = KVMHost.buildManagementNodeCallbackCheckCommand(IPV6_2, restf)
+            def command = KVMHost.buildManagementNodeCallbackCheckCommand(IPV6_2, restf)
             String callbackUrl = RESTFacadeImpl.buildCallbackUrl(IPV6, REST_PORT, "zstack")
 
+            assert command.success
             assert callbackUrl == "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
-            assert command.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
-            assert command.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
-            assert !command.contains("http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
+            assert command.result.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
+            assert command.result.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
+            assert !command.result.contains("http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
         }
     }
 
@@ -430,6 +437,62 @@ class ManagementNetworkIpv6Case extends SubCase {
             assert Platform.selectManagementServerIpForRemote("192.168.1.20", null) == IPV4
             assert Platform.selectManagementServerIpForRemote("192.168.1.20", "192.168.1.88") == IPV4
         }
+    }
+
+    void testTargetAwareManagementNodeSelectionDoesNotCrossAddressFamily() {
+        withManagementServerIpProperties([
+                "management.server.ip": IPV4,
+        ]) {
+            assert Platform.getManagementServerIp("192.168.1.20").result == IPV4
+            def missingIpv6 = Platform.getManagementServerIp(IPV6_2)
+            assert !missingIpv6.success
+            assert missingIpv6.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10001"
+            def hostnameTarget = Platform.getManagementServerIp("host.example.com")
+            assert !hostnameTarget.success
+            assert hostnameTarget.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10000"
+        }
+    }
+
+    void testDefaultManagementNodeSelectionPrefersIpv4() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV6,
+                "management.server.ip4": IPV4,
+        ]) {
+            assert Platform.getManagementServerIp() == IPV4
+        }
+    }
+
+    void testHaManagementEndpointSelectionPreservesEndpointKind() {
+        ZSha2Info info = JSONObjectUtil.toObject('''
+            {
+              "ipv4": {"enabled": true, "nodeIp": "192.168.1.11", "peerIp": "192.168.1.12", "virtualIp": "192.168.1.100"},
+              "ipv6": {"enabled": true, "nodeIp": "2001:db8::11", "peerIp": "2001:db8::12", "virtualIp": "2001:db8::100"}
+            }
+        ''', ZSha2Info.class)
+
+        ManagementEndpointData endpoints = new ManagementEndpointData([IPV4, IPV6], info)
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.NODE, IPV6_2).result == IPV6
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, IPV6_2).result == "2001:db8::11"
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2).result == "2001:db8::100"
+
+        ZSha2Info missingIpv6Vip = new ZSha2Info()
+        missingIpv6Vip.setIpv6(new ZSha2Info.HaAddressFamily(nodeIp: "2001:db8::11", peerIp: "2001:db8::12", enabled: true))
+        missingIpv6Vip.setDbvip("2001:db8::200")
+        def missingVip = new ManagementEndpointData([IPV4, IPV6], missingIpv6Vip)
+                .selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2)
+        assert !missingVip.success
+        assert missingVip.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10002"
+
+        ZSha2Info missingIpv6Family = new ZSha2Info()
+        missingIpv6Family.setIpv4(new ZSha2Info.HaAddressFamily(nodeIp: "192.168.1.11", peerIp: "192.168.1.12", virtualIp: "192.168.1.100", enabled: true))
+        missingIpv6Family.setDbvip("2001:db8::200")
+        assert !new ManagementEndpointData([IPV4, IPV6], missingIpv6Family)
+                .selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2).success
+
+        ZSha2Info legacyIpv4 = new ZSha2Info(nodeip: "192.168.1.11", dbvip: "192.168.1.100")
+        ManagementEndpointData legacyEndpoints = new ManagementEndpointData([IPV4], legacyIpv4)
+        assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, "192.168.1.20").result == "192.168.1.11"
+        assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, "192.168.1.20").result == "192.168.1.100"
     }
 
     void testManagementServerSecondaryPropertyRejectsWrongAddressFamily() {
