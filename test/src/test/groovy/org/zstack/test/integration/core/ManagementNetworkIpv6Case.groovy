@@ -289,15 +289,15 @@ class ManagementNetworkIpv6Case extends SubCase {
             String defaultCallbackUrl = "http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
 
             assert RESTFacadeImpl.selectCallbackUrl(
-                    "http://[${IPV6_2}]:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
+                    "http://[${IPV6_2}]:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack").result ==
                     "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
             assert RESTFacadeImpl.selectCallbackUrl(
-                    "http://host.example.com:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
+                    "http://host.example.com:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack").result ==
                     defaultCallbackUrl
             assert RESTFacadeImpl.selectCallbackUrl(
                     "http://[${IPV6_2}]:7070/host/ping",
                     [(RESTConstant.CALLBACK_URL): "http://override.example.com/callback"],
-                    defaultCallbackUrl, REST_PORT, "zstack") == defaultCallbackUrl
+                    defaultCallbackUrl, REST_PORT, "zstack").result == defaultCallbackUrl
         }
     }
 

@@ -131,7 +131,7 @@ public class ManagementEndpointData {
     private static void put(Map<Integer, String> endpoints, String ip) {
         Integer family = getAddressFamily(ip);
         if (family != null) {
-            endpoints.put(family, normalize(ip));
+            endpoints.putIfAbsent(family, normalize(ip));
         }
     }
 
