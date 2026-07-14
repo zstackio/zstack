@@ -150,10 +150,6 @@ public class SourceClassMap {
 			put("org.zstack.header.core.trash.TrashCleanupResult", "org.zstack.sdk.TrashCleanupResult");
 			put("org.zstack.header.core.webhooks.WebhookInventory", "org.zstack.sdk.WebhookInventory");
 			put("org.zstack.header.errorcode.ErrorCode", "org.zstack.sdk.ErrorCode");
-			put("org.zstack.header.flowMeter.FlowCollectorInventory", "org.zstack.sdk.FlowCollectorInventory");
-			put("org.zstack.header.flowMeter.FlowCounter", "org.zstack.sdk.FlowCounter");
-			put("org.zstack.header.flowMeter.FlowMeterInventory", "org.zstack.sdk.FlowMeterInventory");
-			put("org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory", "org.zstack.sdk.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.header.host.AddHostFromFileResult", "org.zstack.sdk.AddHostFromFileResult");
 			put("org.zstack.header.host.BlockDevices", "org.zstack.sdk.BlockDevices");
 			put("org.zstack.header.host.BlockDevices$BlockDevice", "org.zstack.sdk.BlockDevice");
@@ -802,9 +798,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlkSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.FlkSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory");
-			put("org.zstack.sdk.FlowCollectorInventory", "org.zstack.header.flowMeter.FlowCollectorInventory");
-			put("org.zstack.sdk.FlowCounter", "org.zstack.header.flowMeter.FlowCounter");
-			put("org.zstack.sdk.FlowMeterInventory", "org.zstack.header.flowMeter.FlowMeterInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
@@ -936,7 +929,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.Neighbor", "org.zstack.header.protocol.Neighbor");
 			put("org.zstack.sdk.NetworkReachablePair", "org.zstack.zops.NetworkReachablePair");
 			put("org.zstack.sdk.NetworkRouterAreaRefInventory", "org.zstack.header.protocol.NetworkRouterAreaRefInventory");
-			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NicTO", "org.zstack.kvm.KVMAgentCommands$NicTO");

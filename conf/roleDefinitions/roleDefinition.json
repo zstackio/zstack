@@ -555,7 +555,6 @@
           "org.zstack.header.baremetal.pxeserver.**",
           "org.zstack.header.baremetal.network.**",
           "org.zstack.header.hybrid.backup.**",
-          "org.zstack.header.flowMeter.**",
           "org.zstack.core.config.APIQueryGlobalConfigMsg",
           "org.zstack.core.config.APIResetGlobalConfigMsg",
           "org.zstack.core.config.APIUpdateGlobalConfigMsg",

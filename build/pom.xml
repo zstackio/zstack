@@ -408,11 +408,6 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>flowMeter</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
                     <artifactId>accessKey</artifactId>
                     <version>${project.version}</version>
                 </dependency>
