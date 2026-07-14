@@ -297,7 +297,6 @@
           "org.zstack.header.network.service.APIAttachNetworkServiceToL3NetworkMsg",
           "org.zstack.guesttools.**",
           "org.zstack.externalbackup.**",
-          "org.zstack.policyRoute.**",
           "org.zstack.storage.primary.smp.**",
           "org.zstack.autoscaling.**",
           "org.zstack.header.hybrid.network.vpn.**",
