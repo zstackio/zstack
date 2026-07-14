@@ -31,6 +31,7 @@ import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
@@ -1034,11 +1035,24 @@ public class Platform {
     }
 
     public static String getManagementServerIp() {
+        String endpoint = getManagementNodeEndpointData().getDefaultEndpoint(ManagementEndpointData.EndpointType.NODE);
+        if (endpoint != null) {
+            return endpoint;
+        }
+
+        if (hasConfiguredManagementNodeIpProperty()) {
+            throw new CloudRuntimeException("management server IP configuration contains no valid IPv4 or IPv6 address");
+        }
+
         if (managementServerIp == null) {
             managementServerIp = getManagementServerIpInternal();
         }
 
         return managementServerIp;
+    }
+
+    public static ErrorableValue<String> getManagementServerIp(String targetIp) {
+        return getManagementNodeEndpointData().selectForTarget(ManagementEndpointData.EndpointType.NODE, targetIp);
     }
 
     public static int getManagementNodeServicePort() {
@@ -1049,7 +1063,15 @@ public class Platform {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
         }
-        return ZSha2Helper.getInfo(false).getDbvip();
+        ErrorableValue<String> endpoint = getManagementEndpointData().selectDefault(ManagementEndpointData.EndpointType.VIP);
+        if (!endpoint.isSuccess()) {
+            throw new CloudRuntimeException(endpoint.error.getDetails());
+        }
+        return endpoint.result;
+    }
+
+    public static ErrorableValue<String> getManagementServerVip(String targetIp) {
+        return getManagementEndpointData().selectForTarget(ManagementEndpointData.EndpointType.VIP, targetIp);
     }
 
     public static String getManagementServerVipBaseUrl() {
@@ -1071,8 +1093,15 @@ public class Platform {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
         }
+        ErrorableValue<String> endpoint = getManagementEndpointData().selectDefault(ManagementEndpointData.EndpointType.CANONICAL_NODE);
+        if (!endpoint.isSuccess()) {
+            throw new CloudRuntimeException(endpoint.error.getDetails());
+        }
+        return endpoint.result;
+    }
 
-        return ZSha2Helper.getInfo(false).getNodeip();
+    public static ErrorableValue<String> getCanonicalServerIp(String targetIp) {
+        return getManagementEndpointData().selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, targetIp);
     }
 
     public static boolean isVIPNode() {
@@ -1234,19 +1263,61 @@ public class Platform {
     }
 
     public static String getManagementServerIp6() {
-        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP6_PROPERTY, IPv6Constants.IPv6);
-        if (ip != null) {
-            return ip;
-        }
-        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv6);
+        return getConfiguredManagementServerIp(IPv6Constants.IPv6);
     }
 
     public static String getManagementServerIp4() {
-        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
-        if (ip != null) {
-            return ip;
+        return getConfiguredManagementServerIp(IPv6Constants.IPv4);
+    }
+
+    private static ManagementEndpointData getManagementEndpointData() {
+        List<String> nodeIps = getConfiguredManagementNodeIps();
+        return ZSha2Helper.isMNHaEnvironment() ?
+                new ManagementEndpointData(nodeIps, ZSha2Helper.getInfo(false)) :
+                new ManagementEndpointData(nodeIps);
+    }
+
+    private static ManagementEndpointData getManagementNodeEndpointData() {
+        return new ManagementEndpointData(getConfiguredManagementNodeIps());
+    }
+
+    private static List<String> getConfiguredManagementNodeIps() {
+        List<String> nodeIps = new ArrayList<>();
+        String primaryIp = System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY);
+        if (!StringUtils.isBlank(primaryIp)) {
+            nodeIps.add(normalizeManagementIp(primaryIp));
         }
-        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv4);
+
+        String ipv4 = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
+        if (ipv4 != null) {
+            nodeIps.add(ipv4);
+        }
+        String ipv6 = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP6_PROPERTY, IPv6Constants.IPv6);
+        if (ipv6 != null) {
+            nodeIps.add(ipv6);
+        }
+        return nodeIps;
+    }
+
+    private static boolean hasConfiguredManagementNodeIpProperty() {
+        return !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP4_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP6_PROPERTY));
+    }
+
+    private static String getConfiguredManagementServerIp(int ipVersion) {
+        String primaryIp = System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY);
+        if (!StringUtils.isBlank(primaryIp)) {
+            String normalizedPrimaryIp = normalizeManagementIp(primaryIp);
+            if ((ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(normalizedPrimaryIp)) ||
+                    (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(normalizedPrimaryIp))) {
+                return normalizedPrimaryIp;
+            }
+        }
+
+        return getManagementServerSecondaryIpProperty(
+                ipVersion == IPv6Constants.IPv4 ? MANAGEMENT_SERVER_IP4_PROPERTY : MANAGEMENT_SERVER_IP6_PROPERTY,
+                ipVersion);
     }
 
     private static String getManagementServerSecondaryIpProperty(String property, int ipVersion) {
@@ -1267,45 +1338,6 @@ public class Platform {
         return normalizedIp;
     }
 
-    private static String getManagementServerIpOnManagementInterface(int ipVersion) {
-        try {
-            NetworkInterface iface = findManagementServerInterface();
-            if (iface == null || !iface.isUp()) {
-                return null;
-            }
-
-            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
-                if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
-                    continue;
-                }
-                if (ipVersion == IPv6Constants.IPv6 && !(address instanceof Inet4Address)) {
-                    return normalizeManagementIp(address.getHostAddress());
-                }
-                if (ipVersion == IPv6Constants.IPv4 && address instanceof Inet4Address) {
-                    return normalizeManagementIp(address.getHostAddress());
-                }
-            }
-        } catch (SocketException e) {
-            throw new CloudRuntimeException(e);
-        }
-
-        return null;
-    }
-
-    private static NetworkInterface findManagementServerInterface() throws SocketException {
-        String currentIp = normalizeManagementIp(getManagementServerIp());
-        Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-        for (NetworkInterface iface : Collections.list(nets)) {
-            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
-                if (currentIp.equals(normalizeManagementIp(address.getHostAddress()))) {
-                    return iface;
-                }
-            }
-        }
-
-        return null;
-    }
-
     public static String getManagementServerIp6Cidr() {
         String ip6 = getManagementServerIp6();
         return ip6 == null ? null : getManagementServerCidr(ip6);
@@ -1313,7 +1345,12 @@ public class Platform {
 
     public static List<String> getManagementServerIps() {
         LinkedHashSet<String> ips = new LinkedHashSet<>();
-        ips.add(getManagementServerIp());
+        String primaryIp = System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY);
+        if (!StringUtils.isBlank(primaryIp)) {
+            ips.add(normalizeManagementIp(primaryIp));
+        } else {
+            ips.add(getManagementServerIp());
+        }
         ips.add(getManagementServerIp4());
         ips.add(getManagementServerIp6());
         ips.remove(null);

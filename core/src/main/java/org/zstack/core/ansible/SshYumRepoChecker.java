@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
@@ -23,6 +24,7 @@ public class SshYumRepoChecker implements AnsibleChecker {
     private String password;
     private String privateKey;
     private String targetIp;
+    private String managementNodeIp;
     private int sshPort = 22;
 
     @Override
@@ -36,9 +38,8 @@ public class SshYumRepoChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.sudoCommand(String.format("sed -i '/baseurl/s/\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}:\\([0-9]\\+\\)/%s/g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                    restf.getHostName() + ":" + restf.getPort()
-            ));
+            String managementNodeEndpoint = managementNodeIp == null ? restf.getHostName() : managementNodeIp;
+            ssh.sudoCommand(buildYumRepoEndpointRewriteCommand(managementNodeEndpoint, restf.getPort()));
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
                 logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
@@ -53,6 +54,11 @@ public class SshYumRepoChecker implements AnsibleChecker {
 
         logger.debug("successfully configured zstack-mn.repo and qemu-kvm-ev-mn.repo in " + targetIp);
         return false;
+    }
+
+    static String buildYumRepoEndpointRewriteCommand(String managementNodeEndpoint, int restPort) {
+        return String.format("sed -i '/baseurl/s#\\(\\[[^]]*\\]\\|\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}\\):\\([0-9]\\+\\)#%s#g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
+                IPv6NetworkUtils.formatHostPort(managementNodeEndpoint, restPort));
     }
 
     @Override
@@ -98,5 +104,9 @@ public class SshYumRepoChecker implements AnsibleChecker {
 
     public void setTargetIp(String targetIp) {
         this.targetIp = targetIp;
+    }
+
+    public void setManagementNodeIp(String managementNodeIp) {
+        this.managementNodeIp = managementNodeIp;
     }
 }

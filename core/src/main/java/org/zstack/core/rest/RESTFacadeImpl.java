@@ -40,6 +40,7 @@ import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -229,21 +230,25 @@ public class RESTFacadeImpl implements RESTFacade {
         return ub.build().toUriString();
     }
 
-    public static String selectCallbackUrl(String requestUrl, Map<String, String> headers, String defaultCallbackUrl, int port, String path) {
+    public static ErrorableValue<String> selectCallbackUrl(String requestUrl, Map<String, String> headers, String defaultCallbackUrl, int port, String path) {
         if (headers != null && headers.keySet().stream().anyMatch(RESTConstant.CALLBACK_URL::equalsIgnoreCase)) {
-            return defaultCallbackUrl;
+            return ErrorableValue.of(defaultCallbackUrl);
         }
 
         String host = extractRequestHost(requestUrl);
         if (host == null) {
-            return defaultCallbackUrl;
+            return ErrorableValue.of(defaultCallbackUrl);
         }
 
         if (!NetworkUtils.isIpv4Address(host) && !IPv6NetworkUtils.isIpv6Address(host)) {
-            return defaultCallbackUrl;
+            return ErrorableValue.of(defaultCallbackUrl);
         }
 
-        return buildCallbackUrl(Platform.getManagementServerIpForRemote(host), port, path);
+        ErrorableValue<String> callbackIp = Platform.getManagementServerIp(host);
+        if (!callbackIp.isSuccess()) {
+            return ErrorableValue.ofErrorCode(callbackIp.error);
+        }
+        return ErrorableValue.of(buildCallbackUrl(callbackIp.result, port, path));
     }
 
     private static String extractRequestHost(String requestUrl) {
@@ -413,6 +418,12 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
+        ErrorableValue<String> selectedCallbackUrl = selectCallbackUrl(url, headers, callbackUrl, port, path);
+        if (!selectedCallbackUrl.isSuccess()) {
+            callback.fail(selectedCallbackUrl.error);
+            return;
+        }
+
         synchronized (interceptors) {
             for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
                 ic.beforeAsyncJsonPost(url, body, unit, timeout);
@@ -442,7 +453,7 @@ public class RESTFacadeImpl implements RESTFacade {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.setContentLength(body.length());
         requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
-        requestHeaders.set(RESTConstant.CALLBACK_URL, selectCallbackUrl(url, headers, callbackUrl, port, path));
+        requestHeaders.set(RESTConstant.CALLBACK_URL, selectedCallbackUrl.result);
         MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
         requestHeaders.setContentType(JSON);
         if (headers != null) {
