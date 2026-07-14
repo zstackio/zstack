@@ -152,7 +152,7 @@ public class KVMGlobalConfig {
     @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "enable TLS encryption for libvirt remote connections (migration)")
     public static GlobalConfig LIBVIRT_TLS_ENABLED = new GlobalConfig(CATEGORY, "libvirt.tls.enabled");
 
-    @GlobalConfigValidation
+    @GlobalConfigValidation(numberGreaterThan = 1)
     @GlobalConfigDef(defaultValue = "300", type = Long.class, description = "timeout in seconds for KVM agent connectivity-check commands that opt out of the default command timeout")
     public static GlobalConfig AGENT_CONNECTIVITY_CHECK_TIMEOUT = new GlobalConfig(CATEGORY, "agent.connectivityCheck.timeout");
 

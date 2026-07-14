@@ -2938,7 +2938,7 @@ public class KVMHost extends HostBase implements Host {
         String url = buildUrl(msg.getPath());
         MessageCommandRecorder.record(msg.getCommandClassName());
         new Http<>(url, msg.getCommand(), msg.getCommandClassName(), LinkedHashMap.class)
-                .timeout(msg.getTimeout() > 0 ? msg.getTimeout() : factory.getAgentHttpShortTimeout(msg.getPath()))
+                .timeout(msg.getTimeout())
                 .call(new ReturnValueCompletion<LinkedHashMap>(msg, completion) {
             @Override
             public void success(LinkedHashMap ret) {

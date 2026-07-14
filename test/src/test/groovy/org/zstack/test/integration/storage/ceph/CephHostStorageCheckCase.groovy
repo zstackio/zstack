@@ -5,10 +5,12 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.header.host.HostConstant
 import org.zstack.header.message.MessageReply
+import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor
+import org.zstack.header.rest.RESTFacade
 import org.zstack.header.storage.primary.PrimaryStorageConstant
 import org.zstack.kvm.KVMAgentCommands
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg
-import org.zstack.kvm.KVMHostFactory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.ceph.primary.CephPrimaryStorageBase
@@ -21,11 +23,13 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 class CephHostStorageCheckCase extends SubCase {
     EnvSpec env
     CloudBus bus
+    RESTFacade restf
 
     @Override
     void setup() {
@@ -79,8 +83,11 @@ class CephHostStorageCheckCase extends SubCase {
     void test() {
         env.create {
             bus = bean(CloudBus.class)
+            restf = bean(RESTFacade.class)
+            testConnectivityCheckTimeoutRejectsValuesBelowOneSecond()
             testCheckNotSerializedAcrossHosts()
-            testPerMessageTimeoutHonored()
+            testConnectivityCheckUsesConfiguredTimeoutBeforeSend()
+            testConnectivityCheckUsesRemainingDeadlineBeforeSend()
         }
     }
 
@@ -89,9 +96,12 @@ class CephHostStorageCheckCase extends SubCase {
         env.delete()
     }
 
-    // ZSTAC-85421: a stuck per-host check must not block other hosts' check on the
-    // same primary storage. The chain syncLevel is raised from 1 to 10 so the second
-    // host's check runs concurrently instead of queueing behind the stuck one.
+    void testConnectivityCheckTimeoutRejectsValuesBelowOneSecond() {
+        expect(AssertionError.class) {
+            updateConnectivityCheckTimeout(0)
+        }
+    }
+
     void testCheckNotSerializedAcrossHosts() {
         def ps = env.inventoryByName("ceph-pri") as PrimaryStorageInventory
         def host1 = env.inventoryByName("host1") as HostInventory
@@ -99,12 +109,6 @@ class CephHostStorageCheckCase extends SubCase {
 
         CountDownLatch host1Entered = new CountDownLatch(1)
         CountDownLatch release = new CountDownLatch(1)
-
-        // ceph registers the check path with a short timeout via
-        // KVMAgentHttpTimeoutExtensionPoint; the value comes from the
-        // agent.connectivityCheck.timeout global config (default 300s).
-        // When sending, KVMHost clamps it down to the inherited total timeout.
-        assert bean(KVMHostFactory.class).getAgentHttpShortTimeout(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) == TimeUnit.MINUTES.toMillis(5)
 
         env.simulator(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CheckHostStorageConnectionCmd)
@@ -117,59 +121,121 @@ class CephHostStorageCheckCase extends SubCase {
 
         CountDownLatch reply1Done = new CountDownLatch(1)
         sendCheckMsg(ps.uuid, host1.uuid, { MessageReply r -> reply1Done.countDown() })
-        assert host1Entered.await(10, TimeUnit.SECONDS)
+        assert host1Entered.await(10, TimeUnit.SECONDS) :
+                "stuck host check did not enter the real Ceph path within 10 seconds"
 
         AtomicReference<MessageReply> reply2 = new AtomicReference<>()
         CountDownLatch reply2Done = new CountDownLatch(1)
         sendCheckMsg(ps.uuid, host2.uuid, { MessageReply r -> reply2.set(r); reply2Done.countDown() })
 
-        assert reply2Done.await(15, TimeUnit.SECONDS)
-        assert reply2.get().isSuccess()
-        assert reply1Done.getCount() == 1
+        assert reply2Done.await(15, TimeUnit.SECONDS) :
+                "healthy host check was blocked by another host on the same Ceph primary storage"
+        assert reply2.get().isSuccess() :
+                "healthy host check failed while the stuck host occupied another concurrency slot: actual=${reply2.get().error}"
+        assert reply1Done.getCount() == 1 :
+                "stuck host check unexpectedly completed before release: remaining=${reply1Done.getCount()}"
 
         release.countDown()
-        assert reply1Done.await(15, TimeUnit.SECONDS)
+        assert reply1Done.await(15, TimeUnit.SECONDS) :
+                "stuck host check did not complete after its simulator was released"
     }
 
-    // ZSTAC-85421: a KVMHostAsyncHttpCallMsg carrying an explicit timeout must fail at
-    // that timeout instead of riding the default 1800s. The ceph check relies on this to
-    // limit its blast radius to 5 minutes.
-    void testPerMessageTimeoutHonored() {
+    void testConnectivityCheckUsesConfiguredTimeoutBeforeSend() {
         def host1 = env.inventoryByName("host1") as HostInventory
-        def stuckPath = "/test/zstac85421/stuck"
-        CountDownLatch release = new CountDownLatch(1)
+        long originalTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class)
+        long expectedTimeout = TimeUnit.SECONDS.toMillis(2)
 
-        env.simulator(stuckPath) { HttpEntity<String> e ->
-            release.await(60, TimeUnit.SECONDS)
-            return new KVMAgentCommands.AgentResponse()
+        updateConnectivityCheckTimeout(2)
+        long actualTimeout = captureConnectivityCheckTimeout(host1.uuid) {
+            reconnectHost {
+                uuid = host1.uuid
+                apiTimeout = 30L
+            }
         }
 
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg()
-        msg.setHostUuid(host1.uuid)
-        msg.setPath(stuckPath)
-        msg.setCommand(new KVMAgentCommands.AgentCommand())
-        msg.setNoStatusCheck(true)
-        msg.setTimeout(TimeUnit.SECONDS.toMillis(3))
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host1.uuid)
+        assert actualTimeout == expectedTimeout :
+                "real ReconnectHost Ceph check did not use agent.connectivityCheck.timeout before CloudBus send: " +
+                        "expected=${expectedTimeout}ms actual=${actualTimeout}ms"
+        updateConnectivityCheckTimeout(originalTimeout)
+    }
 
-        AtomicReference<MessageReply> reply = new AtomicReference<>()
+    void testConnectivityCheckUsesRemainingDeadlineBeforeSend() {
+        def host1 = env.inventoryByName("host1") as HostInventory
+        long originalTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class)
+        long remaining = TimeUnit.SECONDS.toMillis(15)
+
+        updateConnectivityCheckTimeout(60)
+        long actualTimeout = captureConnectivityCheckTimeout(host1.uuid) {
+            sendKvmConnectivityCheck(host1.uuid, TimeUnit.SECONDS.toMillis(30),
+                    System.currentTimeMillis() + remaining)
+        }
+
+        assert actualTimeout >= remaining - TimeUnit.SECONDS.toMillis(5) && actualTimeout <= remaining :
+                "Ceph check exceeded the parent remaining deadline before CloudBus send: " +
+                        "expected=[${remaining - TimeUnit.SECONDS.toMillis(5)},${remaining}]ms actual=${actualTimeout}ms"
+        updateConnectivityCheckTimeout(originalTimeout)
+    }
+
+    private void sendKvmConnectivityCheck(String hostUuid, long timeout, long messageDeadline) {
+        CephPrimaryStorageBase.CheckHostStorageConnectionCmd cmd =
+                new CephPrimaryStorageBase.CheckHostStorageConnectionCmd()
+        cmd.setHostUuid(hostUuid)
+
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg()
+        msg.setHostUuid(hostUuid)
+        msg.setPath(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH)
+        msg.setCommand(cmd)
+        msg.setNoStatusCheck(true)
+        msg.setTimeout(timeout)
+        msg.setMessageDeadline(messageDeadline)
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid)
+
         CountDownLatch done = new CountDownLatch(1)
-        long start = System.currentTimeMillis()
         bus.send(msg, new CloudBusCallBack(null) {
             @Override
-            void run(MessageReply r) {
-                reply.set(r)
+            void run(MessageReply reply) {
                 done.countDown()
             }
         })
+        assert done.await(10, TimeUnit.SECONDS) :
+                "direct KVM connectivity check did not complete while verifying the pre-send timeout hook"
+    }
 
-        assert done.await(20, TimeUnit.SECONDS)
-        long elapsed = System.currentTimeMillis() - start
-        assert !reply.get().isSuccess()
-        assert elapsed >= 2000
-        assert elapsed < 20000
+    private long captureConnectivityCheckTimeout(String hostUuid, Closure trigger) {
+        AtomicLong captured = new AtomicLong(-1)
+        CountDownLatch capturedDone = new CountDownLatch(1)
+        Runnable close = restf.installBeforeAsyncJsonPostInterceptor(new BeforeAsyncJsonPostInterceptor() {
+            @Override
+            void beforeAsyncJsonPost(String url, Object body, TimeUnit unit, long timeout) {
+            }
 
-        release.countDown()
+            @Override
+            void beforeAsyncJsonPost(String url, String body, TimeUnit unit, long timeout) {
+                if (!url.endsWith(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH)) {
+                    return
+                }
+
+                def cmd = JSONObjectUtil.toObject(body, CephPrimaryStorageBase.CheckHostStorageConnectionCmd)
+                if (cmd.hostUuid == hostUuid) {
+                    captured.set(unit.toMillis(timeout))
+                    capturedDone.countDown()
+                }
+            }
+        })
+
+        trigger()
+        assert capturedDone.await(10, TimeUnit.SECONDS) :
+                "real Ceph host storage connection path was not invoked for host=${hostUuid}"
+        close.run()
+        return captured.get()
+    }
+
+    private void updateConnectivityCheckTimeout(long timeout) {
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = "agent.connectivityCheck.timeout"
+            value = timeout.toString()
+        }
     }
 
     private void sendCheckMsg(String psUuid, String hostUuid, Closure cb) {

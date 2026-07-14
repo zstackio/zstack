@@ -45,6 +45,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.AbstractBeforeSendMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -399,6 +400,28 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         }
     }
 
+    private void installAgentHttpShortTimeoutInterceptor() {
+        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            public void beforeSendMessage(Message message) {
+                KVMHostAsyncHttpCallMsg msg = (KVMHostAsyncHttpCallMsg) message;
+                long timeout = getAgentHttpShortTimeout(msg.getPath());
+                if (timeout == -1) {
+                    return;
+                }
+
+                if (msg.getTimeout() > 0) {
+                    timeout = Math.min(timeout, msg.getTimeout());
+                }
+                if (msg.getMessageDeadline() != -1) {
+                    timeout = Math.min(timeout,
+                            Math.max(1L, msg.getMessageDeadline() - System.currentTimeMillis()));
+                }
+                msg.setTimeout(timeout);
+            }
+        }, KVMHostAsyncHttpCallMsg.class);
+    }
+
     public long getAgentHttpShortTimeout(String path) {
         if (agentHttpPathsWithShortTimeout.contains(path)) {
             return TimeUnit.SECONDS.toMillis(KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class));
@@ -548,6 +571,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         initLibvirtTlsCA();
         deployAnsibleModule();
         populateExtensions();
+        installAgentHttpShortTimeoutInterceptor();
         configKVMDeviceType();
 
         if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
