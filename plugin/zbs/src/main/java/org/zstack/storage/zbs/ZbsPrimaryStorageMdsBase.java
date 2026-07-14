@@ -206,6 +206,12 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                         restf.asyncJsonPost(ZbsAgentUrl.primaryStorageUrl(getSelf().getAddr(), SYNC_METADATA_PATH), cmd, new JsonAsyncRESTCallback<SyncMetadataRsp>(trigger) {
                             @Override
                             public void success(SyncMetadataRsp ret) {
+                                if (!ret.isSuccess()) {
+                                    trigger.fail(operr("unable to sync metadata from ZBS primary storage MDS[%s], because %s",
+                                            getSelf().getAddr(), ret.getError()));
+                                    return;
+                                }
+
                                 getSelf().setExternalAddr(ret.getExternalAddr());
                                 trigger.next();
                             }
@@ -307,7 +313,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
     }
 
     private void pingMds(ClusterInfo clusterInfo, final Completion completion) {
-        final Integer MAX_PING_CNT = ZbsConstants.PRIMARY_STORAGE_MDS_MAXIMUM_PING_FAILURE;
+        final Integer MAX_PING_CNT = ZbsConstants.MDS_PING_RETRY_PER_CYCLE;
         final List<Integer> stepCount = new ArrayList<>();
         for (int i = 1; i <= MAX_PING_CNT; i++) {
             stepCount.add(i);
