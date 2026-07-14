@@ -1329,6 +1329,27 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             final String exportProtocol = controller.reportCapabilities().getDefaultImageExportProtocol() != null
                     ? controller.reportCapabilities().getDefaultImageExportProtocol().toString()
                     : rcf.getResourceConfigValue(ExternalPrimaryStorageGlobalConfig.IMAGE_EXPORT_PROTOCOL, self.getUuid(), String.class);
+
+            private ExternalPrimaryStorageImageDownloadContext buildDownloadContext() {
+                ExternalPrimaryStorageImageDownloadContext context = new ExternalPrimaryStorageImageDownloadContext();
+                context.setPrimaryStorageUuid(self.getUuid());
+                context.setPrimaryStorageType(externalVO.getIdentity());
+                context.setImage(image);
+                context.setSpec(spec);
+                context.setTargetResourceType(targetClz);
+                return context;
+            }
+
+            private ExternalPrimaryStorageImageDownloadExtensionPoint findDownloadExtension(
+                    ExternalPrimaryStorageImageDownloadContext context) {
+                for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class)) {
+                    if (ext.supportsDownload(context)) {
+                        return ext;
+                    }
+                }
+                return null;
+            }
+
             @Override
             public void setup() {
                 flow(new Flow() {
@@ -1337,6 +1358,9 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         spec.setSize(Long.max(image.getActualSize(), image.getSize()));
+                        for (ExternalPrimaryStorageImageDownloadExtensionPoint ext : pluginRgty.getExtensionList(ExternalPrimaryStorageImageDownloadExtensionPoint.class)) {
+                            ext.beforeDownload(self.getUuid(), externalVO.getIdentity(), image, spec, targetClz);
+                        }
                         controller.createVolume(spec, new ReturnValueCompletion<VolumeStats>(trigger) {
                             @Override
                             public void success(VolumeStats stats) {
@@ -1416,7 +1440,45 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 });
 
                 flow(new NoRollbackFlow() {
+                    String __name__ = "download-encrypted-image";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return !spec.isEncrypted();
+                    }
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        ExternalPrimaryStorageImageDownloadContext context = buildDownloadContext();
+                        context.setVolume(volume);
+                        context.setRemoteTarget(remoteTarget);
+                        ExternalPrimaryStorageImageDownloadExtensionPoint ext = findDownloadExtension(context);
+                        if (ext == null) {
+                            trigger.fail(operr("cannot find external primary storage image download extension for encrypted image[uuid:%s]",
+                                    image.getUuid()));
+                            return;
+                        }
+                        ext.download(context, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
                     String __name__ = "download-image";
+
+                    @Override
+                    public boolean skip(Map data) {
+                        return spec.isEncrypted();
+                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
