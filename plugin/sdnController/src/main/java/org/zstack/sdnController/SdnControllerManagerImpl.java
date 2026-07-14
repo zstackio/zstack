@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -19,6 +20,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.NetworkException;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.*;
@@ -80,11 +82,29 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     public void handleMessage(Message msg) {
         if (msg instanceof APIAddSdnControllerMsg) {
             handle((APIAddSdnControllerMsg) msg);
+        } else if (msg instanceof AddSdnControllerMsg) {
+            handle((AddSdnControllerMsg) msg);
         } else if (msg instanceof SdnControllerMessage) {
             handleSdnControllerMessage((SdnControllerMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(AddSdnControllerMsg msg) {
+        AddSdnControllerReply reply = new AddSdnControllerReply();
+        doCreateSdnController(msg, new Completion(msg) {
+            @Override
+            public void success() {
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handleSdnControllerMessage(SdnControllerMessage msg) {
@@ -99,23 +119,23 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         sdnController.handleMessage(msg);
     }
 
-    private void doCreateSdnController(SdnControllerVO vo, APIAddSdnControllerMsg msg, Completion completion) {
-        SdnControllerFactory factory = getSdnControllerFactory(msg.getVendorType());
+    private void doCreateSdnController(AddSdnControllerMsg msg, Completion completion) {
+        SdnControllerVO vo = msg.getSdnControllerVO();
+        SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         SdnController controller = factory.getSdnController(vo);
 
         Map data = new HashMap();
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setData(data);
-        chain.setName(String.format("create-sdn-controller-%s", msg.getName()));
+        chain.setName(String.format("create-sdn-controller-%s", vo.getName()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("pre-process-for-create-sdn-controller-%s", msg.getName());
+                    String __name__ = String.format("pre-process-for-create-sdn-controller-%s", vo.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        msg.setResourceUuid(vo.getUuid());
                         controller.preInitSdnController(msg, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -130,7 +150,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     }
                 });
                 flow(new Flow() {
-                    String __name__ = String.format("create-sdn-controller-%s-on-db", msg.getName());
+                    String __name__ = String.format("create-sdn-controller-%s-on-db", vo.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -155,7 +175,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     }
                 });
                 flow(new Flow() {
-                    String __name__ = String.format("init-sdn-controller-%s", msg.getName());
+                    String __name__ = String.format("init-sdn-controller-%s", vo.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -179,7 +199,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     }
                 });
                 flow(new NoRollbackFlow() {
-                    String __name__ = String.format("post-process-for-create-sdn-controller--%s", msg.getName());
+                    String __name__ = String.format("post-process-for-create-sdn-controller-%s", vo.getName());
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -238,17 +258,22 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
         vo.setStatus(SdnControllerStatus.Connected);
 
-        doCreateSdnController(vo, msg, new Completion(msg) {
+        AddSdnControllerMsg amsg = new AddSdnControllerMsg();
+        amsg.setSdnControllerVO(vo);
+        amsg.setAccountUuid(msg.getSession().getAccountUuid());
+        if (msg.getSystemTags() != null) {
+            amsg.setSystemTags(msg.getSystemTags());
+        }
+        bus.makeTargetServiceIdByResourceUuid(amsg, SdnControllerConstant.SERVICE_ID, vo.getUuid());
+        bus.send(amsg, new CloudBusCallBack(amsg) {
             @Override
-            public void success() {
-                tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SdnControllerVO.class.getSimpleName());
-                event.setInventory(SdnControllerInventory.valueOf(dbf.findByUuid(vo.getUuid(), SdnControllerVO.class)));
-                bus.publish(event);
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                event.setError(errorCode);
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), SdnControllerVO.class.getSimpleName());
+                    event.setInventory(SdnControllerInventory.valueOf(dbf.findByUuid(vo.getUuid(), SdnControllerVO.class)));
+                } else {
+                    event.setError(reply.getError());
+                }
                 bus.publish(event);
             }
         });

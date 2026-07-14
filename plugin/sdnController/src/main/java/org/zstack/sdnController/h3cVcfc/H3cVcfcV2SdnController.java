@@ -141,7 +141,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
 
     @Override
     @SdnControllerLog
-    public void initSdnController(APIAddSdnControllerMsg msg, Completion completion) {
+    public void initSdnController(AddSdnControllerMsg msg, Completion completion) {
         getH3cControllerToken(new Completion(completion) {
             @Override
             public void success() {
@@ -335,7 +335,7 @@ public class H3cVcfcV2SdnController extends H3cVcfcSdnController {
         }
     }
 
-    private void getH3cParameters(APIAddSdnControllerMsg msg, Completion completion) {
+    private void getH3cParameters(AddSdnControllerMsg msg, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("get-h3c-parameters-%s", self.getIp()));
         chain.then(new NoRollbackFlow() {
