@@ -192,6 +192,10 @@ public class VolumeBase extends AbstractVolume implements Volume {
     private void handle(ReInitVolumeMsg msg) {
         ReInitVolumeReply reply = new ReInitVolumeReply();
         refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
+        }
 
         VolumeInventory rootVolumeInventory = VolumeInventory.valueOf(self);
         final long originSize = Q.New(ImageCacheVO.class)
@@ -1090,6 +1094,10 @@ public class VolumeBase extends AbstractVolume implements Volume {
             @Override
             public void run(SyncTaskChain chain) {
                 refreshVO();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
                 doCreateDataVolumeTemplateFromDataVolumeMsg(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -2122,7 +2130,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("create-volume-%s-snapshot-group", msg.getVolumeUuid());
+                return syncThreadId;
             }
 
             @Override
@@ -2868,12 +2876,17 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("create-volume-%s-snapshot-group", msg.getVolumeUuid());
+                return syncThreadId;
             }
 
             @Override
             public void run(SyncTaskChain chain) {
                 APICreateVolumeSnapshotGroupEvent evt = new APICreateVolumeSnapshotGroupEvent(msg.getId());
+                refreshVO();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
                 doCreateVolumeSnapshotGroup(msg, new ReturnValueCompletion<VolumeSnapshotGroupInventory>(chain) {
                     @Override
                     public void success(VolumeSnapshotGroupInventory inv) {
@@ -3281,6 +3294,14 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     return;
                 }
 
+                if (self.getStatus() != VolumeStatus.Ready) {
+                    reply.setError(operr("volume[uuid:%s] is not in status Ready, current is %s, cannot change encryption",
+                            self.getUuid(), self.getStatus()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                    return;
+                }
+
                 changeVolumeEncryption(msg.isEncrypted(), new ReturnValueCompletion<VolumeInventory>(chain) {
                     @Override
                     public void success(VolumeInventory inventory) {
@@ -3303,6 +3324,14 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 return getSyncSignature();
             }
         });
+    }
+
+    private void updateVolumeStatusForEncryptionConversion(VolumeStatus status) {
+        SQL.New(VolumeVO.class)
+                .eq(VolumeVO_.uuid, self.getUuid())
+                .set(VolumeVO_.status, status)
+                .update();
+        refreshVO();
     }
 
     private static class VolumeEncryptionConversionContext {
@@ -3338,6 +3367,22 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             return;
                         }
                         trigger.next();
+                    }
+                });
+
+                flow(new Flow() {
+                    String __name__ = "mark-volume-encryption-conversion-in-progress";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        updateVolumeStatusForEncryptionConversion(VolumeStatus.Converting);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        updateVolumeStatusForEncryptionConversion(VolumeStatus.Ready);
+                        trigger.rollback();
                     }
                 });
 
@@ -3488,6 +3533,16 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             logger.warn(String.format("failed to record old volume bits in trash for volume[uuid:%s] after encryption conversion: %s",
                                     self.getUuid(), e.getMessage()), e);
                         }
+                        trigger.next();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "finish-volume-encryption-conversion";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        updateVolumeStatusForEncryptionConversion(VolumeStatus.Ready);
                         trigger.next();
                     }
                 });
@@ -3853,11 +3908,16 @@ public class VolumeBase extends AbstractVolume implements Volume {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("flattern-volume-%s", msg.getUuid());
+                return syncThreadId;
             }
 
             @Override
             public void run(SyncTaskChain chain) {
+                refreshVO();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
+                }
                 FlattenVolumeReply reply = new FlattenVolumeReply();
                 flattenVolume(new Completion(chain) {
                     @Override
@@ -4085,46 +4145,84 @@ public class VolumeBase extends AbstractVolume implements Volume {
     }
 
     private void handle(APIAttachDataVolumeToHostMsg msg) {
-        APIAttachDataVolumeToHostEvent evt = new APIAttachDataVolumeToHostEvent(msg.getId());
-        AttachDataVolumeToHostMsg mmsg = new AttachDataVolumeToHostMsg();
-        mmsg.setHostUuid(msg.getHostUuid());
-        mmsg.setVolumeUuid(msg.getVolumeUuid());
-        mmsg.setMountPath(msg.getMountPath());
-        bus.makeTargetServiceIdByResourceUuid(mmsg, HostConstant.SERVICE_ID, mmsg.getHostUuid());
-        bus.send(mmsg, new CloudBusCallBack(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                    bus.publish(evt);
-                    return;
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                refreshVO();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
                 }
-                bus.publish(evt);
+                APIAttachDataVolumeToHostEvent evt = new APIAttachDataVolumeToHostEvent(msg.getId());
+                AttachDataVolumeToHostMsg mmsg = new AttachDataVolumeToHostMsg();
+                mmsg.setHostUuid(msg.getHostUuid());
+                mmsg.setVolumeUuid(msg.getVolumeUuid());
+                mmsg.setMountPath(msg.getMountPath());
+                bus.makeTargetServiceIdByResourceUuid(mmsg, HostConstant.SERVICE_ID, mmsg.getHostUuid());
+                bus.send(mmsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            evt.setError(reply.getError());
+                        }
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
     }
 
     private void handle(APIDetachDataVolumeFromHostMsg msg) {
-        APIDetachDataVolumeFromHostEvent evt = new APIDetachDataVolumeFromHostEvent(msg.getId());
-        VolumeHostRefVO ref = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).find();
-        String hostUuid = msg.getHostUuid() != null ? msg.getHostUuid() : ref.getHostUuid();
-
-        DetachDataVolumeFromHostMsg dmsg = new DetachDataVolumeFromHostMsg();
-        dmsg.setVolumeInstallPath(self.getInstallPath());
-        dmsg.setMountPath(ref.getMountPath());
-        dmsg.setDevice(ref.getDevice());
-        dmsg.setHostUuid(hostUuid);
-        dmsg.setVolumeUuid(msg.getVolumeUuid());
-        bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, dmsg.getHostUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                    bus.publish(evt);
-                    return;
+            public String getSyncSignature() {
+                return syncThreadId;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                refreshVO();
+                ErrorCode err = validateOperationByState(msg, self.getStatus(), SysErrors.OPERATION_ERROR);
+                if (err != null) {
+                    throw new OperationFailureException(err);
                 }
-                bus.publish(evt);
+                APIDetachDataVolumeFromHostEvent evt = new APIDetachDataVolumeFromHostEvent(msg.getId());
+                VolumeHostRefVO ref = Q.New(VolumeHostRefVO.class).eq(VolumeHostRefVO_.volumeUuid, msg.getVolumeUuid()).find();
+                String hostUuid = msg.getHostUuid() != null ? msg.getHostUuid() : ref.getHostUuid();
+
+                DetachDataVolumeFromHostMsg dmsg = new DetachDataVolumeFromHostMsg();
+                dmsg.setVolumeInstallPath(self.getInstallPath());
+                dmsg.setMountPath(ref.getMountPath());
+                dmsg.setDevice(ref.getDevice());
+                dmsg.setHostUuid(hostUuid);
+                dmsg.setVolumeUuid(msg.getVolumeUuid());
+                bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, dmsg.getHostUuid());
+                bus.send(dmsg, new CloudBusCallBack(msg, chain) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            evt.setError(reply.getError());
+                        }
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return msg.getClass().getName();
             }
         });
     }

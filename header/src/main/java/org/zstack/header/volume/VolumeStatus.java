@@ -11,5 +11,6 @@ public enum VolumeStatus {
     Ready,
     NotInstantiated,
     Deleted,
-    Migrating
+    Migrating,
+    Converting
 }

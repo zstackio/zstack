@@ -29,6 +29,7 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.image.ImageConstant;
@@ -63,6 +64,7 @@ import org.zstack.storage.primary.PrimaryStorageCapacityUpdater;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
+import org.zstack.storage.volume.AbstractVolume;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.tag.TagManager;
@@ -148,7 +150,7 @@ public class VolumeSnapshotTreeBase {
     public VolumeSnapshotTreeBase(VolumeSnapshotVO vo, boolean syncOnVolume) {
         currentRoot = vo;
         if (syncOnVolume) {
-            syncSignature = String.format("volume.snapshot.volume.%s", currentRoot.getVolumeUuid());
+            syncSignature = String.format("volume-%s", currentRoot.getVolumeUuid());
         } else {
             syncSignature = String.format("volume.snapshot.tree.%s", currentRoot.getTreeUuid());
         }
@@ -161,6 +163,25 @@ public class VolumeSnapshotTreeBase {
             return err(VolumeSnapshotErrors.NOT_IN_CORRECT_STATE,
                     "snapshot[uuid:%s, name:%s]'s status[%s] is not allowed for message[%s], allowed status%s",
                     currentRoot.getUuid(), currentRoot.getName(), currentRoot.getStatus(), msg.getClass().getName(), allowedStatus.getStatesForOperation(msg.getClass().getName()));
+        }
+    }
+
+    private void validateVolumeOperationByState(Message msg) {
+        if (StringUtils.isBlank(currentRoot.getVolumeUuid())) {
+            return;
+        }
+
+        VolumeStatus volumeStatus = Q.New(VolumeVO.class)
+                .select(VolumeVO_.status)
+                .eq(VolumeVO_.uuid, currentRoot.getVolumeUuid())
+                .findValue();
+        if (volumeStatus == null) {
+            return;
+        }
+
+        ErrorCode err = AbstractVolume.validateOperationByVolumeState(msg, volumeStatus, SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
         }
     }
 
@@ -295,6 +316,7 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 RevertVolumeSnapshotReply reply = new RevertVolumeSnapshotReply();
+                validateVolumeOperationByState(msg);
 
                 revert(msg, new Completion(msg, chain) {
                     @Override
@@ -321,6 +343,7 @@ public class VolumeSnapshotTreeBase {
 
     private void handle(DeleteVolumeSnapshotMsg msg) {
         DeleteVolumeSnapshotReply reply = new DeleteVolumeSnapshotReply();
+        validateVolumeOperationByState(msg);
 
         deleteVolumeSnapshot(msg, new Completion(msg) {
             @Override
@@ -345,6 +368,7 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                validateVolumeOperationByState(msg);
                 deletion(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -1456,6 +1480,7 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                validateVolumeOperationByState(msg);
                 createDataVolume(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -1638,6 +1663,7 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                validateVolumeOperationByState(msg);
                 createTemplate(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -1662,6 +1688,7 @@ public class VolumeSnapshotTreeBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
+                validateVolumeOperationByState(msg);
                 createImageCache(msg, new NoErrorCompletion(chain) {
                     @Override
                     public void done() {
@@ -2048,6 +2075,7 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 APIShrinkVolumeSnapshotEvent event = new APIShrinkVolumeSnapshotEvent(msg.getId());
+                validateVolumeOperationByState(msg);
 
                 shrinkSnapshot(msg, new ReturnValueCompletion<ShrinkResult>(msg) {
                     @Override
@@ -2558,6 +2586,7 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void run(SyncTaskChain chain) {
                 RevertVolumeFromSnapshotGroupReply reply = new RevertVolumeFromSnapshotGroupReply();
+                validateVolumeOperationByState(msg);
                 revert(msg, new Completion(msg, chain) {
                     @Override
                     public void success() {
@@ -2591,6 +2620,7 @@ public class VolumeSnapshotTreeBase {
             @Override
             public void run(final SyncTaskChain chain) {
                 APIRevertVolumeFromSnapshotEvent evt = new APIRevertVolumeFromSnapshotEvent(msg.getId());
+                validateVolumeOperationByState(msg);
 
                 revert(msg, new Completion(evt, chain) {
                     @Override
@@ -3050,6 +3080,7 @@ public class VolumeSnapshotTreeBase {
 
     private void handle(final APIDeleteVolumeSnapshotMsg msg) {
         final APIDeleteVolumeSnapshotEvent evt = new APIDeleteVolumeSnapshotEvent(msg.getId());
+        validateVolumeOperationByState(msg);
 
         deleteVolumeSnapshot(msg, new Completion(msg) {
             @Override

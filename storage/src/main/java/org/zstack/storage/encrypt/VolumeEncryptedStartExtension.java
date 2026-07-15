@@ -11,6 +11,7 @@ import org.zstack.header.vm.VmBeforeCreateOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmBeforeStartOnHypervisorExtensionPoint;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -60,7 +61,15 @@ public class VolumeEncryptedStartExtension
             return;
         }
 
-        List<VolumeInventory> encryptedVolumes = collectEncryptedVolumes(spec);
+        Map<String, VolumeVO> latestVolumes = latestVolumes(spec);
+        for (VolumeVO volume : latestVolumes.values()) {
+            if (volume.getStatus() == VolumeStatus.Converting) {
+                throw new OperationFailureException(operr(
+                        "cannot start VM because volume[uuid:%s] is being converted", volume.getUuid()));
+            }
+        }
+
+        List<VolumeInventory> encryptedVolumes = collectEncryptedVolumes(spec, latestVolumes);
         if (encryptedVolumes.isEmpty()) {
             return;
         }
@@ -98,9 +107,8 @@ public class VolumeEncryptedStartExtension
         beforeStartVmOnHypervisor(spec);
     }
 
-    private List<VolumeInventory> collectEncryptedVolumes(VmInstanceSpec spec) {
+    private List<VolumeInventory> collectEncryptedVolumes(VmInstanceSpec spec, Map<String, VolumeVO> latestVolumes) {
         List<VolumeInventory> result = new ArrayList<>();
-        Map<String, VolumeVO> latestVolumes = latestVolumes(spec);
         VolumeInventory root = spec.getDestRootVolume();
         if (root != null && isEncrypted(latestVolumes, root)) {
             result.add(root);

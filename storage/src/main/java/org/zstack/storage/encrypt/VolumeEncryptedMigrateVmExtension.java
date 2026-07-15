@@ -18,7 +18,9 @@ import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmStateChangedExtensionPoint;
 import org.zstack.header.volume.VolumeAO_;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeStatus;
 import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.volume.VolumeSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -46,6 +48,26 @@ public class VolumeEncryptedMigrateVmExtension
 
     @Override
     public void preVmMigration(VmInstanceInventory vm, VmMigrationType type, String dstHostUuid, Completion completion) {
+        if (vm != null) {
+            Set<String> volumeUuids = new HashSet<>();
+            for (VolumeInventory volume : vm.getAllDiskVolumes()) {
+                volumeUuids.add(volume.getUuid());
+            }
+            if (!volumeUuids.isEmpty()) {
+                List<String> convertingVolumeUuids = Q.New(VolumeVO.class)
+                        .select(VolumeVO_.uuid)
+                        .in(VolumeVO_.uuid, volumeUuids)
+                        .eq(VolumeVO_.status, VolumeStatus.Converting)
+                        .listValues();
+                if (!convertingVolumeUuids.isEmpty()) {
+                    completion.fail(operr(
+                            "cannot migrate VM[uuid:%s] because attached volume[uuid:%s] is being converted",
+                            vm.getUuid(), StringUtils.join(convertingVolumeUuids, ",")));
+                    return;
+                }
+            }
+        }
+
         if (type != VmMigrationType.HostMigration) {
             completion.success();
             return;

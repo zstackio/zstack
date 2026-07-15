@@ -6,12 +6,16 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.core.Completion
+import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.FutureReturnValueCompletion
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.OperationFailureException
+import org.zstack.header.errorcode.SysErrors
+import org.zstack.header.host.HostInventory
 import org.zstack.header.image.ImageVO
 import org.zstack.header.keyprovider.EncryptedResourceKeyManager
+import org.zstack.header.message.Message
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.addon.primary.CreateVolumeSpec
 import org.zstack.header.storage.addon.primary.ZbsVolumeEncryptionBackend
@@ -25,6 +29,26 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO
+import org.zstack.header.storage.snapshot.APIShrinkVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.BackupVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.CreateImageCacheFromVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.CreateTemplateFromVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.InstantiateDataVolumeFromVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.APIRevertVolumeFromSnapshotMsg
+import org.zstack.header.storage.snapshot.RevertVolumeSnapshotMsg
+import org.zstack.header.storage.snapshot.group.RevertVolumeFromSnapshotGroupMsg
+import org.zstack.header.vm.VmInstanceSpec
+import org.zstack.header.vm.VmInstanceInventory
+import org.zstack.header.vm.VmMigrationType
+import org.zstack.header.volume.VolumeCreateSnapshotMsg
+import org.zstack.header.volume.APIAttachDataVolumeToHostMsg
+import org.zstack.header.volume.APIDetachDataVolumeFromHostMsg
+import org.zstack.header.volume.APICreateVolumeSnapshotGroupMsg
+import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeMsg
+import org.zstack.header.volume.CreateDataVolumeTemplateFromDataVolumeSnapshotMsg
+import org.zstack.header.volume.FlattenVolumeMsg
+import org.zstack.header.volume.ReInitVolumeMsg
 import org.zstack.header.volume.VolumeInventory
 import org.zstack.header.volume.VolumeState
 import org.zstack.header.volume.VolumeStatus
@@ -39,9 +63,12 @@ import org.zstack.sdk.KVMHostInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.encrypt.VolumeEncryptedSecretHelper
 import org.zstack.storage.encrypt.DummyVolumeEncryptedResourceKeyBackend
+import org.zstack.storage.encrypt.VolumeEncryptedMigrateVmExtension
+import org.zstack.storage.encrypt.VolumeEncryptedStartExtension
 import org.zstack.storage.encrypt.ZbsVolumeEncryptionExtension
 import org.zstack.storage.encrypt.ZbsVolumeEncryptionKvmCaller
 import org.zstack.storage.encrypt.ZbsVolumeEncryptionMaterialFactory
+import org.zstack.storage.volume.AbstractVolume
 import org.zstack.storage.volume.VolumeBase
 import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsStorageController
@@ -126,6 +153,7 @@ class ZbsVolumeEncryptionCase extends SubCase {
             primaryStorageAttached = true
 
             testBuildNativeCbdConversionPaths()
+            testConvertingRejectsStorageMutatingOperations()
             testPrepareVolumeEncryptionFallsBackToTargetVolumeKey()
             testEncryptedEmptyVolumeCreatorReusesImageKey()
             testPrepareVolumeEncryptionRejectsIncompleteKeyResource()
@@ -171,6 +199,41 @@ class ZbsVolumeEncryptionCase extends SubCase {
         assert plainTarget != volume.installPath
         assert !encryptedTarget.endsWith(".qcow2")
         assert !plainTarget.endsWith(".qcow2")
+    }
+
+    void testConvertingRejectsStorageMutatingOperations() {
+        VolumeCreateSnapshotMsg snapshotMsg = new VolumeCreateSnapshotMsg()
+
+        ErrorCode migratingError = AbstractVolume.validateOperationByVolumeState(
+                snapshotMsg, VolumeStatus.Migrating, SysErrors.OPERATION_ERROR)
+        assert migratingError != null : "Migrating volume must reject snapshot creation: actual=${migratingError}"
+
+        List<Message> storageMutatingMessages = [
+                snapshotMsg,
+                new FlattenVolumeMsg(),
+                new ReInitVolumeMsg(),
+                new APIAttachDataVolumeToHostMsg(),
+                new APIDetachDataVolumeFromHostMsg(),
+                new CreateDataVolumeTemplateFromDataVolumeMsg(),
+                new CreateDataVolumeTemplateFromDataVolumeSnapshotMsg(queuedInVolume: false),
+                new APICreateVolumeSnapshotGroupMsg(),
+                new DeleteVolumeSnapshotMsg(),
+                new RevertVolumeSnapshotMsg(),
+                new RevertVolumeFromSnapshotGroupMsg(),
+                new APIRevertVolumeFromSnapshotMsg(),
+                new APIShrinkVolumeSnapshotMsg(),
+                new BackupVolumeSnapshotMsg(),
+                new CreateTemplateFromVolumeSnapshotMsg(),
+                new CreateImageCacheFromVolumeSnapshotMsg(),
+                new InstantiateDataVolumeFromVolumeSnapshotMsg()
+        ]
+        storageMutatingMessages.each { Message msg ->
+            ErrorCode convertingError = AbstractVolume.validateOperationByVolumeState(
+                    msg, VolumeStatus.Converting, SysErrors.OPERATION_ERROR)
+            assert convertingError != null :
+                    "Converting volume must reject storage-mutating operation: " +
+                            "message=${msg.class.name} actual=${convertingError}"
+        }
     }
 
     void testPrepareVolumeEncryptionFallsBackToTargetVolumeKey() {
@@ -273,6 +336,7 @@ class ZbsVolumeEncryptionCase extends SubCase {
     void testChangeZbsVolumeEncryptionThroughPublicApi() {
         DatabaseFacade dbf = bean(DatabaseFacade.class)
         String volumeUuid = Platform.uuid
+        String vmUuid = Platform.uuid
         String sourceInstallPath = "cbd:pool1/lpool1/${volumeUuid}"
         long sourceSize = SizeUnit.GIGABYTE.toByte(2)
         long actualSize = SizeUnit.MEGABYTE.toByte(768)
@@ -290,7 +354,8 @@ class ZbsVolumeEncryptionCase extends SubCase {
         volume.encrypted = true
         dbf.persistAndRefresh(volume)
 
-        Expando tracker = installPublicApiConversionSimulators(sourceInstallPath, sourceSize, actualSize)
+        Expando tracker = installPublicApiConversionSimulators(
+                volumeUuid, vmUuid, sourceInstallPath, sourceSize, actualSize)
         try {
             withSealedDekStub { List<Map<String, String>> requests ->
                 ChangeVolumeEncryptionAction action = new ChangeVolumeEncryptionAction()
@@ -321,6 +386,8 @@ class ZbsVolumeEncryptionCase extends SubCase {
                 assert !current.encrypted
                 assert current.installPath == tracker.targetInstallPath
                 assert current.actualSize == actualSize
+                assert current.status == VolumeStatus.Ready : \
+                        "Volume status must return to Ready after encryption conversion: actual=${current.status}"
             }
         } finally {
             dbf.removeByPrimaryKey(volumeUuid, VolumeVO.class)
@@ -797,7 +864,9 @@ class ZbsVolumeEncryptionCase extends SubCase {
         return tracker
     }
 
-    private Expando installPublicApiConversionSimulators(String sourceInstallPath,
+    private Expando installPublicApiConversionSimulators(String volumeUuid,
+                                                          String vmUuid,
+                                                          String sourceInstallPath,
                                                           long sourceSize,
                                                           long actualSize) {
         env.cleanSimulatorAndMessageHandlers()
@@ -827,6 +896,34 @@ class ZbsVolumeEncryptionCase extends SubCase {
             tracker.kvmConvertCount++
             assert hmsg.path == KVM_LUKS_CONVERT_PATH
             assert hmsg.hostUuid == host.uuid
+            VolumeStatus status = bean(DatabaseFacade.class).findByUuid(volumeUuid, VolumeVO.class).status
+            assert status == VolumeStatus.Converting : \
+                    "Volume status must be Converting during encryption conversion: actual=${status}"
+            VmInstanceSpec startSpec = new VmInstanceSpec()
+            startSpec.destHost = new HostInventory(uuid: host.uuid)
+            startSpec.destDataVolumes = [VolumeInventory.valueOf(
+                    bean(DatabaseFacade.class).findByUuid(volumeUuid, VolumeVO.class))]
+            OperationFailureException startFailure = null
+            try {
+                bean(VolumeEncryptedStartExtension.class).beforeStartVmOnHypervisor(startSpec)
+            } catch (OperationFailureException e) {
+                startFailure = e
+            }
+            assert startFailure?.errorCode?.details?.contains("being converted") : \
+                    "VM start must be rejected while volume conversion is in progress: actual=${startFailure?.errorCode?.details}"
+            VmInstanceInventory migratingVm = new VmInstanceInventory(uuid: vmUuid)
+            migratingVm.allVolumes = [VolumeInventory.valueOf(
+                    bean(DatabaseFacade.class).findByUuid(volumeUuid, VolumeVO.class))]
+            FutureCompletion migrationCompletion = new FutureCompletion(null)
+            bean(VolumeEncryptedMigrateVmExtension.class).preVmMigration(
+                    migratingVm, VmMigrationType.PrimaryStorageMigration, host.uuid, migrationCompletion)
+            migrationCompletion.await(TimeUnit.SECONDS.toMillis(3))
+            assert !migrationCompletion.success : \
+                    "VM migration must be rejected when an attached volume is Converting: " +
+                            "vmUuid=${vmUuid} volumeUuid=${volumeUuid} actualSuccess=${migrationCompletion.success}"
+            assert migrationCompletion.errorCode?.details?.contains("being converted") : \
+                    "VM migration rejection must identify the Converting volume: " +
+                            "volumeUuid=${volumeUuid} actualError=${migrationCompletion.errorCode?.details}"
             tracker.kvmCmd = JSONObjectUtil.toObject(hmsg.command, LinkedHashMap.class)
             assert tracker.kvmCmd.psUuid == ps.uuid
             assert tracker.kvmCmd.installPath == sourceInstallPath

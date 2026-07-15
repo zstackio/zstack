@@ -11,6 +11,7 @@ import org.zstack.header.image.APICreateRootVolumeTemplateFromRootVolumeMsg;
 import org.zstack.header.message.Message;
 import org.zstack.header.storage.backup.VolumeBackupOverlayMsg;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.header.storage.snapshot.group.RevertVolumeFromSnapshotGroupMsg;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.*;
 import org.zstack.utils.message.OperationChecker;
@@ -50,6 +51,10 @@ public abstract class AbstractVolume {
                 ChangeVolumeStatusMsg.class.getName()
         );
 
+        allowedOperations.addState(VolumeStatus.Converting,
+                ChangeVolumeStatusMsg.class.getName()
+        );
+
         allowedOperations.addState(VolumeStatus.Deleted,
                 VolumeDeletionMsg.class.getName(),
                 DeleteVolumeMsg.class.getName(),
@@ -78,13 +83,39 @@ public abstract class AbstractVolume {
                 VolumeSnapshotDeletionMsg.class.getName(),
                 VolumeSnapshotDeletionOverlayVolumeMsg.class.getName(),
                 VolumeSnapshotOverlayMsg.class.getName());
+
+        forbiddenOperations.addState(VolumeStatus.Converting,
+                VolumeTemplateOverlayMsg.class.getName(),
+                VolumeBackupOverlayMsg.class.getName(),
+                CreateVolumeSnapshotGroupMsg.class.getName(),
+                APICreateVolumeSnapshotGroupMsg.class.getName(),
+                VolumeCreateSnapshotMsg.class.getName(),
+                FlattenVolumeMsg.class.getName(),
+                ReInitVolumeMsg.class.getName(),
+                APIAttachDataVolumeToHostMsg.class.getName(),
+                APIDetachDataVolumeFromHostMsg.class.getName(),
+                CreateDataVolumeTemplateFromDataVolumeMsg.class.getName(),
+                CreateDataVolumeTemplateFromDataVolumeSnapshotMsg.class.getName(),
+                APIDeleteVolumeSnapshotMsg.class.getName(),
+                VolumeSnapshotDeletionMsg.class.getName(),
+                VolumeSnapshotDeletionOverlayVolumeMsg.class.getName(),
+                VolumeSnapshotOverlayMsg.class.getName(),
+                DeleteVolumeSnapshotMsg.class.getName(),
+                RevertVolumeSnapshotMsg.class.getName(),
+                RevertVolumeFromSnapshotGroupMsg.class.getName(),
+                APIRevertVolumeFromSnapshotMsg.class.getName(),
+                APIShrinkVolumeSnapshotMsg.class.getName(),
+                BackupVolumeSnapshotMsg.class.getName(),
+                CreateTemplateFromVolumeSnapshotMsg.class.getName(),
+                CreateImageCacheFromVolumeSnapshotMsg.class.getName(),
+                InstantiateDataVolumeFromVolumeSnapshotMsg.class.getName());
     }
 
     public static Set<String> getAllowedStatesForOperation(Class<? extends Message> clz) {
         return allowedOperations.getStatesForOperation(clz.getName());
     }
 
-    private ErrorCode validateOperationByState(OperationChecker checker, Message msg, VolumeStatus currentState, Enum errorCode) {
+    private static ErrorCode validateOperationByState(OperationChecker checker, Message msg, VolumeStatus currentState, Enum errorCode) {
         if (!checker.isOperationForbidden(msg.getMessageName(), currentState.toString())) {
             return null;
         }
@@ -99,6 +130,14 @@ public abstract class AbstractVolume {
 
     public ErrorCode validateOperationByState(Message msg, VolumeStatus currentState, Enum errorCode) {
         return validateOperationByState(forbiddenOperations, msg, currentState, errorCode);
+    }
+
+    public static ErrorCode validateOperationByVolumeState(Message msg, VolumeStatus currentState, Enum errorCode) {
+        return validateOperationByState(forbiddenOperations, msg, currentState, errorCode);
+    }
+
+    public static boolean isOperationForbidden(Message msg, VolumeStatus currentState) {
+        return forbiddenOperations.isOperationForbidden(msg.getMessageName(), currentState.toString());
     }
 
 }
