@@ -67,11 +67,7 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="TfZstackPortSync" class="org.zstack.sugonSdnController.network.TfZstackPortSync">
-        <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-        </zstack:plugin>
-    </bean>
+    <bean id="TfZstackPortSync" class="org.zstack.sugonSdnController.network.TfZstackPortSync" />
 
     <bean id="SugonApiInterceptor" class="org.zstack.sugonSdnController.header.SugonApiInterceptor">
         <zstack:plugin>
