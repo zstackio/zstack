@@ -48,6 +48,8 @@ public class CoreGlobalProperty {
     public static int REST_FACADE_MAX_PER_ROUTE;
     @GlobalProperty(name = "RESTFacade.maxTotal", defaultValue = "128")
     public static int REST_FACADE_MAX_TOTAL;
+    @GlobalProperty(name = "RESTFacade.keepAliveTimeMillis", defaultValue = "5000")
+    public static int REST_FACADE_KEEPALIVE_TIME_MILLIS;
     /**
      * When set RestServer.maskSensitiveInfo to true, sensitive info will be
      * masked see @NoLogging.
