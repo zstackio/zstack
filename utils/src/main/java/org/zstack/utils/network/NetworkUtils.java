@@ -502,7 +502,7 @@ public class NetworkUtils {
     }
 
     public static List<String> getAllMac() {
-        ShellResult res = ShellUtils.runAndReturn("ip a | awk '/ether/ {print $2}' | sort -u");
+        ShellResult res = ShellUtils.runAndReturn("ip a | awk '/link\\// && !/loopback/ {print $2}' | sort -u");
 
         if (!res.isReturnCode(0)) {
             throw new RuntimeException("Fail to get mac address");
