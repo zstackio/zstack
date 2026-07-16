@@ -15,6 +15,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.HasThreadContext;
@@ -79,6 +80,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     private ResourceConfigFacade rcf;
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ThreadFacade thdf;
     @Autowired
     private PluginRegistry pluginRgty;
 
@@ -1029,18 +1032,28 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void revertVolumeSnapshot(String snapshotInstallPath, ReturnValueCompletion<VolumeStats> comp) {
-        RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
-        cmd.setPath(snapshotInstallPath);
-
-        httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(comp) {
+        waitVolumeClientsReleased(snapshotInstallPath, new Completion(comp) {
             @Override
-            public void success(RollbackSnapshotRsp returnValue) {
-                VolumeStats stats = new VolumeStats();
-                stats.setInstallPath(returnValue.getInstallPath());
-                stats.setSize(returnValue.getSize());
-                stats.setActualSize(returnValue.getActualSize());
-                stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
-                comp.success(stats);
+            public void success() {
+                RollbackSnapshotCmd cmd = new RollbackSnapshotCmd();
+                cmd.setPath(snapshotInstallPath);
+
+                httpCall(ROLLBACK_SNAPSHOT_PATH, cmd, RollbackSnapshotRsp.class, new ReturnValueCompletion<RollbackSnapshotRsp>(comp) {
+                    @Override
+                    public void success(RollbackSnapshotRsp returnValue) {
+                        VolumeStats stats = new VolumeStats();
+                        stats.setInstallPath(returnValue.getInstallPath());
+                        stats.setSize(returnValue.getSize());
+                        stats.setActualSize(returnValue.getActualSize());
+                        stats.setFormat(VolumeConstant.VOLUME_FORMAT_RAW);
+                        comp.success(stats);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        comp.fail(errorCode);
+                    }
+                });
             }
 
             @Override
@@ -1048,6 +1061,49 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 comp.fail(errorCode);
             }
         });
+    }
+
+    private void waitVolumeClientsReleased(String snapshotInstallPath, Completion comp) {
+        int index = snapshotInstallPath.indexOf("@snapshot_");
+        if (index < 0) {
+            comp.fail(operr("unable to revert snapshot[path:%s], invalid zbs snapshot install path", snapshotInstallPath));
+            return;
+        }
+        String volumeInstallPath = snapshotInstallPath.substring(0, index);
+        long timeout = ZbsGlobalConfig.VOLUME_CLIENT_RELEASE_TIMEOUT.value(Long.class);
+        long pollInterval = ZbsGlobalConfig.VOLUME_CLIENT_RELEASE_POLL_INTERVAL.value(Long.class);
+        long expired = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(timeout);
+
+        thdf.submitTimeoutTask(() -> waitVolumeClientsReleased(volumeInstallPath, snapshotInstallPath, expired, timeout, pollInterval, comp),
+                TimeUnit.SECONDS, 0);
+    }
+
+    private void waitVolumeClientsReleased(String volumeInstallPath, String snapshotInstallPath, long expired, long timeout, long pollInterval, Completion comp) {
+        List<ActiveVolumeClient> clients;
+        try {
+            clients = getActiveClients(volumeInstallPath, VolumeProtocol.CBD.toString());
+        } catch (OperationFailureException e) {
+            comp.fail(e.getErrorCode());
+            return;
+        }
+
+        if (clients.isEmpty()) {
+            comp.success();
+            return;
+        }
+
+        if (System.currentTimeMillis() >= expired) {
+            comp.fail(operr("unable to revert volume[path:%s] to snapshot[path:%s], active clients[%s] were not released within %s seconds",
+                    volumeInstallPath, snapshotInstallPath,
+                    clients.stream().map(ActiveVolumeClient::getManagerIp).collect(Collectors.joining(",")),
+                    timeout));
+            return;
+        }
+
+        long remaining = expired - System.currentTimeMillis();
+        long nextDelay = Math.min(pollInterval, Math.max(1, TimeUnit.MILLISECONDS.toSeconds(remaining)));
+        thdf.submitTimeoutTask(() -> waitVolumeClientsReleased(volumeInstallPath, snapshotInstallPath, expired, timeout, pollInterval, comp),
+                TimeUnit.SECONDS, nextDelay);
     }
 
     @Override

@@ -2,18 +2,23 @@ package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.Q
+import org.zstack.header.core.ReturnValueCompletion
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
+import org.zstack.header.volume.VolumeStats
 import org.zstack.cbd.MdsUri
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.sdk.*
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.ZbsConstants
+import org.zstack.storage.zbs.ZbsGlobalConfig
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
@@ -22,6 +27,12 @@ import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * @author Xingwei Yu
@@ -157,6 +168,8 @@ class ZbsPrimaryStorageCase extends SubCase {
             testUpdateExternalPrimaryStorage()
             testLifecycle()
             testDataVolumeLifecycle()
+            testRevertVolumeSnapshotDoesNotBlockWhileWaitingForActiveClients()
+            testRevertVolumeSnapshotFailsWhenActiveClientsAreNotReleasedBeforeTimeout()
             testMdsPing()
             testCheckHostStorageConnection()
             testNegativeScenario()
@@ -384,6 +397,175 @@ class ZbsPrimaryStorageCase extends SubCase {
         } as VolumeInventory
 
         deleteVolume(vol.uuid)
+    }
+
+    void testRevertVolumeSnapshotDoesNotBlockWhileWaitingForActiveClients() {
+        VolumeInventory volume = null
+        VolumeSnapshotInventory snapshot = null
+        AtomicBoolean clientsReleased = new AtomicBoolean(false)
+        AtomicInteger rollbackCount = new AtomicInteger()
+        CountDownLatch revertMethodReturned = new CountDownLatch(1)
+        CountDownLatch completionDone = new CountDownLatch(1)
+        AtomicReference<VolumeStats> volumeStats = new AtomicReference<>()
+        AtomicReference<ErrorCode> errorCode = new AtomicReference<>()
+        Thread revertThread = null
+
+        try {
+            volume = createDataVolume {
+                name = "test-revert-waits-active-client-release-async"
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+            } as VolumeInventory
+
+            snapshot = createVolumeSnapshot {
+                name = "test-revert-waits-active-client-release-async"
+                volumeUuid = volume.uuid
+            } as VolumeSnapshotInventory
+
+            String volumeInstallPath = volume.installPath
+
+            env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.GetVolumeClientsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetVolumeClientsCmd.class)
+                assert cmd.path == volumeInstallPath: "revert must query active clients by the target volume install path"
+
+                ZbsStorageController.GetVolumeClientsRsp rsp = new ZbsStorageController.GetVolumeClientsRsp()
+                if (!clientsReleased.get()) {
+                    rsp.clients = [new ZbsStorageController.ClientInfo("127.0.0.1", 7700)]
+                }
+                return rsp
+            }
+
+            env.simulator(ZbsStorageController.ROLLBACK_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.RollbackSnapshotCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.RollbackSnapshotCmd.class)
+                assert cmd.path == snapshot.primaryStorageInstallPath: "rollback must use the requested snapshot install path"
+                assert clientsReleased.get(): "rollback must not run before active clients are released"
+                rollbackCount.incrementAndGet()
+
+                ZbsStorageController.RollbackSnapshotRsp rsp = new ZbsStorageController.RollbackSnapshotRsp()
+                rsp.installPath = volumeInstallPath
+                rsp.size = volume.size
+                rsp.actualSize = volume.actualSize
+                return rsp
+            }
+
+            ZbsStorageController controller = bean(ExternalPrimaryStorageFactory.class).getControllerSvc(ps.uuid) as ZbsStorageController
+            revertThread = Thread.start {
+                try {
+                    controller.revertVolumeSnapshot(snapshot.primaryStorageInstallPath, new ReturnValueCompletion<VolumeStats>(null) {
+                        @Override
+                        void success(VolumeStats returnValue) {
+                            volumeStats.set(returnValue)
+                            completionDone.countDown()
+                        }
+
+                        @Override
+                        void fail(ErrorCode error) {
+                            errorCode.set(error)
+                            completionDone.countDown()
+                        }
+                    })
+                } finally {
+                    revertMethodReturned.countDown()
+                }
+            }
+
+            assert revertMethodReturned.await(2, TimeUnit.SECONDS): "revertVolumeSnapshot must return without synchronously sleeping while active clients remain"
+            assert rollbackCount.get() == 0: "rollback must not run before active clients are released"
+            assert completionDone.getCount() == 1: "completion must wait for active clients to be released"
+
+            clientsReleased.set(true)
+
+            assert completionDone.await(5, TimeUnit.SECONDS): "completion must finish after active clients are released"
+            assert errorCode.get() == null: "revert must not fail after active clients are released"
+            assert volumeStats.get() != null: "revert must return volume stats after rollback"
+            assert rollbackCount.get() == 1: "rollback must run exactly once after active clients are released"
+        } finally {
+            clientsReleased.set(true)
+            if (revertThread != null && revertThread.isAlive()) {
+                revertThread.interrupt()
+                revertThread.join(5000)
+            }
+            if (snapshot != null) {
+                deleteVolumeSnapshot {
+                    uuid = snapshot.uuid
+                }
+            }
+            if (volume != null) {
+                deleteVolume(volume.uuid)
+            }
+
+            env.cleanSimulatorAndMessageHandlers()
+        }
+    }
+
+    void testRevertVolumeSnapshotFailsWhenActiveClientsAreNotReleasedBeforeTimeout() {
+        VolumeInventory volume = null
+        VolumeSnapshotInventory snapshot = null
+        AtomicInteger rollbackCount = new AtomicInteger()
+        CountDownLatch completionDone = new CountDownLatch(1)
+        AtomicReference<ErrorCode> errorCode = new AtomicReference<>()
+
+        try {
+            ZbsGlobalConfig.VOLUME_CLIENT_RELEASE_TIMEOUT.updateValue(1)
+
+            volume = createDataVolume {
+                name = "test-revert-fails-when-active-client-not-released"
+                diskOfferingUuid = diskOffering.uuid
+                primaryStorageUuid = ps.uuid
+            } as VolumeInventory
+
+            snapshot = createVolumeSnapshot {
+                name = "test-revert-fails-when-active-client-not-released"
+                volumeUuid = volume.uuid
+            } as VolumeSnapshotInventory
+
+            String volumeInstallPath = volume.installPath
+
+            env.simulator(ZbsStorageController.GET_VOLUME_CLIENTS_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                ZbsStorageController.GetVolumeClientsCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.GetVolumeClientsCmd.class)
+                assert cmd.path == volumeInstallPath: "revert must keep polling the target volume install path before timeout"
+
+                ZbsStorageController.GetVolumeClientsRsp rsp = new ZbsStorageController.GetVolumeClientsRsp()
+                rsp.clients = [new ZbsStorageController.ClientInfo("127.0.0.1", 7700)]
+                return rsp
+            }
+
+            env.simulator(ZbsStorageController.ROLLBACK_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                rollbackCount.incrementAndGet()
+                return new ZbsStorageController.RollbackSnapshotRsp()
+            }
+
+            ZbsStorageController controller = bean(ExternalPrimaryStorageFactory.class).getControllerSvc(ps.uuid) as ZbsStorageController
+            controller.revertVolumeSnapshot(snapshot.primaryStorageInstallPath, new ReturnValueCompletion<VolumeStats>(null) {
+                @Override
+                void success(VolumeStats returnValue) {
+                    completionDone.countDown()
+                }
+
+                @Override
+                void fail(ErrorCode error) {
+                    errorCode.set(error)
+                    completionDone.countDown()
+                }
+            })
+
+            assert completionDone.await(5, TimeUnit.SECONDS): "revert must fail when active clients are not released before the configured timeout"
+            assert errorCode.get() != null: "timeout must fail the completion"
+            assert errorCode.get().details.contains("were not released within 1 seconds")
+            assert rollbackCount.get() == 0: "rollback must not run after client-release wait times out"
+        } finally {
+            ZbsGlobalConfig.VOLUME_CLIENT_RELEASE_TIMEOUT.resetValue()
+            if (snapshot != null) {
+                deleteVolumeSnapshot {
+                    uuid = snapshot.uuid
+                }
+            }
+            if (volume != null) {
+                deleteVolume(volume.uuid)
+            }
+
+            env.cleanSimulatorAndMessageHandlers()
+        }
     }
 
     void testNegativeScenario() {
