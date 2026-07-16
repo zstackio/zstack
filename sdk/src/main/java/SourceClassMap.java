@@ -68,17 +68,9 @@ public class SourceClassMap {
 			put("org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder", "org.zstack.sdk.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.core.gc.GarbageCollectorInventory", "org.zstack.sdk.GarbageCollectorInventory");
 			put("org.zstack.core.jsonlabel.JsonLabelInventory", "org.zstack.sdk.JsonLabelInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateAccountRefInventory", "org.zstack.sdk.CCSCertificateAccountRefInventory");
-			put("org.zstack.crypto.ccs.CCSCertificateInventory", "org.zstack.sdk.CCSCertificateInventory");
 			put("org.zstack.crypto.keyprovider.api.RekeyFailedResource", "org.zstack.sdk.keyprovider.api.RekeyFailedResource");
 			put("org.zstack.crypto.keyprovider.api.RekeyProviderResult", "org.zstack.sdk.keyprovider.api.RekeyProviderResult");
 			put("org.zstack.crypto.keyprovider.api.RekeySkippedResource", "org.zstack.sdk.keyprovider.api.RekeySkippedResource");
-			put("org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory", "org.zstack.sdk.AiSiNoSecretResourcePoolInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory", "org.zstack.sdk.FlkSecSecretResourcePoolInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory", "org.zstack.sdk.FlkSecSecurityMachineInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory", "org.zstack.sdk.HaiTaiSecretResourcePoolInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory", "org.zstack.sdk.InfoSecSecretResourcePoolInventory");
-			put("org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory", "org.zstack.sdk.InfoSecSecurityMachineInventory");
 			put("org.zstack.directory.DirectoryInventory", "org.zstack.sdk.DirectoryInventory");
 			put("org.zstack.drs.api.HostLoad", "org.zstack.sdk.HostLoad");
 			put("org.zstack.drs.api.Threshold", "org.zstack.sdk.Threshold");
@@ -215,8 +207,6 @@ public class SourceClassMap {
 			put("org.zstack.header.scheduler.SchedulerJobInventory", "org.zstack.sdk.SchedulerJobInventory");
 			put("org.zstack.header.scheduler.SchedulerJobSchedulerTriggerInventory", "org.zstack.sdk.SchedulerJobSchedulerTriggerInventory");
 			put("org.zstack.header.scheduler.SchedulerTriggerInventory", "org.zstack.sdk.SchedulerTriggerInventory");
-			put("org.zstack.header.securitymachine.SecretResourcePoolInventory", "org.zstack.sdk.SecretResourcePoolInventory");
-			put("org.zstack.header.securitymachine.SecurityMachineInventory", "org.zstack.sdk.SecurityMachineInventory");
 			put("org.zstack.header.simulator.SimulatorHostInventory", "org.zstack.sdk.SimulatorHostInventory");
 			put("org.zstack.header.sriov.EthernetVfPciDeviceInventory", "org.zstack.sdk.EthernetVfPciDeviceInventory");
 			put("org.zstack.header.sriov.EthernetVfStatus", "org.zstack.sdk.EthernetVfStatus");
@@ -674,7 +664,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AddressPoolInventory", "org.zstack.header.network.l3.AddressPoolInventory");
 			put("org.zstack.sdk.AffinityGroupInventory", "org.zstack.header.affinitygroup.AffinityGroupInventory");
 			put("org.zstack.sdk.AffinityGroupUsageInventory", "org.zstack.header.affinitygroup.AffinityGroupUsageInventory");
-			put("org.zstack.sdk.AiSiNoSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.aisino.AiSiNoSecretResourcePoolInventory");
 			put("org.zstack.sdk.AlertInventory", "org.zstack.monitoring.AlertInventory");
 			put("org.zstack.sdk.ApplianceVmInventory", "org.zstack.appliancevm.ApplianceVmInventory");
 			put("org.zstack.sdk.AttachTagResult", "org.zstack.tag2.AttachTagResult");
@@ -706,8 +695,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.BlockDevices", "org.zstack.header.host.BlockDevices");
 			put("org.zstack.sdk.BlockPrimaryStorageInventory", "org.zstack.storage.primary.block.BlockPrimaryStorageInventory");
 			put("org.zstack.sdk.BlockVolumeInventory", "org.zstack.header.volume.block.BlockVolumeInventory");
-			put("org.zstack.sdk.CCSCertificateAccountRefInventory", "org.zstack.crypto.ccs.CCSCertificateAccountRefInventory");
-			put("org.zstack.sdk.CCSCertificateInventory", "org.zstack.crypto.ccs.CCSCertificateInventory");
 			put("org.zstack.sdk.CandidateDecision", "org.zstack.header.candidate.CandidateDecision");
 			put("org.zstack.sdk.CandidateDecisionEntry", "org.zstack.header.candidate.CandidateDecisionEntry");
 			put("org.zstack.sdk.CandidateResult", "org.zstack.header.candidate.CandidateResult");
@@ -779,8 +766,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
-			put("org.zstack.sdk.FlkSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory");
-			put("org.zstack.sdk.FlkSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
@@ -788,7 +773,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
 			put("org.zstack.sdk.HaStrategyConditionInventory", "org.zstack.ha.HaStrategyConditionInventory");
-			put("org.zstack.sdk.HaiTaiSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.haitai.HaiTaiSecretResourcePoolInventory");
 			put("org.zstack.sdk.HbaDeviceInventory", "org.zstack.storage.device.hba.HbaDeviceInventory");
 			put("org.zstack.sdk.HostConnectedStatus", "org.zstack.zops.HostConnectedStatus");
 			put("org.zstack.sdk.HostDiskCapacity", "org.zstack.storage.primary.local.APIGetLocalStorageHostDiskCapacityReply$HostDiskCapacity");
@@ -828,8 +812,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ImageStoreBackupStorageInventory", "org.zstack.storage.backup.imagestore.ImageStoreBackupStorageInventory");
 			put("org.zstack.sdk.ImageStoreGcResult", "org.zstack.storage.backup.imagestore.ImageStoreGcResult");
 			put("org.zstack.sdk.ImageStoreImageStruct", "org.zstack.storage.backup.imagestore.ImageStoreImageStruct");
-			put("org.zstack.sdk.InfoSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecretResourcePoolInventory");
-			put("org.zstack.sdk.InfoSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.infoSec.InfoSecSecurityMachineInventory");
 			put("org.zstack.sdk.InstallPathRecycleInventory", "org.zstack.header.core.trash.InstallPathRecycleInventory");
 			put("org.zstack.sdk.InstanceOfferingInventory", "org.zstack.header.configuration.InstanceOfferingInventory");
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
@@ -1016,11 +998,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ScsiLunHostRefInventory", "org.zstack.header.storageDevice.ScsiLunHostRefInventory");
 			put("org.zstack.sdk.ScsiLunInventory", "org.zstack.header.storageDevice.ScsiLunInventory");
 			put("org.zstack.sdk.ScsiLunVmInstanceRefInventory", "org.zstack.header.storageDevice.ScsiLunVmInstanceRefInventory");
-			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
-			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.Sensor", "org.zstack.header.host.Sensor");
 			put("org.zstack.sdk.ServiceTypeStatisticData", "org.zstack.header.host.ServiceTypeStatisticData");
 			put("org.zstack.sdk.SessionInventory", "org.zstack.header.identity.SessionInventory");
