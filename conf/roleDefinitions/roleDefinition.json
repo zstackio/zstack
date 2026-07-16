@@ -69,7 +69,6 @@
           "org.zstack.aliyun.pangu.**",
           "org.zstack.network.service.lb.**",
           "org.zstack.core.gc.**",
-          "org.zstack.header.portMirror.**",
           "org.zstack.sns.**",
           "org.zstack.license.APIDeleteLicenseMsg",
           "org.zstack.license.APIUpdateLicenseMsg",
