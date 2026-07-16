@@ -3525,7 +3525,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
     }
 
     private ErrorCode validateVolumeEncryptionConversion() {
-        if (!isCephInstallPath(self.getInstallPath())) {
+        boolean ceph = isCephInstallPath(self.getInstallPath());
+        boolean cbd = isCbdInstallPath(self.getInstallPath());
+        if (!ceph && !cbd) {
             return null;
         }
 
@@ -3537,8 +3539,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
             return null;
         }
 
-        return operr("cannot change encryption for Ceph/RBD volume[uuid:%s] because it has snapshots; delete snapshots before changing volume encryption",
-                self.getUuid());
+        String storageType = cbd ? "ZBS/CBD" : "Ceph/RBD";
+        return operr("cannot change encryption for %s volume[uuid:%s] because it has snapshots; delete snapshots before changing volume encryption",
+                storageType, self.getUuid());
     }
 
     private String resolveVolumeSecretHostUuid(VolumeVO volume) {
@@ -3661,6 +3664,9 @@ public class VolumeBase extends AbstractVolume implements Volume {
         if (isCephInstallPath(installPath)) {
             return makeCephVolumeInstallPath(installPath, convertedName);
         }
+        if (isCbdInstallPath(installPath)) {
+            return makeSiblingInstallPath(installPath, convertedName);
+        }
         if (isSharedBlockInstallPath(installPath) || installPath.startsWith("/dev/")) {
             return makeSiblingInstallPath(installPath, convertedName);
         }
@@ -3721,6 +3727,10 @@ public class VolumeBase extends AbstractVolume implements Volume {
 
     private boolean isCephInstallPath(String installPath) {
         return installPath != null && installPath.startsWith("ceph://");
+    }
+
+    private boolean isCbdInstallPath(String installPath) {
+        return installPath != null && installPath.startsWith("cbd:");
     }
 
     private boolean isSharedBlockInstallPath(String installPath) {
