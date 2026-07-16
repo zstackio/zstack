@@ -47,6 +47,12 @@ public class DeployPlatformServiceAction extends AbstractAction {
     public java.lang.String staticIp;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String netmask;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gateway;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
