@@ -559,7 +559,6 @@
           "org.zstack.storage.device.fibreChannel.**",
           "org.zstack.header.storage.snapshot.**",
           "org.zstack.aliyunproxy.vpc.**",
-          "org.zstack.faulttolerance.api.**",
           "org.zstack.zwatch.**",
           "org.zstack.aliyun.nas.storage.message.**",
           "org.zstack.header.APIIsOpensourceVersionMsg",

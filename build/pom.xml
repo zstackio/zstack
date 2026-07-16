@@ -434,11 +434,6 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>faulttolerance</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
                     <artifactId>zbox</artifactId>
                     <version>${project.version}</version>
                 </dependency>

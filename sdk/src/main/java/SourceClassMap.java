@@ -96,7 +96,6 @@ public class SourceClassMap {
 			put("org.zstack.externalbackup.zbox.ZBoxBackupStorageBackupInfo", "org.zstack.sdk.zbox.ZBoxBackupStorageBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVmBackupInfo", "org.zstack.sdk.zbox.ZBoxVmBackupInfo");
 			put("org.zstack.externalbackup.zbox.ZBoxVolumeBackupInfo", "org.zstack.sdk.zbox.ZBoxVolumeBackupInfo");
-			put("org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory", "org.zstack.sdk.FaultToleranceVmGroupInventory");
 			put("org.zstack.guesttools.GuestToolsInventory", "org.zstack.sdk.guesttools.GuestToolsInventory");
 			put("org.zstack.guesttools.GuestToolsStateInventory", "org.zstack.sdk.guesttools.GuestToolsStateInventory");
 			put("org.zstack.guesttools.advanced.VmCustomSpecificationInventory", "org.zstack.sdk.guesttools.advanced.VmCustomSpecificationInventory");
@@ -776,7 +775,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
 			put("org.zstack.sdk.ExternalServiceInventory", "org.zstack.header.core.external.service.ExternalServiceInventory");
-			put("org.zstack.sdk.FaultToleranceVmGroupInventory", "org.zstack.faulttolerance.entity.FaultToleranceVmGroupInventory");
 			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
