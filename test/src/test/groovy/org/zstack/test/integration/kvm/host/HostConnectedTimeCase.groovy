@@ -16,6 +16,11 @@ import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceMsg
 import org.zstack.header.network.l2.BatchCheckNetworkPhysicalInterfaceReply
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.ResourceDestinationMaker
+import org.zstack.compute.host.HostTrackImpl
+
+import static org.mockito.Mockito.mock
+import static org.mockito.Mockito.when
 
 class HostConnectedTimeCase extends SubCase {
 
@@ -34,6 +39,7 @@ class HostConnectedTimeCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testSkipTrackIfNotManagedByUs()
             testHostConnectedTime()
         }
     }
@@ -41,6 +47,31 @@ class HostConnectedTimeCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    /**
+     * Test for ZSV-12570: check isManagedByUs before trackHost to prevent dual MN tracking
+     */
+    void testSkipTrackIfNotManagedByUs() {
+        HostInventory host = env.inventoryByName("kvm") as HostInventory
+        HostTrackImpl tracker = bean(HostTrackImpl.class)
+
+        ResourceDestinationMaker originalDestMaker = tracker.@destMaker
+
+        ResourceDestinationMaker mockDestMaker = mock(ResourceDestinationMaker.class)
+        when(mockDestMaker.isManagedByUs(host.uuid)).thenReturn(false)
+        tracker.@destMaker = mockDestMaker
+
+        tracker.untrackHost(host.uuid)
+        assert !tracker.trackers.containsKey(host.uuid)
+
+        tracker.trackHost(host.uuid)
+        assert !tracker.trackers.containsKey(host.uuid) : "Host should NOT be tracked when isManagedByUs returns false"
+
+        tracker.@destMaker = originalDestMaker
+
+        tracker.trackHost(host.uuid)
+        assert tracker.trackers.containsKey(host.uuid) : "Host should be tracked when isManagedByUs returns true"
     }
 
     void testHostConnectedTime() {
