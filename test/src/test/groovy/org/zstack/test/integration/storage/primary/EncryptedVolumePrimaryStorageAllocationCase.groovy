@@ -25,6 +25,7 @@ import org.zstack.header.vm.DiskAO
 import org.zstack.header.volume.InstantiateRootVolumeMsg
 import org.zstack.header.volume.InstantiateVolumeMsg
 import org.zstack.header.volume.VolumeProtocol
+import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeType
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
@@ -35,6 +36,7 @@ import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
+import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -151,6 +153,7 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
             testFilterZhpsForEncryptedSource()
             testKeepExplicitZhpsForEncryptedSource()
             testFilterZhpsForEncryptedTemplateDataVolumeAutoAllocation()
+            testFilterZhpsWhenAttachingUninstantiatedEncryptedDataVolume()
         }
     }
 
@@ -363,6 +366,63 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
 
         assert nfsDataVolumeDownloads == 1 : \
                 "encrypted template data volume was not instantiated on non-ZHPS: NFS download count=${nfsDataVolumeDownloads}"
+    }
+
+    void testFilterZhpsWhenAttachingUninstantiatedEncryptedDataVolume() {
+        HostInventory host = env.inventoryByName("kvm") as HostInventory
+        ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
+        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
+        InstanceOfferingInventory offering = env.inventoryByName("instance-offering") as InstanceOfferingInventory
+
+        DiskAO rootDisk = DiskAO.rootDisk()
+        rootDisk.size = SizeUnit.GIGABYTE.toByte(1)
+        rootDisk.primaryStorageUuid = supportedPs.uuid
+        rootDisk.platform = "Linux"
+        rootDisk.guestOsType = "CentOS"
+        rootDisk.architecture = "x86_64"
+
+        VmInstanceInventory vm = createVmInstance {
+            name = "vm-for-attaching-encrypted-data"
+            instanceOfferingUuid = offering.uuid
+            zoneUuid = supportedPs.zoneUuid
+            clusterUuid = cluster.uuid
+            hostUuid = host.uuid
+            l3NetworkUuids = [l3.uuid]
+            defaultL3NetworkUuid = l3.uuid
+            delegate.diskAOs = [rootDisk]
+        } as VmInstanceInventory
+
+        VolumeInventory data = createDataVolume {
+            name = "uninstantiated-encrypted-data"
+            diskSize = SizeUnit.GIGABYTE.toByte(1)
+            encrypted = true
+        } as VolumeInventory
+        assert data.status == VolumeStatus.NotInstantiated.toString() : \
+                "encrypted attach fixture should stay uninstantiated before attach: expected=${VolumeStatus.NotInstantiated} actual=${data.status}"
+
+        String allocatedDataPsUuid = null
+        def cleanup = notifyWhenReceivedMessage(InstantiateVolumeMsg.class) { InstantiateVolumeMsg msg ->
+            if (msg.volumeUuid == data.uuid) {
+                allocatedDataPsUuid = msg.primaryStorageUuid
+            }
+        }
+
+        try {
+            expectApiFailure({
+                attachDataVolumeToVm {
+                    vmInstanceUuid = vm.uuid
+                    volumeUuid = data.uuid
+                }
+            }) {
+                assert details.contains("no key provider") : \
+                        "Encrypted attach should reach encryption after PS allocation: details=${details}"
+            }
+        } finally {
+            cleanup()
+        }
+
+        assert allocatedDataPsUuid == supportedPs.uuid : \
+                "attaching uninstantiated encrypted data volume selected unsupported ZHPS: expected=${supportedPs.uuid} actual=${allocatedDataPsUuid}"
     }
 
     void testFilterZhpsForEncryptedSource() {
