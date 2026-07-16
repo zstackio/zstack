@@ -95,6 +95,9 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         amsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         amsg.setSize(volume.getSize());
         amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+        if (Boolean.TRUE.equals(volume.getEncrypted())) {
+            amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
+        }
         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override

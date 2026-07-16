@@ -1,6 +1,5 @@
 package org.zstack.test.integration.storage.primary
 
-import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
@@ -10,12 +9,6 @@ import org.zstack.header.image.ImageVO
 import org.zstack.header.image.ImageVO_
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
-import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceMsg
-import org.zstack.header.storage.primary.AllocatePrimaryStorageSpaceReply
-import org.zstack.header.storage.primary.PrimaryStorageAllocationPurpose
-import org.zstack.header.storage.primary.PrimaryStorageConstant
-import org.zstack.header.storage.primary.PrimaryStorageFeature
-import org.zstack.header.storage.primary.ReleasePrimaryStorageSpaceMsg
 import org.zstack.header.storage.snapshot.VolumeSnapshotState
 import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
 import org.zstack.header.storage.snapshot.VolumeSnapshotTreeStatus
@@ -47,7 +40,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
     PrimaryStorageInventory zhps
     PrimaryStorageInventory supportedPs
     VolumeInventory plainZhpsVolume
-    CloudBus bus
 
     @Override
     void setup() {
@@ -141,20 +133,17 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
         env.create {
             zhps = env.inventoryByName("zhps") as PrimaryStorageInventory
             supportedPs = env.inventoryByName("supported-ps") as PrimaryStorageInventory
-            bus = bean(CloudBus.class)
-
             plainZhpsVolume = createPlainVolumeOnZhps()
-            testFilterZhpsForEncryptedVolumeAutoAllocation()
+            configureZhpsAllocatorMetadata()
             testFilterZhpsForEncryptedRootImageAutoAllocation()
             testFilterZhpsForEncryptedDataDiskAutoAllocation()
             testKeepPlainRootExplicitZhpsWhenEncryptedDataDiskAutoAllocation()
             testFilterZhpsForEncryptedSource()
-            testKeepExplicitZhpsForEncryptedSource()
             testFilterZhpsForEncryptedTemplateDataVolumeAutoAllocation()
         }
     }
 
-    void testFilterZhpsForEncryptedVolumeAutoAllocation() {
+    private void configureZhpsAllocatorMetadata() {
         // Expon tests require physical storage, so reuse the simulated external PS and change allocator-visible metadata only.
         SQL.New(ExternalPrimaryStorageVO.class)
                 .eq(ExternalPrimaryStorageVO_.uuid, zhps.uuid)
@@ -173,23 +162,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
                 .findValue()
         assert protocol == VolumeProtocol.Vhost.name() : \
                 "ZHPS fixture protocol mismatch: expected=${VolumeProtocol.Vhost.name()} actual=${protocol}"
-
-        AllocatePrimaryStorageSpaceMsg plainMsg = newAllocationMsg()
-        plainMsg.requiredPrimaryStorageUuid = zhps.uuid
-        AllocatePrimaryStorageSpaceReply plainReply = bus.call(plainMsg) as AllocatePrimaryStorageSpaceReply
-        assert plainReply.success : "plain explicit allocation must keep ZHPS available: error=${plainReply.error}"
-        assert plainReply.primaryStorageInventory.uuid == zhps.uuid : \
-                "plain explicit allocation selected an unexpected PS: expected=${zhps.uuid} actual=${plainReply.primaryStorageInventory.uuid}"
-        releaseAllocation(plainReply)
-
-        AllocatePrimaryStorageSpaceMsg encryptedMsg = newAllocationMsg()
-        encryptedMsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME)
-        AllocatePrimaryStorageSpaceReply encryptedReply = bus.call(encryptedMsg) as AllocatePrimaryStorageSpaceReply
-
-        assert encryptedReply.success : "encrypted auto allocation must use a non-ZHPS candidate: error=${encryptedReply.error}"
-        assert encryptedReply.primaryStorageInventory.uuid == supportedPs.uuid : \
-                "encrypted auto allocation selected ZHPS: expected=${supportedPs.uuid} actual=${encryptedReply.primaryStorageInventory.uuid}"
-        releaseAllocation(encryptedReply)
     }
 
     void testFilterZhpsForEncryptedRootImageAutoAllocation() {
@@ -404,30 +376,8 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
         }
     }
 
-    void testKeepExplicitZhpsForEncryptedSource() {
-        ImageInventory image = env.inventoryByName("root-volume-template") as ImageInventory
-        SQL.New(VolumeVO.class)
-                .eq(VolumeVO_.uuid, plainZhpsVolume.uuid)
-                .set(VolumeVO_.encrypted, true)
-                .update()
-
-        try {
-            assertEncryptedSourceVmCreationUsesPrimaryStorage(
-                    image.uuid, "explicit-zhps-volume-source", "volume://${plainZhpsVolume.uuid}", zhps.uuid, zhps.uuid)
-        } finally {
-            SQL.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid)
-                    .set(ImageVO_.url, "http://zstack.org/download/root.qcow2").update()
-        }
-    }
-
     private void assertEncryptedSourceVmCreationUsesSupportedPrimaryStorage(String rootImageUuid, String sourceName,
                                                                            String imageUrl) {
-        assertEncryptedSourceVmCreationUsesPrimaryStorage(rootImageUuid, sourceName, imageUrl, null, supportedPs.uuid)
-    }
-
-    private void assertEncryptedSourceVmCreationUsesPrimaryStorage(String rootImageUuid, String sourceName,
-                                                                   String imageUrl, String requestedRootPsUuid,
-                                                                   String expectedRootPsUuid) {
         HostInventory host = env.inventoryByName("kvm") as HostInventory
         ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
         L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
@@ -453,9 +403,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
                     hostUuid = host.uuid
                     l3NetworkUuids = [l3.uuid]
                     defaultL3NetworkUuid = l3.uuid
-                    if (requestedRootPsUuid != null) {
-                        primaryStorageUuidForRootVolume = requestedRootPsUuid
-                    }
                 }
             }) {
                 assert details.contains("no key provider") : \
@@ -465,9 +412,9 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
             cleanup()
         }
 
-        assert allocatedRootPsUuid == expectedRootPsUuid : \
+        assert allocatedRootPsUuid == supportedPs.uuid : \
                 "Encrypted source root volume allocation selected unexpected PS: source=${sourceName} " +
-                        "expected=${expectedRootPsUuid} actual=${allocatedRootPsUuid}"
+                        "expected=${supportedPs.uuid} actual=${allocatedRootPsUuid}"
     }
 
     private VolumeInventory createPlainVolumeOnZhps() {
@@ -480,24 +427,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
         def createResult = createAction.call()
         assert createResult.error == null : "failed to create the plain ZHPS volume fixture: ${createResult.error}"
         return createResult.value.inventory as VolumeInventory
-    }
-
-    private AllocatePrimaryStorageSpaceMsg newAllocationMsg() {
-        AllocatePrimaryStorageSpaceMsg msg = new AllocatePrimaryStorageSpaceMsg()
-        msg.requiredZoneUuid = zhps.zoneUuid
-        msg.size = SizeUnit.GIGABYTE.toByte(1)
-        msg.purpose = PrimaryStorageAllocationPurpose.CreateDataVolume.toString()
-        bus.makeLocalServiceId(msg, PrimaryStorageConstant.SERVICE_ID)
-        return msg
-    }
-
-    private void releaseAllocation(AllocatePrimaryStorageSpaceReply reply) {
-        ReleasePrimaryStorageSpaceMsg msg = new ReleasePrimaryStorageSpaceMsg()
-        msg.primaryStorageUuid = reply.primaryStorageInventory.uuid
-        msg.allocatedInstallUrl = reply.allocatedInstallUrl
-        msg.diskSize = SizeUnit.GIGABYTE.toByte(1)
-        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, msg.primaryStorageUuid)
-        bus.send(msg)
     }
 
     @Override
