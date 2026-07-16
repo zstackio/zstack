@@ -6246,8 +6246,27 @@ public class KVMHost extends HostBase implements Host {
                 }
 
                 deleteCpuHistoryVOIfCpuModeNameChange(ret.getCpuModelName());
+                deleteCpuHistoryVOIfCpuFeatureMd5Change(ret.getCpuFeatureMd5());
             }
         };
+    }
+
+    private void deleteCpuHistoryVOIfCpuFeatureMd5Change(String newMd5) {
+        if (newMd5 == null) {
+            return;
+        }
+
+        String oldMd5 = KVMSystemTags.CPU_FEATURE_MD5.getTokenByResourceUuid(self.getUuid(), KVMSystemTags.CPU_FEATURE_MD5_TOKEN);
+
+        if (oldMd5 == null || !oldMd5.equals(newMd5)) {
+            SQL.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.srcHostUuid, self.getUuid()).delete();
+            SQL.New(CpuFeaturesHistoryVO.class).eq(CpuFeaturesHistoryVO_.dstHostUuid, self.getUuid()).delete();
+
+            logger.debug(String.format("host[uuid:%s] CPU feature %s, old MD5: %s, new MD5: %s, deleted related CpuFeaturesHistoryVO records",
+                    self.getUuid(), oldMd5 == null ? "first recorded" : "changed", oldMd5, newMd5));
+        }
+
+        createTagWithoutNonValue(KVMSystemTags.CPU_FEATURE_MD5, KVMSystemTags.CPU_FEATURE_MD5_TOKEN, newMd5, true);
     }
 
     private void deleteCpuHistoryVOIfCpuModeNameChange(String cpuModelName){
