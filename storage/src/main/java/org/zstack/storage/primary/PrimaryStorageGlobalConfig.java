@@ -50,7 +50,7 @@ public class PrimaryStorageGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false"})
     @BindResourceConfig({PrimaryStorageVO.class})
-    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "Whether undo temp snapshot after template uploaded")
     public static GlobalConfig UNDO_TEMP_SNAPSHOT = new GlobalConfig(CATEGORY, "undo.tempSnapshot");
     @GlobalConfigValidation(min = 1)
     @GlobalConfigDef(defaultValue = "1", type = Long.class)
