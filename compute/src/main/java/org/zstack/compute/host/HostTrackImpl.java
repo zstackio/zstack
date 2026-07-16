@@ -266,6 +266,11 @@ public class HostTrackImpl implements HostTracker, ManagementNodeChangeListener,
 
 
     public void trackHost(String hostUuid) {
+        if (!destMaker.isManagedByUs(hostUuid)) {
+            logger.debug(String.format("skip tracking host[uuid:%s]: not managed by us", hostUuid));
+            return;
+        }
+
         Tracker t = trackers.get(hostUuid);
         if (t != null) {
             t.cancel();
