@@ -12,4 +12,11 @@ public interface FlowTrigger extends AsyncBackup {
 
     void setError(ErrorCode error);
 
+    default void next(ErrorCode error) {
+        if (error == null) {
+            next();
+        } else {
+            fail(error);
+        }
+    }
 }
