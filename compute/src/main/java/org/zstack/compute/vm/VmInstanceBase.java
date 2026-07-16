@@ -1005,16 +1005,38 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                         logger.debug(String.format("HaStartVmJudger[%s] says the VM[uuid:%s, name:%s] is qualified for HA start, now we are starting it",
                                 judger.getClass(), self.getUuid(), self.getName()));
+                        String hostUuid = self.getHostUuid();
+                        String suspectHostUuid = StringUtils.trimToNull(hostUuid);
+                        String peerHostUuid = StringUtils.trimToNull(msg.getAccessiblePeerHostUuid());
                         UpdateQuery sql = SQL.New(VmInstanceVO.class)
                                 .eq(VmInstanceVO_.uuid, self.getUuid())
                                 .set(VmInstanceVO_.state, VmInstanceState.Stopped)
                                 .set(VmInstanceVO_.hostUuid, null);
 
-                        if (self.getHostUuid() != null) {
-                            sql.set(VmInstanceVO_.lastHostUuid, self.getHostUuid());
+                        if (hostUuid != null) {
+                            sql.set(VmInstanceVO_.lastHostUuid, hostUuid);
                         }
 
                         sql.update();
+                        refreshVO();
+                        if (suspectHostUuid == null) {
+                            logger.debug(String.format("HA-start vm[%s]: skip creating pre-fence tag because suspect host is absent",
+                                    self.getUuid()));
+                        } else if (peerHostUuid == null) {
+                            logger.debug(String.format("HA-start vm[%s]: skip creating pre-fence tag because peer host is absent",
+                                    self.getUuid()));
+                        } else {
+                            Map<String, String> tokens = new HashMap<>();
+                            tokens.put(VmSystemTags.HA_PRE_FENCE_SUSPECT_HOST_UUID_TOKEN, suspectHostUuid);
+                            tokens.put(VmSystemTags.HA_PRE_FENCE_ACCESSIBLE_PEER_HOST_UUID_TOKEN, peerHostUuid);
+
+                            SystemTagCreator creator = VmSystemTags.HA_PRE_FENCE_PENDING.newSystemTagCreator(self.getUuid());
+                            creator.inherent = true;
+                            creator.recreate = true;
+                            creator.ignoreIfExisting = true;
+                            creator.setTagByTokens(tokens);
+                            creator.create();
+                        }
 
                         startVm(msg, new Completion(msg, chain) {
                             @Override
@@ -8985,4 +9007,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-

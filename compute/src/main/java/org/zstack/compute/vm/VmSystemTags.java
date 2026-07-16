@@ -310,4 +310,11 @@ public class VmSystemTags {
     public static PatternedSystemTag VM_STATE_PAUSED_AFTER_MIGRATE = new PatternedSystemTag(("vmPausedAfterMigrate"), VmInstanceVO.class);
 
     public static PatternedSystemTag VM_MEMORY_ACCESS_MODE_SHARED = new PatternedSystemTag(("vmMemoryAccessModeShared"), VmInstanceVO.class);
+
+    public static String HA_PRE_FENCE_SUSPECT_HOST_UUID_TOKEN = "suspectHostUuid";
+    public static String HA_PRE_FENCE_ACCESSIBLE_PEER_HOST_UUID_TOKEN = "accessiblePeerHostUuid";
+    public static PatternedSystemTag HA_PRE_FENCE_PENDING =
+            new PatternedSystemTag(String.format("haPreFencePending::{%s}::{%s}",
+                    HA_PRE_FENCE_SUSPECT_HOST_UUID_TOKEN,
+                    HA_PRE_FENCE_ACCESSIBLE_PEER_HOST_UUID_TOKEN), VmInstanceVO.class);
 }
