@@ -373,11 +373,6 @@
                 </dependency>
                 <dependency>
                     <groupId>org.zstack</groupId>
-                    <artifactId>crypto-enterprise</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-                <dependency>
-                    <groupId>org.zstack</groupId>
                     <artifactId>loginControl</artifactId>
                     <version>${project.version}</version>
                 </dependency>
