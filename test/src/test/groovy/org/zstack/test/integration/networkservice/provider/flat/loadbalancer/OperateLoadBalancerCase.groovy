@@ -13,6 +13,7 @@ import org.zstack.network.service.vip.VipNetworkServicesRefVO_
 import org.zstack.network.service.vip.VipPeerL3NetworkRefVO
 import org.zstack.network.service.vip.VipPeerL3NetworkRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
+import org.zstack.sdk.CreateLoadBalancerListenerAction
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerInventory
 import org.zstack.sdk.LoadBalancerListenerInventory
@@ -296,6 +297,18 @@ class OperateLoadBalancerCase extends SubCase {
         assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).count() == 1
         assert Q.New(VipNetworkServicesRefVO.class).eq(VipNetworkServicesRefVO_.vipUuid, vip.getUuid()).select(VipNetworkServicesRefVO_.serviceType).findValue() == VipUseForList.LB_NETWORK_SERVICE_TYPE
         assert Q.New(VipPeerL3NetworkRefVO.class).eq(VipPeerL3NetworkRefVO_.vipUuid, vip.getUuid()).count() == 0
+
+        CreateLoadBalancerListenerAction invalidListenerAction = new CreateLoadBalancerListenerAction()
+        invalidListenerAction.loadBalancerUuid = lb.uuid
+        invalidListenerAction.name = "invalid-compression-listener"
+        invalidListenerAction.instancePort = 23
+        invalidListenerAction.loadBalancerPort = 23
+        invalidListenerAction.protocol = LoadBalancerConstants.LB_PROTOCOL_HTTP
+        invalidListenerAction.systemTags = ["httpCompressAlgos::disable"]
+        invalidListenerAction.sessionId = adminSession()
+        CreateLoadBalancerListenerAction.Result invalidListenerResult = invalidListenerAction.call()
+        assert invalidListenerResult.error != null
+        assert invalidListenerResult.error.details.contains("please remove this tag")
 
         List<String> httpAlgos = ["deflate","gzip", "raw-deflate"]
         List<String> httpAlgosInput = ["deflate","gzip", "raw-deflate\n"]
