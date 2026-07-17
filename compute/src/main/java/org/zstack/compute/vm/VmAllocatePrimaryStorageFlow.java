@@ -185,10 +185,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
             amsg.setDiskOfferingUuid(deprecatedDisk != null ? deprecatedDisk.getDiskOfferingUuid() : null);
 
-            if (deprecatedDisk != null && Boolean.TRUE.equals(deprecatedDisk.getEncrypted())
-                    && isAutoAllocateDataVolumePrimaryStorage(spec, deprecatedDisk)) {
-                amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
-            }
             Set<String> tags = new HashSet<>();
             if (spec.getDataVolumeSystemTags() != null) {
                 tags.addAll(spec.getDataVolumeSystemTags());
@@ -209,10 +205,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         DiskAO disk = spec.getRootDisk();
         return (disk == null || disk.getPrimaryStorageUuid() == null)
                 && isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume());
-    }
-
-    private boolean isAutoAllocateDataVolumePrimaryStorage(VmInstanceSpec spec, DiskAO disk) {
-        return disk.getPrimaryStorageUuid() == null && isEmpty(spec.getCandidatePrimaryStorageUuidsForDataVolume());
     }
 
     @Override

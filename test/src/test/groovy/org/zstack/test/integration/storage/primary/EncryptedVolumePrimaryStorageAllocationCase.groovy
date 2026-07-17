@@ -1,19 +1,10 @@
 package org.zstack.test.integration.storage.primary
 
-import org.zstack.core.Platform
-import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.image.ImageConstant
-import org.zstack.header.image.ImageVO
-import org.zstack.header.image.ImageVO_
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
-import org.zstack.header.storage.snapshot.VolumeSnapshotState
-import org.zstack.header.storage.snapshot.VolumeSnapshotStatus
-import org.zstack.header.storage.snapshot.VolumeSnapshotTreeStatus
-import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO
-import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.vm.DiskAO
 import org.zstack.header.volume.InstantiateRootVolumeMsg
 import org.zstack.header.volume.InstantiateVolumeMsg
@@ -22,13 +13,11 @@ import org.zstack.header.volume.VolumeType
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.ClusterInventory
-import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.ImageInventory
 import org.zstack.sdk.InstanceOfferingInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
-import org.zstack.sdk.VolumeInventory
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -39,7 +28,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
     EnvSpec env
     PrimaryStorageInventory zhps
     PrimaryStorageInventory supportedPs
-    VolumeInventory plainZhpsVolume
 
     @Override
     void setup() {
@@ -133,12 +121,10 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
         env.create {
             zhps = env.inventoryByName("zhps") as PrimaryStorageInventory
             supportedPs = env.inventoryByName("supported-ps") as PrimaryStorageInventory
-            plainZhpsVolume = createPlainVolumeOnZhps()
             configureZhpsAllocatorMetadata()
             testFilterZhpsForEncryptedRootImageAutoAllocation()
             testFilterZhpsForEncryptedDataDiskAutoAllocation()
             testKeepPlainRootExplicitZhpsWhenEncryptedDataDiskAutoAllocation()
-            testFilterZhpsForEncryptedSource()
             testFilterZhpsForEncryptedTemplateDataVolumeAutoAllocation()
         }
     }
@@ -335,98 +321,6 @@ class EncryptedVolumePrimaryStorageAllocationCase extends SubCase {
 
         assert nfsDataVolumeDownloads == 1 : \
                 "encrypted template data volume was not instantiated on non-ZHPS: NFS download count=${nfsDataVolumeDownloads}"
-    }
-
-    void testFilterZhpsForEncryptedSource() {
-        ImageInventory image = env.inventoryByName("root-volume-template") as ImageInventory
-        SQL.New(VolumeVO.class)
-                .eq(VolumeVO_.uuid, plainZhpsVolume.uuid)
-                .set(VolumeVO_.encrypted, true)
-                .update()
-
-        DatabaseFacade dbf = bean(DatabaseFacade.class)
-        VolumeSnapshotTreeVO tree = new VolumeSnapshotTreeVO()
-        tree.uuid = Platform.getUuid()
-        tree.status = VolumeSnapshotTreeStatus.Completed
-        dbf.persist(tree)
-
-        VolumeSnapshotVO snapshot = new VolumeSnapshotVO()
-        snapshot.uuid = Platform.getUuid()
-        snapshot.name = "encrypted-source-snapshot"
-        snapshot.format = ImageConstant.QCOW2_FORMAT_STRING
-        snapshot.treeUuid = tree.uuid
-        snapshot.volumeType = VolumeType.Data.toString()
-        snapshot.state = VolumeSnapshotState.Enabled
-        snapshot.status = VolumeSnapshotStatus.Ready
-        snapshot.encrypted = true
-        dbf.persist(snapshot)
-
-        try {
-            assertEncryptedSourceVmCreationUsesSupportedPrimaryStorage(
-                    image.uuid, "volume-source", "volume://${plainZhpsVolume.uuid}")
-            assertEncryptedSourceVmCreationUsesSupportedPrimaryStorage(
-                    image.uuid, "snapshot-source", "${ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA}${snapshot.uuid}")
-            assertEncryptedSourceVmCreationUsesSupportedPrimaryStorage(
-                    image.uuid, "snapshot-reuse-source", "${ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA}${snapshot.uuid}")
-        } finally {
-            SQL.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid)
-                    .set(ImageVO_.url, "http://zstack.org/download/root.qcow2").update()
-            dbf.remove(snapshot)
-            dbf.remove(tree)
-        }
-    }
-
-    private void assertEncryptedSourceVmCreationUsesSupportedPrimaryStorage(String rootImageUuid, String sourceName,
-                                                                           String imageUrl) {
-        HostInventory host = env.inventoryByName("kvm") as HostInventory
-        ClusterInventory cluster = env.inventoryByName("cluster") as ClusterInventory
-        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
-        InstanceOfferingInventory offering = env.inventoryByName("instance-offering") as InstanceOfferingInventory
-
-        SQL.New(ImageVO.class).eq(ImageVO_.uuid, rootImageUuid).set(ImageVO_.url, imageUrl).update()
-
-        String allocatedRootPsUuid = null
-        def cleanup = notifyWhenReceivedMessage(InstantiateVolumeMsg.class) { InstantiateVolumeMsg msg ->
-            if (msg instanceof InstantiateRootVolumeMsg) {
-                allocatedRootPsUuid = msg.primaryStorageUuid
-            }
-        }
-
-        try {
-            expectApiFailure({
-                createVmInstance {
-                    name = "vm-from-${sourceName}"
-                    instanceOfferingUuid = offering.uuid
-                    imageUuid = rootImageUuid
-                    zoneUuid = supportedPs.zoneUuid
-                    clusterUuid = cluster.uuid
-                    hostUuid = host.uuid
-                    l3NetworkUuids = [l3.uuid]
-                    defaultL3NetworkUuid = l3.uuid
-                }
-            }) {
-                assert details.contains("no key provider") : \
-                        "Encrypted source VM creation failed before encrypted root instantiate: details=${details}"
-            }
-        } finally {
-            cleanup()
-        }
-
-        assert allocatedRootPsUuid == supportedPs.uuid : \
-                "Encrypted source root volume allocation selected unexpected PS: source=${sourceName} " +
-                        "expected=${supportedPs.uuid} actual=${allocatedRootPsUuid}"
-    }
-
-    private VolumeInventory createPlainVolumeOnZhps() {
-        CreateDataVolumeAction createAction = new CreateDataVolumeAction()
-        createAction.name = "plain-volume-on-zhps"
-        createAction.diskSize = SizeUnit.GIGABYTE.toByte(1)
-        createAction.primaryStorageUuid = zhps.uuid
-        createAction.encrypted = false
-        createAction.sessionId = adminSession()
-        def createResult = createAction.call()
-        assert createResult.error == null : "failed to create the plain ZHPS volume fixture: ${createResult.error}"
-        return createResult.value.inventory as VolumeInventory
     }
 
     @Override

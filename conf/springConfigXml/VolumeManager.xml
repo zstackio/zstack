@@ -102,7 +102,6 @@
     <bean id="VolumeEncryptedTrashCleanupHelper" class="org.zstack.storage.encrypt.VolumeEncryptedTrashCleanupHelper"/>
 
     <bean id="VolumeSnapshotEncryptionHelper" class="org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper"/>
-    <bean id="VolumeSourceEncryptionResolver" class="org.zstack.storage.encrypt.VolumeSourceEncryptionResolver"/>
 
     <bean id="ZbsVolumeEncryptionMaterialFactory" class="org.zstack.storage.encrypt.ZbsVolumeEncryptionMaterialFactory"/>
     <bean id="ZbsVolumeEncryptionConverter" class="org.zstack.storage.encrypt.ZbsVolumeEncryptionConverter"/>

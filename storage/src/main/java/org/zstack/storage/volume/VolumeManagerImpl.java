@@ -45,7 +45,6 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
 import org.zstack.storage.encrypt.VolumeEncryptedResourceKeyBackend;
 import org.zstack.storage.encrypt.VolumeSnapshotEncryptionHelper;
-import org.zstack.storage.encrypt.VolumeSourceEncryptionResolver;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataManager;
 import org.zstack.header.volume.*;
@@ -100,8 +99,6 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     private VolumeInPlaceEncryptor volumeInPlaceEncryptor;
     @Autowired
     private VolumeSnapshotEncryptionHelper snapshotEncryptionHelper;
-    @Autowired
-    private VolumeSourceEncryptionResolver sourceEncryptionResolver;
     @Autowired
     private VolumeEncryptedResourceKeyBackend volumeEncryptedResourceKeyBackend;
 
@@ -536,7 +533,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
                     @Override
                     public boolean skip(Map data) {
-                        return !sourceEncryptionResolver.isEncrypted(msg.getImageUuid());
+                        return !isTemplateFromEncryptedSource(msg.getImageUuid());
                     }
 
                     @Override
@@ -674,7 +671,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setType(VolumeType.valueOf(msg.getVolumeType()));
         vo.setDiskOfferingUuid(msg.getDiskOfferingUuid());
         vo.setEncrypted(Boolean.TRUE.equals(msg.getEncrypted()) ||
-                (vo.getType() == VolumeType.Root && sourceEncryptionResolver.isEncrypted(msg.getRootImageUuid())));
+                (vo.getType() == VolumeType.Root && isTemplateFromEncryptedSource(msg.getRootImageUuid())));
         if (vo.getType() == VolumeType.Root) {
             vo.setDeviceId(0);
         }
@@ -728,7 +725,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
     }
 
     private boolean requiresEncryptInPlace(CreateDataVolumeFromVolumeTemplateMsg msg) {
-        return Boolean.TRUE.equals(msg.getEncrypted()) && !sourceEncryptionResolver.isEncrypted(msg.getImageUuid());
+        return Boolean.TRUE.equals(msg.getEncrypted()) && !isTemplateFromEncryptedSource(msg.getImageUuid());
     }
 
     private String getHostUuidFromAllocatedInstallUrl(String primaryStorageType, String allocatedInstallUrl) {
@@ -783,6 +780,46 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     storageDescription, primaryStorageUuid, operation));
         }
         return ErrorableValue.of(host.getUuid());
+    }
+
+    private boolean isTemplateFromEncryptedSource(String imageUuid) {
+        if (StringUtils.isBlank(imageUuid)) {
+            return false;
+        }
+
+        if (snapshotEncryptionHelper.hasTemporarySnapshotImageKey(imageUuid)) {
+            return true;
+        }
+
+        String imageUrl = Q.New(ImageVO.class)
+                .eq(ImageVO_.uuid, imageUuid)
+                .select(ImageVO_.url)
+                .findValue();
+        if (StringUtils.isBlank(imageUrl)) {
+            return false;
+        }
+
+        if (imageUrl.startsWith("volume://")) {
+            String srcVolumeUuid = imageUrl.substring("volume://".length());
+            return Boolean.TRUE.equals(Q.New(VolumeVO.class)
+                    .eq(VolumeVO_.uuid, srcVolumeUuid)
+                    .select(VolumeVO_.encrypted)
+                    .findValue());
+        }
+
+        String snapshotUuid;
+        if (imageUrl.startsWith(ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA)) {
+            snapshotUuid = imageUrl.substring(ImageConstant.IMAGE_FROM_SNAPSHOT_SCHEMA.length());
+        } else if (imageUrl.startsWith(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA)) {
+            snapshotUuid = imageUrl.substring(ImageConstant.SNAPSHOT_REUSE_IMAGE_SCHEMA.length());
+        } else {
+            return false;
+        }
+        snapshotUuid = snapshotUuid.length() >= 32 ? snapshotUuid.substring(0, 32) : snapshotUuid;
+        return Boolean.TRUE.equals(Q.New(VolumeSnapshotVO.class)
+                .eq(VolumeSnapshotVO_.uuid, snapshotUuid)
+                .select(VolumeSnapshotVO_.encrypted)
+                .findValue());
     }
 
     private void handle(CreateVolumeMsg msg) {

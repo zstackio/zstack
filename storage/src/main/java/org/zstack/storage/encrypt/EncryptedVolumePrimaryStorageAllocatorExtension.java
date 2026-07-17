@@ -1,6 +1,5 @@
 package org.zstack.storage.encrypt;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.db.Q;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
@@ -21,8 +20,6 @@ public class EncryptedVolumePrimaryStorageAllocatorExtension implements VmAlloca
         PrimaryStorageFeatureAllocatorExtensionPoint {
     private static final String ZHPS_PRIMARY_STORAGE_IDENTITY = "expon";
     private static final String ZHPS_PRIMARY_STORAGE_PROTOCOL = VolumeProtocol.Vhost.name();
-    @Autowired
-    private VolumeSourceEncryptionResolver sourceEncryptionResolver;
 
     @Override
     public List<PrimaryStorageVO> allocatePrimaryStorage(Set<PrimaryStorageFeature> requiredFeatures,
@@ -36,20 +33,10 @@ public class EncryptedVolumePrimaryStorageAllocatorExtension implements VmAlloca
     }
 
     @Override
-    public void beforeAllocatePrimaryStorage(VmInstanceSpec spec) {
-        sourceEncryptionResolver.resolve(spec);
-    }
-
-    @Override
     public void filterPrimaryStorageCandidates(VmInstanceSpec spec, List<String> rootPrimaryStorageUuids,
-                                               boolean rootPrimaryStorageAutoAllocation,
-                                               List<String> dataPrimaryStorageUuids,
-                                               boolean dataPrimaryStorageAutoAllocation) {
+                                               boolean rootPrimaryStorageAutoAllocation) {
         if (requiresEncryptedRootVolumeAutoPsFilter(spec, rootPrimaryStorageUuids, rootPrimaryStorageAutoAllocation)) {
             filterEncryptedVolumeUnsupportedPrimaryStorageUuids(rootPrimaryStorageUuids);
-        }
-        if (requiresEncryptedDataVolumeAutoPsFilter(spec, dataPrimaryStorageUuids, dataPrimaryStorageAutoAllocation)) {
-            filterEncryptedVolumeUnsupportedPrimaryStorageUuids(dataPrimaryStorageUuids);
         }
     }
 
@@ -62,13 +49,6 @@ public class EncryptedVolumePrimaryStorageAllocatorExtension implements VmAlloca
     private boolean requiresEncryptedRootVolumeAutoPsFilter(VmInstanceSpec spec, List<String> candidates,
                                                            boolean autoAllocation) {
         return autoAllocation && spec != null && isEncrypted(spec.getRootDisk())
-                && candidates != null && !candidates.isEmpty();
-    }
-
-    private boolean requiresEncryptedDataVolumeAutoPsFilter(VmInstanceSpec spec, List<String> candidates,
-                                                           boolean autoAllocation) {
-        return autoAllocation && spec != null
-                && spec.getNonTemplateDeprecatedDisksSpecs().stream().anyMatch(this::isEncrypted)
                 && candidates != null && !candidates.isEmpty();
     }
 

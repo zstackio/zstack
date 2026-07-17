@@ -61,10 +61,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
-        for (VmAllocatePrimaryStorageExtensionPoint ext :
-                pluginRgty.getExtensionList(VmAllocatePrimaryStorageExtensionPoint.class)) {
-            ext.beforeAllocatePrimaryStorage(spec);
-        }
 
         if (spec.getImageSpec().relyOnImageCache()) {
             String imageUuid = spec.getImageSpec().getInventory().getUuid();
@@ -463,7 +459,7 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         } else {
             dataPs.add(null);
         }
-        filterPrimaryStorageCandidates(spec, rootPs, autoAllocateRootVolumePs, dataPs, autoAllocateDataVolumePs);
+        filterPrimaryStorageCandidates(spec, rootPs, autoAllocateRootVolumePs);
 
         List<List<String>> finalPsCombos = new ArrayList<>();
         if (autoAllocateRootVolumePs && autoAllocateDataVolumePs) {
@@ -487,11 +483,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
         return finalPsCombos;
     }
 
-    private void filterPrimaryStorageCandidates(VmInstanceSpec spec, List<String> rootPs, boolean rootAutoAllocation,
-                                                List<String> dataPs, boolean dataAutoAllocation) {
+    private void filterPrimaryStorageCandidates(VmInstanceSpec spec, List<String> rootPs, boolean rootAutoAllocation) {
         for (VmAllocatePrimaryStorageExtensionPoint ext :
                 pluginRgty.getExtensionList(VmAllocatePrimaryStorageExtensionPoint.class)) {
-            ext.filterPrimaryStorageCandidates(spec, rootPs, rootAutoAllocation, dataPs, dataAutoAllocation);
+            ext.filterPrimaryStorageCandidates(spec, rootPs, rootAutoAllocation);
         }
     }
 
