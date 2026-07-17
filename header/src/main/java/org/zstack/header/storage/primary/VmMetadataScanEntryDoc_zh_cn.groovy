@@ -64,4 +64,10 @@ doc {
 		type "boolean"
 		since "5.0.0"
 	}
+	field {
+		name "regenerateUuidRequired"
+		desc "注册该元数据时是否必须重新生成云主机UUID"
+		type "boolean"
+		since "5.1.0"
+	}
 }
