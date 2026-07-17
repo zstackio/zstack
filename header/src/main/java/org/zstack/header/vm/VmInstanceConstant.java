@@ -62,7 +62,7 @@ public interface VmInstanceConstant {
         Reboot,
         Destroy,
         Migrate,
-        MigrateStorage,
+        MigrateVolume,
         AttachVolume,
         AttachNic,
         ChangeNicNetwork,

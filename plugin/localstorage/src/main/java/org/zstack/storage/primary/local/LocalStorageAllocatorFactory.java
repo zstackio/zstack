@@ -16,7 +16,6 @@ import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.storage.primary.*;
@@ -109,7 +108,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
-        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateStorage.toString().equals(spec.getVmOperation())) {
+        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateVolume.toString().equals(spec.getVmOperation())) {
             List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
             if (huuids.isEmpty()) {
                 return candidates;
