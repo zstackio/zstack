@@ -214,7 +214,6 @@
           "org.zstack.storage.device.iscsi.**",
           "org.zstack.header.vipQos.**",
           "org.zstack.header.volume.**",
-          "org.zstack.vpcfirewall.api.**",
           "org.zstack.header.vo.APIGetResourceNamesMsg",
           "org.zstack.header.aliyun.network.vpc.APIUpdateEcsVpcMsg",
           "org.zstack.header.aliyun.network.group.APICreateEcsSecurityGroupRemoteMsg",
