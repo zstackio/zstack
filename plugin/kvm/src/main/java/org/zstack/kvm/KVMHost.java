@@ -5304,6 +5304,15 @@ public class KVMHost extends HostBase implements Host {
         return inaccessiblePsCount == attachedPsCount && attachedPsCount > 0;
     }
 
+    @Transactional(readOnly = true)
+    private long getLibvirtRestartedEchoTimeout() {
+        long vmCount = KVMHostUtils.countVmsForLibvirtRestartEchoTimeout(self.getUuid());
+        long timeout = KVMHostUtils.calculateLibvirtRestartEchoTimeoutMillis(vmCount);
+        logger.info(String.format("extend kvmagent echo timeout after libvirtd restart on host[uuid:%s, vmCount:%s] to %sms",
+                self.getUuid(), vmCount, timeout));
+        return timeout;
+    }
+
     private void updateHostOsInformation(String distro, String release, String version) {
         final KVMHostVO kvmHostVO = getSelf();
         kvmHostVO.setOsDistribution(distro);
@@ -5574,6 +5583,7 @@ public class KVMHost extends HostBase implements Host {
         chain.allowWatch();
         chain.then(new ShareFlow() {
             boolean deployed = false;
+            boolean libvirtRestarted = false;
             @Override
             public void setup() {
                 flow(new NoRollbackFlow() {
@@ -5850,6 +5860,8 @@ public class KVMHost extends HostBase implements Host {
                                     deployed = run;
                                 }
                                 if (deployed) {
+                                    libvirtRestarted = KVMHostUtils.shouldRestartLibvirtdDuringDeploy(
+                                            deployArguments.getInit(), deployArguments.getRestartLibvirtd());
                                     // update host agent version when open grayScaleUpgrade
                                     upgradeChecker.updateAgentVersion(self.getUuid(), AnsibleConstant.KVM_AGENT_NAME, dbf.getDbVersion(), dbf.getDbVersion());
                                 }
@@ -5924,6 +5936,9 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
+                        final long echoTimeout = libvirtRestarted
+                                ? getLibvirtRestartedEchoTimeout()
+                                : TimeUnit.SECONDS.toMillis(CoreGlobalProperty.REST_FACADE_ECHO_TIMEOUT);
                         restf.echo(echoPath, new Completion(trigger) {
                             @Override
                             public void success() {
@@ -5955,7 +5970,7 @@ public class KVMHost extends HostBase implements Host {
                                                 public void fail(ErrorCode errorCode) {
                                                     trigger.fail(errorCode);
                                                 }
-                                            });
+                                            }, TimeUnit.SECONDS.toMillis(1), echoTimeout);
                                         }
 
                                         @Override
@@ -5967,7 +5982,7 @@ public class KVMHost extends HostBase implements Host {
                                     trigger.fail(errorCode);
                                 }
                             }
-                        });
+                        }, TimeUnit.SECONDS.toMillis(1), echoTimeout);
                     }
                 });
 
