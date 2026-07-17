@@ -141,7 +141,7 @@ public class HostPrimaryStorageAllocatorFlow extends AbstractHostAllocatorFlow {
     private List<HostVO> allocateFromCandidates() {
         List<String> huuids = getHostUuidsFromCandidates();
         Set<String> requiredPsUuids = spec.getRequiredPrimaryStorageUuids();
-        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateStorage.toString().equals(spec.getVmOperation())) {
+        if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateVolume.toString().equals(spec.getVmOperation())) {
             huuids = filterHostHavingAccessiblePrimaryStorage(huuids, spec)
                     .stream().map(ResourceVO::getUuid).collect(Collectors.toList());
         } else {
