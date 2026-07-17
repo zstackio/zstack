@@ -36,11 +36,15 @@ public class EncryptedVolumePrimaryStorageAllocatorExtension implements VmAlloca
     }
 
     @Override
+    public void beforeAllocatePrimaryStorage(VmInstanceSpec spec) {
+        sourceEncryptionResolver.resolve(spec);
+    }
+
+    @Override
     public void filterPrimaryStorageCandidates(VmInstanceSpec spec, List<String> rootPrimaryStorageUuids,
                                                boolean rootPrimaryStorageAutoAllocation,
                                                List<String> dataPrimaryStorageUuids,
                                                boolean dataPrimaryStorageAutoAllocation) {
-        sourceEncryptionResolver.resolve(spec);
         if (requiresEncryptedRootVolumeAutoPsFilter(spec, rootPrimaryStorageUuids, rootPrimaryStorageAutoAllocation)) {
             filterEncryptedVolumeUnsupportedPrimaryStorageUuids(rootPrimaryStorageUuids);
         }

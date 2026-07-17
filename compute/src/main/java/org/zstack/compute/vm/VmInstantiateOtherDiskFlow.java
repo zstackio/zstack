@@ -283,7 +283,7 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         List<String> bsUuids = template.getBackupStorageRefs().stream()
                                 .map(ImageBackupStorageRefVO::getBackupStorageUuid).collect(Collectors.toList());
                         amsg.setPossiblePrimaryStorageTypes(possiblePrimaryStorageTypes(bsUuids));
-                        if (Boolean.TRUE.equals(diskAO.getEncrypted()) && diskAO.getPrimaryStorageUuid() == null) {
+                        if (Boolean.TRUE.equals(diskAO.getEncrypted())) {
                             amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
                         }
 

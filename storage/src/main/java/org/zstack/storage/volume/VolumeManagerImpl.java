@@ -237,6 +237,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         final String originVolumeUuid = msg instanceof CreateTemporaryDataVolumeFromVolumeTemplateMsg ?
                 ((CreateTemporaryDataVolumeFromVolumeTemplateMsg) msg).getOriginVolumeUuid() : null;
         final ImageVO template = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        final boolean encryptedVolumeAutoAllocation = Boolean.TRUE.equals(msg.getEncrypted())
+                && msg.getPrimaryStorageUuid() == null && msg.getHostUuid() != null;
         final VolumeVO vol = new VolumeVO();
         vol.setUuid(msg.getResourceUuid() == null ? Platform.getUuid() : msg.getResourceUuid());
         vol.setName(msg.getName());
@@ -320,13 +322,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 }
 
                                 String sql;
-                                if (msg.getPrimaryStorageUuid() == null && msg.getHostUuid() != null) {
+                                if (encryptedVolumeAutoAllocation) {
                                     sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, ClusterVO cluster, HostVO host where host.uuid = :hostUuid and host.clusterUuid = cluster.uuid and zref.zoneUuid = cluster.zoneUuid and bs.status = :bsStatus and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
                                 } else {
                                     sql = "select bs.uuid from BackupStorageVO bs, BackupStorageZoneRefVO zref, PrimaryStorageVO ps where zref.zoneUuid = ps.zoneUuid and bs.status = :bsStatus and ps.uuid = :psUuid and zref.backupStorageUuid = bs.uuid and bs.uuid in (:bsUuids)";
                                 }
                                 TypedQuery<String> q = dbf.getEntityManager().createQuery(sql, String.class);
-                                if (msg.getPrimaryStorageUuid() == null && msg.getHostUuid() != null) {
+                                if (encryptedVolumeAutoAllocation) {
                                     q.setParameter("hostUuid", msg.getHostUuid());
                                 } else {
                                     q.setParameter("psUuid", msg.getPrimaryStorageUuid());
@@ -373,7 +375,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         if (vvo.isShareable()) {
                             amsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.SHARED_VOLUME));
                         }
-                        if (Boolean.TRUE.equals(msg.getEncrypted()) && msg.getPrimaryStorageUuid() == null) {
+                        if (encryptedVolumeAutoAllocation) {
                             amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
                         }
 

@@ -86,6 +86,9 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
             if (localStorageHostRefVOList != null && !localStorageHostRefVOList.isEmpty()) {
                 localStorageHostRefVOList.forEach(r -> amsg.addExcludePrimaryStorageUuid(r.getPrimaryStorageUuid()));
             }
+            if (Boolean.TRUE.equals(volume.getEncrypted())) {
+                amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
+            }
         } else {
             amsg.setAllocationStrategy(LocalStorageConstants.LOCAL_STORAGE_ALLOCATOR_STRATEGY);
             amsg.setRequiredPrimaryStorageUuid(spec.getVmInventory().getRootVolume().getPrimaryStorageUuid());
@@ -95,9 +98,6 @@ public class LocalStorageAllocateCapacityForAttachingVolumeFlow implements Flow 
         amsg.setVmInstanceUuid(spec.getVmInventory().getUuid());
         amsg.setSize(volume.getSize());
         amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
-        if (Boolean.TRUE.equals(volume.getEncrypted())) {
-            amsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
-        }
         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
         bus.send(amsg, new CloudBusCallBack(trigger) {
             @Override

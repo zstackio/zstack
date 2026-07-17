@@ -61,6 +61,10 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
     @Override
     public void run(final FlowTrigger trigger, final Map data) {
         final VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        for (VmAllocatePrimaryStorageExtensionPoint ext :
+                pluginRgty.getExtensionList(VmAllocatePrimaryStorageExtensionPoint.class)) {
+            ext.beforeAllocatePrimaryStorage(spec);
+        }
 
         if (spec.getImageSpec().relyOnImageCache()) {
             String imageUuid = spec.getImageSpec().getInventory().getUuid();
