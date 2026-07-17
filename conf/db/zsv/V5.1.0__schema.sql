@@ -310,3 +310,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PlatformServiceInstanceVO` (
     INDEX `idxPlatformServiceInstanceVOState` (`state`),
     INDEX `idxPlatformServiceInstanceVOActiveApiId` (`activeApiId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Feature: LicenseHistoryVO cause | ZSV-12697
+CALL INSERT_COLUMN('LicenseHistoryVO', 'cause', 'varchar(32)', 0, 'UpdateLicense', 'source');
