@@ -57,8 +57,8 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     }
 
     public void addRequiredFeature(PrimaryStorageFeature requiredFeature) {
-        requiredFeatures = requiredFeatures == null
-                ? EnumSet.noneOf(PrimaryStorageFeature.class)
+        requiredFeatures = requiredFeatures == null || requiredFeatures.isEmpty()
+                ? EnumSet.of(requiredFeature)
                 : EnumSet.copyOf(requiredFeatures);
         requiredFeatures.add(requiredFeature);
     }

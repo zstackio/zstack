@@ -245,9 +245,14 @@ public class InstantiateVolumeForNewCreatedVmExtension implements PreVmInstantia
             }
 
             for (DiskAO diskAO : templateDataDisks) {
-                String psUuid = diskAO.getPrimaryStorageUuid() != null ? diskAO.getPrimaryStorageUuid() : defaultPsUuid;
-                msgs.add(buildCreateDataVolumeFromTemplateMsg(spec, diskAO.getTemplateUuid(), psUuid,
-                        diskAO.getSystemTags(), accountUuid, diskAO.getEncrypted()));
+                boolean encryptedVolumeAutoAllocation = Boolean.TRUE.equals(diskAO.getEncrypted())
+                        && diskAO.getPrimaryStorageUuid() == null;
+                String psUuid = encryptedVolumeAutoAllocation ? null
+                        : (diskAO.getPrimaryStorageUuid() != null ? diskAO.getPrimaryStorageUuid() : defaultPsUuid);
+                CreateDataVolumeFromVolumeTemplateMsg cmsg = buildCreateDataVolumeFromTemplateMsg(spec,
+                        diskAO.getTemplateUuid(), psUuid, diskAO.getSystemTags(), accountUuid, diskAO.getEncrypted());
+                cmsg.setEncryptedVolumeAutoAllocation(encryptedVolumeAutoAllocation);
+                msgs.add(cmsg);
             }
         }
 

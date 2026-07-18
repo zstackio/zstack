@@ -148,7 +148,8 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
             rmsg.setCandidatePrimaryStorageUuids(candidatePs);
             rmsg.setPossiblePrimaryStorageTypes(selectPsTypesFromSpec(spec));
         }
-        if (disk != null && Boolean.TRUE.equals(disk.getEncrypted()) && isAutoAllocateRootVolumePrimaryStorage(spec)) {
+        if (disk != null && Boolean.TRUE.equals(disk.getEncrypted())
+                && disk.getPrimaryStorageUuid() == null && isEmpty(candidatePs)) {
             rmsg.addRequiredFeature(PrimaryStorageFeature.ENCRYPTED_VOLUME);
         }
 
@@ -199,12 +200,6 @@ public class VmAllocatePrimaryStorageFlow implements Flow {
         }
 
         return msgs;
-    }
-
-    private boolean isAutoAllocateRootVolumePrimaryStorage(VmInstanceSpec spec) {
-        DiskAO disk = spec.getRootDisk();
-        return (disk == null || disk.getPrimaryStorageUuid() == null)
-                && isEmpty(spec.getCandidatePrimaryStorageUuidsForRootVolume());
     }
 
     @Override

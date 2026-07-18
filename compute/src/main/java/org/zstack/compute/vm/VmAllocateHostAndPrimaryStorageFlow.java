@@ -159,10 +159,6 @@ public class VmAllocateHostAndPrimaryStorageFlow implements Flow {
 
         // local + non-local， need to automatically allocate the primary storage
         List<List<String>> psCombos = getPrimaryStorageCombinationFromSpec(spec, localPsUuids, nonLocalPsUuids);
-        if (psCombos.isEmpty()) {
-            trigger.fail(Platform.operr("no primary storage candidate is available"));
-            return;
-        }
         new While<>(psCombos).each((combo, whileCompletion) -> {
             spec.setRequiredPrimaryStorageUuidForRootVolume(combo.get(0));
             spec.setRequiredPrimaryStorageUuidForDataVolume(combo.get(1));
