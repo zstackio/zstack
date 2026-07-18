@@ -10,6 +10,7 @@ import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.volume.VolumeProtocol;
 import org.zstack.storage.primary.PrimaryStorageFeatureAllocatorExtensionPoint;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -44,6 +45,11 @@ public class EncryptedVolumePrimaryStorageAllocatorExtension implements VmAlloca
         Set<String> unsupportedPsUuids = new HashSet<>(
                 getEncryptedVolumeUnsupportedPrimaryStorageUuids(rootPrimaryStorageUuids));
         rootPrimaryStorageUuids.removeIf(unsupportedPsUuids::contains);
+    }
+
+    public boolean isEncryptedVolumeUnsupportedPrimaryStorage(String psUuid) {
+        return psUuid != null && !getEncryptedVolumeUnsupportedPrimaryStorageUuids(
+                Collections.singletonList(psUuid)).isEmpty();
     }
 
     private List<String> getEncryptedVolumeUnsupportedPrimaryStorageUuids(List<String> psUuids) {
