@@ -536,18 +536,6 @@ public class SourceClassMap {
 			put("org.zstack.twoFactorAuthentication.TwoFactorAuthenticationSecretInventory", "org.zstack.sdk.TwoFactorAuthenticationSecretInventory");
 			put("org.zstack.usbDevice.UsbDeviceInventory", "org.zstack.sdk.UsbDeviceInventory");
 			put("org.zstack.usbDevice.UsbDeviceState", "org.zstack.sdk.UsbDeviceState");
-			put("org.zstack.vpcfirewall.entity.ActionType", "org.zstack.sdk.ActionType");
-			put("org.zstack.vpcfirewall.entity.FirewallRuleState", "org.zstack.sdk.FirewallRuleState");
-			put("org.zstack.vpcfirewall.entity.IpSetType", "org.zstack.sdk.IpSetType");
-			put("org.zstack.vpcfirewall.entity.PacketsForwardType", "org.zstack.sdk.PacketsForwardType");
-			put("org.zstack.vpcfirewall.entity.ProtocolType", "org.zstack.sdk.ProtocolType");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallInventory", "org.zstack.sdk.VpcFirewallInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallIpSetTemplateInventory", "org.zstack.sdk.VpcFirewallIpSetTemplateInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallRuleInventory", "org.zstack.sdk.VpcFirewallRuleInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallRuleSetInventory", "org.zstack.sdk.VpcFirewallRuleSetInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallRuleSetL3RefInventory", "org.zstack.sdk.VpcFirewallRuleSetL3RefInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallRuleTemplateInventory", "org.zstack.sdk.VpcFirewallRuleTemplateInventory");
-			put("org.zstack.vpcfirewall.entity.VpcFirewallVRouterRefInventory", "org.zstack.sdk.VpcFirewallVRouterRefInventory");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryAO", "org.zstack.sdk.VRouterRouteEntryAO");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryInventory", "org.zstack.sdk.VRouterRouteEntryInventory");
 			put("org.zstack.vrouterRoute.VRouterRouteEntryType", "org.zstack.sdk.VRouterRouteEntryType");
@@ -656,7 +644,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.AccountPriceTableRefInventory", "org.zstack.billing.table.AccountPriceTableRefInventory");
 			put("org.zstack.sdk.AccountResourceRefInventory", "org.zstack.header.identity.AccountResourceRefInventory");
 			put("org.zstack.sdk.ActionStruct", "org.zstack.cloudformation.template.struct.ActionStruct");
-			put("org.zstack.sdk.ActionType", "org.zstack.vpcfirewall.entity.ActionType");
 			put("org.zstack.sdk.AddHostFromFileResult", "org.zstack.header.host.AddHostFromFileResult");
 			put("org.zstack.sdk.AddingNewVmRuleInventory", "org.zstack.autoscaling.group.rule.AddingNewVmRuleInventory");
 			put("org.zstack.sdk.AdditionalLicenseInfo", "org.zstack.license.AdditionalLicenseInfo");
@@ -765,7 +752,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FcHbaDeviceInventory", "org.zstack.storage.device.hba.FcHbaDeviceInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
-			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FreeIpInventory", "org.zstack.header.network.l3.FreeIpInventory");
 			put("org.zstack.sdk.GarbageCollectorInventory", "org.zstack.core.gc.GarbageCollectorInventory");
 			put("org.zstack.sdk.GlobalConfigInventory", "org.zstack.core.config.GlobalConfigInventory");
@@ -817,7 +803,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.IpCapacityData", "org.zstack.header.network.l3.datatypes.IpCapacityData");
 			put("org.zstack.sdk.IpRangeInventory", "org.zstack.header.network.l3.IpRangeInventory");
 			put("org.zstack.sdk.IpRangeType", "org.zstack.header.network.l3.IpRangeType");
-			put("org.zstack.sdk.IpSetType", "org.zstack.vpcfirewall.entity.IpSetType");
 			put("org.zstack.sdk.IpStatisticData", "org.zstack.network.service.flat.IpStatisticData");
 			put("org.zstack.sdk.IscsiLunInventory", "org.zstack.storage.device.iscsi.IscsiLunInventory");
 			put("org.zstack.sdk.IscsiServerClusterRefInventory", "org.zstack.storage.device.iscsi.IscsiServerClusterRefInventory");
@@ -916,7 +901,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.OvfOSInfo", "org.zstack.ovf.datatype.OvfOSInfo");
 			put("org.zstack.sdk.OvfSystemInfo", "org.zstack.ovf.datatype.OvfSystemInfo");
 			put("org.zstack.sdk.OvfVolumeInfo", "org.zstack.ovf.datatype.OvfVolumeInfo");
-			put("org.zstack.sdk.PacketsForwardType", "org.zstack.vpcfirewall.entity.PacketsForwardType");
 			put("org.zstack.sdk.Pagination", "org.zstack.billing.Pagination");
 			put("org.zstack.sdk.PciDeviceBillingInventory", "org.zstack.billing.generator.pcidevice.PciDeviceBillingInventory");
 			put("org.zstack.sdk.PciDeviceChooser", "org.zstack.pciDevice.PciDeviceChooser");
@@ -952,7 +936,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.PriceTableInventory", "org.zstack.billing.table.PriceTableInventory");
 			put("org.zstack.sdk.PrimaryStorageHostStatus", "org.zstack.header.storage.primary.PrimaryStorageHostStatus");
 			put("org.zstack.sdk.PrimaryStorageInventory", "org.zstack.header.storage.primary.PrimaryStorageInventory");
-			put("org.zstack.sdk.ProtocolType", "org.zstack.vpcfirewall.entity.ProtocolType");
 			put("org.zstack.sdk.PubIpVipBandwidthInBillingInventory", "org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthInBillingInventory");
 			put("org.zstack.sdk.PubIpVipBandwidthOutBillingInventory", "org.zstack.billing.generator.pubip.vip.PubIpVipBandwidthOutBillingInventory");
 			put("org.zstack.sdk.PubIpVipBandwidthSpending", "org.zstack.billing.spendingcalculator.vip.PubIpVipBandwidthSpending");
@@ -1113,13 +1096,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.VolumeSnapshotReferenceTreeInventory", "org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeInventory");
 			put("org.zstack.sdk.VolumeSnapshotTreeInventory", "org.zstack.header.storage.snapshot.VolumeSnapshotTreeInventory");
 			put("org.zstack.sdk.VolumeTO", "org.zstack.kvm.VolumeTO");
-			put("org.zstack.sdk.VpcFirewallInventory", "org.zstack.vpcfirewall.entity.VpcFirewallInventory");
-			put("org.zstack.sdk.VpcFirewallIpSetTemplateInventory", "org.zstack.vpcfirewall.entity.VpcFirewallIpSetTemplateInventory");
-			put("org.zstack.sdk.VpcFirewallRuleInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleInventory");
-			put("org.zstack.sdk.VpcFirewallRuleSetInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleSetInventory");
-			put("org.zstack.sdk.VpcFirewallRuleSetL3RefInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleSetL3RefInventory");
-			put("org.zstack.sdk.VpcFirewallRuleTemplateInventory", "org.zstack.vpcfirewall.entity.VpcFirewallRuleTemplateInventory");
-			put("org.zstack.sdk.VpcFirewallVRouterRefInventory", "org.zstack.vpcfirewall.entity.VpcFirewallVRouterRefInventory");
 			put("org.zstack.sdk.VpcHaGroupApplianceVmRefInventory", "org.zstack.header.vpc.ha.VpcHaGroupApplianceVmRefInventory");
 			put("org.zstack.sdk.VpcHaGroupInventory", "org.zstack.header.vpc.ha.VpcHaGroupInventory");
 			put("org.zstack.sdk.VpcHaGroupMonitorIpInventory", "org.zstack.header.vpc.ha.VpcHaGroupMonitorIpInventory");
