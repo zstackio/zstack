@@ -100,6 +100,14 @@ public class LicenseHistoryInventory  {
         return this.source;
     }
 
+    public java.lang.String cause;
+    public void setCause(java.lang.String cause) {
+        this.cause = cause;
+    }
+    public java.lang.String getCause() {
+        return this.cause;
+    }
+
     public java.lang.String managementNodeUuid;
     public void setManagementNodeUuid(java.lang.String managementNodeUuid) {
         this.managementNodeUuid = managementNodeUuid;
