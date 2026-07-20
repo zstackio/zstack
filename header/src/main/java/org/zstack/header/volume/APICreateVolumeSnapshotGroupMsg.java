@@ -127,6 +127,9 @@ public class APICreateVolumeSnapshotGroupMsg extends APICreateMessage implements
 
             List<VolumeSnapshotGroupRefInventory> volumeSnapshotRefs = ((APICreateVolumeSnapshotGroupEvent) rsp).getInventory().getVolumeSnapshotRefs();
             volumeSnapshotRefs.forEach(it -> {
+                if (it.isSnapshotDeleted()) {
+                    return;
+                }
                 res.add(new APIAuditor.Result(it.getVolumeSnapshotUuid(), VolumeSnapshotVO.class));
             });
         }
