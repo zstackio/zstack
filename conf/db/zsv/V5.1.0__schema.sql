@@ -298,6 +298,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PlatformServiceInstanceVO` (
     `vmInstanceUuid` char(32) DEFAULT NULL,
     `state` varchar(32) NOT NULL,
     `healthStatus` varchar(32) NOT NULL,
+    `version` varchar(255) DEFAULT NULL,
     `activeApiId` varchar(255) DEFAULT NULL,
     `lastError` varchar(4096) DEFAULT NULL,
     `lastHealthCheckTime` timestamp NULL DEFAULT NULL,

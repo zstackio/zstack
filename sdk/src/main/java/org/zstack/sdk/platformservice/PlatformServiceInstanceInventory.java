@@ -68,6 +68,14 @@ public class PlatformServiceInstanceInventory  {
         return this.healthStatus;
     }
 
+    public java.lang.String version;
+    public void setVersion(java.lang.String version) {
+        this.version = version;
+    }
+    public java.lang.String getVersion() {
+        return this.version;
+    }
+
     public java.lang.String operationState;
     public void setOperationState(java.lang.String operationState) {
         this.operationState = operationState;
