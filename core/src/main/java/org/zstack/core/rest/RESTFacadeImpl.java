@@ -63,6 +63,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -194,7 +195,8 @@ public class RESTFacadeImpl implements RESTFacade {
 
         port = Platform.getManagementNodeServicePort();
 
-        IptablesUtils.insertRuleToFilterTable(String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port));
+        installRestPortFirewallRules(port, Platform.getManagementServerIp6() != null,
+                IptablesUtils::insertRuleToFilterTable, IptablesUtils::insertRuleToFilterTableV6);
 
         if ("AUTO".equals(hostname)) {
             callbackHostName = Platform.getManagementServerIp();
@@ -222,6 +224,16 @@ public class RESTFacadeImpl implements RESTFacade {
             url = String.format("%s/%s", url, path);
         }
         return UriComponentsBuilder.fromHttpUrl(url).build().toUriString();
+    }
+
+    static void installRestPortFirewallRules(int port, boolean ipv6Enabled,
+                                             Consumer<String> ipv4RuleInstaller,
+                                             Consumer<String> ipv6RuleInstaller) {
+        String rule = String.format("-A INPUT -p tcp -m state --state NEW -m tcp --dport %s -j ACCEPT", port);
+        ipv4RuleInstaller.accept(rule);
+        if (ipv6Enabled) {
+            ipv6RuleInstaller.accept(rule);
+        }
     }
 
     public static String buildCallbackUrl(String hostName, int port, String path) {
@@ -1070,6 +1082,11 @@ public class RESTFacadeImpl implements RESTFacade {
     @Override
     public String getSendCommandUrl() {
         return sendCommandUrl;
+    }
+
+    @Override
+    public String buildSendCommandUrl(String hostName) {
+        return buildSendCommandUrl(hostName, port, path);
     }
 
     @Override

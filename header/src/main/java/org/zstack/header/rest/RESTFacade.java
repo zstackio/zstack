@@ -89,6 +89,8 @@ public interface RESTFacade {
 
     String getSendCommandUrl();
 
+    String buildSendCommandUrl(String hostName);
+
     String getCallbackUrl();
 
     /**
