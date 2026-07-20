@@ -21,6 +21,6 @@ public class VolumeSnapshotGlobalConfig {
     public static GlobalConfig SNAPSHOT_BEFORE_REVERTVOLUME = new GlobalConfig(CATEGORY, "snapshot.before.revertvolume");
 
     @GlobalConfigValidation(validValues = {"true", "false"})
-    @GlobalConfigDef(defaultValue = "false", type = Boolean.class, description = "effective count with detached volumes")
+    @GlobalConfigDef(defaultValue = "true", type = Boolean.class, description = "effective count with detached volumes")
     public static GlobalConfig EFFECTIVE_COUNT_WITH_DETACHED_VOLUMES = new GlobalConfig(CATEGORY, "effectiveCount.withDetachedVolumes");
 }

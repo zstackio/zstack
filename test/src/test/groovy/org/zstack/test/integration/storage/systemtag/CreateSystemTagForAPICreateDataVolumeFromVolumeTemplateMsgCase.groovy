@@ -191,11 +191,5 @@ class CreateSystemTagForAPICreateDataVolumeFromVolumeTemplateMsgCase extends Sub
         expungeDataVolume {
             uuid = dataVolume.uuid
         }
-
-        VolumeSnapshotInventory snapshotInventory = queryVolumeSnapshot {
-        }[0]
-        deleteVolumeSnapshot {
-            uuid = snapshotInventory.uuid
-        }
     }
 }

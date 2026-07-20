@@ -10,7 +10,6 @@
         <artifactId>zstack</artifactId>
         <groupId>org.zstack</groupId>
         <version>5.0.0</version>
-        <relativePath>..</relativePath>
     </parent>
     <artifactId>test</artifactId>
 
