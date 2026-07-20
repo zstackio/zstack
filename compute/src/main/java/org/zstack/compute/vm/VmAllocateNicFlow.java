@@ -165,8 +165,7 @@ public class VmAllocateNicFlow implements Flow {
                 protected String scripts() {
                     VmNicVO nicVO = vnicFactory.createVmNic(nic, spec);
                     if (!nw.enableIpAllocation() && nicNetworkInfoMap != null
-                            && nicNetworkInfoMap.containsKey(nw.getUuid())
-                            && spec.getVmInventory().getType().equals(VmInstanceConstant.USER_VM_TYPE)) {
+                            && nicNetworkInfoMap.containsKey(nw.getUuid())) {
                         NicIpAddressInfo nicIpAddressInfo = nicNetworkInfoMap.get(nic.getL3NetworkUuid());
                         if (!StringUtils.isEmpty(nicIpAddressInfo.ipv6Address)) {
                             UsedIpVO vo = new UsedIpVO();

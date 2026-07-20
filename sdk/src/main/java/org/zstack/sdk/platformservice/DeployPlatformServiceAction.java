@@ -47,6 +47,12 @@ public class DeployPlatformServiceAction extends AbstractAction {
     public java.lang.String staticIp;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String netmask;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gateway;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clusterUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -57,6 +63,9 @@ public class DeployPlatformServiceAction extends AbstractAction {
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String allocatorStrategy;
+
+    @Param(required = false, validValues = {"zh_CN","en_US"}, maxLength = 5, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String language;
 
     @Param(required = false)
     public java.util.List systemTags;
