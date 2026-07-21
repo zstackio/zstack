@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayOfferingVO` (
     `uuid` varchar(32) NOT NULL,
     `name` varchar(255) NOT NULL,
     `description` varchar(2048) DEFAULT NULL,
-    `imageUuid` varchar(32) NOT NULL,
+    `imageUuid` varchar(32) DEFAULT NULL,
     `instanceOfferingUuid` varchar(32) NOT NULL,
     `managementNetworkUuid` varchar(32) NOT NULL,
     `businessNetworkUuid` varchar(32) NOT NULL,
@@ -181,6 +181,99 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayOfferingVO` (
     CONSTRAINT `fkAIBusinessGatewayOfferingVOBusinessL3` FOREIGN KEY (`businessNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT,
     CONSTRAINT `fkAIBusinessGatewayOfferingVODeveloperL3` FOREIGN KEY (`developerAccessNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`AIBusinessGatewayOfferingVO`
+    MODIFY COLUMN `imageUuid` varchar(32) DEFAULT NULL;
+
+SET @ai_gateway_instance_offering_uuid = MD5('zstack-ai-business-gateway-instance-offering');
+SET @admin_account_uuid = '36c27e8ff05c4780bf6d2fa65700f22e';
+
+INSERT IGNORE INTO `zstack`.`ResourceVO`
+    (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`)
+SELECT @ai_gateway_instance_offering_uuid,
+       'AI 网关计算规格',
+       'InstanceOfferingVO',
+       'org.zstack.header.configuration.InstanceOfferingVO'
+FROM `zstack`.`ModelCenterVO`
+WHERE `serviceNetworkUuid` IS NOT NULL
+LIMIT 1;
+
+INSERT IGNORE INTO `zstack`.`InstanceOfferingEO`
+    (`uuid`, `name`, `description`, `cpuNum`, `cpuSpeed`, `memorySize`, `reservedMemorySize`,
+     `allocatorStrategy`, `sortKey`, `state`, `type`, `duration`, `createDate`, `lastOpDate`, `deleted`)
+SELECT @ai_gateway_instance_offering_uuid,
+       'AI 网关计算规格',
+       '由 5.5.28.1 升级生成，供 AI 网关云主机使用',
+       1,
+       0,
+       1073741824,
+       0,
+       'LeastVmPreferredHostAllocatorStrategy',
+       0,
+       'Enabled',
+       'UserVm',
+       'Permanent',
+       CURRENT_TIMESTAMP(),
+       CURRENT_TIMESTAMP(),
+       NULL
+FROM `zstack`.`ModelCenterVO`
+WHERE `serviceNetworkUuid` IS NOT NULL
+LIMIT 1;
+
+INSERT INTO `zstack`.`AccountResourceRefVO`
+    (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `concreteResourceType`,
+     `permission`, `isShared`, `createDate`, `lastOpDate`)
+SELECT @admin_account_uuid,
+       @admin_account_uuid,
+       @ai_gateway_instance_offering_uuid,
+       'InstanceOfferingVO',
+       'org.zstack.header.configuration.InstanceOfferingVO',
+       2,
+       0,
+       CURRENT_TIMESTAMP(),
+       CURRENT_TIMESTAMP()
+FROM `zstack`.`InstanceOfferingEO`
+WHERE `uuid` = @ai_gateway_instance_offering_uuid
+  AND NOT EXISTS (
+      SELECT 1
+      FROM `zstack`.`AccountResourceRefVO`
+      WHERE `resourceUuid` = @ai_gateway_instance_offering_uuid
+  );
+
+INSERT IGNORE INTO `zstack`.`ResourceVO`
+    (`uuid`, `resourceName`, `resourceType`, `concreteResourceType`)
+SELECT MD5(CONCAT('zstack-ai-business-gateway-offering-', `mc`.`serviceNetworkUuid`)),
+       LEFT(CONCAT('AI 网关规格-', COALESCE(NULLIF(MIN(`mc`.`name`), ''), LEFT(`mc`.`serviceNetworkUuid`, 8))), 255),
+       'AIBusinessGatewayOfferingVO',
+       'org.zstack.ai.entity.AIBusinessGatewayOfferingVO'
+FROM `zstack`.`ModelCenterVO` `mc`
+JOIN `zstack`.`L3NetworkEO` `l3` ON `l3`.`uuid` = `mc`.`serviceNetworkUuid`
+LEFT JOIN `zstack`.`AIBusinessGatewayOfferingVO` `offering`
+       ON `offering`.`managementNetworkUuid` = `mc`.`serviceNetworkUuid`
+WHERE `offering`.`uuid` IS NULL
+GROUP BY `mc`.`serviceNetworkUuid`;
+
+INSERT IGNORE INTO `zstack`.`AIBusinessGatewayOfferingVO`
+    (`uuid`, `name`, `description`, `imageUuid`, `instanceOfferingUuid`, `managementNetworkUuid`,
+     `businessNetworkUuid`, `developerAccessNetworkUuid`, `agentPort`, `listenerPort`, `createDate`, `lastOpDate`)
+SELECT MD5(CONCAT('zstack-ai-business-gateway-offering-', `mc`.`serviceNetworkUuid`)),
+       LEFT(CONCAT('AI 网关规格-', COALESCE(NULLIF(MIN(`mc`.`name`), ''), LEFT(`mc`.`serviceNetworkUuid`, 8))), 255),
+       '由 5.5.28.1 升级从 Model Center 网络配置生成，请关联 AI 网关镜像后使用',
+       NULL,
+       @ai_gateway_instance_offering_uuid,
+       `mc`.`serviceNetworkUuid`,
+       `mc`.`serviceNetworkUuid`,
+       `mc`.`serviceNetworkUuid`,
+       7777,
+       80,
+       CURRENT_TIMESTAMP(),
+       CURRENT_TIMESTAMP()
+FROM `zstack`.`ModelCenterVO` `mc`
+JOIN `zstack`.`L3NetworkEO` `l3` ON `l3`.`uuid` = `mc`.`serviceNetworkUuid`
+LEFT JOIN `zstack`.`AIBusinessGatewayOfferingVO` `offering`
+       ON `offering`.`managementNetworkUuid` = `mc`.`serviceNetworkUuid`
+WHERE `offering`.`uuid` IS NULL
+GROUP BY `mc`.`serviceNetworkUuid`;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayVO` (
     `uuid` varchar(32) NOT NULL,
@@ -233,7 +326,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterBusinessNetworkProfileVO` (
     `containerNetwork` varchar(255) DEFAULT NULL,
     `containerDeveloperAccessNetwork` varchar(255) DEFAULT NULL,
     `containerStorageNetwork` varchar(255) DEFAULT NULL,
-    `businessGatewayUuid` varchar(32) NOT NULL,
+    `businessGatewayUuid` varchar(32) DEFAULT NULL,
     `developerAccessGatewayUuid` varchar(32) DEFAULT NULL,
     `defaultProfile` tinyint(1) NOT NULL DEFAULT 0,
     `status` varchar(32) NOT NULL DEFAULT 'Enabled',
@@ -254,6 +347,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterBusinessNetworkProfileVO` (
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVOBusinessGateway` FOREIGN KEY (`businessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE CASCADE,
     CONSTRAINT `fkModelCenterBusinessNetworkProfileVODeveloperGateway` FOREIGN KEY (`developerAccessGatewayUuid`) REFERENCES `zstack`.`AIBusinessGatewayVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `zstack`.`ModelCenterBusinessNetworkProfileVO`
+    MODIFY COLUMN `businessGatewayUuid` varchar(32) DEFAULT NULL;
 
 CALL ADD_COLUMN('ModelServiceInstanceGroupVO', 'businessNetworkProfileUuid', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('ModelServiceInstanceGroupVO', 'businessGatewayUuid', 'VARCHAR(32)', 1, NULL);
