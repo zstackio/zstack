@@ -67,6 +67,12 @@ public class DeployPlatformServiceAction extends AbstractAction {
     @Param(required = false, validValues = {"zh_CN","en_US"}, maxLength = 5, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String language;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mnUsername;
+
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mnPassword;
+
     @Param(required = false)
     public java.util.List systemTags;
 
