@@ -758,7 +758,7 @@
     "zh_CN": "存在多个同名[{0}]的事件族，必须指定标签[{1}]",
     "arguments": [
       "name.getValue()",
-      "InfluxEventDataV2.FIELD_NAMESPACE"
+      "ZWatchConstants.LABEL_NAMESPACE"
     ],
     "fileName": "src/main/java/org/zstack/zwatch/migratedb/MigrateDBEventDatabaseDriver.java"
   },
