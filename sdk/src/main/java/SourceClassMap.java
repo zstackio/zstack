@@ -591,9 +591,6 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.datatype.Label", "org.zstack.sdk.zwatch.datatype.Label");
 			put("org.zstack.zwatch.datatype.Label$Operator", "org.zstack.sdk.zwatch.datatype.Operator");
 			put("org.zstack.zwatch.datatype.MetricDatum", "org.zstack.sdk.zwatch.datatype.MetricDatum");
-			put("org.zstack.zwatch.influxdb.InfluxEventData", "org.zstack.sdk.zwatch.influxdb.InfluxEventData");
-			put("org.zstack.zwatch.influxdb.InfluxEventDataV1", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1");
-			put("org.zstack.zwatch.influxdb.InfluxEventDataV2", "org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2");
 			put("org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.zwatch.metricpusher.ReceiverState", "org.zstack.sdk.zwatch.metricpusher.ReceiverState");
@@ -1205,9 +1202,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.datatype.Label", "org.zstack.zwatch.datatype.Label");
 			put("org.zstack.sdk.zwatch.datatype.MetricDatum", "org.zstack.zwatch.datatype.MetricDatum");
 			put("org.zstack.sdk.zwatch.datatype.Operator", "org.zstack.zwatch.datatype.Label$Operator");
-			put("org.zstack.sdk.zwatch.influxdb.InfluxEventData", "org.zstack.zwatch.influxdb.InfluxEventData");
-			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV1", "org.zstack.zwatch.influxdb.InfluxEventDataV1");
-			put("org.zstack.sdk.zwatch.influxdb.InfluxEventDataV2", "org.zstack.zwatch.influxdb.InfluxEventDataV2");
 			put("org.zstack.sdk.zwatch.metricpusher.MetricDataHttpReceiverInventory", "org.zstack.zwatch.metricpusher.MetricDataHttpReceiverInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.MetricTemplateInventory", "org.zstack.zwatch.metricpusher.MetricTemplateInventory");
 			put("org.zstack.sdk.zwatch.metricpusher.ReceiverState", "org.zstack.zwatch.metricpusher.ReceiverState");
