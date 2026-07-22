@@ -112,6 +112,7 @@ public enum VmInstanceState {
         VolumeRecovering.transactions(
                 new Transaction(VmInstanceStateEvent.starting, VmInstanceState.VolumeRecovering),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.VolumeRecovering),
+                new Transaction(VmInstanceStateEvent.paused, VmInstanceState.VolumeRecovering),
                 new Transaction(VmInstanceStateEvent.volumeRecovering, VmInstanceState.VolumeRecovering),
                 new Transaction(VmInstanceStateEvent.volumeRecovered, VmInstanceState.Running),
                 new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
@@ -132,6 +133,7 @@ public enum VmInstanceState {
                 new Transaction(VmInstanceStateEvent.resuming, VmInstanceState.Resuming),
                 new Transaction(VmInstanceStateEvent.stopped, VmInstanceState.Stopped),
                 new Transaction(VmInstanceStateEvent.running, VmInstanceState.Running),
+                new Transaction(VmInstanceStateEvent.volumeRecovering, VmInstanceState.VolumeRecovering),
                 new Transaction(VmInstanceStateEvent.stopping, VmInstanceState.Stopping),
                 new Transaction(VmInstanceStateEvent.destroying, VmInstanceState.Destroying),
                 new Transaction(VmInstanceStateEvent.noState, VmInstanceState.NoState),
