@@ -596,6 +596,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             imsg = new InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg();
                             ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(msg.getOriginVolumeUuid());
                             ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg).setTemplateSpec(msg.getTemplateSpec());
+                            ((InstantiateTemporaryRootVolumeFromTemplateOnPrimaryStorageMsg)imsg)
+                                    .setEncryptedVolumeBackupRestore(msg.isEncryptedVolumeBackupRestore());
                         } else {
                             imsg = new InstantiateTemporaryVolumeOnPrimaryStorageMsg();
                             ((InstantiateTemporaryVolumeOnPrimaryStorageMsg)imsg).setOriginVolumeUuid(msg.getOriginVolumeUuid());
@@ -609,6 +611,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg imsg = new InstantiateRootVolumeFromTemplateOnPrimaryStorageMsg();
                         prepareMsg(msg, imsg);
                         imsg.setTemplateSpec(msg.getTemplateSpec());
+                        imsg.setEncryptedVolumeBackupRestore(msg.isEncryptedVolumeBackupRestore());
                         doInstantiateVolume(imsg, trigger);
                     }
 
