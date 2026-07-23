@@ -9,13 +9,13 @@ import org.zstack.header.core.encrypt.GlobalConfigEncrypt;
 public class IdentityGlobalConfig {
     public static final String CATEGORY = "identity";
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig MAX_CONCURRENT_SESSION = new GlobalConfig(CATEGORY, "session.maxConcurrent");
 
     @GlobalConfigEncrypt(category = CATEGORY, name = "session.timeout")
-    @GlobalConfigValidation(numberGreaterThan = 0,numberLessThan = 31536000)
+    @GlobalConfigValidation(min = 0, max = 31536000)
     public static GlobalConfig SESSION_TIMEOUT = new GlobalConfig(CATEGORY, "session.timeout");
-    @GlobalConfigValidation(numberGreaterThan = 1)
+    @GlobalConfigValidation(min = 1)
     public static GlobalConfig SESSION_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "session.cleanup.interval");
     @GlobalConfigValidation
     public static GlobalConfig SHOW_ALL_RESOURCE_TO_ADMIN = new GlobalConfig(CATEGORY, "admin.showAllResource");

@@ -12,6 +12,6 @@ public class GlobalConfigForTest {
 
     public static GlobalConfig TEST_GlobalConfig1_String = new GlobalConfig(CATEGORY, "TestString");
     public static GlobalConfig TEST_GlobalConfig2_Boolean = new GlobalConfig(CATEGORY, "TestBoolean");
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 100)
+    @GlobalConfigValidation(min = 0, max = 100)
     public static GlobalConfig TEST_GLOBALCONFIG_BORDER = new GlobalConfig(CATEGORY, "TestBorder");
 }

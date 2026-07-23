@@ -11,6 +11,6 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class VolumeSnapshotQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig VOLUME_SNAPSHOT_NUM = new GlobalConfig(CATEGORY, VolumeSnapshotQuotaConstant.VOLUME_SNAPSHOT_NUM);
 }

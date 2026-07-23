@@ -11,6 +11,6 @@ import org.zstack.identity.QuotaGlobalConfig;
 @GlobalConfigDefinition
 public class EipQuotaGlobalConfig extends QuotaGlobalConfig {
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig EIP_NUM = new GlobalConfig(CATEGORY, EipQuotaConstant.EIP_NUM);
 }

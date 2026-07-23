@@ -10,8 +10,8 @@ import org.zstack.core.config.GlobalConfigValidation;
 public class ManagementNodeGlobalConfig {
     public static final String CATEGORY = "managementServer";
 
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig NODE_HEARTBEAT_INTERVAL = new GlobalConfig(CATEGORY, "node.heartbeatInterval");
-    @GlobalConfigValidation(numberGreaterThan = -1)
+    @GlobalConfigValidation(min = -1)
     public static GlobalConfig NODE_JOIN_DELAY = new GlobalConfig(CATEGORY, "node.joinDelay");
 }

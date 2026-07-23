@@ -13,9 +13,9 @@ public class CloudBusGlobalConfig {
 
     @GlobalConfigValidation
     public static GlobalConfig STATISTICS_ON = new GlobalConfig(CATEGORY, "statistics.on");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig MAX_MANAGEMENTNODE_NOTFOUND_ERROR_HANDLER_NUM = new GlobalConfig(CATEGORY, "managementNodeNotFoundHandler.maxNum");
-    @GlobalConfigValidation(numberGreaterThan = 0)
+    @GlobalConfigValidation(min = 0)
     public static GlobalConfig MAX_MANAGEMENTNODE_NOTFOUND_ERROR_HANDLER_TIMEOUT = new GlobalConfig(CATEGORY, "managementNodeNotFoundHandler.timeoutInSecs");
 
     /**
