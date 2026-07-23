@@ -10,6 +10,7 @@ import org.zstack.header.host.HostNUMANode;
 import org.zstack.header.host.Sensor;
 import org.zstack.header.host.VmNicRedirectConfig;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.CancelTaskResult;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.additions.VmHostFileBackupJob;
 import org.zstack.header.vm.devices.DeviceAddress;
@@ -4671,6 +4672,7 @@ public class KVMAgentCommands {
 
     public static class CancelCmd extends AgentCommand implements CancelCommand {
         private String cancellationApiId;
+        private boolean allowTaskNotFound;
         private Integer times;
         private Integer interval;
 
@@ -4694,9 +4696,26 @@ public class KVMAgentCommands {
         public void setCancellationApiId(String cancellationApiId) {
             this.cancellationApiId = cancellationApiId;
         }
+
+        public boolean isAllowTaskNotFound() {
+            return allowTaskNotFound;
+        }
+
+        public void setAllowTaskNotFound(boolean allowTaskNotFound) {
+            this.allowTaskNotFound = allowTaskNotFound;
+        }
     }
 
     public static class CancelRsp extends AgentResponse {
+        private CancelTaskResult cancelResult;
+
+        public CancelTaskResult getCancelResult() {
+            return cancelResult == null ? CancelTaskResult.CANCEL_SIGNALLED : cancelResult;
+        }
+
+        public void setCancelResult(CancelTaskResult cancelResult) {
+            this.cancelResult = cancelResult;
+        }
     }
 
     public static class TransmitVmOperationToMnCmd {

@@ -47,6 +47,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.utils.CollectionDSL.*;
@@ -542,17 +543,24 @@ public class ImageBase implements Image {
         List<String> bsUuids = amsg.getBackupStorageUuids();
         ImageInventory img = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
         ErrorCodeList err = new ErrorCodeList();
+        AtomicBoolean allTasksNotFound = new AtomicBoolean(true);
         new While<>(bsUuids).all((bsUuid, compl) -> {
             CancelDownloadImageMsg cmsg = new CancelDownloadImageMsg();
             cmsg.setImageInventory(img);
             cmsg.setBackupStorageUuid(bsUuid);
             cmsg.setCancellationApiId(msg.getCancellationApiId());
+            cmsg.setAllowTaskNotFound(msg.isAllowTaskNotFound());
             bus.makeTargetServiceIdByResourceUuid(cmsg, BackupStorageConstant.SERVICE_ID, bsUuid);
             bus.send(cmsg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply r) {
                     if (!r.isSuccess()) {
                         err.getCauses().add(r.getError());
+                    } else {
+                        CancelDownloadImageReply cr = r.castReply();
+                        if (cr.getCancelResult() != CancelTaskResult.TASK_NOT_FOUND) {
+                            allTasksNotFound.set(false);
+                        }
                     }
                     compl.done();
                 }
@@ -562,6 +570,10 @@ public class ImageBase implements Image {
             public void done(ErrorCodeList errorCodeList) {
                 if (!err.getCauses().isEmpty()) {
                     reply.setError(err.getCauses().get(0));
+                } else {
+                    reply.setCancelResult(msg.isAllowTaskNotFound() && allTasksNotFound.get()
+                            ? CancelTaskResult.TASK_NOT_FOUND
+                            : CancelTaskResult.CANCEL_SIGNALLED);
                 }
                 bus.reply(msg, reply);
             }

@@ -33,6 +33,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.image.*;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.message.CancelTaskResult;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -657,10 +658,31 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
     public static class CancelCommand extends AgentCommand implements org.zstack.header.agent.CancelCommand {
         private String cancellationApiId;
+        private boolean allowTaskNotFound;
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
             this.cancellationApiId = cancellationApiId;
+        }
+
+        public boolean isAllowTaskNotFound() {
+            return allowTaskNotFound;
+        }
+
+        public void setAllowTaskNotFound(boolean allowTaskNotFound) {
+            this.allowTaskNotFound = allowTaskNotFound;
+        }
+    }
+
+    public static class CancelResponse extends AgentResponse {
+        private CancelTaskResult cancelResult;
+
+        public CancelTaskResult getCancelResult() {
+            return cancelResult == null ? CancelTaskResult.CANCEL_SIGNALLED : cancelResult;
+        }
+
+        public void setCancelResult(CancelTaskResult cancelResult) {
+            this.cancelResult = cancelResult;
         }
     }
 
@@ -1201,8 +1223,9 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         CancelCommand cmd = new CancelCommand();
         cmd.setCancellationApiId(msg.getCancellationApiId());
+        cmd.setAllowTaskNotFound(msg.isAllowTaskNotFound());
 
-        new HttpCaller<>(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+        new HttpCaller<>(AgentConstant.CANCEL_JOB, cmd, CancelResponse.class, new ReturnValueCompletion<CancelResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -1210,7 +1233,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             }
 
             @Override
-            public void success(AgentResponse rsp) {
+            public void success(CancelResponse rsp) {
+                reply.setCancelResult(rsp.getCancelResult());
                 bus.reply(msg, reply);
             }
         }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
@@ -2482,9 +2506,10 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         CancelCommand cmd = new CancelCommand();
         cmd.setCancellationApiId(msg.getCancellationApiId());
+        cmd.setAllowTaskNotFound(msg.isAllowTaskNotFound());
 
         CephBackupStorageMonBase monBase = new CephBackupStorageMonBase(mon);
-        monBase.httpCall(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
+        monBase.httpCall(AgentConstant.CANCEL_JOB, cmd, CancelResponse.class, new ReturnValueCompletion<CancelResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -2492,7 +2517,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             }
 
             @Override
-            public void success(AgentResponse rsp) {
+            public void success(CancelResponse rsp) {
+                reply.setCancelResult(rsp.getCancelResult());
                 bus.reply(msg, reply);
             }
         });

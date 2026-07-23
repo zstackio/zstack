@@ -2,6 +2,7 @@ package org.zstack.storage.backup.sftp;
 
 import org.zstack.header.HasThreadContext;
 import org.zstack.header.log.NoLogging;
+import org.zstack.header.message.CancelTaskResult;
 
 import java.io.Serializable;
 
@@ -401,10 +402,31 @@ public class SftpBackupStorageCommands {
 
     public static class CancelCommand extends AgentCommand implements org.zstack.header.agent.CancelCommand {
         private String cancellationApiId;
+        private boolean allowTaskNotFound;
 
         @Override
         public void setCancellationApiId(String cancellationApiId) {
             this.cancellationApiId = cancellationApiId;
+        }
+
+        public boolean isAllowTaskNotFound() {
+            return allowTaskNotFound;
+        }
+
+        public void setAllowTaskNotFound(boolean allowTaskNotFound) {
+            this.allowTaskNotFound = allowTaskNotFound;
+        }
+    }
+
+    public static class CancelResponse extends AgentResponse {
+        private CancelTaskResult cancelResult;
+
+        public CancelTaskResult getCancelResult() {
+            return cancelResult == null ? CancelTaskResult.CANCEL_SIGNALLED : cancelResult;
+        }
+
+        public void setCancelResult(CancelTaskResult cancelResult) {
+            this.cancelResult = cancelResult;
         }
     }
 }

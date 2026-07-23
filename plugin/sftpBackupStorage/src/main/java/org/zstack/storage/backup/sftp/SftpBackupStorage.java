@@ -223,8 +223,9 @@ public class SftpBackupStorage extends BackupStorageBase {
 
         CancelCommand cmd = new CancelCommand();
         cmd.setCancellationApiId(msg.getCancellationApiId());
+        cmd.setAllowTaskNotFound(msg.isAllowTaskNotFound());
 
-        restf.asyncJsonPost(buildUrl(AgentConstant.CANCEL_JOB), cmd, new JsonAsyncRESTCallback<AgentResponse>(msg) {
+        restf.asyncJsonPost(buildUrl(AgentConstant.CANCEL_JOB), cmd, new JsonAsyncRESTCallback<CancelResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
                 reply.setError(err);
@@ -232,16 +233,18 @@ public class SftpBackupStorage extends BackupStorageBase {
             }
 
             @Override
-            public void success(AgentResponse rsp) {
+            public void success(CancelResponse rsp) {
                 if (!rsp.isSuccess()) {
                     reply.setError(operr("fail to cancel download image, because %s", rsp.getError()));
+                } else {
+                    reply.setCancelResult(rsp.getCancelResult());
                 }
                 bus.reply(msg, reply);
             }
 
             @Override
-            public Class<AgentResponse> getReturnClass() {
-                return AgentResponse.class;
+            public Class<CancelResponse> getReturnClass() {
+                return CancelResponse.class;
             }
         });
     }
