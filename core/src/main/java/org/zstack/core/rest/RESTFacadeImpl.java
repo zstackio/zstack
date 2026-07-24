@@ -247,6 +247,10 @@ public class RESTFacadeImpl implements RESTFacade {
             return ErrorableValue.of(defaultCallbackUrl);
         }
 
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            return ErrorableValue.of(defaultCallbackUrl);
+        }
+
         String host = extractRequestHost(requestUrl);
         if (host == null) {
             return ErrorableValue.of(defaultCallbackUrl);
