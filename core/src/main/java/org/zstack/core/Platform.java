@@ -1052,6 +1052,9 @@ public class Platform {
     }
 
     public static ErrorableValue<String> getManagementServerIp(String targetIp) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !hasConfiguredManagementNodeIpProperty()) {
+            return ErrorableValue.of(getManagementServerIp());
+        }
         return getManagementNodeEndpointData().selectForTarget(ManagementEndpointData.EndpointType.NODE, targetIp);
     }
 
@@ -1071,6 +1074,9 @@ public class Platform {
     }
 
     public static ErrorableValue<String> getManagementServerVip(String targetIp) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !hasConfiguredManagementNodeIpProperty()) {
+            return ErrorableValue.of(getManagementServerIp());
+        }
         return getManagementEndpointData().selectForTarget(ManagementEndpointData.EndpointType.VIP, targetIp);
     }
 

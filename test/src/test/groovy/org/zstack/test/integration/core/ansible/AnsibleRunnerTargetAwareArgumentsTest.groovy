@@ -25,7 +25,7 @@ import java.lang.reflect.Field
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.atomic.AtomicInteger
 
-class AnsibleRunnerTargetAwareArgumentsCase {
+class AnsibleRunnerTargetAwareArgumentsTest {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
     private static final String IPV4_TARGET = "192.168.1.2"

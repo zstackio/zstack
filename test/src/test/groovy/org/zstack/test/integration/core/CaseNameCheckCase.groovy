@@ -30,6 +30,7 @@ class CaseNameCheckCase extends SubCase {
     void test() {
         checkTestSuiteName()
         checkTestCaseName()
+        checkJUnitTestName()
     }
 
     void checkTestSuiteName(){
@@ -61,6 +62,19 @@ class CaseNameCheckCase extends SubCase {
         }
 
         assert 0 == invalidNameList.size() : "invalid SubCase name, testsuite name must end with 'Case', ${invalidNameList}"
+    }
+
+    void checkJUnitTestName() {
+        List<String> invalidNameList = Platform.reflections.getMethodsAnnotatedWith(org.junit.Test.class)
+                .collect { it.declaringClass }
+               .findAll {
+                   Class testClass = it
+                   testClass.package != null && testClass.package.name.startsWith("org.zstack.test.integration.") &&
+                           !SubCase.isAssignableFrom(testClass) && testClass.name.endsWith("Case")
+               }
+                .collect { it.name }
+
+       assert invalidNameList.isEmpty() : "plain JUnit tests under integration must not end with 'Case', ${invalidNameList}"
     }
 
 }

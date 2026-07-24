@@ -5,7 +5,7 @@ import org.zstack.core.ManagementEndpointData
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.zsha2.ZSha2Info
 
-class ZSha2ManagementEndpointCase {
+class ZSha2ManagementEndpointTest {
     private static final String IPV4 = "192.168.1.10"
     private static final String IPV6 = "2001:db8::1"
     private static final String IPV4_TARGET = "192.168.1.20"

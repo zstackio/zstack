@@ -5,7 +5,7 @@ import org.zstack.core.ansible.SshYumRepoChecker
 
 import java.nio.file.Files
 
-class SshYumRepoCheckerEndpointRewriteCase {
+class SshYumRepoCheckerEndpointRewriteTest {
     private static final int REST_PORT = 8080
     private static final String REPO_FILES = "/etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo"
 
