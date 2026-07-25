@@ -27,4 +27,8 @@ public interface SdnController {
     default void removeHost(SdnControllerRemoveHostMsg msg, Completion completion) {completion.success();};
 
     default void changeHost(SdnControllerHostRefVO oldRef, SdnControllerHostRefVO newRef, Completion completion) {completion.success();};
+
+    default boolean supportsIpChange() { return false; }
+
+    default void changeIp(APIChangeSdnControllerMsg msg, Completion completion) { completion.success(); }
 }

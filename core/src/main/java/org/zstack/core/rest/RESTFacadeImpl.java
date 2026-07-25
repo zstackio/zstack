@@ -1084,6 +1084,11 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     @Override
+    public String buildBaseUrl(String hostName) {
+        return buildBaseUrl(hostName, port, path);
+    }
+
+    @Override
     public String getSendCommandUrl() {
         return sendCommandUrl;
     }
