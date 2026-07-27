@@ -2904,11 +2904,11 @@ public class KVMHost extends HostBase implements Host {
     }
 
     public static ErrorableValue<String> buildManagementNodeCallbackCheckCommand(String hostManagementIp, RESTFacade restf) {
-        ErrorableValue<String> callbackHost = Platform.getManagementServerIp(hostManagementIp);
-        if (!callbackHost.isSuccess()) {
-            return ErrorableValue.ofErrorCode(callbackHost.error);
+        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(hostManagementIp);
+        if (!endpoints.isSuccess()) {
+            return ErrorableValue.ofErrorCode(endpoints.error);
         }
-        return ErrorableValue.of(buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost.result)));
+        return ErrorableValue.of(buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(endpoints.result.get(0).getCallbackIp())));
     }
 
     private static String joinAgentPath(String rootPath, String path) {
@@ -5804,18 +5804,19 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                ShellUtils.run(String.format("arp -d %s || true", getSelf().getManagementIp()));
+                ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(getSelf().getManagementIp());
+                if (!endpoints.isSuccess()) {
+                    throw new OperationFailureException(endpoints.error);
+                }
+                Platform.RemoteEndpoint endpoint = endpoints.result.get(0);
+                ShellUtils.run(String.format("arp -d %s || true", endpoint.getConnectIp()));
                 SshShell sshShell = new SshShell();
-                sshShell.setHostname(getSelf().getManagementIp());
+                sshShell.setHostname(endpoint.getConnectIp());
                 sshShell.setUsername(getSelf().getUsername());
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                ErrorableValue<String> callbackHost = Platform.getManagementServerIp(getSelf().getManagementIp());
-                if (!callbackHost.isSuccess()) {
-                    throw new OperationFailureException(callbackHost.error);
-                }
-                final String cmd = buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(callbackHost.result));
+                final String cmd = buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(endpoint.getCallbackIp()));
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
@@ -5833,7 +5834,7 @@ public class KVMHost extends HostBase implements Host {
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10106, "the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), callbackHost.result,
+                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), endpoint.getCallbackIp(),
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
 
@@ -6069,11 +6070,14 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ErrorableValue<String> callbackIp = Platform.getManagementServerIp(getSelf().getManagementIp());
-                        if (!callbackIp.isSuccess()) {
-                            trigger.fail(callbackIp.error);
+                        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(getSelf().getManagementIp());
+                        if (!endpoints.isSuccess()) {
+                            trigger.fail(endpoints.error);
                             return;
                         }
+                        Platform.RemoteEndpoint endpoint = endpoints.result.get(0);
+                        String hostManagementIp = endpoint.getConnectIp();
+                        String callbackIp = endpoint.getCallbackIp();
 
                         String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                         String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
@@ -6081,7 +6085,7 @@ public class KVMHost extends HostBase implements Host {
                         checker.setUsername(getSelf().getUsername());
                         checker.setPassword(getSelf().getPassword());
                         checker.setSshPort(getSelf().getPort());
-                        checker.setTargetIp(getSelf().getManagementIp());
+                        checker.setTargetIp(hostManagementIp);
                         checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/kvm/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                         checker.addSrcDestPair(srcPath, destPath);
 
@@ -6089,31 +6093,31 @@ public class KVMHost extends HostBase implements Host {
                         dhcpChecker.setUsername(getSelf().getUsername());
                         dhcpChecker.setPassword(getSelf().getPassword());
                         dhcpChecker.setSshPort(getSelf().getPort());
-                        dhcpChecker.setTargetIp(getSelf().getManagementIp());
+                        dhcpChecker.setTargetIp(hostManagementIp);
                         dhcpChecker.setFilePath(KVMConstant.DHCP_BIN_FILE_PATH);
 
                         SshChronyConfigChecker chronyChecker = new SshChronyConfigChecker();
-                        chronyChecker.setTargetIp(getSelf().getManagementIp());
+                        chronyChecker.setTargetIp(hostManagementIp);
                         chronyChecker.setUsername(getSelf().getUsername());
                         chronyChecker.setPassword(getSelf().getPassword());
                         chronyChecker.setSshPort(getSelf().getPort());
 
                         SshYumRepoChecker repoChecker = new SshYumRepoChecker();
-                        repoChecker.setTargetIp(getSelf().getManagementIp());
+                        repoChecker.setTargetIp(hostManagementIp);
                         repoChecker.setUsername(getSelf().getUsername());
                         repoChecker.setPassword(getSelf().getPassword());
                         repoChecker.setSshPort(getSelf().getPort());
 
                         CallBackNetworkChecker callbackChecker = new CallBackNetworkChecker();
-                        callbackChecker.setTargetIp(getSelf().getManagementIp());
+                        callbackChecker.setTargetIp(hostManagementIp);
                         callbackChecker.setUsername(getSelf().getUsername());
                         callbackChecker.setPassword(getSelf().getPassword());
                         callbackChecker.setPort(getSelf().getPort());
-                        callbackChecker.setCallbackIp(callbackIp.result);
+                        callbackChecker.setCallbackIp(callbackIp);
                         callbackChecker.setCallBackPort(CloudBusGlobalProperty.HTTP_PORT);
 
                         KvmHostConfigChecker kvmHostConfigChecker = new KvmHostConfigChecker();
-                        kvmHostConfigChecker.setTargetIp(getSelf().getManagementIp());
+                        kvmHostConfigChecker.setTargetIp(hostManagementIp);
                         kvmHostConfigChecker.setUsername(getSelf().getUsername());
                         kvmHostConfigChecker.setPassword(getSelf().getPassword());
                         kvmHostConfigChecker.setSshPort(getSelf().getPort());
@@ -6129,11 +6133,11 @@ public class KVMHost extends HostBase implements Host {
 
                         if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {
                             CallBackNetworkChecker hostTcpConnectionCallbackChecker = new CallBackNetworkChecker();
-                            hostTcpConnectionCallbackChecker.setTargetIp(getSelf().getManagementIp());
+                            hostTcpConnectionCallbackChecker.setTargetIp(hostManagementIp);
                             hostTcpConnectionCallbackChecker.setUsername(getSelf().getUsername());
                             hostTcpConnectionCallbackChecker.setPassword(getSelf().getPassword());
                             hostTcpConnectionCallbackChecker.setPort(getSelf().getPort());
-                            hostTcpConnectionCallbackChecker.setCallbackIp(callbackIp.result);
+                            hostTcpConnectionCallbackChecker.setCallbackIp(callbackIp);
                             hostTcpConnectionCallbackChecker.setCallBackPort(KVMGlobalProperty.TCP_SERVER_PORT);
                             runner.installChecker(hostTcpConnectionCallbackChecker);
                         }
@@ -6145,8 +6149,8 @@ public class KVMHost extends HostBase implements Host {
                             }
                         }
                         runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
-                        runner.setTargetIp(getSelf().getManagementIp());
-                        runner.setManagementNodeIp(callbackIp.result);
+                        runner.setTargetIp(hostManagementIp);
+                        runner.setManagementNodeIp(callbackIp);
                         runner.setTargetUuid(getSelf().getUuid());
                         runner.setPlayBookName(KVMConstant.ANSIBLE_PLAYBOOK_NAME);
                         runner.setUsername(getSelf().getUsername());

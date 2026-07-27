@@ -243,11 +243,7 @@ public class RESTFacadeImpl implements RESTFacade {
     }
 
     public static ErrorableValue<String> selectCallbackUrl(String requestUrl, Map<String, String> headers, String defaultCallbackUrl, int port, String path) {
-        if (headers != null && headers.keySet().stream().anyMatch(RESTConstant.CALLBACK_URL::equalsIgnoreCase)) {
-            return ErrorableValue.of(defaultCallbackUrl);
-        }
-
-        if (CoreGlobalProperty.UNIT_TEST_ON) {
+        if (hasCallbackUrlHeader(headers) || CoreGlobalProperty.UNIT_TEST_ON) {
             return ErrorableValue.of(defaultCallbackUrl);
         }
 
@@ -256,15 +252,41 @@ public class RESTFacadeImpl implements RESTFacade {
             return ErrorableValue.of(defaultCallbackUrl);
         }
 
-        if (!NetworkUtils.isIpv4Address(host) && !IPv6NetworkUtils.isIpv6Address(host)) {
-            return ErrorableValue.of(defaultCallbackUrl);
+        ErrorableValue<Platform.RemoteEndpoint> endpoint = resolveRequestEndpoint(host);
+        if (!endpoint.isSuccess()) {
+            return ErrorableValue.ofErrorCode(endpoint.error);
         }
+        return ErrorableValue.of(buildCallbackUrl(endpoint.result.getCallbackIp(), port, path));
+    }
 
-        ErrorableValue<String> callbackIp = Platform.getManagementServerIp(host);
-        if (!callbackIp.isSuccess()) {
-            return ErrorableValue.ofErrorCode(callbackIp.error);
+    private static boolean hasCallbackUrlHeader(Map<String, String> headers) {
+        return headers != null && headers.keySet().stream().anyMatch(RESTConstant.CALLBACK_URL::equalsIgnoreCase);
+    }
+
+    private static ErrorableValue<Platform.RemoteEndpoint> resolveRequestEndpoint(String host) {
+        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(host);
+        if (!endpoints.isSuccess()) {
+            return ErrorableValue.ofErrorCode(endpoints.error);
         }
-        return ErrorableValue.of(buildCallbackUrl(callbackIp.result, port, path));
+        return ErrorableValue.of(endpoints.result.get(0));
+    }
+
+    private static boolean isHttpsHostname(String requestUrl, String host) {
+        try {
+            return "https".equalsIgnoreCase(new URI(requestUrl).getScheme()) && !NetworkUtils.isIpAddress(host);
+        } catch (URISyntaxException e) {
+            return false;
+        }
+    }
+
+    private static String replaceRequestHost(String requestUrl, String connectIp) {
+        try {
+            URI uri = new URI(requestUrl);
+            return new URI(uri.getScheme(), uri.getUserInfo(), connectIp, uri.getPort(),
+                    uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format("cannot replace request host in url[%s]", requestUrl), e);
+        }
     }
 
     private static String extractRequestHost(String requestUrl) {
@@ -434,11 +456,27 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout) {
-        ErrorableValue<String> selectedCallbackUrl = selectCallbackUrl(url, headers, callbackUrl, port, path);
-        if (!selectedCallbackUrl.isSuccess()) {
-            callback.fail(selectedCallbackUrl.error);
-            return;
+        String selectedCallbackUrl = callbackUrl;
+        String targetUrl = url;
+        if (!hasCallbackUrlHeader(headers) && !CoreGlobalProperty.UNIT_TEST_ON) {
+            String host = extractRequestHost(url);
+            if (host != null) {
+                if (isHttpsHostname(url, host)) {
+                    callback.fail(operr(ORG_ZSTACK_CORE_REST_10016,
+                            "cannot use hostname[%s] for asynchronous HTTPS request[%s] because its resolved address cannot be pinned without changing TLS server identity",
+                            host, url));
+                    return;
+                }
+                ErrorableValue<Platform.RemoteEndpoint> endpoint = resolveRequestEndpoint(host);
+                if (!endpoint.isSuccess()) {
+                    callback.fail(endpoint.error);
+                    return;
+                }
+                selectedCallbackUrl = buildCallbackUrl(endpoint.result.getCallbackIp(), port, path);
+                targetUrl = replaceRequestHost(url, endpoint.result.getConnectIp());
+            }
         }
+        final String actualTargetUrl = targetUrl;
 
         synchronized (interceptors) {
             for (BeforeAsyncJsonPostInterceptor ic : interceptors) {
@@ -469,7 +507,7 @@ public class RESTFacadeImpl implements RESTFacade {
         HttpHeaders requestHeaders = new HttpHeaders();
         requestHeaders.setContentLength(body.length());
         requestHeaders.set(RESTConstant.TASK_UUID, taskUuid);
-        requestHeaders.set(RESTConstant.CALLBACK_URL, selectedCallbackUrl.result);
+        requestHeaders.set(RESTConstant.CALLBACK_URL, selectedCallbackUrl);
         MediaType JSON = MediaType.parseMediaType("application/json; charset=utf-8");
         requestHeaders.setContentType(JSON);
         if (headers != null) {
@@ -667,7 +705,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 logger.trace(String.format("json %s [%s], %s", method.toString(), url, req));
             }
 
-            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(url, method, req, String.class);
+            ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(actualTargetUrl, method, req, String.class);
             f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
         } catch (RestClientException e) {
             logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));

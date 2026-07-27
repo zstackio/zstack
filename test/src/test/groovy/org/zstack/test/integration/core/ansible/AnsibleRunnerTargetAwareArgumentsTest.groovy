@@ -38,7 +38,7 @@ class AnsibleRunnerTargetAwareArgumentsTest {
         testTargetAwareEndpointArgumentsUseTheSelectedIpv4Node()
         testMissingFamilyFailsBeforeRunAnsibleDispatch()
         testMissingFamilyFailsBeforeChecker()
-        testHostnameKeepsConfiguredCallbackIp()
+        testHostnameUsesResolvedTargetAndMatchingCallbackIp()
     }
 
     void testTargetAwareEndpointArgumentsUseTheSelectedIpv6Node() {
@@ -149,13 +149,12 @@ class AnsibleRunnerTargetAwareArgumentsTest {
         }
     }
 
-    void testHostnameKeepsConfiguredCallbackIp() {
+    void testHostnameUsesResolvedTargetAndMatchingCallbackIp() {
         withManagementServerIpProperties([
                 "management.server.ip": IPV4,
         ]) {
             AtomicReference<Boolean> result = new AtomicReference<>()
             CallBackNetworkChecker checker = new CallBackNetworkChecker()
-            checker.callbackIp = "configured-callback-ip"
             AnsibleRunner runner = new AnsibleRunner()
             setField(runner, "restf", [
                     getBaseUrl : { String.format("http://127.0.0.1:%d", REST_PORT) },
@@ -172,7 +171,7 @@ class AnsibleRunnerTargetAwareArgumentsTest {
             try {
                 CoreGlobalProperty.UNIT_TEST_ON = true
                 runner.forceRun = true
-                runner.targetIp = "host.example.com"
+                runner.targetIp = "localhost"
                 runner.targetUuid = Platform.uuid
                 runner.playBookName = "kvm.yml"
                 runner.username = "root"
@@ -194,7 +193,7 @@ class AnsibleRunnerTargetAwareArgumentsTest {
             }
 
             assert result.get() == true
-            assert checker.callbackIp == "configured-callback-ip"
+            assert checker.callbackIp == IPV4
         }
     }
 

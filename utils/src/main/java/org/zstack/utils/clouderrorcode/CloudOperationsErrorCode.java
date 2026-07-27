@@ -2956,6 +2956,12 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CORE_PLATFORM_10002 = "ORG_ZSTACK_CORE_PLATFORM_10002";
 
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10003 = "ORG_ZSTACK_CORE_PLATFORM_10003";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10004 = "ORG_ZSTACK_CORE_PLATFORM_10004";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10005 = "ORG_ZSTACK_CORE_PLATFORM_10005";
+
     public static final String ORG_ZSTACK_SCHEDULER_10000 = "ORG_ZSTACK_SCHEDULER_10000";
 
     public static final String ORG_ZSTACK_SCHEDULER_10001 = "ORG_ZSTACK_SCHEDULER_10001";
@@ -10707,6 +10713,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CORE_REST_10015 = "ORG_ZSTACK_CORE_REST_10015";
 
+    public static final String ORG_ZSTACK_CORE_REST_10016 = "ORG_ZSTACK_CORE_REST_10016";
+
     public static final String ORG_ZSTACK_LICENSE_10000 = "ORG_ZSTACK_LICENSE_10000";
 
     public static final String ORG_ZSTACK_LICENSE_10001 = "ORG_ZSTACK_LICENSE_10001";
@@ -12252,6 +12260,7 @@ public class CloudOperationsErrorCode {
     // 10052 ZNS internal change-controller endpoint is not a literal IP address
     // 10053 ZNS change-controller has no computer manager UUID
     // 10054 ZNS change-controller cluster has no same-family endpoint
+    // 10055 ZNS endpoint cannot be resolved for an asynchronous request
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
@@ -12272,6 +12281,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10052 = "ORG_ZSTACK_NETWORK_ZNS_10052";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10053 = "ORG_ZSTACK_NETWORK_ZNS_10053";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10054 = "ORG_ZSTACK_NETWORK_ZNS_10054";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10055 = "ORG_ZSTACK_NETWORK_ZNS_10055";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
