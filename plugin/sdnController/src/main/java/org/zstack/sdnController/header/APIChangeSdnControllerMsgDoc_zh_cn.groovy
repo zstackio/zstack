@@ -75,6 +75,15 @@ doc {
 					optional true
 					since "5.3.28"
 				}
+				column {
+					name "ip"
+					enclosedIn "changeSdnController"
+					desc ""
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+				}
 			}
         }
 
