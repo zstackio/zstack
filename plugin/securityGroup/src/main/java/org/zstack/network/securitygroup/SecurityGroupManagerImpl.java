@@ -32,6 +32,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
@@ -217,7 +218,26 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         private List<String> hostUuids;
         private List<VmInstanceState> vmStates;
         private List<SecurityGroupState> sgStates;
+        private Set<String> inactiveSecurityGroupUuids = Collections.emptySet();
         private boolean isDelete = false;
+
+        private Set<String> collectInactiveSecurityGroupUuids(Collection<String> candidates) {
+            if (candidates == null || candidates.isEmpty()) {
+                return Collections.emptySet();
+            }
+
+            Set<String> uniqueCandidates = new HashSet<>(candidates);
+            Set<String> result = new HashSet<>();
+            for (SecurityGroupRuleFilterExtensionPoint ext :
+                    pluginRgty.getExtensionList(SecurityGroupRuleFilterExtensionPoint.class)) {
+                Set<String> inactive = ext.getInactiveSecurityGroupUuids(uniqueCandidates);
+                if (inactive != null) {
+                    result.addAll(inactive);
+                }
+            }
+            result.retainAll(uniqueCandidates);
+            return result;
+        }
 
         List<HostRuleTO> calculate() {
             if (sgStates == null) {
@@ -333,6 +353,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         private List<RuleTO> calculateRuleTOBySecurityGroup(String sgUuid, String l3Uuid, int ipVersion) {
             List<RuleTO> ret = new ArrayList<>();
+            if (inactiveSecurityGroupUuids.contains(sgUuid)) {
+                return ret;
+            }
+
             List<SecurityGroupRuleVO> rules = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, sgUuid)
                     .eq(SecurityGroupRuleVO_.ipVersion, ipVersion)
                     .eq(SecurityGroupRuleVO_.state, SecurityGroupRuleState.Enabled)
@@ -382,6 +406,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             VmNicSecurityGroupTo to = new VmNicSecurityGroupTo();
+            Set<String> securityGroupsToCheck = securityGroupUuids == null
+                    ? new HashSet<>()
+                    : new HashSet<>(securityGroupUuids);
             if (vmNicUuids != null && !vmNicUuids.isEmpty()) {
                 // calculate nic security group priority
                 List<Tuple> ts = SQL.New("select nic.uuid, nic.internalName, nic.mac" +
@@ -404,7 +431,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                         .param("vmNicUuids", vmNicUuids)
                         .param("sgStates", sgStates)
                         .list();
-                ;
+                securityGroupsToCheck.addAll(refs.stream()
+                        .map(ref -> ref.get(2, String.class))
+                        .collect(Collectors.toSet()));
 
                 for (Tuple t : ts) {
                     String nicUuid = t.get(0, String.class);
@@ -446,6 +475,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     to.getVmNics().add(nicTo);
                 }
             }
+            inactiveSecurityGroupUuids = collectInactiveSecurityGroupUuids(securityGroupsToCheck);
 
             // calculate security group rules
             if (securityGroupUuids != null && !securityGroupUuids.isEmpty()) {
@@ -463,19 +493,21 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     List<SecurityGroupRuleVO> rules = vo.getRules().stream()
                             .filter(r -> r.getState() == SecurityGroupRuleState.Enabled)
                             .collect(Collectors.toList());
-                    for (SecurityGroupRuleVO r : rules) {
-                        RuleTO rto = new RuleTO();
-                        rto.setIpVersion(r.getIpVersion());
-                        rto.setPriority(r.getPriority());
-                        rto.setRuleType(r.getType().toString());
-                        rto.setState(r.getState().toString());
-                        rto.setRemoteGroupUuid(r.getRemoteSecurityGroupUuid());
-                        rto.setProtocol(r.getProtocol().toString());
-                        rto.setSrcIpRange(r.getSrcIpRange());
-                        rto.setDstIpRange(r.getDstIpRange());
-                        rto.setDstPortRange(r.getDstPortRange());
-                        rto.setAction(r.getAction());
-                        group.getRules().add(rto);
+                    if (!inactiveSecurityGroupUuids.contains(uuid)) {
+                        for (SecurityGroupRuleVO r : rules) {
+                            RuleTO rto = new RuleTO();
+                            rto.setIpVersion(r.getIpVersion());
+                            rto.setPriority(r.getPriority());
+                            rto.setRuleType(r.getType().toString());
+                            rto.setState(r.getState().toString());
+                            rto.setRemoteGroupUuid(r.getRemoteSecurityGroupUuid());
+                            rto.setProtocol(r.getProtocol().toString());
+                            rto.setSrcIpRange(r.getSrcIpRange());
+                            rto.setDstIpRange(r.getDstIpRange());
+                            rto.setDstPortRange(r.getDstPortRange());
+                            rto.setAction(r.getAction());
+                            group.getRules().add(rto);
+                        }
                     }
 
                     to.getGroups().add(group);
@@ -525,6 +557,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     .param("vmNicUuids", vmNicUuids)
                     .param("sgStates", sgStates)
                     .list();
+            inactiveSecurityGroupUuids = collectInactiveSecurityGroupUuids(refs.stream()
+                    .map(ref -> ref.get(2, String.class))
+                    .collect(Collectors.toSet()));
 
             for (Tuple t : ts) {
                 String hostUuid = t.get(0, String.class);
@@ -627,9 +662,170 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((SecurityGroupDeletionMsg) msg);
         } else if (msg instanceof AddVmNicToSecurityGroupMsg) {
             handle((AddVmNicToSecurityGroupMsg) msg);
+        } else if (msg instanceof ChangeSecurityGroupScheduleMsg) {
+            handle((ChangeSecurityGroupScheduleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ChangeSecurityGroupScheduleMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                MessageReply reply = new MessageReply();
+                FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+                fchain.setName(String.format(
+                        "change-security-group-schedule-%s",
+                        msg.getSecurityGroupUuid()));
+                if (msg.getOperation() != ChangeSecurityGroupScheduleMsg.Operation.REFRESH) {
+                    fchain.then(new Flow() {
+                        String __name__ = "change-schedule-reference";
+                        private String oldScheduleUuid;
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            SecurityGroupVO current =
+                                    dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                            if (current == null) {
+                                trigger.fail(err(
+                                        ORG_ZSTACK_NETWORK_SECURITYGROUP_10126,
+                                        SysErrors.RESOURCE_NOT_FOUND,
+                                        "cannot find security group[uuid:%s]",
+                                        msg.getSecurityGroupUuid()));
+                                return;
+                            }
+                            oldScheduleUuid = current.getScheduleUuid();
+                            current.setScheduleUuid(msg.getScheduleUuid());
+                            dbf.update(current);
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            SecurityGroupVO current = dbf.findByUuid(
+                                    msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+                            if (current == null) {
+                                trigger.rollback();
+                                return;
+                            }
+                            current.setScheduleUuid(oldScheduleUuid);
+                            dbf.update(current);
+
+                            refreshSecurityGroupRules(msg.getSecurityGroupUuid(),
+                                    new Completion(trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.rollback();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            logger.warn(String.format(
+                                                    "failed to restore rules for security group[uuid:%s], %s",
+                                                    msg.getSecurityGroupUuid(), errorCode));
+                                            trigger.rollback();
+                                        }
+                                    });
+                        }
+                    });
+                }
+
+                fchain.then(new NoRollbackFlow() {
+                    String __name__ = "refresh-security-group-rules";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        refreshSecurityGroupRules(msg.getSecurityGroupUuid(),
+                                new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        trigger.next();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        if (msg.isIgnoreRefreshFailure()) {
+                                            logger.warn(String.format(
+                                                    "failed to refresh security group[uuid:%s] after deleting network security policy schedule, %s",
+                                                    msg.getSecurityGroupUuid(), errorCode));
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(errorCode);
+                                        }
+                                    }
+                                });
+                    }
+                }).done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(msg) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "change-security-group-schedule";
+            }
+        });
+    }
+
+    private void refreshSecurityGroupRules(String securityGroupUuid, Completion completion) {
+        if (!dbf.isExist(securityGroupUuid, SecurityGroupVO.class)) {
+            completion.success();
+            return;
+        }
+
+        SecurityGroupSdnBackend sdnBackend = getSdnBackend(securityGroupUuid);
+        if (sdnBackend != null) {
+            sdnRefreshSecurityGroup(sdnBackend, securityGroupUuid, completion);
+            return;
+        }
+
+        RuleCalculator cal = new RuleCalculator();
+        cal.securityGroupUuids = Collections.singletonList(securityGroupUuid);
+        applyScheduleRules(cal.calculate(), completion);
+    }
+
+    private void applyScheduleRules(Collection<HostRuleTO> hostRules, Completion completion) {
+        new While<>(hostRules).step((hostRule, whileCompletion) -> {
+            getHypervisorBackend(hostRule.getHypervisorType()).applyRules(
+                    hostRule, new Completion(whileCompletion) {
+                        @Override
+                        public void success() {
+                            whileCompletion.done();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.debug(String.format(
+                                    "failed to refresh security group rules on host[uuid:%s], " +
+                                            "because %s, will try it later",
+                                    hostRule.getHostUuid(), errorCode));
+                            createFailureHostTask(hostRule.getHostUuid());
+                            whileCompletion.done();
+                        }
+                    });
+        }, 10).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.success();
+            }
+        });
     }
 
     @Override
@@ -1991,7 +2187,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         });
     }
 
-    private void handle(APIChangeSecurityGroupStateMsg msg) {
+    private void doChangeSecurityGroupState(APIChangeSecurityGroupStateMsg msg,
+                                            NoErrorCompletion completion) {
         APIChangeSecurityGroupStateEvent evt = new APIChangeSecurityGroupStateEvent(msg.getId());
         SecurityGroupStateEvent sevt = SecurityGroupStateEvent.valueOf(msg.getStateEvent());
         SecurityGroupVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupVO.class);
@@ -2001,6 +2198,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         if (oldState == sgState) {
             evt.setInventory(SecurityGroupInventory.valueOf(vo));
             bus.publish(evt);
+            completion.done();
             return;
         }
 
@@ -2017,6 +2215,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             if (vmNicUuids.isEmpty()) {
                 evt.setInventory(SecurityGroupInventory.valueOf(finalVO));
                 bus.publish(evt);
+                completion.done();
                 return;
             }
 
@@ -2030,6 +2229,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 public void success() {
                     evt.setInventory(SecurityGroupInventory.valueOf(finalVO));
                     bus.publish(evt);
+                    completion.done();
                 }
 
                 @Override
@@ -2038,6 +2238,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                     dbf.persist(finalVO);
                     evt.setError(errorCode);
                     bus.publish(evt);
+                    completion.done();
                 }
             });
             return;
@@ -2063,6 +2264,31 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
         evt.setInventory(SecurityGroupInventory.valueOf(vo));
         bus.publish(evt);
+        completion.done();
+    }
+
+    private void handle(APIChangeSecurityGroupStateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doChangeSecurityGroupState(msg, new NoErrorCompletion(msg, chain) {
+                    @Override
+                    public void done() {
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("change-security-group-%s-state", msg.getUuid());
+            }
+        });
     }
 
     private void handle(APIAttachSecurityGroupToL3NetworkMsg msg) {

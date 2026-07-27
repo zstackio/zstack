@@ -15,6 +15,7 @@
         <module>sftpBackupStorage</module>
         <module>virtualRouterProvider</module>
         <module>securityGroup</module>
+        <module>networkSecurityPolicySchedule</module>
         <module>portForwarding</module>
         <module>applianceVm</module>
         <module>vip</module>

@@ -36,6 +36,9 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
     private String vSwitchType;
 
     @Column
+    private String scheduleUuid;
+
+    @Column
     private Timestamp createDate;
     
     @Column
@@ -147,5 +150,13 @@ public class SecurityGroupVO extends ResourceVO implements OwnedByAccount {
 
     public void setvSwitchType(String vSwitchType) {
         this.vSwitchType = vSwitchType;
+    }
+
+    public String getScheduleUuid() {
+        return scheduleUuid;
+    }
+
+    public void setScheduleUuid(String scheduleUuid) {
+        this.scheduleUuid = scheduleUuid;
     }
 }
