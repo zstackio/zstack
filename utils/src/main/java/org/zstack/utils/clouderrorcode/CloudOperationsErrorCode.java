@@ -12246,6 +12246,12 @@ public class CloudOperationsErrorCode {
     // 10046 ZNS DHCP 409 fallback GET returned empty
     // 10047 ZNS DHCP update has no Cloud-reserved DHCPv4 server IP
     // 10048 failed to allocate DHCPv4 server IP in ZNS DHCP backend
+    // 10049 ZNS endpoint has no same-family Cloud management callback address
+    // 10050 ZNS add-controller endpoint is not a literal IP address
+    // 10051 ZNS change-controller endpoint is not a literal IP address
+    // 10052 ZNS internal change-controller endpoint is not a literal IP address
+    // 10053 ZNS change-controller has no computer manager UUID
+    // 10054 ZNS change-controller cluster has no same-family endpoint
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
@@ -12260,6 +12266,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10046 = "ORG_ZSTACK_NETWORK_ZNS_10046";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10047 = "ORG_ZSTACK_NETWORK_ZNS_10047";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10048 = "ORG_ZSTACK_NETWORK_ZNS_10048";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10049 = "ORG_ZSTACK_NETWORK_ZNS_10049";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10050 = "ORG_ZSTACK_NETWORK_ZNS_10050";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10051 = "ORG_ZSTACK_NETWORK_ZNS_10051";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10052 = "ORG_ZSTACK_NETWORK_ZNS_10052";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10053 = "ORG_ZSTACK_NETWORK_ZNS_10053";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10054 = "ORG_ZSTACK_NETWORK_ZNS_10054";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
@@ -15746,6 +15758,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_SDNCONTROLLER_10032 = "ORG_ZSTACK_SDNCONTROLLER_10032";
 
     public static final String ORG_ZSTACK_SDNCONTROLLER_10033 = "ORG_ZSTACK_SDNCONTROLLER_10033";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10034 = "ORG_ZSTACK_SDNCONTROLLER_10034";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10035 = "ORG_ZSTACK_SDNCONTROLLER_10035";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000 = "ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000";
 

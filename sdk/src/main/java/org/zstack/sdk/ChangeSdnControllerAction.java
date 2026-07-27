@@ -37,6 +37,9 @@ public class ChangeSdnControllerAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List vlanRanges;
 
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String ip;
+
     @Param(required = false)
     public java.util.List systemTags;
 
