@@ -90,6 +90,7 @@
     <import resource="springConfigXml/SearchFacade.xml"/>
     <import resource="springConfigXml/RESTFacade.xml"/>
     <import resource="springConfigXml/SecurityGroupManager.xml"/>
+    <import resource="springConfigXml/networkSecurityPolicySchedule.xml"/>
     <import resource="springConfigXml/SftpBackupStorage.xml"/>
     <import resource="springConfigXml/sharedMountPointPrimaryStorage.xml"/>
     <import resource="springConfigXml/tag.xml"/>

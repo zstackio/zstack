@@ -94,6 +94,8 @@ public class SecurityGroupInventory {
 
     private String vSwitchType;
 
+    private String scheduleUuid;
+
     /**
      * @desc the time this resource gets created
      */
@@ -133,6 +135,7 @@ public class SecurityGroupInventory {
         this.setRules(SecurityGroupRuleInventory.valueOf(vo.getRules()));
         this.setState(vo.getState().toString());
         this.setvSwitchType(vo.getvSwitchType());
+        this.setScheduleUuid(vo.getScheduleUuid());
         Set<String> l3Uuids= new HashSet<String>(vo.getAttachedL3NetworkRefs().size());
         for (SecurityGroupL3NetworkRefVO ref : vo.getAttachedL3NetworkRefs()) {
             l3Uuids.add(ref.getL3NetworkUuid());
@@ -240,5 +243,13 @@ public class SecurityGroupInventory {
 
     public void setvSwitchType(String vSwitchType) {
         this.vSwitchType = vSwitchType;
+    }
+
+    public String getScheduleUuid() {
+        return scheduleUuid;
+    }
+
+    public void setScheduleUuid(String scheduleUuid) {
+        this.scheduleUuid = scheduleUuid;
     }
 }
