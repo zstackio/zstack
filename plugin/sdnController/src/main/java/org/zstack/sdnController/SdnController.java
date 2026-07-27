@@ -28,7 +28,17 @@ public interface SdnController {
 
     default void changeHost(SdnControllerHostRefVO oldRef, SdnControllerHostRefVO newRef, Completion completion) {completion.success();};
 
+    /**
+     * Returns whether this controller can change its endpoint through the common API.
+     *
+     * Implementations returning {@code true} must override {@link #changeIp(APIChangeSdnControllerMsg, Completion)}.
+     */
     default boolean supportsIpChange() { return false; }
 
+    /**
+     * Changes this controller's endpoint.
+     *
+     * This method is called only when {@link #supportsIpChange()} returns {@code true}.
+     */
     default void changeIp(APIChangeSdnControllerMsg msg, Completion completion) { completion.success(); }
 }
