@@ -1,9 +1,8 @@
 -- ZSTAC-86635: Persist ZNS controller connection candidates outside SystemTag.
-ALTER TABLE `zstack`.`ZnsControllerVO`
-    ADD COLUMN `ipOwnership` varchar(32) DEFAULT NULL,
-    ADD COLUMN `vipEndpoint` varchar(255) DEFAULT NULL;
+CALL ADD_COLUMN('ZnsControllerVO', 'ipOwnership', 'varchar(32)', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'vipEndpoint', 'varchar(255)', 1, NULL);
 
-CREATE TABLE `zstack`.`ZnsControllerNodeEndpointVO` (
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerNodeEndpointVO` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT,
     `znsControllerUuid` varchar(32) NOT NULL,
     `endpoint` varchar(255) NOT NULL,
