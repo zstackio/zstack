@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.snmp;
+package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class QuerySNSSnmpPlatformAction extends QueryAction {
+public class GetSnmpEngineInfoAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class QuerySNSSnmpPlatformAction extends QueryAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformResult value;
+        public org.zstack.sdk.GetSnmpEngineInfoResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,6 +25,23 @@ public class QuerySNSSnmpPlatformAction extends QueryAction {
         }
     }
 
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -34,8 +51,8 @@ public class QuerySNSSnmpPlatformAction extends QueryAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformResult value = res.getResult(org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.snmp.QuerySNSSnmpPlatformResult() : value; 
+        org.zstack.sdk.GetSnmpEngineInfoResult value = res.getResult(org.zstack.sdk.GetSnmpEngineInfoResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetSnmpEngineInfoResult() : value; 
 
         return ret;
     }
@@ -65,7 +82,7 @@ public class QuerySNSSnmpPlatformAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sns/application-platforms/snmp";
+        info.path = "/snmp/engine";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
