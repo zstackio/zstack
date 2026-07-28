@@ -390,22 +390,19 @@ public class AnsibleRunner {
 
     public void run(ReturnValueCompletion<Boolean> completion) {
         try {
+            ErrorableValue<List<Platform.RemoteEndpoint>> resolvedEndpoints = Platform.resolveRemoteEndpoints(targetIp);
+            if (!resolvedEndpoints.isSuccess()) {
+                completion.fail(resolvedEndpoints.error);
+                return;
+            }
+            Platform.RemoteEndpoint resolvedEndpoint = resolvedEndpoints.result.get(0);
+            targetIp = resolvedEndpoint.getConnectIp();
+
             String selectedManagementNodeIp = managementNodeIp;
             if (selectedManagementNodeIp == null) {
-                if (NetworkUtils.isIpAddress(targetIp)) {
-                    ErrorableValue<String> managementNodeEndpoint = Platform.getManagementServerIp(targetIp);
-                    if (!managementNodeEndpoint.isSuccess()) {
-                        completion.fail(managementNodeEndpoint.error);
-                        return;
-                    }
-                    selectedManagementNodeIp = managementNodeEndpoint.result;
-                } else {
-                    selectedManagementNodeIp = restf.getHostName();
-                }
+                selectedManagementNodeIp = resolvedEndpoint.getCallbackIp();
             }
-            if (NetworkUtils.isIpAddress(targetIp)) {
-                updateCheckersManagementNodeIp(selectedManagementNodeIp);
-            }
+            updateCheckersManagementNodeIp(selectedManagementNodeIp);
 
             if (!forceRun && !isNeedRun()) {
                 completion.success(false);

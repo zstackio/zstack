@@ -116,6 +116,41 @@ class PlatformManagementEndpointSelectionTest {
     }
 
     @Test
+    void testResolvedRemoteEndpointsKeepConnectionAndCallbackInTheSameAddressFamily() {
+        withUnitTestOn(false) {
+            withErrorFacade {
+                withManagementServerIpProperties([
+                        "management.server.ip" : IPV4,
+                        "management.server.ip6": IPV6,
+                ]) {
+                    def endpoints = Platform.resolveRemoteEndpoints("controller.example.com", ["2001:db8::20", "192.168.1.20"])
+
+                    assert endpoints.success
+                    assert endpoints.result*.connectIp == ["2001:db8::20", "192.168.1.20"]
+                    assert endpoints.result*.callbackIp == [IPV6, IPV4]
+                }
+            }
+        }
+    }
+
+    @Test
+    void testResolvedRemoteEndpointsSkipAddressFamiliesWithoutManagementEndpoint() {
+        withUnitTestOn(false) {
+            withErrorFacade {
+                withManagementServerIpProperties([
+                        "management.server.ip": IPV4,
+                ]) {
+                    def endpoints = Platform.resolveRemoteEndpoints("controller.example.com", ["2001:db8::20", "192.168.1.20"])
+
+                    assert endpoints.success
+                    assert endpoints.result*.connectIp == ["192.168.1.20"]
+                    assert endpoints.result*.callbackIp == [IPV4]
+                }
+            }
+        }
+    }
+
+    @Test
     void testTargetAwareGetterFailsWithoutConfiguredEndpointOutsideUnitTest() {
         withUnitTestOn(false) {
             withErrorFacade {
@@ -159,6 +194,23 @@ class PlatformManagementEndpointSelectionTest {
     }
 
     @Test
+    void testAsyncRestCallbackSelectionResolvesHostnameToMatchingManagementEndpoint() {
+        withUnitTestOn(false) {
+            withErrorFacade {
+                withManagementServerIpProperties([
+                        "management.server.ip": IPV4,
+                ]) {
+                    def callback = RESTFacadeImpl.selectCallbackUrl(
+                            "http://localhost:7070/host/ping", [:], "http://127.0.0.1:8080/zstack/asyncrest/callback", 8080, "zstack")
+
+                    assert callback.success
+                    assert callback.result == "http://${IPV4}:8080/zstack/asyncrest/callback"
+                }
+            }
+        }
+    }
+
+    @Test
     void testAsyncRestCallbackSelectionFailsBeforeInterceptors() {
         withUnitTestOn(false) {
             withErrorFacade {
@@ -187,6 +239,35 @@ class PlatformManagementEndpointSelectionTest {
                     assert interceptorCalls.get() == 0
                     assert error.get().globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10001"
                 }
+            }
+        }
+    }
+
+    @Test
+    void testAsyncRestRejectsHttpsHostnameBeforeInterceptors() {
+        withUnitTestOn(false) {
+            withErrorFacade {
+                AtomicInteger interceptorCalls = new AtomicInteger()
+                AtomicReference error = new AtomicReference()
+                RESTFacadeImpl restf = new RESTFacadeImpl()
+                restf.installBeforeAsyncJsonPostInterceptor([
+                        beforeAsyncJsonPost: { Object... ignored -> interceptorCalls.incrementAndGet() },
+                ] as org.zstack.header.rest.BeforeAsyncJsonPostInterceptor)
+
+                restf.asyncJson("https://controller.example.com:7070/host/ping", "{}", [:], HttpMethod.POST,
+                        new AsyncRESTCallback(null) {
+                            @Override
+                            void fail(org.zstack.header.errorcode.ErrorCode errorCode) {
+                                error.set(errorCode)
+                            }
+
+                            @Override
+                            void success(HttpEntity<String> responseEntity) {
+                            }
+                        }, TimeUnit.SECONDS, 10)
+
+                assert interceptorCalls.get() == 0
+                assert error.get().globalErrorCode == "ORG_ZSTACK_CORE_REST_10016"
             }
         }
     }

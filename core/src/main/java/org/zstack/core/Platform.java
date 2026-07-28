@@ -76,6 +76,9 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10003;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10004;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10005;
 
 public class Platform {
     private static final CLogger logger = CLoggerImpl.getLogger(Platform.class);
@@ -1056,6 +1059,78 @@ public class Platform {
             return ErrorableValue.of(getManagementServerIp());
         }
         return getManagementNodeEndpointData().selectForTarget(ManagementEndpointData.EndpointType.NODE, targetIp);
+    }
+
+    public static ErrorableValue<List<RemoteEndpoint>> resolveRemoteEndpoints(String endpoint) {
+        String normalizedEndpoint = IPv6NetworkUtils.stripHostUrlBrackets(endpoint == null ? null : endpoint.trim());
+        if (StringUtils.isBlank(normalizedEndpoint)) {
+            return ErrorableValue.ofErrorCode(argerr(ORG_ZSTACK_CORE_PLATFORM_10003,
+                    "cannot resolve an empty remote endpoint"));
+        }
+
+        if (NetworkUtils.isIpAddress(normalizedEndpoint)) {
+            return resolveRemoteEndpoints(normalizedEndpoint, Collections.singletonList(normalizedEndpoint));
+        }
+
+        try {
+            List<String> addresses = Arrays.stream(InetAddress.getAllByName(normalizedEndpoint))
+                    .map(InetAddress::getHostAddress)
+                    .collect(Collectors.toList());
+            return resolveRemoteEndpoints(normalizedEndpoint, addresses);
+        } catch (UnknownHostException e) {
+            return ErrorableValue.ofErrorCode(operr(ORG_ZSTACK_CORE_PLATFORM_10004,
+                    "cannot resolve remote endpoint[%s]: %s", normalizedEndpoint, e.getMessage()));
+        }
+    }
+
+    public static ErrorableValue<List<RemoteEndpoint>> resolveRemoteEndpoints(String endpoint, Collection<String> addresses) {
+        List<RemoteEndpoint> endpoints = new ArrayList<>();
+        ErrorCode lastError = null;
+        Set<String> uniqueAddresses = new LinkedHashSet<>();
+        if (addresses != null) {
+            for (String address : addresses) {
+                String connectIp = normalizeManagementIp(IPv6NetworkUtils.stripHostUrlBrackets(address));
+                if (!NetworkUtils.isIpAddress(connectIp) || !uniqueAddresses.add(connectIp)) {
+                    continue;
+                }
+
+                ErrorableValue<String> callbackIp = getManagementServerIp(connectIp);
+                if (callbackIp.isSuccess()) {
+                    endpoints.add(new RemoteEndpoint(connectIp, callbackIp.result));
+                } else {
+                    lastError = callbackIp.error;
+                }
+            }
+        }
+
+        if (!endpoints.isEmpty()) {
+            return ErrorableValue.of(endpoints);
+        }
+
+        if (lastError != null) {
+            return ErrorableValue.ofErrorCode(lastError);
+        }
+
+        return ErrorableValue.ofErrorCode(argerr(ORG_ZSTACK_CORE_PLATFORM_10005,
+                "remote endpoint[%s] has no valid IPv4 or IPv6 address", endpoint));
+    }
+
+    public static class RemoteEndpoint {
+        private final String connectIp;
+        private final String callbackIp;
+
+        public RemoteEndpoint(String connectIp, String callbackIp) {
+            this.connectIp = connectIp;
+            this.callbackIp = callbackIp;
+        }
+
+        public String getConnectIp() {
+            return connectIp;
+        }
+
+        public String getCallbackIp() {
+            return callbackIp;
+        }
     }
 
     public static int getManagementNodeServicePort() {
