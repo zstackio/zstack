@@ -371,7 +371,7 @@ CREATE VIEW `zstack`.`VmInstanceVO` AS
 SELECT uuid, name, description, zoneUuid, clusterUuid, imageUuid, hostUuid, internalId,
        lastHostUuid, instanceOfferingUuid, rootVolumeUuid, defaultL3NetworkUuid, type,
        hypervisorType, cpuNum, cpuSpeed, memorySize, reservedMemorySize, platform,
-       guestOsType, allocatorStrategy, createDate, lastOpDate, state, architecture, vmEncryption
+       guestOsType, allocatorStrategy, createDate, lastOpDate, state, architecture, bootTime, vmEncryption
 FROM `zstack`.`VmInstanceEO`
 WHERE deleted IS NULL;
 

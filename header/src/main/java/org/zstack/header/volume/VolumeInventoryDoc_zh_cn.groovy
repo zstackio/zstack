@@ -139,6 +139,6 @@ doc {
 		name "encrypted"
 		desc ""
 		type "Boolean"
-		since "5.0.0"
+		since "5.1.0"
 	}
 }
