@@ -82,6 +82,9 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String gatewayManagementAddress;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String businessGatewayOfferingUuid;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
