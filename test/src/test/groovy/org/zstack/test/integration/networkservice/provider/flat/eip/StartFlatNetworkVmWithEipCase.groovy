@@ -150,7 +150,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             testStartVmWithEip()
             testRecoverVmWithEip()
             testRecoverVmWithEipWithError()
-            testMigrateVmWithEip()
+            testMigrateVmWithEipZSTAC86874()
         }
     }
 
@@ -234,7 +234,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
     }
 
-    void testMigrateVmWithEip() {
+    void testMigrateVmWithEipZSTAC86874() {
         def eip = env.inventoryByName("eip-1") as EipInventory
         def vm = env.inventoryByName("vm-1") as VmInstanceInventory
         def host1 = env.inventoryByName("kvm") as HostInventory
@@ -245,16 +245,20 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             vmNicUuid = vm.vmNics[0].uuid
         }
 
-        boolean deleteEipOnSrcHostFailed = false
-        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) {
-            deleteEipOnSrcHostFailed = true
-            throw new HttpError(403, "on purpose")
+        List<String> operations = Collections.synchronizedList([])
+        env.afterSimulator(FlatEipBackend.BATCH_PREPARE_EIP_PATH) { rsp ->
+            operations.add("prepare")
+            return rsp
         }
 
-        boolean applyEipOnDestHostSuccessed = false
-        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
-            applyEipOnDestHostSuccessed = true
+        env.afterSimulator(FlatEipBackend.BATCH_ENABLE_EIP_PATH) { rsp ->
+            operations.add("enable")
             return rsp
+        }
+
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            throw new HttpError(403, "on purpose")
         }
 
         migrateVm {
@@ -263,13 +267,12 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == true
-            assert applyEipOnDestHostSuccessed == true
+            assert operations == ["prepare", "enable", "delete"]
         }
 
-        applyEipOnDestHostSuccessed = false
-        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp, HttpEntity<String> e ->
-            deleteEipOnSrcHostFailed = false
+        operations.clear()
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
             return rsp
         }
 
@@ -279,8 +282,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == false
-            assert applyEipOnDestHostSuccessed == true
+            assert operations == ["prepare", "enable", "delete"]
         }
     }
 
