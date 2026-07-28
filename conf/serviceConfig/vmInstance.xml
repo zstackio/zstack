@@ -268,6 +268,9 @@
         <name>org.zstack.header.vm.APICleanupVmInstanceMetadataMsg</name>
     </message>
     <message>
+        <name>org.zstack.header.vm.APICleanupAllVmInstanceMetadataMsg</name>
+    </message>
+    <message>
         <name>org.zstack.header.vm.APIRegisterVmInstanceFromMetadataMsg</name>
     </message>
     <message>

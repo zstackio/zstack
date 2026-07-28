@@ -314,3 +314,21 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PlatformServiceInstanceVO` (
 
 -- Feature: LicenseHistoryVO cause | ZSV-12697
 CALL INSERT_COLUMN('LicenseHistoryVO', 'cause', 'varchar(32)', 0, 'UpdateLicense', 'source');
+
+-- Feature: serialize VM metadata cleanup with cluster-wide metadata flushes | ZSV-11867
+CREATE TABLE IF NOT EXISTS `zstack`.`VmMetadataCleanupBarrierVO` (
+    `id` varchar(32) NOT NULL,
+    `state` varchar(32) NOT NULL DEFAULT 'Idle',
+    `operationUuid` varchar(32) DEFAULT NULL,
+    `managementNodeUuid` varchar(32) DEFAULT NULL,
+    `leaseExpireDate` timestamp NULL DEFAULT NULL,
+    `generation` bigint NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '1999-12-31 23:59:59',
+    PRIMARY KEY (`id`),
+    CONSTRAINT `fkVmMetadataCleanupBarrierVOManagementNodeVO`
+        FOREIGN KEY (`managementNodeUuid`) REFERENCES `ManagementNodeVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `zstack`.`VmMetadataCleanupBarrierVO` (`id`, `state`, `createDate`)
+VALUES ('vm-metadata-cleanup', 'Idle', CURRENT_TIMESTAMP);
