@@ -2643,11 +2643,18 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     public List<String> getVirtualRouterVips(String vrUuid, List<String> vipUuids) {
         List<String> ret = new ArrayList<>();
         String peerUuid = haBackend.getVirtualRouterPeerUuid(vrUuid);
+        Set<String> slbVipUuids = vipUuids.isEmpty() ? Collections.emptySet() : new HashSet<>(Q.New(VipVO.class)
+                .in(VipVO_.uuid, vipUuids)
+                .eq(VipVO_.serviceProvider, APPLIANCE_VM_TYPE_SLB)
+                .select(VipVO_.uuid)
+                .listValues());
 
         for (String uuid : vipUuids) {
             List<String> vrUuids = vipProxy.getVrUuidsByNetworkService(VipVO.class.getSimpleName(), uuid);
             if (vrUuids == null || vrUuids.isEmpty()) {
-                ret.add(uuid);
+                if (!slbVipUuids.contains(uuid)) {
+                    ret.add(uuid);
+                }
                 continue;
             }
 
