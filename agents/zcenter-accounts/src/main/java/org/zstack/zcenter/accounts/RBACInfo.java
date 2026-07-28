@@ -16,6 +16,7 @@ public class RBACInfo implements RBACDescription {
                 .adminOnlyForAll()
                 .communityAvailable()
                 .zsvProAvailable()
+                .zsvBasicAvailable()
                 .build();
     }
 }
