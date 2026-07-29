@@ -213,6 +213,15 @@ doc {
 					optional true
 					since "3.17.21"
 				}
+				column {
+					name "vmEncryption"
+					enclosedIn "params"
+					desc "虚拟机是否加密"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.1.0"
+				}
 			}
 		}
 

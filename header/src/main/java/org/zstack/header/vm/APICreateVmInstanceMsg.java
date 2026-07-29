@@ -223,6 +223,9 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
     private Boolean virtio;
 
     @APIParam(required = false)
+    private Boolean vmEncryption;
+
+    @APIParam(required = false)
     private String allocatorStrategy;
 
     @APIParam(required = false)
@@ -468,6 +471,16 @@ public class APICreateVmInstanceMsg extends APICreateMessage implements APIAudit
 
     public void setVirtio(Boolean virtio) {
         this.virtio = virtio;
+    }
+
+    @Override
+    public Boolean getVmEncryption() {
+        return vmEncryption;
+    }
+
+    @Override
+    public void setVmEncryption(Boolean vmEncryption) {
+        this.vmEncryption = vmEncryption;
     }
 
     public String getAllocatorStrategy() {

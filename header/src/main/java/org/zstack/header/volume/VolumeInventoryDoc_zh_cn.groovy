@@ -135,4 +135,10 @@ doc {
 		type "String"
 		since "3.17.13"
 	}
+	field {
+		name "encrypted"
+		desc ""
+		type "Boolean"
+		since "5.1.0"
+	}
 }

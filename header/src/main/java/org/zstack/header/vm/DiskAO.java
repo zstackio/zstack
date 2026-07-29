@@ -2,6 +2,8 @@ package org.zstack.header.vm;
 
 import org.zstack.header.configuration.PythonClassInventory;
 import org.zstack.header.rest.SDK;
+import org.zstack.header.message.NoJsonSchema;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.volume.VolumeVO;
 
 import java.util.List;
@@ -27,6 +29,10 @@ public class DiskAO {
     private String sourceUuid;
     private List<String> systemTags;
     private String name;
+    private Boolean encrypted;
+    @APINoSee
+    @NoJsonSchema
+    private boolean volumeBackupTemplate;
 
     public DiskAO withImage(String imageUuid) {
         this.templateUuid = imageUuid;
@@ -139,6 +145,22 @@ public class DiskAO {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Boolean getEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncrypted(Boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+
+    public boolean isVolumeBackupTemplate() {
+        return volumeBackupTemplate;
+    }
+
+    public void setVolumeBackupTemplate(boolean volumeBackupTemplate) {
+        this.volumeBackupTemplate = volumeBackupTemplate;
     }
 
     public static DiskAO rootDisk() {
