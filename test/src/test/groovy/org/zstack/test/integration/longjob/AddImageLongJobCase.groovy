@@ -13,9 +13,15 @@ import org.zstack.header.image.APIAddImageMsg
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
+import org.zstack.header.image.CancelDownloadImageReply
+import org.zstack.header.image.CancelDownloadImageMsg
+import org.zstack.header.image.ImageDeletionMsg
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
 import org.zstack.header.longjob.LongJobState
+import org.zstack.header.message.CancelTaskResult
+import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageMsg
 import org.zstack.header.storage.backup.DownloadImageReply
 import org.zstack.header.storage.primary.APIAttachPrimaryStorageToClusterMsg
@@ -65,6 +71,11 @@ class AddImageLongJobCase extends SubCase {
             testAddImage()
             testAddImageAppointResourceUuid()
             testAddImageTimeout()
+            testCancelAddImageWhenAgentTaskNotFound()
+            testCancelAddImageWhenMissingTaskCleanupFails()
+            testCancelAddImageWhenAgentTaskIsSignalled()
+            testCancelAddImageLateSuccessCleanupFailureIsNotTerminal()
+            testCancelAddImageAfterImageExpunged()
             testUpdateLongJobApiTimeout()
             testLongJobTimeout()
         }
@@ -171,6 +182,265 @@ class AddImageLongJobCase extends SubCase {
         assert timeout + TimeUtils.parseTimeInMillis("1m") > TimeUtils.parseTimeInMillis("72h")
 
         env.cleanMessageHandlers()
+    }
+
+    void testCancelAddImageWhenAgentTaskNotFound() {
+        String imageUuid = Platform.uuid
+        DownloadImageMsg pendingMsg
+
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            pendingMsg = dmsg
+        }
+        env.message(CancelDownloadImageMsg.class) { CancelDownloadImageMsg cmsg, CloudBus bus ->
+            assert cmsg.isAllowTaskNotFound()
+            CancelDownloadImageReply reply = new CancelDownloadImageReply()
+            reply.setCancelResult(CancelTaskResult.TASK_NOT_FOUND)
+            bus.reply(cmsg, reply)
+        }
+
+        APIAddImageMsg msg = new APIAddImageMsg()
+        msg.setName("cancel-missing-task")
+        msg.setBackupStorageUuids(Collections.singletonList(bs.uuid))
+        msg.setUrl("http://192.168.1.20/share/images/cancel.qcow2")
+        msg.setFormat(ImageConstant.RAW_FORMAT_STRING)
+        msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString())
+        msg.setPlatform(ImagePlatform.Linux.toString())
+        msg.setResourceUuid(imageUuid)
+
+        LongJobInventory jobInv = submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+
+        retryInSecs {
+            assert pendingMsg != null: "download request must be pending before cancellation"
+            assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists()
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Running
+        }
+
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Canceled
+            assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists()
+        }
+        env.cleanMessageHandlers()
+    }
+
+    void testCancelAddImageWhenAgentTaskIsSignalled() {
+        String imageUuid = Platform.uuid
+        DownloadImageMsg pendingMsg
+        CloudBus pendingBus
+
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            pendingMsg = dmsg
+            pendingBus = bus
+        }
+        env.message(CancelDownloadImageMsg.class) { CancelDownloadImageMsg cmsg, CloudBus bus ->
+            assert cmsg.isAllowTaskNotFound(): "add-image cancellation must tolerate an already-finished agent task"
+            assert pendingMsg != null: "download request must be pending before cancellation"
+
+            CancelDownloadImageReply cancelReply = new CancelDownloadImageReply()
+            cancelReply.setCancelResult(CancelTaskResult.CANCEL_SIGNALLED)
+            bus.reply(cmsg, cancelReply)
+
+            DownloadImageReply downloadReply = new DownloadImageReply()
+            downloadReply.setError(Platform.operr("simulated download rollback after cancellation"))
+            pendingBus.reply(pendingMsg, downloadReply)
+        }
+
+        LongJobInventory jobInv = submitPendingAddImage("cancel-signalled-task", imageUuid)
+
+        retryInSecs {
+            assert pendingMsg != null: "download request must be pending before cancellation"
+            assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists():
+                    "pending add-image must create the image record"
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Running:
+                    "long job must still be running before cancellation"
+        }
+
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Canceled:
+                    "CANCEL_SIGNALLED must let the original add-image flow finish rollback"
+            assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists():
+                    "rolled-back add-image must remove its image record"
+        }
+        env.cleanMessageHandlers()
+    }
+
+    void testCancelAddImageWhenMissingTaskCleanupFails() {
+        String imageUuid = Platform.uuid
+        LongJobInventory jobInv
+        DownloadImageMsg pendingMsg
+        boolean cleanCalled = false
+
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            pendingMsg = dmsg
+        }
+        env.message(CancelDownloadImageMsg.class) { CancelDownloadImageMsg cmsg, CloudBus bus ->
+            CancelDownloadImageReply reply = new CancelDownloadImageReply()
+            reply.setCancelResult(CancelTaskResult.TASK_NOT_FOUND)
+            bus.reply(cmsg, reply)
+        }
+        env.message(ImageDeletionMsg.class) { ImageDeletionMsg dmsg, CloudBus bus ->
+            cleanCalled = true
+            MessageReply reply = new MessageReply()
+            reply.setError(Platform.operr("simulated image cleanup failure"))
+            bus.reply(dmsg, reply)
+        }
+
+        try {
+            jobInv = submitPendingAddImage("cancel-missing-task-cleanup-fails", imageUuid)
+
+            retryInSecs {
+                assert pendingMsg != null: "download request must be pending before cancellation"
+                assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists()
+            }
+
+            expectError {
+                cancelLongJob {
+                    uuid = jobInv.uuid
+                }
+            }
+
+            assert cleanCalled: "TASK_NOT_FOUND must attempt image cleanup"
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Canceling:
+                    "cleanup failure must not make the LongJob terminal"
+            assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists():
+                    "failed cleanup must not be reported as a completed cancellation"
+        } finally {
+            env.cleanMessageHandlers()
+            SQL.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).delete()
+            if (jobInv != null) {
+                SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).delete()
+            }
+        }
+    }
+
+    void testCancelAddImageLateSuccessCleanupFailureIsNotTerminal() {
+        String imageUuid = Platform.uuid
+        DownloadImageMsg pendingMsg
+        CloudBus pendingBus
+        boolean cleanupAttempted = false
+        LongJobInventory jobInv
+
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            pendingMsg = dmsg
+            pendingBus = bus
+        }
+        env.message(CancelDownloadImageMsg.class) { CancelDownloadImageMsg cmsg, CloudBus bus ->
+            CancelDownloadImageReply cancelReply = new CancelDownloadImageReply()
+            cancelReply.setCancelResult(CancelTaskResult.CANCEL_SIGNALLED)
+            bus.reply(cmsg, cancelReply)
+        }
+        env.message(ImageDeletionMsg.class) { ImageDeletionMsg dmsg, CloudBus bus ->
+            cleanupAttempted = true
+            MessageReply reply = new MessageReply()
+            reply.setError(Platform.operr("simulated late-success image cleanup failure"))
+            bus.reply(dmsg, reply)
+        }
+
+        try {
+            jobInv = submitPendingAddImage("cancel-late-success-cleanup-fails", imageUuid)
+
+            retryInSecs {
+                assert pendingMsg != null
+                assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists()
+            }
+
+            cancelLongJob {
+                uuid = jobInv.uuid
+            }
+
+            DownloadImageReply downloadReply = new DownloadImageReply()
+            downloadReply.setSize(SizeUnit.GIGABYTE.toByte(8))
+            downloadReply.setActualSize(SizeUnit.GIGABYTE.toByte(8))
+            downloadReply.setFormat(ImageConstant.RAW_FORMAT_STRING)
+            downloadReply.setInstallPath("test/cancel-late-success-cleanup-fails")
+            downloadReply.setMd5sum("cancel-late-success-cleanup-fails")
+            pendingBus.reply(pendingMsg, downloadReply)
+
+            retryInSecs {
+                assert cleanupAttempted :
+                        "late successful add-image completion must attempt image cleanup"
+                assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Canceling :
+                        "late-success cleanup failure must leave the LongJob non-terminal"
+                assert Q.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).isExists() :
+                        "failed cleanup must retain the image for a later cleanup retry"
+            }
+        } finally {
+            env.cleanMessageHandlers()
+            SQL.New(ImageVO.class).eq(ImageVO_.uuid, imageUuid).delete()
+            if (jobInv != null) {
+                SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).delete()
+            }
+        }
+    }
+
+    void testCancelAddImageAfterImageExpunged() {
+        String jobImageUuid = Platform.uuid
+        DownloadImageMsg pendingMsg
+        CloudBus pendingBus
+
+        env.message(DownloadImageMsg.class) { DownloadImageMsg dmsg, CloudBus bus ->
+            pendingMsg = dmsg
+            pendingBus = bus
+        }
+
+        LongJobInventory jobInv = submitPendingAddImage("cancel-expunged-image", jobImageUuid)
+
+        retryInSecs {
+            assert Q.New(ImageVO.class).eq(ImageVO_.uuid, jobImageUuid).isExists():
+                    "pending add-image must create the image record"
+            assert pendingMsg != null: "download request must be pending before image expunge"
+        }
+
+        deleteImage {
+            uuid = jobImageUuid
+        }
+        if (Q.New(ImageVO.class).eq(ImageVO_.uuid, jobImageUuid).isExists()) {
+            expungeImage {
+                imageUuid = jobImageUuid
+            }
+        }
+        assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, jobImageUuid).isExists():
+                "test setup must fully expunge the downloading image"
+
+        cancelLongJob {
+            uuid = jobInv.uuid
+        }
+
+        retryInSecs {
+            assert Q.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid).find().state == LongJobState.Canceled:
+                    "RESOURCE_NOT_FOUND must be treated as an already-clean terminal cancellation"
+        }
+
+        DownloadImageReply downloadReply = new DownloadImageReply()
+        downloadReply.setError(Platform.operr("simulated completion after image expunge"))
+        pendingBus.reply(pendingMsg, downloadReply)
+        env.cleanMessageHandlers()
+    }
+
+    private LongJobInventory submitPendingAddImage(String name, String imageUuid) {
+        APIAddImageMsg msg = new APIAddImageMsg()
+        msg.setName(name)
+        msg.setBackupStorageUuids(Collections.singletonList(bs.uuid))
+        msg.setUrl("http://192.168.1.20/share/images/${name}.qcow2")
+        msg.setFormat(ImageConstant.RAW_FORMAT_STRING)
+        msg.setMediaType(ImageConstant.ImageMediaType.RootVolumeTemplate.toString())
+        msg.setPlatform(ImagePlatform.Linux.toString())
+        msg.setResourceUuid(imageUuid)
+
+        return submitLongJob {
+            jobName = msg.getClass().getSimpleName()
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
     }
 
     void testAddImageAppointResourceUuid() {

@@ -7049,9 +7049,10 @@ public class KVMHost extends HostBase implements Host {
 
     private void handle(final CancelHostTaskMsg msg) {
         CancelHostTaskReply reply = new CancelHostTaskReply();
-        cancelJob(msg, new Completion(msg) {
+        cancelJob(msg, new ReturnValueCompletion<CancelRsp>(msg) {
             @Override
-            public void success() {
+            public void success(CancelRsp ret) {
+                reply.setCancelResult(ret.getCancelResult());
                 bus.reply(msg, reply);
             }
 
@@ -7063,9 +7064,10 @@ public class KVMHost extends HostBase implements Host {
         });
     }
 
-    private void cancelJob(CancelHostTaskMsg msg, Completion completion) {
+    private void cancelJob(CancelHostTaskMsg msg, ReturnValueCompletion<CancelRsp> completion) {
         CancelCmd cmd = new CancelCmd();
         cmd.setCancellationApiId(msg.getCancellationApiId());
+        cmd.setAllowTaskNotFound(msg.isAllowTaskNotFound());
         if (msg.getInterval() != null && msg.getTimes() != null) {
             cmd.setInterval(msg.getInterval());
             cmd.setTimes(msg.getTimes());
@@ -7074,7 +7076,7 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CancelRsp ret) {
                 if (ret.isSuccess()) {
-                    completion.success();
+                    completion.success(ret);
                 } else {
                     completion.fail(Platform.operr("%s", ret.getError()));
                 }

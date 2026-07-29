@@ -5,6 +5,7 @@ package org.zstack.header.message;
  */
 public abstract class CancelMessage extends NeedReplyMessage {
     private String cancellationApiId;
+    private boolean allowTaskNotFound;
 
     public String getCancellationApiId() {
         return cancellationApiId;
@@ -12,5 +13,13 @@ public abstract class CancelMessage extends NeedReplyMessage {
 
     public void setCancellationApiId(String cancellationApiId) {
         this.cancellationApiId = cancellationApiId;
+    }
+
+    public boolean isAllowTaskNotFound() {
+        return allowTaskNotFound;
+    }
+
+    public void setAllowTaskNotFound(boolean allowTaskNotFound) {
+        this.allowTaskNotFound = allowTaskNotFound;
     }
 }

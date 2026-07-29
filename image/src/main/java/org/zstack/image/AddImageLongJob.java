@@ -20,6 +20,7 @@ import org.zstack.header.longjob.LongJobFor;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.longjob.UseApiTimeout;
 import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.CancelTaskResult;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.backup.ImageHashAlgorithm;
 import org.zstack.longjob.LongJobGlobalConfig;
@@ -208,7 +209,13 @@ public class AddImageLongJob implements LongJob {
         bus.send(dmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
-                completion.fail(err);
+                if (reply.isSuccess()) {
+                    completion.fail(err);
+                    return;
+                }
+
+                logger.warn(String.format("failed to clean canceled image [uuid:%s]: %s",
+                        msg.getResourceUuid(), reply.getError().getReadableDetails()));
             }
         });
     }
@@ -220,13 +227,34 @@ public class AddImageLongJob implements LongJob {
         msg.setMsg(amsg);
         msg.setImageUuid(amsg.getResourceUuid());
         msg.setCancellationApiId(job.getApiId());
+        msg.setAllowTaskNotFound(true);
         bus.makeTargetServiceIdByResourceUuid(msg, ImageConstant.SERVICE_ID, msg.getImageUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
+                    CancelDownloadImageReply creply = reply.castReply();
+                    if (creply.getCancelResult() == CancelTaskResult.TASK_NOT_FOUND) {
+                        cleanAndCompleteCancel(job, completion);
+                        return;
+                    }
                     completion.success(false);
                 } else if (reply.getError().isError(SysErrors.RESOURCE_NOT_FOUND)) {
+                    completion.success(true);
+                } else {
+                    completion.fail(reply.getError());
+                }
+            }
+        });
+    }
+
+    private void cleanAndCompleteCancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
+        AddImageMsg amsg = JSONObjectUtil.toObject(job.getJobData(), AddImageMsg.class);
+        ImageDeletionMsg dmsg = buildDeletionMsg(amsg);
+        bus.send(dmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
                     completion.success(true);
                 } else {
                     completion.fail(reply.getError());

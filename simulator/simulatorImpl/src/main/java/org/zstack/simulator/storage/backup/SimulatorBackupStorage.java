@@ -3,8 +3,8 @@ package org.zstack.simulator.storage.backup;
 import org.zstack.core.Platform;
 import org.zstack.header.core.Completion;
 import org.zstack.header.exception.CloudRuntimeException;
-import org.zstack.header.image.CancelAddImageReply;
 import org.zstack.header.image.CancelDownloadImageMsg;
+import org.zstack.header.image.CancelDownloadImageReply;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.storage.backup.*;
 import org.zstack.storage.backup.BackupStorageBase;
@@ -70,7 +70,7 @@ public class SimulatorBackupStorage extends BackupStorageBase {
 
     @Override
     protected void handle(CancelDownloadImageMsg msg) {
-        bus.reply(msg, new CancelAddImageReply());
+        bus.reply(msg, new CancelDownloadImageReply());
     }
 
     @Override
