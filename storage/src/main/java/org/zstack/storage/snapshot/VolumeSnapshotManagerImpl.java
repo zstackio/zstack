@@ -678,6 +678,9 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     @Transactional
     private void rollbackSnapshot(String uuid) {
         VolumeSnapshotVO vo = dbf.getEntityManager().find(VolumeSnapshotVO.class, uuid);
+        if (vo == null) {
+            return;
+        }
 
         if (vo.getStatus() == VolumeSnapshotStatus.Ready) {
             logger.warn(String.format("volume snapshot[uuid:%s] has been marked Ready, skip rollback to keep control plane metadata consistent with hypervisor snapshot",

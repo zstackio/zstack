@@ -94,6 +94,15 @@ doc {
 					optional true
 					since "4.6.21"
 				}
+				column {
+					name "downTime"
+					enclosedIn "migrateVm"
+					desc ""
+					location "body"
+					type "Integer"
+					optional true
+					since "0.6"
+				}
 			}
         }
 

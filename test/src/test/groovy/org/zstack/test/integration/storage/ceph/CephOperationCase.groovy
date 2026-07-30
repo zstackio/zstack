@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.core.config.GlobalConfigVO
 import org.zstack.core.config.GlobalConfigVO_
+import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.storage.primary.PrimaryStorageVO_
@@ -13,6 +14,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_
 import org.zstack.sdk.*
 import org.zstack.storage.ceph.CephGlobalConfig
 import org.zstack.storage.ceph.DataSecurityPolicy
+import org.zstack.storage.ceph.backup.CephBackupStorageMonVO
+import org.zstack.storage.ceph.backup.CephBackupStorageVO
 import org.zstack.storage.ceph.primary.CephPrimaryStorageMonBase
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -25,6 +28,7 @@ class CephOperationCase extends SubCase {
     EnvSpec env
     PrimaryStorageInventory ps
     BackupStorageInventory bs
+    DatabaseFacade dbf
 
     @Override
     void setup() {
@@ -123,6 +127,7 @@ class CephOperationCase extends SubCase {
 
     @Override
     void test() {
+        dbf = bean(DatabaseFacade.class)
         env.create {
             prepare()
             testAddPrimaryReplaceMon()
@@ -130,6 +135,7 @@ class CephOperationCase extends SubCase {
 
             testAddBackupReplaceMon()
             testAddBackupSameMon()
+            testAddBackupMonWithSpecialPassword()
 
             testCephSnapshotTree()
 
@@ -271,6 +277,21 @@ class CephOperationCase extends SubCase {
                 .eq(GlobalConfigVO_.name, "sds.admin.password")
                 .eq(GlobalConfigVO_.category, "ceph")
                 .findValue() == "PWD"
+    }
+
+    void testAddBackupMonWithSpecialPassword() {
+        def specialPassword = "password123-`=[];,./~!@#\$%^&*()_+|{}:<>?"
+        def hostname = "127.0.0.3"
+        def action = new AddMonToCephBackupStorageAction()
+        action.uuid = bs.uuid
+        action.sessionId = adminSession()
+        action.monUrls = ["root:${specialPassword}@${hostname}/?monPort=7777".toString()]
+
+        AddMonToCephBackupStorageAction.Result result = action.call()
+        assert result.error == null
+        CephBackupStorageVO cvo = dbf.findByUuid(result.value.inventory.uuid, CephBackupStorageVO.class)
+        def addMonSuccess = cvo.mons.find { it.hostname == hostname && it.sshPassword == specialPassword } != null
+        assert addMonSuccess
     }
 
     @Override
