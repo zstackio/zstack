@@ -33,6 +33,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6Constants;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -171,6 +172,10 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         }
 
         final DhcpStruct struct = it.next();
+        if (struct.getIpVersion() == IPv6Constants.IPv6) {
+            applyDhcpEntry(it, completion);
+            return;
+        }
 
         VirtualRouterStruct s = new VirtualRouterStruct();
         s.setL3Network(struct.getL3Network());
@@ -279,6 +284,10 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
         }
 
         final DhcpStruct struct = it.next();
+        if (struct.getIpVersion() == IPv6Constants.IPv6) {
+            releaseDhcp(it, spec, completion);
+            return;
+        }
         final VirtualRouterVmInventory vr = getVirtualRouterForVyosDhcp(struct.getL3Network());
         if (vr == null) {
             logger.debug(String.format("virtual router for l3Network[uuid:%s] is not found, skip releasing DHCP", struct.getL3Network().getUuid()));
@@ -402,6 +411,10 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
 
                 VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
                 DhcpStruct struct = JSONObjectUtil.toObject(task.getJsonData(), DhcpStruct.class);
+                if (struct.getIpVersion() == IPv6Constants.IPv6) {
+                    completion.success();
+                    return;
+                }
                 VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
                 doApplyDhcpEntryToVirtualRouter(vr, info, completion);
             }
@@ -422,6 +435,10 @@ public class VirtualRouterDhcpBackend extends AbstractVirtualRouterBackend imple
 
                 VirtualRouterVmInventory vr = VirtualRouterVmInventory.valueOf(vrVO);
                 DhcpStruct struct = JSONObjectUtil.toObject(task.getJsonData(), DhcpStruct.class);
+                if (struct.getIpVersion() == IPv6Constants.IPv6) {
+                    completion.success();
+                    return;
+                }
                 VirtualRouterCommands.DhcpInfo info = getDhcpInfo(vr, struct);
                 doReleaseDhcpFromVirtualRouter(vr, info, new NoErrorCompletion(completion) {
                     @Override
