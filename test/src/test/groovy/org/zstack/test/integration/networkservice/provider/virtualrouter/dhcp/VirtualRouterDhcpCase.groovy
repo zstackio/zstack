@@ -127,6 +127,23 @@ public class VirtualRouterDhcpCase extends SubCase {
                             gateway = "192.168.101.1"
                         }
                     }
+
+                    l3Network {
+                        name = "ipv6L3"
+                        ipVersion = 6
+
+                        service {
+                            provider = VyosConstants.VYOS_ROUTER_PROVIDER_TYPE
+                            types = [NetworkServiceType.DHCP.toString()]
+                        }
+
+                        ipv6 {
+                            name = "ipv6-stateful-dhcp"
+                            networkCidr = "2001:db8:1::/64"
+                            addressMode = "Stateful-DHCP"
+                        }
+                    }
+
                     l3Network {
                         name = "pubL3"
                         category = "Public"
@@ -180,6 +197,7 @@ public class VirtualRouterDhcpCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testCreateIpv6OnlyVmWillNotApplyVirtualRouterDhcp()
             testCreateVmWillSetDhcpOnly()
             testCreateVmWillSetDhcpDns()
         }
@@ -187,6 +205,42 @@ public class VirtualRouterDhcpCase extends SubCase {
 
     String makeNamespaceName(String brName, String l3Uuid) {
         return String.format("%s_%s", brName, l3Uuid)
+    }
+
+    void testCreateIpv6OnlyVmWillNotApplyVirtualRouterDhcp() {
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        ImageInventory image = env.inventoryByName("image") as ImageInventory
+        L3NetworkInventory l3 = env.inventoryByName("ipv6L3") as L3NetworkInventory
+        HostInventory host = env.inventoryByName("kvm") as HostInventory
+
+        int addDhcpCalls = 0
+        int removeDhcpCalls = 0
+        env.afterSimulator(VirtualRouterConstant.VR_ADD_DHCP_PATH) { VirtualRouterCommands.AddDhcpEntryRsp rsp, HttpEntity<String> e ->
+            addDhcpCalls++
+            return rsp
+        }
+        env.afterSimulator(VirtualRouterConstant.VR_REMOVE_DHCP_PATH) { VirtualRouterCommands.RemoveDhcpEntryRsp rsp, HttpEntity<String> e ->
+            removeDhcpCalls++
+            return rsp
+        }
+
+        def vm = createVmInstance {
+            name = "ipv6-vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            defaultL3NetworkUuid = l3.uuid
+            hostUuid = host.uuid
+        }
+
+        assert addDhcpCalls == 0
+
+        destroyVmInstance {
+            uuid = vm.uuid
+        }
+
+        assert removeDhcpCalls == 0
+        env.cleanAfterSimulatorHandlers()
     }
 
     void testCreateVmWillSetDhcpOnly() {
