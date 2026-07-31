@@ -14,6 +14,8 @@ import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.lb.LoadBalancerVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterCommands
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig
@@ -201,6 +203,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
     @Override
     void test() {
         env.create {
+            installSupportedZvrVersionSimulator()
             prepareDedicatedLoadBalancer()
             installRefreshLbCapture()
             testTcpIpvsIpv6Validation()
@@ -215,6 +218,13 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             testTcpHaproxyBackendRefreshPayload()
             testUdpHaproxyBackendRefreshPayload()
             testTcpIpvsDedicatedListenerBackendRefreshPayload()
+        }
+    }
+
+    void installSupportedZvrVersionSimulator() {
+        env.afterSimulator(VirtualRouterConstant.VR_INIT) { VirtualRouterCommands.InitRsp rsp, HttpEntity<String> e ->
+            rsp.zvrVersion = VyosConstants.TCP_IPVS_MIN_ZVR_VERSION
+            return rsp
         }
     }
 
