@@ -502,6 +502,21 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
     }
 
+    private boolean isTcpIpvsListener(String listenerUuid) {
+        LoadBalancerListenerVO listener = Q.New(LoadBalancerListenerVO.class)
+                .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
+                .find();
+        return listener != null && LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol()) &&
+                LoadBalancerConstants.DATA_PLANE_IPVS.equals(listener.getDataPlane());
+    }
+
+    private void rejectTcpIpvsSystemTag(String listenerUuid, String errorCode, String parameter) {
+        if (isTcpIpvsListener(listenerUuid)) {
+            throw new OperationFailureException(
+                    operr(errorCode, "tcp ipvs listener doesn't support %s", parameter));
+        }
+    }
+
     private void prepareSystemTags() {
         AbstractSystemTagOperationJudger judger = new AbstractSystemTagOperationJudger() {
             @Override
@@ -551,6 +566,14 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
                 if (!LoadBalancerConstants.BALANCE_ALGORITHMS.contains(algorithm)) {
                     throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10005, "invalid balance algorithm[%s], valid algorithms are %s", algorithm, LoadBalancerConstants.BALANCE_ALGORITHMS));
                 }
+            }
+        });
+
+        LoadBalancerSystemTags.TCP_PROXYPROTOCOL.installValidator(new SystemTagValidator() {
+            @Override
+            public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                rejectTcpIpvsSystemTag(resourceUuid, ORG_ZSTACK_NETWORK_SERVICE_LB_10191,
+                        "tcpProxyProtocol");
             }
         });
 
@@ -661,6 +684,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                rejectTcpIpvsSystemTag(resourceUuid, ORG_ZSTACK_NETWORK_SERVICE_LB_10192,
+                        "connectionIdleTimeout");
                 String s = LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.getTokenByTag(systemTag,
                         LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN);
 
@@ -703,6 +728,8 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
         LoadBalancerSystemTags.NUMBER_OF_PROCESS.installValidator(new SystemTagValidator() {
             @Override
             public void validateSystemTag(String resourceUuid, Class resourceType, String systemTag) {
+                rejectTcpIpvsSystemTag(resourceUuid, ORG_ZSTACK_NETWORK_SERVICE_LB_10193,
+                        "nbprocess");
                 String s = LoadBalancerSystemTags.NUMBER_OF_PROCESS.getTokenByTag(systemTag,
                         LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN);
 

@@ -815,6 +815,33 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 msg.getHealthCheckHttpCode() != null;
     }
 
+    private boolean hasEnabledTcpProxyProtocol(String tcpProxyProtocol) {
+        return !StringUtils.isEmpty(tcpProxyProtocol) &&
+                !DisableLbSupportTcpProxyProtocol.equals(tcpProxyProtocol);
+    }
+
+    private void validateTcpIpvsDoesNotUseTcpProxyProtocol(String protocol, String dataPlane, String tcpProxyProtocol) {
+        if (isTcpIpvsListener(protocol, dataPlane) && hasEnabledTcpProxyProtocol(tcpProxyProtocol)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10191, "tcp ipvs listener doesn't support tcpProxyProtocol"));
+        }
+    }
+
+    private void validateTcpIpvsDoesNotUseConnectionIdleTimeout(String protocol, String dataPlane,
+                                                                 Integer connectionIdleTimeout) {
+        if (isTcpIpvsListener(protocol, dataPlane) && connectionIdleTimeout != null) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10192, "tcp ipvs listener doesn't support connectionIdleTimeout"));
+        }
+    }
+
+    private void validateTcpIpvsDoesNotUseNbprocess(String protocol, String dataPlane, Integer nbprocess) {
+        if (isTcpIpvsListener(protocol, dataPlane) && nbprocess != null) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10193, "tcp ipvs listener doesn't support nbprocess"));
+        }
+    }
+
     private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
         if (healthCheckTarget == null) {
             return null;
@@ -970,6 +997,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             throw new ApiMessageInterceptionException(
                     operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10189, "tcp ipvs listener doesn't support healthCheckTimeout"));
         }
+        if (isTcpIpvsListener(msg.getProtocol(), dataPlane) && hasTag(msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10192, "tcp ipvs listener doesn't support connectionIdleTimeout"));
+        }
+        if (isTcpIpvsListener(msg.getProtocol(), dataPlane) && hasTag(msg, LoadBalancerSystemTags.NUMBER_OF_PROCESS)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10193, "tcp ipvs listener doesn't support nbprocess"));
+        }
+        if (isTcpIpvsListener(msg.getProtocol(), dataPlane) && hasTag(msg, LoadBalancerSystemTags.TCP_PROXYPROTOCOL)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10191, "tcp ipvs listener doesn't support tcpProxyProtocol"));
+        }
 
         if (isHealthCheckProtocolNotSupportedByListenerProtocol(msg.getProtocol(), dataPlane, msg.getHealthCheckProtocol())) {
             throw new ApiMessageInterceptionException(
@@ -1011,12 +1050,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validateAcl(msg.getAclUuids(),new ArrayList<>(), msg.getLoadBalancerUuid());
         }
 
-        insertTagIfNotExisting(
-                msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT,
-                LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(
-                        map(e(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, LoadBalancerGlobalConfig.CONNECTION_IDLE_TIMEOUT.value(Long.class)))
-                )
-        );
+        if (!isTcpIpvsListener(msg.getProtocol(), dataPlane)) {
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT,
+                    LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.instantiateTag(
+                            map(e(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, LoadBalancerGlobalConfig.CONNECTION_IDLE_TIMEOUT.value(Long.class)))
+                    )
+            );
+        }
 
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.HEALTHY_THRESHOLD,
@@ -1076,12 +1117,14 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 )
         );
 
-        insertTagIfNotExisting(
-                msg, LoadBalancerSystemTags.NUMBER_OF_PROCESS,
-                LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(
-                        map(e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, LoadBalancerGlobalConfig.NUMBER_OF_PROCESS.value()))
-                )
-        );
+        if (!isTcpIpvsListener(msg.getProtocol(), dataPlane)) {
+            insertTagIfNotExisting(
+                    msg, LoadBalancerSystemTags.NUMBER_OF_PROCESS,
+                    LoadBalancerSystemTags.NUMBER_OF_PROCESS.instantiateTag(
+                            map(e(LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, LoadBalancerGlobalConfig.NUMBER_OF_PROCESS.value()))
+                    )
+            );
+        }
 
 
         if (LoadBalancerConstants.LB_PROTOCOL_HTTP.equals(msg.getProtocol()) || LoadBalancerConstants.LB_PROTOCOL_HTTPS.equals(msg.getProtocol())) {
@@ -1381,6 +1424,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(
                         argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10093, "cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
+            validateTcpIpvsDoesNotUseTcpProxyProtocol(msg.getProtocol(), dataPlane, msg.getTcpProxyProtocol());
 
             if (!msg.getTcpProxyProtocol().equals(DisableLbSupportTcpProxyProtocol)) {
                 insertTagIfNotExisting(
@@ -1620,6 +1664,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                                            eq(LoadBalancerListenerVO_.uuid,msg.getLoadBalancerListenerUuid()).find();
         String dataPlane = getListenerDataPlane(msg.getLoadBalancerListenerUuid());
 
+        validateTcpIpvsDoesNotUseConnectionIdleTimeout(listenerVO.getProtocol(), dataPlane,
+                msg.getConnectionIdleTimeout());
+        validateTcpIpvsDoesNotUseNbprocess(listenerVO.getProtocol(), dataPlane, msg.getNbprocess());
+
         if (msg.getSecurityPolicyType() != null) {
             if (!listenerVO.getProtocol().equals(LB_PROTOCOL_HTTPS)) {
                 throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10118, "the listener with protocol [%s] doesn't support select security policy", listenerVO.getProtocol(), msg.getHealthCheckProtocol()));
@@ -1697,6 +1745,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(
                         argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10125, "cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
+            validateTcpIpvsDoesNotUseTcpProxyProtocol(listenerVO.getProtocol(), dataPlane, msg.getTcpProxyProtocol());
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {

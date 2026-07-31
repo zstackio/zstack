@@ -4,6 +4,8 @@ import org.zstack.appliancevm.ApplianceVmVO
 import org.zstack.appliancevm.ApplianceVmVO_
 import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.tag.SystemTagVO
+import org.zstack.header.tag.SystemTagVO_
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerAclStatus
 import org.zstack.network.service.lb.LoadBalancerAclType
@@ -28,11 +30,14 @@ import org.zstack.sdk.ChangeLoadBalancerListenerAction
 import org.zstack.sdk.ApiResult
 import org.zstack.sdk.CreateLoadBalancerListenerAction
 import org.zstack.sdk.CreateLoadBalancerListenerResult
+import org.zstack.sdk.CreateSystemTagAction
+import org.zstack.sdk.CreateSystemTagsAction
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.LoadBalancerInventory
 import org.zstack.sdk.LoadBalancerListenerInventory
 import org.zstack.sdk.LoadBalancerServerGroupInventory
 import org.zstack.sdk.QueryLoadBalancerListenerAction
+import org.zstack.sdk.UpdateSystemTagAction
 import org.zstack.sdk.VipInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.ZSClient
@@ -214,7 +219,11 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             testTcpIpvsDefaultForwardMode()
             testTcpIpvsForwardModeCannotBeChanged()
             testTcpIpvsCreateValidation()
+            testTcpIpvsTcpProxyProtocolValidation()
             testTcpIpvsHealthCheckParameterValidation()
+            testTcpIpvsUnsupportedHaproxyParameterValidation()
+            testTcpIpvsSystemTagApiValidation()
+            testTcpHaproxyParameterRegression()
             testTcpHaproxyBackendRefreshPayload()
             testUdpHaproxyBackendRefreshPayload()
             testTcpIpvsDedicatedListenerBackendRefreshPayload()
@@ -551,6 +560,47 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert result.error.details.contains("forwardMode is only supported when dataPlane is ipvs")
     }
 
+    void testTcpIpvsTcpProxyProtocolValidation() {
+        ["v1", "v2"].eachWithIndex { String protocol, int index ->
+            int port = 11260 + index
+            CreateLoadBalancerListenerAction.Result result = assertCreateTcpIpvsListenerError(port) { CreateLoadBalancerListenerAction action ->
+                action.tcpProxyProtocol = protocol
+            }
+            assertUnsupportedTcpProxyProtocolError(result.error)
+            assert !Q.New(LoadBalancerListenerVO.class)
+                    .eq(LoadBalancerListenerVO_.name, "tcp-ipvs-error-${port}".toString())
+                    .isExists()
+        }
+
+        LoadBalancerListenerInventory disabledOnCreate = createLoadBalancerListener {
+            delegate.name = "tcp-ipvs-disabled-tcp-proxy-protocol"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            delegate.loadBalancerPort = 11262
+            delegate.instancePort = 8080
+            delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
+            delegate.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+            delegate.tcpProxyProtocol = LoadBalancerConstants.DisableLbSupportTcpProxyProtocol
+        }
+        assert disabledOnCreate.uuid != null
+        assert !LoadBalancerSystemTags.TCP_PROXYPROTOCOL.hasTag(disabledOnCreate.uuid, LoadBalancerListenerVO.class)
+
+        LoadBalancerListenerInventory listener = createTcpIpvsListener(
+                "tcp-ipvs-change-tcp-proxy-protocol", 11263, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        ["v1", "v2"].each { String protocol ->
+            ChangeLoadBalancerListenerAction.Result result = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+                action.tcpProxyProtocol = protocol
+            }
+            assertUnsupportedTcpProxyProtocolError(result.error)
+        }
+        assert !LoadBalancerSystemTags.TCP_PROXYPROTOCOL.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.tcpProxyProtocol = LoadBalancerConstants.DisableLbSupportTcpProxyProtocol
+        }
+        assert !LoadBalancerSystemTags.TCP_PROXYPROTOCOL.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+    }
+
     void testTcpIpvsHealthCheckParameterValidation() {
         [
                 { CreateLoadBalancerListenerAction action -> action.healthCheckMethod = "GET" },
@@ -684,6 +734,123 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             action.healthCheckTarget = "none:8080"
         }
         assert noneSpecificTargetResult.error.details.contains("health check protocol none only supports default target")
+    }
+
+    void testTcpIpvsUnsupportedHaproxyParameterValidation() {
+        [
+                ["connectionIdleTimeout::77", "ORG_ZSTACK_NETWORK_SERVICE_LB_10192", "connectionIdleTimeout"],
+                ["Nbprocess::2", "ORG_ZSTACK_NETWORK_SERVICE_LB_10193", "nbprocess"],
+                ["tcpProxyProtocol::v2", "ORG_ZSTACK_NETWORK_SERVICE_LB_10191", "tcpProxyProtocol"],
+                ["tcpProxyProtocol::disable", "ORG_ZSTACK_NETWORK_SERVICE_LB_10191", "tcpProxyProtocol"]
+        ].eachWithIndex { List param, int index ->
+            int port = 11270 + index
+            CreateLoadBalancerListenerAction.Result result = assertCreateTcpIpvsListenerError(port) { CreateLoadBalancerListenerAction action ->
+                action.systemTags = [param[0]]
+            }
+            assertUnsupportedTcpIpvsParameterError(result.error, param[1] as String, param[2] as String)
+            assert !Q.New(LoadBalancerListenerVO.class)
+                    .eq(LoadBalancerListenerVO_.name, "tcp-ipvs-invalid-health-check-${port}".toString())
+                    .isExists()
+        }
+
+        LoadBalancerListenerInventory listener = createTcpIpvsListener(
+                "tcp-ipvs-unsupported-haproxy-parameters", 11274,
+                LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+        List<String> tags = Q.New(SystemTagVO.class)
+                .select(SystemTagVO_.tag)
+                .eq(SystemTagVO_.resourceUuid, listener.uuid)
+                .listValues()
+        assert !tags.any { it.startsWith("connectionIdleTimeout::") }
+        assert !tags.any { it.startsWith("Nbprocess::") }
+
+        ChangeLoadBalancerListenerAction.Result idleTimeoutResult = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.connectionIdleTimeout = 77
+        }
+        assertUnsupportedTcpIpvsParameterError(idleTimeoutResult.error,
+                "ORG_ZSTACK_NETWORK_SERVICE_LB_10192", "connectionIdleTimeout")
+
+        ChangeLoadBalancerListenerAction.Result nbprocessResult = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.nbprocess = 2
+        }
+        assertUnsupportedTcpIpvsParameterError(nbprocessResult.error,
+                "ORG_ZSTACK_NETWORK_SERVICE_LB_10193", "nbprocess")
+    }
+
+    void testTcpIpvsSystemTagApiValidation() {
+        LoadBalancerListenerInventory listener = createTcpIpvsListener(
+                "tcp-ipvs-system-tag-validation", 11275,
+                LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
+
+        [
+                ["connectionIdleTimeout::77", "ORG_ZSTACK_NETWORK_SERVICE_LB_10192", "connectionIdleTimeout"],
+                ["Nbprocess::2", "ORG_ZSTACK_NETWORK_SERVICE_LB_10193", "nbprocess"],
+                ["tcpProxyProtocol::v2", "ORG_ZSTACK_NETWORK_SERVICE_LB_10191", "tcpProxyProtocol"]
+        ].each { List param ->
+            CreateSystemTagAction action = new CreateSystemTagAction()
+            action.resourceType = LoadBalancerListenerVO.class.simpleName
+            action.resourceUuid = listener.uuid
+            action.tag = param[0]
+            action.sessionId = adminSession()
+
+            CreateSystemTagAction.Result result = action.call()
+            assert result.error != null
+            assertUnsupportedTcpIpvsParameterError(result.error, param[1] as String, param[2] as String)
+        }
+
+        CreateSystemTagsAction batchAction = new CreateSystemTagsAction()
+        batchAction.resourceType = LoadBalancerListenerVO.class.simpleName
+        batchAction.resourceUuid = listener.uuid
+        batchAction.tags = ["connectionIdleTimeout::88"]
+        batchAction.sessionId = adminSession()
+        CreateSystemTagsAction.Result batchResult = batchAction.call()
+        assert batchResult.error != null
+        assertUnsupportedTcpIpvsParameterError(batchResult.error,
+                "ORG_ZSTACK_NETWORK_SERVICE_LB_10192", "connectionIdleTimeout")
+
+        SystemTagVO maxConnectionTag = Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, listener.uuid)
+                .like(SystemTagVO_.tag, "maxConnection::%")
+                .find()
+        assert maxConnectionTag != null
+
+        UpdateSystemTagAction updateAction = new UpdateSystemTagAction()
+        updateAction.uuid = maxConnectionTag.uuid
+        updateAction.tag = "Nbprocess::3"
+        updateAction.sessionId = adminSession()
+        UpdateSystemTagAction.Result updateResult = updateAction.call()
+        assert updateResult.error != null
+        assertUnsupportedTcpIpvsParameterError(updateResult.error,
+                "ORG_ZSTACK_NETWORK_SERVICE_LB_10193", "nbprocess")
+
+        assert Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.uuid, maxConnectionTag.uuid)
+                .like(SystemTagVO_.tag, "maxConnection::%")
+                .isExists()
+    }
+
+    void testTcpHaproxyParameterRegression() {
+        LoadBalancerListenerInventory listener = createLoadBalancerListener {
+            delegate.name = "tcp-haproxy-parameter-regression"
+            delegate.loadBalancerUuid = lb.uuid
+            delegate.protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+            delegate.loadBalancerPort = 11276
+            delegate.instancePort = 8080
+            delegate.systemTags = [
+                    "connectionIdleTimeout::77",
+                    "Nbprocess::2",
+                    "tcpProxyProtocol::v2"
+            ]
+        }
+
+        assert LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+        assert LoadBalancerSystemTags.NUMBER_OF_PROCESS.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+        assert LoadBalancerSystemTags.TCP_PROXYPROTOCOL.hasTag(listener.uuid, LoadBalancerListenerVO.class)
+
+        assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.connectionIdleTimeout = 88
+            action.nbprocess = 3
+            action.tcpProxyProtocol = "v1"
+        }
     }
 
     void testTcpHaproxyBackendRefreshPayload() {
@@ -1161,6 +1328,16 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
     void assertUnsupportedHealthCheckTimeoutError(def error) {
         assert error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10189"
         assert error.details.contains("tcp ipvs listener doesn't support healthCheckTimeout")
+    }
+
+    void assertUnsupportedTcpProxyProtocolError(def error) {
+        assert error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10191"
+        assert error.details.contains("tcp ipvs listener doesn't support tcpProxyProtocol")
+    }
+
+    void assertUnsupportedTcpIpvsParameterError(def error, String errorCode, String parameter) {
+        assert error.globalErrorCode == errorCode
+        assert error.details.contains("tcp ipvs listener doesn't support ${parameter}".toString())
     }
 
     String getApiResultString(ApiResult result) {
