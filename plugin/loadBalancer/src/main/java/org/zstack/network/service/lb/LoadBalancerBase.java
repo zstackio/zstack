@@ -1811,9 +1811,33 @@ public class LoadBalancerBase {
                     return;
                 }
 
-                createListener(msg, new NoErrorCompletion(chain) {
+                LoadBalancerBackend backend = getBackend();
+                if (backend == null) {
+                    createListener(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
+                backend.validateBeforeCreateListener(self, msg, new Completion(chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        createListener(msg, new NoErrorCompletion(chain) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
+                        evt.setError(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });

@@ -47,6 +47,7 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
@@ -1301,6 +1302,46 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void validateBeforeCreateListener(LoadBalancerVO lbVO, APICreateLoadBalancerListenerMsg msg, Completion completion) {
+        if (!isTcpIpvsListener(msg)) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmInventory vr = findVirtualRouterVm(lbVO.getUuid());
+        if (vr == null) {
+            completion.success();
+            return;
+        }
+
+        ErrorCode errorCode = validateTcpIpvsZvrVersion(vr.getUuid());
+        if (errorCode != null) {
+            completion.fail(errorCode);
+            return;
+        }
+
+        completion.success();
+    }
+
+    private boolean isTcpIpvsListener(APICreateLoadBalancerListenerMsg msg) {
+        return LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol()) &&
+                LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane());
+    }
+
+    private ErrorCode validateTcpIpvsZvrVersion(String vmUuid) {
+        VirtualRouterMetadataVO metadataVO = dbf.findByUuid(vmUuid, VirtualRouterMetadataVO.class);
+        String zvrVersion = metadataVO == null ? null : metadataVO.getZvrVersion();
+        if (!VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion) ||
+                new VersionComparator(zvrVersion).compare(VyosConstants.TCP_IPVS_MIN_ZVR_VERSION) < 0) {
+            return operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10190,
+                    "target appliance vm[uuid:%s] zvr version [%s] does not support tcp ipvs listener, required >= %s",
+                    vmUuid, zvrVersion == null ? "unknown" : zvrVersion, VyosConstants.TCP_IPVS_MIN_ZVR_VERSION);
+        }
+
+        return null;
     }
 
     public void refreshCertsAndListeners(VirtualRouterVmInventory vr,
