@@ -815,6 +815,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 msg.getHealthCheckHttpCode() != null;
     }
 
+    private boolean hasEnabledTcpProxyProtocol(String tcpProxyProtocol) {
+        return !StringUtils.isEmpty(tcpProxyProtocol) &&
+                !DisableLbSupportTcpProxyProtocol.equals(tcpProxyProtocol);
+    }
+
+    private void validateTcpIpvsDoesNotUseTcpProxyProtocol(String protocol, String dataPlane, String tcpProxyProtocol) {
+        if (isTcpIpvsListener(protocol, dataPlane) && hasEnabledTcpProxyProtocol(tcpProxyProtocol)) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10191, "tcp ipvs listener doesn't support tcpProxyProtocol"));
+        }
+    }
+
     private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
         if (healthCheckTarget == null) {
             return null;
@@ -1381,6 +1393,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(
                         argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10093, "cloud not create the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
+            validateTcpIpvsDoesNotUseTcpProxyProtocol(msg.getProtocol(), dataPlane, msg.getTcpProxyProtocol());
 
             if (!msg.getTcpProxyProtocol().equals(DisableLbSupportTcpProxyProtocol)) {
                 insertTagIfNotExisting(
@@ -1697,6 +1710,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 throw new ApiMessageInterceptionException(
                         argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10125, "cloud not change the loadbalancer listener, because only support tcp proxy protocol %s", LbSupportTcpProxyProtocol));
             }
+            validateTcpIpvsDoesNotUseTcpProxyProtocol(listenerVO.getProtocol(), dataPlane, msg.getTcpProxyProtocol());
         }
 
         if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {

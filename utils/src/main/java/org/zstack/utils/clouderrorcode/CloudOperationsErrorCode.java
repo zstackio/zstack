@@ -14015,6 +14015,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_NETWORK_SERVICE_LB_10190 = "ORG_ZSTACK_NETWORK_SERVICE_LB_10190";
 
+    public static final String ORG_ZSTACK_NETWORK_SERVICE_LB_10191 = "ORG_ZSTACK_NETWORK_SERVICE_LB_10191";
+
     public static final String ORG_ZSTACK_IPSEC_10000 = "ORG_ZSTACK_IPSEC_10000";
 
     public static final String ORG_ZSTACK_IPSEC_10001 = "ORG_ZSTACK_IPSEC_10001";
