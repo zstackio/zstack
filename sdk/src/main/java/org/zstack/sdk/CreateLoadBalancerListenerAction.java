@@ -52,6 +52,9 @@ public class CreateLoadBalancerListenerAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckTarget;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,10000000L}, noTrim = false)
+    public java.lang.Integer maxConnection;
+
     @Param(required = false, validValues = {"GET","HEAD"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String healthCheckMethod;
 

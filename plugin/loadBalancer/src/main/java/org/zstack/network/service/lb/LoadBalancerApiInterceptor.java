@@ -905,6 +905,32 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, normalizedTarget))));
     }
 
+    private void normalizeCreateMaxConnection(APICreateLoadBalancerListenerMsg msg) {
+        if (msg.getMaxConnection() == null) {
+            return;
+        }
+
+        String maxConnection = msg.getMaxConnection().toString();
+        List<String> taggedMaxConnections = getSystemTagTokens(msg, LoadBalancerSystemTags.MAX_CONNECTION,
+                LoadBalancerSystemTags.MAX_CONNECTION_TOKEN);
+        if (taggedMaxConnections.size() > 1) {
+            throw new ApiMessageInterceptionException(
+                    operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10087, "only one maxConnection is allowed, but got %s",
+                            taggedMaxConnections));
+        }
+        if (taggedMaxConnections.size() == 1) {
+            if (!maxConnection.equals(taggedMaxConnections.get(0))) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10087, "maxConnection [%s] conflicts with system tag value [%s]",
+                                maxConnection, taggedMaxConnections.get(0)));
+            }
+            return;
+        }
+
+        msg.addSystemTag(LoadBalancerSystemTags.MAX_CONNECTION.instantiateTag(
+                map(e(LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, maxConnection))));
+    }
+
     private void normalizeChangeHealthCheckTarget(APIChangeLoadBalancerListenerMsg msg) {
         String target = msg.getHealthCheckTarget();
         if (target == null || !target.contains(":")) {
@@ -938,6 +964,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_TCP);
         }
         normalizeCreateHealthCheckTarget(msg);
+        normalizeCreateMaxConnection(msg);
 
         if (msg.getProtocol().equals(LB_PROTOCOL_UDP)) {
             if (!StringUtils.isEmpty(lbVO.getVipUuid()) && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {

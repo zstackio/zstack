@@ -43,6 +43,8 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String healthCheckProtocol;
     @APIParam(required = false)
     private String healthCheckTarget;
+    @APIParam(numberRange = {LoadBalancerConstants.MAXIMUM_CONNECTION_MIN, LoadBalancerConstants.MAXIMUM_CONNECTION_MAX}, required = false)
+    private Integer maxConnection;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;
     @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
@@ -136,6 +138,14 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setHealthCheckTarget(String healthCheckTarget) {
         this.healthCheckTarget = healthCheckTarget;
+    }
+
+    public Integer getMaxConnection() {
+        return maxConnection;
+    }
+
+    public void setMaxConnection(Integer maxConnection) {
+        this.maxConnection = maxConnection;
     }
 
     public String getHealthCheckMethod() {

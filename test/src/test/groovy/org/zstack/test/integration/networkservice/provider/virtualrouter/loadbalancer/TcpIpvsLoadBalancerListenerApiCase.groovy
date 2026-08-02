@@ -210,6 +210,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             testTcpHaproxyDefaultDataPlane()
             testTcpIpvsFullNatListener()
             testTcpIpvsSupportedParameterInventory()
+            testTcpIpvsCreateMaxConnectionConflict()
             testTcpIpvsNatAndDrListener()
             testTcpIpvsDefaultForwardMode()
             testTcpIpvsForwardModeCannotBeChanged()
@@ -311,9 +312,9 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         createAction.instancePort = 8080
         createAction.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
         createAction.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+        createAction.maxConnection = 2000000
         createAction.systemTags = [
-                "balancerAlgorithm::${LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN}".toString(),
-                "maxConnection::1234"
+                "balancerAlgorithm::${LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN}".toString()
         ]
         createAction.sessionId = adminSession()
 
@@ -321,7 +322,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert createResult.error == null
         String rawResult = getApiResultString(createResult)
         assert rawResult.contains("\"balancerAlgorithm\":\"${LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN}\"".toString())
-        assert rawResult.contains("\"maxConnection\":1234")
+        assert rawResult.contains("\"maxConnection\":2000000")
 
         LoadBalancerListenerInventory listener = createResult.getResult(CreateLoadBalancerListenerResult.class).inventory
 
@@ -330,7 +331,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
 
         rawResult = queryListenerRaw(listener.uuid)
         assert rawResult.contains("\"balancerAlgorithm\":\"${LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN}\"".toString())
-        assert rawResult.contains("\"maxConnection\":1234")
+        assert rawResult.contains("\"maxConnection\":2000000")
 
         String backendIp = backendIp("backend-vm-1")
         LoadBalancerServerGroupInventory group = createServerGroupWithVmNics(
@@ -345,10 +346,10 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
 
         VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(listener.uuid, [
                 "balancerAlgorithm::${LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN}".toString(),
-                "maxConnection::1234"
+                "maxConnection::2000000"
         ], refreshOffset)
         assertTcpIpvsTO(to, listener.uuid, 11074, LoadBalancerConstants.BALANCE_ALGORITHM_LEAST_CONN)
-        assert to.parameters.contains("maxConnection::1234")
+        assert to.parameters.contains("maxConnection::2000000")
         assertServerGroups(to, [
                 (group.uuid): [(backendIp): 100L]
         ])
@@ -356,7 +357,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         ChangeLoadBalancerListenerAction changeAction = new ChangeLoadBalancerListenerAction()
         changeAction.uuid = listener.uuid
         changeAction.balancerAlgorithm = LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN
-        changeAction.maxConnection = 2345
+        changeAction.maxConnection = 1234567
         changeAction.sessionId = adminSession()
 
         refreshOffset = refreshCmds.size()
@@ -364,18 +365,28 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         assert changeResult.error == null
         rawResult = getApiResultString(changeResult)
         assert rawResult.contains("\"balancerAlgorithm\":\"${LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN}\"".toString())
-        assert rawResult.contains("\"maxConnection\":2345")
+        assert rawResult.contains("\"maxConnection\":1234567")
 
         to = lastLbTOWithParameters(listener.uuid, [
                 "balancerAlgorithm::${LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN}".toString(),
-                "maxConnection::2345"
+                "maxConnection::1234567"
         ], refreshOffset)
         assertTcpIpvsTO(to, listener.uuid, 11074, LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN)
-        assert to.parameters.contains("maxConnection::2345")
+        assert to.parameters.contains("maxConnection::1234567")
 
         rawResult = queryListenerRaw(listener.uuid)
         assert rawResult.contains("\"balancerAlgorithm\":\"${LoadBalancerConstants.BALANCE_ALGORITHM_WEIGHT_ROUND_ROBIN}\"".toString())
-        assert rawResult.contains("\"maxConnection\":2345")
+        assert rawResult.contains("\"maxConnection\":1234567")
+    }
+
+    void testTcpIpvsCreateMaxConnectionConflict() {
+        CreateLoadBalancerListenerAction.Result result = assertCreateTcpIpvsListenerError(11075) {
+            it.maxConnection = 2000000
+            it.systemTags = ["maxConnection::1234567"]
+        }
+
+        assert result.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10087"
+        assert result.error.details.contains("maxConnection [2000000] conflicts with system tag value [1234567]")
     }
 
     void testTcpIpvsNatAndDrListener() {
