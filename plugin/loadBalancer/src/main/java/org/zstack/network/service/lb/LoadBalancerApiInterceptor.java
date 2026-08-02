@@ -863,6 +863,48 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                 LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(protocol);
     }
 
+    private void normalizeCreateHealthCheckTarget(APICreateLoadBalancerListenerMsg msg) {
+        String target = msg.getHealthCheckTarget();
+        if (target == null) {
+            return;
+        }
+
+        String normalizedTarget = target;
+        if (target.contains(":")) {
+            String[] ts = target.split(":");
+            if (ts.length != 2 || !isValidHealthCheckProtocolInTarget(ts[0])) {
+                throw new ApiMessageInterceptionException(
+                        argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10100, "healthCheck target [%s] error, it must be 'default' or number between[1~65535] ",
+                                target));
+            }
+        } else {
+            String protocol = msg.getHealthCheckProtocol();
+            if (protocol == null) {
+                protocol = LoadBalancerConstants.LB_PROTOCOL_UDP.equals(msg.getProtocol()) ?
+                        LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP :
+                        LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP;
+            }
+            normalizedTarget = String.format("%s:%s", protocol, target);
+        }
+
+        List<String> taggedTargets = getSystemTagTokens(msg, LoadBalancerSystemTags.HEALTH_TARGET,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+        if (taggedTargets.size() > 1) {
+            return;
+        }
+        if (taggedTargets.size() == 1) {
+            if (!normalizedTarget.equals(taggedTargets.get(0))) {
+                throw new ApiMessageInterceptionException(
+                        operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10177, "only one health check target is allowed, but got [%s, %s]",
+                                normalizedTarget, taggedTargets.get(0)));
+            }
+            return;
+        }
+
+        msg.addSystemTag(LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
+                map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, normalizedTarget))));
+    }
+
     private void normalizeChangeHealthCheckTarget(APIChangeLoadBalancerListenerMsg msg) {
         String target = msg.getHealthCheckTarget();
         if (target == null || !target.contains(":")) {
@@ -895,6 +937,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (msg.getProtocol() == null) {
             msg.setProtocol(LoadBalancerConstants.LB_PROTOCOL_TCP);
         }
+        normalizeCreateHealthCheckTarget(msg);
 
         if (msg.getProtocol().equals(LB_PROTOCOL_UDP)) {
             if (!StringUtils.isEmpty(lbVO.getVipUuid()) && !StringUtils.isEmpty(lbVO.getIpv6VipUuid())) {

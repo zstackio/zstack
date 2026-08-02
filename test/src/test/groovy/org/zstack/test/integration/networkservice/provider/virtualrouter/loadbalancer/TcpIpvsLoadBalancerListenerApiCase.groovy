@@ -624,8 +624,8 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             delegate.instancePort = 8080
             delegate.dataPlane = LoadBalancerConstants.DATA_PLANE_IPVS
             delegate.forwardMode = LoadBalancerConstants.FORWARD_MODE_FULL_NAT
+            delegate.healthCheckTarget = "8081"
             delegate.systemTags = [
-                    "healthCheckTarget::tcp:default",
                     "healthCheckInterval::2",
                     "healthyThreshold::2",
                     "unhealthyThreshold::2"
@@ -641,7 +641,7 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
             serverGroupUuid = group.uuid
         }
         VirtualRouterLoadBalancerBackend.LbTO to = lastLbTOWithParameters(listener.uuid, healthCheckParameters([
-                healthCheckTarget: "tcp:default",
+                healthCheckTarget: "tcp:8081",
                 healthCheckInterval: "2",
                 healthyThreshold: "2",
                 unhealthyThreshold: "2"

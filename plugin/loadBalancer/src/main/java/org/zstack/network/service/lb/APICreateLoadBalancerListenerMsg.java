@@ -41,6 +41,8 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String certificateUuid;
     @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
+    @APIParam(required = false)
+    private String healthCheckTarget;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;
     @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
@@ -126,6 +128,14 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setHealthCheckProtocol(String healthCheckProtocol) {
         this.healthCheckProtocol = healthCheckProtocol;
+    }
+
+    public String getHealthCheckTarget() {
+        return healthCheckTarget;
+    }
+
+    public void setHealthCheckTarget(String healthCheckTarget) {
+        this.healthCheckTarget = healthCheckTarget;
     }
 
     public String getHealthCheckMethod() {

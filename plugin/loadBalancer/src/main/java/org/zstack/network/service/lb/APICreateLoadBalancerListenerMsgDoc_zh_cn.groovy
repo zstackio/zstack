@@ -96,6 +96,15 @@ doc {
 					values ("tcp","udp","http","none")
 				}
 				column {
+					name "healthCheckTarget"
+					enclosedIn "params"
+					desc "健康检查目标，支持端口或协议与端口组合，例如81或tcp:81"
+					location "body"
+					type "String"
+					optional true
+					since "5.5.38"
+				}
+				column {
 					name "healthCheckMethod"
 					enclosedIn "params"
 					desc "健康检查方法"
