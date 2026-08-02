@@ -10,6 +10,7 @@ public class AccountResourceRefVO_ {
     public static volatile SingularAttribute<AccountResourceRefVO, String> accountUuid;
     public static volatile SingularAttribute<AccountResourceRefVO, String> ownerAccountUuid;
     public static volatile SingularAttribute<AccountResourceRefVO, String> resourceUuid;
+    public static volatile SingularAttribute<AccountResourceRefVO, String> creatorVirtualIDUuid;
     public static volatile SingularAttribute<AccountResourceRefVO, String> resourceType;
     public static volatile SingularAttribute<AccountResourceRefVO, String> concreteResourceType;
     public static volatile SingularAttribute<AccountResourceRefVO, Integer> permission;

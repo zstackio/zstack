@@ -18,6 +18,8 @@ public class AccountResourceRefInventory {
     @APINoSee
     private String ownerAccountUuid;
     private String resourceUuid;
+    @APINoSee
+    private String creatorVirtualIDUuid;
     private String resourceType;
     private String concreteResourceType;
     @APINoSee
@@ -37,6 +39,7 @@ public class AccountResourceRefInventory {
         inv.setPermission(vo.getPermission());
         inv.setResourceType(vo.getResourceType());
         inv.setResourceUuid(vo.getResourceUuid());
+        inv.setCreatorVirtualIDUuid(vo.getCreatorVirtualIDUuid());
         inv.setShared(vo.isShared());
         inv.setConcreteResourceType(vo.getConcreteResourceType());
         return inv;
@@ -89,6 +92,14 @@ public class AccountResourceRefInventory {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public String getCreatorVirtualIDUuid() {
+        return creatorVirtualIDUuid;
+    }
+
+    public void setCreatorVirtualIDUuid(String creatorVirtualIDUuid) {
+        this.creatorVirtualIDUuid = creatorVirtualIDUuid;
     }
 
     public String getResourceType() {

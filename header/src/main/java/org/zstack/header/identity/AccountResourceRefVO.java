@@ -18,6 +18,8 @@ import java.sql.Timestamp;
         }
 )
 public class AccountResourceRefVO {
+    public static final String RESOURCE_CREATOR_CONTEXT_KEY = "resource-creator-virtual-id-uuid";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column
@@ -34,6 +36,10 @@ public class AccountResourceRefVO {
     @Column
     @Index
     private String resourceUuid;
+
+    @Column
+    @Index
+    private String creatorVirtualIDUuid;
 
     // may be deprecated later, should not rely on it
     @Column
@@ -90,6 +96,14 @@ public class AccountResourceRefVO {
 
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
+    }
+
+    public String getCreatorVirtualIDUuid() {
+        return creatorVirtualIDUuid;
+    }
+
+    public void setCreatorVirtualIDUuid(String creatorVirtualIDUuid) {
+        this.creatorVirtualIDUuid = creatorVirtualIDUuid;
     }
 
     public String getResourceType() {

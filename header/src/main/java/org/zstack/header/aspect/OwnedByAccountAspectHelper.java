@@ -1,5 +1,6 @@
 package org.zstack.header.aspect;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.OwnedByAccount;
@@ -14,6 +15,7 @@ public class OwnedByAccountAspectHelper {
         ref.setResourceType(ResourceTypeMetadata.getBaseResourceTypeFromConcreteType(entity.getClass()).getSimpleName());
         ref.setConcreteResourceType(entity.getClass().getName());
         ref.setResourceUuid(OwnedByAccount.getResourceUuid(entity));
+        ref.setCreatorVirtualIDUuid(ThreadContext.get(AccountResourceRefVO.RESOURCE_CREATOR_CONTEXT_KEY));
         ref.setPermission(AccountConstant.RESOURCE_PERMISSION_WRITE);
         ref.setOwnerAccountUuid(oa.getAccountUuid());
         ref.setShared(false);
