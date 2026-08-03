@@ -23,7 +23,7 @@ public interface VyosConstants {
 
     String VYOS_VERSION_PATH = "ansible/zvr/version";
     int VYOS_VERSION_LENGTH = 4;
-    String TCP_IPVS_MIN_ZVR_VERSION = "5.5.38.0";
+    String TCP_IPVS_MIN_ZVR_VERSION = "5.5.31.0";
 
     String REPLACE_FIREWALL_WITH_IPTBALES = "SkipVyosIptables";
     String HA_STATUS = "haStatus";
