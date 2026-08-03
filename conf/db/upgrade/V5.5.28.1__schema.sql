@@ -364,3 +364,5 @@ CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupV
                     'businessGatewayUuid', 'AIBusinessGatewayVO', 'uuid', 'SET NULL');
 CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupVODeveloperAccessGateway',
                     'developerAccessGatewayUuid', 'AIBusinessGatewayVO', 'uuid', 'SET NULL');
+CALL ADD_COLUMN('AIBusinessGatewayVO', 'agentStatus', 'VARCHAR(32)', 1, 'Unknown');
+CALL ADD_COLUMN('AIBusinessGatewayVO', 'dataPlaneStatus', 'VARCHAR(32)', 1, 'Unknown');
