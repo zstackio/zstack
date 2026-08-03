@@ -936,11 +936,16 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp, String apiId) throws IOException {
+        sendResponse(statusCode, response, rsp, apiId, false);
+    }
+
+    private void sendResponse(int statusCode, ApiResponse response, HttpServletResponse rsp, String apiId,
+                              boolean maskLogBody) throws IOException {
         prepareApiResponse(response, rsp, apiId);
 
         RequestInfo info = requestInfo.get();
         if (requestLogger.isTraceEnabled() && needLog(info)) {
-            String body = CloudBusGson.toJson(response);
+            String body = maskLogBody ? "*****" : CloudBusGson.toJson(response);
             StringBuilder sb = new StringBuilder(String.format("[ID: %s] Response to %s (%s),", info.session.getId(),
                     info.remoteHost, info.requestUrl));
             sb.append(String.format(" Status Code: %s,", statusCode));
@@ -1519,7 +1524,9 @@ public class RestServer implements Component, CloudBusEventListener {
         // the api succeeded
 
         writeResponse(response, responseAnnotationByClass.get(api.apiResponseClass), reply);
-        sendResponse(HttpStatus.OK.value(), response, rsp);
+        boolean maskLogBody = !LogSafeGson.getSensitiveFields(
+                reply.getClass()).isEmpty();
+        sendResponse(HttpStatus.OK.value(), response, rsp, null, maskLogBody);
     }
 
     private void sendMessage(APIMessage msg, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
