@@ -95,6 +95,15 @@ doc {
 					since "3.4"
 				}
 				column {
+					name "healthCheckTimeout"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查超时时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.28"
+				}
+				column {
 					name "healthCheckProtocol"
 					enclosedIn "changeLoadBalancerListener"
 					desc "负载均衡健康检查协议"
@@ -131,6 +140,16 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
+				}
+				column {
+					name "forwardMode"
+					enclosedIn "changeLoadBalancerListener"
+					desc "监听器使用 IPVS 数据平面时的转发模式。该参数只允许在创建监听器时指定，创建后不允许修改。"
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+					values ("full_nat","nat","dr")
 				}
 				column {
 					name "aclStatus"

@@ -44,6 +44,9 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MIN, LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MAX}, required = false)
     private Integer healthCheckInterval;
 
+    @APIParam(numberRange = {LoadBalancerConstants.HEALTH_CHECK_TIMEOUT_MIN, LoadBalancerConstants.HEALTH_CHECK_TIMEOUT_MAX}, required = false)
+    private Integer healthCheckTimeout;
+
     @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
@@ -91,6 +94,9 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     @APIParam(required = false)
     private List<String> httpCompressAlgos;
+
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT, LoadBalancerConstants.FORWARD_MODE_NAT, LoadBalancerConstants.FORWARD_MODE_DR}, required = false)
+    private String forwardMode;
 
     @APINoSee
     private String loadBalancerUuid;
@@ -165,6 +171,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHealthCheckInterval(Integer healthCheckInterval) {
         this.healthCheckInterval = healthCheckInterval;
+    }
+
+    public Integer getHealthCheckTimeout() {
+        return healthCheckTimeout;
+    }
+
+    public void setHealthCheckTimeout(Integer healthCheckTimeout) {
+        this.healthCheckTimeout = healthCheckTimeout;
     }
 
     public String getLoadBalancerUuid() {
@@ -305,6 +319,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHttpCompressAlgos(List<String> httpCompressAlgos) {
         this.httpCompressAlgos = httpCompressAlgos;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public static APIChangeLoadBalancerListenerMsg __example__() {
