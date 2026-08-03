@@ -54825,6 +54825,104 @@ abstract class ApiHelper {
     }
 
 
+    def createSNSSmsPluginEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.CreateSNSSmsPluginEndpointAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.plugin.CreateSNSSmsPluginEndpointAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def createSNSPluginPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.CreateSNSPluginPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.plugin.CreateSNSPluginPlatformAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+    def validateSNSSmsPluginEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        return errorOut(a.call())
+    }
+
+    def updateSNSPluginPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.UpdateSNSPluginPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.plugin.UpdateSNSPluginPlatformAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        return errorOut(a.call())
+    }
+
+
+    def querySNSPluginPlatform(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.QuerySNSPluginPlatformAction.class) Closure c) {
+        def a = new org.zstack.sdk.sns.platform.plugin.QuerySNSPluginPlatformAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+        a.conditions = a.conditions.collect { it.toString() }
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def querySNSPluginEndpoint(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.sns.platform.plugin.QuerySNSPluginEndpointAction.class) Closure c) {
         def a = new org.zstack.sdk.sns.platform.plugin.QuerySNSPluginEndpointAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid

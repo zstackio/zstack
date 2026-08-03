@@ -1,10 +1,10 @@
-package org.zstack.sdk.sns.platform.plugin;
+package org.zstack.sdk.zwatch.alarm.sns.template.plugin;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSPluginEndpointAction extends AbstractAction {
+public class CreateSNSPluginTextTemplateAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value;
+        public org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long timeoutInSeconds = 0L;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map properties;
+    public java.lang.String pluginDriverUuid;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
@@ -40,8 +34,26 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String applicationPlatformType = "Plugin";
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String subject;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String recoverySubject;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String template;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
+    public java.lang.String recoveryTemplate;
+
+    @Param(required = false)
+    public java.lang.Boolean defaultTemplate;
+
+    @Param(required = false, validValues = {"alarm","event","combined"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String type;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -81,8 +93,8 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult() : value; 
+        org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult value = res.getResult(org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult.class);
+        ret.value = value == null ? new org.zstack.sdk.zwatch.alarm.sns.CreateSNSTextTemplateResult() : value; 
 
         return ret;
     }
@@ -112,7 +124,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/plugin";
+        info.path = "/zwatch/alarms/sns/text-templates/plugin";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";
