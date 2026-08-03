@@ -852,6 +852,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
         APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+        refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
         final GetVmStartingCandidateClustersHostsMsg gmsg = new GetVmStartingCandidateClustersHostsMsg();
         gmsg.setUuid(msg.getUuid());
         bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
