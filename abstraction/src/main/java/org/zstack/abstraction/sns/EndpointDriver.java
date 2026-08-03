@@ -8,4 +8,8 @@ import org.zstack.abstraction.PluginDriver;
  */
 public interface EndpointDriver extends PluginDriver {
     boolean send(PluginEndpointData message);
+
+    default PluginEndpointSendResult sendWithResult(PluginEndpointData message) {
+        return PluginEndpointSendResult.from(send(message));
+    }
 }
