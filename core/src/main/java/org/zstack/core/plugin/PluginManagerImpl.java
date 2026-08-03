@@ -14,6 +14,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -44,8 +45,10 @@ import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -57,6 +60,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  */
 public class PluginManagerImpl extends AbstractService implements PluginManager {
     private static final CLogger logger = Utils.getLogger(PluginManagerImpl.class);
+    private static final long PLUGIN_DRIVER_REGISTRATION_LOCK_TIMEOUT = TimeUnit.MINUTES.toSeconds(2);
 
     @Autowired
     private DatabaseFacade dbf;
@@ -135,39 +139,55 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
             verifyPluginProduct(pluginDriver);
 
+            persistPluginDriver(pluginDriver);
+
             pluginInstances.put(pluginDriver.uuid(), pluginDriver);
             List<PluginDriver> registeredPlugins = pluginRegisters.computeIfAbsent(
                     pluginDriverClz, k -> new ArrayList<>());
             registeredPlugins.removeIf(registered -> Objects.equals(
                     registered.uuid(), pluginDriver.uuid()));
             registeredPlugins.add(pluginDriver);
-
-            PluginDriverVO vo = dbf.findByUuid(pluginDriver.uuid(), PluginDriverVO.class);
-            if (vo == null) {
-                vo = new PluginDriverVO();
-                vo.setUuid(pluginDriver.uuid());
-                vo.setName(pluginDriver.name());
-                vo.setVendor(pluginDriver.vendor());
-                vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
-                vo.setType(pluginDriver.type());
-                vo.setDescription(pluginDriver.description());
-                vo.setVersion(pluginDriver.version());
-                vo.setLicense(pluginDriver.license());
-                vo.setOptionTypes(JSONObjectUtil.toJsonString(pluginDriver.optionTypes()));
-                dbf.persist(vo);
-            } else {
-                vo.setName(pluginDriver.name());
-                vo.setVendor(pluginDriver.vendor());
-                vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
-                vo.setType(pluginDriver.type());
-                vo.setDescription(pluginDriver.description());
-                vo.setVersion(pluginDriver.version());
-                vo.setLicense(pluginDriver.license());
-                vo.setOptionTypes(JSONObjectUtil.toJsonString(pluginDriver.optionTypes()));
-                dbf.update(vo);
-            }
         } catch (Exception e) {
             throw new CloudRuntimeException(e);
+        }
+    }
+
+    protected void persistPluginDriver(PluginDriver pluginDriver) {
+        GLock lock = createPluginDriverRegistrationLock(pluginDriver.uuid());
+        lock.lock();
+        try {
+            upsertPluginDriver(pluginDriver);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    protected GLock createPluginDriverRegistrationLock(String pluginUuid) {
+        String lockUuid = UUID.nameUUIDFromBytes(pluginUuid.getBytes(StandardCharsets.UTF_8)).toString();
+        return new GLock(String.format("plugin-driver-%s", lockUuid),
+                PLUGIN_DRIVER_REGISTRATION_LOCK_TIMEOUT, dbf);
+    }
+
+    protected void upsertPluginDriver(PluginDriver pluginDriver) {
+        PluginDriverVO vo = dbf.findByUuid(pluginDriver.uuid(), PluginDriverVO.class);
+        boolean newPlugin = vo == null;
+        if (newPlugin) {
+            vo = new PluginDriverVO();
+            vo.setUuid(pluginDriver.uuid());
+        }
+
+        vo.setName(pluginDriver.name());
+        vo.setVendor(pluginDriver.vendor());
+        vo.setFeatures(JSONObjectUtil.toJsonString(pluginDriver.features()));
+        vo.setType(pluginDriver.type());
+        vo.setDescription(pluginDriver.description());
+        vo.setVersion(pluginDriver.version());
+        vo.setLicense(pluginDriver.license());
+        vo.setOptionTypes(JSONObjectUtil.toJsonString(pluginDriver.optionTypes()));
+        if (newPlugin) {
+            dbf.persist(vo);
+        } else {
+            dbf.update(vo);
         }
     }
 
