@@ -2714,6 +2714,11 @@ public class KVMHost extends HostBase implements Host {
     }
 
     private void handle(final KVMHostAsyncHttpCallMsg msg) {
+        if (isVolumeEncryptionConversion(msg)) {
+            handleVolumeEncryptionConversion(msg);
+            return;
+        }
+
         inQueue().name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
                 .asyncBackup(msg)
                 .run(outer -> new RunInQueue("host-sync-control", thdf, getHostMaxThreadsNum())
@@ -2728,6 +2733,35 @@ public class KVMHost extends HostBase implements Host {
                             }
                         }))
                 );
+    }
+
+    private boolean isVolumeEncryptionConversion(KVMHostAsyncHttpCallMsg msg) {
+        String path = msg.getPath();
+        return path != null && (path.endsWith("/convertencryption") || path.endsWith("/luksconvert"));
+    }
+
+    private void handleVolumeEncryptionConversion(final KVMHostAsyncHttpCallMsg msg) {
+        new RunInQueue(String.format("volume-encryption-conversion-on-kvm-host-%s", self.getUuid()), thdf, 1)
+                .name(String.format("convert-volume-encryption-on-kvm-host-%s", self.getUuid()))
+                .asyncBackup(msg)
+                .run(conversionChain -> inQueue()
+                        .name(String.format("execute-async-http-call-on-kvm-host-%s", self.getUuid()))
+                        .asyncBackup(msg)
+                        .asyncBackup(conversionChain)
+                        .run(outer -> new RunInQueue("host-sync-control", thdf, getHostMaxThreadsNum())
+                                .name("async-call-on-kvm-" + self.getUuid())
+                                .asyncBackup(msg)
+                                .asyncBackup(outer)
+                                .asyncBackup(conversionChain)
+                                .run(chain -> executeAsyncHttpCall(msg,
+                                        new NoErrorCompletion(chain, outer, conversionChain) {
+                                            @Override
+                                            public void done() {
+                                                chain.next();
+                                                outer.next();
+                                                conversionChain.next();
+                                            }
+                                        }))));
     }
 
     private String buildUrl(String path) {
