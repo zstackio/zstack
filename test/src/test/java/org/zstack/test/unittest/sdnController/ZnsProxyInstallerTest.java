@@ -7,27 +7,32 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.host.HostVO;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectedContext;
 import org.zstack.kvm.KVMHostInventory;
-import org.zstack.sdnController.SdnControllerSystemTags;
 import org.zstack.sdnController.ZnsProxyGlobalProperty;
 import org.zstack.sdnController.znsproxy.ZnsProxyInstaller;
 import org.zstack.sdnController.znsproxy.ZnsProxyKvmReconnectExtension;
 import org.zstack.sdnController.znsproxy.ZnsProxyPrepareServiceCmd;
 
 import java.io.File;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ZnsProxyInstallerTest {
     @Rule
@@ -35,17 +40,21 @@ public class ZnsProxyInstallerTest {
 
     private String originalPackageRepositoryPath;
     private String originalProxyPackageName;
+    private String originalAnsibleModulePath;
 
     @Before
     public void setUp() {
         originalPackageRepositoryPath = ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH;
         originalProxyPackageName = ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME;
+        originalAnsibleModulePath = ZnsProxyGlobalProperty.ANSIBLE_MODULE_PATH;
+        ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = "zns-proxy.bin";
     }
 
     @After
     public void tearDown() {
         ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = originalPackageRepositoryPath;
         ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = originalProxyPackageName;
+        ZnsProxyGlobalProperty.ANSIBLE_MODULE_PATH = originalAnsibleModulePath;
     }
 
     @Test
@@ -92,12 +101,6 @@ public class ZnsProxyInstallerTest {
     }
 
     @Test
-    public void testZnsProxyPreparedTagTargetsHost() {
-        assertEquals("znsProxy::prepared", SdnControllerSystemTags.ZNS_PROXY_PREPARED.getTagFormat());
-        assertEquals(HostVO.class, SdnControllerSystemTags.ZNS_PROXY_PREPARED.getResourceClass());
-    }
-
-    @Test
     public void testPrepareServiceCmdAcceptsHostUuidsField() {
         ZnsProxyPrepareServiceCmd cmd = new Gson().fromJson(
                 "{\"computeManagerUuid\":\"cm-uuid\",\"hostUuids\":[\"host-uuid-1\"]}",
@@ -116,59 +119,95 @@ public class ZnsProxyInstallerTest {
     }
 
     @Test
-    public void testReconnectSkipsHostWithoutPreparedTag() throws Exception {
-        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension(false);
+    public void testReconnectEnsuresKvmHost() throws Exception {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
 
         extension.connectionReestablished(kvmHost("host-uuid"));
 
-        assertEquals(0, extension.reinstallCount);
+        assertEquals(1, extension.ensureCount);
+        assertEquals("host-uuid", extension.lastEnsuredHostUuid);
     }
 
     @Test
-    public void testReconnectReinstallsPreparedHost() throws Exception {
-        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension(true);
+    public void testReconnectPreservesPackageFailureDetails() throws Exception {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
+        extension.ensureFailure = new CloudRuntimeException("zns-proxy package checksum mismatch");
 
-        extension.connectionReestablished(kvmHost("host-uuid"));
-
-        assertEquals(1, extension.reinstallCount);
-        assertEquals("host-uuid", extension.lastReinstalledHostUuid);
+        try {
+            extension.connectionReestablished(kvmHost("host-uuid"));
+        } catch (OperationFailureException e) {
+            assertEquals("zns-proxy package checksum mismatch", e.getErrorCode().getDetails());
+            return;
+        }
+        throw new AssertionError("reconnect must fail when zns-proxy package validation fails");
     }
 
     @Test
     public void testReconnectSkipsNonKvmHost() throws Exception {
-        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension(true);
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
         HostInventory host = kvmHost("host-uuid");
         host.setHypervisorType("Simulator");
 
         extension.connectionReestablished(host);
 
-        assertEquals(0, extension.reinstallCount);
+        assertEquals(0, extension.ensureCount);
     }
 
     @Test
-    public void testConnectFlowSkipsNewAddedHost() {
-        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension(true);
+    public void testReconnectSkipsRemoteInstallInUnitTestMode() throws Exception {
+        boolean originalUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON;
+        try {
+            CoreGlobalProperty.UNIT_TEST_ON = true;
+            TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
+
+            extension.connectionReestablished(kvmHost("host-uuid"));
+
+            assertEquals(0, extension.ensureCount);
+        } finally {
+            CoreGlobalProperty.UNIT_TEST_ON = originalUnitTestOn;
+        }
+    }
+
+    @Test
+    public void testConnectFlowEnsuresNewAddedHost() {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
         TestFlowTrigger trigger = new TestFlowTrigger();
 
         extension.createKvmHostConnectingFlow(connectContext("host-uuid", true)).run(trigger, new HashMap<>());
 
-        assertEquals(0, extension.reinstallCount);
+        assertEquals(1, extension.ensureCount);
+        assertEquals("host-uuid", extension.lastEnsuredHostUuid);
         assertEquals(1, trigger.nextCount);
         assertEquals(0, trigger.failCount);
     }
 
     @Test
-    public void testConnectFlowReinstallsPreparedReconnectedHost() {
-        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension(true);
+    public void testConnectFlowEnsuresReconnectedHost() {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
         TestFlowTrigger trigger = new TestFlowTrigger();
 
         Flow flow = extension.createKvmHostConnectingFlow(connectContext("host-uuid", false));
         flow.run(trigger, new HashMap<>());
 
-        assertEquals(1, extension.reinstallCount);
-        assertEquals("host-uuid", extension.lastReinstalledHostUuid);
+        assertEquals(1, extension.ensureCount);
+        assertEquals("host-uuid", extension.lastEnsuredHostUuid);
         assertEquals(1, trigger.nextCount);
         assertEquals(0, trigger.failCount);
+    }
+
+    @Test
+    public void testConnectFlowPreservesPackageFailureDetails() {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
+        TestFlowTrigger trigger = new TestFlowTrigger();
+        extension.ensureFailure = new CloudRuntimeException("zns-proxy package checksum mismatch");
+
+        extension.createKvmHostConnectingFlow(connectContext("host-uuid", false))
+                .run(trigger, new HashMap<>());
+
+        assertEquals(1, extension.ensureCount);
+        assertEquals(0, trigger.nextCount);
+        assertEquals(1, trigger.failCount);
+        assertEquals("zns-proxy package checksum mismatch", trigger.error.getDetails());
     }
 
     @Test(expected = RuntimeException.class)
@@ -191,6 +230,79 @@ public class ZnsProxyInstallerTest {
         cmd.packageName = "missing.bin";
 
         ZnsProxyInstaller.resolvePackage(cmd);
+    }
+
+    @Test
+    public void testResolveAndVerifyPackageAcceptsValidManifest() throws Exception {
+        File repo = tempFolder.newFolder("repo-valid-manifest");
+        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        File pkg = new File(repo, "zns-proxy.bin");
+        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
+        writeManifest(repo, pkg, sha256(pkg), "1.2.0.1");
+
+        File resolved = ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+
+        assertEquals(pkg.getAbsolutePath(), resolved.getAbsolutePath());
+    }
+
+    @Test
+    public void testResolveAndVerifyPackagePrefersCompleteClasspathReleaseOverStaleRepositoryPackage()
+            throws Exception {
+        File repo = tempFolder.newFolder("repo-stale-package");
+        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        FileUtils.writeStringToFile(
+                new File(repo, "zns-proxy.bin"), "stale-proxy", StandardCharsets.UTF_8);
+
+        URL classPathRoot = getClass().getClassLoader().getResource("");
+        File module = new File(new File(classPathRoot.toURI()),
+                "ansible/znsproxy-" + System.nanoTime());
+        assertTrue(module.mkdirs());
+        ZnsProxyGlobalProperty.ANSIBLE_MODULE_PATH =
+                "ansible/" + module.getName();
+        File classPathPackage = new File(module, "zns-proxy.bin");
+        FileUtils.writeStringToFile(classPathPackage, "current-proxy", StandardCharsets.UTF_8);
+        writeManifest(module, classPathPackage, sha256(classPathPackage), "1.2.0.1");
+
+        try {
+            File resolved = ZnsProxyInstaller.resolveAndVerifyPackage(
+                    new ZnsProxyPrepareServiceCmd());
+            assertEquals(classPathPackage.getAbsolutePath(), resolved.getAbsolutePath());
+        } finally {
+            FileUtils.deleteDirectory(module);
+        }
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testResolveAndVerifyPackageRejectsMissingManifest() throws Exception {
+        File repo = tempFolder.newFolder("repo-missing-manifest");
+        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        FileUtils.writeStringToFile(new File(repo, "zns-proxy.bin"), "proxy", StandardCharsets.UTF_8);
+
+        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testResolveAndVerifyPackageRejectsShaMismatch() throws Exception {
+        File repo = tempFolder.newFolder("repo-sha-mismatch");
+        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        File pkg = new File(repo, "zns-proxy.bin");
+        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
+        writeManifest(repo, pkg,
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "1.2.0.1");
+
+        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void testResolveAndVerifyPackageRejectsNonCanonicalVersion() throws Exception {
+        File repo = tempFolder.newFolder("repo-version-invalid");
+        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        File pkg = new File(repo, "zns-proxy.bin");
+        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
+        writeManifest(repo, pkg, sha256(pkg), "1.2.0");
+
+        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
     }
 
     private static HostInventory kvmHost(String uuid) {
@@ -233,24 +345,47 @@ public class ZnsProxyInstallerTest {
         }
     }
 
+    private static void writeManifest(File repo, File pkg, String sha256, String version) throws Exception {
+        HashMap<String, Object> manifest = new HashMap<>();
+        manifest.put("component", "zns-proxy");
+        manifest.put("packageName", pkg.getName());
+        manifest.put("version", version);
+        manifest.put("arch", Collections.singletonList("amd64"));
+        manifest.put("sha256", sha256);
+        manifest.put("path", pkg.getName());
+        manifest.put("buildTime", "2026-07-31T00:00:00Z");
+        FileUtils.writeStringToFile(
+                new File(repo, "zns-proxy-manifest.json"),
+                new Gson().toJson(manifest),
+                StandardCharsets.UTF_8);
+    }
+
+    private static String sha256(File file) throws Exception {
+        byte[] digest = MessageDigest.getInstance("SHA-256").digest(FileUtils.readFileToByteArray(file));
+        StringBuilder result = new StringBuilder();
+        for (byte value : digest) {
+            result.append(String.format("%02x", value & 0xff));
+        }
+        return result.toString();
+    }
+
     private static class TestZnsProxyKvmReconnectExtension extends ZnsProxyKvmReconnectExtension {
-        private final boolean prepared;
-        private int reinstallCount;
-        private String lastReinstalledHostUuid;
+        private int ensureCount;
+        private String lastEnsuredHostUuid;
+        private CloudRuntimeException ensureFailure;
 
-        private TestZnsProxyKvmReconnectExtension(boolean prepared) {
-            this.prepared = prepared;
+        @Override
+        protected void ensureHost(String hostUuid) {
+            ensureCount++;
+            lastEnsuredHostUuid = hostUuid;
+            if (ensureFailure != null) {
+                throw ensureFailure;
+            }
         }
 
         @Override
-        protected boolean isZnsProxyPrepared(String hostUuid) {
-            return prepared;
-        }
-
-        @Override
-        protected void reinstallPreparedHost(String hostUuid) {
-            reinstallCount++;
-            lastReinstalledHostUuid = hostUuid;
+        protected ErrorCode toOperationError(String details) {
+            return new ErrorCode("SYS.1006", "Operation Error", details);
         }
     }
 }
