@@ -293,6 +293,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayVO` (
     `port` int NOT NULL,
     `managementAddress` varchar(255) NOT NULL,
     `status` varchar(32) NOT NULL DEFAULT 'Disconnected',
+    `agentStatus` varchar(32) DEFAULT 'Unknown',
+    `dataPlaneStatus` varchar(32) DEFAULT 'Unknown',
     `desiredRuleVersion` varchar(64) DEFAULT NULL,
     `appliedRuleVersion` varchar(64) DEFAULT NULL,
     `version` varchar(64) DEFAULT NULL,
@@ -310,6 +312,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`AIBusinessGatewayVO` (
     CONSTRAINT `fkAIBusinessGatewayVOModelServiceL3` FOREIGN KEY (`modelServiceNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT,
     CONSTRAINT `fkAIBusinessGatewayVODeveloperL3` FOREIGN KEY (`developerAccessNetworkUuid`) REFERENCES `zstack`.`L3NetworkEO` (`uuid`) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('AIBusinessGatewayVO', 'agentStatus', 'VARCHAR(32)', 1, 'Unknown');
+CALL ADD_COLUMN('AIBusinessGatewayVO', 'dataPlaneStatus', 'VARCHAR(32)', 1, 'Unknown');
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ModelCenterBusinessNetworkProfileVO` (
     `uuid` varchar(32) NOT NULL,
