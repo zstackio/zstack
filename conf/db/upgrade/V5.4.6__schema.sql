@@ -272,9 +272,9 @@ BEGIN
             LEAVE update_template_loop;
         END IF;
 
-        SELECT COUNT(*) INTO @cnt FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1;
+        SELECT COUNT(*) INTO @cnt FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND `system` = 1;
         IF @cnt > 0 THEN
-            SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND system = 1 LIMIT 1;
+            SELECT uuid INTO service_uuid FROM `zstack`.`ModelServiceVO` WHERE name = model_name AND `system` = 1 LIMIT 1;
         ELSE
             SET service_uuid = NULL;
         END IF;
