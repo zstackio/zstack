@@ -140,6 +140,22 @@ public class AIBusinessGatewayInventory  {
         return this.status;
     }
 
+    public java.lang.String agentStatus;
+    public void setAgentStatus(java.lang.String agentStatus) {
+        this.agentStatus = agentStatus;
+    }
+    public java.lang.String getAgentStatus() {
+        return this.agentStatus;
+    }
+
+    public java.lang.String dataPlaneStatus;
+    public void setDataPlaneStatus(java.lang.String dataPlaneStatus) {
+        this.dataPlaneStatus = dataPlaneStatus;
+    }
+    public java.lang.String getDataPlaneStatus() {
+        return this.dataPlaneStatus;
+    }
+
     public java.lang.String desiredRuleVersion;
     public void setDesiredRuleVersion(java.lang.String desiredRuleVersion) {
         this.desiredRuleVersion = desiredRuleVersion;
