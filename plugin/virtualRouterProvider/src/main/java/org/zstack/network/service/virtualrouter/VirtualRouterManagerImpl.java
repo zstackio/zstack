@@ -7,6 +7,7 @@ import org.zstack.appliancevm.*;
 import org.zstack.compute.vm.VmNicExtensionPoint;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.asyncbatch.While;
@@ -34,6 +35,7 @@ import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
@@ -984,26 +986,13 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     }
 
     private String selectManagementIpForAgent(String agentIp) {
-        String routeSourceIp = Platform.getRouteSourceIp(agentIp);
-        if (routeSourceIp != null) {
-            return routeSourceIp;
+        ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                Platform.resolveManagedComponentEndpoints(agentIp);
+        if (!endpoints.isSuccess()) {
+            throw new OperationFailureException(endpoints.error);
         }
 
-        if (IPv6NetworkUtils.isIpv6Address(agentIp)) {
-            return Platform.getManagementServerIps().stream()
-                    .filter(IPv6NetworkUtils::isIpv6Address)
-                    .findFirst()
-                    .orElse(Platform.getManagementServerIp());
-        }
-
-        if (NetworkUtils.isIpv4Address(agentIp)) {
-            return Platform.getManagementServerIps().stream()
-                    .filter(NetworkUtils::isIpv4Address)
-                    .findFirst()
-                    .orElse(Platform.getManagementServerIp());
-        }
-
-        return Platform.getManagementServerIp();
+        return endpoints.result.get(0).getCurrentManagementNodeAddress();
     }
 
 	private void buildWorkFlowBuilder() {

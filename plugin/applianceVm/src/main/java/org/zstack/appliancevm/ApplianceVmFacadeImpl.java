@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.zstack.appliancevm.ApplianceVmConstant.BootstrapParams;
 import org.zstack.compute.vm.VmInstanceHookManager;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagementNodeAddressInventory;
 import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.*;
@@ -26,6 +27,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.APIMessage;
@@ -49,11 +51,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
+import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import javax.persistence.Query;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_APPLIANCEVM_10008;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_APPLIANCEVM_10009;
 
 /**
  * Created with IntelliJ IDEA.
@@ -63,7 +69,8 @@ import java.util.stream.Collectors;
  */
 public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceVmFacade, Component {
     private static final CLogger logger = Utils.getLogger(ApplianceVmFacadeImpl.class);
-    private static final String NO_MATCHED_MN_IP_WARN = "no MN IP matched VR management CIDR %s, fallback to %s";
+    private static final String NO_MATCHED_MN_IP_WARN =
+            "no configured MN IP matches VR management CIDR families %s";
 
     @Autowired
     private CloudBus bus;
@@ -466,11 +473,16 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         String publicKey = asf.getPublicKey();
         ret.put(ApplianceVmConstant.BootstrapParams.publicKey.toString(), publicKey);
         ret.put(BootstrapParams.uuid.toString(), spec.getVmInventory().getUuid());
+        List<String> managementNodeIps = Platform.getManagementServerIps();
+        ManagementNodeAddressInventory managementNodeAddresses = Platform.getManagementNodeAddressInventory();
+        String primaryManagementNodeIp = managementNodeAddresses.getPrimaryCurrentNodeAddress();
+        if (primaryManagementNodeIp == null && !managementNodeIps.isEmpty()) {
+            primaryManagementNodeIp = managementNodeIps.get(0);
+        }
         putManagementNodeBootstrapParams(ret,
-                Platform.getManagementServerIpsWithLocalFallback(),
+                managementNodeIps,
                 getVrManagementCidrs(mgmtNic),
-                Platform.getManagementServerIp(),
-                Platform.getManagementServerVip(),
+                primaryManagementNodeIp,
                 Platform.getManagementServerCidr(),
                 Platform.getManagementServerIp6Cidr());
         /* this is only used by ApplianceVmPrepareBootstrapInfoExtensionPoint extension point, will be deleted after extension point */
@@ -485,10 +497,13 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     }
 
     public static String selectManagementNodeIpForBootstrap(Collection<String> mnIps, Collection<String> vrManagementCidrs, String fallbackIp) {
+        Set<Integer> managementIpVersions = new LinkedHashSet<>();
         for (String cidr : vrManagementCidrs) {
             if (!NetworkUtils.isCidr(cidr)) {
                 continue;
             }
+            managementIpVersions.add(NetworkUtils.isCidr(cidr, IPv6Constants.IPv4)
+                    ? IPv6Constants.IPv4 : IPv6Constants.IPv6);
             for (String ip : mnIps) {
                 if (StringUtils.isBlank(ip)) {
                     continue;
@@ -499,10 +514,51 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
             }
         }
 
-        if (!vrManagementCidrs.isEmpty()) {
-            logger.warn(String.format(NO_MATCHED_MN_IP_WARN, String.join(",", vrManagementCidrs), fallbackIp));
+        if (managementIpVersions.isEmpty()) {
+            return fallbackIp;
         }
-        return fallbackIp;
+
+        int fallbackIpVersion = NetworkUtils.isIpv4Address(fallbackIp)
+                ? IPv6Constants.IPv4 : IPv6Constants.IPv6;
+        if (managementIpVersions.contains(fallbackIpVersion) && mnIps.contains(fallbackIp)) {
+            return fallbackIp;
+        }
+
+        for (int ipVersion : managementIpVersions) {
+            for (String ip : mnIps) {
+                if ((ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(ip))
+                        || (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(ip))) {
+                    return ip;
+                }
+            }
+        }
+
+        logger.warn(String.format(NO_MATCHED_MN_IP_WARN, managementIpVersions));
+        return null;
+    }
+
+    public static void putManagementNodeBootstrapParams(Map<String, Object> ret,
+                                                        Collection<String> mnIps,
+                                                        Collection<String> vrManagementCidrs,
+                                                        String fallbackIp,
+                                                        String managementNodeCidr,
+                                                        String managementNodeIp6Cidr) {
+        String managementNodeIp = requireManagementNodeIp(mnIps, vrManagementCidrs, fallbackIp);
+        String managementNodeVip = managementNodeIp;
+        ManagementNodeAddressInventory managementNodeAddresses = Platform.getManagementNodeAddressInventory();
+        if (managementNodeAddresses.isHaEnabled()) {
+            int ipVersion = NetworkUtils.isIpv4Address(managementNodeIp)
+                    ? IPv6Constants.IPv4 : IPv6Constants.IPv6;
+            managementNodeVip = managementNodeAddresses
+                    .findHaVirtualAddress(ipVersion)
+                    .orElseThrow(() -> new OperationFailureException(Platform.operr(
+                            ORG_ZSTACK_APPLIANCEVM_10008,
+                            "cannot select appliance VM bootstrap HA virtual address for current management node address[%s]: required family[IPv%s] is missing or invalid; HA enabled[true]",
+                            managementNodeIp, ipVersion)));
+        }
+
+        putManagementNodeBootstrapParams(ret, managementNodeIp, managementNodeVip,
+                managementNodeCidr, managementNodeIp6Cidr);
     }
 
     public static void putManagementNodeBootstrapParams(Map<String, Object> ret,
@@ -512,8 +568,31 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
                                                         String managementNodeVip,
                                                         String managementNodeCidr,
                                                         String managementNodeIp6Cidr) {
-        ret.put(BootstrapParams.managementNodeIp.toString(),
-                selectManagementNodeIpForBootstrap(mnIps, vrManagementCidrs, fallbackIp));
+        String managementNodeIp = requireManagementNodeIp(mnIps, vrManagementCidrs, fallbackIp);
+        putManagementNodeBootstrapParams(ret, managementNodeIp, managementNodeVip,
+                managementNodeCidr, managementNodeIp6Cidr);
+    }
+
+    private static String requireManagementNodeIp(Collection<String> mnIps,
+                                                  Collection<String> vrManagementCidrs,
+                                                  String fallbackIp) {
+        String managementNodeIp = selectManagementNodeIpForBootstrap(mnIps, vrManagementCidrs, fallbackIp);
+        if (managementNodeIp == null) {
+            throw new OperationFailureException(Platform.operr(
+                    ORG_ZSTACK_APPLIANCEVM_10009,
+                    "cannot select a configured management node address for appliance VM management CIDRs[%s]; HA enabled[%s]",
+                    String.join(",", vrManagementCidrs),
+                    Platform.getManagementNodeAddressInventory().isHaEnabled()));
+        }
+        return managementNodeIp;
+    }
+
+    private static void putManagementNodeBootstrapParams(Map<String, Object> ret,
+                                                         String managementNodeIp,
+                                                         String managementNodeVip,
+                                                         String managementNodeCidr,
+                                                         String managementNodeIp6Cidr) {
+        ret.put(BootstrapParams.managementNodeIp.toString(), managementNodeIp);
         ret.put(BootstrapParams.managementNodeVip.toString(), managementNodeVip);
         ret.put(BootstrapParams.managementNodeCidr.toString(), managementNodeCidr);
         if (managementNodeIp6Cidr != null) {

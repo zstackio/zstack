@@ -68,6 +68,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_APPLIANCEVM_10007 = "ORG_ZSTACK_APPLIANCEVM_10007";
 
+    public static final String ORG_ZSTACK_APPLIANCEVM_10008 = "ORG_ZSTACK_APPLIANCEVM_10008";
+
+    public static final String ORG_ZSTACK_APPLIANCEVM_10009 = "ORG_ZSTACK_APPLIANCEVM_10009";
+
     public static final String ORG_ZSTACK_PORTAL_APIMEDIATOR_10000 = "ORG_ZSTACK_PORTAL_APIMEDIATOR_10000";
 
     public static final String ORG_ZSTACK_PORTAL_APIMEDIATOR_10001 = "ORG_ZSTACK_PORTAL_APIMEDIATOR_10001";
@@ -519,6 +523,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_VPC_10048 = "ORG_ZSTACK_VPC_10048";
 
     public static final String ORG_ZSTACK_VPC_10049 = "ORG_ZSTACK_VPC_10049";
+
+    public static final String ORG_ZSTACK_VPC_10050 = "ORG_ZSTACK_VPC_10050";
+
+    public static final String ORG_ZSTACK_VPC_10051 = "ORG_ZSTACK_VPC_10051";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_TEST_INTEGRATION_CORE_CLOUDBUS_10000";
 
@@ -6797,6 +6805,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10036 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10036";
 
     public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10037 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10037";
+
+    public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10038 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10038";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_V2V_10000 = "ORG_ZSTACK_TEST_INTEGRATION_V2V_10000";
 

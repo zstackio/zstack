@@ -4,6 +4,8 @@ import org.junit.Test
 import org.zstack.core.ansible.AnsibleGlobalProperty
 import org.zstack.core.ansible.AnsibleChecker
 import org.zstack.core.ansible.AnsibleFacade
+import org.zstack.core.ansible.AnsibleFacadeImpl
+import org.zstack.core.ansible.AnsibleBasicArguments
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.PrepareAnsible
@@ -15,11 +17,13 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.componentloader.ComponentLoader
 import org.zstack.core.errorcode.ErrorFacade
+import org.zstack.core.rest.RESTFacadeImpl
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.message.NeedReplyMessage
 import org.zstack.header.message.MessageReply
 import org.zstack.header.rest.RESTFacade
+import org.zstack.kvm.KVMHost
 
 import java.lang.reflect.Field
 import java.util.concurrent.atomic.AtomicReference
@@ -30,6 +34,7 @@ class AnsibleRunnerTargetAwareArgumentsTest {
     private static final String IPV6 = "2001:db8::1"
     private static final String IPV4_TARGET = "192.168.1.2"
     private static final String IPV6_TARGET = "2001:db8::2"
+    private static final String HOST_UUID = "11111111111111111111111111111111"
     private static final int REST_PORT = 8080
 
     @Test
@@ -39,6 +44,8 @@ class AnsibleRunnerTargetAwareArgumentsTest {
         testMissingFamilyFailsBeforeRunAnsibleDispatch()
         testMissingFamilyFailsBeforeChecker()
         testHostnameUsesResolvedTargetAndMatchingCallbackIp()
+        testAnsibleFacadeKeepsRunnerSelectedManagementNodeAddress()
+        testAnsibleLogCallbackUrlUsesTheSelectedManagementNodeAddress()
     }
 
     void testTargetAwareEndpointArgumentsUseTheSelectedIpv6Node() {
@@ -195,6 +202,40 @@ class AnsibleRunnerTargetAwareArgumentsTest {
             assert result.get() == true
             assert checker.callbackIp == IPV4
         }
+    }
+
+    void testAnsibleFacadeKeepsRunnerSelectedManagementNodeAddress() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV4,
+                "management.server.ip6": IPV6,
+        ]) {
+            AnsibleBasicArguments deployArguments = new AnsibleBasicArguments()
+            deployArguments.trustedHost = IPV6
+            deployArguments.remoteUser = "root"
+            deployArguments.remotePass = "password"
+            deployArguments.remotePort = "22"
+            RunAnsibleMsg msg = new RunAnsibleMsg()
+            msg.targetIp = IPV6_TARGET
+            msg.playBookPath = "kvm.yml"
+            msg.deployArguments = deployArguments
+
+            def method = AnsibleFacadeImpl.getDeclaredMethod("collectArguments", RunAnsibleMsg.class)
+            method.accessible = true
+            Map<String, Object> arguments = method.invoke(new AnsibleFacadeImpl(), msg) as Map<String, Object>
+
+            assert arguments.mn_ip == IPV6
+        }
+    }
+
+    void testAnsibleLogCallbackUrlUsesTheSelectedManagementNodeAddress() {
+        RESTFacade restf = [
+                buildBaseUrl: { String host -> RESTFacadeImpl.buildBaseUrl(host, REST_PORT, "zstack") },
+        ] as RESTFacade
+        String ipv4Url = String.format("http://%s:%d/zstack/kvm/ansiblelog/%s", IPV4, REST_PORT, HOST_UUID)
+        String ipv6Url = String.format("http://[%s]:%d/zstack/kvm/ansiblelog/%s", IPV6, REST_PORT, HOST_UUID)
+
+        assert KVMHost.buildAnsibleLogCallbackUrl(HOST_UUID, IPV4, restf).equals(ipv4Url)
+        assert KVMHost.buildAnsibleLogCallbackUrl(HOST_UUID, IPV6, restf).equals(ipv6Url)
     }
 
     private void runAnsible(String targetIp, AtomicReference<RunAnsibleMsg> received,

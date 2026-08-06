@@ -4,12 +4,18 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.ManagedComponentEndpoint;
+import org.zstack.core.Platform;
+import org.zstack.header.errorcode.ErrorableValue;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
+
+import java.util.List;
 
 /**
  * Created by GuoYi on 2018-12-24.
@@ -38,7 +44,18 @@ public class SshYumRepoChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            String managementNodeEndpoint = managementNodeIp == null ? restf.getHostName() : managementNodeIp;
+            String managementNodeEndpoint = managementNodeIp;
+            if (managementNodeEndpoint == null) {
+                ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                        Platform.resolveManagedComponentEndpoints(targetIp);
+                if (!endpoints.isSuccess()) {
+                    throw new OperationFailureException(endpoints.error);
+                }
+                ManagedComponentEndpoint endpoint = endpoints.result.get(0);
+                managementNodeEndpoint = endpoint.getCurrentManagementNodeAddress();
+                targetIp = endpoint.getRemoteAddress();
+                ssh.setHostname(targetIp);
+            }
             ssh.sudoCommand(buildYumRepoEndpointRewriteCommand(managementNodeEndpoint, restf.getPort()));
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {

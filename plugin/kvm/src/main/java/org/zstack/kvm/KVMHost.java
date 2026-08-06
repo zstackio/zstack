@@ -19,6 +19,7 @@ import org.zstack.header.core.*;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.agent.AgentConstant;
@@ -2904,11 +2905,19 @@ public class KVMHost extends HostBase implements Host {
     }
 
     public static ErrorableValue<String> buildManagementNodeCallbackCheckCommand(String hostManagementIp, RESTFacade restf) {
-        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(hostManagementIp);
+        ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                Platform.resolveManagedComponentEndpoints(hostManagementIp);
         if (!endpoints.isSuccess()) {
             return ErrorableValue.ofErrorCode(endpoints.error);
         }
-        return ErrorableValue.of(buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(endpoints.result.get(0).getCallbackIp())));
+        return ErrorableValue.of(buildManagementNodeCallbackCheckCommand(
+                restf.buildCallbackUrl(endpoints.result.get(0).getCurrentManagementNodeAddress())));
+    }
+
+    public static String buildAnsibleLogCallbackUrl(String hostUuid, String callbackAddress, RESTFacade restf) {
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.buildBaseUrl(callbackAddress));
+        ub.path(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT);
+        return ub.buildAndExpand(hostUuid).toUriString();
     }
 
     private static String joinAgentPath(String rootPath, String path) {
@@ -5804,19 +5813,21 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(getSelf().getManagementIp());
+                ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                        Platform.resolveManagedComponentEndpoints(getSelf().getManagementIp());
                 if (!endpoints.isSuccess()) {
                     throw new OperationFailureException(endpoints.error);
                 }
-                Platform.RemoteEndpoint endpoint = endpoints.result.get(0);
-                ShellUtils.run(String.format("arp -d %s || true", endpoint.getConnectIp()));
+                ManagedComponentEndpoint endpoint = endpoints.result.get(0);
+                ShellUtils.run(String.format("arp -d %s || true", endpoint.getRemoteAddress()));
                 SshShell sshShell = new SshShell();
-                sshShell.setHostname(endpoint.getConnectIp());
+                sshShell.setHostname(endpoint.getRemoteAddress());
                 sshShell.setUsername(getSelf().getUsername());
                 sshShell.setPassword(getSelf().getPassword());
                 sshShell.setPort(getSelf().getPort());
                 sshShell.setWithSudo(false);
-                final String cmd = buildManagementNodeCallbackCheckCommand(restf.buildCallbackUrl(endpoint.getCallbackIp()));
+                final String cmd = buildManagementNodeCallbackCheckCommand(
+                        restf.buildCallbackUrl(endpoint.getCurrentManagementNodeAddress()));
                 SshResult ret = sshShell.runCommand(cmd);
                 if (ret.getStderr() != null && ret.getStderr().contains("No route to host")) {
                     // c.f. https://access.redhat.com/solutions/1120533
@@ -5834,7 +5845,7 @@ public class KVMHost extends HostBase implements Host {
                                     "please check if username/password is wrong; %s", self.getManagementIp(), getSelf().getUsername(), getSelf().getPort(), ret.getExitErrorMessage()));
                 } else if (ret.getReturnCode() != 0) {
                     throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10106, "the KVM host[ip:%s] cannot access the management node's callback url. It seems" +
-                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), endpoint.getCallbackIp(),
+                                    " that the KVM host cannot reach the management IP[%s]. %s %s", self.getManagementIp(), endpoint.getCurrentManagementNodeAddress(),
                             ret.getStderr(), ret.getExitErrorMessage()));
                 }
 
@@ -6070,14 +6081,15 @@ public class KVMHost extends HostBase implements Host {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(getSelf().getManagementIp());
+                        ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                                Platform.resolveManagedComponentEndpoints(getSelf().getManagementIp());
                         if (!endpoints.isSuccess()) {
                             trigger.fail(endpoints.error);
                             return;
                         }
-                        Platform.RemoteEndpoint endpoint = endpoints.result.get(0);
-                        String hostManagementIp = endpoint.getConnectIp();
-                        String callbackIp = endpoint.getCallbackIp();
+                        ManagedComponentEndpoint endpoint = endpoints.result.get(0);
+                        String hostManagementIp = endpoint.getRemoteAddress();
+                        String callbackIp = endpoint.getCurrentManagementNodeAddress();
 
                         String srcPath = PathUtil.findFileOnClassPath(String.format("ansible/kvm/%s", agentPackageName), true).getAbsolutePath();
                         String destPath = String.format("/var/lib/zstack/kvm/package/%s", agentPackageName);
@@ -6230,11 +6242,7 @@ public class KVMHost extends HostBase implements Host {
                             runner.setForceRun(true);
                         }
 
-                        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
-                        ub.path(new StringBind(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT).bind("uuid", self.getUuid()).toString());
-                        String postUrl = ub.build().toString();
-
-                        deployArguments.setPostUrl(postUrl);
+                        deployArguments.setPostUrl(buildAnsibleLogCallbackUrl(self.getUuid(), callbackIp, restf));
                         runner.setDeployArguments(deployArguments);
                         runner.run(new ReturnValueCompletion<Boolean>(trigger) {
                             @Override

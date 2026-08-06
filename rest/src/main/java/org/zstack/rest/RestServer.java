@@ -230,12 +230,14 @@ public class RestServer implements Component, CloudBusEventListener {
         String requestUrl;
         final String method;
         final String clientIp;
+        final String requestDestinationAddress;
         final String clientBrowser;
         HttpHeaders headers = new HttpHeaders();
 
         public RequestInfo(HttpServletRequest req) {
             session = req.getSession();
             remoteHost = req.getRemoteHost();
+            requestDestinationAddress = req.getLocalAddr();
             clientBrowser = HttpServletRequestUtils.getClientBrowser(req);
             String ipFromRequest = HttpServletRequestUtils.getClientIP(req);
             if (ipFromRequest == null) {
@@ -1536,19 +1538,26 @@ public class RestServer implements Component, CloudBusEventListener {
             }
 
             asyncStore.save(d);
-            UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.getBaseUrl());
-            ub.path(RestConstants.API_VERSION);
-            ub.path(RestConstants.ASYNC_JOB_PATH);
-            ub.path("/" + msg.getId());
 
             ApiResponse response = new ApiResponse();
-            response.setLocation(ub.build().toUriString());
+            response.setLocation(buildAsyncJobLocation(msg.getId(), d.requestInfo.requestDestinationAddress, restf));
             response.setApiTimeout(timeoutMgr.getMessageTimeout(msg));
 
             bus.send(msg);
 
             sendResponse(HttpStatus.ACCEPTED.value(), response, rsp);
         }
+    }
+
+    static String buildAsyncJobLocation(String jobUuid, String requestDestinationAddress, RESTFacade restf) {
+        String baseUrl = StringUtils.isBlank(requestDestinationAddress)
+                ? restf.getBaseUrl()
+                : restf.buildBaseUrl(requestDestinationAddress);
+        UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(RestConstants.API_VERSION);
+        ub.path(RestConstants.ASYNC_JOB_PATH);
+        ub.path("/" + jobUuid);
+        return ub.build().toUriString();
     }
 
     @Override

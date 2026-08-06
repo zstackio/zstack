@@ -174,7 +174,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
                 [IPV4, IPV6],
                 ["10.0.0.0/24"],
-                IPV6) == IPV6
+                IPV6) == IPV4
     }
 
     void testBuildUrlIpv4() {
