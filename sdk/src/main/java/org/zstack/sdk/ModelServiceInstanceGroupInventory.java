@@ -172,6 +172,14 @@ public class ModelServiceInstanceGroupInventory  {
         return this.developerEndpoint;
     }
 
+    public java.lang.String managementEndpoint;
+    public void setManagementEndpoint(java.lang.String managementEndpoint) {
+        this.managementEndpoint = managementEndpoint;
+    }
+    public java.lang.String getManagementEndpoint() {
+        return this.managementEndpoint;
+    }
+
     public java.lang.String businessEndpointStatus;
     public void setBusinessEndpointStatus(java.lang.String businessEndpointStatus) {
         this.businessEndpointStatus = businessEndpointStatus;
