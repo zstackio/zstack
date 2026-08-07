@@ -1323,7 +1323,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
             gmsg.setBackupStorageUuid(ref.getBackupStorageUuid());
             gmsg.setImageUuid(ref.getImageUuid());
             try {
-                String hostname = new URI(ref.getInstallPath()).getHost();
+                String hostname = IPv6NetworkUtils.normalizeHost(new URI(ref.getInstallPath()).getHost());
                 gmsg.setHostname(hostname);
             } catch (URISyntaxException e) {
                 continue;
