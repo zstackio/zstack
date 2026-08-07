@@ -113,6 +113,7 @@ abstract class Test extends ApiHelper implements Retry {
             localStorage()
             virtualRouter()
             securityGroup()
+            networkSecurityPolicySchedule()
             kvm()
             vyos()
             flatNetwork()

@@ -52,6 +52,14 @@ public class VpcFirewallRuleSetInventory  {
         return this.isApplied;
     }
 
+    public java.lang.String scheduleUuid;
+    public void setScheduleUuid(java.lang.String scheduleUuid) {
+        this.scheduleUuid = scheduleUuid;
+    }
+    public java.lang.String getScheduleUuid() {
+        return this.scheduleUuid;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

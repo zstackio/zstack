@@ -40,6 +40,12 @@ doc {
 		since "3.1"
 	}
 	field {
+		name "scheduleUuid"
+		desc "安全组关联的时间策略UUID"
+		type "String"
+		since "5.5.38"
+	}
+	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"

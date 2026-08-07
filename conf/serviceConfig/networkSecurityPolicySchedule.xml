@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>networkSecurityPolicySchedule</id>
+    <interceptor>NetworkSecurityPolicyScheduleApiInterceptor</interceptor>
+
+    <message>
+        <name>org.zstack.networksecuritypolicyschedule.APICreateNetworkSecurityPolicyScheduleMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.networksecuritypolicyschedule.APIUpdateNetworkSecurityPolicyScheduleMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.networksecuritypolicyschedule.APIDeleteNetworkSecurityPolicyScheduleMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.networksecuritypolicyschedule.APIGetNetworkSecurityPolicyScheduleMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.networksecuritypolicyschedule.APISetNetworkSecurityPolicyScheduleMsg</name>
+    </message>
+</service>
