@@ -9,7 +9,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterManagerImpl
 
 import java.lang.reflect.Field
 
-class VirtualRouterManagementEndpointCase {
+class VirtualRouterManagementEndpointTest {
     @Test
     void testBootstrapFallbackKeepsTheVirtualRouterAddressFamily() {
         assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(

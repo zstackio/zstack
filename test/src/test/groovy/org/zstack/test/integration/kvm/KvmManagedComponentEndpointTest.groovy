@@ -11,7 +11,7 @@ import org.zstack.kvm.KVMHost
 import java.lang.reflect.Field
 import java.util.concurrent.atomic.AtomicInteger
 
-class KvmManagedComponentEndpointCase {
+class KvmManagedComponentEndpointTest {
     @Test
     void missingSameFamilyAddressFailsBeforeBuildingTheCallbackCommand() {
         withManagementServerIpProperties([

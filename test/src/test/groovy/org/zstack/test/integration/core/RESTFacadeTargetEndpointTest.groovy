@@ -7,7 +7,7 @@ import org.zstack.core.rest.RESTFacadeImpl
 
 import java.lang.reflect.Method
 
-class RESTFacadeTargetEndpointCase {
+class RESTFacadeTargetEndpointTest {
     @Test
     void testRequestAndCallbackUseOneResolvedEndpointCandidate() {
         boolean oldUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
