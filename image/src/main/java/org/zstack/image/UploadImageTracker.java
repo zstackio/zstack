@@ -26,6 +26,7 @@ import org.zstack.header.storage.backup.GetImageDownloadProgressReply;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -71,7 +72,8 @@ public class UploadImageTracker {
 
     void addTrackTask(ImageVO image, ImageBackupStorageRefVO ref) {
         try {
-            addTrackTask(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), new URI(ref.getInstallPath()).getHost());
+            String hostname = IPv6NetworkUtils.normalizeHost(new URI(ref.getInstallPath()).getHost());
+            addTrackTask(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), hostname);
         } catch (URISyntaxException e) {
             throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10017, e.getMessage()));
         }
@@ -94,7 +96,8 @@ public class UploadImageTracker {
 
     void trackUpload(ImageVO image, ImageBackupStorageRefVO ref) {
         try {
-            trackUpload(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), new URI(ref.getInstallPath()).getHost());
+            String hostname = IPv6NetworkUtils.normalizeHost(new URI(ref.getInstallPath()).getHost());
+            trackUpload(image.getName(), image.getUuid(), ref.getBackupStorageUuid(), hostname);
         } catch (URISyntaxException e) {
             throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10018, e.getMessage()));
         }
