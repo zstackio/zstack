@@ -7,6 +7,7 @@ import org.apache.commons.lang.StringUtils;
 import org.ini4j.Wini;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -19,6 +20,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
@@ -202,7 +204,17 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         arguments.put("host", msg.getTargetIp());
-        arguments.put("mn_ip", Platform.getCanonicalServerIp());
+        String managementNodeAddress = msg.getDeployArguments() == null
+                ? null : msg.getDeployArguments().getTrustedHost();
+        if (StringUtils.isBlank(managementNodeAddress)) {
+            ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                    Platform.resolveManagedComponentEndpoints(msg.getTargetIp());
+            if (!endpoints.isSuccess()) {
+                throw new OperationFailureException(endpoints.error);
+            }
+            managementNodeAddress = endpoints.result.get(0).getCurrentManagementNodeAddress();
+        }
+        arguments.put("mn_ip", managementNodeAddress);
         if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
             arguments.put("host_uuid", msg.getTargetUuid());
         }

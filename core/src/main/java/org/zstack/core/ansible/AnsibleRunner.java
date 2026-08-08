@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -390,17 +391,18 @@ public class AnsibleRunner {
 
     public void run(ReturnValueCompletion<Boolean> completion) {
         try {
-            ErrorableValue<List<Platform.RemoteEndpoint>> resolvedEndpoints = Platform.resolveRemoteEndpoints(targetIp);
+            ErrorableValue<List<ManagedComponentEndpoint>> resolvedEndpoints =
+                    Platform.resolveManagedComponentEndpoints(targetIp);
             if (!resolvedEndpoints.isSuccess()) {
                 completion.fail(resolvedEndpoints.error);
                 return;
             }
-            Platform.RemoteEndpoint resolvedEndpoint = resolvedEndpoints.result.get(0);
-            targetIp = resolvedEndpoint.getConnectIp();
+            ManagedComponentEndpoint resolvedEndpoint = resolvedEndpoints.result.get(0);
+            targetIp = resolvedEndpoint.getRemoteAddress();
 
             String selectedManagementNodeIp = managementNodeIp;
             if (selectedManagementNodeIp == null) {
-                selectedManagementNodeIp = resolvedEndpoint.getCallbackIp();
+                selectedManagementNodeIp = resolvedEndpoint.getCurrentManagementNodeAddress();
             }
             updateCheckersManagementNodeIp(selectedManagementNodeIp);
 

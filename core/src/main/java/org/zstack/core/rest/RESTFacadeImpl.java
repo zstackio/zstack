@@ -22,6 +22,7 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.web.client.*;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.MessageCommandRecorder;
 import org.zstack.core.Platform;
 import org.zstack.core.debug.DebugManager;
@@ -252,19 +253,19 @@ public class RESTFacadeImpl implements RESTFacade {
             return ErrorableValue.of(defaultCallbackUrl);
         }
 
-        ErrorableValue<Platform.RemoteEndpoint> endpoint = resolveRequestEndpoint(host);
+        ErrorableValue<ManagedComponentEndpoint> endpoint = resolveRequestEndpoint(host);
         if (!endpoint.isSuccess()) {
             return ErrorableValue.ofErrorCode(endpoint.error);
         }
-        return ErrorableValue.of(buildCallbackUrl(endpoint.result.getCallbackIp(), port, path));
+        return ErrorableValue.of(buildCallbackUrl(endpoint.result.getCurrentManagementNodeAddress(), port, path));
     }
 
     private static boolean hasCallbackUrlHeader(Map<String, String> headers) {
         return headers != null && headers.keySet().stream().anyMatch(RESTConstant.CALLBACK_URL::equalsIgnoreCase);
     }
 
-    private static ErrorableValue<Platform.RemoteEndpoint> resolveRequestEndpoint(String host) {
-        ErrorableValue<List<Platform.RemoteEndpoint>> endpoints = Platform.resolveRemoteEndpoints(host);
+    private static ErrorableValue<ManagedComponentEndpoint> resolveRequestEndpoint(String host) {
+        ErrorableValue<List<ManagedComponentEndpoint>> endpoints = Platform.resolveManagedComponentEndpoints(host);
         if (!endpoints.isSuccess()) {
             return ErrorableValue.ofErrorCode(endpoints.error);
         }
@@ -467,13 +468,14 @@ public class RESTFacadeImpl implements RESTFacade {
                             host, url));
                     return;
                 }
-                ErrorableValue<Platform.RemoteEndpoint> endpoint = resolveRequestEndpoint(host);
+                ErrorableValue<ManagedComponentEndpoint> endpoint = resolveRequestEndpoint(host);
                 if (!endpoint.isSuccess()) {
                     callback.fail(endpoint.error);
                     return;
                 }
-                selectedCallbackUrl = buildCallbackUrl(endpoint.result.getCallbackIp(), port, path);
-                targetUrl = replaceRequestHost(url, endpoint.result.getConnectIp());
+                selectedCallbackUrl = buildCallbackUrl(
+                        endpoint.result.getCurrentManagementNodeAddress(), port, path);
+                targetUrl = replaceRequestHost(url, endpoint.result.getRemoteAddress());
             }
         }
         final String actualTargetUrl = targetUrl;
