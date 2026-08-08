@@ -116,11 +116,43 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof L3NetworkMessage) {
+        if (msg instanceof CreateL3NetworkMsg) {
+            handle((CreateL3NetworkMsg) msg);
+        } else if (msg instanceof L3NetworkMessage) {
             passThrough((L3NetworkMessage) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(CreateL3NetworkMsg msg) {
+        APICreateL3NetworkMsg api = new APICreateL3NetworkMsg();
+        api.setName(msg.getName());
+        api.setDescription(msg.getDescription());
+        api.setType(msg.getType());
+        api.setL2NetworkUuid(msg.getL2NetworkUuid());
+        api.setCategory(msg.getCategory());
+        api.setIpVersion(msg.getIpVersion());
+        api.setSystem(msg.isSystem());
+        api.setDnsDomain(msg.getDnsDomain());
+        api.setEnableIPAM(msg.getEnableIPAM());
+        api.setResourceUuid(msg.getResourceUuid());
+        api.setSession(msg.getSession());
+        api.setSystemTags(msg.getSystemTags());
+        handle(api, msg.getContext() == null ? NetworkCreateContext.api() : msg.getContext(),
+                new ReturnValueCompletion<L3NetworkInventory>(msg) {
+                    @Override
+                    public void success(L3NetworkInventory inventory) {
+                        CreateL3NetworkReply reply = new CreateL3NetworkReply();
+                        reply.setInventory(inventory);
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        bus.replyErrorByMessageType(msg, errorCode);
+                    }
+                });
     }
 
 
@@ -526,11 +558,39 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(APICreateL3NetworkMsg msg) {
-        handle(msg, NetworkCreateContext.api());
+        handle(msg, NetworkCreateContext.api(), new ReturnValueCompletion<L3NetworkInventory>(msg) {
+            @Override
+            public void success(L3NetworkInventory inventory) {
+                APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
+                evt.setInventory(inventory);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
     }
 
     private void handle(APICreateL3NetworkMsg msg, NetworkCreateContext context) {
-        APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
+        handle(msg, context, new ReturnValueCompletion<L3NetworkInventory>(msg) {
+            @Override
+            public void success(L3NetworkInventory inventory) {
+                logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]", msg.getName(), inventory.getUuid()));
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("Failed to create L3Network[name:%s]: %s", msg.getName(), errorCode));
+            }
+        });
+    }
+
+    private void handle(APICreateL3NetworkMsg msg, NetworkCreateContext context,
+                        ReturnValueCompletion<L3NetworkInventory> completion) {
 
         L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
         assert l2Vo.getZoneUuid() != null;
@@ -622,21 +682,19 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 }
 
                 extpEmitter.afterCreate(inv);
-                evt.setInventory(inv);
+                data.put("L3NetworkInventory", inv);
 
                 trigger.next();
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errCode);
-                bus.publish(evt);
+                completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
-                logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]", vo.getName(), vo.getUuid()));
-                bus.publish(evt);
+                completion.success((L3NetworkInventory) data.get("L3NetworkInventory"));
             }
         }).start();
 
