@@ -160,6 +160,16 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 List<String> uuids = new ArrayList<String>();
                 for (MessageReply r : replies) {
                     L2NetworkInventory inv = finalL2invs.get(replies.indexOf(r));
+                    if (!r.isSuccess()) {
+                        boolean confirmed = false;
+                        for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
+                            confirmed |= ext.supports(inv);
+                        }
+                        if (confirmed) {
+                            completion.fail(r.getError());
+                            return;
+                        }
+                    }
                     for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
                         if (ext.supports(inv)) {
                             ErrorCode errorCode = ext.delete(inv);
