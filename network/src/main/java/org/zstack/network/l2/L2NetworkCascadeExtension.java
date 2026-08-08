@@ -140,6 +140,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             L2NetworkDeletionMsg msg = new L2NetworkDeletionMsg();
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL2NetworkUuid(l2inv.getUuid());
+            msg.setOperationUuid(org.zstack.core.Platform.getUuid());
             bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, l2inv.getUuid());
             msgs.add(msg);
         }
