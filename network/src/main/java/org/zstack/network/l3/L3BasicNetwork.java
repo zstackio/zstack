@@ -41,6 +41,8 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.NetworkCreateContext;
+import org.zstack.header.network.NetworkDependencyAdmissionExtensionPoint;
+import org.zstack.header.network.NetworkDependencyAdmissionRequest;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
@@ -1538,6 +1540,17 @@ public class L3BasicNetwork implements L3Network {
 
 	private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
+        NetworkDependencyAdmissionRequest admission = new NetworkDependencyAdmissionRequest(
+                msg.getL3NetworkUuid(), "NetworkService", null, "ATTACH_NETWORK_SERVICE");
+        for (NetworkDependencyAdmissionExtensionPoint extension :
+                pluginRgty.getExtensionList(NetworkDependencyAdmissionExtensionPoint.class)) {
+            ErrorCode errorCode = extension.admit(admission);
+            if (errorCode != null) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+                return;
+            }
+        }
         L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
         Map<String, String> providerUuidTypeMap = new HashMap<>();
