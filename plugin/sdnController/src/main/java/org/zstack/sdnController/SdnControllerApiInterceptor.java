@@ -60,6 +60,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         ret.add(APISetVmNicSecurityGroupMsg.class);
         ret.add(APIAddSecurityGroupRuleMsg.class);
         ret.add(APIPullSdnControllerTenantMsg.class);
+        ret.add(APIPullSdnControllerMsg.class);
 
         return ret;
     }
@@ -85,6 +86,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             validate((APIPullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerMsg) {
+            validate((APIPullSdnControllerMsg) msg);
         } else if (msg instanceof APIChangeSdnControllerMsg) {
             validate((APIChangeSdnControllerMsg) msg);
         }
@@ -264,6 +267,21 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10026, "Pull tenant operation is not supported for SDN controller[uuid:%s, vendorType:%s, vendorVersion:%s]. " +
                     "Only H3C VCFC V2 controllers support this operation",
                     msg.getSdnControllerUuid(), sdnControllerVO.getVendorType(), sdnControllerVO.getVendorVersion()));
+        }
+    }
+
+    private void validate(APIPullSdnControllerMsg msg) {
+        if (!Arrays.asList("Segment", "TenantRouter").contains(msg.getResourceType())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+                    "Unsupported resource type[%s]", msg.getResourceType()));
+        }
+        if (msg.getResourceUuids() != null && msg.getResourceUuids().size() > 100) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+                    "At most 100 resource uuids can be pulled in one request"));
+        }
+        if (dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class) == null) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+                    "SDN controller[uuid:%s] not found", msg.getSdnControllerUuid()));
         }
     }
 
