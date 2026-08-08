@@ -76,11 +76,55 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof L2NetworkMessage) {
+        if (msg instanceof CreateL2NetworkMsg) {
+            handle((CreateL2NetworkMsg) msg);
+        } else if (msg instanceof L2NetworkMessage) {
             passThrough((L2NetworkMessage)msg);
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(CreateL2NetworkMsg msg) {
+        APICreateL2NetworkMsg apiMsg;
+        if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(msg.getType())) {
+            APICreateL2VlanNetworkMsg vlanMsg = new APICreateL2VlanNetworkMsg();
+            vlanMsg.setVlan(msg.getVlan() == null ? 0 : msg.getVlan());
+            apiMsg = vlanMsg;
+        } else if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(msg.getType())) {
+            apiMsg = new APICreateL2NoVlanNetworkMsg();
+        } else {
+            bus.replyErrorByMessageType(msg, err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.INVALID_ARGUMENT_ERROR,
+                    "unsupported internal l2 network type[%s]", msg.getType()));
+            return;
+        }
+        apiMsg.setName(msg.getName());
+        apiMsg.setDescription(msg.getDescription());
+        apiMsg.setZoneUuid(msg.getZoneUuid());
+        apiMsg.setPhysicalInterface(msg.getPhysicalInterface());
+        apiMsg.setvSwitchType(msg.getvSwitchType());
+        apiMsg.setIsolated(msg.getIsolated());
+        apiMsg.setPvlan(msg.getPvlan());
+        apiMsg.setResourceUuid(msg.getResourceUuid());
+        apiMsg.setSession(msg.getSession());
+        apiMsg.setSystemTags(msg.getSystemTags());
+        NetworkCreateContext context = msg.getContext();
+        if (context == null) {
+            context = NetworkCreateContext.api();
+        }
+        handle(apiMsg, context, new ReturnValueCompletion<L2NetworkInventory>(msg) {
+            @Override
+            public void success(L2NetworkInventory returnValue) {
+                CreateL2NetworkReply reply = new CreateL2NetworkReply();
+                reply.setInventory(returnValue);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                bus.replyErrorByMessageType(msg, errorCode);
+            }
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -417,15 +461,33 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     private void handle(APICreateL2NetworkMsg msg) {
-        NetworkCreateContext context = NetworkCreateContext.api();
+        handle(msg, NetworkCreateContext.api(), new ReturnValueCompletion<L2NetworkInventory>(msg) {
+            @Override
+            public void success(L2NetworkInventory returnValue) {
+                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
+                evt.setInventory(returnValue);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(APICreateL2NetworkMsg msg, NetworkCreateContext context,
+                        ReturnValueCompletion<L2NetworkInventory> completion) {
         for (L2NetworkCreateExtensionPoint extp : createExtensions) {
             try {
                 extp.beforeCreateL2Network(msg, context);
 			} catch (NetworkException e) {
-				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setError(err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.CREATE_RESOURCE_ERROR, "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage()));
-                logger.warn(evt.getError().getDetails(), e);
-				bus.publish(evt);
+                ErrorCode error = err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.CREATE_RESOURCE_ERROR,
+                        "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage());
+                logger.warn(error.getDetails(), e);
+                completion.fail(error);
 				return;
 			}
     	}
@@ -445,7 +507,16 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setType(type.toString());
         vo.setvSwitchType(vSwitchType.toString());
         vo.setZoneUuid(msg.getZoneUuid());
-        vo.setAccountUuid(msg.getSession().getAccountUuid());
+        String accountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
+        if (accountUuid == null && context.getExternalRef() != null) {
+            accountUuid = context.getExternalRef().getAccountUuid();
+        }
+        if (accountUuid == null) {
+            completion.fail(err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.INVALID_ARGUMENT_ERROR,
+                    "account uuid is required for l2 create"));
+            return;
+        }
+        vo.setAccountUuid(accountUuid);
         vo.setIsolated(msg.getIsolated());
         vo.setPvlan(msg.getPvlan());
         factory.createL2Network(vo, msg, context, new ReturnValueCompletion<L2NetworkInventory>(msg) {
@@ -461,16 +532,12 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
                     }
                 }
 
-                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setInventory(returnValue);
-                bus.publish(evt);
+                completion.success(returnValue);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
-                evt.setError(errorCode);
-                bus.publish(evt);
+                completion.fail(errorCode);
             }
         });
 
