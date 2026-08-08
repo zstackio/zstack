@@ -292,6 +292,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg, Completion completion) {
+        postCreateL2Network(l2Network, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
+                                    NetworkCreateContext context, Completion completion) {
         VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
         if (vSwitchType.getSdnControllerType() == null) {
             completion.success();
@@ -326,7 +332,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
         SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
         SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
-        controller.createL2Network(l2Network, msg, completion);
+        controller.createL2Network(l2Network, msg, context, completion);
     }
 
     @Override
