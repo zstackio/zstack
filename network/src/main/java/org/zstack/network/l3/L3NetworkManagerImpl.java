@@ -526,6 +526,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(APICreateL3NetworkMsg msg) {
+        handle(msg, NetworkCreateContext.api());
+    }
+
+    private void handle(APICreateL3NetworkMsg msg, NetworkCreateContext context) {
         APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
 
         L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
@@ -569,7 +573,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return;
                 }
 
-                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(),
+                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(), context,
                         new Completion(trigger) {
                     @Override
                     public void success() {
@@ -591,8 +595,14 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                 L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
                     @Override
                     protected L3NetworkInventory scripts() {
-                        vo.setAccountUuid(msg.getSession().getAccountUuid());
-                        L3NetworkInventory inv = factory.createL3Network(vo, msg);
+                        String accountUuid = msg.getSession() == null && context.getExternalRef() != null
+                                ? context.getExternalRef().getAccountUuid()
+                                : msg.getSession() == null ? null : msg.getSession().getAccountUuid();
+                        if (accountUuid == null) {
+                            throw new CloudRuntimeException("account uuid is required for l3 create");
+                        }
+                        vo.setAccountUuid(accountUuid);
+                        L3NetworkInventory inv = factory.createL3Network(vo, msg, context);
                         tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
                         return inv;
                     }
