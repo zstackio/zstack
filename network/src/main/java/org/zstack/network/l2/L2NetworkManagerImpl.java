@@ -417,9 +417,10 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     private void handle(APICreateL2NetworkMsg msg) {
+        NetworkCreateContext context = NetworkCreateContext.api();
     	for (L2NetworkCreateExtensionPoint extp : createExtensions) {
     		try {
-				extp.beforeCreateL2Network(msg);
+                extp.beforeCreateL2Network(msg, context);
 			} catch (NetworkException e) {
 				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
                 evt.setError(err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.CREATE_RESOURCE_ERROR, "unable to create l2network[name:%s, type:%s], %s", msg.getName(), msg.getType(), e.getMessage()));
@@ -447,7 +448,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setIsolated(msg.getIsolated());
         vo.setPvlan(msg.getPvlan());
-        factory.createL2Network(vo, msg, new ReturnValueCompletion<L2NetworkInventory>(msg) {
+        factory.createL2Network(vo, msg, context, new ReturnValueCompletion<L2NetworkInventory>(msg) {
             @Override
             public void success(L2NetworkInventory returnValue) {
                 tagMgr.createTagsFromAPICreateMessage(msg, returnValue.getUuid(), L2NetworkVO.class.getSimpleName());
