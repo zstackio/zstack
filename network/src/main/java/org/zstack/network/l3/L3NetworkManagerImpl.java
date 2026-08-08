@@ -32,6 +32,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
+import org.zstack.header.network.NetworkDependencyAdmissionExtensionPoint;
+import org.zstack.header.network.NetworkDependencyAdmissionRequest;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
@@ -885,6 +887,15 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
+        NetworkDependencyAdmissionRequest request = new NetworkDependencyAdmissionRequest(
+                ipRange.getL3NetworkUuid(), "UsedIp", null, "RESERVE_IP");
+        for (NetworkDependencyAdmissionExtensionPoint extension :
+                pluginRgty.getExtensionList(NetworkDependencyAdmissionExtensionPoint.class)) {
+            ErrorCode errorCode = extension.admit(request);
+            if (errorCode != null) {
+                throw new CloudRuntimeException(errorCode.getDetails());
+            }
+        }
         if (NetworkUtils.isIpv4Address(ip)) {
             return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
         } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
