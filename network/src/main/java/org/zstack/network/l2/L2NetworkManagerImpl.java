@@ -418,8 +418,8 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
 
     private void handle(APICreateL2NetworkMsg msg) {
         NetworkCreateContext context = NetworkCreateContext.api();
-    	for (L2NetworkCreateExtensionPoint extp : createExtensions) {
-    		try {
+        for (L2NetworkCreateExtensionPoint extp : createExtensions) {
+            try {
                 extp.beforeCreateL2Network(msg, context);
 			} catch (NetworkException e) {
 				APICreateL2NetworkEvent evt = new APICreateL2NetworkEvent(msg.getId());
