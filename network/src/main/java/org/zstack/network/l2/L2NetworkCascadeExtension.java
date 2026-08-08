@@ -13,6 +13,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -102,7 +103,14 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         try {
             final List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
             if (l2invs != null) {
-                l2invs.forEach(l -> dbf.eoCleanup(L2NetworkVO.class, l.getUuid()));
+                l2invs.forEach(l -> {
+                    for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
+                        if (ext.supports(l)) {
+                            ext.deleteLocalMetadata(l);
+                        }
+                    }
+                    dbf.eoCleanup(L2NetworkVO.class, l.getUuid());
+                });
             } else {
                 dbf.eoCleanup(L2NetworkVO.class);
             }
@@ -152,6 +160,15 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 List<String> uuids = new ArrayList<String>();
                 for (MessageReply r : replies) {
                     L2NetworkInventory inv = finalL2invs.get(replies.indexOf(r));
+                    for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
+                        if (ext.supports(inv)) {
+                            ErrorCode errorCode = ext.delete(inv);
+                            if (errorCode != null) {
+                                completion.fail(errorCode);
+                                return;
+                            }
+                        }
+                    }
                     uuids.add(inv.getUuid());
                     logger.debug(String.format("delete l2 network[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
                 }
@@ -172,6 +189,21 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         try {
             for (L2NetworkInventory prinv : l2invs) {
                 extpEmitter.preDelete(prinv);
+                for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
+                    if (ext.supports(prinv)) {
+                        ErrorCode errorCode = ext.begin(prinv);
+                        if (errorCode != null) {
+                            completion.fail(errorCode);
+                            return;
+                        }
+                        errorCode = ext.check(prinv);
+                        if (errorCode != null) {
+                            ext.cancel(prinv);
+                            completion.fail(errorCode);
+                            return;
+                        }
+                    }
+                }
             }
 
             completion.success();
