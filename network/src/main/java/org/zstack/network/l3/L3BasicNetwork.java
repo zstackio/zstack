@@ -40,6 +40,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
@@ -190,7 +191,7 @@ public class L3BasicNetwork implements L3Network {
         }
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        factory.createIpRange(Collections.singletonList(ipr), msg, new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        factory.createIpRange(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
@@ -1227,7 +1228,7 @@ public class L3BasicNetwork implements L3Network {
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(iprs.get(0).getIpRangeType());
-        factory.createIpRange(iprs, msg, new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        factory.createIpRange(iprs, msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
@@ -1251,7 +1252,7 @@ public class L3BasicNetwork implements L3Network {
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        factory.createIpRange(Collections.singletonList(ipr), msg, new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        factory.createIpRange(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
@@ -1274,7 +1275,7 @@ public class L3BasicNetwork implements L3Network {
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        factory.createIpRange(Collections.singletonList(ipr), msg, new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        factory.createIpRange(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
