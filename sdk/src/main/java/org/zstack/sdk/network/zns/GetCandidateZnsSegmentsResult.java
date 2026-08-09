@@ -8,6 +8,6 @@ public class GetCandidateZnsSegmentsResult {
     }
 
     public java.util.List getCandidates() {
-        return this.candidates;
+        return candidates;
     }
 }
