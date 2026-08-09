@@ -166,7 +166,24 @@ public class L3BasicNetwork implements L3Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
-                doAddIpRange(msg, chain);
+                IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
+                addIpRange(ipr, msg, NetworkCreateContext.api(), new ReturnValueCompletion<IpRangeInventory>(msg) {
+                    @Override
+                    public void success(IpRangeInventory inv) {
+                        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+                        evt.setInventory(inv);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
             }
 
             @Override
@@ -181,34 +198,85 @@ public class L3BasicNetwork implements L3Network {
         });
     }
 
-    private void doAddIpRange(APIAddIpRangeMsg msg, SyncTaskChain chain) {
-        IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+    private void handle(AddIpRangeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                IpRangeInventory ipr = msg.getInventory();
+                if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10083,
+                            "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
+                    chain.next();
+                    return;
+                }
+
+                APIAddIpRangeMsg create = new APIAddIpRangeMsg();
+                create.setL3NetworkUuid(msg.getL3NetworkUuid());
+                create.setName(ipr.getName());
+                create.setDescription(ipr.getDescription());
+                create.setStartIp(ipr.getStartIp());
+                create.setEndIp(ipr.getEndIp());
+                create.setNetmask(ipr.getNetmask());
+                create.setGateway(ipr.getGateway());
+                create.setIpRangeType(ipr.getIpRangeType().toString());
+                create.setResourceUuid(ipr.getUuid());
+                create.setSystemTags(msg.getSystemTags());
+                create.setUserTags(msg.getUserTags());
+                addIpRange(ipr, create, msg.getContext(), new ReturnValueCompletion<IpRangeInventory>(msg) {
+                    @Override
+                    public void success(IpRangeInventory inv) {
+                        AddIpRangeReply reply = new AddIpRangeReply();
+                        reply.setInventory(inv);
+                        bus.reply(msg, reply);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        bus.replyErrorByMessageType(msg, errorCode);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return "add-projected-ip-range";
+            }
+        });
+    }
+
+    private void addIpRange(IpRangeInventory ipr, APICreateMessage msg, NetworkCreateContext context,
+                            ReturnValueCompletion<IpRangeInventory> completion) {
+        if (context == null) {
+            completion.fail(Platform.inerr(ORG_ZSTACK_NETWORK_L3_10084,
+                    "network create context is required for internal IP range creation"));
+            return;
+        }
         ErrorCode errorCode = validateManagementNetworkIpRangeVersionBeforeCreate(ipr);
         if (errorCode != null) {
-            evt.setError(errorCode);
-            bus.publish(evt);
-            chain.next();
+            completion.fail(errorCode);
             return;
         }
 
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(ipr.getIpRangeType());
-        factory.createIpRange(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        factory.createIpRange(Collections.singletonList(ipr), msg, context, new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
                 tagMgr.createTagsFromAPICreateMessage(msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
-                setIpRangeSharedResource(msg.getL3NetworkUuid(), inv.getUuid());
-                evt.setInventory(inv);
-                bus.publish(evt);
-                chain.next();
+                setIpRangeSharedResource(ipr.getL3NetworkUuid(), inv.getUuid());
+                completion.success(inv);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
-                chain.next();
+                completion.fail(errorCode);
             }
         });
     }
@@ -237,7 +305,9 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handleLocalMessage(Message msg) {
-        if (msg instanceof AllocateIpMsg) {
+        if (msg instanceof AddIpRangeMsg) {
+            handle((AddIpRangeMsg) msg);
+        } else if (msg instanceof AllocateIpMsg) {
             handle((AllocateIpMsg)msg);
         } else if (msg instanceof ReturnIpMsg) {
             handle((ReturnIpMsg)msg);
