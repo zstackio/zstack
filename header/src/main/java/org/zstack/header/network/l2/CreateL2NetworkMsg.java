@@ -3,8 +3,6 @@ package org.zstack.header.network.l2;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
 
-import java.util.List;
-
 /** Internal, typed local L2 create request used by projection/recovery flows. */
 public class CreateL2NetworkMsg extends NeedReplyMessage {
     private String name;
@@ -20,7 +18,6 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     private String accountUuid;
     private NetworkCreateContext context;
     private SessionInventory session;
-    private List<String> systemTags;
     private APICreateL2NetworkMsg subtypeMessage;
 
     public String getName() { return name; }
@@ -49,8 +46,6 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     public void setContext(NetworkCreateContext value) { context = value; }
     public SessionInventory getSession() { return session; }
     public void setSession(SessionInventory value) { session = value; }
-    public List<String> getSystemTags() { return systemTags; }
-    public void setSystemTags(List<String> value) { systemTags = value; }
     public APICreateL2NetworkMsg getSubtypeMessage() { return subtypeMessage; }
     public void setSubtypeMessage(APICreateL2NetworkMsg value) { subtypeMessage = value; }
 }
