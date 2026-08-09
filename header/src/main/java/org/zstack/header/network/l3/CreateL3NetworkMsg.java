@@ -4,8 +4,6 @@ import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.NetworkCreateContext;
 
-import java.util.List;
-
 /** Internal typed L3 create request for ZNS projection and recovery. */
 public class CreateL3NetworkMsg extends NeedReplyMessage {
     private String name;
@@ -19,7 +17,6 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
     private Boolean enableIPAM = Boolean.TRUE;
     private String resourceUuid;
     private SessionInventory session;
-    private List<String> systemTags;
     private NetworkCreateContext context;
 
     public String getName() { return name; }
@@ -44,8 +41,6 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
     public void setResourceUuid(String value) { resourceUuid = value; }
     public SessionInventory getSession() { return session; }
     public void setSession(SessionInventory value) { session = value; }
-    public List<String> getSystemTags() { return systemTags; }
-    public void setSystemTags(List<String> value) { systemTags = value; }
     public NetworkCreateContext getContext() { return context; }
     public void setContext(NetworkCreateContext value) { context = value; }
 }
