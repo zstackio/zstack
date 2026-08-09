@@ -37,6 +37,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus", "org.zstack.sdk.ServiceStatus");
 			put("org.zstack.ai.message.ModelCenterServiceInventory$ZdfsService", "org.zstack.sdk.ZdfsService");
 			put("org.zstack.ai.message.ModelService", "org.zstack.sdk.ModelService");
+			put("org.zstack.ai.message.ModelServiceInstanceLaunchCommandInventory", "org.zstack.sdk.ModelServiceInstanceLaunchCommandInventory");
+			put("org.zstack.ai.message.ModelServiceLaunchCommandInventory", "org.zstack.sdk.ModelServiceLaunchCommandInventory");
 			put("org.zstack.ai.message.ModelServiceMatchEntry", "org.zstack.sdk.ModelServiceMatchEntry");
 			put("org.zstack.ai.message.ModelServiceMatchEntryName", "org.zstack.sdk.ModelServiceMatchEntryName");
 			put("org.zstack.ai.message.ModelServiceMatchStatus", "org.zstack.sdk.ModelServiceMatchStatus");
@@ -373,6 +375,7 @@ public class SourceClassMap {
 			put("org.zstack.header.sshkeypair.SshKeyPairInventory", "org.zstack.sdk.SshKeyPairInventory");
 			put("org.zstack.header.sshkeypair.SshPrivateKeyPairInventory", "org.zstack.sdk.SshPrivateKeyPairInventory");
 			put("org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory", "org.zstack.sdk.ExternalBackupStorageInventory");
+			put("org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefInventory", "org.zstack.sdk.ExternalPrimaryStorageHostProtocolRefInventory");
 			put("org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory", "org.zstack.sdk.ExternalPrimaryStorageInventory");
 			put("org.zstack.header.storage.backup.BackupMode", "org.zstack.sdk.BackupMode");
 			put("org.zstack.header.storage.backup.BackupStorageInventory", "org.zstack.sdk.BackupStorageInventory");
@@ -633,7 +636,7 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.network.zns.ZnsControllerInventory", "org.zstack.sdk.network.zns.ZnsControllerInventory");
-            put("org.zstack.network.zns.ZnsSegmentCandidateInventory", "org.zstack.sdk.network.zns.ZnsSegmentCandidateInventory");
+			put("org.zstack.network.zns.ZnsSegmentCandidateInventory", "org.zstack.sdk.network.zns.ZnsSegmentCandidateInventory");
 			put("org.zstack.network.zns.ZnsTenantInventory", "org.zstack.sdk.network.zns.ZnsTenantInventory");
 			put("org.zstack.network.zns.ZnsTenantRouterInventory", "org.zstack.sdk.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.network.zns.ZnsTransportZoneInventory");
@@ -864,6 +867,7 @@ public class SourceClassMap {
 			put("org.zstack.zwatch.alarm.AlarmDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory");
 			put("org.zstack.zwatch.alarm.AlarmInventory", "org.zstack.sdk.zwatch.alarm.AlarmInventory");
 			put("org.zstack.zwatch.alarm.AlarmLabelInventory", "org.zstack.sdk.zwatch.alarm.AlarmLabelInventory");
+			put("org.zstack.zwatch.alarm.AlarmResourceStateInventory", "org.zstack.sdk.zwatch.alarm.AlarmResourceStateInventory");
 			put("org.zstack.zwatch.alarm.AlarmState", "org.zstack.sdk.zwatch.alarm.AlarmState");
 			put("org.zstack.zwatch.alarm.AlarmStatus", "org.zstack.sdk.zwatch.alarm.AlarmStatus");
 			put("org.zstack.zwatch.alarm.AlertDataAckInventory", "org.zstack.sdk.zwatch.alarm.AlertDataAckInventory");
@@ -1117,6 +1121,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
 			put("org.zstack.sdk.ExternalBackupState", "org.zstack.externalbackup.ExternalBackupState");
 			put("org.zstack.sdk.ExternalBackupStorageInventory", "org.zstack.header.storage.addon.backup.ExternalBackupStorageInventory");
+			put("org.zstack.sdk.ExternalPrimaryStorageHostProtocolRefInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefInventory");
 			put("org.zstack.sdk.ExternalPrimaryStorageInventory", "org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory");
 			put("org.zstack.sdk.ExternalServiceCapabilities", "org.zstack.header.core.external.service.ExternalServiceCapabilities");
 			put("org.zstack.sdk.ExternalServiceCapabilitiesBuilder", "org.zstack.core.externalservice.ExternalServiceCapabilitiesBuilder");
@@ -1308,7 +1313,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelServiceGroupDatasetRefInventory", "org.zstack.ai.entity.ModelServiceGroupDatasetRefInventory");
 			put("org.zstack.sdk.ModelServiceInstanceGroupInventory", "org.zstack.ai.entity.ModelServiceInstanceGroupInventory");
 			put("org.zstack.sdk.ModelServiceInstanceInventory", "org.zstack.ai.entity.ModelServiceInstanceInventory");
+			put("org.zstack.sdk.ModelServiceInstanceLaunchCommandInventory", "org.zstack.ai.message.ModelServiceInstanceLaunchCommandInventory");
 			put("org.zstack.sdk.ModelServiceInventory", "org.zstack.ai.entity.ModelServiceInventory");
+			put("org.zstack.sdk.ModelServiceLaunchCommandInventory", "org.zstack.ai.message.ModelServiceLaunchCommandInventory");
 			put("org.zstack.sdk.ModelServiceMatchEntry", "org.zstack.ai.message.ModelServiceMatchEntry");
 			put("org.zstack.sdk.ModelServiceMatchEntryName", "org.zstack.ai.message.ModelServiceMatchEntryName");
 			put("org.zstack.sdk.ModelServiceMatchStatus", "org.zstack.ai.message.ModelServiceMatchStatus");
@@ -1740,7 +1747,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.sdk.network.zns.L2GeneveNetworkInventory", "org.zstack.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.sdk.network.zns.ZnsControllerInventory", "org.zstack.network.zns.ZnsControllerInventory");
-            put("org.zstack.sdk.network.zns.ZnsSegmentCandidateInventory", "org.zstack.network.zns.ZnsSegmentCandidateInventory");
+			put("org.zstack.sdk.network.zns.ZnsSegmentCandidateInventory", "org.zstack.network.zns.ZnsSegmentCandidateInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantInventory", "org.zstack.network.zns.ZnsTenantInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantRouterInventory", "org.zstack.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.sdk.network.zns.ZnsTransportZoneInventory", "org.zstack.network.zns.ZnsTransportZoneInventory");
@@ -1783,6 +1790,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.zwatch.alarm.AlarmDataAckInventory", "org.zstack.zwatch.alarm.AlarmDataAckInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmInventory", "org.zstack.zwatch.alarm.AlarmInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmLabelInventory", "org.zstack.zwatch.alarm.AlarmLabelInventory");
+			put("org.zstack.sdk.zwatch.alarm.AlarmResourceStateInventory", "org.zstack.zwatch.alarm.AlarmResourceStateInventory");
 			put("org.zstack.sdk.zwatch.alarm.AlarmState", "org.zstack.zwatch.alarm.AlarmState");
 			put("org.zstack.sdk.zwatch.alarm.AlarmStatus", "org.zstack.zwatch.alarm.AlarmStatus");
 			put("org.zstack.sdk.zwatch.alarm.AlertDataAckInventory", "org.zstack.zwatch.alarm.AlertDataAckInventory");
