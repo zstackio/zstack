@@ -12240,6 +12240,7 @@ public class CloudOperationsErrorCode {
     // 10046 ZNS DHCP 409 fallback GET returned empty
     // 10047 ZNS DHCP update has no Cloud-reserved DHCPv4 server IP
     // 10048 failed to allocate DHCPv4 server IP in ZNS DHCP backend
+    // 10051 public ZNS L3 requires a VLAN-backed Basic network
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
@@ -12254,6 +12255,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10046 = "ORG_ZSTACK_NETWORK_ZNS_10046";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10047 = "ORG_ZSTACK_NETWORK_ZNS_10047";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10048 = "ORG_ZSTACK_NETWORK_ZNS_10048";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10051 = "ORG_ZSTACK_NETWORK_ZNS_10051";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
