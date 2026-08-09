@@ -11,6 +11,7 @@ import org.zstack.header.network.l2.NetworkOperationOrigin;
 import org.zstack.header.network.l3.CreateL3NetworkMsg;
 import org.zstack.header.network.l3.AddIpRangeMsg;
 import org.zstack.header.network.l3.DeleteProjectedIpRangeMsg;
+import org.zstack.header.network.l3.L3NetworkMessage;
 import org.zstack.header.network.l3.UpdateProjectedDnsMsg;
 import org.zstack.header.network.l3.UpdateProjectedIpRangeMsg;
 import org.zstack.network.l3.AttachNetworkServiceToL3Msg;
@@ -85,6 +86,8 @@ public class CreateL2NetworkMsgTest {
 
         Assert.assertTrue(update.getContext().isProjection());
         Assert.assertTrue(delete.getContext().isProjection());
+        Assert.assertTrue(update instanceof L3NetworkMessage);
+        Assert.assertTrue(delete instanceof L3NetworkMessage);
     }
 
     @Test
