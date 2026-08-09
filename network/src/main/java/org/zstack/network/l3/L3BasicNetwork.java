@@ -307,6 +307,8 @@ public class L3BasicNetwork implements L3Network {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddIpRangeMsg) {
             handle((AddIpRangeMsg) msg);
+        } else if (msg instanceof UpdateProjectedDnsMsg) {
+            handle((UpdateProjectedDnsMsg) msg);
         } else if (msg instanceof AllocateIpMsg) {
             handle((AllocateIpMsg)msg);
         } else if (msg instanceof ReturnIpMsg) {
@@ -1608,7 +1610,7 @@ public class L3BasicNetwork implements L3Network {
         }).start();
 	}
 
-	private void handle(final AttachNetworkServiceToL3Msg msg) {
+    private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
         NetworkDependencyAdmissionRequest admission = new NetworkDependencyAdmissionRequest(
                 msg.getL3NetworkUuid(), "NetworkService", null, "ATTACH_NETWORK_SERVICE");
@@ -1656,6 +1658,11 @@ public class L3BasicNetwork implements L3Network {
                 return;
             }
 
+            if (msg.getContext() != null && msg.getContext().isProjection()) {
+                wcomp.done();
+                return;
+            }
+
             nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), new Completion(wcomp) {
                 @Override
                 public void success() {
@@ -1690,6 +1697,68 @@ public class L3BasicNetwork implements L3Network {
                         }
                     });
                 }
+            }
+        });
+    }
+
+    private void handle(UpdateProjectedDnsMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (msg.getContext() == null || !msg.getContext().isProjection()) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10085,
+                            "DNS projection requires a ZNS projection context"));
+                    chain.next();
+                    return;
+                }
+
+                LinkedHashSet<String> desired = new LinkedHashSet<>(
+                        msg.getDns() == null ? Collections.emptyList() : msg.getDns());
+                String invalid = desired.stream().filter(dns -> !NetworkUtils.isIpAddress(dns)).findFirst().orElse(null);
+                if (invalid != null) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10086,
+                            "DNS[%s] is not an IP address", invalid));
+                    chain.next();
+                    return;
+                }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        List<L3NetworkDnsVO> existing = Q.New(L3NetworkDnsVO.class)
+                                .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                        Set<String> current = existing.stream().map(L3NetworkDnsVO::getDns)
+                                .collect(Collectors.toSet());
+                        List<L3NetworkDnsVO> obsolete = existing.stream()
+                                .filter(vo -> !desired.contains(vo.getDns())).collect(Collectors.toList());
+                        if (!obsolete.isEmpty()) {
+                            dbf.removeCollection(obsolete, L3NetworkDnsVO.class);
+                        }
+                        List<L3NetworkDnsVO> additions = desired.stream()
+                                .filter(dns -> !current.contains(dns))
+                                .map(dns -> {
+                                    L3NetworkDnsVO vo = new L3NetworkDnsVO();
+                                    vo.setL3NetworkUuid(msg.getL3NetworkUuid());
+                                    vo.setDns(dns);
+                                    return vo;
+                                }).collect(Collectors.toList());
+                        if (!additions.isEmpty()) {
+                            dbf.persistCollection(additions);
+                        }
+                    }
+                }.execute();
+                bus.reply(msg, new MessageReply());
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return "update-projected-dns";
             }
         });
     }
