@@ -21,6 +21,8 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.NetworkDependencyAdmissionExtensionPoint;
+import org.zstack.header.network.NetworkDependencyAdmissionRequest;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -117,6 +119,13 @@ public class VmAllocateNicFlow implements Flow {
             VmNicInventory nic = buildNicInventory(spec, nicSpec, nw, mac, customNicUuid, deviceId, disableL3Networks);
             if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
                 errs.add(operr(ORG_ZSTACK_COMPUTE_VM_10069, "Duplicate mac address [%s]", nic.getMac()));
+                wcomp.allDone();
+                return;
+            }
+
+            ErrorCode admissionError = admitDependency(nw.getUuid(), "VmNic", null, "CREATE_VM_NIC");
+            if (admissionError != null) {
+                errs.add(admissionError);
                 wcomp.allDone();
                 return;
             }
@@ -263,6 +272,13 @@ public class VmAllocateNicFlow implements Flow {
 
         VmNicParam vmNicParm = vmNicParms.get(0);
 
+        if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
+            ErrorCode admissionError = admitDependency(vmNicVO.getL3NetworkUuid(), "VmNicQos", null, "ADD_VM_NIC_QOS");
+            if (admissionError != null) {
+                throw new org.zstack.header.exception.CloudRuntimeException(admissionError.getDetails());
+            }
+        }
+
         // add vmnic bandwidth systemtag
         if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
@@ -275,6 +291,19 @@ public class VmAllocateNicFlow implements Flow {
             Integer queues = vmNicParm.getMultiQueueNum();
             multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
         }
+    }
+
+    private ErrorCode admitDependency(String resourceUuid, String dependencyType, String operationUuid, String operationStep) {
+        NetworkDependencyAdmissionRequest request = new NetworkDependencyAdmissionRequest(
+                resourceUuid, dependencyType, operationUuid, operationStep);
+        for (NetworkDependencyAdmissionExtensionPoint extension :
+                pluginRgty.getExtensionList(NetworkDependencyAdmissionExtensionPoint.class)) {
+            ErrorCode errorCode = extension.admit(request);
+            if (errorCode != null) {
+                return errorCode;
+            }
+        }
+        return null;
     }
 
     private void callBeforeAllocateVmNicExtensions(VmNicInventory nic, VmInstanceSpec spec, Completion completion) {

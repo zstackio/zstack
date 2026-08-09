@@ -39,6 +39,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
+import org.zstack.header.network.NetworkDependencyAdmissionExtensionPoint;
+import org.zstack.header.network.NetworkDependencyAdmissionRequest;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -926,6 +928,16 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void  attachL2NetworkToCluster(final AttachL2NetworkToClusterMsg msg, final Completion completion){
+        NetworkDependencyAdmissionRequest admission = new NetworkDependencyAdmissionRequest(
+                msg.getL2NetworkUuid(), "ClusterAttach", null, "ATTACH_CLUSTER");
+        for (NetworkDependencyAdmissionExtensionPoint extension :
+                pluginRgty.getExtensionList(NetworkDependencyAdmissionExtensionPoint.class)) {
+            ErrorCode errorCode = extension.admit(admission);
+            if (errorCode != null) {
+                completion.fail(errorCode);
+                return;
+            }
+        }
         long count = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
                 .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid()).count();
         if (count != 0) {

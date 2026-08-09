@@ -4,6 +4,7 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -20,6 +21,9 @@ import java.util.List;
 public interface SdnControllerL2 {
     void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Completion completion);
+    default void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, NetworkCreateContext context, Completion completion) {
+        createL2Network(inv, msg, completion);
+    }
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
