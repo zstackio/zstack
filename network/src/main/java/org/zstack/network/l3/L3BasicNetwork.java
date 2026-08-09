@@ -307,6 +307,10 @@ public class L3BasicNetwork implements L3Network {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddIpRangeMsg) {
             handle((AddIpRangeMsg) msg);
+        } else if (msg instanceof UpdateProjectedIpRangeMsg) {
+            handle((UpdateProjectedIpRangeMsg) msg);
+        } else if (msg instanceof DeleteProjectedIpRangeMsg) {
+            handle((DeleteProjectedIpRangeMsg) msg);
         } else if (msg instanceof UpdateProjectedDnsMsg) {
             handle((UpdateProjectedDnsMsg) msg);
         } else if (msg instanceof AllocateIpMsg) {
@@ -324,6 +328,147 @@ public class L3BasicNetwork implements L3Network {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(UpdateProjectedIpRangeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                IpRangeVO range = dbf.findByUuid(msg.getRangeUuid(), IpRangeVO.class);
+                if (msg.getContext() == null || !msg.getContext().isProjection()
+                        || !IpRangeVO.class.getSimpleName().equals(msg.getExpectedSourceType())
+                        || !Objects.equals(self.getUuid(), msg.getL3NetworkUuid())
+                        || range == null || !Objects.equals(range.getL3NetworkUuid(), msg.getL3NetworkUuid())) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10087,
+                            "IP range projection update requires the expected range on L3 network[uuid:%s]",
+                            msg.getL3NetworkUuid()));
+                    chain.next();
+                    return;
+                }
+
+                boolean valid;
+                try {
+                    valid = NetworkUtils.isInRange(msg.getStartIp(), msg.getStartIp(), msg.getEndIp());
+                } catch (RuntimeException e) {
+                    valid = false;
+                }
+                if (!valid) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10088,
+                            "projected IP range[%s, %s] is invalid", msg.getStartIp(), msg.getEndIp()));
+                    chain.next();
+                    return;
+                }
+
+                List<UsedIpVO> rangeUsedIps = Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.ipRangeUuid, range.getUuid()).list();
+                UsedIpVO outside = rangeUsedIps.stream()
+                        .filter(ip -> !NetworkUtils.isInRange(ip.getIp(), msg.getStartIp(), msg.getEndIp()))
+                        .findFirst().orElse(null);
+                if (outside != null) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10089,
+                            "used IP[%s] is outside projected IP range[uuid:%s]",
+                            outside.getIp(), range.getUuid()));
+                    chain.next();
+                    return;
+                }
+
+                range.setStartIp(msg.getStartIp());
+                range.setEndIp(msg.getEndIp());
+                range.setGateway(msg.getGateway());
+                range.setNetmask(msg.getNetmask());
+                dbf.update(range);
+                bus.reply(msg, new MessageReply());
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return "update-projected-ip-range";
+            }
+        });
+    }
+
+    private void handle(DeleteProjectedIpRangeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (msg.getContext() == null || !msg.getContext().isProjection()
+                        || !IpRangeVO.class.getSimpleName().equals(msg.getExpectedSourceType())
+                        || !Objects.equals(self.getUuid(), msg.getL3NetworkUuid())) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "IP range projection delete requires L3 network[uuid:%s] ownership",
+                            msg.getL3NetworkUuid()));
+                    chain.next();
+                    return;
+                }
+
+                IpRangeVO range = dbf.findByUuid(msg.getRangeUuid(), IpRangeVO.class);
+                if (range == null) {
+                    bus.reply(msg, new MessageReply());
+                    chain.next();
+                    return;
+                }
+                if (!Objects.equals(range.getL3NetworkUuid(), msg.getL3NetworkUuid())) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "IP range[uuid:%s] does not belong to L3 network[uuid:%s]",
+                            range.getUuid(), msg.getL3NetworkUuid()));
+                    chain.next();
+                    return;
+                }
+
+                List<IpRangeVO> alternatives = Q.New(IpRangeVO.class)
+                        .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .notEq(IpRangeVO_.uuid, range.getUuid()).list();
+                List<UsedIpVO> usedIps = Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.ipRangeUuid, range.getUuid()).list();
+                Map<UsedIpVO, IpRangeVO> replacements = new LinkedHashMap<>();
+                for (UsedIpVO usedIp : usedIps) {
+                    IpRangeVO replacement = alternatives.stream()
+                            .filter(candidate -> Objects.equals(candidate.getIpVersion(), usedIp.getIpVersion()))
+                            .filter(candidate -> NetworkUtils.isInRange(
+                                    usedIp.getIp(), candidate.getStartIp(), candidate.getEndIp()))
+                            .findFirst().orElse(null);
+                    if (replacement == null) {
+                        bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10091,
+                                "used IP[%s] prevents deleting projected IP range[uuid:%s]",
+                                usedIp.getIp(), range.getUuid()));
+                        chain.next();
+                        return;
+                    }
+                    replacements.put(usedIp, replacement);
+                }
+
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        replacements.forEach((usedIp, replacement) ->
+                                usedIp.setIpRangeUuid(replacement.getUuid()));
+                        if (!usedIps.isEmpty()) {
+                            dbf.updateCollection(usedIps);
+                        }
+                        dbf.remove(range);
+                        IpRangeHelper.updateL3NetworkIpversion(range);
+                    }
+                }.execute();
+                bus.reply(msg, new MessageReply());
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return "delete-projected-ip-range";
+            }
+        });
     }
 
     private void handle(CheckIpAvailabilityMsg msg) {

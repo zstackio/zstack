@@ -10,7 +10,9 @@ import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l2.NetworkOperationOrigin;
 import org.zstack.header.network.l3.CreateL3NetworkMsg;
 import org.zstack.header.network.l3.AddIpRangeMsg;
+import org.zstack.header.network.l3.DeleteProjectedIpRangeMsg;
 import org.zstack.header.network.l3.UpdateProjectedDnsMsg;
+import org.zstack.header.network.l3.UpdateProjectedIpRangeMsg;
 import org.zstack.network.l3.AttachNetworkServiceToL3Msg;
 import org.zstack.utils.gson.JSONObjectUtil;
 
@@ -70,6 +72,19 @@ public class CreateL2NetworkMsgTest {
 
         Assert.assertTrue(msg.getContext().isProjection());
         Assert.assertEquals("192.0.2.53", msg.getDns().get(0));
+    }
+
+    @Test
+    public void internalIpRangeRefreshCarriesLocalOnlyContext() {
+        NetworkCreateContext context = NetworkCreateContext.projection(NetworkOperationOrigin.ZNS_REFRESH,
+                new ExternalNetworkRef("range-uuid", "account-uuid"));
+        UpdateProjectedIpRangeMsg update = new UpdateProjectedIpRangeMsg();
+        update.setContext(context);
+        DeleteProjectedIpRangeMsg delete = new DeleteProjectedIpRangeMsg();
+        delete.setContext(context);
+
+        Assert.assertTrue(update.getContext().isProjection());
+        Assert.assertTrue(delete.getContext().isProjection());
     }
 
     @Test
