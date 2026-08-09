@@ -175,8 +175,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                         if (ext.supports(inv)) {
                             ErrorCode errorCode = ext.delete(inv);
                             if (errorCode != null) {
-                                completion.fail(errorCode);
-                                return;
+                                logger.warn(String.format("failed to delete confirmed local metadata for l2 network[uuid:%s], continue cascade: %s",
+                                        inv.getUuid(), errorCode));
                             }
                         }
                     }

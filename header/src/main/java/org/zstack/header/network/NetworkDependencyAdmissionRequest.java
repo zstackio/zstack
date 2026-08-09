@@ -1,6 +1,11 @@
 package org.zstack.header.network;
 
 public final class NetworkDependencyAdmissionRequest {
+    public static final String DEPENDENCY_VM_NIC = "VmNic";
+    public static final String DEPENDENCY_VM_NIC_QOS = "VmNicQos";
+    public static final String OPERATION_CREATE_VM_NIC = "CREATE_VM_NIC";
+    public static final String OPERATION_ADD_VM_NIC_QOS = "ADD_VM_NIC_QOS";
+
     private final String resourceUuid;
     private final String dependencyType;
     private final String operationUuid;

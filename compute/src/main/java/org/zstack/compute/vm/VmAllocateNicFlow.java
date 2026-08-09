@@ -123,7 +123,9 @@ public class VmAllocateNicFlow implements Flow {
                 return;
             }
 
-            ErrorCode admissionError = admitDependency(nw.getUuid(), "VmNic", null, "CREATE_VM_NIC");
+            ErrorCode admissionError = admitDependency(nw.getUuid(),
+                    NetworkDependencyAdmissionRequest.DEPENDENCY_VM_NIC, null,
+                    NetworkDependencyAdmissionRequest.OPERATION_CREATE_VM_NIC);
             if (admissionError != null) {
                 errs.add(admissionError);
                 wcomp.allDone();
@@ -273,7 +275,9 @@ public class VmAllocateNicFlow implements Flow {
         VmNicParam vmNicParm = vmNicParms.get(0);
 
         if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
-            ErrorCode admissionError = admitDependency(vmNicVO.getL3NetworkUuid(), "VmNicQos", null, "ADD_VM_NIC_QOS");
+            ErrorCode admissionError = admitDependency(vmNicVO.getL3NetworkUuid(),
+                    NetworkDependencyAdmissionRequest.DEPENDENCY_VM_NIC_QOS, null,
+                    NetworkDependencyAdmissionRequest.OPERATION_ADD_VM_NIC_QOS);
             if (admissionError != null) {
                 throw new org.zstack.header.exception.CloudRuntimeException(admissionError.getDetails());
             }

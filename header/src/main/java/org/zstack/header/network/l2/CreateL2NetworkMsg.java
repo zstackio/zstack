@@ -12,7 +12,7 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     private String zoneUuid;
     private String physicalInterface;
     private String type;
-    private String vSwitchType = "LinuxBridge";
+    private String vSwitchType = L2NetworkConstant.VSWITCH_TYPE_LINUX_BRIDGE;
     private Boolean isolated = Boolean.FALSE;
     private String pvlan;
     private Integer vlan;

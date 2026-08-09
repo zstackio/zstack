@@ -272,15 +272,15 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
 
     private void validate(APIPullSdnControllerMsg msg) {
         if (!Arrays.asList("Segment", "TenantRouter").contains(msg.getResourceType())) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10030,
                     "Unsupported resource type[%s]", msg.getResourceType()));
         }
         if (msg.getResourceUuids() != null && msg.getResourceUuids().size() > 100) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10031,
                     "At most 100 resource uuids can be pulled in one request"));
         }
         if (dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class) == null) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10025,
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10032,
                     "SDN controller[uuid:%s] not found", msg.getSdnControllerUuid()));
         }
     }
