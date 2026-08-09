@@ -43,6 +43,12 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
 
     @Override
     public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
+        createL2Network(vo, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, NetworkCreateContext context,
+                                ReturnValueCompletion<L2NetworkInventory> completion) {
 
         FlowChain chain = new SimpleFlowChain();
         chain.setName("create-no-vlan-network");
@@ -65,7 +71,7 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.postCreateL2Network(L2NetworkInventory.valueOf(vo), msg, new Completion(trigger) {
+                        .each((exp, wcompl) -> exp.postCreateL2Network(L2NetworkInventory.valueOf(vo), msg, context, new Completion(trigger) {
                             @Override
                             public void success() {
                                 wcompl.done();

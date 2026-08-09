@@ -120,12 +120,16 @@ public class SdnControllerBase {
             handle((APISdnControllerChangeHostMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             handle((APIPullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerMsg) {
+            handle((APIPullSdnControllerMsg) msg);
         } else if (msg instanceof APIChangeSdnControllerMsg) {
             handle((APIChangeSdnControllerMsg) msg);
         } else if (msg instanceof SdnControllerRemoveHostMsg) {
             handle((SdnControllerRemoveHostMsg) msg);
         } else if (msg instanceof PullSdnControllerTenantMsg) {
             handle((PullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof PullSdnControllerMsg) {
+            handle((PullSdnControllerMsg) msg);
         } else if (msg instanceof ReconnectSdnControllerMsg) {
             handle((ReconnectSdnControllerMsg) msg);
         } else if (msg instanceof SyncSdnControllerDataMsg) {
@@ -1063,6 +1067,15 @@ public class SdnControllerBase {
         });
     }
 
+    private void handle(APIPullSdnControllerMsg amsg) {
+        APIPullSdnControllerEvent event = new APIPullSdnControllerEvent(amsg.getId());
+        PullSdnControllerMsg msg = PullSdnControllerMsg.fromApi(amsg);
+        pullResources(msg, new Completion(msg) {
+            @Override public void success() { bus.publish(event); }
+            @Override public void fail(ErrorCode errorCode) { event.setError(errorCode); bus.publish(event); }
+        });
+    }
+
     private void handle(PullSdnControllerTenantMsg msg) {
         PullSdnControllerTenantReply reply = new PullSdnControllerTenantReply();
 
@@ -1084,6 +1097,18 @@ public class SdnControllerBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(PullSdnControllerMsg msg) {
+        PullSdnControllerReply reply = new PullSdnControllerReply();
+        pullResources(msg, new Completion(msg) {
+            @Override public void success() { bus.reply(msg, reply); }
+            @Override public void fail(ErrorCode errorCode) { reply.setError(errorCode); bus.reply(msg, reply); }
+        });
+    }
+
+    private void pullResources(PullSdnControllerMsg msg, Completion completion) {
+        getSdnController().pullResources(msg, completion);
     }
 
     private void pullSdnControllerTenant(PullSdnControllerTenantMsg msg, Completion completion) {

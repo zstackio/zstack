@@ -107,6 +107,19 @@ public class RESTFacadeImpl implements RESTFacade {
     private interface HttpCallHandlerWrapper {
         String handle(HttpEntity<String> entity);
 
+        default void handle(HttpEntity<String> entity, HttpServletResponse response) {
+            String body = handle(entity);
+            response.setStatus(HttpStatus.SC_OK);
+            if (body != null) {
+                response.setHeader("Content-Type", "application/json");
+                try {
+                    response.getWriter().write(body);
+                } catch (IOException e) {
+                    throw new CloudRuntimeException(e);
+                }
+            }
+        }
+
         HttpCallHandler getHandler();
     }
 
@@ -346,12 +359,7 @@ public class RESTFacadeImpl implements RESTFacade {
                 return;
             }
 
-            String ret = handler.handle(entity);
-            if (ret == null) {
-                rsp.setStatus(HttpStatus.SC_OK);
-            } else {
-                rsp.setStatus(HttpStatus.SC_OK, ret);
-            }
+            handler.handle(entity, rsp);
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
         } catch (Throwable t) {
@@ -1049,6 +1057,42 @@ public class RESTFacadeImpl implements RESTFacade {
         };
 
         httpCallhandlers.put(path, wrapper);
+    }
+
+    @Override
+    public <T> void registerSyncHttpStatusBodyCallHandler(String path, final Class<T> objectType,
+                                                           final SyncHttpStatusBodyCallHandler<T> handler) {
+        if (httpCallhandlers.containsKey(path)) {
+            throw new CloudRuntimeException("duplicate SyncHttpStatusBodyCallHandler for path[" + path + "]");
+        }
+        httpCallhandlers.put(path, new HttpCallHandlerWrapper() {
+            @Override
+            public String handle(HttpEntity<String> entity) {
+                SyncHttpResponse response = handler.handleSyncHttpCall(JSONObjectUtil.toObject(entity.getBody(), objectType));
+                return response == null ? null : response.getBody();
+            }
+
+            @Override
+            public void handle(HttpEntity<String> entity, HttpServletResponse servletResponse) {
+                SyncHttpResponse response = handler.handleSyncHttpCall(JSONObjectUtil.toObject(entity.getBody(), objectType));
+                if (response == null) {
+                    servletResponse.setStatus(HttpStatus.SC_OK);
+                    return;
+                }
+                servletResponse.setStatus(response.getStatus());
+                if (response.getBody() != null) {
+                    servletResponse.setHeader("Content-Type", "application/json");
+                    try {
+                        servletResponse.getWriter().write(response.getBody());
+                    } catch (IOException e) {
+                        throw new CloudRuntimeException(e);
+                    }
+                }
+            }
+
+            @Override
+            public HttpCallHandler getHandler() { return handler; }
+        });
     }
 
     @Override

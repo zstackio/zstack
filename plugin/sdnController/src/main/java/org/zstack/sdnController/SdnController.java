@@ -27,4 +27,10 @@ public interface SdnController {
     default void removeHost(SdnControllerRemoveHostMsg msg, Completion completion) {completion.success();};
 
     default void changeHost(SdnControllerHostRefVO oldRef, SdnControllerHostRefVO newRef, Completion completion) {completion.success();};
+
+    default void pullResources(PullSdnControllerMsg msg, Completion completion) {
+        completion.fail(org.zstack.core.Platform.operr(
+                org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_SDNCONTROLLER_10012,
+                "Resource pull is not supported by sdn controller[%s]", msg.getSdnControllerUuid()));
+    }
 }
