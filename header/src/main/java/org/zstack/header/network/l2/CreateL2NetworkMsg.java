@@ -21,6 +21,7 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     private NetworkCreateContext context;
     private SessionInventory session;
     private List<String> systemTags;
+    private APICreateL2NetworkMsg subtypeMessage;
 
     public String getName() { return name; }
     public void setName(String value) { name = value; }
@@ -50,4 +51,6 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     public void setSession(SessionInventory value) { session = value; }
     public List<String> getSystemTags() { return systemTags; }
     public void setSystemTags(List<String> value) { systemTags = value; }
+    public APICreateL2NetworkMsg getSubtypeMessage() { return subtypeMessage; }
+    public void setSubtypeMessage(APICreateL2NetworkMsg value) { subtypeMessage = value; }
 }

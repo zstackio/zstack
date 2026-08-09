@@ -86,14 +86,19 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
     }
 
     private void handle(CreateL2NetworkMsg msg) {
-        APICreateL2NetworkMsg apiMsg;
-        if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(msg.getType())) {
+        APICreateL2NetworkMsg apiMsg = msg.getSubtypeMessage();
+        if (apiMsg != null && !msg.getType().equals(apiMsg.getType())) {
+            bus.replyErrorByMessageType(msg, err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.INVALID_ARGUMENT_ERROR,
+                    "internal l2 type[%s] does not match subtype message[%s]",
+                    msg.getType(), apiMsg.getType()));
+            return;
+        } else if (apiMsg == null && L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(msg.getType())) {
             APICreateL2VlanNetworkMsg vlanMsg = new APICreateL2VlanNetworkMsg();
             vlanMsg.setVlan(msg.getVlan() == null ? 0 : msg.getVlan());
             apiMsg = vlanMsg;
-        } else if (L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(msg.getType())) {
+        } else if (apiMsg == null && L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE.equals(msg.getType())) {
             apiMsg = new APICreateL2NoVlanNetworkMsg();
-        } else {
+        } else if (apiMsg == null) {
             bus.replyErrorByMessageType(msg, err(ORG_ZSTACK_NETWORK_L2_10002, SysErrors.INVALID_ARGUMENT_ERROR,
                     "unsupported internal l2 network type[%s]", msg.getType()));
             return;
