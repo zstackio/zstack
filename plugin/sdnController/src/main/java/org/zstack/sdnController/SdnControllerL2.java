@@ -1,6 +1,7 @@
 package org.zstack.sdnController;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
@@ -34,6 +35,15 @@ public interface SdnControllerL2 {
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
     void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, Completion completion);
     void deleteL2Network(L2NetworkInventory inv, Completion completion);
+    default boolean requiresConfirmedDelete() { return false; }
+    default void deleteL2Network(L2NetworkInventory inv, String operationUuid, Completion completion) {
+        deleteL2Network(inv, completion);
+    }
+    default ErrorCode beginConfirmedDelete(L2NetworkInventory inv) { return null; }
+    default ErrorCode checkConfirmedDelete(L2NetworkInventory inv) { return null; }
+    default ErrorCode completeConfirmedDelete(L2NetworkInventory inv) { return null; }
+    default ErrorCode cancelConfirmedDelete(L2NetworkInventory inv) { return null; }
+    default void deleteConfirmedLocalMetadata(L2NetworkInventory inv) { }
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getVlanRange(SdnControllerInventory controller);

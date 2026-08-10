@@ -11,6 +11,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -30,8 +31,11 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -135,6 +139,15 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         }
 
+        Map<String, List<L2DeleteConfirmExtensionPoint>> confirmedExtensions = new HashMap<>();
+        for (L2NetworkInventory l2inv : l2invs) {
+            List<L2DeleteConfirmExtensionPoint> extensions = pluginRgty
+                    .getExtensionList(L2DeleteConfirmExtensionPoint.class).stream()
+                    .filter(ext -> ext.supports(l2inv))
+                    .collect(Collectors.toList());
+            confirmedExtensions.put(l2inv.getUuid(), extensions);
+        }
+
         List<L2NetworkDeletionMsg> msgs = new ArrayList<L2NetworkDeletionMsg>();
         for (L2NetworkInventory l2inv : l2invs) {
             L2NetworkDeletionMsg msg = new L2NetworkDeletionMsg();
@@ -162,30 +175,39 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 for (MessageReply r : replies) {
                     L2NetworkInventory inv = finalL2invs.get(replies.indexOf(r));
                     if (!r.isSuccess()) {
-                        boolean confirmed = false;
-                        for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
-                            confirmed |= ext.supports(inv);
-                        }
-                        if (confirmed) {
+                        if (!confirmedExtensions.get(inv.getUuid()).isEmpty()) {
                             completion.fail(r.getError());
                             return;
                         }
                     }
-                    for (L2DeleteConfirmExtensionPoint ext : pluginRgty.getExtensionList(L2DeleteConfirmExtensionPoint.class)) {
-                        if (ext.supports(inv)) {
-                            ErrorCode errorCode = ext.delete(inv);
-                            if (errorCode != null) {
-                                logger.warn(String.format("failed to delete confirmed local metadata for l2 network[uuid:%s], continue cascade: %s",
-                                        inv.getUuid(), errorCode));
-                            }
+                    for (L2DeleteConfirmExtensionPoint ext : confirmedExtensions.get(inv.getUuid())) {
+                        ErrorCode errorCode = ext.delete(inv);
+                        if (errorCode != null) {
+                            completion.fail(errorCode);
+                            return;
                         }
                     }
                     uuids.add(inv.getUuid());
                     logger.debug(String.format("delete l2 network[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
                 }
 
-                dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
-                completion.success();
+                try {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            for (L2NetworkInventory inv : finalL2invs) {
+                                for (L2DeleteConfirmExtensionPoint ext : confirmedExtensions.get(inv.getUuid())) {
+                                    ext.deleteLocalMetadata(inv);
+                                }
+                            }
+                            databaseFacade.removeByPrimaryKeys(uuids, L2NetworkVO.class);
+                        }
+                    }.execute();
+                    completion.success();
+                } catch (RuntimeException e) {
+                    completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10000,
+                            "failed to commit confirmed l2 network deletion: %s", e.getMessage()));
+                }
             }
         });
     }

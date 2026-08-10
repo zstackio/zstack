@@ -354,12 +354,29 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkDeleteExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.deleteL2Network(inv, new NoErrorCompletion(trigger) {
-                            @Override
-                            public void done() {
-                                wcompl.done();
+                        .each((exp, wcompl) -> {
+                            if (exp.requiresConfirmedDelete(inv)) {
+                                exp.deleteL2Network(inv, msg.getOperationUuid(), new Completion(trigger) {
+                                    @Override
+                                    public void success() {
+                                        wcompl.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        wcompl.addError(errorCode);
+                                        wcompl.allDone();
+                                    }
+                                });
+                                return;
                             }
-                        })).run(new WhileDoneCompletion(trigger) {
+                            exp.deleteL2Network(inv, new NoErrorCompletion(trigger) {
+                                @Override
+                                public void done() {
+                                    wcompl.done();
+                                }
+                            });
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 if (errorCodeList.getCauses().isEmpty()) {

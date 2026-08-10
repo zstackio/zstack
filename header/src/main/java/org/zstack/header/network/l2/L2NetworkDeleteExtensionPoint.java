@@ -10,5 +10,16 @@ public interface L2NetworkDeleteExtensionPoint {
 
     default void deleteL2Network(L2NetworkInventory inv, NoErrorCompletion completion) {completion.done();}
 
+    default boolean requiresConfirmedDelete(L2NetworkInventory inv) { return false; }
+
+    default void deleteL2Network(L2NetworkInventory inv, String operationUuid, Completion completion) {
+        deleteL2Network(inv, new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                completion.success();
+            }
+        });
+    }
+
     void afterDeleteL2Network(L2NetworkInventory inventory);
 }
