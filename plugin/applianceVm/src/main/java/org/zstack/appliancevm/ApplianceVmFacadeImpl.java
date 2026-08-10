@@ -12,7 +12,9 @@ import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.cloudbus.*;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -259,6 +261,7 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
     public boolean start() {
         createApplianceVmWorkFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(getCreateApplianceVmWorkFlow()).construct();
         populateExtensions();
+        installGlobalConfigValidators();
         deployAnsible();
         hookVmEvents();
 
@@ -279,6 +282,29 @@ public class ApplianceVmFacadeImpl extends AbstractService implements ApplianceV
         });
 
         return true;
+    }
+
+    private void installGlobalConfigValidators() {
+        ApplianceVmGlobalConfig.ALINUX_VIRTIO_SERIAL_PORT.installValidateExtension(new GlobalConfigValidatorExtensionPoint() {
+            @Override
+            public void validateGlobalConfig(String category, String name, String oldValue, String newValue) throws GlobalConfigException {
+                try {
+                    int port = Integer.parseInt(newValue);
+                    if (port == ApplianceVmGlobalConfig.DISABLED_ALINUX_VIRTIO_SERIAL_PORT ||
+                            (port >= ApplianceVmGlobalConfig.MIN_ALINUX_VIRTIO_SERIAL_PORT &&
+                                    port <= ApplianceVmGlobalConfig.MAX_ALINUX_VIRTIO_SERIAL_PORT)) {
+                        return;
+                    }
+                } catch (NumberFormatException ignored) {
+                }
+
+                throw new GlobalConfigException(String.format("%s must be %d or in range [%d, %d]",
+                        ApplianceVmGlobalConfig.ALINUX_VIRTIO_SERIAL_PORT.getCanonicalName(),
+                        ApplianceVmGlobalConfig.DISABLED_ALINUX_VIRTIO_SERIAL_PORT,
+                        ApplianceVmGlobalConfig.MIN_ALINUX_VIRTIO_SERIAL_PORT,
+                        ApplianceVmGlobalConfig.MAX_ALINUX_VIRTIO_SERIAL_PORT));
+            }
+        });
     }
 
     private void hookVmEvents() {
