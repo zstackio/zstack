@@ -12270,6 +12270,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10054 = "ORG_ZSTACK_NETWORK_ZNS_10054";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10055 = "ORG_ZSTACK_NETWORK_ZNS_10055";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10056 = "ORG_ZSTACK_NETWORK_ZNS_10056";
+    // 10057 targeted Tenant Router pull completed without a local projection
+    // 10058 targeted Tenant Router pull returned an unknown projection state
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10057 = "ORG_ZSTACK_NETWORK_ZNS_10057";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10058 = "ORG_ZSTACK_NETWORK_ZNS_10058";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
