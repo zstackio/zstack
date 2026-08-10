@@ -46,6 +46,8 @@ import org.zstack.header.network.NetworkDependencyAdmissionRequest;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -62,6 +64,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.stopwatch.StopWatch;
 
+import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
@@ -313,6 +316,8 @@ public class L3BasicNetwork implements L3Network {
             handle((DeleteProjectedIpRangeMsg) msg);
         } else if (msg instanceof UpdateProjectedDnsMsg) {
             handle((UpdateProjectedDnsMsg) msg);
+        } else if (msg instanceof ConvertL3NetworkTypeMsg) {
+            handle((ConvertL3NetworkTypeMsg) msg);
         } else if (msg instanceof AllocateIpMsg) {
             handle((AllocateIpMsg)msg);
         } else if (msg instanceof ReturnIpMsg) {
@@ -328,6 +333,128 @@ public class L3BasicNetwork implements L3Network {
         } else {
             bus.dealWithUnknownMessage(msg);
         }
+    }
+
+    private void handle(ConvertL3NetworkTypeMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                L3NetworkCategory targetCategory;
+                try {
+                    targetCategory = L3NetworkCategory.valueOf(msg.getTargetCategory());
+                } catch (RuntimeException e) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "invalid target category for projected L3 network conversion"));
+                    chain.next();
+                    return;
+                }
+                if (msg.getContext() == null || !msg.getContext().isProjection()
+                        || msg.getExpectedSourceType() == null
+                        || msg.getExpectedSourceCategory() == null
+                        || msg.getTargetType() == null
+                        || !L3NetworkType.hasType(msg.getTargetType())
+                        || targetCategory == L3NetworkCategory.System
+                        || msg.getManagedSystemTagPrefix() == null
+                        || msg.getManagedSystemTagPrefix().isEmpty()
+                        || (msg.getTargetSystemTag() != null
+                        && (!msg.getTargetSystemTag().startsWith(msg.getManagedSystemTagPrefix())
+                        || msg.getTargetSystemTag().length() > 128))) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "projected L3 network conversion has an invalid typed contract"));
+                    chain.next();
+                    return;
+                }
+
+                String failure;
+                try {
+                    failure = new SQLBatchWithReturn<String>() {
+                        @Override
+                        protected String scripts() {
+                            L3NetworkVO current = databaseFacade.getEntityManager().find(
+                                    L3NetworkVO.class, msg.getL3NetworkUuid(), LockModeType.PESSIMISTIC_WRITE);
+                            if (current == null) {
+                                return String.format("L3 network[uuid:%s] no longer exists",
+                                        msg.getL3NetworkUuid());
+                            }
+
+                            List<SystemTagVO> managedTags = databaseFacade.getEntityManager()
+                                    .createQuery("select tag from SystemTagVO tag where tag.resourceUuid = :resourceUuid" +
+                                                    " and tag.resourceType = :resourceType", SystemTagVO.class)
+                                    .setParameter("resourceUuid", current.getUuid())
+                                    .setParameter("resourceType", L3NetworkVO.class.getSimpleName())
+                                    .getResultList().stream()
+                                    .filter(tag -> tag.getTag().startsWith(msg.getManagedSystemTagPrefix()))
+                                    .collect(Collectors.toList());
+                            boolean targetTagMatches = msg.getTargetSystemTag() == null
+                                    ? managedTags.isEmpty()
+                                    : managedTags.size() == 1
+                                    && msg.getTargetSystemTag().equals(managedTags.get(0).getTag());
+                            if (msg.getTargetType().equals(current.getType())
+                                    && targetCategory == current.getCategory()
+                                    && targetTagMatches) {
+                                return null;
+                            }
+                            if (!msg.getExpectedSourceType().equals(current.getType())
+                                    || !msg.getExpectedSourceCategory().equals(current.getCategory().toString())) {
+                                return String.format("L3 network[uuid:%s] changed from expected source[%s/%s] to[%s/%s]",
+                                        current.getUuid(), msg.getExpectedSourceType(),
+                                        msg.getExpectedSourceCategory(), current.getType(), current.getCategory());
+                            }
+
+                            Long usedIpCount = databaseFacade.getEntityManager()
+                                    .createQuery("select count(ip) from UsedIpVO ip where ip.l3NetworkUuid = :l3Uuid",
+                                            Long.class)
+                                    .setParameter("l3Uuid", current.getUuid())
+                                    .getSingleResult();
+                            Long vmNicCount = databaseFacade.getEntityManager()
+                                    .createQuery("select count(nic) from VmNicVO nic where nic.l3NetworkUuid = :l3Uuid",
+                                            Long.class)
+                                    .setParameter("l3Uuid", current.getUuid())
+                                    .getSingleResult();
+                            if (usedIpCount > 0 || vmNicCount > 0) {
+                                return String.format("L3 network[uuid:%s] has active dependencies[usedIp:%d, vmNic:%d]",
+                                        current.getUuid(), usedIpCount, vmNicCount);
+                            }
+
+                            current.setType(msg.getTargetType());
+                            current.setCategory(targetCategory);
+                            managedTags.forEach(tag -> tagMgr.deleteSystemTag(tag.getUuid()));
+                            if (msg.getTargetSystemTag() != null) {
+                                tagMgr.createNonInherentSystemTag(current.getUuid(),
+                                        msg.getTargetSystemTag(), L3NetworkVO.class.getSimpleName());
+                            }
+                            databaseFacade.getEntityManager().flush();
+                            return null;
+                        }
+                    }.execute();
+                } catch (RuntimeException e) {
+                    bus.replyErrorByMessageType(msg, Platform.inerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "failed to atomically convert projected L3 network[uuid:%s]: %s",
+                            msg.getL3NetworkUuid(), e.getMessage()));
+                    chain.next();
+                    return;
+                }
+                if (failure != null) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10091, failure));
+                    chain.next();
+                    return;
+                }
+
+                self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+                bus.reply(msg, new MessageReply());
+                chain.next();
+            }
+
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public String getName() {
+                return String.format("convert-projected-l3-network-%s", msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void handle(UpdateProjectedIpRangeMsg msg) {
