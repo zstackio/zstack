@@ -439,7 +439,7 @@ public class KvmTpmManager extends AbstractService {
                         }
                         trigger.fail(operr("Failed to clone encrypted resource key")
                                 .withOpaque("src.tpm.uuid", originTpmUuid)
-                                .withCause(errorCodeList));
+                                .causedBy(errorCodeList));
                     }
                 });
             }

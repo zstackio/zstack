@@ -302,7 +302,7 @@ public class KvmSecureBootManager extends AbstractService {
 
                 if (!errors.isEmpty()) {
                     reply.setError(operr("failed to read file content from host[uuid=%s]", msg.getHostUuid())
-                            .withCause(errors));
+                            .causedBy(errors));
                 }
                 bus.reply(msg, reply);
             }
