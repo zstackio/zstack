@@ -114,8 +114,10 @@ import org.zstack.utils.tester.ZTester;
 
 import javax.persistence.TypedQuery;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -2914,6 +2916,113 @@ public class KVMHost extends HostBase implements Host {
                 restf.buildCallbackUrl(endpoints.result.get(0).getCurrentManagementNodeAddress())));
     }
 
+    public static final class TargetAwareAgentEndpoint {
+        private final String requestUrl;
+        private final String sendCommandUrl;
+
+        public TargetAwareAgentEndpoint(String requestUrl, String sendCommandUrl) {
+            this.requestUrl = requestUrl;
+            this.sendCommandUrl = sendCommandUrl;
+        }
+
+        public String getRequestUrl() {
+            return requestUrl;
+        }
+
+        public String getSendCommandUrl() {
+            return sendCommandUrl;
+        }
+    }
+
+    /**
+     * Resolves the KVM request URL and the paired MN send-command URL.
+     *
+     * @param hostManagementIp Host IP or hostname used to select the address family
+     * @param requestUrl original KVM agent request URL
+     * @param restf REST facade used to read legacy URLs and build the selected MN URL
+     * @return the selected request/send-command URL pair, or the endpoint resolution error when neither
+     * configured management addresses nor the legacy REST configuration can reach the Host address family
+     */
+    public static ErrorableValue<TargetAwareAgentEndpoint> resolveTargetAwareAgentEndpoint(
+            String hostManagementIp, String requestUrl, RESTFacade restf) {
+        ErrorableValue<List<ManagedComponentEndpoint>> resolvedEndpoints =
+                Platform.resolveManagedComponentEndpoints(hostManagementIp);
+        if (!resolvedEndpoints.isSuccess()) {
+            return resolveLegacyAgentEndpoint(
+                    hostManagementIp, requestUrl, restf, resolvedEndpoints.error);
+        }
+
+        ManagedComponentEndpoint endpoint = resolvedEndpoints.result.get(0);
+        return ErrorableValue.of(new TargetAwareAgentEndpoint(
+                buildTargetAwareRequestUrl(requestUrl, endpoint.getRemoteAddress()),
+                restf.buildSendCommandUrl(endpoint.getCurrentManagementNodeAddress())));
+    }
+
+    private static ErrorableValue<TargetAwareAgentEndpoint> resolveLegacyAgentEndpoint(
+            String hostManagementIp, String requestUrl, RESTFacade restf, ErrorCode resolutionError) {
+        String managementNodeAddress =
+                IPv6NetworkUtils.stripHostUrlBrackets(restf.getHostName());
+
+        if (isHostname(managementNodeAddress)) {
+            return ErrorableValue.of(new TargetAwareAgentEndpoint(
+                    requestUrl, restf.getSendCommandUrl()));
+        }
+
+        Optional<String> hostAddress = findAddressMatchingFamily(
+                hostManagementIp, managementNodeAddress);
+        if (!hostAddress.isPresent()) {
+            return ErrorableValue.ofErrorCode(resolutionError);
+        }
+
+        return ErrorableValue.of(new TargetAwareAgentEndpoint(
+                buildTargetAwareRequestUrl(requestUrl, hostAddress.get()),
+                restf.getSendCommandUrl()));
+    }
+
+    private static Optional<String> findAddressMatchingFamily(String host, String referenceAddress) {
+        if (isSameIpAddressFamily(host, referenceAddress)) {
+            return Optional.of(host);
+        }
+        if (StringUtils.isBlank(host) || NetworkUtils.isIpAddress(host)) {
+            return Optional.empty();
+        }
+
+        try {
+            return Arrays.stream(InetAddress.getAllByName(host))
+                    .map(InetAddress::getHostAddress)
+                    .filter(address -> isSameIpAddressFamily(address, referenceAddress))
+                    .findFirst();
+        } catch (UnknownHostException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static boolean isHostname(String host) {
+        return StringUtils.isNotBlank(host) && !NetworkUtils.isIpAddress(host);
+    }
+
+    private static String buildTargetAwareRequestUrl(String requestUrl, String host) {
+        try {
+            URI uri = new URI(requestUrl);
+            String requestHost = IPv6NetworkUtils.stripHostUrlBrackets(uri.getHost());
+            if ("https".equalsIgnoreCase(uri.getScheme()) && !NetworkUtils.isIpAddress(requestHost)) {
+                return requestUrl;
+            }
+            return new URI(uri.getScheme(), uri.getUserInfo(), IPv6NetworkUtils.stripHostUrlBrackets(host),
+                    uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
+        } catch (URISyntaxException e) {
+            throw new CloudRuntimeException(String.format(
+                    "failed to build KVM agent url[%s] for selected host[%s]", requestUrl, host), e);
+        }
+    }
+
+    private static boolean isSameIpAddressFamily(String first, String second) {
+        String normalizedFirst = IPv6NetworkUtils.stripHostUrlBrackets(first);
+        String normalizedSecond = IPv6NetworkUtils.stripHostUrlBrackets(second);
+        return NetworkUtils.isIpv4Address(normalizedFirst) && NetworkUtils.isIpv4Address(normalizedSecond)
+                || IPv6NetworkUtils.isIpv6Address(normalizedFirst) && IPv6NetworkUtils.isIpv6Address(normalizedSecond);
+    }
+
     public static String buildAnsibleLogCallbackUrl(String hostUuid, String callbackAddress, RESTFacade restf) {
         UriComponentsBuilder ub = UriComponentsBuilder.fromHttpUrl(restf.buildBaseUrl(callbackAddress));
         ub.path(KVMConstant.KVM_ANSIBLE_LOG_PATH_FROMAT);
@@ -5198,23 +5307,21 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(SyncTaskChain chain) {
+                ErrorableValue<TargetAwareAgentEndpoint> endpoint = resolveTargetAwareAgentEndpoint(
+                        self.getManagementIp(), updateHostConfigurationPath, restf);
+                if (!endpoint.isSuccess()) {
+                    handleUpdateHostConfigurationFailure(endpoint.error);
+                    chain.next();
+                    return;
+                }
                 UpdateHostConfigurationCmd cmd = new UpdateHostConfigurationCmd();
                 cmd.hostUuid = self.getUuid();
-                cmd.sendCommandUrl = restf.getSendCommandUrl();
-                restf.asyncJsonPost(updateHostConfigurationPath, cmd, new JsonAsyncRESTCallback<UpdateHostConfigurationResponse>(chain) {
+                cmd.sendCommandUrl = endpoint.result.getSendCommandUrl();
+                restf.asyncJsonPost(endpoint.result.getRequestUrl(), cmd, new JsonAsyncRESTCallback<UpdateHostConfigurationResponse>(chain) {
                     @Override
                     public void fail(ErrorCode err) {
-                        String info = "Failed to update host configuration request for host reconnect";
-                        logger.warn(info);
-
-                        changeConnectionState(HostStatusEvent.disconnected);
-                        new HostDisconnectedCanonicalEvent(self.getUuid(), argerr(ORG_ZSTACK_KVM_10090, info)).fire();
-
-                        ReconnectHostMsg rmsg = new ReconnectHostMsg();
-                        rmsg.setHostUuid(self.getUuid());
-                        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
-                        bus.send(rmsg);
-
+                        handleUpdateHostConfigurationFailure(argerr(ORG_ZSTACK_KVM_10090,
+                                "failed to update host configuration request for host reconnect: %s", err));
                         chain.next();
                     }
 
@@ -5244,6 +5351,17 @@ public class KVMHost extends HostBase implements Host {
                 return getSyncSignature();
             }
         });
+    }
+
+    private void handleUpdateHostConfigurationFailure(ErrorCode error) {
+        logger.warn(String.format("failed to update host[uuid:%s] configuration: %s", self.getUuid(), error));
+        changeConnectionState(HostStatusEvent.disconnected);
+        new HostDisconnectedCanonicalEvent(self.getUuid(), error).fire();
+
+        ReconnectHostMsg rmsg = new ReconnectHostMsg();
+        rmsg.setHostUuid(self.getUuid());
+        bus.makeTargetServiceIdByResourceUuid(rmsg, HostConstant.SERVICE_ID, self.getUuid());
+        bus.send(rmsg);
     }
 
     enum ReconnectHostAction {
@@ -5281,7 +5399,12 @@ public class KVMHost extends HostBase implements Host {
 
     boolean needUpdateHostConfiguration(PingResponse rsp) {
         // host uuid or send command url or version changed
-        return !restf.getSendCommandUrl().equals(rsp.getSendCommandUrl());
+        ErrorableValue<TargetAwareAgentEndpoint> endpoint = resolveTargetAwareAgentEndpoint(
+                self.getManagementIp(), pingPath, restf);
+        if (!endpoint.isSuccess()) {
+            return true;
+        }
+        return !endpoint.result.getSendCommandUrl().equals(rsp.getSendCommandUrl());
     }
 
     @Override
@@ -5459,10 +5582,17 @@ public class KVMHost extends HostBase implements Host {
 
     private ErrorCode connectToAgent() {
         ErrorCode errCode = null;
+        String requestUrl = connectPath;
         try {
+            ErrorableValue<TargetAwareAgentEndpoint> endpoint = resolveTargetAwareAgentEndpoint(
+                    self.getManagementIp(), connectPath, restf);
+            if (!endpoint.isSuccess()) {
+                return endpoint.error;
+            }
+            requestUrl = endpoint.result.getRequestUrl();
             ConnectCmd cmd = new ConnectCmd();
             cmd.setHostUuid(self.getUuid());
-            cmd.setSendCommandUrl(restf.getSendCommandUrl());
+            cmd.setSendCommandUrl(endpoint.result.getSendCommandUrl());
             cmd.setIptablesRules(KVMGlobalProperty.IPTABLES_RULES);
             cmd.setIgnoreMsrs(KVMGlobalConfig.KVM_IGNORE_MSRS.value(Boolean.class));
             cmd.setTcpServerPort(KVMGlobalProperty.TCP_SERVER_PORT);
@@ -5471,10 +5601,10 @@ public class KVMHost extends HostBase implements Host {
             if (HostSystemTags.PAGE_TABLE_EXTENSION_DISABLED.hasTag(self.getUuid(), HostVO.class) || !KVMSystemTags.EPT_CPU_FLAG.hasTag(self.getUuid())) {
                 cmd.setPageTableExtensionDisabled(true);
             }
-            ConnectResponse rsp = restf.syncJsonPost(connectPath, cmd, ConnectResponse.class);
+            ConnectResponse rsp = restf.syncJsonPost(requestUrl, cmd, ConnectResponse.class);
             if (!rsp.isSuccess()) {
                 errCode = operr(ORG_ZSTACK_KVM_10093, "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s",
-                        self.getUuid(), self.getManagementIp(), connectPath, rsp.getError());
+                        self.getUuid(), self.getManagementIp(), requestUrl, rsp.getError());
             } else {
                 if (rsp.isFirstConnect()) {
                     long cutoffMillis = rsp.getAgentStartTimeMillis() - TimeUnit.SECONDS.toMillis(60);
@@ -5505,7 +5635,7 @@ public class KVMHost extends HostBase implements Host {
             }
         } catch (RestClientException e) {
             errCode = operr(ORG_ZSTACK_KVM_10094, "unable to connect to kvm host[uuid:%s, ip:%s, url:%s], because %s", self.getUuid(), self.getManagementIp(),
-                    connectPath, e.getMessage());
+                    requestUrl, e.getMessage());
         } catch (Throwable t) {
             logger.warn(t.getMessage(), t);
             errCode = inerr(ORG_ZSTACK_KVM_10095, t.getMessage());
