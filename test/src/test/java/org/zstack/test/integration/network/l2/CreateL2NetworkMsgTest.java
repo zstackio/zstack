@@ -2,8 +2,10 @@ package org.zstack.test.integration.network.l2;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.zstack.core.cloudbus.CloudBusGson;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.APICreateL2NoVlanNetworkMsg;
+import org.zstack.header.network.l2.APICreateL2VlanNetworkMsg;
 import org.zstack.header.network.l2.CreateL2NetworkMsg;
 import org.zstack.header.network.l2.ExternalNetworkRef;
 import org.zstack.header.network.l2.NetworkCreateContext;
@@ -28,6 +30,22 @@ public class CreateL2NetworkMsgTest {
         msg.setSubtypeMessage(subtype);
 
         Assert.assertSame(subtype, msg.getSubtypeMessage());
+    }
+
+    @Test
+    public void internalCreateSubtypeSurvivesCloudBusRoundTrip() {
+        CreateL2NetworkMsg msg = new CreateL2NetworkMsg();
+        APICreateL2VlanNetworkMsg subtype = new APICreateL2VlanNetworkMsg();
+        subtype.setVlan(101);
+        msg.setSubtypeMessage(subtype);
+
+        String json = CloudBusGson.toJson(msg);
+        CreateL2NetworkMsg restored = (CreateL2NetworkMsg) CloudBusGson.fromJson(json);
+
+        Assert.assertTrue(json.contains(APICreateL2VlanNetworkMsg.class.getName()));
+        Assert.assertTrue(restored.getSubtypeMessage() instanceof APICreateL2VlanNetworkMsg);
+        Assert.assertEquals(101,
+                ((APICreateL2VlanNetworkMsg) restored.getSubtypeMessage()).getVlan());
     }
 
     @Test
