@@ -2252,6 +2252,11 @@ public class LoadBalancerBase {
         return ts;
     }
 
+    private boolean isHttpBasedHealthCheck(String protocol) {
+        return LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(protocol);
+    }
+
     private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo, List<String> serverGroupUuids) {
         List<String> sgUuids = new ArrayList<>();
         if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
@@ -2338,6 +2343,12 @@ public class LoadBalancerBase {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
                 }
 
+                if (msg.getHealthCheckTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT,
+                            msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN,
+                            msg.getHealthCheckTimeout());
+                }
+
                 if (msg.getNbprocess() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.NUMBER_OF_PROCESS, msg.getUuid(), LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess());
                 }
@@ -2387,7 +2398,7 @@ public class LoadBalancerBase {
                 String[] ts = getHeathCheckTarget(msg.getUuid());
                 if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
-                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                            isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
                         DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
                                 "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
                         String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
@@ -2401,7 +2412,7 @@ public class LoadBalancerBase {
                         creator.create();
                     }
 
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0]) &&
+                    if (isHttpBasedHealthCheck(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
                         LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
                     }
@@ -2415,7 +2426,7 @@ public class LoadBalancerBase {
                 }
 
                 if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0])) {
+                    if (isHttpBasedHealthCheck(ts[0])) {
                         String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                                 LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
                         String[] pm = param.split(":");

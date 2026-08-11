@@ -29,6 +29,7 @@ public class LoadBalancerConstants {
     public static final String HEALTH_CHECK_TARGET_PROTOCL_TCP = "tcp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_UDP = "udp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTP = "http";
+    public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTPS = "https";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_NONE = "none";
 
     public static final String HTTP_MODE_HTTP_KEEP_ALIVE = "http-keep-alive";
@@ -132,6 +133,7 @@ public class LoadBalancerConstants {
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_UDP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTP);
+        HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTPS);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_NONE);
 
         HTTP_MODES.add(HTTP_MODE_HTTP_KEEP_ALIVE);

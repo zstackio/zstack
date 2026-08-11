@@ -69,7 +69,7 @@ doc {
 				column {
 					name "protocol"
 					enclosedIn "params"
-					desc "协议"
+					desc "监听协议"
 					location "body"
 					type "String"
 					optional true
@@ -79,7 +79,7 @@ doc {
 				column {
 					name "certificateUuid"
 					enclosedIn "params"
-					desc ""
+					desc "证书UUID"
 					location "body"
 					type "String"
 					optional true
@@ -93,7 +93,25 @@ doc {
 					type "String"
 					optional true
 					since "3.9"
-					values ("tcp","udp","http","none")
+					values ("tcp","udp","http","https","none")
+				}
+				column {
+					name "healthCheckTarget"
+					enclosedIn "params"
+					desc "健康检查端口，default表示使用后端服务器端口"
+					location "body"
+					type "String"
+					optional true
+					since "5.5.38"
+				}
+				column {
+					name "healthCheckTimeout"
+					enclosedIn "params"
+					desc "健康检查超时时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.38"
 				}
 				column {
 					name "healthCheckMethod"
@@ -136,7 +154,7 @@ doc {
 				column {
 					name "aclUuids"
 					enclosedIn "params"
-					desc "访问控制策略组"
+					desc "访问控制策略组UUID列表"
 					location "body"
 					type "List"
 					optional true
@@ -153,6 +171,43 @@ doc {
 					values ("white","black")
 				}
 				column {
+					name "securityPolicyType"
+					enclosedIn "params"
+					desc "TLS安全策略"
+					location "body"
+					type "String"
+					optional true
+					since "4.1"
+					values ("tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
+				}
+				column {
+					name "httpVersions"
+					enclosedIn "params"
+					desc "支持的HTTP协议版本列表"
+					location "body"
+					type "List"
+					optional true
+					since "5.0.0"
+				}
+				column {
+					name "tcpProxyProtocol"
+					enclosedIn "params"
+					desc "TCP Proxy Protocol配置"
+					location "body"
+					type "String"
+					optional true
+					since "5.0.0"
+				}
+				column {
+					name "httpCompressAlgos"
+					enclosedIn "params"
+					desc "HTTP压缩算法列表"
+					location "body"
+					type "List"
+					optional true
+					since "5.0.0"
+				}
+				column {
 					name "resourceUuid"
 					enclosedIn "params"
 					desc "资源UUID"
@@ -160,6 +215,15 @@ doc {
 					type "String"
 					optional true
 					since "0.6"
+				}
+				column {
+					name "tagUuids"
+					enclosedIn "params"
+					desc "标签UUID列表"
+					location "body"
+					type "List"
+					optional true
+					since "3.4.0"
 				}
 				column {
 					name "systemTags"
@@ -178,52 +242,6 @@ doc {
 					type "List"
 					optional true
 					since "0.6"
-				}
-				column {
-					name "tagUuids"
-					enclosedIn "params"
-					desc "标签UUID列表"
-					location "body"
-					type "List"
-					optional true
-					since "3.4.0"
-				}
-				column {
-					name "securityPolicyType"
-					enclosedIn "params"
-					desc "TLS安全策略"
-					location "body"
-					type "String"
-					optional true
-					since "4.1"
-					values ("tls_cipher_policy_default","tls_cipher_policy_1_0","tls_cipher_policy_1_1","tls_cipher_policy_1_2","tls_cipher_policy_1_2_strict","tls_cipher_policy_1_2_strict_with_1_3")
-				}
-				column {
-					name "httpVersions"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "5.0.0"
-				}
-				column {
-					name "tcpProxyProtocol"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "String"
-					optional true
-					since "5.0.0"
-				}
-				column {
-					name "httpCompressAlgos"
-					enclosedIn "params"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "5.0.0"
 				}
 			}
         }

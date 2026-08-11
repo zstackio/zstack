@@ -740,6 +740,11 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         return isUdpHealthCheck || isNoneHealthCheck;
     }
 
+    private boolean isHttpBasedHealthCheck(String healthCheckProtocol) {
+        return LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(healthCheckProtocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(healthCheckProtocol);
+    }
+
     private String getHealthCheckProtocolFromTarget(String healthCheckTarget) {
         if (healthCheckTarget == null) {
             return null;
@@ -823,7 +828,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10062, "the listener with protocol [%s] doesn't support this health check:[%s]",
                             msg.getProtocol(), msg.getHealthCheckProtocol()));
         }
-        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+        if (isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
             if (msg.getHealthCheckURI() == null) {
                 throw new ApiMessageInterceptionException(
                         operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10063, "the http health check protocol must be specified its healthy checking parameter healthCheckURI"));
@@ -838,7 +843,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
                     operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10064, "the http health check protocol's expecting code [%s] is invalidate", msg.getHealthCheckHttpCode()));
         }
 
-        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+        if (isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
             String expectResult = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
             if (msg.getHealthCheckHttpCode() != null) {
                 expectResult = msg.getHealthCheckHttpCode();
@@ -882,14 +887,21 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.HEALTH_TARGET,
                 LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(
-                        map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, msg.getHealthCheckProtocol()+":default"))
+                        map(e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN,
+                                msg.getHealthCheckProtocol() + ":" +
+                                        (msg.getHealthCheckTarget() == null ?
+                                                LoadBalancerConstants.HEALTH_CHECK_TARGET_DEFAULT :
+                                                msg.getHealthCheckTarget())))
                 )
         );
 
         insertTagIfNotExisting(
                 msg, LoadBalancerSystemTags.HEALTH_TIMEOUT,
                 LoadBalancerSystemTags.HEALTH_TIMEOUT.instantiateTag(
-                        map(e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, LoadBalancerGlobalConfig.HEALTH_TIMEOUT.value(Long.class)))
+                        map(e(LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN,
+                                msg.getHealthCheckTimeout() == null ?
+                                        LoadBalancerGlobalConfig.HEALTH_TIMEOUT.value(Long.class) :
+                                        msg.getHealthCheckTimeout()))
                 )
         );
 
@@ -1435,7 +1447,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        if (msg.getHealthCheckProtocol() != null && LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+        if (msg.getHealthCheckProtocol() != null && isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
             if (msg.getHealthCheckMethod() == null) {
                 msg.setHealthCheckMethod(LoadBalancerConstants.HealthCheckMothod.HEAD.toString());
             }
@@ -1491,7 +1503,7 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             }
         }
 
-        if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+        if (isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
             String[] ts = healthTarget.split(":");
             if (ts.length != 2) {
                 throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10119, "invalid health target[%s], the format is targetCheckProtocol:port, for example, tcp:default", target));

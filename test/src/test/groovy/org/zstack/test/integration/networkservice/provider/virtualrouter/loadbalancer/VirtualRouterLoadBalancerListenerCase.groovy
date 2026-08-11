@@ -715,7 +715,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         listenerAction.loadBalancerPort = 55
         listenerAction.instancePort = 55
         listenerAction.protocol = "tcp"
-        listenerAction.healthCheckProtocol = "http"
+        listenerAction.healthCheckProtocol = "https"
         listenerAction.sessionId = adminSession()
 
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
@@ -735,15 +735,24 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         action.uuid  = lblRes.value.inventory.uuid
         action.healthCheckURI = "/abcd.html"
         action.healthCheckMethod = "GET"
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
+        action.healthCheckHttpCode = "http_2xx,http_3xx"
         action.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result res = action.call()
         assert res.error == null
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         for (Map<String, String>  token: tokens) {
-            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abcd.html:http_2xx"
+            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abcd.html:http_2xx,http_3xx"
         }
+
+        action.healthCheckProtocol = "http"
+        action.healthCheckURI = "/http.html"
+        action.healthCheckHttpCode = "http_2xx"
+        res = action.call()
+        assert res.error == null
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid)
+        assert tokens[0].get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/http.html:http_2xx"
 
         action.healthCheckProtocol = "tcp"
         res = action.call()
@@ -751,14 +760,19 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         assert tokens == null || tokens.isEmpty()
 
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
         action.healthCheckMethod = null
         action.healthCheckURI = null
         res = action.call()
         assert res.error != null
 
         action.healthCheckURI = "/abc.html"
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
+        action.healthCheckHttpCode = "invalid-code"
+        res = action.call()
+        assert res.error != null
+
+        action.healthCheckHttpCode = "http_2xx"
         res = action.call()
         assert res.error == null
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
@@ -766,6 +780,35 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         for (Map<String, String>  token: tokens) {
             assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
         }
+
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        addVmNicToLoadBalancer {
+            listenerUuid = lblRes.value.inventory.uuid
+            vmNicUuids = [vm.vmNics.find { it.l3NetworkUuid == l3.uuid }.uuid]
+        }
+        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> rollbackCmds =
+                Collections.synchronizedList(new ArrayList<VirtualRouterLoadBalancerBackend.RefreshLbCmd>())
+        boolean failNextRefresh = true
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            rollbackCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
+            if (failNextRefresh) {
+                failNextRefresh = false
+                rsp.error = "on purpose"
+                rsp.success = false
+            }
+            return rsp
+        }
+        action.healthCheckMethod = "GET"
+        action.healthCheckURI = "/rollback.html"
+        action.healthCheckProtocol = "https"
+        res = action.call()
+        assert res.error != null
+        retryInSecs {
+            assert rollbackCmds.size() == 2
+        }
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid)
+        assert tokens[0].get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
 
         deleteLoadBalancerListener {
             uuid = lblRes.value.inventory.uuid
