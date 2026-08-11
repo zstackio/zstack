@@ -13,6 +13,8 @@ import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO_
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO_
 import org.zstack.network.service.lb.LoadBalancerListenerVO
 import org.zstack.network.service.lb.LoadBalancerListenerVO_
 import org.zstack.network.service.lb.LoadBalancerSystemTags
@@ -182,6 +184,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         dbf = bean(DatabaseFacade.class)
         env.create {
             testLoadBalancerHealthCheckCase()
+            testBackendServerStateAndInstancePortCase()
             testLoadBalancerWrrCase()
             testLoadBalancerAclCase()
             testOperateLBRedirectRuleCase()
@@ -773,6 +776,216 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         assert tokens == null || tokens.isEmpty()
+    }
+
+    private void testBackendServerStateAndInstancePortCase() {
+        def load = env.inventoryByName("lb") as LoadBalancerInventory
+        def vm1 = env.inventoryByName("vm") as VmInstanceInventory
+        def vm2 = env.inventoryByName("vm2") as VmInstanceInventory
+        def vm3 = env.inventoryByName("vm3") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        def nic1 = vm1.vmNics.find { it.l3NetworkUuid == l3.uuid }
+        def nic2 = vm2.vmNics.find { it.l3NetworkUuid == l3.uuid }
+        def unrelatedNic = vm3.vmNics.find { it.l3NetworkUuid == l3.uuid }
+
+        def listener = createLoadBalancerListener {
+            loadBalancerUuid = load.uuid
+            name = "backend-state-listener"
+            loadBalancerPort = 56
+            instancePort = 56
+            protocol = LoadBalancerConstants.LB_PROTOCOL_TCP
+        } as LoadBalancerListenerInventory
+        def serverGroup = createLoadBalancerServerGroup {
+            loadBalancerUuid = load.uuid
+            name = "backend-state-server-group"
+        } as LoadBalancerServerGroupInventory
+        addBackendServerToServerGroup {
+            serverGroupUuid = serverGroup.uuid
+            vmNics = [['uuid': nic1.uuid, 'weight': '20'], ['uuid': nic2.uuid, 'weight': '30']]
+        }
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+
+        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> refreshCmds =
+                Collections.synchronizedList(new ArrayList<VirtualRouterLoadBalancerBackend.RefreshLbCmd>())
+        boolean failNextRefresh = false
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            refreshCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
+            if (failNextRefresh) {
+                failNextRefresh = false
+                rsp.error = "on purpose"
+                rsp.success = false
+            }
+            return rsp
+        }
+
+        def stateResult = changeLoadBalancerListenerBackendServerState {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+            vmNicUuids = [nic1.uuid]
+            state = "Disabled"
+        }
+        assert stateResult.results.size() == 1
+        assert stateResult.results[0].backendType == "VmNic"
+        assert stateResult.results[0].vmNicUuid == nic1.uuid
+        assert stateResult.results[0].effectiveState == "Disabled"
+        assert refreshCmds.size() == 1
+        assert Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listener.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroup.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic1.uuid)
+                .isExists()
+
+        def backendServers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+        assert backendServers.size() == 2
+        def disabledBackend = backendServers.find { it.vmNicUuid == nic1.uuid }
+        assert disabledBackend.listenerUuid == listener.uuid
+        assert disabledBackend.serverGroupUuid == serverGroup.uuid
+        assert disabledBackend.backendType == "VmNic"
+        assert disabledBackend.vmNicUuid == nic1.uuid
+        assert disabledBackend.ipAddress == nic1.ip
+        assert disabledBackend.weight == 20
+        assert disabledBackend.state == "Disabled"
+        assert disabledBackend.runtimeStatus == "Active"
+        assert disabledBackend.healthStatus == "Unchecked"
+        assert disabledBackend.instancePort == 56
+        def enabledBackend = backendServers.find { it.vmNicUuid == nic2.uuid }
+        assert enabledBackend.listenerUuid == listener.uuid
+        assert enabledBackend.serverGroupUuid == serverGroup.uuid
+        assert enabledBackend.backendType == "VmNic"
+        assert enabledBackend.vmNicUuid == nic2.uuid
+        assert enabledBackend.ipAddress == nic2.ip
+        assert enabledBackend.weight == 30
+        assert enabledBackend.state == "Enabled"
+        assert enabledBackend.runtimeStatus == "Active"
+        assert enabledBackend.healthStatus == "Unknown"
+        assert enabledBackend.instancePort == 56
+
+        changeLoadBalancerListenerBackendServerState {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+            vmNicUuids = [nic1.uuid]
+            state = "Disabled"
+        }
+        assert refreshCmds.size() == 1
+
+        ChangeLoadBalancerListenerBackendServerStateAction invalidStateAction =
+                new ChangeLoadBalancerListenerBackendServerStateAction()
+        invalidStateAction.listenerUuid = listener.uuid
+        invalidStateAction.serverGroupUuid = serverGroup.uuid
+        invalidStateAction.vmNicUuids = [nic2.uuid, unrelatedNic.uuid]
+        invalidStateAction.state = "Disabled"
+        invalidStateAction.sessionId = adminSession()
+        assert invalidStateAction.call().error != null
+        assert refreshCmds.size() == 1
+        assert !Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listener.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroup.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic2.uuid)
+                .isExists()
+        backendServers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+        assert backendServers.find { it.vmNicUuid == nic2.uuid }.state == "Enabled"
+        assert backendServers.find { it.vmNicUuid == nic2.uuid }.healthStatus == "Unknown"
+
+        failNextRefresh = true
+        ChangeLoadBalancerListenerBackendServerStateAction rollbackStateAction =
+                new ChangeLoadBalancerListenerBackendServerStateAction()
+        rollbackStateAction.listenerUuid = listener.uuid
+        rollbackStateAction.serverGroupUuid = serverGroup.uuid
+        rollbackStateAction.vmNicUuids = [nic2.uuid]
+        rollbackStateAction.state = "Disabled"
+        rollbackStateAction.sessionId = adminSession()
+        assert rollbackStateAction.call().error != null
+        retryInSecs {
+            assert refreshCmds.size() == 3
+        }
+        assert !Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listener.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroup.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic2.uuid)
+                .isExists()
+        backendServers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+        assert backendServers.find { it.vmNicUuid == nic2.uuid }.state == "Enabled"
+        assert backendServers.find { it.vmNicUuid == nic2.uuid }.healthStatus == "Unknown"
+
+        changeLoadBalancerListenerBackendServerState {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+            vmNicUuids = [nic1.uuid]
+            state = "Enabled"
+        }
+        assert refreshCmds.size() == 4
+        assert !Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listener.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroup.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic1.uuid)
+                .isExists()
+
+        backendServers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+        assert backendServers.find { it.vmNicUuid == nic1.uuid }.state == "Enabled"
+        assert backendServers.find { it.vmNicUuid == nic1.uuid }.healthStatus == "Unknown"
+
+        int beforePortRollback = refreshCmds.size()
+        failNextRefresh = true
+        ChangeLoadBalancerListenerAction portAction = new ChangeLoadBalancerListenerAction()
+        portAction.uuid = listener.uuid
+        portAction.instancePort = 5656
+        portAction.sessionId = adminSession()
+        assert portAction.call().error != null
+        retryInSecs {
+            assert refreshCmds.size() == beforePortRollback + 2
+        }
+        assert Q.New(LoadBalancerListenerVO.class)
+                .select(LoadBalancerListenerVO_.instancePort)
+                .eq(LoadBalancerListenerVO_.uuid, listener.uuid)
+                .findValue() == 56
+        assert refreshCmds[beforePortRollback].lbs.find { it.listenerUuid == listener.uuid }.instancePort == 5656
+        assert refreshCmds[beforePortRollback + 1].lbs.find { it.listenerUuid == listener.uuid }.instancePort == 56
+
+        int beforePortSuccess = refreshCmds.size()
+        portAction = new ChangeLoadBalancerListenerAction()
+        portAction.uuid = listener.uuid
+        portAction.instancePort = 5656
+        portAction.sessionId = adminSession()
+        assert portAction.call().error == null
+        assert refreshCmds.size() == beforePortSuccess + 1
+        assert Q.New(LoadBalancerListenerVO.class)
+                .select(LoadBalancerListenerVO_.instancePort)
+                .eq(LoadBalancerListenerVO_.uuid, listener.uuid)
+                .findValue() == 5656
+        backendServers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = serverGroup.uuid
+        }
+        assert backendServers.every { it.instancePort == 5656 }
+
+        portAction = new ChangeLoadBalancerListenerAction()
+        portAction.uuid = listener.uuid
+        portAction.instancePort = 5656
+        portAction.sessionId = adminSession()
+        assert portAction.call().error == null
+        assert refreshCmds.size() == beforePortSuccess + 1
+
+        deleteLoadBalancerListener {
+            uuid = listener.uuid
+        }
+        deleteLoadBalancerServerGroup {
+            uuid = serverGroup.uuid
+        }
     }
 
     private void testOperateLBRedirectAclCase() {

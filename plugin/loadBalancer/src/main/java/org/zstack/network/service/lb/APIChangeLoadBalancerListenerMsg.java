@@ -2,8 +2,10 @@ package org.zstack.network.service.lb;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -19,12 +21,16 @@ import java.util.List;
         responseClass = APIChangeLoadBalancerListenerEvent.class,
         isAction = true
 )
-public class APIChangeLoadBalancerListenerMsg extends APIMessage implements LoadBalancerListenerMsg , LoadBalancerMessage {
+public class APIChangeLoadBalancerListenerMsg extends APIMessage implements LoadBalancerListenerMsg,
+        LoadBalancerMessage, APIAuditor {
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     @APIParam(numberRange = {LoadBalancerConstants.CONNECTION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.CONNECTION_IDLE_TIMEOUT_MAX}, required = false)
     private Integer connectionIdleTimeout;
+
+    @APIParam(numberRange = {1, 65535}, required = false)
+    private Integer instancePort;
 
     @APIParam(numberRange = {LoadBalancerConstants.MAXIMUM_CONNECTION_MIN, LoadBalancerConstants.MAXIMUM_CONNECTION_MAX}, required = false)
     private Integer maxConnection;
@@ -119,6 +125,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         this.connectionIdleTimeout = connectionIdleTimeout;
     }
 
+    public Integer getInstancePort() {
+        return instancePort;
+    }
+
+    public void setInstancePort(Integer instancePort) {
+        this.instancePort = instancePort;
+    }
+
     public Integer getMaxConnection() {
         return maxConnection;
     }
@@ -173,6 +187,11 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setLoadBalancerUuid(String loadBalancerUuid) {
         this.loadBalancerUuid = loadBalancerUuid;
+    }
+
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(loadBalancerUuid, LoadBalancerVO.class);
     }
 
     public String getHealthCheckProtocol() {

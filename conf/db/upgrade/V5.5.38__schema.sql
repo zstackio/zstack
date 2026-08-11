@@ -20,3 +20,39 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SnmpEngineVO` (
     `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerServerGroupVmNicRefVO` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `listenerUuid` varchar(32) NOT NULL,
+    `serverGroupUuid` varchar(32) NOT NULL,
+    `vmNicUuid` varchar(32) NOT NULL,
+    `state` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ukListenerServerGroupVmNic` (`listenerUuid`, `serverGroupUuid`, `vmNicUuid`),
+    CONSTRAINT `fkLbListenerVmNicRefListener`
+        FOREIGN KEY (`listenerUuid`) REFERENCES `LoadBalancerListenerVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkLbListenerVmNicRefGroup`
+        FOREIGN KEY (`serverGroupUuid`) REFERENCES `LoadBalancerServerGroupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkLbListenerVmNicRefVmNic`
+        FOREIGN KEY (`vmNicUuid`) REFERENCES `VmNicVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerServerGroupServerIpRefVO` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `listenerUuid` varchar(32) NOT NULL,
+    `serverGroupUuid` varchar(32) NOT NULL,
+    `serverIpId` bigint unsigned NOT NULL,
+    `state` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ukListenerServerGroupServerIp` (`listenerUuid`, `serverGroupUuid`, `serverIpId`),
+    CONSTRAINT `fkLbListenerServerIpRefListener`
+        FOREIGN KEY (`listenerUuid`) REFERENCES `LoadBalancerListenerVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkLbListenerServerIpRefGroup`
+        FOREIGN KEY (`serverGroupUuid`) REFERENCES `LoadBalancerServerGroupVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkLbListenerServerIpRefServerIp`
+        FOREIGN KEY (`serverIpId`) REFERENCES `LoadBalancerServerGroupServerIpVO` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

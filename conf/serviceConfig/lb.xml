@@ -148,6 +148,14 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerListenerBackendServerStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIGetLoadBalancerListenerBackendServersMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIAttachVipToLoadBalancerMsg</name>
     </message>
 

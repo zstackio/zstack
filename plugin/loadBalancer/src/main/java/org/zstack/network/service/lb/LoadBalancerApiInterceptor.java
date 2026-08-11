@@ -154,6 +154,10 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg)msg);
         } else if (msg instanceof APIChangeLoadBalancerBackendServerMsg) {
             validate((APIChangeLoadBalancerBackendServerMsg)msg);
+        } else if (msg instanceof APIChangeLoadBalancerListenerBackendServerStateMsg) {
+            validate((APIChangeLoadBalancerListenerBackendServerStateMsg) msg);
+        } else if (msg instanceof APIGetLoadBalancerListenerBackendServersMsg) {
+            validate((APIGetLoadBalancerListenerBackendServersMsg) msg);
         } else if (msg instanceof APIDeleteLoadBalancerMsg) {
             validate((APIDeleteLoadBalancerMsg) msg);
         }
@@ -2059,6 +2063,145 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             msg.setLoadBalancerUuid(loadBalancerUuid);
         }else{
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10171, "could not change backendserver, beacause vmincs and serverips is null"));
+        }
+    }
+
+    private void validate(APIChangeLoadBalancerListenerBackendServerStateMsg msg) {
+        List<String> vmNicUuids = msg.getVmNicUuids() == null
+                ? Collections.emptyList() : msg.getVmNicUuids();
+        List<String> serverIps = msg.getServerIps() == null
+                ? Collections.emptyList() : msg.getServerIps();
+        if (vmNicUuids.isEmpty() && serverIps.isEmpty()) {
+            throw new ApiMessageInterceptionException(
+                    errf.stringToInvalidArgumentError(
+                            "vmNicUuids and serverIps cannot both be empty"));
+        }
+        msg.setVmNicUuids(new ArrayList<>(vmNicUuids));
+        msg.setServerIps(new ArrayList<>(serverIps));
+
+        LoadBalancerListenerVO listener = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        if (listener == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find load balancer listener[uuid:%s]",
+                            msg.getListenerUuid())));
+        }
+
+        LoadBalancerServerGroupVO group = dbf.findByUuid(msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+        if (group == null || !Objects.equals(group.getLoadBalancerUuid(), listener.getLoadBalancerUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find server group[uuid:%s] in the load balancer of listener[uuid:%s]",
+                            msg.getServerGroupUuid(), msg.getListenerUuid())));
+        }
+
+        boolean attached = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                .isExists();
+        if (!attached) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("server group[uuid:%s] is not attached to listener[uuid:%s]",
+                            msg.getServerGroupUuid(), msg.getListenerUuid())));
+        }
+
+        validateBackendServerState(msg.getState());
+
+        Set<String> requestedVmNicUuids = new HashSet<>(vmNicUuids);
+        if (requestedVmNicUuids.size() != vmNicUuids.size()
+                || requestedVmNicUuids.contains(null)) {
+            throw new ApiMessageInterceptionException(
+                    errf.stringToInvalidArgumentError("vmNicUuids contains null or duplicated uuid"));
+        }
+
+        if (!requestedVmNicUuids.isEmpty()) {
+            List<String> existingVmNicUuids = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .select(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid)
+                    .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,
+                            msg.getServerGroupUuid())
+                    .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid,
+                            requestedVmNicUuids)
+                    .listValues();
+            if (existingVmNicUuids.size() != requestedVmNicUuids.size()) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("cannot find all requested vm nics in listener[uuid:%s] and server group[uuid:%s]",
+                                msg.getListenerUuid(), msg.getServerGroupUuid())));
+            }
+        }
+
+        Set<String> requestedServerIps = new HashSet<>(serverIps);
+        if (requestedServerIps.size() != serverIps.size()
+                || requestedServerIps.contains(null)
+                || requestedServerIps.stream().anyMatch(ip -> !NetworkUtils.isIpAddress(ip))) {
+            throw new ApiMessageInterceptionException(
+                    errf.stringToInvalidArgumentError(
+                            "serverIps contains null, duplicated, or invalid IP address"));
+        }
+
+        if (!requestedServerIps.isEmpty()) {
+            LoadBalancerVO loadBalancer = dbf.findByUuid(
+                    listener.getLoadBalancerUuid(), LoadBalancerVO.class);
+            if (loadBalancer == null || loadBalancer.getType() != LoadBalancerType.SLB) {
+                throw new ApiMessageInterceptionException(
+                        errf.stringToInvalidArgumentError(
+                                "serverIps backend state is only supported by SLB"));
+            }
+
+            List<String> existingServerIps = Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .select(LoadBalancerServerGroupServerIpVO_.ipAddress)
+                    .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,
+                            msg.getServerGroupUuid())
+                    .in(LoadBalancerServerGroupServerIpVO_.ipAddress,
+                            requestedServerIps)
+                    .listValues();
+            if (existingServerIps.size() != requestedServerIps.size()) {
+                throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                        String.format("cannot find all requested server IPs in listener[uuid:%s] and server group[uuid:%s]",
+                                msg.getListenerUuid(), msg.getServerGroupUuid())));
+            }
+        }
+
+        msg.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+    }
+
+    private void validate(APIGetLoadBalancerListenerBackendServersMsg msg) {
+        LoadBalancerListenerVO listener = dbf.findByUuid(
+                msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        if (listener == null) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find load balancer listener[uuid:%s]",
+                            msg.getListenerUuid())));
+        }
+
+        LoadBalancerServerGroupVO group = dbf.findByUuid(
+                msg.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
+        if (group == null || !Objects.equals(
+                group.getLoadBalancerUuid(), listener.getLoadBalancerUuid())) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("cannot find server group[uuid:%s] in the load balancer of listener[uuid:%s]",
+                            msg.getServerGroupUuid(), msg.getListenerUuid())));
+        }
+
+        boolean attached = Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid,
+                        msg.getListenerUuid())
+                .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid,
+                        msg.getServerGroupUuid())
+                .isExists();
+        if (!attached) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("server group[uuid:%s] is not attached to listener[uuid:%s]",
+                            msg.getServerGroupUuid(), msg.getListenerUuid())));
+        }
+
+        msg.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+    }
+
+    private void validateBackendServerState(String state) {
+        try {
+            LoadBalancerBackendServerState.valueOf(state);
+        } catch (Exception e) {
+            throw new ApiMessageInterceptionException(errf.stringToInvalidArgumentError(
+                    String.format("invalid backend server state[%s], valid values are Enabled and Disabled",
+                            state)));
         }
     }
 

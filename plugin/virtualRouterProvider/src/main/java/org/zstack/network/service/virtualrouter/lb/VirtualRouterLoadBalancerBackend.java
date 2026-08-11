@@ -320,10 +320,18 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         public static class BackendServer {
             private String ip;
             private long weight;
+            @GrayVersion(value = "5.5.38")
+            private boolean disabled;
 
             public BackendServer(String ip, long weight) {
                 this.ip = ip;
                 this.weight = weight;
+            }
+
+            public BackendServer(String ip, long weight, boolean disabled) {
+                this.ip = ip;
+                this.weight = weight;
+                this.disabled = disabled;
             }
 
             public String getIp() {
@@ -340,6 +348,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
             public void setWeight(long weight) {
                 this.weight = weight;
+            }
+
+            public boolean isDisabled() {
+                return disabled;
+            }
+
+            public void setDisabled(boolean disabled) {
+                this.disabled = disabled;
             }
         }
 
@@ -938,10 +954,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 }).collect(Collectors.toList());
 
                         for (LoadBalancerServerGroupVmNicRefInventory nicRef : nicRefInventories) {
-                            if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
-                                continue;
-                            }
-
                             VmNicInventory nic = struct.getVmNics().get(nicRef.getVmNicUuid());
                             if (nic == null) {
                                 throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", nicRef.getVmNicUuid()));
@@ -977,22 +989,27 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     }
                                     ips.add(usedIpInventory.getIp());
                                     params.add(String.format("balancerWeight::%s::%s", usedIpInventory.getIp(), nicRef.getWeight()));
-                                    backendServers.add(new LbTO.BackendServer(usedIpInventory.getIp(), nicRef.getWeight()));
+                                    boolean disabled = nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString()) ||
+                                            struct.isVmNicDisabled(l.getUuid(), groupInv.getUuid(),
+                                                    nicRef.getVmNicUuid());
+                                    backendServers.add(new LbTO.BackendServer(
+                                            usedIpInventory.getIp(), nicRef.getWeight(), disabled));
                                 }
                             }
                         }
 
                         for (LoadBalancerServerGroupServerIpInventory ipRef : ipRefInventories) {
-                            if (ipRef.getStatus().equals(LoadBalancerBackendServerStatus.Inactive.toString())) {
-                                continue;
-                            }
-
                             if (ipRef.getIpAddress() == null || ipRef.getIpAddress().isEmpty()) {
                                 continue;
                             }
                             ips.add(ipRef.getIpAddress());
                             params.add(String.format("balancerWeight::%s::%s", ipRef.getIpAddress(), ipRef.getWeight()));
-                            backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
+                            boolean disabled = ipRef.getStatus().equals(
+                                    LoadBalancerBackendServerStatus.Inactive.toString()) ||
+                                    struct.isServerIpDisabled(l.getUuid(), groupInv.getUuid(),
+                                            ipRef.getId());
+                            backendServers.add(new LbTO.BackendServer(
+                                    ipRef.getIpAddress(), ipRef.getWeight(), disabled));
                         }
 
                         if (!backendServers.isEmpty()) {

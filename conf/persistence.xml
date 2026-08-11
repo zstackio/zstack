@@ -162,6 +162,8 @@
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupServerIpVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupServerIpRefVO</class>
         <class>org.zstack.network.service.lb.CertificateVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerCertificateRefVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>
