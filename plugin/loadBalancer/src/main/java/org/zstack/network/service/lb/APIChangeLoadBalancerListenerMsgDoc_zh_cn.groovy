@@ -61,7 +61,7 @@ doc {
 				column {
 					name "healthCheckTarget"
 					enclosedIn "changeLoadBalancerListener"
-					desc "健康检查端口"
+					desc "健康检查端口，default表示使用后端服务器端口"
 					location "body"
 					type "String"
 					optional true
@@ -97,12 +97,21 @@ doc {
 				column {
 					name "healthCheckProtocol"
 					enclosedIn "changeLoadBalancerListener"
-					desc "负载均衡健康检查协议"
+					desc "健康检查协议"
 					location "body"
 					type "String"
 					optional true
 					since "3.9"
-					values ("tcp","udp","http","none")
+					values ("tcp","udp","http","https","none")
+				}
+				column {
+					name "healthCheckTimeout"
+					enclosedIn "changeLoadBalancerListener"
+					desc "健康检查超时时间"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.38"
 				}
 				column {
 					name "healthCheckMethod"
@@ -200,27 +209,18 @@ doc {
 					since "4.6"
 				}
 				column {
-					name "systemTags"
-					enclosedIn ""
-					desc "系统标签"
+					name "httpVersions"
+					enclosedIn "changeLoadBalancerListener"
+					desc "支持的HTTP协议版本列表"
 					location "body"
 					type "List"
 					optional true
-					since "3.4"
-				}
-				column {
-					name "userTags"
-					enclosedIn ""
-					desc "用户标签"
-					location "body"
-					type "List"
-					optional true
-					since "3.4"
+					since "5.0.0"
 				}
 				column {
 					name "httpRedirectHttps"
 					enclosedIn "changeLoadBalancerListener"
-					desc "http重定向https"
+					desc "是否将HTTP重定向到HTTPS"
 					location "body"
 					type "String"
 					optional true
@@ -247,18 +247,9 @@ doc {
 					values ("301","302","303","307","308")
 				}
 				column {
-					name "httpVersions"
-					enclosedIn "changeLoadBalancerListener"
-					desc ""
-					location "body"
-					type "List"
-					optional true
-					since "5.0.0"
-				}
-				column {
 					name "tcpProxyProtocol"
 					enclosedIn "changeLoadBalancerListener"
-					desc ""
+					desc "TCP Proxy Protocol配置"
 					location "body"
 					type "String"
 					optional true
@@ -267,11 +258,29 @@ doc {
 				column {
 					name "httpCompressAlgos"
 					enclosedIn "changeLoadBalancerListener"
-					desc ""
+					desc "HTTP压缩算法列表"
 					location "body"
 					type "List"
 					optional true
 					since "5.0.0"
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "body"
+					type "List"
+					optional true
+					since "3.4"
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "body"
+					type "List"
+					optional true
+					since "3.4"
 				}
 			}
         }

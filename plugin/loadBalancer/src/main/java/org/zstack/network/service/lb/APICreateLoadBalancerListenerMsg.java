@@ -39,8 +39,12 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String protocol;
     @APIParam(resourceType = CertificateVO.class, required = false)
     private String certificateUuid;
-    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
+    @APIParam(required = false)
+    private String healthCheckTarget;
+    @APIParam(numberRange = {1, Integer.MAX_VALUE}, required = false)
+    private Integer healthCheckTimeout;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;
     @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
@@ -122,6 +126,22 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setHealthCheckProtocol(String healthCheckProtocol) {
         this.healthCheckProtocol = healthCheckProtocol;
+    }
+
+    public String getHealthCheckTarget() {
+        return healthCheckTarget;
+    }
+
+    public void setHealthCheckTarget(String healthCheckTarget) {
+        this.healthCheckTarget = healthCheckTarget;
+    }
+
+    public Integer getHealthCheckTimeout() {
+        return healthCheckTimeout;
+    }
+
+    public void setHealthCheckTimeout(Integer healthCheckTimeout) {
+        this.healthCheckTimeout = healthCheckTimeout;
     }
 
     public String getHealthCheckMethod() {
