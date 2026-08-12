@@ -19,8 +19,11 @@ public class LoadBalancerStruct implements Serializable {
     private List<LoadBalancerListenerInventory> listeners;
     private Map<String, List<LoadBalancerServerGroupInventory>> listenerServerGroupMap = new HashMap<>();
     private Map<String, List<LoadBalancerServerGroupInventory>> deletedListenerServerGroupMap = new HashMap<>();
+    private Set<String> disabledVmNics = new HashSet<>();
+    private Set<String> disabledServerIps = new HashSet<>();
     private Map<String, List<String>> tags;
     private boolean init;
+    private boolean rollback;
 
     public Map<String, VmNicInventory> getVmNics() {
         return vmNics;
@@ -32,6 +35,14 @@ public class LoadBalancerStruct implements Serializable {
 
     public void setInit(boolean init) {
         this.init = init;
+    }
+
+    public boolean isRollback() {
+        return rollback;
+    }
+
+    public void setRollback(boolean rollback) {
+        this.rollback = rollback;
     }
 
     public Map<String, List<String>> getTags() {
@@ -92,6 +103,38 @@ public class LoadBalancerStruct implements Serializable {
 
     public void setDeletedListenerServerGroupMap(Map<String, List<LoadBalancerServerGroupInventory>> deletedListenerServerGroupMap) {
         this.deletedListenerServerGroupMap = deletedListenerServerGroupMap;
+    }
+
+    public Set<String> getDisabledVmNics() {
+        return disabledVmNics;
+    }
+
+    public void setDisabledVmNics(Set<String> disabledVmNics) {
+        this.disabledVmNics = disabledVmNics;
+    }
+
+    public boolean isVmNicDisabled(String listenerUuid, String serverGroupUuid, String vmNicUuid) {
+        return disabledVmNics.contains(vmNicStateKey(listenerUuid, serverGroupUuid, vmNicUuid));
+    }
+
+    public static String vmNicStateKey(String listenerUuid, String serverGroupUuid, String vmNicUuid) {
+        return String.format("%s:%s:%s", listenerUuid, serverGroupUuid, vmNicUuid);
+    }
+
+    public Set<String> getDisabledServerIps() {
+        return disabledServerIps;
+    }
+
+    public void setDisabledServerIps(Set<String> disabledServerIps) {
+        this.disabledServerIps = disabledServerIps;
+    }
+
+    public boolean isServerIpDisabled(String listenerUuid, String serverGroupUuid, long serverIpId) {
+        return disabledServerIps.contains(serverIpStateKey(listenerUuid, serverGroupUuid, serverIpId));
+    }
+
+    public static String serverIpStateKey(String listenerUuid, String serverGroupUuid, long serverIpId) {
+        return String.format("%s:%s:%d", listenerUuid, serverGroupUuid, serverIpId);
     }
 
     public List<String> getActiveVmNics() {
