@@ -843,9 +843,7 @@ class RestDocumentationGenerator implements DocumentGenerator {
     }
 
     void checkMD(String mdPath, GlobalConfig globalConfig) {
-        String result = ShellUtils.runAndReturn(
-                "grep '${PLACEHOLDER}' ${mdPath}").stdout.replaceAll("\n", "")
-        if (!result.empty) {
+        if (new File(mdPath).text.contains(PLACEHOLDER)) {
             throw new CloudRuntimeException("Placeholders detected in ${mdPath}; please replace them with actual content.")
         }
         GlobalConfigMarkDown markDown = getExistGlobalConfigMarkDown(mdPath)
