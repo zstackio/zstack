@@ -13,8 +13,10 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.HypervisorType;
+import org.zstack.header.rest.AsyncRESTCallback;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.rest.RESTConstant;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.URLBuilder;
 import org.zstack.utils.Utils;
@@ -24,6 +26,8 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 
 import java.net.URI;
 import java.sql.Timestamp;
+import java.util.Collections;
+import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -100,8 +104,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
             cmd.setTlsVersion(tlsVersion.toCommandParameter());
         }
 
-        String agentUrl = URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH);
-        restf.asyncJsonPost(agentUrl, cmd, new JsonAsyncRESTCallback<ConsoleProxyCommands.EstablishProxyRsp>(completion) {
+        asyncJsonPostToLocalConsoleAgent(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH, cmd,
+                new JsonAsyncRESTCallback<ConsoleProxyCommands.EstablishProxyRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -127,6 +131,12 @@ public class ConsoleProxyBase implements ConsoleProxy {
                 return ConsoleProxyCommands.EstablishProxyRsp.class;
             }
         });
+    }
+
+    void asyncJsonPostToLocalConsoleAgent(String path, Object command, AsyncRESTCallback callback) {
+        Map<String, String> headers = Collections.singletonMap(RESTConstant.CALLBACK_URL, restf.getCallbackUrl());
+        String agentUrl = URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, path);
+        restf.asyncJsonPost(agentUrl, command, headers, callback);
     }
 
     public static String selectProxyListenHostname(String proxyHostname) {
@@ -195,8 +205,8 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setProxyIdentity(self.getProxyIdentity());
         cmd.setToken(self.getToken());
         cmd.setScheme(self.getScheme());
-        restf.asyncJsonPost(URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_CHECK_PROXY_PATH),
-                cmd, new JsonAsyncRESTCallback<ConsoleProxyCommands.CheckAvailabilityRsp>(completion) {
+        asyncJsonPostToLocalConsoleAgent(ConsoleConstants.CONSOLE_PROXY_CHECK_PROXY_PATH, cmd,
+                new JsonAsyncRESTCallback<ConsoleProxyCommands.CheckAvailabilityRsp>(completion) {
             @Override
             public void fail(ErrorCode err) {
                 completion.fail(err);
@@ -234,7 +244,7 @@ public class ConsoleProxyBase implements ConsoleProxy {
         cmd.setToken(self.getToken());
         cmd.setVmUuid(vmInstanceUuid);
 
-        restf.asyncJsonPost(URLBuilder.buildHttpUrl(self.getAgentIp(), agentPort, ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH), cmd,
+        asyncJsonPostToLocalConsoleAgent(ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH, cmd,
                 new JsonAsyncRESTCallback<DeleteProxyRsp>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
