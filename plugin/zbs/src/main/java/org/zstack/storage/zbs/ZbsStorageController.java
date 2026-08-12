@@ -51,6 +51,7 @@ import org.zstack.kvm.KVMHostVO;
 import org.zstack.kvm.KVMHostVO_;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper;
 import org.zstack.storage.volume.VolumeGlobalConfig;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.TagUtils;
@@ -199,7 +200,14 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     }
 
     private static String buildVhostBdevName(String installPath) {
-        return ZbsConstants.VHOST_BDEV_NAME_PREFIX + installPathHash(installPath);
+        String name = ZbsGlobalProperty.VHOST_BDEV_NAME_USE_VOLUME_UUID ? volumeUuidFromInstallPath(installPath) : installPathHash(installPath);
+        return ZbsConstants.VHOST_BDEV_NAME_PREFIX + name;
+    }
+
+    private static String volumeUuidFromInstallPath(String installPath) {
+        String relativePath = stripScheme(installPath);
+        String volumeName = relativePath.substring(relativePath.indexOf('/') + 1);
+        return ExternalPrimaryStorageNameHelper.getVolumeInfo(volumeName).getUuid();
     }
 
     private static String installPathHash(String installPath) {
