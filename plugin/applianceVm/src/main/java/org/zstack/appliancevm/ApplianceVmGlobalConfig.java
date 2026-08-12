@@ -12,6 +12,9 @@ import org.zstack.resourceconfig.BindResourceConfig;
 @GlobalConfigDefinition
 public class ApplianceVmGlobalConfig {
     public static final String CATEGORY = "applianceVm";
+    public static final int DISABLED_ALINUX_VIRTIO_SERIAL_PORT = 0;
+    public static final int MIN_ALINUX_VIRTIO_SERIAL_PORT = 8;
+    public static final int MAX_ALINUX_VIRTIO_SERIAL_PORT = 30;
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "connect.timeout");
@@ -35,4 +38,7 @@ public class ApplianceVmGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 0)
     public static GlobalConfig ABNORMAL_FILE_MAX_SIZE = new GlobalConfig(CATEGORY, "abnormalFileMaxSize");
+
+    @GlobalConfigValidation
+    public static GlobalConfig ALINUX_VIRTIO_SERIAL_PORT = new GlobalConfig(CATEGORY, "alinux.virtioSerialPort");
 }
