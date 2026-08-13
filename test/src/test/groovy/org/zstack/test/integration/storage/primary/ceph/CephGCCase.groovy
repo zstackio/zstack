@@ -151,8 +151,10 @@ class CephGCCase extends SubCase {
         } as VolumeSnapshotInventory
 
         def deleteFailed = true
+        def deleteSnapshotCalled = 0
         def deleteSucVol = []
         env.simulator(CephPrimaryStorageBase.DELETE_SNAPSHOT_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            deleteSnapshotCalled++
             def rsp = new CephPrimaryStorageBase.DeleteSnapshotRsp()
             if (deleteFailed) {
                 rsp.setError("it's children in trash, cannot delete")
@@ -206,6 +208,24 @@ class CephGCCase extends SubCase {
         } as List<GarbageCollectorInventory>
         assert volGC.size() == 1
         assert volGC[0].status != GCStatus.Done.toString()
+
+        def deleteSnapshotCalledBeforeTriggerGC = deleteSnapshotCalled
+        def spGCBeforeTriggerGC = queryGCJob {
+            conditions = ["runnerClass=${DeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
+        } as List<GarbageCollectorInventory>
+
+        triggerGCJob {
+            uuid = spGC[0].uuid
+        }
+
+        retryInSecs(3) {
+            def currentSpGC = queryGCJob {
+                conditions = ["runnerClass=${DeleteVolumeSnapshotGC.class.name}".toString(), "context~=%${sp.primaryStorageInstallPath}%".toString()]
+            } as List<GarbageCollectorInventory>
+            assert deleteSnapshotCalled == deleteSnapshotCalledBeforeTriggerGC + 1
+            assert currentSpGC.size() == spGCBeforeTriggerGC.size()
+            assert currentSpGC[0].status != GCStatus.Done.toString()
+        }
 
         deleteFailed = false
         triggerGCJob {
