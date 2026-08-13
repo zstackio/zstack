@@ -15,6 +15,8 @@ import org.zstack.header.console.ConsoleProxyAgentVO
 import org.zstack.header.console.ConsoleProxyCommands
 import org.zstack.header.console.ConsoleProxyVO
 import org.zstack.header.console.ConsoleProxyVO_
+import org.zstack.header.rest.RESTConstant
+import org.zstack.header.rest.RESTFacade
 import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg
 import org.zstack.sdk.ConsoleInventory
 import org.zstack.sdk.ConsoleProxyAgentInventory
@@ -31,6 +33,7 @@ class ConsoleProxyCase extends SubCase {
     EnvSpec env
     DatabaseFacade dbf
     CloudBus bus;
+    RESTFacade restf
 
     @Override
     void setup() {
@@ -41,6 +44,7 @@ class ConsoleProxyCase extends SubCase {
     void environment() {
         dbf = bean(DatabaseFacade.class)
         bus = bean(CloudBus.class)
+        restf = bean(RESTFacade.class)
         env = env {
             account {
                 name = "test"
@@ -171,12 +175,14 @@ class ConsoleProxyCase extends SubCase {
 
     void testConsoleProxyGC() {
         ConsoleProxyAgentVO agent = dbf.listAll(ConsoleProxyAgentVO)[0]
+        String expectedCallbackUrl = restf.getCallbackUrl()
         agent.setConsoleProxyOverriddenIp("")
         agent.setConsoleProxyOverriddenIpv4("127.0.0.1")
         agent.setConsoleProxyOverriddenIpv6("")
         dbf.update(agent)
 
         env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH) { ConsoleProxyCommands.EstablishProxyRsp rsp, HttpEntity<String> e ->
+            assert e.headers.getFirst(RESTConstant.CALLBACK_URL) == expectedCallbackUrl
             rsp.proxyPort = 5900
             rsp.token = "test token"
             return rsp
@@ -184,6 +190,7 @@ class ConsoleProxyCase extends SubCase {
 
         boolean error = true
         env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            assert e.headers.getFirst(RESTConstant.CALLBACK_URL) == expectedCallbackUrl
             if (error) {
                 throw new HttpError(504, "on purpose")
             }
