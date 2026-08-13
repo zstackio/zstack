@@ -51,6 +51,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.storage.snapshot.group.APIGetVolumeSnapshotGroupTreeMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.vm.devices.APIQueryVmInstanceResourceMetadataArchiveMsg</name>
         <serviceId>query</serviceId>
     </message>
