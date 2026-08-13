@@ -2362,8 +2362,6 @@ public class KVMAgentCommands {
         private String nestedVirtualization;
         @GrayVersion(value = "5.0.0")
         private String hostManagementIp;
-        @GrayVersion(value = "5.5.28")
-        private String managementNetworkIpVersion;
         @GrayVersion(value = "5.5.22")
         private Boolean enableHa;
         @GrayVersion(value = "5.0.0")
@@ -2856,14 +2854,6 @@ public class KVMAgentCommands {
 
         public void setHostManagementIp(String hostManagementIp) {
             this.hostManagementIp = hostManagementIp;
-        }
-
-        public String getManagementNetworkIpVersion() {
-            return managementNetworkIpVersion;
-        }
-
-        public void setManagementNetworkIpVersion(String managementNetworkIpVersion) {
-            this.managementNetworkIpVersion = managementNetworkIpVersion;
         }
 
         public Boolean getEnableHa() {

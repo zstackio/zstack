@@ -84,7 +84,6 @@ import org.zstack.header.vm.devices.DeviceAddress;
 import org.zstack.header.vm.devices.VirtualDeviceInfo;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.*;
-import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
@@ -254,8 +253,6 @@ public class KVMHost extends HostBase implements Host {
     private UpgradeChecker upgradeChecker;
     @Autowired
     private ResourceDestinationMaker destMaker;
-    @Autowired
-    private ManagementNetworkIpVersionManager managementNetworkIpVersionManager;
 
     private KVMHostContext context;
 
@@ -4934,7 +4931,6 @@ public class KVMHost extends HostBase implements Host {
         deviceBootOrderOperator.updateVmDeviceBootOrder(cmd, spec);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
         cmd.setHostManagementIp(self.getManagementIp());
-        cmd.setManagementNetworkIpVersion(managementNetworkIpVersionManager.getZoneIpVersion(self.getZoneUuid()));
         cmd.setConsolePassword(spec.getConsolePassword());
         cmd.setUsbRedirect(spec.isUsbRedirect());
         cmd.setEnableSecurityElement(spec.isEnableSecurityElement());
