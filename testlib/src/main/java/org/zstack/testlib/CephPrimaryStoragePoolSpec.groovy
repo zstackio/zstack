@@ -13,6 +13,8 @@ class CephPrimaryStoragePoolSpec extends Spec {
     String description
     @SpecParam(required = true)
     String type
+    @SpecParam
+    boolean isCreate = true
 
     CephPrimaryStoragePoolInventory inventory
 
@@ -40,7 +42,7 @@ class CephPrimaryStoragePoolSpec extends Spec {
             delegate.resourceUuid = uuid
             delegate.sessionId = sessionId
             delegate.type = type
-            delegate.isCreate = true
+            delegate.isCreate = isCreate
         }
 
         return id(poolName, inventory.uuid)

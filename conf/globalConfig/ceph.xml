@@ -17,6 +17,14 @@
     </config>
 
     <config>
+        <name>imageCache.poolStrategy</name>
+        <description>strategy to select ceph image cache pool when preparing root volume image cache.</description>
+        <category>ceph</category>
+        <defaultValue>DefaultImageCachePool</defaultValue>
+        <type>java.lang.String</type>
+    </config>
+
+    <config>
         <name>trash.cleanup.interval</name>
         <description>interval to cleanup image trash on primary storage, in seconds.</description>
         <category>ceph</category>
