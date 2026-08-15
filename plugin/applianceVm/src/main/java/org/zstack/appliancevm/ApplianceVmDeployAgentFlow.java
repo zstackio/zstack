@@ -132,7 +132,8 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
 
     private int getAgentPort(String apvmUuid) {
         ApplianceVmVO avo = dbf.findByUuid(apvmUuid, ApplianceVmVO.class);
-        return avo != null && avo.getAgentPort() > 0 ? avo.getAgentPort() : ApplianceVmGlobalProperty.AGENT_PORT;
+        return avo != null && avo.getAgentPort() > 0 && avo.getAgentPort() <= 65535
+                ? avo.getAgentPort() : ApplianceVmGlobalProperty.AGENT_PORT;
     }
 
     @Override
