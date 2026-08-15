@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelCenterAction extends AbstractAction {
+public class DeleteAIBusinessGatewayOfferingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddModelCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelCenterResult value;
+        public org.zstack.sdk.DeleteAIBusinessGatewayOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -26,46 +26,10 @@ public class AddModelCenterAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer managementPort;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceNetworkUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerRegistry;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
+    public java.lang.String uuid;
 
     @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.String deleteMode = "Permissive";
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -99,8 +63,8 @@ public class AddModelCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddModelCenterResult value = res.getResult(org.zstack.sdk.AddModelCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelCenterResult() : value; 
+        org.zstack.sdk.DeleteAIBusinessGatewayOfferingResult value = res.getResult(org.zstack.sdk.DeleteAIBusinessGatewayOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.DeleteAIBusinessGatewayOfferingResult() : value; 
 
         return ret;
     }
@@ -129,11 +93,11 @@ public class AddModelCenterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/model-centers";
+        info.httpMethod = "DELETE";
+        info.path = "/ai/business-gateway-offerings/{uuid}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "";
         return info;
     }
 

@@ -132,4 +132,60 @@ public class ModelServiceInstanceGroupInventory  {
         return this.exportPath;
     }
 
+    public java.lang.String businessNetworkProfileUuid;
+    public void setBusinessNetworkProfileUuid(java.lang.String businessNetworkProfileUuid) {
+        this.businessNetworkProfileUuid = businessNetworkProfileUuid;
+    }
+    public java.lang.String getBusinessNetworkProfileUuid() {
+        return this.businessNetworkProfileUuid;
+    }
+
+    public java.lang.String businessGatewayUuid;
+    public void setBusinessGatewayUuid(java.lang.String businessGatewayUuid) {
+        this.businessGatewayUuid = businessGatewayUuid;
+    }
+    public java.lang.String getBusinessGatewayUuid() {
+        return this.businessGatewayUuid;
+    }
+
+    public java.lang.String developerAccessGatewayUuid;
+    public void setDeveloperAccessGatewayUuid(java.lang.String developerAccessGatewayUuid) {
+        this.developerAccessGatewayUuid = developerAccessGatewayUuid;
+    }
+    public java.lang.String getDeveloperAccessGatewayUuid() {
+        return this.developerAccessGatewayUuid;
+    }
+
+    public java.lang.String businessEndpoint;
+    public void setBusinessEndpoint(java.lang.String businessEndpoint) {
+        this.businessEndpoint = businessEndpoint;
+    }
+    public java.lang.String getBusinessEndpoint() {
+        return this.businessEndpoint;
+    }
+
+    public java.lang.String developerEndpoint;
+    public void setDeveloperEndpoint(java.lang.String developerEndpoint) {
+        this.developerEndpoint = developerEndpoint;
+    }
+    public java.lang.String getDeveloperEndpoint() {
+        return this.developerEndpoint;
+    }
+
+    public java.lang.String managementEndpoint;
+    public void setManagementEndpoint(java.lang.String managementEndpoint) {
+        this.managementEndpoint = managementEndpoint;
+    }
+    public java.lang.String getManagementEndpoint() {
+        return this.managementEndpoint;
+    }
+
+    public java.lang.String businessEndpointStatus;
+    public void setBusinessEndpointStatus(java.lang.String businessEndpointStatus) {
+        this.businessEndpointStatus = businessEndpointStatus;
+    }
+    public java.lang.String getBusinessEndpointStatus() {
+        return this.businessEndpointStatus;
+    }
+
 }

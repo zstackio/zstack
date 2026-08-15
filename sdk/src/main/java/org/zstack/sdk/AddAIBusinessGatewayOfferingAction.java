@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelCenterAction extends AbstractAction {
+public class AddAIBusinessGatewayOfferingAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddModelCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelCenterResult value;
+        public org.zstack.sdk.AddAIBusinessGatewayOfferingResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,32 @@ public class AddModelCenterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String name;
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementIp;
+    public java.lang.String imageUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer managementPort;
+    public java.lang.String instanceOfferingUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String managementNetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
+    public java.lang.String businessNetworkUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
+    public java.lang.String developerAccessNetworkUuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceNetworkUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer agentPort;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerRegistry;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer listenerPort;
 
     @Param(required = false)
     public java.lang.String resourceUuid;
@@ -99,8 +90,8 @@ public class AddModelCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddModelCenterResult value = res.getResult(org.zstack.sdk.AddModelCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelCenterResult() : value; 
+        org.zstack.sdk.AddAIBusinessGatewayOfferingResult value = res.getResult(org.zstack.sdk.AddAIBusinessGatewayOfferingResult.class);
+        ret.value = value == null ? new org.zstack.sdk.AddAIBusinessGatewayOfferingResult() : value; 
 
         return ret;
     }
@@ -130,10 +121,10 @@ public class AddModelCenterAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/ai/model-centers";
+        info.path = "/ai/business-gateway-offerings";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "params";
         return info;
     }
 
