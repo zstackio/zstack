@@ -315,8 +315,7 @@ FROM `zstack`.`ModelCenterVO`
 WHERE `serviceNetworkUuid` IS NOT NULL
 LIMIT 1;
 
-INSERT INTO `zstack`.`AccountResourceRefVO`
-    (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `concreteResourceType`,
+INSERT INTO `zstack`.`AccountResourceRefVO` (`accountUuid`, `ownerAccountUuid`, `resourceUuid`, `resourceType`, `concreteResourceType`,
      `permission`, `isShared`, `createDate`, `lastOpDate`)
 SELECT @admin_account_uuid,
        @admin_account_uuid,
