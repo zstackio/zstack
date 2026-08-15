@@ -408,7 +408,8 @@ ${output.join("\n")}
     }
 
     def getCollectionFieldType(Field field, Class genericType) {
-        if (!field.isAnnotationPresent(SDKGeneric.class) || genericType == null) {
+        if (!field.isAnnotationPresent(SDKGeneric.class) || genericType == null
+                || genericType.isAnnotationPresent(NoSDK.class)) {
             return field.type.name
         }
 
