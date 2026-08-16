@@ -318,7 +318,7 @@ public class LogSafeGson {
             } else if (si instanceof Collection) {
                 ((Collection<?>) si).forEach(v -> {
                     if (mayHasSensitiveInfo(v)) {
-                        results.put(v.toString(), f.getMaskedValue(v.toString()));
+                        results.putAll(getValuesToMask(v));
                     }
                 });
             }
@@ -331,7 +331,7 @@ public class LogSafeGson {
             } else if (si instanceof Collection) {
                 ((Collection<?>) si).forEach(v -> {
                     if (mayHasSensitiveInfo(v)) {
-                        results.put(v.toString(), f.getMaskedValue(v.toString()));
+                        results.putAll(getValuesToMask(v));
                     }
                 });
             }
