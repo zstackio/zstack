@@ -62,12 +62,10 @@ public class Session implements Component {
             data.setUserUuid(userUuid);
 
             PluginRegistry pluginRgty = getComponentLoader().getComponent(PluginRegistry.class);
-            EventFacade evtf = getComponentLoader().getComponent(EventFacade.class);
             for (String sessionUuid : currentSessionUuids) {
                 logout(sessionUuid);
                 data.setSessionUuid(sessionUuid);
 
-                evtf.fire(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, data);
                 for (ForceLogoutSessionExtensionPoint ext : pluginRgty.getExtensionList(ForceLogoutSessionExtensionPoint.class)) {
                     ext.afterForceLogoutSession(data);
                 }
@@ -158,15 +156,25 @@ public class Session implements Component {
     }
 
     public static void logout(String uuid) {
+        SessionInventory session;
         synchronized (sessionLock.intern(uuid)) {
-            deleteSession(uuid);
+            session = deleteSession(uuid);
+        }
+
+        if (session != null) {
+            IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData();
+            data.setSessionUuid(session.getUuid());
+            data.setAccountUuid(session.getAccountUuid());
+            data.setUserUuid(session.getUserUuid());
+            getComponentLoader().getComponent(EventFacade.class)
+                    .fire(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, data);
         }
     }
-    
-    private static void deleteSession(String uuid) {
-        new SQLBatch() {
+
+    private static SessionInventory deleteSession(String uuid) {
+        return new SQLBatchWithReturn<SessionInventory>() {
             @Override
-            protected void scripts() {
+            protected SessionInventory scripts() {
                 SessionInventory s = sessions.remove(uuid);
                 if (s == null) {
                     SessionVO vo = findByUuid(uuid, SessionVO.class);
@@ -174,7 +182,7 @@ public class Session implements Component {
                 }
 
                 if (s == null) {
-                    return;
+                    return null;
                 }
 
                 SessionInventory finalS = s;
@@ -183,6 +191,7 @@ public class Session implements Component {
                         .forEach(ext -> ext.sessionLogout(finalS));
 
                 sql(SessionVO.class).eq(SessionVO_.uuid, uuid).hardDelete();
+                return finalS;
             }
         }.execute();
     }
@@ -359,6 +368,25 @@ public class Session implements Component {
     }
 
     private void setupCanonicalEvents() {
+        evtf.on(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, new EventCallback() {
+            @Override
+            public void run(Map tokens, Object data) {
+                IdentityCanonicalEvents.SessionForceLogoutData d =
+                        (IdentityCanonicalEvents.SessionForceLogoutData) data;
+                String sessionUuid = d.getSessionUuid();
+                if (sessionUuid == null) {
+                    return;
+                }
+
+                synchronized (sessionLock.intern(sessionUuid)) {
+                    if (sessions.remove(sessionUuid) != null) {
+                        logger.debug(String.format("evicted force-logged-out session[uuid:%s] from local cache",
+                                sessionUuid));
+                    }
+                }
+            }
+        });
+
         evtf.on(IdentityCanonicalEvents.ACCOUNT_DELETED_PATH, new EventCallback() {
             @Override
             public void run(Map tokens, Object data) {

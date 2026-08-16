@@ -2,7 +2,10 @@ package org.zstack.test.integration.identity.account
 
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.DatabaseFacadeImpl
+import org.zstack.core.cloudbus.EventCallback
+import org.zstack.core.cloudbus.EventFacade
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.IdentityCanonicalEvents
 import org.zstack.identity.AccountManagerImpl
 import org.zstack.identity.IdentityGlobalConfig
 import org.zstack.identity.Session
@@ -17,6 +20,7 @@ import org.zstack.header.identity.IdentityErrors
 import javax.persistence.Query
 import java.sql.Timestamp
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class SessionCase extends SubCase {
     EnvSpec env
@@ -53,8 +57,80 @@ class SessionCase extends SubCase {
             testRenewSession()
             testRenewSessionFail()
             testInvalidSession()
+            testForceLogoutEventEvictsSessionCache()
+            testLogoutBroadcastsForceLogoutEvent()
             testValidateSessionApi()
             testMaxCurrentSessionExceeded()
+        }
+    }
+
+    void testForceLogoutEventEvictsSessionCache() {
+        AccountInventory account = createAccount {
+            name = "force-logout-cache"
+            password = "password"
+        } as AccountInventory
+
+        SessionInventory session = logInByAccount {
+            accountName = account.name
+            password = "password"
+        } as SessionInventory
+
+        assert Session.getSessionsCopy().containsKey(session.uuid)
+
+        IdentityCanonicalEvents.SessionForceLogoutData data = new IdentityCanonicalEvents.SessionForceLogoutData()
+        data.sessionUuid = session.uuid
+        data.accountUuid = session.accountUuid
+        data.userUuid = session.userUuid
+        bean(EventFacade.class).fire(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, data)
+
+        retryInSecs {
+            assert !Session.getSessionsCopy().containsKey(session.uuid)
+        }
+
+        Session.logout(session.uuid)
+        deleteAccount {
+            uuid = account.uuid
+        }
+    }
+
+    void testLogoutBroadcastsForceLogoutEvent() {
+        AccountInventory account = createAccount {
+            name = "force-logout-broadcast"
+            password = "password"
+        } as AccountInventory
+
+        SessionInventory session = logInByAccount {
+            accountName = account.name
+            password = "password"
+        } as SessionInventory
+
+        EventFacade evtf = bean(EventFacade.class)
+        AtomicReference<IdentityCanonicalEvents.SessionForceLogoutData> received = new AtomicReference<>()
+        EventCallback callback = new EventCallback() {
+            @Override
+            void run(Map tokens, Object eventData) {
+                IdentityCanonicalEvents.SessionForceLogoutData data =
+                        (IdentityCanonicalEvents.SessionForceLogoutData) eventData
+                if (data.sessionUuid == session.uuid) {
+                    received.set(data)
+                }
+            }
+        }
+        evtf.onLocal(IdentityCanonicalEvents.SESSION_FORCE_LOGOUT_PATH, callback)
+
+        try {
+            Session.logout(session.uuid)
+            retryInSecs {
+                assert received.get() != null
+                assert received.get().accountUuid == session.accountUuid
+                assert received.get().userUuid == session.userUuid
+            }
+        } finally {
+            evtf.off(callback)
+        }
+
+        deleteAccount {
+            uuid = account.uuid
         }
     }
 
