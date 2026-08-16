@@ -140,6 +140,25 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
     private void handle(APICreateRoleMsg msg) {
         APICreateRoleEvent evt = new APICreateRoleEvent(msg.getId());
 
+        List<RoleCreationExtensionPoint> extensions =
+                pluginRgty.getExtensionList(RoleCreationExtensionPoint.class);
+        createRole(extensions, 0, msg, () -> persistRole(msg, evt));
+
+        bus.publish(evt);
+    }
+
+    private void createRole(List<RoleCreationExtensionPoint> extensions,
+                            int index, APICreateRoleMsg msg,
+                            Runnable creation) {
+        if (index >= extensions.size()) {
+            creation.run();
+            return;
+        }
+        extensions.get(index).createRole(msg,
+                () -> createRole(extensions, index + 1, msg, creation));
+    }
+
+    private void persistRole(APICreateRoleMsg msg, APICreateRoleEvent evt) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -187,8 +206,6 @@ public class RBACManagerImpl extends AbstractService implements RBACManager, Com
                 evt.setInventory(RoleInventory.valueOf(vo));
             }
         }.execute();
-
-        bus.publish(evt);
     }
 
     @Override

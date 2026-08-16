@@ -19,6 +19,8 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.JSONObjectUtil;
 
+import java.util.List;
+
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class RoleBase implements Role {
     @Autowired
@@ -55,8 +57,23 @@ public class RoleBase implements Role {
     }
 
     private void handleApiMessage(APIMessage msg) {
-        beforeRoleMutation((RoleMessage) msg);
+        List<RoleMutationExtensionPoint> extensions =
+                pluginRgty.getExtensionList(RoleMutationExtensionPoint.class);
+        mutateRole(extensions, 0, (RoleMessage) msg,
+                () -> dispatchApiMessage(msg));
+    }
 
+    private void mutateRole(List<RoleMutationExtensionPoint> extensions,
+                            int index, RoleMessage msg, Runnable mutation) {
+        if (index >= extensions.size()) {
+            mutation.run();
+            return;
+        }
+        extensions.get(index).mutateRole(self, msg,
+                () -> mutateRole(extensions, index + 1, msg, mutation));
+    }
+
+    private void dispatchApiMessage(APIMessage msg) {
         if (msg instanceof APIDeleteRoleMsg) {
             handle((APIDeleteRoleMsg) msg);
         } else if (msg instanceof APIAttachRoleToAccountMsg) {
@@ -77,12 +94,6 @@ public class RoleBase implements Role {
             handle((APIUpdateRoleMsg) msg);
         } else {
             bus.dealWithUnknownMessage(msg);
-        }
-    }
-
-    private void beforeRoleMutation(RoleMessage msg) {
-        for (RoleMutationExtensionPoint ext : pluginRgty.getExtensionList(RoleMutationExtensionPoint.class)) {
-            ext.beforeRoleMutation(self, msg);
         }
     }
 
