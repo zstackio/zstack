@@ -110,6 +110,12 @@ doc {
 		since "0.6"
 	}
 	field {
+		name "reservedMemorySize"
+		desc ""
+		type "Long"
+		since "5.5.32"
+	}
+	field {
 		name "cpuNum"
 		desc ""
 		type "Integer"

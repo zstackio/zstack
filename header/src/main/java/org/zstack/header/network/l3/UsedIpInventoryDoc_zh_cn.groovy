@@ -44,6 +44,12 @@ doc {
 		since "5.0.0"
 	}
 	field {
+		name "prefixLen"
+		desc ""
+		type "Integer"
+		since "5.5.32"
+	}
+	field {
 		name "gateway"
 		desc ""
 		type "String"

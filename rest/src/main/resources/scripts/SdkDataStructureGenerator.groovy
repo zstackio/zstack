@@ -10,6 +10,7 @@ import org.zstack.header.rest.APINoSee
 import org.zstack.header.rest.NoSDK
 import org.zstack.header.rest.RestResponse
 import org.zstack.header.rest.SDK
+import org.zstack.header.rest.SDKGeneric
 import org.zstack.rest.sdk.SdkFile
 import org.zstack.rest.sdk.SdkTemplate
 import org.zstack.utils.FieldUtils
@@ -365,13 +366,14 @@ ${output.join("\n")}
                     addToLaterResolvedClassesIfNeed(genericType)
                 }
             }
+            String fieldType = getCollectionFieldType(field, genericType)
 
             return """\
-    public ${field.type.name} ${fname};
-    public void set${StringUtils.capitalize(fname)}(${field.type.name} ${fname}) {
+    public ${fieldType} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${fieldType} ${fname}) {
         this.${fname} = ${fname};
     }
-    public ${field.type.name} get${StringUtils.capitalize(fname)}() {
+    public ${fieldType} get${StringUtils.capitalize(fname)}() {
         return this.${fname};
     }
 """
@@ -403,5 +405,22 @@ ${output.join("\n")}
     }
 """
         }
+    }
+
+    def getCollectionFieldType(Field field, Class genericType) {
+        if (!field.isAnnotationPresent(SDKGeneric.class) || genericType == null
+                || genericType.isAnnotationPresent(NoSDK.class)) {
+            return field.type.name
+        }
+
+        return "${field.type.name}<${getSdkTypeName(genericType)}>"
+    }
+
+    def getSdkTypeName(Class clz) {
+        if (isZStackClass(clz)) {
+            return "${SdkApiTemplate.getPackageName(clz)}.${getTargetClassName(clz)}"
+        }
+
+        return clz.name
     }
 }
