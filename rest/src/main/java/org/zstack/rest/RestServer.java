@@ -469,7 +469,9 @@ public class RestServer implements Component, CloudBusEventListener {
                         String body = CloudBusGson.toJson(response);
                         sb.append(String.format(" Body: %s", body));
 
-                        requestLogger.trace(sb.toString());
+                        try (Utils.MaskWords ignored = new Utils.MaskWords(LogSafeGson.getValuesToMask(evt), true)) {
+                            requestLogger.trace(sb.toString());
+                        }
                     }
 
                     try (Response r = http.newCall(request).execute()) {
@@ -923,8 +925,10 @@ public class RestServer implements Component, CloudBusEventListener {
             if (w == null) {
                 throw new CloudRuntimeException(String.format("cannot find RestResponseWrapper for the class[%s]", evt.getClass()));
             }
-            writeResponse(response, w, ret.getResult());
-            sendResponse(HttpStatus.OK.value(), response, rsp);
+            try (Utils.MaskWords ignored = new Utils.MaskWords(LogSafeGson.getValuesToMask(ret.getResult()), true)) {
+                writeResponse(response, w, ret.getResult());
+                sendResponse(HttpStatus.OK.value(), response, rsp);
+            }
         } else {
             response.setError(evt.getError());
             sendResponse(HttpStatus.SERVICE_UNAVAILABLE.value(), response, rsp, firstNonBlank(evt.getApiId(), uuid));
@@ -1518,8 +1522,10 @@ public class RestServer implements Component, CloudBusEventListener {
 
         // the api succeeded
 
-        writeResponse(response, responseAnnotationByClass.get(api.apiResponseClass), reply);
-        sendResponse(HttpStatus.OK.value(), response, rsp);
+        try (Utils.MaskWords ignored = new Utils.MaskWords(LogSafeGson.getValuesToMask(reply), true)) {
+            writeResponse(response, responseAnnotationByClass.get(api.apiResponseClass), reply);
+            sendResponse(HttpStatus.OK.value(), response, rsp);
+        }
     }
 
     private void sendMessage(APIMessage msg, Api api, HttpServletResponse rsp) throws IOException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {

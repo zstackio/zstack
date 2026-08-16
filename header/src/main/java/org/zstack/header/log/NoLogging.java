@@ -46,4 +46,12 @@ public @interface NoLogging {
     Type type() default Type.Simple;
 
     String classNameField() default "";
+
+    /**
+     * Whether the field must also be masked when a reply is copied into an
+     * externally visible API response. Most secrets (for example passwords)
+     * must remain masked in both places. Set this to {@code false} for values
+     * that are legitimate API response data but must never be written to logs.
+     */
+    boolean maskInApiResponse() default true;
 }

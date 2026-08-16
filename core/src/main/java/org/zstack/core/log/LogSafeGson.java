@@ -31,6 +31,7 @@ public class LogSafeGson {
      * class and its need be masked fields
      */
     private static final Map<Class, Set<FieldNoLogging>> maskFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> apiResponseMaskFields = new HashMap<>();
     /**
      * field with annotation @NoLogging(behavior = NoLogging.Behavior.Auto) will be collect to this map
      *
@@ -40,6 +41,7 @@ public class LogSafeGson {
      * this should be used for base abstractions
      */
     private static final Map<Class, Set<FieldNoLogging>> autoFields = new HashMap<>();
+    private static final Map<Class, Set<FieldNoLogging>> apiResponseAutoFields = new HashMap<>();
 
     /**
      * used for class implements Serializable or Message for potential sensitive check
@@ -53,6 +55,7 @@ public class LogSafeGson {
 
     private static final List<Class<?>> searchClasses = Arrays.asList(Serializable.class, Message.class);
     private static final Gson logSafeGson;
+    private static final Gson apiResponseSafeGson;
     private static Function<String, String> tagInfoHider = s -> s;
     private static class FieldNoLogging {
         Field field;
@@ -106,19 +109,8 @@ public class LogSafeGson {
     }
 
     static {
-        GsonUtil util = new GsonUtil();
-        searchClasses.forEach(it -> util.setInstanceCreator(it, getSerializer()));
-        logSafeGson = util.setSerializationExclusionStrategy(new ExclusionStrategy() {
-            @Override
-            public boolean shouldSkipField(FieldAttributes f) {
-                return f.getAnnotation(GsonTransient.class) != null;
-            }
-
-            @Override
-            public boolean shouldSkipClass(Class<?> clazz) {
-                return false;
-            }
-        }).enableComplexMapKeySerialization().create();
+        logSafeGson = createGson(false);
+        apiResponseSafeGson = createGson(true);
 
         for (Class<?> baseClz : searchClasses) {
             for (Class<?> clz : BeanUtils.reflections.getSubTypesOf(baseClz)) {
@@ -131,6 +123,22 @@ public class LogSafeGson {
         }
     }
 
+    private static Gson createGson(boolean forApiResponse) {
+        GsonUtil util = new GsonUtil();
+        searchClasses.forEach(it -> util.setInstanceCreator(it, getSerializer(forApiResponse)));
+        return util.setSerializationExclusionStrategy(new ExclusionStrategy() {
+            @Override
+            public boolean shouldSkipField(FieldAttributes f) {
+                return f.getAnnotation(GsonTransient.class) != null;
+            }
+
+            @Override
+            public boolean shouldSkipClass(Class<?> clazz) {
+                return false;
+            }
+        }).enableComplexMapKeySerialization().create();
+    }
+
     private static void cacheNoLoggingInfo(Class<?> si) {
         for (Field f : FieldUtils.getAllFields(si)) {
             NoLogging an = f.getAnnotation(NoLogging.class);
@@ -140,8 +148,14 @@ public class LogSafeGson {
                 f.setAccessible(true);
                 if (an.behavior().auto()) {
                     autoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
+                    if (an.maskInApiResponse()) {
+                        apiResponseAutoFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
+                    }
                 } else {
                     maskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
+                    if (an.maskInApiResponse()) {
+                        apiResponseMaskFields.computeIfAbsent(si, k -> new HashSet<>()).add(new FieldNoLogging(f, an, si));
+                    }
                 }
             }
 
@@ -164,14 +178,19 @@ public class LogSafeGson {
         }
     }
 
-    private static <T> JsonSerializer<T> getSerializer() {
+    private static <T> JsonSerializer<T> getSerializer(boolean forApiResponse) {
         return (o, type, jsonSerializationContext) -> {
-            JsonElement jsonElement = logSafeGson.toJsonTree(o);
+            Gson selectedGson = forApiResponse ? apiResponseSafeGson : logSafeGson;
+            Map<Class, Set<FieldNoLogging>> selectedMaskFields =
+                    forApiResponse ? apiResponseMaskFields : maskFields;
+            Map<Class, Set<FieldNoLogging>> selectedAutoFields =
+                    forApiResponse ? apiResponseAutoFields : autoFields;
+            JsonElement jsonElement = selectedGson.toJsonTree(o);
             if (!jsonElement.isJsonObject()) {
                 return jsonElement;
             }
             JsonObject jObj = jsonElement.getAsJsonObject();
-            maskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
+            selectedMaskFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object obj = f.getValue(o);
                 if (obj instanceof Collection) {
                     JsonArray array = new JsonArray();
@@ -182,13 +201,13 @@ public class LogSafeGson {
                 }
             });
 
-            autoFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
+            selectedAutoFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object si = f.getValue(o);
                 if (mayHasSensitiveInfo(si)) {
-                    jObj.add(f.getName(), toJsonElement(si));
+                    jObj.add(f.getName(), toJsonElement(si, forApiResponse));
                 } else if (si instanceof Collection) {
                     JsonArray array = new JsonArray();
-                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v)));
+                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v, forApiResponse)));
                     jObj.add(f.getName(), array);
                 }
             });
@@ -196,10 +215,10 @@ public class LogSafeGson {
             potentialSensitiveFields.getOrDefault(o.getClass(), Collections.emptySet()).forEach(f -> {
                 Object si = f.getValue(o);
                 if (mayHasSensitiveInfo(si)) {
-                    jObj.add(f.getName(), toJsonElement(si));
+                    jObj.add(f.getName(), toJsonElement(si, forApiResponse));
                 } else if (si instanceof Collection) {
                     JsonArray array = new JsonArray();
-                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v)));
+                    ((Collection<?>) si).forEach(v -> array.add(toJsonElement(v, forApiResponse)));
                     jObj.add(f.getName(), array);
                 }
             });
@@ -208,10 +227,15 @@ public class LogSafeGson {
     }
 
     public static JsonElement toJsonElement(Object o) {
+        return toJsonElement(o, false);
+    }
+
+    private static JsonElement toJsonElement(Object o, boolean forApiResponse) {
         if (o == null) {
             return JsonNull.INSTANCE;
         }
-        return logSafeGson.toJsonTree(o, getGsonType(o.getClass()));
+        Gson selectedGson = forApiResponse ? apiResponseSafeGson : logSafeGson;
+        return selectedGson.toJsonTree(o, getGsonType(o.getClass()));
     }
 
     public static String toJson(Object o) {
@@ -231,19 +255,23 @@ public class LogSafeGson {
      * @return if the class has any field annotated by @NoLogging return false
      *         else return true
      */
-    private static boolean mostLikelyCommonClass(Class clz) {
-        return !maskFields.containsKey(clz) && !autoFields.containsKey(clz);
+    private static boolean mostLikelyCommonClass(Class clz, boolean forApiResponse) {
+        Map<Class, Set<FieldNoLogging>> selectedMaskFields =
+                forApiResponse ? apiResponseMaskFields : maskFields;
+        Map<Class, Set<FieldNoLogging>> selectedAutoFields =
+                forApiResponse ? apiResponseAutoFields : autoFields;
+        return !selectedMaskFields.containsKey(clz) && !selectedAutoFields.containsKey(clz);
     }
 
     public static Message desensitize(Message o) {
-        if (o == null || mostLikelyCommonClass(o.getClass())) {
+        if (o == null || mostLikelyCommonClass(o.getClass(), true)) {
             logger.trace(String.format("%s is not class annotated by @NoLogging, skip desensitize",
                     o != null ? o.getClass().getCanonicalName() : null));
             return o;
         }
 
         buildSchemaIfNeed(o);
-        String retStr = toJson(o);
+        String retStr = apiResponseSafeGson.toJson(o, getGsonType(o.getClass()));
         Map raw = JSONObjectUtil.toObject(retStr, LinkedHashMap.class);
         Message result = JSONObjectUtil.toObject(retStr, o.getClass());
 
