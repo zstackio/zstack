@@ -112,6 +112,9 @@ public class CreateVmInstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List diskAOs;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.Map devices;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 
