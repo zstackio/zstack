@@ -16,6 +16,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -37,7 +38,9 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -61,6 +64,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private CloudBus bus;
     @Autowired
     private ThreadFacade thdf;
+    @Autowired
+    private ErrorFacade errf;
 
     private final Set<Class<? extends PluginDriver>> pluginMetadata = new HashSet<>();
     private final Map<String, PluginDriver> pluginInstances = new ConcurrentHashMap<>();
@@ -131,8 +136,11 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             verifyPluginProduct(pluginDriver);
 
             pluginInstances.put(pluginDriver.uuid(), pluginDriver);
-            pluginRegisters.computeIfAbsent(pluginDriverClz, k -> new ArrayList<>());
-            pluginRegisters.get(pluginDriverClz).add(pluginDriver);
+            List<PluginDriver> registeredPlugins = pluginRegisters.computeIfAbsent(
+                    pluginDriverClz, k -> new ArrayList<>());
+            registeredPlugins.removeIf(registered -> Objects.equals(
+                    registered.uuid(), pluginDriver.uuid()));
+            registeredPlugins.add(pluginDriver);
 
             PluginDriverVO vo = dbf.findByUuid(pluginDriver.uuid(), PluginDriverVO.class);
             if (vo == null) {
@@ -353,12 +361,14 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     }
 
     protected void loadPluginsFromJar(File jarFile) {
-        URL jarUrl = null;
+        URL jarUrl;
         try {
             jarUrl = jarFile.toURI().toURL();
         } catch (MalformedURLException e) {
-            e.printStackTrace();
+            throw new CloudRuntimeException(String.format("invalid plugin jar path[%s]",
+                    jarFile.getAbsolutePath()), e);
         }
+        List<Throwable> registrationFailures = new ArrayList<>();
         try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader())) {
             try (JarFile jar = new JarFile(jarFile)) {
                 Enumeration<JarEntry> entries = jar.entries();
@@ -370,7 +380,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     }
 
                     if (entryName.matches(".*\\$\\d+\\.class$")) {
-                        // eg: org.zstack.CipherOnCloudCryptoPlugin$1.class
                         continue;
                     }
 
@@ -379,31 +388,70 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     }
 
                     String className = entryName.replace('/', '.').substring(0, entryName.length() - 6);
-                    Class<?> tempClazz = classLoader.loadClass(className);
-                    if (className.contains("Validator")) {
-                        collectPluginValidators(tempClazz);
+                    Class<?> tempClazz;
+                    try {
+                        tempClazz = classLoader.loadClass(className);
+                    } catch (Throwable t) {
+                        logger.warn(String.format("failed to load class[%s] from plugin jar[%s]",
+                                className, jarFile.getAbsolutePath()), t);
                         continue;
                     }
 
-                    // Skip anonymous classes or inner classes (which are named with $)
-                    // Anonymous classes or inner classes are typically not needed for plugin registration
-                    if (entryName.contains("$")) {
-                        continue;
-                    }
+                    try {
+                        if (PluginValidator.class.isAssignableFrom(tempClazz)
+                                && !tempClazz.isInterface()
+                                && !Modifier.isAbstract(tempClazz.getModifiers())) {
+                            collectPluginValidators(tempClazz);
+                            continue;
+                        }
+                        if (!PluginDriver.class.isAssignableFrom(tempClazz)
+                                || tempClazz.isInterface()
+                                || Modifier.isAbstract(tempClazz.getModifiers())) {
+                            continue;
+                        }
 
-                    registerPluginAsSingleton((Class<? extends PluginDriver>) tempClazz, (Class<? extends PluginDriver>) tempClazz.getInterfaces()[0]);
+                        registerPluginAsSingleton((Class<? extends PluginDriver>) tempClazz, (Class<? extends PluginDriver>) tempClazz.getInterfaces()[0]);
+                    } catch (Throwable t) {
+                        logger.error(String.format("failed to register plugin class[%s] from jar[%s]",
+                                className, jarFile.getAbsolutePath()), t);
+                        registrationFailures.add(new CloudRuntimeException(String.format(
+                                "failed to register plugin class[%s]", className), t));
+                    }
                 }
             }
-        } catch (Throwable t) {
-            logger.error(String.format("Error occurred while scanning and loading plugins from: %s", jarFile.getAbsolutePath()), t);
+        } catch (IOException | SecurityException t) {
+            logger.warn(String.format("skip unreadable plugin jar[%s]",
+                    jarFile.getAbsolutePath()), t);
+            return;
         }
+
+        throwPluginLoadFailures(String.format("plugin jar[%s]", jarFile.getAbsolutePath()), registrationFailures);
     }
 
     protected void scanAndLoadPlugins(String directoryPath) {
+        List<Throwable> loadFailures = new ArrayList<>();
         List<File> jarFiles = getJarFiles(directoryPath);
         for (File jarFile : jarFiles) {
-            loadPluginsFromJar(jarFile);
+            try {
+                loadPluginsFromJar(jarFile);
+            } catch (Throwable t) {
+                logger.error(String.format("failed to load plugin jar[%s]", jarFile.getAbsolutePath()), t);
+                loadFailures.add(t);
+            }
         }
+        throwPluginLoadFailures(String.format("plugin directory[%s]", directoryPath), loadFailures);
+    }
+
+    private void throwPluginLoadFailures(String source, List<Throwable> failures) {
+        if (failures.isEmpty()) {
+            return;
+        }
+
+        CloudRuntimeException error = new CloudRuntimeException(String.format(
+                "failed to load plugins from %s: %s", source,
+                failures.stream().map(Throwable::toString).collect(java.util.stream.Collectors.joining("; "))));
+        failures.forEach(error::addSuppressed);
+        throw error;
     }
 
     private void handle(RefreshPluginDriversMsg msg) {
@@ -416,7 +464,11 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
             @Override
             public void run(SyncTaskChain chain) {
-                scanAndLoadPlugins(fileDirPath);
+                try {
+                    scanAndLoadPlugins(fileDirPath);
+                } catch (Throwable t) {
+                    reply.setError(errf.throwableToInternalError(t));
+                }
                 bus.reply(msg, reply);
                 chain.next();
             }
