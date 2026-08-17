@@ -1,5 +1,8 @@
 package org.zstack.header.message;
 
+import org.zstack.utils.StringDSL;
+
+import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -29,5 +32,13 @@ public class DocUtils {
 
     public static void removeApiUuidMap(String apiName){
         apiUuidMap.remove(apiName);
+    }
+
+    public static String createFixedUuid(Class<?> voClass) {
+        return StringDSL.createFixedUuid(voClass);
+    }
+
+    public static Timestamp timestamp() {
+        return new Timestamp(date);
     }
 }

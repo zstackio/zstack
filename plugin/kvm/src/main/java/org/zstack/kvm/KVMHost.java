@@ -5452,7 +5452,8 @@ public class KVMHost extends HostBase implements Host {
         SecretHostGetReply reply = new SecretHostGetReply();
         if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
                 msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
-            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for get secret"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for get secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5470,7 +5471,7 @@ public class KVMHost extends HostBase implements Host {
         restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostGetResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err != null ? err : operr("get secret on agent failed"));
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "get secret on agent failed"));
                 bus.reply(msg, reply);
             }
 
@@ -5499,7 +5500,8 @@ public class KVMHost extends HostBase implements Host {
     private void handle(ResolveVtpmLibvirtSecretOnHypervisorMsg msg) {
         ResolveVtpmLibvirtSecretOnHypervisorReply reply = new ResolveVtpmLibvirtSecretOnHypervisorReply();
         if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getHostUuid())) {
-            reply.setError(operr("vmUuid and hostUuid are required for vTPM resolve libvirt secret uuid"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid and hostUuid are required for vTPM resolve libvirt secret uuid"));
             bus.reply(msg, reply);
             return;
         }
@@ -5525,7 +5527,7 @@ public class KVMHost extends HostBase implements Host {
                 if (rsp != null && rsp.isSuccess() && StringUtils.isNotBlank(rsp.getSecretUuid())) {
                     reply.setSecretUuid(rsp.getSecretUuid());
                 } else if (rsp != null && rsp.isSuccess()) {
-                    reply.setError(operr("vTPM resolve succeeded but secretUuid is empty"));
+                    reply.setError(operr(ORG_ZSTACK_KVM_10163, "vTPM resolve succeeded but secretUuid is empty"));
                 } else {
                     reply.setError(buildSecretAgentError(rsp, "vTPM resolve libvirt secret uuid failed"));
                 }
@@ -5537,13 +5539,14 @@ public class KVMHost extends HostBase implements Host {
     private void handle(SecretHostDefineMsg msg) {
         SecretHostDefineReply reply = new SecretHostDefineReply();
         if (org.apache.commons.lang.StringUtils.isBlank(msg.getDekBase64())) {
-            reply.setError(operr("dekBase64 is required"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 is required"));
             bus.reply(msg, reply);
             return;
         }
         if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
                 msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
-            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for ensure secret"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for ensure secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5552,19 +5555,20 @@ public class KVMHost extends HostBase implements Host {
         String pubKey = identity != null ? org.apache.commons.lang.StringUtils.trimToNull(identity.getPublicKey()) : null;
         Boolean verifyOk = identity != null ? identity.getVerified() : null;
         if (pubKey == null) {
-            reply.setError(operr("no public key for host, connect/reconnect did not sync key"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "no public key for host, connect/reconnect did not sync key"));
             bus.reply(msg, reply);
             return;
         }
         String storedFingerprint = StringUtils.trimToNull(identity.getFingerprint());
         String computed = HostKeyIdentityHelper.fingerprintFromPublicKey(pubKey);
         if (storedFingerprint == null || !StringUtils.equals(storedFingerprint, computed)) {
-            reply.setError(operr("host public key fingerprint mismatch, key may be corrupted or tampered"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "host public key fingerprint mismatch, key may be corrupted or tampered"));
             bus.reply(msg, reply);
             return;
         }
         if (!Boolean.TRUE.equals(verifyOk)) {
-            reply.setError(operr("host secret key verify not ok, not synced"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "host secret key verify not ok, not synced"));
             bus.reply(msg, reply);
             return;
         }
@@ -5572,18 +5576,18 @@ public class KVMHost extends HostBase implements Host {
         try {
             dekRaw = java.util.Base64.getDecoder().decode(msg.getDekBase64().trim());
         } catch (IllegalArgumentException e) {
-            reply.setError(operr("invalid dekBase64: %s", e.getMessage()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "invalid dekBase64: %s", e.getMessage()));
             bus.reply(msg, reply);
             return;
         }
         if (dekRaw == null || dekRaw.length == 0) {
-            reply.setError(operr("dekBase64 decoded to empty"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 decoded to empty"));
             bus.reply(msg, reply);
             return;
         }
 
         if (dekRaw.length > KVMConstant.MAX_DEK_BYTES) {
-            reply.setError(operr("dekBase64 decoded payload is too large"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 decoded payload is too large"));
             bus.reply(msg, reply);
             return;
         }
@@ -5592,18 +5596,19 @@ public class KVMHost extends HostBase implements Host {
         try {
             pubKeyBytes = java.util.Base64.getDecoder().decode(pubKey);
         } catch (IllegalArgumentException e) {
-            reply.setError(operr("invalid host public key in DB: %s", e.getMessage()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "invalid host public key in DB: %s", e.getMessage()));
             bus.reply(msg, reply);
             return;
         }
         if (pubKeyBytes == null || pubKeyBytes.length != 32) {
-            reply.setError(operr("host public key must be 32 bytes (X25519)"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "host public key must be 32 bytes (X25519)"));
             bus.reply(msg, reply);
             return;
         }
         java.util.List<HostSecretEnvelopeCryptoExtensionPoint> sealers = pluginRegistry.getExtensionList(HostSecretEnvelopeCryptoExtensionPoint.class);
         if (sealers == null || sealers.isEmpty()) {
-            reply.setError(operr("host secret envelope sealer not available (premium crypto module required)"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "host secret envelope sealer not available (premium crypto module required)"));
             bus.reply(msg, reply);
             return;
         }
@@ -5611,7 +5616,7 @@ public class KVMHost extends HostBase implements Host {
         try {
             envelope = sealers.get(0).seal(pubKeyBytes, dekRaw);
         } catch (Exception e) {
-            reply.setError(operr("HPKE seal failed: %s", e.getMessage()));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "HPKE seal failed: %s", e.getMessage()));
             bus.reply(msg, reply);
             return;
         }
@@ -5632,7 +5637,7 @@ public class KVMHost extends HostBase implements Host {
         restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err != null ? err : operr("ensure secret on agent failed"));
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "ensure secret on agent failed"));
                 bus.reply(msg, reply);
             }
 
@@ -5659,7 +5664,8 @@ public class KVMHost extends HostBase implements Host {
         SecretHostDeleteReply reply = new SecretHostDeleteReply();
         if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
                 StringUtils.isBlank(msg.getUsageInstance()) || msg.getKeyVersion() == null) {
-            reply.setError(operr("vmUuid, purpose, keyVersion and usageInstance are required for delete secret"));
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for delete secret"));
             bus.reply(msg, reply);
             return;
         }
@@ -5677,7 +5683,7 @@ public class KVMHost extends HostBase implements Host {
         restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDeleteResponse>(msg, reply) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err != null ? err : operr("delete secret on agent failed"));
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "delete secret on agent failed"));
                 bus.reply(msg, reply);
             }
 
@@ -5702,7 +5708,7 @@ public class KVMHost extends HostBase implements Host {
     private ErrorCode buildSecretAgentError(KVMAgentCommands.AgentResponse rsp, String defaultMessage) {
         String raw = rsp != null ? StringUtils.trimToNull(rsp.getError()) : null;
         if (raw == null) {
-            return operr(defaultMessage);
+            return operr(ORG_ZSTACK_KVM_10163, defaultMessage);
         }
         String stable = stableKeyAgentErrorCodeFromRawMessage(raw);
         if (stable != null) {
@@ -5711,7 +5717,7 @@ public class KVMHost extends HostBase implements Host {
             err.setDetails(raw);
             return err;
         }
-        return operr("%s: %s", defaultMessage, raw);
+        return operr(ORG_ZSTACK_KVM_10163, "%s: %s", defaultMessage, raw);
     }
 
     private static String stableKeyAgentErrorCodeFromRawMessage(String raw) {

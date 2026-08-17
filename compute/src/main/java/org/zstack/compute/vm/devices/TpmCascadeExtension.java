@@ -29,6 +29,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.header.tpm.TpmConstants.SERVICE_ID;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TpmCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(TpmCascadeExtension.class);
@@ -137,9 +138,10 @@ public class TpmCascadeExtension extends AbstractAsyncCascadeExtension {
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (!errorCodeList.isEmpty()) {
-                    completion.fail(operr("failed to delete Tpm from VM[uuid:%s]", tpmList.get(0).getVmInstanceUuid())
-                            .withCause(errorCodeList));
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                            "failed to delete Tpm from VM[uuid:%s]", tpmList.get(0).getVmInstanceUuid())
+                            .causedBy(errorCodeList.getCauses()));
                     return;
                 }
                 completion.success();

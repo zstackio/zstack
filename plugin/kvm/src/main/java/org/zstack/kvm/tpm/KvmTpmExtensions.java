@@ -80,6 +80,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.zstack.header.tpm.TpmConstants.SERVICE_ID;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
@@ -331,7 +332,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                             return;
                         }
 
-                        trigger.fail(errorCode != null ? errorCode : operr("get secret on host failed"));
+                        trigger.fail(errorCode != null ? errorCode : operr(ORG_ZSTACK_KVM_10163, "get secret on host failed"));
                     }
                 });
             }
@@ -359,7 +360,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
                         context.dekBase64 = result.getDekBase64();
                         context.keyVersion = result.getKeyVersion();
                         if (context.keyVersion == null) {
-                            trigger.fail(operr("missing keyVersion for tpm[uuid:%s] after getOrCreateKey", context.tpmUuid));
+                            trigger.fail(operr(ORG_ZSTACK_KVM_10163, "missing keyVersion for tpm[uuid:%s] after getOrCreateKey", context.tpmUuid));
                             return;
                         }
                         trigger.next();
@@ -382,7 +383,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 if (context.dekBase64 == null) {
-                    trigger.fail(operr("missing dekBase64 for tpm[uuid:%s] before define-secret-on-host", context.tpmUuid));
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10163, "missing dekBase64 for tpm[uuid:%s] before define-secret-on-host", context.tpmUuid));
                     return;
                 }
 
@@ -619,11 +620,11 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         ctx.setProviderUuid(resourceKeyBackend.findKeyProviderUuidByTpm(tpmUuid));
         ctx.setProviderName(resourceKeyBackend.findKeyProviderNameByTpm(tpmUuid));
         if (StringUtils.isBlank(ctx.getProviderUuid()) && StringUtils.isBlank(ctx.getProviderName())) {
-            throw new OperationFailureException(operr("missing TPM resource key binding for tpm[uuid:%s] before migrate", tpmUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163, "missing TPM resource key binding for tpm[uuid:%s] before migrate", tpmUuid));
         }
         ctx.setKeyVersion(resourceKeyBackend.findKeyVersionByTpm(tpmUuid));
         if (ctx.getKeyVersion() == null) {
-            throw new OperationFailureException(operr("cannot find keyVersion for tpm[uuid:%s] before migrate", tpmUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163, "cannot find keyVersion for tpm[uuid:%s] before migrate", tpmUuid));
         }
 
         GetOrCreateResourceKeyContext keyCtx = new GetOrCreateResourceKeyContext();
@@ -634,7 +635,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         keyCtx.setPurpose("vtpm");
         ResourceKeyResult result = resourceKeyManager.getKey(keyCtx);
         if (StringUtils.isBlank(result.getDekBase64())) {
-            throw new OperationFailureException(operr("missing DEK for tpm[uuid:%s] after getKey before migrate", tpmUuid));
+            throw new OperationFailureException(operr(ORG_ZSTACK_KVM_10163, "missing DEK for tpm[uuid:%s] after getKey before migrate", tpmUuid));
         }
         ctx.setResourceKeyResult(result);
     }
@@ -674,7 +675,7 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
     private void ensureDestinationHostVtpmSecretDefined(VtpmMigratePreAgentContext ctx, Completion completion) {
         ResourceKeyResult keyResult = ctx.getResourceKeyResult();
         if (keyResult == null || StringUtils.isBlank(keyResult.getDekBase64())) {
-            completion.fail(operr("missing DEK for tpm[uuid:%s] before ensure secret on destination", ctx.getTpmUuid()));
+            completion.fail(operr(ORG_ZSTACK_KVM_10163, "missing DEK for tpm[uuid:%s] before ensure secret on destination", ctx.getTpmUuid()));
             return;
         }
 

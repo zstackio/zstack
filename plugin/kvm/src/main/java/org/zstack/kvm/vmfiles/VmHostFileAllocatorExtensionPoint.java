@@ -2,7 +2,7 @@ package org.zstack.kvm.vmfiles;
 
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
-import org.zstack.header.allocator.HostCandidate;
+import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
@@ -11,9 +11,8 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.core.db.Q;
 
-import com.google.common.base.Objects;
-
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.i18n;
@@ -22,18 +21,18 @@ public class VmHostFileAllocatorExtensionPoint implements HostAllocatorFilterExt
     private static final CLogger logger = Utils.getLogger(VmHostFileAllocatorExtensionPoint.class);
 
     @Override
-    public void filter(List<HostCandidate> candidates, HostAllocatorSpec spec) {
+    public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
         if (spec == null) {
-            return;
+            return candidates;
         }
 
         String vmOperation = spec.getVmOperation();
         if (vmOperation == null || !VmInstanceConstant.VmOperation.Start.toString().equals(vmOperation)) {
-            return;
+            return candidates;
         }
 
         if (spec.getVmInstance() == null) {
-            return;
+            return candidates;
         }
 
         String vmUuid = spec.getVmInstance().getUuid();
@@ -46,18 +45,22 @@ public class VmHostFileAllocatorExtensionPoint implements HostAllocatorFilterExt
                 .notNull(VmHostFileVO_.changeDate)
                 .listValues();
         if (files.isEmpty()) {
-            return;
+            return candidates;
         }
 
         String types = files.stream()
                 .map(Enum::name)
                 .collect(Collectors.joining(","));
 
-        for (HostCandidate c : candidates) {
-            if (!Objects.equal(lastHostUuid, c.getUuid())) {
-                String reason = i18n("only allowed start on last host: unsynchronized %s VM host files exist", types);
-                c.markAsRejected(getClass(), reason);
-            }
-        }
+        logger.debug(String.format("only allow VM[uuid:%s] start on last host[uuid:%s], unsynchronized %s VM host files exist",
+                vmUuid, lastHostUuid, types));
+        return candidates.stream()
+                .filter(c -> Objects.equals(lastHostUuid, c.getUuid()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String filterErrorReason() {
+        return i18n("only allowed start on last host: unsynchronized VM host files exist");
     }
 }

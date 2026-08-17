@@ -6,7 +6,6 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.core.db.Q;
-import org.zstack.header.vm.APIConvertTemplatedVmInstanceToVmInstanceMsg;
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
@@ -28,16 +27,13 @@ public class VmHostFileAutoCompleter implements GlobalApiMessageInterceptor {
     @SuppressWarnings("rawtypes")
     public List<Class> getMessageClassToIntercept() {
         return list(
-                APIConvertTemplatedVmInstanceToVmInstanceMsg.class,
                 APICreateVmInstanceFromVolumeSnapshotGroupMsg.class
         );
     }
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APIConvertTemplatedVmInstanceToVmInstanceMsg) {
-            validate((APIConvertTemplatedVmInstanceToVmInstanceMsg) msg);
-        } else if (msg instanceof APICreateVmInstanceFromVolumeSnapshotGroupMsg) {
+        if (msg instanceof APICreateVmInstanceFromVolumeSnapshotGroupMsg) {
             validate((APICreateVmInstanceFromVolumeSnapshotGroupMsg) msg);
         }
         return msg;
@@ -46,22 +42,6 @@ public class VmHostFileAutoCompleter implements GlobalApiMessageInterceptor {
     @Override
     public InterceptorPosition getPosition() {
         return InterceptorPosition.FRONT;
-    }
-
-    private void validate(APIConvertTemplatedVmInstanceToVmInstanceMsg msg) {
-        if (msg.getResetTpm() != null) {
-            return;
-        }
-
-        // template VM is also a VM  ->  templateUuid is vmUuid
-        String templateUuid = msg.getTemplatedVmInstanceUuid();
-        if (templateUuid == null) {
-            return;
-        }
-
-        Boolean resolved = resourceConfigFacade.getResourceConfigValue(
-                VmGlobalConfig.RESET_TPM_AFTER_VM_CLONE, templateUuid, Boolean.class);
-        msg.setResetTpm(resolved);
     }
 
     private void validate(APICreateVmInstanceFromVolumeSnapshotGroupMsg msg) {

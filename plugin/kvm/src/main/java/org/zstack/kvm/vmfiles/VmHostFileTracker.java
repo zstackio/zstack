@@ -59,6 +59,7 @@ import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.transformToSet;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmHostFileTracker implements Component {
     private static final CLogger logger = Utils.getLogger(VmHostFileTracker.class);
@@ -522,7 +523,7 @@ public class VmHostFileTracker implements Component {
         new KvmCommandSender(hostUuid).send(cmd, KVMConstant.WRITE_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.WriteVmHostFileContentResponse rsp =
                     wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
-            return rsp.isSuccess() ? null : operr("failed to delete host file[path=%s] on host[uuid=%s]",
+            return rsp.isSuccess() ? null : operr(ORG_ZSTACK_KVM_10163, "failed to delete host file[path=%s] on host[uuid=%s]",
                     file.getPath(), hostUuid);
         }, future);
 

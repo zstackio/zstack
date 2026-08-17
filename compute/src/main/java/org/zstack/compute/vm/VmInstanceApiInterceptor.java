@@ -1094,8 +1094,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 }
 
                 if (msg.getRootDiskSize() <= 0) {
-                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10182, "Unexpected root disk settings")
-                            .withException("DiskAO[0].size is mandatory when image format is ISO"));
+                    throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10182,
+                            "Unexpected root disk settings: DiskAO[0].size is mandatory when image format is ISO"));
                 }
             }
         }

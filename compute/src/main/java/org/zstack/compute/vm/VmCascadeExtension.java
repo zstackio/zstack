@@ -464,7 +464,9 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                                 .collect(Collectors.toList());
                         dbf.removeByPrimaryKeys(cdRomUuids, VmCdRomVO.class);
 
-                        List<String> vmUuidList = transform(vminvs, p -> p.getInventory().getUuid());
+                        List<String> vmUuidList = vminvs.stream()
+                                .map(vm -> vm.getInventory().getUuid())
+                                .collect(Collectors.toList());
                         dbf.removeByPrimaryKeys(vmUuidList, VmInstanceVO.class);
                     }
 

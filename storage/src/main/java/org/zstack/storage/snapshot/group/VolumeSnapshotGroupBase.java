@@ -592,7 +592,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     }, concurrencyNum).run(new WhileDoneCompletion(msg) {
                         @Override
                         public void done(ErrorCodeList errorCodeList) {
-                            DebugUtils.Assert(!errorCodeList.hasError(), "no errorCode expected");
+                            DebugUtils.Assert(errorCodeList.getCauses().isEmpty(), "no errorCode expected");
                             trigger.next();
                         }
                     });
