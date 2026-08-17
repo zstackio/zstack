@@ -2152,7 +2152,7 @@ public class VolumeSnapshotTreeBase {
             }).run(new WhileDoneCompletion(null) {
                 @Override
                 public void done(ErrorCodeList errorCodeList) {
-                    if (errorCodeList.hasError()) {
+                    if (!errorCodeList.getCauses().isEmpty()) {
                         logger.warn("failed to delete some VmHostBackupFiles:\n" + String.join("\n",
                                 transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails)));
                     }

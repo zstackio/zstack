@@ -77,6 +77,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.vm.additions.VmHostFileSyncReason.PreMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PostMigration;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.BeforeHaStart;
 import static org.zstack.header.vm.additions.VmHostFileSyncReason.PrepareReRead;
@@ -86,6 +87,7 @@ import static org.zstack.header.vm.additions.VmHostFileSyncReason.SnapshotGroupO
 import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
 import static org.zstack.kvm.KVMConstant.*;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
@@ -283,13 +285,14 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         sender.send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
             KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
             return writeRsp.isSuccess() ? null :
-                    operr("failed to write file content response").causedBy(writeRsp.getError());
+                    operr(ORG_ZSTACK_KVM_10163, "failed to write file content response: %s", writeRsp.getError());
         }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
             @Override
             public void success(KvmResponseWrapper wrapper) {
                 KVMAgentCommands.WriteVmHostFileContentResponse writeRsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
                 if (!writeRsp.isSuccess()) {
-                    completion.fail(operr("failed to write file content response").causedBy(writeRsp.getError()));
+                    completion.fail(operr(ORG_ZSTACK_KVM_10163,
+                            "failed to write file content response: %s", writeRsp.getError()));
                     return;
                 }
                 completion.success();
@@ -472,7 +475,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                             .eq(VmHostBackupFileVO_.uuid, context.backupUuid)
                             .find();
                     if (context.vmBackupFileVO == null) {
-                        trigger.fail(operr("cannot find matched vm-host backup file[backupUuid:%s]",
+                        trigger.fail(operr(ORG_ZSTACK_KVM_10163, "cannot find matched vm-host backup file[backupUuid:%s]",
                                 context.backupUuid));
                         return;
                     }

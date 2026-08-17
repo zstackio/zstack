@@ -21,6 +21,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.header.tpm.TpmConstants.*;
 import static org.zstack.header.tpm.TpmErrors.*;
 import static org.zstack.header.vm.VmInstanceConstant.KVM_HYPERVISOR_TYPE;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TpmApiInterceptor implements ApiMessageInterceptor {
     private static final CLogger logger = Utils.getLogger(TpmApiInterceptor.class);
@@ -54,7 +55,8 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
                 .eq(TpmVO_.vmInstanceUuid, msg.getVmInstanceUuid())
                 .isExists();
         if (tpmExists) {
-            throw new ApiMessageInterceptionException(err(TPM_ALREADY_EXISTS, "tpm device already exists"));
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                    TPM_ALREADY_EXISTS, "tpm device already exists"));
         }
 
         boolean vmInSupportState = Q.New(VmInstanceVO.class)
@@ -62,7 +64,7 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
                 .in(VmInstanceVO_.state, SUPPORT_VM_STATES_FOR_TPM_OPERATION)
                 .isExists();
         if (!vmInSupportState) {
-            throw new ApiMessageInterceptionException(err(VM_STATE_ERROR,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009, VM_STATE_ERROR,
                     "The current VM state does not support adding TPM operations")
                     .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
         }
@@ -89,7 +91,7 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
                 .in(VmInstanceVO_.state, SUPPORT_VM_STATES_FOR_TPM_OPERATION)
                 .isExists();
         if (!vmInSupportState) {
-            throw new ApiMessageInterceptionException(err(VM_STATE_ERROR,
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009, VM_STATE_ERROR,
                     "The current VM state does not support removing TPM operations")
                     .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
         }
@@ -106,7 +108,8 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
                 .eq(VmInstanceVO_.uuid, vmInstanceUuid)
                 .findValue();
         if (!KVM_HYPERVISOR_TYPE.equals(hypervisorType)) {
-            throw new ApiMessageInterceptionException(err(SysErrors.NOT_SUPPORTED, "only allowed for kvm type VM instance"));
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                    SysErrors.NOT_SUPPORTED, "only allowed for kvm type VM instance"));
         }
     }
 }

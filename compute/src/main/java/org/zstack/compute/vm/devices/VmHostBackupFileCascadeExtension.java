@@ -35,6 +35,7 @@ import java.util.stream.Collectors;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.CollectionUtils.transformAndRemoveNull;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtension {
     private static final CLogger logger = Utils.getLogger(VmHostBackupFileCascadeExtension.class);
@@ -192,9 +193,10 @@ public class VmHostBackupFileCascadeExtension extends AbstractAsyncCascadeExtens
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (!errorCodeList.isEmpty()) {
-                    completion.fail(operr("failed to delete VmHostBackupFile from resource[uuid:%s]", voList.get(0).getResourceUuid())
-                            .withCause(errorCodeList));
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                            "failed to delete VmHostBackupFile from resource[uuid:%s]", voList.get(0).getResourceUuid())
+                            .causedBy(errorCodeList.getCauses()));
                     return;
                 }
                 completion.success();

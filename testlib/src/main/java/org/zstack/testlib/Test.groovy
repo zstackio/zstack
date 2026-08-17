@@ -27,6 +27,7 @@ import org.zstack.testlib.util.Retry
 import org.zstack.testlib.util.TestConfigUtils
 import org.zstack.utils.ShellUtils
 import org.zstack.utils.Utils
+import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.logging.CLogger
 import org.zstack.utils.path.PathUtil
@@ -1089,5 +1090,9 @@ mysqldump -u root zstack > ${failureLogDir.absolutePath}/dbdump.sql
 
     StartMode getCaseMode() {
         return StartMode.DEFAULT
+    }
+
+    static long gb(double gb) {
+        return SizeUnit.GIGABYTE.toByte(gb)
     }
 }

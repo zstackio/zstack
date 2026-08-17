@@ -3505,7 +3505,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     }).run(new WhileDoneCompletion(trigger) {
                         @Override
                         public void done(ErrorCodeList errorCodeList) {
-                            if (errorCodeList.hasError()) {
+                            if (!errorCodeList.getCauses().isEmpty()) {
                                 logger.warn("failed to delete some VmHostBackupFiles:\n" + String.join("\n",
                                         transform(errorCodeList.getCauses(), ErrorCode::getReadableDetails)));
                             }
@@ -3778,7 +3778,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 .param("uuid", msg.getVolumeUuid())
                 .execute();
         if (updated == 0) {
-            evt.setError(operr("volume[uuid:%s] no longer exists, cannot change its protocol", msg.getVolumeUuid()));
+            evt.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_10101,
+                    "volume[uuid:%s] no longer exists, cannot change its protocol", msg.getVolumeUuid()));
             bus.publish(evt);
             return;
         }

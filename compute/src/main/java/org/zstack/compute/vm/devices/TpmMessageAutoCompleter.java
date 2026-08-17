@@ -18,6 +18,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.header.tpm.TpmErrors.TPM_NOT_FOUND;
 import static org.zstack.utils.CollectionDSL.list;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
     @Override
@@ -44,7 +45,8 @@ public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
         String vmUuid = msg.getVmInstanceUuid();
 
         if (tpmUuid == null && vmUuid == null) {
-            throw new ApiMessageInterceptionException(argerr("tpmUuid and vmInstanceUuid cannot be null at the same time"));
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                    "tpmUuid and vmInstanceUuid cannot be null at the same time"));
         }
 
         if (tpmUuid != null && vmUuid != null) {
@@ -53,7 +55,8 @@ public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
                     .eq(TpmVO_.vmInstanceUuid, vmUuid)
                     .isExists();
             if (!exists) {
-                throw new ApiMessageInterceptionException(argerr("tpmUuid[%s] and vmInstanceUuid[%s] are not consistent", tpmUuid, vmUuid));
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                        "tpmUuid[%s] and vmInstanceUuid[%s] are not consistent", tpmUuid, vmUuid));
             }
         } else if (vmUuid != null) {
             tpmUuid = Q.New(TpmVO.class)
@@ -61,7 +64,8 @@ public class TpmMessageAutoCompleter implements GlobalApiMessageInterceptor {
                     .eq(TpmVO_.vmInstanceUuid, vmUuid)
                     .findValue();
             if (tpmUuid == null && (!(msg instanceof APIDeleteMessage))) {
-                throw new ApiMessageInterceptionException(err(TPM_NOT_FOUND, "tpm for vm[%s] does not exist", vmUuid));
+                throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009,
+                        TPM_NOT_FOUND, "tpm for vm[%s] does not exist", vmUuid));
             } else {
                 msg.setTpmUuid(tpmUuid);
             }

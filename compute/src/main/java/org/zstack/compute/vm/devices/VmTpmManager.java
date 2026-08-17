@@ -9,6 +9,7 @@ import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
+import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
@@ -31,6 +32,8 @@ public class VmTpmManager {
     private DatabaseFacade databaseFacade;
     @Autowired
     private ResourceConfigFacade resourceConfigFacade;
+    @Autowired
+    private AccountManager accountManager;
 
     public TpmVO persistTpmVO(String tpmUuid, String vmUuid) {
         if (tpmUuid == null) {
@@ -40,6 +43,7 @@ public class VmTpmManager {
         tpm.setUuid(tpmUuid);
         tpm.setResourceName("TPM-for-VM-" + vmUuid);
         tpm.setVmInstanceUuid(vmUuid);
+        tpm.setAccountUuid(accountManager.getOwnerAccountUuidOfResource(vmUuid));
         databaseFacade.persistAndRefresh(tpm);
 
         logger.debug("Persisted TpmVO for VM " + vmUuid + " with uuid=" + tpm.getUuid());
