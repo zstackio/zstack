@@ -20,7 +20,7 @@ public class LoginByThirdAuthAction extends AbstractAction {
                     String.format("error[code: %s, description: %s, details: %s]", error.code, error.description, error.details)
                 );
             }
-
+            
             return this;
         }
     }
@@ -56,9 +56,9 @@ public class LoginByThirdAuthAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.LoginByThirdAuthResult value = res.getResult(org.zstack.sdk.LoginByThirdAuthResult.class);
-        ret.value = value == null ? new org.zstack.sdk.LoginByThirdAuthResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.LoginByThirdAuthResult() : value; 
 
         return ret;
     }
