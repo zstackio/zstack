@@ -1,40 +1,45 @@
 package org.zstack.header.identity
 
 import java.sql.Timestamp
-import java.sql.Timestamp
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "会话清单"
 
 	field {
 		name "uuid"
 		desc "资源的UUID，唯一标示该资源"
 		type "String"
-		since "0.6"
+		since "5.4.10"
 	}
 	field {
 		name "accountUuid"
 		desc "账户UUID"
 		type "String"
-		since "0.6"
+		since "5.4.10"
 	}
 	field {
 		name "userUuid"
 		desc "用户UUID"
 		type "String"
-		since "0.6"
+		since "5.4.10"
+	}
+	field {
+		name "userType"
+		desc "用户类型"
+		type "String"
+		since "5.4.10"
 	}
 	field {
 		name "expiredDate"
 		desc ""
 		type "Timestamp"
-		since "0.6"
+		since "5.4.10"
 	}
 	field {
 		name "createDate"
 		desc "创建时间"
 		type "Timestamp"
-		since "0.6"
+		since "5.4.10"
 	}
 }
