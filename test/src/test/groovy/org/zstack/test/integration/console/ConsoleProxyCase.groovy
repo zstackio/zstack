@@ -11,10 +11,14 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.gc.GCStatus
 import org.zstack.header.console.ConsoleConstants
+import org.zstack.header.console.ConsoleHypervisorBackend
 import org.zstack.header.console.ConsoleProxyAgentVO
 import org.zstack.header.console.ConsoleProxyCommands
 import org.zstack.header.console.ConsoleProxyVO
 import org.zstack.header.console.ConsoleProxyVO_
+import org.zstack.header.console.ConsoleUrl
+import org.zstack.header.core.ReturnValueCompletion
+import org.zstack.header.host.HypervisorType
 import org.zstack.header.vm.KvmReportVmShutdownFromGuestEventMsg
 import org.zstack.sdk.ConsoleInventory
 import org.zstack.sdk.ConsoleProxyAgentInventory
@@ -26,6 +30,9 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
+
+import java.sql.Timestamp
 
 class ConsoleProxyCase extends SubCase {
     EnvSpec env
@@ -127,9 +134,151 @@ class ConsoleProxyCase extends SubCase {
     void test() {
         env.create {
             testSelectConsoleProxyByClientIpVersion()
+            testExpiredConsoleProxyUsesLegacyRenewal()
+            testExpiredConsoleProxyUsesExclusiveRenewal()
             testConsoleProxyCleanupOnGuestShutdown()
             testUpdateConsoleProxyAgent()
             testConsoleProxyGC()
+        }
+    }
+
+    void testExpiredConsoleProxyUsesLegacyRenewal() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        int deleteProxyCount = 0
+        int establishProxyCount = 0
+        ConsoleManagerImpl consoleMgr = bean(ConsoleManagerImpl.class)
+        def backendsField = ConsoleManagerImpl.class.getDeclaredField("consoleHypervisorBackends")
+        backendsField.accessible = true
+        Map<String, ConsoleHypervisorBackend> backends = backendsField.get(consoleMgr)
+        assert !backends.get(vm.hypervisorType).requireExclusiveConsoleSessionRenewal()
+
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            ConsoleProxyCommands.EstablishProxyCmd cmd = JSONObjectUtil.toObject(e.body, ConsoleProxyCommands.EstablishProxyCmd.class)
+            if (cmd.vmUuid == vm.uuid) {
+                establishProxyCount++
+            }
+            return rsp
+        }
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            ConsoleProxyCommands.DeleteProxyCmd cmd = JSONObjectUtil.toObject(e.body, ConsoleProxyCommands.DeleteProxyCmd.class)
+            if (cmd.vmUuid == vm.uuid) {
+                deleteProxyCount++
+            }
+            return rsp
+        }
+
+        ConsoleInventory console = requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        } as ConsoleInventory
+
+        ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                .find()
+        String firstToken = console.token
+        console = requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        } as ConsoleInventory
+        assert establishProxyCount == 2
+        assert deleteProxyCount == 0
+        assert console.token == firstToken
+
+        vo.expiredDate = new Timestamp(System.currentTimeMillis() - 1000)
+        dbf.update(vo)
+
+        console = requestConsoleAccess {
+            vmInstanceUuid = vm.uuid
+        } as ConsoleInventory
+
+        assert establishProxyCount == 3
+        assert deleteProxyCount == 0
+        assert console.token == "${env.session.uuid}_${vm.uuid}"
+    }
+
+    void testExpiredConsoleProxyUsesExclusiveRenewal() {
+        VmInstanceInventory vm = env.inventoryByName("vm")
+        ConsoleProxyVO current = Q.New(ConsoleProxyVO.class)
+                .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                .find()
+        dbf.remove(current)
+
+        ConsoleManagerImpl consoleMgr = bean(ConsoleManagerImpl.class)
+        def backendsField = ConsoleManagerImpl.class.getDeclaredField("consoleHypervisorBackends")
+        backendsField.accessible = true
+        Map<String, ConsoleHypervisorBackend> backends = backendsField.get(consoleMgr)
+        ConsoleHypervisorBackend originalBackend = backends.get(vm.hypervisorType)
+        backends.put(vm.hypervisorType, new ConsoleHypervisorBackend() {
+            @Override
+            HypervisorType getConsoleBackendHypervisorType() {
+                return originalBackend.getConsoleBackendHypervisorType()
+            }
+
+            @Override
+            void generateConsoleUrl(org.zstack.header.vm.VmInstanceInventory inventory, ReturnValueCompletion<ConsoleUrl> completion) {
+                originalBackend.generateConsoleUrl(inventory, completion)
+            }
+
+            @Override
+            boolean requireExclusiveConsoleSessionRenewal() {
+                return true
+            }
+        })
+
+        int deleteProxyCount = 0
+        int establishProxyCount = 0
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_ESTABLISH_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            ConsoleProxyCommands.EstablishProxyCmd cmd = JSONObjectUtil.toObject(e.body, ConsoleProxyCommands.EstablishProxyCmd.class)
+            if (cmd.vmUuid == vm.uuid) {
+                establishProxyCount++
+            }
+            return rsp
+        }
+        env.afterSimulator(ConsoleConstants.CONSOLE_PROXY_DELETE_PROXY_PATH) { rsp, HttpEntity<String> e ->
+            ConsoleProxyCommands.DeleteProxyCmd cmd = JSONObjectUtil.toObject(e.body, ConsoleProxyCommands.DeleteProxyCmd.class)
+            if (cmd.vmUuid == vm.uuid) {
+                deleteProxyCount++
+            }
+            return rsp
+        }
+
+        try {
+            ConsoleInventory console = requestConsoleAccess {
+                vmInstanceUuid = vm.uuid
+            } as ConsoleInventory
+            String firstToken = console.token
+            String tokenPrefix = "${env.session.uuid}_${vm.uuid}_"
+            assert firstToken.startsWith(tokenPrefix)
+            assert firstToken.substring(tokenPrefix.length()) ==~ /[0-9a-f]{32}/
+
+            console = requestConsoleAccess {
+                vmInstanceUuid = vm.uuid
+            } as ConsoleInventory
+            assert establishProxyCount == 2
+            assert deleteProxyCount == 0
+            assert console.token == firstToken
+
+            ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                    .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                    .find()
+            vo.expiredDate = new Timestamp(System.currentTimeMillis() - 1000)
+            dbf.update(vo)
+
+            console = requestConsoleAccess {
+                vmInstanceUuid = vm.uuid
+            } as ConsoleInventory
+
+            assert establishProxyCount == 3
+            assert deleteProxyCount == 1
+            assert console.token.startsWith(tokenPrefix)
+            assert console.token.substring(tokenPrefix.length()) ==~ /[0-9a-f]{32}/
+            assert console.token != firstToken
+        } finally {
+            backends.put(vm.hypervisorType, originalBackend)
+            ConsoleProxyVO vo = Q.New(ConsoleProxyVO.class)
+                    .eq(ConsoleProxyVO_.vmInstanceUuid, vm.uuid)
+                    .find()
+            if (vo != null) {
+                dbf.remove(vo)
+            }
         }
     }
 
