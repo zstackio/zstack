@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.keyprovider.nkp.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CloneVmInstanceAction extends AbstractAction {
+public class CreateNkpAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CloneVmInstanceResult value;
+        public org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,23 @@ public class CloneVmInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    @Param(required = false, validValues = {"HKDF-SHA256"}, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String kdf = "HKDF-SHA256";
 
-    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
+    @Param(required = false, validValues = {"providerName"}, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String saltPolicy = "providerName";
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicParams;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List names;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForRootVolume;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForDataVolume;
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.Boolean full = false;
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List rootVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean resetTpm;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -93,8 +75,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CloneVmInstanceResult value = res.getResult(org.zstack.sdk.CloneVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CloneVmInstanceResult() : value; 
+        org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult value = res.getResult(org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult.class);
+        ret.value = value == null ? new org.zstack.sdk.keyprovider.nkp.api.CreateNkpResult() : value; 
 
         return ret;
     }
@@ -123,11 +105,11 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/key-providers/nkp";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cloneVmInstance";
+        info.parameterName = "params";
         return info;
     }
 

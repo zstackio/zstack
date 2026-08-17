@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.keyprovider.kms.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CloneVmInstanceAction extends AbstractAction {
+public class CreateKmsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CloneVmInstanceResult value;
+        public org.zstack.sdk.keyprovider.kms.api.CreateKmsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,32 @@ public class CloneVmInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String endpoint;
 
-    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, numberRange = {1L,65535L}, noTrim = false)
+    public java.lang.Integer port;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicParams;
+    @Param(required = false, validValues = {"1.0","1.1","1.2","1.3","1.4","2.0","2.1"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String kmipVersion = "1.2";
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List names;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String username;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForRootVolume;
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String password;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForDataVolume;
+    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String name;
+
+    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String description;
 
     @Param(required = false)
-    public java.lang.Boolean full = false;
+    public java.lang.String resourceUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List rootVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean resetTpm;
+    public java.util.List tagUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -93,8 +84,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CloneVmInstanceResult value = res.getResult(org.zstack.sdk.CloneVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CloneVmInstanceResult() : value; 
+        org.zstack.sdk.keyprovider.kms.api.CreateKmsResult value = res.getResult(org.zstack.sdk.keyprovider.kms.api.CreateKmsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.keyprovider.kms.api.CreateKmsResult() : value; 
 
         return ret;
     }
@@ -123,11 +114,11 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.httpMethod = "POST";
+        info.path = "/key-providers/kms";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cloneVmInstance";
+        info.parameterName = "params";
         return info;
     }
 

@@ -1,10 +1,10 @@
-package org.zstack.sdk;
+package org.zstack.sdk.keyprovider.api;
 
 import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CloneVmInstanceAction extends AbstractAction {
+public class RekeyKeyProviderRefsAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CloneVmInstanceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CloneVmInstanceResult value;
+        public org.zstack.sdk.keyprovider.api.RekeyKeyProviderRefsResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,41 +25,20 @@ public class CloneVmInstanceAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vmInstanceUuid;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List refIds;
 
-    @Param(required = false, validValues = {"InstantStart","JustCreate","CreateStopped"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String strategy = "InstantStart";
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List resourceUuids;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List vmNicParams;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String resourceType;
 
-    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List names;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForRootVolume;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String providerUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String primaryStorageUuidForDataVolume;
-
-    @Param(required = false)
-    public java.lang.Boolean full = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List rootVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List dataVolumeSystemTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String clusterUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String hostUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean resetTpm;
+    public boolean rekeyAll = false;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -93,8 +72,8 @@ public class CloneVmInstanceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CloneVmInstanceResult value = res.getResult(org.zstack.sdk.CloneVmInstanceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CloneVmInstanceResult() : value; 
+        org.zstack.sdk.keyprovider.api.RekeyKeyProviderRefsResult value = res.getResult(org.zstack.sdk.keyprovider.api.RekeyKeyProviderRefsResult.class);
+        ret.value = value == null ? new org.zstack.sdk.keyprovider.api.RekeyKeyProviderRefsResult() : value; 
 
         return ret;
     }
@@ -124,10 +103,10 @@ public class CloneVmInstanceAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/vm-instances/{vmInstanceUuid}/actions";
+        info.path = "/key-providers/{providerUuid}/rekey";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "cloneVmInstance";
+        info.parameterName = "rekeyKeyProviderRefs";
         return info;
     }
 
