@@ -15266,10 +15266,35 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10165 = "ORG_ZSTACK_AI_10165";
     public static final String ORG_ZSTACK_AI_10166 = "ORG_ZSTACK_AI_10166";
     public static final String ORG_ZSTACK_AI_10167 = "ORG_ZSTACK_AI_10167";
-
+    public static final String ORG_ZSTACK_AI_10168 = "ORG_ZSTACK_AI_10168";
+    public static final String ORG_ZSTACK_AI_10169 = "ORG_ZSTACK_AI_10169";
     public static final String ORG_ZSTACK_AI_10170 = "ORG_ZSTACK_AI_10170";
     public static final String ORG_ZSTACK_AI_10171 = "ORG_ZSTACK_AI_10171";
     public static final String ORG_ZSTACK_AI_10172 = "ORG_ZSTACK_AI_10172";
+    public static final String ORG_ZSTACK_AI_10173 = "ORG_ZSTACK_AI_10173";
+    public static final String ORG_ZSTACK_AI_10174 = "ORG_ZSTACK_AI_10174";
+    public static final String ORG_ZSTACK_AI_10175 = "ORG_ZSTACK_AI_10175";
+    public static final String ORG_ZSTACK_AI_10176 = "ORG_ZSTACK_AI_10176";
+    public static final String ORG_ZSTACK_AI_10177 = "ORG_ZSTACK_AI_10177";
+    public static final String ORG_ZSTACK_AI_10178 = "ORG_ZSTACK_AI_10178";
+    public static final String ORG_ZSTACK_AI_10179 = "ORG_ZSTACK_AI_10179";
+    public static final String ORG_ZSTACK_AI_10180 = "ORG_ZSTACK_AI_10180";
+    public static final String ORG_ZSTACK_AI_10181 = "ORG_ZSTACK_AI_10181";
+    public static final String ORG_ZSTACK_AI_10182 = "ORG_ZSTACK_AI_10182";
+    public static final String ORG_ZSTACK_AI_10183 = "ORG_ZSTACK_AI_10183";
+    public static final String ORG_ZSTACK_AI_10184 = "ORG_ZSTACK_AI_10184";
+    public static final String ORG_ZSTACK_AI_10185 = "ORG_ZSTACK_AI_10185";
+    public static final String ORG_ZSTACK_AI_10186 = "ORG_ZSTACK_AI_10186";
+    public static final String ORG_ZSTACK_AI_10187 = "ORG_ZSTACK_AI_10187";
+    public static final String ORG_ZSTACK_AI_10188 = "ORG_ZSTACK_AI_10188";
+    public static final String ORG_ZSTACK_AI_10189 = "ORG_ZSTACK_AI_10189";
+    public static final String ORG_ZSTACK_AI_10190 = "ORG_ZSTACK_AI_10190";
+    public static final String ORG_ZSTACK_AI_10191 = "ORG_ZSTACK_AI_10191";
+    public static final String ORG_ZSTACK_AI_10192 = "ORG_ZSTACK_AI_10192";
+    public static final String ORG_ZSTACK_AI_10193 = "ORG_ZSTACK_AI_10193";
+    public static final String ORG_ZSTACK_AI_10194 = "ORG_ZSTACK_AI_10194";
+    public static final String ORG_ZSTACK_AI_10195 = "ORG_ZSTACK_AI_10195";
+    public static final String ORG_ZSTACK_AI_10196 = "ORG_ZSTACK_AI_10196";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 

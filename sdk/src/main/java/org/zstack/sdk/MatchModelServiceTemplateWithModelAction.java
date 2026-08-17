@@ -76,7 +76,7 @@ public class MatchModelServiceTemplateWithModelAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map startupParameters;
 
-    @Param(required = true, validValues = {"VirtualMachine","Container"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"VirtualMachine","Container","BareMetal2"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
@@ -114,6 +114,18 @@ public class MatchModelServiceTemplateWithModelAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
+
+    @Param(required = false, validValues = {"Auto","Pinned"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String placementMode;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String targetUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String gpuSpecUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
+    public java.lang.Integer gpuCount;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

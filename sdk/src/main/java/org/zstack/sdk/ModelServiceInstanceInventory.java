@@ -101,6 +101,118 @@ public class ModelServiceInstanceInventory  {
         return this.vmInstanceUuid;
     }
 
+    public java.lang.String placementMode;
+    public void setPlacementMode(java.lang.String placementMode) {
+        this.placementMode = placementMode;
+    }
+    public java.lang.String getPlacementMode() {
+        return this.placementMode;
+    }
+
+    public java.lang.String targetUuid;
+    public void setTargetUuid(java.lang.String targetUuid) {
+        this.targetUuid = targetUuid;
+    }
+    public java.lang.String getTargetUuid() {
+        return this.targetUuid;
+    }
+
+    public java.lang.String gpuSpecUuid;
+    public void setGpuSpecUuid(java.lang.String gpuSpecUuid) {
+        this.gpuSpecUuid = gpuSpecUuid;
+    }
+    public java.lang.String getGpuSpecUuid() {
+        return this.gpuSpecUuid;
+    }
+
+    public java.lang.Integer gpuCount;
+    public void setGpuCount(java.lang.Integer gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+    public java.lang.Integer getGpuCount() {
+        return this.gpuCount;
+    }
+
+    public java.lang.Integer runtimeCpuNum;
+    public void setRuntimeCpuNum(java.lang.Integer runtimeCpuNum) {
+        this.runtimeCpuNum = runtimeCpuNum;
+    }
+    public java.lang.Integer getRuntimeCpuNum() {
+        return this.runtimeCpuNum;
+    }
+
+    public java.lang.Long runtimeMemorySize;
+    public void setRuntimeMemorySize(java.lang.Long runtimeMemorySize) {
+        this.runtimeMemorySize = runtimeMemorySize;
+    }
+    public java.lang.Long getRuntimeMemorySize() {
+        return this.runtimeMemorySize;
+    }
+
+    public java.lang.String allocationUuid;
+    public void setAllocationUuid(java.lang.String allocationUuid) {
+        this.allocationUuid = allocationUuid;
+    }
+    public java.lang.String getAllocationUuid() {
+        return this.allocationUuid;
+    }
+
+    public java.lang.Long allocationGeneration;
+    public void setAllocationGeneration(java.lang.Long allocationGeneration) {
+        this.allocationGeneration = allocationGeneration;
+    }
+    public java.lang.Long getAllocationGeneration() {
+        return this.allocationGeneration;
+    }
+
+    public java.lang.String gpuBindings;
+    public void setGpuBindings(java.lang.String gpuBindings) {
+        this.gpuBindings = gpuBindings;
+    }
+    public java.lang.String getGpuBindings() {
+        return this.gpuBindings;
+    }
+
+    public java.lang.String portBindings;
+    public void setPortBindings(java.lang.String portBindings) {
+        this.portBindings = portBindings;
+    }
+    public java.lang.String getPortBindings() {
+        return this.portBindings;
+    }
+
+    public java.lang.String desiredState;
+    public void setDesiredState(java.lang.String desiredState) {
+        this.desiredState = desiredState;
+    }
+    public java.lang.String getDesiredState() {
+        return this.desiredState;
+    }
+
+    public java.lang.String runtimePhase;
+    public void setRuntimePhase(java.lang.String runtimePhase) {
+        this.runtimePhase = runtimePhase;
+    }
+    public java.lang.String getRuntimePhase() {
+        return this.runtimePhase;
+    }
+
+    public java.lang.String healthStatus;
+    public void setHealthStatus(java.lang.String healthStatus) {
+        this.healthStatus = healthStatus;
+    }
+    public java.lang.String getHealthStatus() {
+        return this.healthStatus;
+    }
+
+    public java.lang.String runtimeConditions;
+    public void setRuntimeConditions(java.lang.String runtimeConditions) {
+        this.runtimeConditions = runtimeConditions;
+    }
+    public java.lang.String getRuntimeConditions() {
+        return this.runtimeConditions;
+    }
+
     public java.lang.Integer nodeRank;
     public void setNodeRank(java.lang.Integer nodeRank) {
         this.nodeRank = nodeRank;
