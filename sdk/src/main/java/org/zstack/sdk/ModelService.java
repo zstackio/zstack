@@ -228,6 +228,38 @@ public class ModelService  {
         return this.projectUuid;
     }
 
+    public java.lang.String placementMode;
+    public void setPlacementMode(java.lang.String placementMode) {
+        this.placementMode = placementMode;
+    }
+    public java.lang.String getPlacementMode() {
+        return this.placementMode;
+    }
+
+    public java.lang.String targetUuid;
+    public void setTargetUuid(java.lang.String targetUuid) {
+        this.targetUuid = targetUuid;
+    }
+    public java.lang.String getTargetUuid() {
+        return this.targetUuid;
+    }
+
+    public java.lang.String gpuSpecUuid;
+    public void setGpuSpecUuid(java.lang.String gpuSpecUuid) {
+        this.gpuSpecUuid = gpuSpecUuid;
+    }
+    public java.lang.String getGpuSpecUuid() {
+        return this.gpuSpecUuid;
+    }
+
+    public java.lang.Integer gpuCount;
+    public void setGpuCount(java.lang.Integer gpuCount) {
+        this.gpuCount = gpuCount;
+    }
+    public java.lang.Integer getGpuCount() {
+        return this.gpuCount;
+    }
+
     public SessionInventory session;
     public void setSession(SessionInventory session) {
         this.session = session;

@@ -415,3 +415,40 @@ CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupV
                     'businessGatewayUuid', 'AIBusinessGatewayVO', 'uuid', 'SET NULL');
 CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupVODeveloperAccessGateway',
                     'developerAccessGatewayUuid', 'AIBusinessGatewayVO', 'uuid', 'SET NULL');
+
+-- BareMetal2 inference allocation / GPU runtime inventory
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'placementMode', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'targetUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'gpuSpecUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'gpuCount', 'INT(10)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimeCpuNum', 'INT(10)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimeMemorySize', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimeUid', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimeGid', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'topologyRequirement', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'distributionStrategy', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'allocationUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'allocationGeneration', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'gpuBindings', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'portBindings', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'desiredState', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimePhase', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'healthStatus', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ModelServiceInstanceVO', 'runtimeConditions', 'MEDIUMTEXT', 1, NULL);
+CALL CREATE_INDEX('ModelServiceInstanceVO', 'idx_ModelServiceInstanceVO_targetUuid', 'targetUuid');
+CALL CREATE_INDEX('ModelServiceInstanceVO', 'idx_ModelServiceInstanceVO_allocationUuid', 'allocationUuid');
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'hardwareId', 'VARCHAR(255)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'inventoryGeneration', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'visibility', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'driverReady', 'TINYINT(1)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'driverVersion', 'VARCHAR(255)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'authoritativeIdentity', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'dedicatedDeviceNodes', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'sharedDeviceNodes', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'numaNode', 'INT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'topology', 'MEDIUMTEXT', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'topologyStatus', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'topologySource', 'VARCHAR(255)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'topologyObservedAt', 'VARCHAR(64)', 1, NULL);
+CALL ADD_COLUMN('BareMetal2ChassisGpuDeviceVO', 'topologyValidUntil', 'VARCHAR(64)', 1, NULL);
+CALL CREATE_INDEX('BareMetal2ChassisGpuDeviceVO', 'idx_Bm2ChassisGpuDevice_hardwareId', 'hardwareId');
