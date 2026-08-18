@@ -40,9 +40,9 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.network.NetworkConfigLocalContinuation;
-import org.zstack.header.network.NetworkConfigMutation;
-import org.zstack.header.network.NetworkConfigMutationExtensionPoint;
+import org.zstack.header.network.LocalNetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChangeCoordinator;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -137,6 +137,12 @@ public class L2NoVlanNetwork implements L2Network {
 
     private void handle(UpdateL2NetworkMetadataMsg msg) {
         MessageReply reply = new MessageReply();
+        NetworkCreateContext context = msg.getContext();
+        if (context == null || !context.isProjection() || context.getExternalRef() == null) {
+            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L2_10030,
+                    "L2 network metadata projection requires an external network reference"));
+            return;
+        }
         if (Objects.equals(self.getName(), msg.getName())
                 && Objects.equals(self.getDescription(), msg.getDescription())) {
             bus.reply(msg, reply);
@@ -146,17 +152,17 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("update-l2-network-%s-metadata", msg.getL2NetworkUuid());
+                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
             public void run(SyncTaskChain chain) {
-                NetworkConfigMutation mutation = NetworkConfigMutation.metadata(
-                        msg.getL2NetworkUuid(), msg.getContext().getOrigin(),
-                        msg.getContext().getOperationUuid(),
-                        msg.getContext().getExternalRef().getAccountUuid(),
+                NetworkConfigChange change = NetworkConfigChange.updateL2Metadata(
+                        msg.getL2NetworkUuid(), context.getOrigin(),
+                        context.getOperationUuid(),
+                        context.getExternalRef().getAccountUuid(),
                         msg.getName(), msg.getDescription());
-                mutateNetworkConfig(mutation, localCompletion -> {
+                coordinateNetworkConfigChange(change, localCompletion -> {
                     String originalName = self.getName();
                     String originalDescription = self.getDescription();
                     try {
@@ -187,7 +193,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("update-l2-network-%s-metadata", msg.getL2NetworkUuid());
             }
         });
     }
@@ -523,7 +529,7 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
+                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
@@ -531,11 +537,11 @@ public class L2NoVlanNetwork implements L2Network {
                 L2NetworkInventory target = getSelfInventory();
                 target.setType(msg.getType());
                 target.setVirtualNetworkId(msg.getVlan() == null ? 0 : msg.getVlan());
-                NetworkConfigMutation mutation = NetworkConfigMutation.encapsulation(
+                NetworkConfigChange change = NetworkConfigChange.changeL2Encapsulation(
                         msg.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                         msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                         target.getType(), target.getVirtualNetworkId());
-                mutateNetworkConfig(mutation, localCompletion -> {
+                coordinateNetworkConfigChange(change, localCompletion -> {
                     try {
                         extpEmitter.beforeUpdate(target);
                     } catch (OperationFailureException e) {
@@ -577,29 +583,33 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
             }
         });
     }
 
-    protected void mutateNetworkConfig(NetworkConfigMutation mutation,
-                                       NetworkConfigLocalContinuation continuation,
+    protected void coordinateNetworkConfigChange(NetworkConfigChange change,
+                                                 LocalNetworkConfigChange localChange,
                                        Completion completion) {
-        List<NetworkConfigMutationExtensionPoint> providers = pluginRgty
-                .getExtensionList(NetworkConfigMutationExtensionPoint.class).stream()
-                .filter(provider -> provider.supports(mutation))
+        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
+                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .filter(coordinator -> coordinator.isApplicable(change))
                 .collect(Collectors.toList());
-        if (providers.isEmpty()) {
-            continuation.run(completion);
+        if (coordinators.isEmpty()) {
+            localChange.apply(completion);
             return;
         }
-        if (providers.size() != 1) {
+        if (coordinators.size() != 1) {
             completion.fail(errf.stringToInternalError(String.format(
                     "network mutation[%s] matched[%s] providers",
-                    mutation.getKind(), providers.size())));
+                    change.getKind(), coordinators.size())));
             return;
         }
-        providers.get(0).mutate(mutation, continuation, completion);
+        coordinators.get(0).coordinate(change, localChange, completion);
+    }
+
+    protected String getL2NetworkOperationSyncSignature(String l2NetworkUuid) {
+        return String.format("l2-network-%s", l2NetworkUuid);
     }
 
     private void handle(APIUpdateL2NetworkMsg msg) {
@@ -613,16 +623,16 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("update-l2-network-%s-metadata", msg.getL2NetworkUuid());
+                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
             public void run(SyncTaskChain chain) {
-                NetworkConfigMutation mutation = NetworkConfigMutation.metadata(
+                NetworkConfigChange change = NetworkConfigChange.updateL2Metadata(
                         msg.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                         msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                         msg.getName(), msg.getDescription());
-                mutateNetworkConfig(mutation, localCompletion -> {
+                coordinateNetworkConfigChange(change, localCompletion -> {
                     String originalName = self.getName();
                     String originalDescription = self.getDescription();
                     try {
@@ -658,7 +668,7 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("update-l2-network-%s-metadata", msg.getL2NetworkUuid());
             }
         });
     }
@@ -996,7 +1006,7 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("attach-l2-network-%s-to-cluster-%s", msg.getL2NetworkUuid(), msg.getClusterUuid());
+                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
@@ -1021,7 +1031,8 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("attach-l2-network-%s-to-cluster-%s",
+                        msg.getL2NetworkUuid(), msg.getClusterUuid());
             }
         });
     }
@@ -1097,7 +1108,7 @@ public class L2NoVlanNetwork implements L2Network {
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(err(ORG_ZSTACK_NETWORK_L2_10005, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
+                evt.setError(err(ORG_ZSTACK_NETWORK_L2_10032, SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
         }).start();

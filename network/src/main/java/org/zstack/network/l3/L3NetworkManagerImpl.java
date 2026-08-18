@@ -21,6 +21,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.HostVO;
@@ -33,9 +34,9 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.NetworkDeleteGuardExtensionPoint;
-import org.zstack.header.network.NetworkConfigLocalContinuation;
-import org.zstack.header.network.NetworkConfigMutation;
-import org.zstack.header.network.NetworkConfigMutationExtensionPoint;
+import org.zstack.header.network.LocalNetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChangeCoordinator;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
@@ -600,13 +601,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             if (msg.getResourceUuid() == null) {
                 msg.setResourceUuid(Platform.getUuid());
             }
-            NetworkConfigMutation mutation = NetworkConfigMutation.l3Create(
+            NetworkConfigChange change = NetworkConfigChange.createL3(
                     msg.getL2NetworkUuid(), context.getOrigin(), msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     msg.getResourceUuid(), msg.getType(), msg.getSystemTags());
             java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> created =
                     new java.util.concurrent.atomic.AtomicReference<>();
-            if (mutateNetworkConfig(mutation,
+            if (coordinateNetworkConfigChange(change,
                     localCompletion -> handle(msg,
                             NetworkCreateContext.cloudCommit(msg.getId()),
                             new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
@@ -733,24 +734,24 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     }
 
-    private boolean mutateNetworkConfig(NetworkConfigMutation mutation,
-                                        NetworkConfigLocalContinuation continuation,
+    private boolean coordinateNetworkConfigChange(NetworkConfigChange change,
+                                        LocalNetworkConfigChange localChange,
                                         java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result,
                                         ReturnValueCompletion<L3NetworkInventory> completion) {
-        List<NetworkConfigMutationExtensionPoint> providers = pluginRgty
-                .getExtensionList(NetworkConfigMutationExtensionPoint.class).stream()
-                .filter(provider -> provider.supports(mutation))
+        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
+                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .filter(coordinator -> coordinator.isApplicable(change))
                 .collect(java.util.stream.Collectors.toList());
-        if (providers.isEmpty()) {
+        if (coordinators.isEmpty()) {
             return false;
         }
-        if (providers.size() != 1) {
+        if (coordinators.size() != 1) {
             completion.fail(errf.stringToInternalError(String.format(
                     "network mutation[%s] matched[%s] providers",
-                    mutation.getKind(), providers.size())));
+                    change.getKind(), coordinators.size())));
             return true;
         }
-        providers.get(0).mutate(mutation, continuation, new Completion(completion) {
+        coordinators.get(0).coordinate(change, localChange, new Completion(completion) {
             @Override
             public void success() {
                 completion.success(result.get());
@@ -949,12 +950,6 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
-        return reserveIp(ipRange, ip, allowDuplicatedAddress, null, null);
-    }
-
-    @Override
-    public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress,
-                                     String operationUuid, String operationStep) {
         return new SQLBatchWithReturn<UsedIpInventory>() {
             @Override
             protected UsedIpInventory scripts() {
@@ -962,7 +957,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         pluginRgty.getExtensionList(NetworkDeleteGuardExtensionPoint.class)) {
                     ErrorCode errorCode = extension.checkL3NetworkWithLock(ipRange.getL3NetworkUuid());
                     if (errorCode != null) {
-                        throw new CloudRuntimeException(errorCode.getDetails());
+                        throw new OperationFailureException(errorCode);
                     }
                 }
                 if (NetworkUtils.isIpv4Address(ip)) {

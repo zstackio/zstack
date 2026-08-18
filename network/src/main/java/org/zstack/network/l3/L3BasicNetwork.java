@@ -1,6 +1,8 @@
 package org.zstack.network.l3;
 
 import com.googlecode.ipv6.IPv6Address;
+import org.apache.commons.net.util.SubnetUtils;
+import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -42,9 +44,9 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.NetworkCreateContext;
-import org.zstack.header.network.NetworkConfigLocalContinuation;
-import org.zstack.header.network.NetworkConfigMutation;
-import org.zstack.header.network.NetworkConfigMutationExtensionPoint;
+import org.zstack.header.network.LocalNetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChange;
+import org.zstack.header.network.NetworkConfigChangeCoordinator;
 import org.zstack.header.network.l2.NetworkOperationOrigin;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
@@ -299,23 +301,23 @@ public class L3BasicNetwork implements L3Network {
                     .eq(IpRangeVO_.l3NetworkUuid, first.getL3NetworkUuid())
                     .eq(IpRangeVO_.ipVersion, first.getIpVersion())
                     .list();
-            List<NetworkConfigMutation.IpRangeTarget> ranges = existingRanges.stream()
-                    .map(existing -> new NetworkConfigMutation.IpRangeTarget(
+            List<NetworkConfigChange.IpRange> ranges = existingRanges.stream()
+                    .map(existing -> new NetworkConfigChange.IpRange(
                             existing.getUuid(), existing.getStartIp(), existing.getEndIp()))
                     .collect(Collectors.toList());
-            iprs.forEach(ipr -> ranges.add(new NetworkConfigMutation.IpRangeTarget(
+            iprs.forEach(ipr -> ranges.add(new NetworkConfigChange.IpRange(
                     ipr.getUuid(), ipr.getStartIp(), ipr.getEndIp())));
             int prefix = first.getIpVersion() == IPv6Constants.IPv6
                     ? first.getPrefixLen()
                     : NetworkUtils.getPrefixLengthFromNetmask(first.getNetmask());
-            NetworkConfigMutation mutation = NetworkConfigMutation.ipam(
+            NetworkConfigChange change = NetworkConfigChange.replaceIpRangeConfiguration(
                     self.getL2NetworkUuid(), context.getOrigin(), msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     first.getL3NetworkUuid(),
                     first.getIpVersion(), first.getGateway() + "/" + prefix, ranges);
             java.util.concurrent.atomic.AtomicReference<List<IpRangeInventory>> created =
                     new java.util.concurrent.atomic.AtomicReference<>();
-            if (mutateNetworkConfig(mutation,
+            if (coordinateNetworkConfigChange(change,
                     localCompletion -> addIpRanges(iprs, msg,
                             NetworkCreateContext.cloudCommit(msg.getId()),
                             new ReturnValueCompletion<List<IpRangeInventory>>(localCompletion) {
@@ -353,24 +355,24 @@ public class L3BasicNetwork implements L3Network {
         });
     }
 
-    private <T> boolean mutateNetworkConfig(NetworkConfigMutation mutation,
-                                            NetworkConfigLocalContinuation continuation,
+    private <T> boolean coordinateNetworkConfigChange(NetworkConfigChange change,
+                                            LocalNetworkConfigChange localChange,
                                             java.util.concurrent.atomic.AtomicReference<T> result,
                                             ReturnValueCompletion<T> completion) {
-        List<NetworkConfigMutationExtensionPoint> providers = pluginRgty
-                .getExtensionList(NetworkConfigMutationExtensionPoint.class).stream()
-                .filter(provider -> provider.supports(mutation))
+        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
+                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .filter(coordinator -> coordinator.isApplicable(change))
                 .collect(Collectors.toList());
-        if (providers.isEmpty()) {
+        if (coordinators.isEmpty()) {
             return false;
         }
-        if (providers.size() != 1) {
+        if (coordinators.size() != 1) {
             completion.fail(errf.stringToInternalError(String.format(
                     "network mutation[%s] matched[%s] providers",
-                    mutation.getKind(), providers.size())));
+                    change.getKind(), coordinators.size())));
             return true;
         }
-        providers.get(0).mutate(mutation, continuation, new Completion(completion) {
+        coordinators.get(0).coordinate(change, localChange, new Completion(completion) {
             @Override
             public void success() {
                 completion.success(result.get());
@@ -574,14 +576,62 @@ public class L3BasicNetwork implements L3Network {
                 }
 
                 boolean valid;
+                int prefixLen = 0;
+                String networkCidr = null;
                 try {
-                    valid = NetworkUtils.isInRange(msg.getStartIp(), msg.getStartIp(), msg.getEndIp());
+                    if (range.getIpVersion() == IPv6Constants.IPv6) {
+                        prefixLen = IPv6NetworkUtils.getPrefixLengthFromNetmask(msg.getNetmask());
+                        valid = IPv6NetworkUtils.isIpv6UnicastAddress(msg.getStartIp())
+                                && IPv6NetworkUtils.isIpv6UnicastAddress(msg.getEndIp())
+                                && IPv6NetworkUtils.isIpv6UnicastAddress(msg.getGateway())
+                                && IPv6NetworkUtils.isIpv6Address(msg.getNetmask())
+                                && prefixLen >= IPv6Constants.IPV6_PREFIX_LEN_MIN
+                                && prefixLen <= IPv6Constants.IPV6_PREFIX_LEN_MAX
+                                && IPv6NetworkUtils.isValidUnicastIpv6Range(msg.getStartIp(),
+                                msg.getEndIp(), msg.getGateway(), prefixLen);
+                        networkCidr = IPv6NetworkUtils.getNetworkCidrOfIpRange(
+                                msg.getStartIp(), prefixLen);
+                    } else {
+                        prefixLen = NetworkUtils.getPrefixLengthFromNetmask(msg.getNetmask());
+                        valid = NetworkUtils.isIpv4Address(msg.getStartIp())
+                                && NetworkUtils.isIpv4Address(msg.getEndIp())
+                                && NetworkUtils.isIpv4Address(msg.getGateway())
+                                && NetworkUtils.isNetmaskExcept(msg.getNetmask(), "0.0.0.0");
+                        SubnetInfo subnet = new SubnetUtils(msg.getStartIp(), msg.getNetmask()).getInfo();
+                        valid = valid && subnet.isInRange(msg.getEndIp())
+                                && subnet.isInRange(msg.getGateway())
+                                && !msg.getStartIp().equals(subnet.getNetworkAddress())
+                                && !msg.getEndIp().equals(subnet.getBroadcastAddress());
+                        networkCidr = subnet.getCidrSignature();
+                    }
+                    valid = valid && NetworkUtils.isInRange(
+                            msg.getStartIp(), msg.getStartIp(), msg.getEndIp());
                 } catch (RuntimeException e) {
                     valid = false;
                 }
                 if (!valid) {
                     bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10088,
-                            "projected IP range[%s, %s] is invalid", msg.getStartIp(), msg.getEndIp()));
+                            "projected IP range[start:%s, end:%s, gateway:%s, netmask:%s] is invalid",
+                            msg.getStartIp(), msg.getEndIp(), msg.getGateway(), msg.getNetmask()));
+                    chain.next();
+                    return;
+                }
+
+                List<IpRangeVO> candidates = Q.New(IpRangeVO.class)
+                        .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
+                        .eq(IpRangeVO_.ipVersion, range.getIpVersion())
+                        .notEq(IpRangeVO_.uuid, range.getUuid()).list();
+                IpRangeVO overlap = candidates.stream()
+                        .filter(candidate -> range.getIpVersion() == IPv6Constants.IPv6
+                                ? IPv6NetworkUtils.isIpv6RangeOverlap(msg.getStartIp(), msg.getEndIp(),
+                                candidate.getStartIp(), candidate.getEndIp())
+                                : NetworkUtils.isIpv4RangeOverlap(msg.getStartIp(), msg.getEndIp(),
+                                candidate.getStartIp(), candidate.getEndIp()))
+                        .findFirst().orElse(null);
+                if (overlap != null) {
+                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
+                            "projected IP range overlaps IP range[uuid:%s] on L3 network[uuid:%s]",
+                            overlap.getUuid(), msg.getL3NetworkUuid()));
                     chain.next();
                     return;
                 }
@@ -603,6 +653,8 @@ public class L3BasicNetwork implements L3Network {
                 range.setEndIp(msg.getEndIp());
                 range.setGateway(msg.getGateway());
                 range.setNetmask(msg.getNetmask());
+                range.setPrefixLen(prefixLen);
+                range.setNetworkCidr(networkCidr);
                 dbf.update(range);
                 bus.reply(msg, new MessageReply());
                 chain.next();
@@ -673,8 +725,12 @@ public class L3BasicNetwork implements L3Network {
                 new SQLBatch() {
                     @Override
                     protected void scripts() {
-                        replacements.forEach((usedIp, replacement) ->
-                                usedIp.setIpRangeUuid(replacement.getUuid()));
+                        replacements.forEach((usedIp, replacement) -> {
+                            usedIp.setIpRangeUuid(replacement.getUuid());
+                            usedIp.setNetmask(replacement.getNetmask());
+                            usedIp.setGateway(replacement.getGateway());
+                            usedIp.setPrefixLen(replacement.getPrefixLen());
+                        });
                         if (!usedIps.isEmpty()) {
                             dbf.updateCollection(usedIps);
                         }
@@ -1541,13 +1597,13 @@ public class L3BasicNetwork implements L3Network {
         };
         if (refs.stream().anyMatch(ref -> NetworkServiceType.DHCP.toString()
                 .equals(ref.getNetworkServiceType()))) {
-            NetworkConfigMutation mutation = NetworkConfigMutation.dhcp(
+            NetworkConfigChange change = NetworkConfigChange.updateDhcpConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     msg.getL3NetworkUuid(), false, msg.getSystemTags());
             java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                     new java.util.concurrent.atomic.AtomicReference<>();
-            if (mutateNetworkConfig(mutation,
+            if (coordinateNetworkConfigChange(change,
                     localCompletion -> detachNetworkServicesLocally(l3VO, refs,
                             new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
                                 @Override
@@ -1824,14 +1880,14 @@ public class L3BasicNetwork implements L3Network {
                 .select(L3NetworkDnsVO_.dns)
                 .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid())
                 .notEq(L3NetworkDnsVO_.dns, msg.getDns()).listValues();
-        NetworkConfigMutation mutation = NetworkConfigMutation.dhcpDns(
+        NetworkConfigChange change = NetworkConfigChange.updateDnsConfiguration(
                 self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                 msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                 msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
                         ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns);
         java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                 new java.util.concurrent.atomic.AtomicReference<>();
-        if (mutateNetworkConfig(mutation,
+        if (coordinateNetworkConfigChange(change,
                 localCompletion -> removeDns(msg, true,
                         new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
                             @Override
@@ -1983,14 +2039,14 @@ public class L3BasicNetwork implements L3Network {
         if (!desiredDns.contains(msg.getDns())) {
             desiredDns.add(msg.getDns());
         }
-        NetworkConfigMutation mutation = NetworkConfigMutation.dhcpDns(
+        NetworkConfigChange change = NetworkConfigChange.updateDnsConfiguration(
                 self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                 msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                 msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
                         ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns);
         java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                 new java.util.concurrent.atomic.AtomicReference<>();
-        if (mutateNetworkConfig(mutation,
+        if (coordinateNetworkConfigChange(change,
                 localCompletion -> addDns(msg, true,
                         new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
                             @Override
@@ -2310,13 +2366,13 @@ public class L3BasicNetwork implements L3Network {
             }
         };
         if (containsDhcp(msg.getNetworkServices())) {
-            NetworkConfigMutation mutation = NetworkConfigMutation.dhcp(
+            NetworkConfigChange change = NetworkConfigChange.updateDhcpConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     msg.getL3NetworkUuid(), true, msg.getSystemTags());
             java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                     new java.util.concurrent.atomic.AtomicReference<>();
-            if (mutateNetworkConfig(mutation,
+            if (coordinateNetworkConfigChange(change,
                     localCompletion -> attachNetworkServices(msg,
                             NetworkCreateContext.cloudCommit(msg.getId()),
                             new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
@@ -2457,22 +2513,22 @@ public class L3BasicNetwork implements L3Network {
                 .eq(IpRangeVO_.ipVersion, deleting.getIpVersion())
                 .notEq(IpRangeVO_.uuid, deleting.getUuid())
                 .list();
-        NetworkConfigMutation mutation;
+        NetworkConfigChange change;
         if (remaining.isEmpty()) {
-            mutation = NetworkConfigMutation.deleteIpam(
+            change = NetworkConfigChange.removeIpRangeConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     deleting.getL3NetworkUuid(), deleting.getIpVersion());
         } else {
-            List<NetworkConfigMutation.IpRangeTarget> targets = remaining.stream()
-                    .map(range -> new NetworkConfigMutation.IpRangeTarget(
+            List<NetworkConfigChange.IpRange> targets = remaining.stream()
+                    .map(range -> new NetworkConfigChange.IpRange(
                             range.getUuid(), range.getStartIp(), range.getEndIp()))
                     .collect(Collectors.toList());
             NormalIpRangeVO first = remaining.get(0);
             int prefix = first.getIpVersion() == IPv6Constants.IPv6
                     ? first.getPrefixLen()
                     : NetworkUtils.getPrefixLengthFromNetmask(first.getNetmask());
-            mutation = NetworkConfigMutation.ipam(
+            change = NetworkConfigChange.replaceIpRangeConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     deleting.getL3NetworkUuid(), deleting.getIpVersion(),
@@ -2480,7 +2536,7 @@ public class L3BasicNetwork implements L3Network {
         }
         java.util.concurrent.atomic.AtomicReference<Boolean> deleted =
                 new java.util.concurrent.atomic.AtomicReference<>(false);
-        if (mutateNetworkConfig(mutation,
+        if (coordinateNetworkConfigChange(change,
                 localCompletion -> doDeleteIpRange(msg, new Completion(localCompletion) {
                     @Override
                     public void success() {

@@ -1105,8 +1105,8 @@ public class SdnControllerBase {
 
     private void handle(APIPullSdnControllerMsg amsg) {
         APIPullSdnControllerEvent event = new APIPullSdnControllerEvent(amsg.getId());
-        PullSdnControllerMsg msg = PullSdnControllerMsg.fromApi(amsg);
-        pullResources(msg, new Completion(msg) {
+        pullResources(amsg.getSdnControllerUuid(), amsg.getResourceType(), amsg.getResourceUuids(),
+                new Completion(amsg) {
             @Override public void success() { bus.publish(event); }
             @Override public void fail(ErrorCode errorCode) { event.setError(errorCode); bus.publish(event); }
         });
@@ -1137,14 +1137,16 @@ public class SdnControllerBase {
 
     private void handle(PullSdnControllerMsg msg) {
         PullSdnControllerReply reply = new PullSdnControllerReply();
-        pullResources(msg, new Completion(msg) {
+        pullResources(msg.getSdnControllerUuid(), msg.getResourceType(), msg.getResourceUuids(),
+                new Completion(msg) {
             @Override public void success() { bus.reply(msg, reply); }
             @Override public void fail(ErrorCode errorCode) { reply.setError(errorCode); bus.reply(msg, reply); }
         });
     }
 
-    private void pullResources(PullSdnControllerMsg msg, Completion completion) {
-        getSdnController().pullResources(msg, completion);
+    private void pullResources(String sdnControllerUuid, String resourceType,
+                               List<String> resourceUuids, Completion completion) {
+        getSdnController().pullResources(sdnControllerUuid, resourceType, resourceUuids, completion);
     }
 
     private void pullSdnControllerTenant(PullSdnControllerTenantMsg msg, Completion completion) {

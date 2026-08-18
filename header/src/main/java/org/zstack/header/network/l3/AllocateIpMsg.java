@@ -16,8 +16,6 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     private String gateway;
     private String ipv6Gateway;
     private String ipv6Prefix;
-    private String operationUuid;
-    private String operationStep;
 
     public String getRequiredIp() {
         return requiredIp;
@@ -117,21 +115,4 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
         this.ipv6Prefix = ipv6Prefix;
     }
 
-    @Override
-    public String getOperationUuid() {
-        return operationUuid;
-    }
-
-    public void setOperationUuid(String operationUuid) {
-        this.operationUuid = operationUuid;
-    }
-
-    @Override
-    public String getOperationStep() {
-        return operationStep;
-    }
-
-    public void setOperationStep(String operationStep) {
-        this.operationStep = operationStep;
-    }
 }

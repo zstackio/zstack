@@ -1,10 +1,13 @@
 package org.zstack.network.l2;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l2.L2NetworkException;
@@ -74,36 +77,41 @@ public class L2NetworkExtensionPointEmitter implements Component {
     }
 
     public void beforeUpdate(final L2NetworkInventory inv, Completion completion) {
-        beforeUpdate(inv, 0, completion);
-    }
+        new While<>(updateExtensions).each((extension, extensionCompletion) -> {
+            try {
+                extension.beforeChangeL2NetworkVlanId(inv, new Completion(extensionCompletion) {
+                    @Override
+                    public void success() {
+                        extensionCompletion.done();
+                    }
 
-    private void beforeUpdate(final L2NetworkInventory inv, int index, Completion completion) {
-        if (index >= updateExtensions.size()) {
-            completion.success();
-            return;
-        }
-        L2NetworkUpdateExtensionPoint extension = updateExtensions.get(index);
-        try {
-            extension.beforeChangeL2NetworkVlanId(inv, new Completion(completion) {
-                @Override
-                public void success() {
-                    beforeUpdate(inv, index + 1, completion);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        extensionCompletion.addError(errorCode);
+                        extensionCompletion.allDone();
+                    }
+                });
+            } catch (OperationFailureException e) {
+                extensionCompletion.addError(e.getErrorCode());
+                extensionCompletion.allDone();
+            } catch (RuntimeException e) {
+                logger.warn(String.format("exception in L2NetworkUpdateExtensionPoint.beforeChangeL2NetworkVlanId of %s",
+                        extension.getClass().getCanonicalName()), e);
+                extensionCompletion.addError(inerr(ORG_ZSTACK_NETWORK_L2_10024,
+                        "l2 network update extension[%s] failed before changing vlan id: %s",
+                        extension.getClass().getCanonicalName(), e.getMessage()));
+                extensionCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
                 }
-
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    completion.fail(errorCode);
-                }
-            });
-        } catch (OperationFailureException e) {
-            completion.fail(e.getErrorCode());
-        } catch (RuntimeException e) {
-            logger.warn(String.format("exception in L2NetworkUpdateExtensionPoint.beforeChangeL2NetworkVlanId of %s",
-                    extension.getClass().getCanonicalName()), e);
-            completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10024,
-                    "l2 network update extension[%s] failed before changing vlan id: %s",
-                    extension.getClass().getCanonicalName(), e.getMessage()));
-        }
+            }
+        });
     }
 
     public void afterUpdate(final L2NetworkInventory inv) {

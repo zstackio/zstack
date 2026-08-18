@@ -3,6 +3,7 @@ package org.zstack.test.integration.core.rest
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpMethod
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.web.client.HttpStatusCodeException
 import org.zstack.core.rest.RESTFacadeImpl
@@ -54,7 +55,7 @@ class RestFacadeCase extends SubCase {
     void testSyncHandlerPreservesStatusAndBody() {
         RESTFacadeImpl restf = bean(RESTFacadeImpl.class)
         String commandPath = "/test-rest-facade-status-body-${UUID.randomUUID()}"
-        String body = '{"condition":"receiver-overloaded"}'
+        String body = '{"condition":"接收端过载"}'
         restf.registerSyncHttpStatusBodyCallHandler(commandPath, Map.class) {
             Map ignored -> new SyncHttpResponse(429, body)
         }
@@ -68,7 +69,10 @@ class RestFacadeCase extends SubCase {
         } catch (HttpStatusCodeException e) {
             assert e.rawStatusCode == 429
             assert e.responseBodyAsString == body
-            assert e.responseHeaders.getFirst(HttpHeaders.CONTENT_TYPE).startsWith("application/json")
+            MediaType contentType = MediaType.parseMediaType(
+                    e.responseHeaders.getFirst(HttpHeaders.CONTENT_TYPE))
+            assert contentType.isCompatibleWith(MediaType.APPLICATION_JSON)
+            assert contentType.charset.name().equalsIgnoreCase("UTF-8")
         }
     }
 

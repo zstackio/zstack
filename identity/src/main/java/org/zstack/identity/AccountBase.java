@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeFacade;
@@ -23,12 +24,14 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
 import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.*;
 import org.zstack.header.identity.IdentityCanonicalEvents.AccountDeletedData;
@@ -49,7 +52,9 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import javax.persistence.Tuple;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +176,7 @@ public class AccountBase extends AbstractAccount {
                 .setActionCode(CascadeConstant.DELETION_DELETE_CODE);
         final List<BeforeAccountCascadeDeleteExtensionPoint> extensions =
                 pluginRgty.getExtensionList(BeforeAccountCascadeDeleteExtensionPoint.class);
-        final List<BeforeAccountCascadeDeleteExtensionPoint> prepared = new ArrayList<>();
+        final Deque<BeforeAccountCascadeDeleteExtensionPoint> prepared = new ArrayDeque<>();
         List<String> resourceUuids = Q.New(AccountResourceRefVO.class)
                                         .select(AccountResourceRefVO_.resourceUuid)
                                         .eq(AccountResourceRefVO_.ownerAccountUuid, self.getUuid())
@@ -186,7 +191,7 @@ public class AccountBase extends AbstractAccount {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        prepareAccountDelete(account, cascadeAction, extensions, 0, prepared,
+                        prepareAccountDelete(account, cascadeAction, extensions, prepared,
                                 new Completion(trigger) {
                                     @Override
                                     public void success() {
@@ -247,38 +252,45 @@ public class AccountBase extends AbstractAccount {
 
     private void prepareAccountDelete(AccountInventory account, CascadeAction action,
                                       List<BeforeAccountCascadeDeleteExtensionPoint> extensions,
-                                      int index,
-                                      List<BeforeAccountCascadeDeleteExtensionPoint> prepared,
+                                      Deque<BeforeAccountCascadeDeleteExtensionPoint> prepared,
                                       Completion completion) {
-        if (index == extensions.size()) {
-            completion.success();
-            return;
-        }
-        BeforeAccountCascadeDeleteExtensionPoint extension = extensions.get(index);
-        try {
-            extension.beforeDelete(account, action, new Completion(completion) {
-                @Override
-                public void success() {
-                    prepared.add(extension);
-                    prepareAccountDelete(account, action, extensions, index + 1, prepared, completion);
-                }
+        new While<>(extensions).each((extension, whileCompletion) -> {
+            try {
+                extension.beforeDelete(account, action, new Completion(whileCompletion) {
+                    @Override
+                    public void success() {
+                        prepared.push(extension);
+                        whileCompletion.done();
+                    }
 
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    failAccountDeletePreparation(account, action, prepared, errorCode, completion);
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        whileCompletion.addError(errorCode);
+                        whileCompletion.allDone();
+                    }
+                });
+            } catch (RuntimeException e) {
+                whileCompletion.addError(errf.throwableToInternalError(e));
+                whileCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                    return;
                 }
-            });
-        } catch (RuntimeException e) {
-            failAccountDeletePreparation(account, action, prepared,
-                    errf.throwableToInternalError(e), completion);
-        }
+                failAccountDeletePreparation(account, action, prepared,
+                        errors.getCauses().get(0), completion);
+            }
+        });
     }
 
     private void failAccountDeletePreparation(
             AccountInventory account, CascadeAction action,
-            List<BeforeAccountCascadeDeleteExtensionPoint> prepared,
+            Deque<BeforeAccountCascadeDeleteExtensionPoint> prepared,
             ErrorCode errorCode, Completion completion) {
-        cancelAccountDelete(account, action, prepared, prepared.size() - 1,
+        cancelAccountDelete(account, action, prepared,
                 new Completion(completion) {
                     @Override
                     public void success() {
@@ -293,27 +305,30 @@ public class AccountBase extends AbstractAccount {
     }
 
     private void cancelAccountDelete(AccountInventory account, CascadeAction action,
-                                     List<BeforeAccountCascadeDeleteExtensionPoint> prepared,
-                                     int index, Completion completion) {
-        if (index < 0) {
-            completion.success();
-            return;
-        }
-        try {
-            prepared.get(index).cancel(account, action, new Completion(completion) {
-                @Override
-                public void success() {
-                    cancelAccountDelete(account, action, prepared, index - 1, completion);
-                }
+                                     Deque<BeforeAccountCascadeDeleteExtensionPoint> prepared,
+                                     Completion completion) {
+        new While<>(prepared).each((extension, whileCompletion) -> {
+            try {
+                extension.cancel(account, action, new Completion(whileCompletion) {
+                    @Override
+                    public void success() {
+                        whileCompletion.done();
+                    }
 
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    cancelAccountDelete(account, action, prepared, index - 1, completion);
-                }
-            });
-        } catch (RuntimeException e) {
-            cancelAccountDelete(account, action, prepared, index - 1, completion);
-        }
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        whileCompletion.done();
+                    }
+                });
+            } catch (RuntimeException ignored) {
+                whileCompletion.done();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                completion.success();
+            }
+        });
     }
 
     private void handle(final APIDeleteAccountMsg msg) {

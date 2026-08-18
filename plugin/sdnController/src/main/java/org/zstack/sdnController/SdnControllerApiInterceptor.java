@@ -273,7 +273,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private void validate(APIPullSdnControllerMsg msg) {
-        if (!Arrays.asList("Segment", "TenantRouter").contains(msg.getResourceType())) {
+        if (!SdnControllerConstant.ResourceTypes.Segment.name().equals(msg.getResourceType())
+                && !SdnControllerConstant.ResourceTypes.TenantRouter.name().equals(msg.getResourceType())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10036,
                     "Unsupported resource type[%s]", msg.getResourceType()));
         }
@@ -299,11 +300,12 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         }
         LinkedHashSet<String> normalized = new LinkedHashSet<>();
         for (String resourceUuid : resourceUuids) {
-            if (!StringDSL.isUuid(resourceUuid) && !StringDSL.isZStackUuid(resourceUuid)) {
+            String normalizedUuid = resourceUuid == null ? null : resourceUuid.trim();
+            if (!StringDSL.isUuid(normalizedUuid) && !StringDSL.isZStackUuid(normalizedUuid)) {
                 throw new IllegalArgumentException(String.format(
                         "Invalid resource uuid[%s]", resourceUuid));
             }
-            normalized.add(resourceUuid);
+            normalized.add(normalizedUuid);
         }
         return new ArrayList<>(normalized);
     }

@@ -10,14 +10,6 @@ public class PullSdnControllerMsg extends NeedReplyMessage implements SdnControl
     private String resourceType;
     private List<String> resourceUuids;
 
-    public static PullSdnControllerMsg fromApi(APIPullSdnControllerMsg api) {
-        PullSdnControllerMsg msg = new PullSdnControllerMsg();
-        msg.setSdnControllerUuid(api.getSdnControllerUuid());
-        msg.setResourceType(api.getResourceType());
-        msg.setResourceUuids(api.getResourceUuids());
-        return msg;
-    }
-
     @Override public String getSdnControllerUuid() { return sdnControllerUuid; }
     public void setSdnControllerUuid(String value) { sdnControllerUuid = value; }
     public String getResourceType() { return resourceType; }

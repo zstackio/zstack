@@ -10,9 +10,9 @@ import org.zstack.header.core.Completion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.Message
-import org.zstack.header.network.NetworkConfigLocalContinuation
-import org.zstack.header.network.NetworkConfigMutation
-import org.zstack.header.network.NetworkConfigMutationExtensionPoint
+import org.zstack.header.network.LocalNetworkConfigChange
+import org.zstack.header.network.NetworkConfigChange
+import org.zstack.header.network.NetworkConfigChangeCoordinator
 import org.zstack.header.network.l2.L2DeleteConfirmExtensionPoint
 import org.zstack.header.network.l2.L2NetworkInventory
 import org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint
@@ -25,7 +25,6 @@ import org.zstack.header.network.l3.L3NetworkException
 import org.zstack.header.network.l3.L3NetworkInventory
 import org.zstack.header.network.l3.L3NetworkVO
 import org.zstack.header.zone.ZoneVO
-import org.zstack.network.l2.L2NetworkCascadeFilterExtensionPoint
 import org.zstack.network.l2.L2NetworkConfirmedDeleteCoordinator
 import org.zstack.network.l2.L2NetworkExtensionPointEmitter
 import org.zstack.sdk.L2NetworkInventory as SdkL2NetworkInventory
@@ -132,7 +131,6 @@ class L2NetworkCascadeCase extends SubCase {
             testRepeatedPrepareReusesOperationContext()
             testRepeatedPrepareFailureCancelsExistingFence()
             testDelayedBeginDoesNotBlockCoordinator()
-            testDeletionCheckHonorsCascadeFilter()
             testWholeL2ContextPropagatesToChildren()
             testParentForceChecksBeforeDeletingChildren()
             testParentForcePreservesProviderError()
@@ -333,46 +331,6 @@ class L2NetworkCascadeCase extends SubCase {
         }
     }
 
-    void testDeletionCheckHonorsCascadeFilter() {
-        SdkL2NetworkInventory kept = env.inventoryByName("check-l2-1")
-        SdkL2NetworkInventory filtered = env.inventoryByName("check-l2-2")
-        def filter = new KeepOnlyCascadeFilter(keptUuid: kept.uuid)
-        def confirmation = new RecordingDeleteConfirmation()
-        List<L2NetworkCascadeFilterExtensionPoint> filters = bean(PluginRegistry.class)
-                .getExtensionList(L2NetworkCascadeFilterExtensionPoint.class)
-        List<L2DeleteConfirmExtensionPoint> confirmations = bean(PluginRegistry.class)
-                .getExtensionList(L2DeleteConfirmExtensionPoint.class)
-        filters.add(filter)
-        confirmations.add(confirmation)
-        def inventories = [kept, filtered].collect {
-            L2NetworkInventory.valueOf(dbf.findByUuid(it.uuid, L2NetworkVO.class))
-        }
-        def action = new CascadeAction()
-                .setRootIssuer(L2NetworkVO.simpleName)
-                .setRootIssuerContext(inventories)
-                .setParentIssuer(L2NetworkVO.simpleName)
-                .setParentIssuerContext(inventories)
-                .setActionCode(CascadeConstant.DELETION_CHECK_CODE)
-        boolean success
-
-        try {
-            bean(CascadeFacade.class).asyncCascade(action, new Completion(null) {
-                @Override
-                void success() { success = true }
-
-                @Override
-                void fail(ErrorCode errorCode) { assert false: errorCode }
-            })
-        } finally {
-            confirmations.remove(confirmation)
-            filters.remove(filter)
-        }
-
-        assert success
-        assert confirmation.checked == [kept.uuid]
-        assert confirmation.checkContexts.every { it != null }
-    }
-
     void testDeleteL2NetworkRemovesConfirmedMetadataOnce() {
         SdkL2NetworkInventory l2 = env.inventoryByName("metadata-l2")
         def extension = new RecordingDeleteConfirmation()
@@ -537,9 +495,9 @@ class L2NetworkCascadeCase extends SubCase {
 
     void testL2MetadataMutationCommitsRemoteBeforeLocal() {
         SdkL2NetworkInventory l2 = env.inventoryByName("metadata-update-l2")
-        def extension = new RecordingMetadataMutation(dbf: dbf, l2Uuid: l2.uuid, failRemote: true)
+        def extension = new RecordingMetadataChange(dbf: dbf, l2Uuid: l2.uuid, failRemote: true)
         bean(PluginRegistry.class).defineDynamicExtension(
-                NetworkConfigMutationExtensionPoint.class, extension)
+                NetworkConfigChangeCoordinator.class, extension)
 
         try {
             expectError {
@@ -563,9 +521,9 @@ class L2NetworkCascadeCase extends SubCase {
 
         L2NetworkVO updated = dbf.findByUuid(l2.uuid, L2NetworkVO.class)
         assert extension.nameBeforeContinuation == "metadata-update-l2"
-        assert extension.mutations*.kind == [
-                NetworkConfigMutation.Kind.L2_METADATA,
-                NetworkConfigMutation.Kind.L2_METADATA]
+        assert extension.changes*.kind == [
+                NetworkConfigChange.Kind.L2_METADATA_CHANGE,
+                NetworkConfigChange.Kind.L2_METADATA_CHANGE]
         assert updated.name == "metadata-updated"
         assert updated.description == "metadata-description"
     }
@@ -652,16 +610,6 @@ class L2NetworkCascadeCase extends SubCase {
         }
     }
 
-    private static class KeepOnlyCascadeFilter implements L2NetworkCascadeFilterExtensionPoint {
-        String keptUuid
-
-        @Override
-        List<L2NetworkInventory> filterL2NetworkCascade(List<L2NetworkInventory> inventories,
-                                                        CascadeAction action) {
-            return inventories.findAll { it.uuid == keptUuid }
-        }
-    }
-
     private static class ThrowingL2UpdateExtension implements L2NetworkUpdateExtensionPoint {
         @Override
         void beforeChangeL2NetworkVlanId(L2NetworkInventory inventory) {
@@ -694,28 +642,28 @@ class L2NetworkCascadeCase extends SubCase {
         }
     }
 
-    private static class RecordingMetadataMutation implements NetworkConfigMutationExtensionPoint {
+    private static class RecordingMetadataChange implements NetworkConfigChangeCoordinator {
         DatabaseFacade dbf
         String l2Uuid
         boolean failRemote
         String nameBeforeContinuation
-        List<NetworkConfigMutation> mutations = []
+        List<NetworkConfigChange> changes = []
 
         @Override
-        boolean supports(NetworkConfigMutation mutation) {
-            return mutation.kind == NetworkConfigMutation.Kind.L2_METADATA && mutation.l2Uuid == l2Uuid
+        boolean isApplicable(NetworkConfigChange change) {
+            return change.kind == NetworkConfigChange.Kind.L2_METADATA_CHANGE && change.l2Uuid == l2Uuid
         }
 
         @Override
-        void mutate(NetworkConfigMutation mutation, NetworkConfigLocalContinuation continuation,
+        void coordinate(NetworkConfigChange change, LocalNetworkConfigChange localChange,
                     Completion completion) {
-            mutations.add(mutation)
+            changes.add(change)
             nameBeforeContinuation = dbf.findByUuid(l2Uuid, L2NetworkVO.class).name
             if (failRemote) {
                 completion.fail(new ErrorCode("TEST.REMOTE.FAILURE", "simulated remote failure"))
                 return
             }
-            continuation.run(completion)
+            localChange.apply(completion)
         }
     }
 }

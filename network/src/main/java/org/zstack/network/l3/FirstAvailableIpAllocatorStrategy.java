@@ -66,8 +66,7 @@ public class FirstAvailableIpAllocatorStrategy extends AbstractIpAllocatorStrate
                 return null;
             }
             
-            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed(),
-                    msg.getOperationUuid(), msg.getOperationStep());
+            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed());
             if (inv != null) {
                 return inv;
             }

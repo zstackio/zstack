@@ -1093,7 +1093,7 @@ public class RESTFacadeImpl implements RESTFacade {
         if (response.getBody() == null) {
             return;
         }
-        servletResponse.setHeader("Content-Type", "application/json");
+        servletResponse.setContentType(RESTConstant.APP_JSON_UTF8);
         try {
             servletResponse.getWriter().write(response.getBody());
         } catch (IOException e) {

@@ -129,3 +129,57 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
     CONSTRAINT `chk_zns_seg_ref_segment_state`
         CHECK (`znsSegmentUuid` IS NOT NULL OR `state` = 'MigrationFailed')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+DROP TRIGGER IF EXISTS `zstack`.`trg_zns_controller_capability_validate_insert`;
+DELIMITER $$
+CREATE TRIGGER `zstack`.`trg_zns_controller_capability_validate_insert`
+BEFORE INSERT ON `zstack`.`ZnsControllerCapabilityVO`
+FOR EACH ROW
+BEGIN
+    IF NEW.`observedState` NOT IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY')
+            OR NEW.`effectiveState` NOT IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'ZnsControllerCapabilityVO has an invalid capability state';
+    END IF;
+END$$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS `zstack`.`trg_zns_controller_capability_validate_update`;
+DELIMITER $$
+CREATE TRIGGER `zstack`.`trg_zns_controller_capability_validate_update`
+BEFORE UPDATE ON `zstack`.`ZnsControllerCapabilityVO`
+FOR EACH ROW
+BEGIN
+    IF NEW.`observedState` NOT IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY')
+            OR NEW.`effectiveState` NOT IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY') THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'ZnsControllerCapabilityVO has an invalid capability state';
+    END IF;
+END$$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS `zstack`.`trg_zns_seg_ref_validate_insert`;
+DELIMITER $$
+CREATE TRIGGER `zstack`.`trg_zns_seg_ref_validate_insert`
+BEFORE INSERT ON `zstack`.`ZnsSegmentRefVO`
+FOR EACH ROW
+BEGIN
+    IF NEW.`znsSegmentUuid` IS NULL AND NEW.`state` <> 'MigrationFailed' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'ZnsSegmentRefVO requires znsSegmentUuid unless migration failed';
+    END IF;
+END$$
+DELIMITER ;
+
+DROP TRIGGER IF EXISTS `zstack`.`trg_zns_seg_ref_validate_update`;
+DELIMITER $$
+CREATE TRIGGER `zstack`.`trg_zns_seg_ref_validate_update`
+BEFORE UPDATE ON `zstack`.`ZnsSegmentRefVO`
+FOR EACH ROW
+BEGIN
+    IF NEW.`znsSegmentUuid` IS NULL AND NEW.`state` <> 'MigrationFailed' THEN
+        SIGNAL SQLSTATE '45000'
+            SET MESSAGE_TEXT = 'ZnsSegmentRefVO requires znsSegmentUuid unless migration failed';
+    END IF;
+END$$
+DELIMITER ;
