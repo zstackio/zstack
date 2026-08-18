@@ -182,6 +182,7 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                     @Override
                     public void success() {
                         try {
+                            dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
                             new SQLBatch() {
                                 @Override
                                 protected void scripts() {
@@ -194,7 +195,6 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                                     }
                                 }
                             }.execute();
-                            dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
                             completion.success();
                         } catch (RuntimeException e) {
                             completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10022,
