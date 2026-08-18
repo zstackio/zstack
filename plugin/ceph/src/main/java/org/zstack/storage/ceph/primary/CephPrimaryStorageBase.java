@@ -5594,6 +5594,13 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (!msg.isGcOnFailure()) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    completion.done();
+                    return;
+                }
+
                 // ceph has trash, so children may not be deleted immediately.
                 DeleteVolumeSnapshotGC snapshotGC = new DeleteVolumeSnapshotGC();
                 snapshotGC.NAME = String.format("gc-ceph-%s-volumesnapshot-path-%s", self.getUuid(), cmd.snapshotPath);
