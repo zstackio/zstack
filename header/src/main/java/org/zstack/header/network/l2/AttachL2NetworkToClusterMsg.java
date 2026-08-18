@@ -8,6 +8,8 @@ public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2N
     private String l2NetworkUuid;
     private String clusterUuid;
     private String l2ProviderType;
+    private String operationUuid;
+    private String operationStep;
 
     public String getL2NetworkUuid() {
         return l2NetworkUuid;
@@ -31,5 +33,21 @@ public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2N
 
     public void setL2ProviderType(String l2ProviderType) {
         this.l2ProviderType = l2ProviderType;
+    }
+
+    public String getOperationUuid() {
+        return operationUuid;
+    }
+
+    public void setOperationUuid(String operationUuid) {
+        this.operationUuid = operationUuid;
+    }
+
+    public String getOperationStep() {
+        return operationStep;
+    }
+
+    public void setOperationStep(String operationStep) {
+        this.operationStep = operationStep;
     }
 }

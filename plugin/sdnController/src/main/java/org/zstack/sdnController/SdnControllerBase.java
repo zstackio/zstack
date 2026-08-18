@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -34,6 +35,7 @@ import org.zstack.header.network.l3.SdnControllerL3;
 import org.zstack.header.network.sdncontroller.*;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
+import org.zstack.network.l2.L2NetworkCascadeExtension;
 import org.zstack.sdnController.header.*;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2SdnController;
@@ -73,6 +75,8 @@ public class SdnControllerBase {
     private PluginRegistry pluginRgty;
     @Autowired
     private SdnControllerPingTracker sdnPingTracker;
+    @Autowired
+    private L2NetworkCascadeExtension l2NetworkCascadeExtension;
 
     public SdnControllerVO self;
 
@@ -120,12 +124,16 @@ public class SdnControllerBase {
             handle((APISdnControllerChangeHostMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             handle((APIPullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerMsg) {
+            handle((APIPullSdnControllerMsg) msg);
         } else if (msg instanceof APIChangeSdnControllerMsg) {
             handle((APIChangeSdnControllerMsg) msg);
         } else if (msg instanceof SdnControllerRemoveHostMsg) {
             handle((SdnControllerRemoveHostMsg) msg);
         } else if (msg instanceof PullSdnControllerTenantMsg) {
             handle((PullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof PullSdnControllerMsg) {
+            handle((PullSdnControllerMsg) msg);
         } else if (msg instanceof ReconnectSdnControllerMsg) {
             handle((ReconnectSdnControllerMsg) msg);
         } else if (msg instanceof SyncSdnControllerDataMsg) {
@@ -948,13 +956,34 @@ public class SdnControllerBase {
         final String issuer = SdnControllerVO.class.getSimpleName();
         SdnControllerVO vo = dbf.findByUuid(msg.getUuid(), SdnControllerVO.class);
         final List<SdnControllerInventory> ctx = asList(SdnControllerInventory.valueOf(vo));
+        final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
+                .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-sdn-controller-%s-name-%s", msg.getUuid(), vo.getName()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                cascadeAction.setActionCode(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing
+                        ? CascadeConstant.DELETION_FORCE_DELETE_CODE
+                        : CascadeConstant.DELETION_CHECK_CODE);
+                l2NetworkCascadeExtension.prepareConfirmedDelete(cascadeAction, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -962,14 +991,25 @@ public class SdnControllerBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
+                            l2NetworkCascadeExtension.cancelConfirmedDelete(cascadeAction,
+                                    new Completion(trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.fail(errorCode);
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode cancelError) {
+                                            trigger.fail(errorCode);
+                                        }
+                                    });
                         }
                     });
                 }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -986,7 +1026,7 @@ public class SdnControllerBase {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1063,6 +1103,15 @@ public class SdnControllerBase {
         });
     }
 
+    private void handle(APIPullSdnControllerMsg amsg) {
+        APIPullSdnControllerEvent event = new APIPullSdnControllerEvent(amsg.getId());
+        PullSdnControllerMsg msg = PullSdnControllerMsg.fromApi(amsg);
+        pullResources(msg, new Completion(msg) {
+            @Override public void success() { bus.publish(event); }
+            @Override public void fail(ErrorCode errorCode) { event.setError(errorCode); bus.publish(event); }
+        });
+    }
+
     private void handle(PullSdnControllerTenantMsg msg) {
         PullSdnControllerTenantReply reply = new PullSdnControllerTenantReply();
 
@@ -1084,6 +1133,18 @@ public class SdnControllerBase {
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    private void handle(PullSdnControllerMsg msg) {
+        PullSdnControllerReply reply = new PullSdnControllerReply();
+        pullResources(msg, new Completion(msg) {
+            @Override public void success() { bus.reply(msg, reply); }
+            @Override public void fail(ErrorCode errorCode) { reply.setError(errorCode); bus.reply(msg, reply); }
+        });
+    }
+
+    private void pullResources(PullSdnControllerMsg msg, Completion completion) {
+        getSdnController().pullResources(msg, completion);
     }
 
     private void pullSdnControllerTenant(PullSdnControllerTenantMsg msg, Completion completion) {

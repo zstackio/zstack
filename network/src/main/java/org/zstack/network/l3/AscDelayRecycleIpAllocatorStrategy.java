@@ -148,7 +148,8 @@ public class AscDelayRecycleIpAllocatorStrategy extends AbstractIpAllocatorStrat
                 ip = allocateIpByAsc(r, excludeIp);
                 tr = r;
                 if (ip != null) {
-                    UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed());
+                    UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed(),
+                            msg.getOperationUuid(), msg.getOperationStep());
                     if (inv != null) {
                         return inv;
                     }

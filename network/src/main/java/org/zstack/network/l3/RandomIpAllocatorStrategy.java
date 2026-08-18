@@ -51,7 +51,8 @@ public class RandomIpAllocatorStrategy extends AbstractIpAllocatorStrategy {
                 return null;
             }
 
-            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed());
+            UsedIpInventory inv = l3NwMgr.reserveIp(tr, ip, msg.isDuplicatedIpAllowed(),
+                    msg.getOperationUuid(), msg.getOperationStep());
             if (inv != null) {
                 return inv;
             }

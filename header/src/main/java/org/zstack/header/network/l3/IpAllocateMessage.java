@@ -31,6 +31,14 @@ public interface IpAllocateMessage {
         return null;
     }
 
+    default String getOperationUuid() {
+        return null;
+    }
+
+    default String getOperationStep() {
+        return null;
+    }
+
     void setIpRangeUuid(String ipRangeUuid);
 
     void setRequiredIp(String requiredIp);

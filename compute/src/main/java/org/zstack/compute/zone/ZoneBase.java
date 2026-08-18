@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
@@ -24,6 +25,7 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.zone.*;
+import org.zstack.network.l2.L2NetworkCascadeExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -55,6 +57,8 @@ public class ZoneBase extends AbstractZone {
     protected ErrorFacade errf;
     @Autowired
     protected ThreadFacade thdf;
+    @Autowired
+    protected L2NetworkCascadeExtension l2NetworkCascadeExtension;
 
 	ZoneBase(ZoneVO self) {
 		this.self = self;
@@ -178,13 +182,34 @@ public class ZoneBase extends AbstractZone {
         final String issuer = ZoneVO.class.getSimpleName();
         ZoneInventory zinv = ZoneInventory.valueOf(self);
         final List<ZoneInventory> ctx = Arrays.asList(zinv);
+        final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
+                .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-zone-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                cascadeAction.setActionCode(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing
+                        ? CascadeConstant.DELETION_FORCE_DELETE_CODE
+                        : CascadeConstant.DELETION_CHECK_CODE);
+                l2NetworkCascadeExtension.prepareConfirmedDelete(cascadeAction, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        });
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -192,14 +217,25 @@ public class ZoneBase extends AbstractZone {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
+                            l2NetworkCascadeExtension.cancelConfirmedDelete(cascadeAction,
+                                    new Completion(trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.fail(errorCode);
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode cancelError) {
+                                            trigger.fail(errorCode);
+                                        }
+                                    });
                         }
                     });
                 }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -216,7 +252,7 @@ public class ZoneBase extends AbstractZone {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();

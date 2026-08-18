@@ -136,6 +136,9 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="L2NetworkConfirmedDeleteCoordinator"
+          class="org.zstack.network.l2.L2NetworkConfirmedDeleteCoordinator"/>
+
     <bean id="IpRangeCascadeExtension" class="org.zstack.network.l3.IpRangeCascadeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>

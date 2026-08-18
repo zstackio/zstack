@@ -16,6 +16,7 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.utils.CollectionUtils;
@@ -28,6 +29,9 @@ import org.zstack.utils.network.NetworkUtils;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10092;
 
 public class NormalIpRangeFactory implements IpRangeFactory {
     @Autowired
@@ -47,6 +51,22 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
     @Override
     public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
+        createIpRange(iprs, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, NetworkCreateContext context,
+                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
+        String resolvedAccountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
+        if (resolvedAccountUuid == null && context != null && context.getExternalRef() != null) {
+            resolvedAccountUuid = context.getExternalRef().getAccountUuid();
+        }
+        if (resolvedAccountUuid == null) {
+            completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10092,
+                    "account uuid is required for normal IP range creation"));
+            return;
+        }
+        String accountUuid = resolvedAccountUuid;
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("add-iprange-to-l3-%s", iprs.get(0).getL3NetworkUuid()));
         chain.then(new Flow() {
@@ -59,7 +79,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                         @Override
                         protected NormalIpRangeVO scripts() {
                             NormalIpRangeVO vo = (NormalIpRangeVO) IpRangeHelper
-                                    .fromIpRangeInventory(ipr, msg.getSession().getAccountUuid());
+                                    .fromIpRangeInventory(ipr, accountUuid);
                             dbf.getEntityManager().persist(vo);
                             dbf.getEntityManager().flush();
                             dbf.getEntityManager().refresh(vo);
@@ -97,7 +117,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
                         @Override
                         public void run(AfterAddIpRangeExtensionPoint ext) {
-                            ext.afterAddIpRange(IpRangeInventory.valueOf(vo), msg.getSystemTags());
+                            ext.afterAddIpRange(IpRangeInventory.valueOf(vo), msg.getSystemTags(), context);
                         }
                     });
 
@@ -119,6 +139,10 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                if (context.isRemoteWriteSuppressed()) {
+                    trigger.next();
+                    return;
+                }
                 String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(iprs.get(0).getL3NetworkUuid());
                 if (sdnControllerUuid == null) {
                     trigger.next();
@@ -146,6 +170,10 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                if (context.isRemoteWriteSuppressed()) {
+                    trigger.next();
+                    return;
+                }
                 L3NetworkVO l3vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
                 SdnControllerL3 sdnL3 = l3Mgr.getSdnControllerL3(l3vo.getL2NetworkUuid());
                 if (sdnL3 == null) {

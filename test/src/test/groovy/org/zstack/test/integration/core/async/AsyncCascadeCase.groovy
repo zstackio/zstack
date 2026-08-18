@@ -23,6 +23,7 @@ class AsyncCascadeCase extends SubCase{
     boolean success3 
     boolean success4 
     boolean success5 
+    int clusterChildActionCount
 
     @Override
     void setup() {
@@ -49,6 +50,7 @@ class AsyncCascadeCase extends SubCase{
         success3 = false
         success4 = false
         success5 = false
+        clusterChildActionCount = 0
 
         casf = bean(CascadeFacade.class)
         asyncCascade()
@@ -103,6 +105,7 @@ class AsyncCascadeCase extends SubCase{
             @Override
             public CascadeAction createActionForChildResource(CascadeAction action) {
                 if (action.getParentIssuer().equals("zone")) {
+                    clusterChildActionCount++
                     return action.copy().setParentIssuer("cluster") 
                 }
 
@@ -181,6 +184,7 @@ class AsyncCascadeCase extends SubCase{
         assert success3
         assert success4
         assert success5
+        assert clusterChildActionCount == 1
     }
 
     @Override
