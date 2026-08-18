@@ -493,7 +493,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         if (vSwitchType.getSdnControllerType() == null) {
             return null;
         }
-        SdnControllerFactory factory = getSdnControllerFactory(vSwitchType.getSdnControllerType());
+        SdnControllerFactory factory = sdnControllerFactories.get(vSwitchType.getSdnControllerType());
         return factory == null ? null : factory.getSdnControllerL2(inv.getUuid());
     }
 
