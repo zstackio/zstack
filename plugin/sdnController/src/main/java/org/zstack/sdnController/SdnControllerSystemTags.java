@@ -1,7 +1,7 @@
 package org.zstack.sdnController;
 
-import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
+import org.zstack.header.tag.TagDefinition;
 import org.zstack.tag.PatternedSystemTag;
 
 @TagDefinition
