@@ -2,6 +2,7 @@ package org.zstack.header.network.l3;
 
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerMessage;
+import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.utils.network.IPv6Constants;
 
 public class SdnControllerDisableDHCPMsg extends NeedReplyMessage implements SdnControllerMessage {
@@ -9,6 +10,7 @@ public class SdnControllerDisableDHCPMsg extends NeedReplyMessage implements Sdn
     private Integer ipVersion = IPv6Constants.DUAL_STACK;
     private String sdnControllerUuid;
     private boolean checkIpRange = false;
+    private NetworkDeletionContext networkDeletionContext;
 
     public Integer getIpVersion() {
         return ipVersion;
@@ -42,5 +44,12 @@ public class SdnControllerDisableDHCPMsg extends NeedReplyMessage implements Sdn
     public void setCheckIpRange(boolean checkIpRange) {
         this.checkIpRange = checkIpRange;
     }
-}
 
+    public NetworkDeletionContext getNetworkDeletionContext() {
+        return networkDeletionContext;
+    }
+
+    public void setNetworkDeletionContext(NetworkDeletionContext networkDeletionContext) {
+        this.networkDeletionContext = networkDeletionContext;
+    }
+}

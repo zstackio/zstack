@@ -4,6 +4,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.network.sdncontroller.*;
 import org.zstack.sdnController.header.*;
 
+import java.util.List;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_SDNCONTROLLER_10035;
+
 
 public interface SdnController {
 
@@ -27,4 +30,11 @@ public interface SdnController {
     default void removeHost(SdnControllerRemoveHostMsg msg, Completion completion) {completion.success();};
 
     default void changeHost(SdnControllerHostRefVO oldRef, SdnControllerHostRefVO newRef, Completion completion) {completion.success();};
+
+    default void pullResources(String sdnControllerUuid, String resourceType,
+                               List<String> resourceUuids, Completion completion) {
+        completion.fail(org.zstack.core.Platform.operr(
+                ORG_ZSTACK_SDNCONTROLLER_10035,
+                "Resource pull is not supported by sdn controller[%s]", sdnControllerUuid));
+    }
 }
