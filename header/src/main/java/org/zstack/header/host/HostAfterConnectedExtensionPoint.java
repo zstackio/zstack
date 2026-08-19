@@ -6,7 +6,7 @@ package org.zstack.header.host;
 public interface HostAfterConnectedExtensionPoint {
     void afterHostConnected(HostInventory host);
 
-    default void afterHostConnected(HostInventory host, ConnectHostInfo info, boolean reconnect) {
+    default void afterHostConnected(HostInventory host, ConnectHostInfo info) {
         afterHostConnected(host);
     }
 }

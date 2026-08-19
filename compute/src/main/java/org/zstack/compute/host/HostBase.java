@@ -1360,10 +1360,9 @@ public abstract class HostBase extends AbstractHost {
                                 self = dbf.reload(self);
                                 HostInventory inv = getSelfInventory();
                                 ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
-                                boolean reconnect = msg.isReconnect();
 
                                 for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
-                                    Flow flow = p.createPreHostConnectFlow(inv, info, reconnect);
+                                    Flow flow = p.createPreHostConnectFlow(inv, info);
                                     if (flow != null) {
                                         preConnectChain.then(flow);
                                     }
@@ -1436,9 +1435,8 @@ public abstract class HostBase extends AbstractHost {
 
                                 HostInventory inv = getSelfInventory();
                                 ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
-                                boolean reconnect = msg.isReconnect();
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(inv, info, reconnect));
+                                        ext -> ext.afterHostConnected(inv, info));
                                 completion.success();
                             }
                         });

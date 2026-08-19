@@ -10,7 +10,7 @@ import org.zstack.header.host.HostInventory;
 public interface PreHostConnectExtensionPoint {
     Flow createPreHostConnectFlow(HostInventory host);
 
-    default Flow createPreHostConnectFlow(HostInventory host, ConnectHostInfo info, boolean reconnect) {
+    default Flow createPreHostConnectFlow(HostInventory host, ConnectHostInfo info) {
         return createPreHostConnectFlow(host);
     }
 }
