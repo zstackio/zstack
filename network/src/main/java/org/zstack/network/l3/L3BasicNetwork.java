@@ -199,7 +199,7 @@ public class L3BasicNetwork implements L3Network {
             public void run(SyncTaskChain chain) {
                 IpRangeInventory ipr = msg.getInventory();
                 if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
-                    completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10083,
+                    completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10101,
                             "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
                     chain.next();
                     return;
