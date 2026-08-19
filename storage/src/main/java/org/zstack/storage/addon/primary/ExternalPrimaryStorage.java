@@ -26,7 +26,10 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostState;
+import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.image.ImageConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageVO;
@@ -107,6 +110,61 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         this.node = other.node;
         this.externalVO = other.externalVO;
         this.selfConfig = other.selfConfig;
+    }
+
+    @Override
+    public void attachHook(String clusterUuid, Completion completion) {
+        List<HostVO> hosts = Q.New(HostVO.class)
+                .eq(HostVO_.clusterUuid, clusterUuid)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .notIn(HostVO_.state, Arrays.asList(HostState.PreMaintenance, HostState.Maintenance))
+                .list();
+        if (hosts.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        List<HostInventory> hostInventories = HostInventory.valueOf(hosts);
+        // Deploy-client is idempotent. Hosts prepared before an attach failure are left for
+        // the next attach or reconnect to overwrite.
+        new While<>(hostInventories).each((host, compl) -> {
+            node.deployClient(host, new Completion(compl) {
+                @Override
+                public void success() {
+                    compl.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    compl.addError(errorCode);
+                    compl.allDone();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
+
+                activateHeartbeatVolumeForAttach(hostInventories.get(0), completion);
+            }
+        });
+    }
+
+    private void activateHeartbeatVolumeForAttach(HostInventory host, Completion completion) {
+        node.activateHeartbeatVolume(host, new ReturnValueCompletion<HeartbeatVolumeTO>(completion) {
+            @Override
+            public void success(HeartbeatVolumeTO returnValue) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override

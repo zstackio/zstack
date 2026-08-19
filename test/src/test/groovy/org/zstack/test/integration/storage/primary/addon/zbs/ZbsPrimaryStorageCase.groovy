@@ -10,6 +10,8 @@ import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO
+import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
@@ -168,6 +170,9 @@ class ZbsPrimaryStorageCase extends SubCase {
             evtf = bean(EventFacade.class)
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
+            testPrepareHostsWhenAttachPrimaryStorageToCluster()
+            testAttachPrimaryStorageFailsWhenPreparingUsableHostFails()
+            testAttachPrimaryStorageFailsWhenActivatingHeartbeatVolumeFails()
             testLifecycle()
             testDataVolumeLifecycle()
             testMdsPing()
@@ -298,7 +303,205 @@ class ZbsPrimaryStorageCase extends SubCase {
         assert rc.value == ZbsConstants.VOLUME_PHYSICAL_BLOCK_SIZE
     }
 
+    void testPrepareHostsWhenAttachPrimaryStorageToCluster() {
+        KVMHostInventory kvm2 = env.inventoryByName("kvm-2") as KVMHostInventory
+        KVMHostInventory kvm3 = env.inventoryByName("kvm-3") as KVMHostInventory
+        changeHostState {
+            uuid = kvm3.uuid
+            stateEvent = "maintain"
+        }
+
+        List<String> attachCalls = Collections.synchronizedList(new ArrayList<>())
+        AtomicInteger attachCheckHostStatusCount = new AtomicInteger(0)
+        env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd)
+            attachCalls.add("deploy:${cmd.ip}".toString())
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                attachCalls.add("heartbeat:${cmd.logicalPool}".toString())
+                ZbsStorageController.CreateVolumeRsp createVolumeRsp = new ZbsStorageController.CreateVolumeRsp()
+                createVolumeRsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}"
+                return createVolumeRsp
+            }
+
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
+            attachCheckHostStatusCount.incrementAndGet()
+            return rsp
+        }
+
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+
+        assert attachCalls.findAll { it.startsWith("deploy:") }.sort() == ["deploy:127.0.0.1", "deploy:127.0.0.2"]
+        assert attachCalls.take(2).every { it.startsWith("deploy:") }
+        assert attachCalls.findAll { it.startsWith("heartbeat:") } == ["heartbeat:lpool1"]
+        assert attachCheckHostStatusCount.get() == 0
+
+        env.cleanAfterSimulatorHandlers()
+        changeHostState {
+            uuid = kvm3.uuid
+            stateEvent = "enable"
+        }
+        retryInSecs {
+            HostInventory host = queryHost {
+                conditions = ["uuid=${kvm3.uuid}"]
+            }[0] as HostInventory
+            assert host.state == "Enabled"
+            assert host.status == "Connected"
+        }
+
+        List<String> reconnectCalls = Collections.synchronizedList(new ArrayList<>())
+        AtomicInteger reconnectCheckHostStatusCount = new AtomicInteger(0)
+        env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd)
+            if (cmd.ip == "127.0.0.2") {
+                reconnectCalls.add("deploy:${cmd.ip}".toString())
+            }
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                reconnectCalls.add("heartbeat:${cmd.logicalPool}".toString())
+                ZbsStorageController.CreateVolumeRsp createVolumeRsp = new ZbsStorageController.CreateVolumeRsp()
+                createVolumeRsp.installPath = "zbs://${cmd.logicalPool}/${cmd.volume}"
+                return createVolumeRsp
+            }
+
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+            if (cmd.hostUuid == kvm2.uuid) {
+                reconnectCheckHostStatusCount.incrementAndGet()
+            }
+            ZbsStorageController.CheckHostStorageConnectionRsp checkHostStorageConnectionRsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
+            checkHostStorageConnectionRsp.success = true
+            return checkHostStorageConnectionRsp
+        }
+
+        reconnectHost {
+            uuid = kvm2.uuid
+        }
+
+        assert reconnectCalls.contains("deploy:127.0.0.2")
+        assert reconnectCalls.contains("heartbeat:lpool1")
+        assert reconnectCheckHostStatusCount.get() > 0
+
+        if (Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, cluster.uuid)
+                .isExists()) {
+            detachPrimaryStorageFromCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
+    }
+
+    void testAttachPrimaryStorageFailsWhenPreparingUsableHostFails() {
+        env.cleanAfterSimulatorHandlers()
+
+        PrimaryStorageStatus statusBeforeAttach = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.status)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        AtomicInteger failedDeployCount = new AtomicInteger(0)
+        AtomicInteger heartbeatCount = new AtomicInteger(0)
+        env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployClientCmd)
+            if (cmd.ip == "127.0.0.1") {
+                failedDeployCount.incrementAndGet()
+                ZbsStorageController.DeployClientRsp deployClientRsp = new ZbsStorageController.DeployClientRsp()
+                deployClientRsp.success = false
+                deployClientRsp.error = "on purpose"
+                return deployClientRsp
+            }
+
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                heartbeatCount.incrementAndGet()
+            }
+
+            return rsp
+        }
+
+        expect(AssertionError.class) {
+            attachPrimaryStorageToCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
+
+        assert !Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, cluster.uuid)
+                .isExists()
+        assert Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.status)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue() == statusBeforeAttach
+        assert failedDeployCount.get() == 1
+        assert heartbeatCount.get() == 0
+    }
+
+    void testAttachPrimaryStorageFailsWhenActivatingHeartbeatVolumeFails() {
+        env.cleanAfterSimulatorHandlers()
+
+        PrimaryStorageStatus statusBeforeAttach = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.status)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        AtomicInteger deployCount = new AtomicInteger(0)
+        AtomicInteger failedHeartbeatCount = new AtomicInteger(0)
+        env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp, HttpEntity<String> e ->
+            deployCount.incrementAndGet()
+            return rsp
+        }
+        env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+            if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                failedHeartbeatCount.incrementAndGet()
+                ZbsStorageController.CreateVolumeRsp createVolumeRsp = new ZbsStorageController.CreateVolumeRsp()
+                createVolumeRsp.setError("on purpose")
+                return createVolumeRsp
+            }
+
+            return rsp
+        }
+
+        expect(AssertionError.class) {
+            attachPrimaryStorageToCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
+        }
+
+        assert !Q.New(PrimaryStorageClusterRefVO.class)
+                .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(PrimaryStorageClusterRefVO_.clusterUuid, cluster.uuid)
+                .isExists()
+        assert Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.status)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue() == statusBeforeAttach
+        assert deployCount.get() > 0
+        assert failedHeartbeatCount.get() == 1
+    }
+
     void testLifecycle() {
+        env.cleanAfterSimulatorHandlers()
+
         updateExternalPrimaryStorage {
             uuid = ps.uuid
             name = "test-zbs-new-name"
