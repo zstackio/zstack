@@ -52,7 +52,7 @@ class AsyncCascadeCase extends SubCase{
         success5 = false
         clusterChildActionCount = 0
 
-        casf = bean(CascadeFacade.class)
+        casf = new CascadeFacadeImpl()
         asyncCascade()
     }
 

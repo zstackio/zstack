@@ -25,7 +25,6 @@ import org.zstack.header.message.APIDeleteMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.zone.*;
-import org.zstack.network.l2.L2NetworkCascadeExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -57,8 +56,6 @@ public class ZoneBase extends AbstractZone {
     protected ErrorFacade errf;
     @Autowired
     protected ThreadFacade thdf;
-    @Autowired
-    protected L2NetworkCascadeExtension l2NetworkCascadeExtension;
 
 	ZoneBase(ZoneVO self) {
 		this.self = self;
@@ -192,7 +189,7 @@ public class ZoneBase extends AbstractZone {
                 cascadeAction.setActionCode(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing
                         ? CascadeConstant.DELETION_FORCE_DELETE_CODE
                         : CascadeConstant.DELETION_CHECK_CODE);
-                l2NetworkCascadeExtension.prepareConfirmedDelete(cascadeAction, new Completion(trigger) {
+                extpEmitter.prepareCascadeDelete(zinv, cascadeAction, new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -217,7 +214,7 @@ public class ZoneBase extends AbstractZone {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            l2NetworkCascadeExtension.cancelConfirmedDelete(cascadeAction,
+                            extpEmitter.cancelCascadeDelete(zinv, cascadeAction,
                                     new Completion(trigger) {
                                         @Override
                                         public void success() {

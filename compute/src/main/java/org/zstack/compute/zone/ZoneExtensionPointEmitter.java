@@ -1,15 +1,24 @@
 package org.zstack.compute.zone;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.core.cascade.BeforeZoneCascadeDeleteExtensionPoint;
 import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.zone.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class ZoneExtensionPointEmitter implements Component {
@@ -17,8 +26,11 @@ class ZoneExtensionPointEmitter implements Component {
 
 	@Autowired
 	private PluginRegistry pluginRgty;
+    @Autowired
+    private ErrorFacade errf;
 
     private List<ZoneDeleteExtensionPoint> delExts;
+    private List<BeforeZoneCascadeDeleteExtensionPoint> cascadeDelExts;
     private List<ZoneChangeStateExtensionPoint> changeExts;
 
 	void preDelete(ZoneInventory zinv) throws ZoneException {
@@ -52,6 +64,79 @@ class ZoneExtensionPointEmitter implements Component {
             }
         });
 	}
+
+    void prepareCascadeDelete(ZoneInventory inventory, CascadeAction action, Completion completion) {
+        List<BeforeZoneCascadeDeleteExtensionPoint> prepared = new ArrayList<>();
+        new While<>(cascadeDelExts).each((extension, whileCompletion) -> {
+            try {
+                extension.beforeDelete(inventory, action, new Completion(whileCompletion) {
+                    @Override
+                    public void success() {
+                        prepared.add(extension);
+                        whileCompletion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        whileCompletion.addError(errorCode);
+                        whileCompletion.allDone();
+                    }
+                });
+            } catch (RuntimeException e) {
+                whileCompletion.addError(errf.throwableToInternalError(e));
+                whileCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                    return;
+                }
+                cancelCascadeDelete(inventory, action, prepared, errors.getCauses().get(0), completion);
+            }
+        });
+    }
+
+    void cancelCascadeDelete(ZoneInventory inventory, CascadeAction action, Completion completion) {
+        cancelCascadeDelete(inventory, action, cascadeDelExts, null, completion);
+    }
+
+    private void cancelCascadeDelete(ZoneInventory inventory, CascadeAction action,
+                                     List<BeforeZoneCascadeDeleteExtensionPoint> extensions,
+                                     ErrorCode originalError,
+                                     Completion completion) {
+        new While<>(extensions).each((extension, whileCompletion) -> {
+            try {
+                extension.cancel(inventory, action, new Completion(whileCompletion) {
+                    @Override
+                    public void success() {
+                        whileCompletion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        whileCompletion.addError(errorCode);
+                        whileCompletion.allDone();
+                    }
+                });
+            } catch (RuntimeException e) {
+                whileCompletion.addError(errf.throwableToInternalError(e));
+                whileCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (originalError != null) {
+                    completion.fail(originalError);
+                } else if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
+            }
+        });
+    }
 	
 	void preChange(ZoneVO vo, ZoneStateEvent event) throws ZoneException {
 		ZoneInventory zinv = ZoneInventory.valueOf(vo);
@@ -99,6 +184,7 @@ class ZoneExtensionPointEmitter implements Component {
 
     private void populateExtensions() {
         delExts = pluginRgty.getExtensionList(ZoneDeleteExtensionPoint.class);
+        cascadeDelExts = pluginRgty.getExtensionList(BeforeZoneCascadeDeleteExtensionPoint.class);
         changeExts = pluginRgty.getExtensionList(ZoneChangeStateExtensionPoint.class);
     }
 
