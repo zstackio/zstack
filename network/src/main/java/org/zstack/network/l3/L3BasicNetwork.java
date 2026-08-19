@@ -171,27 +171,50 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(APIAddIpRangeMsg msg) {
+        if (msg.getResourceUuid() == null) {
+            msg.setResourceUuid(Platform.getUuid());
+        }
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, NetworkCreateContext.api());
+        addIpRange(add, apiTagCreator(msg), new ReturnValueCompletion<IpRangeInventory>(msg) {
+            @Override
+            public void success(IpRangeInventory inv) {
+                APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+                evt.setInventory(inv);
+                bus.publish(evt);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+                evt.setError(errorCode);
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void addIpRange(AddIpRangeMsg msg, java.util.function.Consumer<String> tagCreator,
+                            ReturnValueCompletion<IpRangeInventory> completion) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
-                if (msg.getResourceUuid() == null) {
-                    msg.setResourceUuid(Platform.getUuid());
+                IpRangeInventory ipr = msg.getInventory();
+                if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
+                    completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10083,
+                            "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
+                    chain.next();
+                    return;
                 }
-                IpRangeInventory ipr = IpRangeInventory.fromMessage(msg);
-                addIpRange(ipr, msg, NetworkCreateContext.api(), new ReturnValueCompletion<IpRangeInventory>(msg) {
+
+                addIpRange(ipr, msg, msg.getContext(), tagCreator, new ReturnValueCompletion<IpRangeInventory>(msg) {
                     @Override
                     public void success(IpRangeInventory inv) {
-                        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
-                        evt.setInventory(inv);
-                        bus.publish(evt);
+                        completion.success(inv);
                         chain.next();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
-                        evt.setError(errorCode);
-                        bus.publish(evt);
+                        completion.fail(errorCode);
                         chain.next();
                     }
                 });
@@ -210,61 +233,31 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(AddIpRangeMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        addIpRange(msg, resourceUuid -> tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid,
+                L3NetworkVO.class.getSimpleName()), new ReturnValueCompletion<IpRangeInventory>(msg) {
             @Override
-            public void run(SyncTaskChain chain) {
-                IpRangeInventory ipr = msg.getInventory();
-                if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10083,
-                            "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                APIAddIpRangeMsg create = new APIAddIpRangeMsg();
-                create.setL3NetworkUuid(msg.getL3NetworkUuid());
-                create.setName(ipr.getName());
-                create.setDescription(ipr.getDescription());
-                create.setStartIp(ipr.getStartIp());
-                create.setEndIp(ipr.getEndIp());
-                create.setNetmask(ipr.getNetmask());
-                create.setGateway(ipr.getGateway());
-                create.setIpRangeType(ipr.getIpRangeType().toString());
-                create.setResourceUuid(ipr.getUuid());
-                create.setSystemTags(msg.getSystemTags());
-                create.setUserTags(msg.getUserTags());
-                addIpRange(ipr, create, msg.getContext(), new ReturnValueCompletion<IpRangeInventory>(msg) {
-                    @Override
-                    public void success(IpRangeInventory inv) {
-                        AddIpRangeReply reply = new AddIpRangeReply();
-                        reply.setInventory(inv);
-                        bus.reply(msg, reply);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        bus.replyErrorByMessageType(msg, errorCode);
-                        chain.next();
-                    }
-                });
+            public void success(IpRangeInventory inv) {
+                AddIpRangeReply reply = new AddIpRangeReply();
+                reply.setInventory(inv);
+                bus.reply(msg, reply);
             }
 
             @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return "add-projected-ip-range";
+            public void fail(ErrorCode errorCode) {
+                bus.replyErrorByMessageType(msg, errorCode);
             }
         });
     }
 
-    private void addIpRange(IpRangeInventory ipr, APICreateMessage msg, NetworkCreateContext context,
+    private java.util.function.Consumer<String> apiTagCreator(APICreateMessage msg) {
+        return resourceUuid -> tagMgr.createTagsFromAPICreateMessage(msg, resourceUuid,
+                L3NetworkVO.class.getSimpleName());
+    }
+
+    private void addIpRange(IpRangeInventory ipr, AddIpRangeMsg msg, NetworkCreateContext context,
+                            java.util.function.Consumer<String> tagCreator,
                             ReturnValueCompletion<IpRangeInventory> completion) {
-        addIpRanges(Collections.singletonList(ipr), msg, context,
+        addIpRanges(Collections.singletonList(ipr), msg, context, tagCreator,
                 new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
                     @Override
                     public void success(List<IpRangeInventory> inventories) {
@@ -278,8 +271,8 @@ public class L3BasicNetwork implements L3Network {
                 });
     }
 
-    private void addIpRanges(List<IpRangeInventory> iprs, APICreateMessage msg,
-                             NetworkCreateContext context,
+    private void addIpRanges(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
+                             java.util.function.Consumer<String> tagCreator,
                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
         if (context == null) {
             completion.fail(Platform.inerr(ORG_ZSTACK_NETWORK_L3_10084,
@@ -320,6 +313,7 @@ public class L3BasicNetwork implements L3Network {
             if (coordinateNetworkConfigChange(change,
                     localCompletion -> addIpRanges(iprs, msg,
                             NetworkCreateContext.cloudCommit(msg.getId()),
+                            tagCreator,
                             new ReturnValueCompletion<List<IpRangeInventory>>(localCompletion) {
                                 @Override
                                 public void success(List<IpRangeInventory> inventories) {
@@ -341,8 +335,7 @@ public class L3BasicNetwork implements L3Network {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 for (IpRangeInventory inv : invs) {
-                    tagMgr.createTagsFromAPICreateMessage(
-                            msg, inv.getL3NetworkUuid(), L3NetworkVO.class.getSimpleName());
+                    tagCreator.accept(inv.getL3NetworkUuid());
                     setIpRangeSharedResource(inv.getL3NetworkUuid(), inv.getUuid());
                 }
                 completion.success(invs);
@@ -1770,8 +1763,10 @@ public class L3BasicNetwork implements L3Network {
         List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
         assignStableIpRangeUuids(iprs, msg.getResourceUuid());
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, iprs.get(0), NetworkCreateContext.api());
 
-        addIpRanges(iprs, msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        addIpRanges(iprs, add, NetworkCreateContext.api(), apiTagCreator(msg),
+                new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
@@ -1794,8 +1789,10 @@ public class L3BasicNetwork implements L3Network {
             ipr.setUuid(Platform.getUuid());
         }
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr, NetworkCreateContext.api());
 
-        addIpRanges(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        addIpRanges(Collections.singletonList(ipr), add, NetworkCreateContext.api(), apiTagCreator(msg),
+                new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);
@@ -1817,8 +1814,10 @@ public class L3BasicNetwork implements L3Network {
             ipr.setUuid(Platform.getUuid());
         }
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr, NetworkCreateContext.api());
 
-        addIpRanges(Collections.singletonList(ipr), msg, NetworkCreateContext.api(), new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
+        addIpRanges(Collections.singletonList(ipr), add, NetworkCreateContext.api(), apiTagCreator(msg),
+                new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 IpRangeInventory inv = invs.get(0);

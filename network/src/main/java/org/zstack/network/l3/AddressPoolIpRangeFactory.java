@@ -6,7 +6,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.utils.CollectionUtils;
@@ -30,12 +29,12 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
     }
 
     @Override
-    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
+    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
         createIpRange(iprs, msg, NetworkCreateContext.api(), completion);
     }
 
     @Override
-    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, NetworkCreateContext context,
+    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
                               ReturnValueCompletion<List<IpRangeInventory>> completion) {
         String resolvedAccountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
         if (resolvedAccountUuid == null && context != null && context.getExternalRef() != null) {

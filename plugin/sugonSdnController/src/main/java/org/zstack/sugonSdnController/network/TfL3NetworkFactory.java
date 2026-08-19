@@ -26,7 +26,7 @@ public class TfL3NetworkFactory implements L3NetworkFactory {
     }
 
     @Override
-    public L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg) {
+    public L3NetworkInventory createL3Network(L3NetworkVO l3vo, CreateL3NetworkMsg msg) {
         l3vo.setType(type.toString());
         dbf.getEntityManager().persist(l3vo);
         dbf.getEntityManager().flush();

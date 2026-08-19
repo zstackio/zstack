@@ -114,5 +114,4 @@ public class AllocateIpMsg extends NeedReplyMessage implements L3NetworkMessage,
     public void setIpv6Prefix(String ipv6Prefix) {
         this.ipv6Prefix = ipv6Prefix;
     }
-
 }

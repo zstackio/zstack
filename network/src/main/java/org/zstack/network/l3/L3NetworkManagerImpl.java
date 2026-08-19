@@ -131,21 +131,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(CreateL3NetworkMsg msg) {
-        APICreateL3NetworkMsg api = new APICreateL3NetworkMsg();
-        api.setName(msg.getName());
-        api.setDescription(msg.getDescription());
-        api.setType(msg.getType());
-        api.setL2NetworkUuid(msg.getL2NetworkUuid());
-        api.setCategory(msg.getCategory());
-        api.setIpVersion(msg.getIpVersion());
-        api.setSystem(msg.isSystem());
-        api.setDnsDomain(msg.getDnsDomain());
-        api.setEnableIPAM(msg.getEnableIPAM());
-        api.setResourceUuid(msg.getResourceUuid());
-        api.setSession(msg.getSession());
-        api.setSystemTags(msg.getSystemTags());
-        handle(api, msg.getContext() == null ? NetworkCreateContext.api() : msg.getContext(),
-                new ReturnValueCompletion<L3NetworkInventory>(msg) {
+        createL3Network(msg, msg.getContext() == null ? NetworkCreateContext.api() : msg.getContext(),
+                resourceUuid -> tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid,
+                        L3NetworkVO.class.getSimpleName()), new ReturnValueCompletion<L3NetworkInventory>(msg) {
                     @Override
                     public void success(L3NetworkInventory inventory) {
                         CreateL3NetworkReply reply = new CreateL3NetworkReply();
@@ -563,7 +551,10 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(APICreateL3NetworkMsg msg) {
-        handle(msg, NetworkCreateContext.api(), new ReturnValueCompletion<L3NetworkInventory>(msg) {
+        CreateL3NetworkMsg create = CreateL3NetworkMsg.fromApi(msg, NetworkCreateContext.api());
+        createL3Network(create, NetworkCreateContext.api(), resourceUuid ->
+                tagMgr.createTagsFromAPICreateMessage(msg, resourceUuid, L3NetworkVO.class.getSimpleName()),
+                new ReturnValueCompletion<L3NetworkInventory>(msg) {
             @Override
             public void success(L3NetworkInventory inventory) {
                 APICreateL3NetworkEvent evt = new APICreateL3NetworkEvent(msg.getId());
@@ -580,22 +571,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         });
     }
 
-    private void handle(APICreateL3NetworkMsg msg, NetworkCreateContext context) {
-        handle(msg, context, new ReturnValueCompletion<L3NetworkInventory>(msg) {
-            @Override
-            public void success(L3NetworkInventory inventory) {
-                logger.debug(String.format("Successfully created L3Network[name:%s, uuid:%s]", msg.getName(), inventory.getUuid()));
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("Failed to create L3Network[name:%s]: %s", msg.getName(), errorCode));
-            }
-        });
-    }
-
-    private void handle(APICreateL3NetworkMsg msg, NetworkCreateContext context,
-                        ReturnValueCompletion<L3NetworkInventory> completion) {
+    private void createL3Network(CreateL3NetworkMsg msg, NetworkCreateContext context,
+                                 java.util.function.Consumer<String> tagCreator,
+                                 ReturnValueCompletion<L3NetworkInventory> completion) {
 
         if (context.getOrigin() == NetworkOperationOrigin.API) {
             if (msg.getResourceUuid() == null) {
@@ -608,8 +586,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> created =
                     new java.util.concurrent.atomic.AtomicReference<>();
             if (coordinateNetworkConfigChange(change,
-                    localCompletion -> handle(msg,
+                    localCompletion -> createL3Network(msg,
                             NetworkCreateContext.cloudCommit(msg.getId()),
+                            tagCreator,
                             new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
                                 @Override
                                 public void success(L3NetworkInventory inventory) {
@@ -697,7 +676,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         }
                         vo.setAccountUuid(accountUuid);
                         L3NetworkInventory inv = factory.createL3Network(vo, msg, context);
-                        tagMgr.createTagsFromAPICreateMessage(msg, vo.getUuid(), L3NetworkVO.class.getSimpleName());
+                        tagCreator.accept(vo.getUuid());
                         return inv;
                     }
                 }.execute();

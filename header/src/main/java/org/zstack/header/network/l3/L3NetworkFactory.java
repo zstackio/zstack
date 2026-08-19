@@ -5,9 +5,9 @@ import org.zstack.header.network.l2.NetworkCreateContext;
 public interface L3NetworkFactory {
     L3NetworkType getType();
 
-    L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg);
+    L3NetworkInventory createL3Network(L3NetworkVO l3vo, CreateL3NetworkMsg msg);
 
-    default L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg, NetworkCreateContext context) {
+    default L3NetworkInventory createL3Network(L3NetworkVO l3vo, CreateL3NetworkMsg msg, NetworkCreateContext context) {
         return createL3Network(l3vo, msg);
     }
 

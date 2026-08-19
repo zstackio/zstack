@@ -19,6 +19,27 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
     private SessionInventory session;
     private NetworkCreateContext context;
 
+    public static CreateL3NetworkMsg fromApi(APICreateL3NetworkMsg api,
+                                             NetworkCreateContext context) {
+        CreateL3NetworkMsg msg = new CreateL3NetworkMsg();
+        msg.setName(api.getName());
+        msg.setDescription(api.getDescription());
+        msg.setType(api.getType());
+        msg.setL2NetworkUuid(api.getL2NetworkUuid());
+        msg.setCategory(api.getCategory());
+        msg.setIpVersion(api.getIpVersion());
+        msg.setSystem(api.isSystem());
+        msg.setDnsDomain(api.getDnsDomain());
+        msg.setEnableIPAM(api.getEnableIPAM());
+        msg.setResourceUuid(api.getResourceUuid());
+        msg.setSession(api.getSession());
+        msg.setSystemTags(api.getSystemTags());
+        msg.setUserTags(api.getUserTags());
+        msg.setContext(context);
+        msg.setId(api.getId());
+        return msg;
+    }
+
     public String getName() { return name; }
     public void setName(String value) { name = value; }
     public String getDescription() { return description; }
