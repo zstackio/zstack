@@ -406,6 +406,10 @@ PREPARE stmt FROM @sql;
 EXECUTE stmt;
 DEALLOCATE PREPARE stmt;
 
+-- ZSTAC-87753: primary-storage cache policies are resource-level and shared by
+-- all hosts; shared rows carry hostUuid NULL, so the column must be nullable.
+ALTER TABLE `zstack`.`AiHostModelCachePolicyVO` MODIFY COLUMN `hostUuid` VARCHAR(32) NULL;
+
 CALL CREATE_INDEX('VmModelMountVO', 'idxVmModelMountVOCacheUuid', 'cacheUuid');
 CALL ADD_CONSTRAINT('VmModelMountVO', 'fkVmModelMountVOAiHostModelCacheVO', 'cacheUuid', 'AiHostModelCacheVO', 'uuid', 'SET NULL');
 
