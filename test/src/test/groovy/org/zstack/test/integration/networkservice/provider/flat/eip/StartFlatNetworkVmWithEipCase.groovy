@@ -268,7 +268,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
             def cmd = json(e.body, FlatEipBackend.BatchApplyEipCmd.class)
-            migrationEipOperations.add(cmd.prepare ? "prepare" : "active")
+            migrationEipOperations.add(cmd.prepare ? "prepare" : cmd.activate ? "activate" : "active")
             return rsp
         }
 
@@ -279,11 +279,12 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         retryInSecs {
             int prepareIndex = migrationEipOperations.indexOf("prepare")
-            int activeIndex = migrationEipOperations.indexOf("active")
+            int activateIndex = migrationEipOperations.indexOf("activate")
             int deleteIndex = migrationEipOperations.indexOf("delete")
             assert prepareIndex >= 0 : "EIP migration did not prepare destination EIP: operations=${migrationEipOperations}"
-            assert activeIndex > prepareIndex : "Destination EIP was not activated after prepare: operations=${migrationEipOperations}"
-            assert deleteIndex > activeIndex : "Source EIP was deleted before destination activation: operations=${migrationEipOperations}"
+            assert activateIndex > prepareIndex : "EIP migration did not activate prepared destination EIP: operations=${migrationEipOperations}"
+            assert deleteIndex > activateIndex : "Source EIP was deleted before destination activation: operations=${migrationEipOperations}"
+            assert !migrationEipOperations.contains("active") : "Migration unexpectedly reapplied EIP on destination: operations=${migrationEipOperations}"
         }
 
         migrationEipOperations.clear()
@@ -299,11 +300,37 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         retryInSecs {
             int prepareIndex = migrationEipOperations.indexOf("prepare")
-            int activeIndex = migrationEipOperations.indexOf("active")
+            int activateIndex = migrationEipOperations.indexOf("activate")
             int deleteIndex = migrationEipOperations.indexOf("delete")
             assert prepareIndex >= 0 : "Reverse migration did not prepare destination EIP: operations=${migrationEipOperations}"
-            assert activeIndex > prepareIndex : "Reverse migration did not activate destination after prepare: operations=${migrationEipOperations}"
-            assert deleteIndex > activeIndex : "Reverse migration deleted source before destination activation: operations=${migrationEipOperations}"
+            assert activateIndex > prepareIndex : "Reverse migration did not activate prepared destination EIP: operations=${migrationEipOperations}"
+            assert deleteIndex > activateIndex : "Reverse migration deleted source before destination activation: operations=${migrationEipOperations}"
+            assert !migrationEipOperations.contains("active") : "Reverse migration unexpectedly reapplied EIP on destination: operations=${migrationEipOperations}"
+        }
+
+        migrationEipOperations.clear()
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = json(e.body, FlatEipBackend.BatchApplyEipCmd.class)
+            migrationEipOperations.add(cmd.prepare ? "prepare" : cmd.activate ? "activate" : "active")
+            if (cmd.activate) {
+                rsp.success = false
+                rsp.error = "on purpose"
+            }
+            return rsp
+        }
+
+        migrateVm {
+            vmInstanceUuid = vm.uuid
+            hostUuid = host2.uuid
+        }
+
+        retryInSecs {
+            assert migrationEipOperations.contains("prepare") :
+                    "EIP migration did not prepare destination EIP: operations=${migrationEipOperations}"
+            assert migrationEipOperations.contains("activate") :
+                    "EIP migration did not activate prepared destination EIP: operations=${migrationEipOperations}"
+            assert !migrationEipOperations.contains("delete") :
+                    "Migration deleted source EIP after destination activation failed: operations=${migrationEipOperations}"
         }
     }
 

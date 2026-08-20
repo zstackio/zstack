@@ -123,6 +123,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     public static class BatchApplyEipCmd extends AgentCmd {
         public List<EipTO> eips;
         public boolean prepare;
+        public boolean activate;
     }
 
     public static class BatchDeleteEipCmd extends AgentCmd {
@@ -161,7 +162,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return;
         }
 
-        batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
+        batchActivateEips(eips, inv.getHostUuid(), new Completion(null) {
             @Override
             public void success() {
                 batchDeleteEips(eips, srcHostUuid, new Completion(null) {
@@ -179,7 +180,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
             @Override
             public void fail(ErrorCode errorCode) {
-                logger.warn(String.format("failed to enable EIPs[vips:%s] for migrated vm[uuid:%s] on destination host[uuid:%s], keep source EIPs on host[uuid:%s], %s",
+                logger.warn(String.format("failed to activate prepared EIPs[vips:%s] for migrated vm[uuid:%s] on destination host[uuid:%s], keep source EIPs on host[uuid:%s], %s",
                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getHostUuid(), srcHostUuid, errorCode));
             }
         });
@@ -574,9 +575,19 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
     private void batchApplyEips(List<EipTO> eips, String hostUuid, boolean prepare, boolean noHostStatusCheck,
                                 final Completion completion) {
+        batchApplyEips(eips, hostUuid, prepare, false, noHostStatusCheck, completion);
+    }
+
+    private void batchActivateEips(List<EipTO> eips, String hostUuid, final Completion completion) {
+        batchApplyEips(eips, hostUuid, false, true, false, completion);
+    }
+
+    private void batchApplyEips(List<EipTO> eips, String hostUuid, boolean prepare, boolean activate,
+                                boolean noHostStatusCheck, final Completion completion) {
         BatchApplyEipCmd cmd = new BatchApplyEipCmd();
         cmd.eips = eips;
         cmd.prepare = prepare;
+        cmd.activate = activate;
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -599,7 +610,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
-                if (prepare) {
+                if (prepare || activate) {
                     completion.success();
                     return;
                 }
