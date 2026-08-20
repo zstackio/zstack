@@ -6729,25 +6729,35 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final Map data) {
                 VmInstanceInventory vm = VmInstanceInventory.valueOf(self);
-                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid());
-                completion.success();
+                extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
             }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
-                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode);
-                if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
-                        @Override
-                        public void done() {
+                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode,
+                        new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        if (!HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
+                            changeVmStateInDb(originState.getDrivenEvent());
                             completion.fail(errCode);
+                            return;
                         }
-                    });
-                } else {
-                    changeVmStateInDb(originState.getDrivenEvent());
-                    completion.fail(errCode);
-                }
+
+                        checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                            @Override
+                            public void done() {
+                                completion.fail(errCode);
+                            }
+                        });
+                    }
+                });
             }
         }).start();
     }
@@ -8728,4 +8738,3 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 }
-
