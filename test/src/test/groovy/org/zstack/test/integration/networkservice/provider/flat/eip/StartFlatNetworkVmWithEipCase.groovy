@@ -245,15 +245,15 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             vmNicUuid = vm.vmNics[0].uuid
         }
 
-        boolean deleteEipOnSrcHostFailed = false
+        List<String> migrationEipOperations = Collections.synchronizedList([])
         env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) {
-            deleteEipOnSrcHostFailed = true
+            migrationEipOperations.add("delete")
             throw new HttpError(403, "on purpose")
         }
 
-        boolean applyEipOnDestHostSuccessed = false
         env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
-            applyEipOnDestHostSuccessed = true
+            def cmd = json(e.body, FlatEipBackend.BatchApplyEipCmd.class)
+            migrationEipOperations.add(cmd.prepare ? "prepare" : "active")
             return rsp
         }
 
@@ -263,13 +263,17 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == true
-            assert applyEipOnDestHostSuccessed == true
+            int prepareIndex = migrationEipOperations.indexOf("prepare")
+            int activeIndex = migrationEipOperations.indexOf("active")
+            int deleteIndex = migrationEipOperations.indexOf("delete")
+            assert prepareIndex >= 0 : "EIP migration did not prepare destination EIP: operations=${migrationEipOperations}"
+            assert activeIndex > prepareIndex : "Destination EIP was not activated after prepare: operations=${migrationEipOperations}"
+            assert deleteIndex > activeIndex : "Source EIP was deleted before destination activation: operations=${migrationEipOperations}"
         }
 
-        applyEipOnDestHostSuccessed = false
+        migrationEipOperations.clear()
         env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp, HttpEntity<String> e ->
-            deleteEipOnSrcHostFailed = false
+            migrationEipOperations.add("delete")
             return rsp
         }
 
@@ -279,8 +283,12 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == false
-            assert applyEipOnDestHostSuccessed == true
+            int prepareIndex = migrationEipOperations.indexOf("prepare")
+            int activeIndex = migrationEipOperations.indexOf("active")
+            int deleteIndex = migrationEipOperations.indexOf("delete")
+            assert prepareIndex >= 0 : "Reverse migration did not prepare destination EIP: operations=${migrationEipOperations}"
+            assert activeIndex > prepareIndex : "Reverse migration did not activate destination after prepare: operations=${migrationEipOperations}"
+            assert deleteIndex > activeIndex : "Reverse migration deleted source before destination activation: operations=${migrationEipOperations}"
         }
     }
 

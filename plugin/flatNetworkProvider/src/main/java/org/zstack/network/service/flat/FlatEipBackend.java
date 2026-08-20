@@ -13,7 +13,7 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.FutureCompletion;
 import org.zstack.header.core.NopeCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowRollback;
@@ -58,6 +58,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -134,14 +135,18 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     public static final String BATCH_DELETE_EIP_PATH = "/flatnetworkprovider/eip/batchdelete";
 
     @Override
-    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid, Completion completion) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         List<EipTO> eips = getEipsByVmUuid(inv.getUuid());
         if (eips == null || eips.isEmpty()) {
-            completion.success();
             return;
         }
 
+        FutureCompletion completion = new FutureCompletion(null);
         batchApplyEips(eips, destHostUuid, true, false, completion);
+        completion.await(TimeUnit.MINUTES.toMillis(30));
+        if (!completion.isSuccess()) {
+            throw new OperationFailureException(completion.getErrorCode());
+        }
     }
 
     @Override
@@ -150,27 +155,24 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
     }
 
     @Override
-    public void afterMigrateVm(final VmInstanceInventory inv, String srcHostUuid, NoErrorCompletion completion) {
+    public void afterMigrateVm(final VmInstanceInventory inv, String srcHostUuid) {
         List<EipTO> eips = getEipsByVmUuid(inv.getUuid());
         if (eips == null || eips.isEmpty()) {
-            completion.done();
             return;
         }
 
-        batchApplyEips(eips, inv.getHostUuid(), new Completion(completion) {
+        batchApplyEips(eips, inv.getHostUuid(), new Completion(null) {
             @Override
             public void success() {
-                batchDeleteEips(eips, srcHostUuid, new Completion(completion) {
+                batchDeleteEips(eips, srcHostUuid, new Completion(null) {
                     @Override
                     public void success() {
-                        completion.done();
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
                         logger.warn(String.format("failed to delete EIPs[vips:%s] for migrated vm[uuid:%s] on source host[uuid:%s], %s",
                                 eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), srcHostUuid, errorCode));
-                        completion.done();
                     }
                 });
             }
@@ -179,36 +181,32 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("failed to enable EIPs[vips:%s] for migrated vm[uuid:%s] on destination host[uuid:%s], keep source EIPs on host[uuid:%s], %s",
                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), inv.getHostUuid(), srcHostUuid, errorCode));
-                completion.done();
             }
         });
     }
 
     @Override
-    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason,
-                                  NoErrorCompletion completion) {
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
         List<EipTO> eips = getEipsByVmUuid(inv.getUuid());
         if (eips == null || eips.isEmpty() || destHostUuid == null) {
-            completion.done();
             return;
         }
 
-        if (destHostUuid.equals(inv.getHostUuid())) {
-            afterMigrateVm(inv, inv.getLastHostUuid(), completion);
+        if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(reason.getCode())) {
+            logger.warn(String.format("keep prepared EIPs[vips:%s] on destination host[uuid:%s] because vm[uuid:%s] placement is uncertain after migration failure",
+                    eips.stream().map(e -> e.vip).collect(Collectors.toList()), destHostUuid, inv.getUuid()));
             return;
         }
 
-        batchDeleteEips(eips, destHostUuid, new Completion(completion) {
+        batchDeleteEips(eips, destHostUuid, new Completion(null) {
             @Override
             public void success() {
-                completion.done();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("failed to clean prepared EIPs[vips:%s] for vm[uuid:%s] on destination host[uuid:%s], %s",
                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(), destHostUuid, errorCode));
-                completion.done();
             }
         });
     }
@@ -274,13 +272,22 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             }
 
             private void vmMigrateToAnotherHost(final FlowTrigger trigger) {
-                batchDeleteEips(eips, struct.getOriginalHostUuid(), new NopeCompletion());
-                applyHostUuidForRollback = struct.getOriginalHostUuid();
                 batchApplyEips(eips, struct.getCurrentHostUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         releaseHostUuidForRollback = struct.getCurrentHostUuid();
-                        trigger.next();
+                        batchDeleteEips(eips, struct.getOriginalHostUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                applyHostUuidForRollback = struct.getOriginalHostUuid();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
@@ -292,13 +299,22 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
 
             private void vmRunningFromUnknownStateHostChanged(final FlowTrigger trigger) {
-                batchDeleteEips(eips, struct.getOriginalHostUuid(), new NopeCompletion());
-                applyHostUuidForRollback = struct.getOriginalHostUuid();
                 batchApplyEips(eips, struct.getCurrentHostUuid(), new Completion(trigger) {
                     @Override
                     public void success() {
                         releaseHostUuidForRollback = struct.getCurrentHostUuid();
-                        trigger.next();
+                        batchDeleteEips(eips, struct.getOriginalHostUuid(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                applyHostUuidForRollback = struct.getOriginalHostUuid();
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
