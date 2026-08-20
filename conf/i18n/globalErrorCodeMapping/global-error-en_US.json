@@ -4749,6 +4749,7 @@
   "ORG_ZSTACK_AI_10171": "multiple enabled business network profiles found for model service backend[%s], zoneUuid[%s], clusterUuid[%s]; cannot select one automatically. Specify businessNetworkProfileUuid explicitly, or mark one profile as the default.",
   "ORG_ZSTACK_AI_10172": "no AI business gateway offering available for business network profile[uuid:%s]. Add an offering with an image and an instance offering first.",
   "ORG_ZSTACK_AI_10173": "business network profile[uuid:%s] has no developer access path: the developer access gateway lacks developerAccessNetworkUuid. Configure a developer access gateway/network for the profile, or disable the developer endpoint and retry.",
+  "ORG_ZSTACK_AI_10174": "business network profile[uuid:%s] backendType[%s] does not match model service backend[%s]. Select a profile whose backend type matches the service deployment type, or leave it unspecified and let the system resolve one by deployment scope.",
   "ORG_ZSTACK_NETWORK_ZNS_10043": "failed to allocate DHCPv4 server IP for ZNS L3[uuid:%s]",
   "ORG_ZSTACK_NETWORK_ZNS_10044": "cannot enable DHCP: L3[uuid:%s] has no eligible IpRange (SLAAC excluded)",
   "ORG_ZSTACK_NETWORK_ZNS_10045": "cannot enable DHCP: L3[uuid:%s] has no Cloud-reserved DHCPv4 server IP",
