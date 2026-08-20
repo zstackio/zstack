@@ -285,7 +285,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                releaseHostUuidForRollback = null;
+                                logger.warn(String.format("failed to clean EIPs[vips:%s] for vm[uuid:%s] on original host[uuid:%s] after applying them on current host[uuid:%s], %s",
+                                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), struct.getOriginalHostUuid(), struct.getCurrentHostUuid(), errorCode));
+                                trigger.next();
                             }
                         });
                     }
@@ -312,7 +315,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                releaseHostUuidForRollback = null;
+                                logger.warn(String.format("failed to clean EIPs[vips:%s] for vm[uuid:%s] on original host[uuid:%s] after applying them on current host[uuid:%s], %s",
+                                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), struct.getOriginalHostUuid(), struct.getCurrentHostUuid(), errorCode));
+                                trigger.next();
                             }
                         });
                     }

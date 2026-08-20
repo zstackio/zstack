@@ -2,7 +2,16 @@ package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.workflow.FlowChainBuilder
+import org.zstack.header.core.FutureCompletion
+import org.zstack.header.core.workflow.Flow
+import org.zstack.header.core.workflow.FlowDoneHandler
+import org.zstack.header.core.workflow.FlowErrorHandler
+import org.zstack.header.core.workflow.FlowRollback
+import org.zstack.header.core.workflow.FlowTrigger
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct
+import org.zstack.header.vm.VmInstanceVO
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -17,6 +26,10 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 
 import static org.zstack.core.Platform.operr
 
@@ -245,6 +258,8 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             vmNicUuid = vm.vmNics[0].uuid
         }
 
+        testAbnormalMigrationSourceCleanupFailure()
+
         List<String> migrationEipOperations = Collections.synchronizedList([])
         env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) {
             migrationEipOperations.add("delete")
@@ -289,6 +304,73 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             assert prepareIndex >= 0 : "Reverse migration did not prepare destination EIP: operations=${migrationEipOperations}"
             assert activeIndex > prepareIndex : "Reverse migration did not activate destination after prepare: operations=${migrationEipOperations}"
             assert deleteIndex > activeIndex : "Reverse migration deleted source before destination activation: operations=${migrationEipOperations}"
+        }
+    }
+
+    void testAbnormalMigrationSourceCleanupFailure() {
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        [
+                VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost,
+                VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged,
+        ].each { operation ->
+            AtomicInteger deleteCount = new AtomicInteger()
+            AtomicBoolean downstreamReached = new AtomicBoolean(false)
+            FutureCompletion chainResult = new FutureCompletion(null)
+
+            env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp ->
+                return rsp
+            }
+            env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+                deleteCount.incrementAndGet()
+                rsp.success = false
+                rsp.error = "source cleanup failure"
+                return rsp
+            }
+
+            VmAbnormalLifeCycleStruct struct = new VmAbnormalLifeCycleStruct()
+            struct.operation = operation
+            struct.vmInstance = org.zstack.header.vm.VmInstanceInventory.valueOf(
+                    dbFindByUuid(vm.uuid, VmInstanceVO.class))
+            struct.originalHostUuid = host1.uuid
+            struct.currentHostUuid = host2.uuid
+
+            def chain = FlowChainBuilder.newSimpleFlowChain()
+            chain.then(bean(FlatEipBackend.class).createVmAbnormalLifeCycleHandlingFlow(struct))
+            chain.then(new Flow() {
+                @Override
+                void run(FlowTrigger trigger, Map data) {
+                    downstreamReached.set(true)
+                    trigger.fail(operr("downstream failure"))
+                }
+
+                @Override
+                void rollback(FlowRollback trigger, Map data) {
+                    trigger.rollback()
+                }
+            })
+            chain.done(new FlowDoneHandler(null) {
+                @Override
+                void handle(Map data) {
+                    chainResult.success()
+                }
+            })
+            chain.error(new FlowErrorHandler(null) {
+                @Override
+                void handle(org.zstack.header.errorcode.ErrorCode errorCode, Map data) {
+                    chainResult.fail(errorCode)
+                }
+            })
+            chain.start()
+
+            chainResult.await(TimeUnit.SECONDS.toMillis(30))
+            assert !chainResult.success
+            assert downstreamReached.get() : "source cleanup failure stopped ${operation} flow"
+            TimeUnit.MILLISECONDS.sleep(500)
+            assert deleteCount.get() == 1 :
+                    "rollback deleted current-host EIP after source cleanup failure: operation=${operation}, deletes=${deleteCount.get()}"
         }
     }
 
