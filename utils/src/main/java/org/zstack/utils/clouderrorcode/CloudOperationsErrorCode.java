@@ -15270,6 +15270,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10170 = "ORG_ZSTACK_AI_10170";
     public static final String ORG_ZSTACK_AI_10171 = "ORG_ZSTACK_AI_10171";
     public static final String ORG_ZSTACK_AI_10172 = "ORG_ZSTACK_AI_10172";
+    public static final String ORG_ZSTACK_AI_10173 = "ORG_ZSTACK_AI_10173";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
