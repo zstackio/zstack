@@ -1,6 +1,7 @@
 package org.zstack.testlib
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.core.db.SQLBatch
@@ -12,6 +13,7 @@ import org.zstack.header.storage.snapshot.TakeSnapshotsOnKvmResultStruct
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.header.vm.additions.VmHostFileContentFormat
 import org.zstack.header.vm.devices.DeviceAddress
 import org.zstack.header.vm.devices.VirtualDeviceInfo
 import org.zstack.header.volume.VolumeInventory
@@ -37,6 +39,8 @@ import static org.zstack.kvm.KVMAgentCommands.*
  */
 class KVMSimulator implements Simulator {
     static ConcurrentHashMap<String, KVMAgentCommands.ConnectCmd> connectCmdConcurrentHashMap = new ConcurrentHashMap<>()
+    static ConcurrentHashMap<String, String> ensureSecretUuidCache = new ConcurrentHashMap<>()
+    static final String MOCK_ENVELOPE_PUBLIC_KEY_BASE64 = "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA="
     private static Map<String, VFSPrimaryStorageTakeSnapshotBackend> takeSnapshotBackends = [:]
 
     static {
@@ -311,6 +315,62 @@ class KVMSimulator implements Simulator {
             return rsp
         }
 
+        spec.simulator(KVMConstant.KVM_CREATE_ENVELOPE_KEY_PATH) {
+            def rsp = new CreatePublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_GET_ENVELOPE_KEY_PATH) {
+            def rsp = new GetPublicKeyResponse()
+            rsp.success = true
+            rsp.publicKey = MOCK_ENVELOPE_PUBLIC_KEY_BASE64
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_VERIFY_ENVELOPE_KEY_PATH) {
+            def rsp = new VerifyPublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_ROTATE_ENVELOPE_KEY_PATH) {
+            def rsp = new RotatePublicKeyResponse()
+            rsp.success = true
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_ENSURE_SECRET_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            SecretHostDefineCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostDefineCmd.class)
+            String cacheKey = buildHostSecretCacheKey(hostUuid, cmd?.vmUuid, cmd?.purpose, cmd?.keyVersion, cmd?.usageInstance)
+            def rsp = new SecretHostDefineResponse()
+            rsp.secretUuid = ensureSecretUuidCache.computeIfAbsent(cacheKey) { Platform.uuid }
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_GET_SECRET_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            SecretHostGetCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostGetCmd.class)
+            String cacheKey = buildHostSecretCacheKey(hostUuid, cmd?.vmUuid, cmd?.purpose, cmd?.keyVersion, cmd?.usageInstance)
+            def rsp = new SecretHostGetResponse()
+            String secretUuid = ensureSecretUuidCache.get(cacheKey)
+            if (secretUuid == null) {
+                rsp.setError("KEY_AGENT_SECRET_NOT_FOUND")
+            } else {
+                rsp.secretUuid = secretUuid
+            }
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.KVM_DELETE_SECRET_PATH) { HttpEntity<String> e ->
+            String hostUuid = e.getHeaders().getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID)
+            SecretHostDeleteCmd cmd = JSONObjectUtil.toObject(e.body, SecretHostDeleteCmd.class)
+            String cacheKey = buildHostSecretCacheKey(hostUuid, cmd?.vmUuid, cmd?.purpose, cmd?.keyVersion, cmd?.usageInstance)
+            ensureSecretUuidCache.remove(cacheKey)
+            return new SecretHostDeleteResponse()
+        }
+
         spec.simulator(KVMConstant.KVM_ECHO_PATH) { HttpEntity<String> e ->
             Spec.checkHttpCallType(e, true)
             return [:]
@@ -519,6 +579,7 @@ class KVMSimulator implements Simulator {
             rsp.virtualizerInfo.uuid = cmd.vmInstanceUuid
             rsp.virtualizerInfo.virtualizer = "qemu-kvm"
             rsp.virtualizerInfo.version = "4.2.0-632.g6a6222b.el7"
+            rsp.edkRpm = "edk2-ovmf-20220126gitbb1bba3d77-3.el8.noarch"
 
             return rsp
         }
@@ -703,5 +764,52 @@ class KVMSimulator implements Simulator {
         spec.simulator(KVMConstant.HA_NETWORK_GROUP_SYNC_PATH) {
             return new KVMAgentCommands.AgentResponse()
         }
+
+        spec.simulator(KVMConstant.READ_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ReadVmHostFileContentCmd)
+
+            def rsp = new ReadVmHostFileContentResponse()
+            for (final def param in cmd.hostFiles) {
+                def to = new VmHostFileTO()
+                to.path = param.path
+                to.type = param.type
+                to.fileFormat = VmHostFileContentFormat.Raw.toString()
+                to.contentBase64 = "dGVzdA=="
+                rsp.hostFiles.add(to)
+            }
+            return rsp
+        }
+
+        spec.simulator(KVMConstant.WRITE_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            return new WriteVmHostFileContentResponse()
+        }
+
+        spec.simulator(KVMConstant.BACKUP_VM_HOST_FILE_PATH) { HttpEntity<String> e ->
+            return new BackupVmHostFileResponse()
+        }
+    }
+
+    /** Resets simulated host vTPM secret entries for getSecret / ensureSecret / deleteSecret. */
+    static void resetSimulatedHostSecretCache() {
+        ensureSecretUuidCache.clear()
+    }
+
+    static void putSimulatedHostSecretForTest(String hostUuid, String vmUuid, String purpose,
+                                              Integer keyVersion, String secretUuid) {
+        ensureSecretUuidCache.put(buildHostSecretCacheKey(hostUuid, vmUuid, purpose, keyVersion, KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM), secretUuid)
+    }
+
+    static String getSimulatedHostSecretForTest(String hostUuid, String vmUuid, String purpose, Integer keyVersion) {
+        return ensureSecretUuidCache.get(buildHostSecretCacheKey(hostUuid, vmUuid, purpose, keyVersion, KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM))
+    }
+
+    private static String buildHostSecretCacheKey(String hostUuid, String vmUuid, String purpose, Integer keyVersion, String usageInstance) {
+        String usage = usageInstance ?: KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM
+        return String.format("%s::%s::%s::%s::%s",
+                hostUuid ?: "",
+                vmUuid ?: "",
+                purpose ?: "",
+                keyVersion == null ? "" : String.valueOf(keyVersion),
+                usage)
     }
 }

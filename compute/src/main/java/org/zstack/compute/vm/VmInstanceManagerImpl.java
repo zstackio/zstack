@@ -924,7 +924,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
         flowChain.setName(String.format("create-nic-on-l3-network-%s", msg.getL3NetworkUuid()));
         flowChain.then(new NoRollbackFlow() {
-            String __name__ = "create-nic-and-presist-to-db";
+            String __name__ = "create-nic-and-persist-to-db";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
@@ -1227,6 +1227,28 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 }
 
                 flow(new Flow() {
+                    String __name__ = "call-after-persist-vm-extensions";
+                    List<VmInstanceCreateExtensionPoint> done = new ArrayList<>();
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        for (VmInstanceCreateExtensionPoint extension : pluginRgty.getExtensionList(VmInstanceCreateExtensionPoint.class)) {
+                            done.add(extension);
+                            extension.afterPersistVmInstanceVO(finalVo, msg);
+                        }
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        Collections.reverse(done);
+                        CollectionUtils.safeForEach(done,
+                                extension -> extension.afterRollbackPersistVmInstanceVO(finalVo, msg));
+                        trigger.rollback();
+                    }
+                });
+
+                flow(new Flow() {
                     List<ErrorCode> errorCodes = new ArrayList<>();
                     String __name__ = String.format("instantiate-systemTag-for-vm-%s", finalVo.getUuid());
 
@@ -1323,6 +1345,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         smsg.setDataVolumeSystemTags(msg.getDataVolumeSystemTags());
                         smsg.setDataVolumeSystemTagsOnIndex(msg.getDataVolumeSystemTagsOnIndex());
                         smsg.setDiskAOs(msg.getDiskAOs());
+                        smsg.setDevicesSpec(msg.getDevicesSpec());
                         bus.makeTargetServiceIdByResourceUuid(smsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(smsg, new CloudBusCallBack(smsg) {
                             @Override
@@ -1364,7 +1387,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                         }
                         DestroyVmInstanceMsg dmsg = new DestroyVmInstanceMsg();
                         dmsg.setVmInstanceUuid(finalVo.getUuid());
-                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Direct);
+                        dmsg.setDeletionPolicy(VmInstanceDeletionPolicy.Direct);
                         bus.makeTargetServiceIdByResourceUuid(dmsg, VmInstanceConstant.SERVICE_ID, finalVo.getUuid());
                         bus.send(dmsg, new CloudBusCallBack(null) {
                             @Override

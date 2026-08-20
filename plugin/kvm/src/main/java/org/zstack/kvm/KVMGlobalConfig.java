@@ -11,6 +11,8 @@ import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.zone.ZoneVO;
 
+import static org.zstack.kvm.KVMConstant.EDK_VERSION_NONE;
+
 /**
  */
 @GlobalConfigDefinition
@@ -166,4 +168,18 @@ public class KVMGlobalConfig {
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig MINIMUM_MEMORY_SIZE_BEFORE_START_VM = new GlobalConfig(CATEGORY, "min.free.memory.size");
 
+    @GlobalConfigDef(defaultValue = EDK_VERSION_NONE,
+            description = "Specify the EDK version to be used for the next VM startup. None indicates the use of the system's default EDK version")
+    @BindResourceConfig(value = {VmInstanceVO.class, ClusterVO.class})
+    public static GlobalConfig VM_EDK_VERSION_CONFIG = new GlobalConfig(CATEGORY, "vm.edk.version");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 86400)
+    @GlobalConfigDef(defaultValue = "15", type = Long.class,
+            description = "Interval in seconds for checking VM host files (NvRam, TpmState) on KVM hosts")
+    public static GlobalConfig VM_HOST_FILE_SYNC_INTERVAL = new GlobalConfig(CATEGORY, "vm.host.file.sync.interval");
+
+    @GlobalConfigValidation(numberGreaterThan = 1, numberLessThan = 30)
+    @GlobalConfigDef(defaultValue = "5", type = Integer.class,
+            description = "The concurrency level for syncing VM host files from KVM hosts")
+    public static GlobalConfig VM_HOST_FILE_SYNC_CONCURRENCY = new GlobalConfig(CATEGORY, "vm.host.file.sync.concurrency");
 }

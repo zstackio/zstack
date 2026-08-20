@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -146,6 +147,21 @@ public class StringDSL {
 
     public static boolean isApiId(String apiId) {
         return apiId != null && apiId.matches("[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}");
+    }
+
+    public static String createFixedUuid(Class<?> voClass) {
+        return createFixedUuid(voClass.getSimpleName());
+    }
+
+    public static String createFixedUuid(String text) {
+        StringBuilder builder = new StringBuilder(
+                UUID.nameUUIDFromBytes(text.getBytes()).toString().replace("-", ""));
+        builder.setCharAt(0, 'f');
+        builder.setCharAt(1, 'f');
+        builder.setCharAt(2, '0');
+        builder.setCharAt(30, '0');
+        builder.setCharAt(31, '0');
+        return builder.toString();
     }
 
     private static int hashOXR(List lst) {

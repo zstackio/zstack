@@ -20,7 +20,9 @@ public enum SysErrors {
     UNIMPLEMENTED_OPERATION_ERROR(1014),
     HTTP_ERROR(1015),
     IO_ERROR(1016),
-    CANCEL_ERROR(1017);
+    CANCEL_ERROR(1017),
+    NOT_SUPPORTED(1091),
+    ;
 
     private String code;
 

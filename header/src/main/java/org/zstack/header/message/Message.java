@@ -54,6 +54,10 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
         }
     }
 
+    protected static String uuid(Class<?> voClass) {
+        return DocUtils.createFixedUuid(voClass);
+    }
+
     public Message() {
         createdTime = System.currentTimeMillis();
         id = UUID.randomUUID().toString().replace("-", "");

@@ -753,6 +753,14 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return null;
         });
 
+        restf.registerSyncHttpCallHandler(KVMConstant.KVM_REPORT_VM_HOST_FILE_CHANGED, ReportVmHostFileChangedCmd.class, cmd -> {
+            VmCanonicalEvents.VmHostFileChangedData data = new VmCanonicalEvents.VmHostFileChangedData();
+            data.setHostUuid(cmd.hostUuid);
+            data.setVmUuid(cmd.vmUuid);
+            data.setTypes(cmd.types);
+            evf.fire(VmCanonicalEvents.VM_HOST_FILE_CHANGED_PATH, data);
+            return null;
+        });
 
         restf.registerSyncHttpCallHandler(KVMConstant.KVM_HOST_PHYSICAL_NIC_ALARM_EVENT, KVMAgentCommands.PhysicalNicAlarmEventCmd.class, cmd -> {
             if (!isNeedAlarmNic(cmd.host, cmd.nic, cmd.bond)) {

@@ -6,6 +6,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.kvm.xmlhook.XmlHookVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -72,4 +73,16 @@ public class KVMSystemTags {
 
     public static final String LIBVIRT_CAPABILITIES_TOKEN = "libvirtCapabilities";
     public static PatternedSystemTag LIBVIRT_CAPABILITIES = new PatternedSystemTag(String.format("libvirtCapabilities::{%s}", LIBVIRT_CAPABILITIES_TOKEN), HostVO.class);
+
+    public static final String EDK_RPM_TOKEN = "edkRpm";
+    public static PatternedSystemTag VM_EDK =
+            new PatternedSystemTag(String.format("vm::edk::{%s}", EDK_RPM_TOKEN), VmInstanceVO.class);
+
+    public static final String SWTPM_VERSION_TOKEN = "version";
+    public static PatternedSystemTag SWTPM_VERSION =
+            new PatternedSystemTag(String.format("swtpm::{%s}", SWTPM_VERSION_TOKEN), HostVO.class);
+
+    public static final String TPM_KEY_PROVIDER_NAME_TOKEN = "keyProviderName";
+    public static PatternedSystemTag TPM_KEY_PROVIDER_NAME =
+            new PatternedSystemTag(String.format("tpm::keyProvider::{%s}", TPM_KEY_PROVIDER_NAME_TOKEN), VmHostBackupFileVO.class);
 }

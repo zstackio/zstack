@@ -121,6 +121,7 @@
                 <value>org.zstack.compute.vm.VmExpungeRootVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeMemoryVolumeFlow</value>
                 <value>org.zstack.compute.vm.VmExpungeCacheVolumeFlow</value>
+                <value>org.zstack.compute.vm.VmExpungeVmResourceCascadeFlow</value>
             </list>
         </property>
         <property name="pauseVmWorkFlowElements">
@@ -273,4 +274,56 @@
         </zstack:plugin>
     </bean>
 
+    <!-- TPM -->
+    <bean id="TpmApiInterceptor" class="org.zstack.compute.vm.devices.TpmApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TpmMessageAutoCompleter" class="org.zstack.compute.vm.devices.TpmMessageAutoCompleter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmTpmManager" class="org.zstack.compute.vm.devices.VmTpmManager"/>
+
+    <bean id="VmTpmExtensions" class="org.zstack.compute.vm.devices.VmTpmExtensions">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceCreateExtensionPoint" />
+            <zstack:extension interface="org.zstack.compute.vm.BuildVmSpecExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="TpmCascadeExtension"
+          class="org.zstack.compute.vm.devices.TpmCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmHostFileCascadeExtension"
+          class="org.zstack.compute.vm.devices.VmHostFileCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmHostBackupFileCascadeExtension"
+          class="org.zstack.compute.vm.devices.VmHostBackupFileCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="VmTpmRekeyAssociation" class="org.zstack.compute.vm.devices.VmTpmRekeyAssociation">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.keyprovider.KeyProviderRekeyAssociationExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="DummyTpmEncryptedResourceKeyBackend" class="org.zstack.compute.vm.devices.DummyTpmEncryptedResourceKeyBackend"/>
+    <bean id="DummyEncryptedResourceKeyManager" class="org.zstack.compute.vm.devices.DummyEncryptedResourceKeyManager"/>
+    <bean id="DummyVmHostFileManager" class="org.zstack.compute.vm.devices.DummyVmHostFileManager"/>
 </beans>

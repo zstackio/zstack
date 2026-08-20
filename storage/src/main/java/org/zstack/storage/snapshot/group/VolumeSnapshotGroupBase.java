@@ -30,14 +30,26 @@ import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.*;
+import org.zstack.header.tpm.entity.TpmVO;
+import org.zstack.header.tpm.entity.TpmVO_;
+import org.zstack.header.tpm.message.AddTpmMsg;
+import org.zstack.header.tpm.message.DeleteTpmKeyBackupMsg;
+import org.zstack.header.tpm.message.RestoreTpmEncryptionKeyMsg;
+import org.zstack.header.tpm.message.RestoreTpmEncryptionKeyReply;
+import org.zstack.header.tpm.message.TpmDeletionMsg;
+import org.zstack.header.vm.additions.RestoreVmHostFileMsg;
 import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.additions.VmHostFileManager;
+import org.zstack.header.vm.additions.VmHostFileSyncReason;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.header.volume.VolumeVO;
 import org.zstack.header.volume.VolumeVO_;
 import org.zstack.storage.snapshot.VolumeSnapshotGlobalConfig;
+import org.zstack.storage.snapshot.VolumeSnapshotGroupSystemTags;
+import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TimeUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -47,6 +59,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.tpm.TpmConstants.SERVICE_ID;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
@@ -68,6 +81,8 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     private PluginRegistry pluginRgty;
     @Autowired
     private VmInstanceDeviceManager vidm;
+    @Autowired
+    private VmHostFileManager vmHostFileManager;
 
     public VolumeSnapshotGroupBase(VolumeSnapshotGroupVO self) {
         this.self = self;
@@ -147,6 +162,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             public void run(SyncTaskChain chain) {
                 APIUngroupVolumeSnapshotGroupEvent evt = new APIUngroupVolumeSnapshotGroupEvent(msg.getId());
                 dbf.remove(self);
+                vmHostFileManager.cleanVmHostBackupFile(msg.getUuid());
                 bus.publish(evt);
                 chain.next();
             }
@@ -214,28 +230,41 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             logger.debug(String.format("skip snapshots not belong to origin vm[uuid:%s]", self.getVmInstanceUuid()));
         }
 
-        new While<>(snapshots).all((snapshot, compl) -> {
-            DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
-            rmsg.setSnapshotUuid(snapshot.getUuid());
-            rmsg.setVolumeUuid(snapshot.getVolumeUuid());
-            rmsg.setTreeUuid(snapshot.getTreeUuid());
-            rmsg.setDeletionMode(msg.getDeletionMode());
-            rmsg.setScope(msg.getScope());
-            rmsg.setDirection(msg.getDirection());
-            bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
-            bus.send(rmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    reply.addResult(new DeleteSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
-                    compl.done();
-                }
-            });
-        }).run(new WhileDoneCompletion(msg) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
+        SimpleFlowChain.of("delete-volume-snapshot-group")
+            .then("delete-volume-snapshots", (trigger) ->
+                new While<>(snapshots).step((snapshot, compl) -> {
+                    DeleteVolumeSnapshotMsg rmsg = new DeleteVolumeSnapshotMsg();
+                    rmsg.setSnapshotUuid(snapshot.getUuid());
+                    rmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                    rmsg.setTreeUuid(snapshot.getTreeUuid());
+                    rmsg.setDeletionMode(msg.getDeletionMode());
+                    rmsg.setScope(msg.getScope());
+                    rmsg.setDirection(msg.getDirection());
+                    bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
+                    bus.send(rmsg, new CloudBusCallBack(compl) {
+                        @Override
+                        public void run(MessageReply r) {
+                            reply.addResult(new DeleteSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
+                            compl.done();
+                        }
+                    });
+                }, 5).run(new WhileDoneCompletion(msg) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        trigger.next();
+                    }
+                }))
+            .then("delete-vm-host-backup-files", trigger -> {
+                vmHostFileManager.cleanVmHostBackupFile(self.getUuid());
+                trigger.next();
+            })
+            .propagateExceptionTo(msg)
+            .done(() -> bus.reply(msg, reply))
+            .error(errorCode -> {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
-            }
-        });
+            })
+            .start();
     }
 
     private void handle(APIRevertVmFromSnapshotGroupMsg msg) {
@@ -363,47 +392,239 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
             return;
         }
 
-        VolumeSnapshotGroupVO newGroup = null;
-        if (VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
-            newGroup = new VolumeSnapshotGroupVO();
-            newGroup.setUuid(Platform.getUuid());
-            newGroup.setName(String.format("revert-vm-point-%s-%s", vmUuid, TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
-            newGroup.setDescription(String.format("save snapshot for revert vm [uuid:%s]", vmUuid));
-            newGroup.setSnapshotCount(snapshots.size());
-            newGroup.setVmInstanceUuid(vmUuid);
-            newGroup.setAccountUuid(msg.getSession().getAccountUuid());
-            dbf.persist(newGroup);
+        class Context {
+            VolumeSnapshotGroupVO newGroup;
+            boolean snapshotGroupHasTpm;
+            String tpmUuid, newCreateTpmUuid;
+            String tpmKeyBackupUuid;
         }
+        Context context = new Context();
+        context.snapshotGroupHasTpm = VolumeSnapshotGroupSystemTags.WITH_TPM.hasTag(msg.getUuid());
+        context.tpmUuid = Q.New(TpmVO.class)
+                .eq(TpmVO_.vmInstanceUuid, vmUuid)
+                .select(TpmVO_.uuid)
+                .findValue();
 
-        final String finalNewGroupUuid = newGroup == null ? null : newGroup.getUuid();
-        Integer concurrencyNum = VolumeSnapshotGlobalConfig.SNAPSHOT_GROUP_REVERT_CONCURRENCY.value(Integer.class);
-        new While<>(snapshots).step((snapshot, compl) -> {
-            if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid()).eq(VolumeVO_.type, VolumeType.Memory).isExists()) {
-                compl.done();
-                return;
-            }
+        SimpleFlowChain.of("revert-vm-from-snapshot-group-inner")
+            .then(Flow.of("persist-before-revert-snapshot-in-db")
+                .runIf(data -> VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class))
+                .handle(trigger -> {
+                    context.newGroup = new VolumeSnapshotGroupVO();
+                    context.newGroup.setUuid(Platform.getUuid());
+                    context.newGroup.setName(String.format("revert-vm-point-%s-%s", vmUuid, TimeUtils.getCurrentTimeStamp("yyyyMMddHHmmss")));
+                    context.newGroup.setDescription(String.format("save snapshot for revert vm [uuid:%s]", vmUuid));
+                    context.newGroup.setSnapshotCount(snapshots.size());
+                    context.newGroup.setVmInstanceUuid(vmUuid);
+                    context.newGroup.setAccountUuid(msg.getSession().getAccountUuid());
+                    dbf.persist(context.newGroup);
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("create-tpm-if-needed")
+                .runIf(data -> context.snapshotGroupHasTpm && context.tpmUuid == null)
+                .handle(trigger -> {
+                    AddTpmMsg addTpmMsg = new AddTpmMsg();
+                    addTpmMsg.setResourceUuidKeyFrom(msg.getUuid());
+                    addTpmMsg.setVmInstanceUuid(vmUuid);
+                    addTpmMsg.setTpmUuid(context.newCreateTpmUuid = Platform.getUuid());
+                    bus.makeTargetServiceIdByResourceUuid(addTpmMsg, SERVICE_ID, addTpmMsg.getTpmUuid());
+                    bus.send(addTpmMsg, new CloudBusCallBack(msg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.debug(String.format("create Tpm[uuid:%s] for VM[uuid:%s]",
+                                addTpmMsg.getTpmUuid(), addTpmMsg.getVmInstanceUuid()));
+                                trigger.next();
+                            } else {
+                                trigger.fail(reply.getError());
+                            }
+                        }
+                    });
+                })
+                .rollback(trigger -> {
+                    TpmDeletionMsg deletionMsg = new TpmDeletionMsg();
+                    deletionMsg.setTpmUuid(context.newCreateTpmUuid);
+                    deletionMsg.setVmInstanceUuid(vmUuid);
+                    deletionMsg.setForceDelete(true);
+                    bus.makeTargetServiceIdByResourceUuid(deletionMsg, SERVICE_ID, deletionMsg.getTpmUuid());
+                    bus.send(deletionMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.debug(String.format("failed to deleted Tpm[uuid:%s] from VM[uuid:%s] but still continue",
+                                        deletionMsg.getTpmUuid(), deletionMsg.getVmInstanceUuid()));
+                            }
+                            trigger.rollback();
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("restore-tpm")
+                .runIf(data -> context.snapshotGroupHasTpm && context.tpmUuid != null)
+                .handle(trigger -> {
+                    RestoreTpmEncryptionKeyMsg restoreMsg = new RestoreTpmEncryptionKeyMsg();
+                    restoreMsg.setSrcResourceUuid(msg.getUuid());
+                    restoreMsg.setDstResourceUuid(context.tpmUuid);
+                    restoreMsg.setBackupCurrentKey(true);
+                    bus.makeTargetServiceIdByResourceUuid(restoreMsg, SERVICE_ID, context.tpmUuid);
+                    bus.send(restoreMsg, new CloudBusCallBack(msg) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                if (reply instanceof RestoreTpmEncryptionKeyReply) {
+                                    context.tpmKeyBackupUuid = ((RestoreTpmEncryptionKeyReply) reply).getTpmKeyBackupUuid();
+                                }
+                                logger.debug(String.format(
+                                        "restore resource key of Tpm[uuid:%s] for VM[uuid:%s] for snapshotGroup[uuid:%s]",
+                                        context.tpmUuid, vmUuid, msg.getUuid()));
+                                trigger.next();
+                            } else {
+                                trigger.fail(reply.getError());
+                            }
+                        }
+                    });
+                })
+                .rollback(trigger -> {
+                    if (context.tpmKeyBackupUuid == null) {
+                        trigger.rollback();
+                        return;
+                    }
+                    RestoreTpmEncryptionKeyMsg rollbackMsg = new RestoreTpmEncryptionKeyMsg();
+                    rollbackMsg.setBackupCurrentKey(false);
+                    rollbackMsg.setSrcResourceUuid(context.tpmKeyBackupUuid);
+                    rollbackMsg.setDstResourceUuid(context.tpmUuid);
+                    bus.makeTargetServiceIdByResourceUuid(rollbackMsg, SERVICE_ID, context.tpmUuid);
+                    bus.send(rollbackMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (!reply.isSuccess()) {
+                                logger.debug(String.format(
+                                        "failed to rollback TPM encryption key from TpmKeyBackupVO[uuid:%s] to Tpm[uuid:%s]",
+                                        context.tpmKeyBackupUuid, context.tpmUuid));
+                            }
+                            DeleteTpmKeyBackupMsg delMsg = new DeleteTpmKeyBackupMsg();
+                            delMsg.setTpmUuid(context.tpmUuid);
+                            delMsg.setTpmKeyBackupUuid(context.tpmKeyBackupUuid);
+                            bus.makeTargetServiceIdByResourceUuid(delMsg, SERVICE_ID, context.tpmUuid);
+                            bus.send(delMsg, new CloudBusCallBack(trigger) {
+                                @Override
+                                public void run(MessageReply reply2) {
+                                    if (!reply2.isSuccess()) {
+                                        logger.debug(String.format(
+                                                "failed to delete TpmKeyBackupVO[uuid:%s] after TPM key rollback",
+                                                context.tpmKeyBackupUuid));
+                                    }
+                                    context.tpmKeyBackupUuid = null;
+                                    trigger.rollback();
+                                }
+                            });
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("remove-tpm-if-needed")
+                .runIf(data -> !context.snapshotGroupHasTpm && context.tpmUuid != null)
+                .handle(trigger -> {
+                    TpmDeletionMsg deletionMsg = new TpmDeletionMsg();
+                    deletionMsg.setTpmUuid(context.tpmUuid);
+                    deletionMsg.setVmInstanceUuid(vmUuid);
+                    deletionMsg.setForceDelete(true);
+                    bus.makeTargetServiceIdByResourceUuid(deletionMsg, SERVICE_ID, deletionMsg.getTpmUuid());
+                    bus.send(deletionMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                logger.debug(String.format("deleted Tpm[uuid:%s] from VM[uuid:%s]",
+                                        deletionMsg.getTpmUuid(), deletionMsg.getVmInstanceUuid()));
+                                trigger.next();
+                            } else {
+                                trigger.fail(reply.getError());
+                            }
+                        }
+                    });
+                })
+                // TODO: It should has rollback
+                .build())
+            .then(Flow.of("restore-vm-host-file")
+                .handle(trigger -> {
+                    RestoreVmHostFileMsg restoreMsg = new RestoreVmHostFileMsg();
+                    restoreMsg.setVmInstanceUuid(vmUuid);
+                    restoreMsg.setSnapshotGroupUuid(self.getUuid());
+                    restoreMsg.setSyncReason(VmHostFileSyncReason.RevertSnapshot.reason());
+                    bus.makeLocalServiceId(restoreMsg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
+                    bus.send(restoreMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (reply.isSuccess()) {
+                                trigger.next();
+                            } else {
+                                trigger.fail(reply.getError());
+                            }
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("revert-every-volumes")
+                .handle(trigger -> {
+                    final String finalNewGroupUuid = context.newGroup == null ? null : context.newGroup.getUuid();
+                    Integer concurrencyNum = VolumeSnapshotGlobalConfig.SNAPSHOT_GROUP_REVERT_CONCURRENCY.value(Integer.class);
+                    new While<>(snapshots).step((snapshot, compl) -> {
+                        if (Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid()).eq(VolumeVO_.type, VolumeType.Memory).isExists()) {
+                            compl.done();
+                            return;
+                        }
 
-            RevertVolumeFromSnapshotGroupMsg rmsg = new RevertVolumeFromSnapshotGroupMsg();
-            rmsg.setSnapshotUuid(snapshot.getUuid());
-            rmsg.setVolumeUuid(snapshot.getVolumeUuid());
-            rmsg.setTreeUuid(snapshot.getTreeUuid());
-            rmsg.setSession(msg.getSession());
-            rmsg.setNewSnapshotGroupUuid(finalNewGroupUuid);
+                        RevertVolumeFromSnapshotGroupMsg rmsg = new RevertVolumeFromSnapshotGroupMsg();
+                        rmsg.setSnapshotUuid(snapshot.getUuid());
+                        rmsg.setVolumeUuid(snapshot.getVolumeUuid());
+                        rmsg.setTreeUuid(snapshot.getTreeUuid());
+                        rmsg.setSession(msg.getSession());
+                        rmsg.setNewSnapshotGroupUuid(finalNewGroupUuid);
 
-            bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
-            bus.send(rmsg, new CloudBusCallBack(compl) {
-                @Override
-                public void run(MessageReply r) {
-                    reply.addResult(new RevertSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
-                    compl.done();
-                }
-            });
-        }, concurrencyNum).run(new WhileDoneCompletion(msg) {
-            @Override
-            public void done(ErrorCodeList errorCodeList) {
+                        bus.makeTargetServiceIdByResourceUuid(rmsg, VolumeSnapshotConstant.SERVICE_ID, getResourceIdToRouteMsg(snapshot));
+                        bus.send(rmsg, new CloudBusCallBack(compl) {
+                            @Override
+                            public void run(MessageReply r) {
+                                reply.addResult(new RevertSnapshotGroupResult(rmsg.getSnapshotUuid(), rmsg.getVolumeUuid(), r.getError()));
+                                compl.done();
+                            }
+                        });
+                    }, concurrencyNum).run(new WhileDoneCompletion(msg) {
+                        @Override
+                        public void done(ErrorCodeList errorCodeList) {
+                            DebugUtils.Assert(errorCodeList.getCauses().isEmpty(), "no errorCode expected");
+                            trigger.next();
+                        }
+                    });
+                })
+                .build())
+            .then(Flow.of("delete-tpm-key-backup")
+                .runIf(data -> context.tpmKeyBackupUuid != null)
+                .handle(trigger -> {
+                    DeleteTpmKeyBackupMsg delMsg = new DeleteTpmKeyBackupMsg();
+                    delMsg.setTpmUuid(context.tpmUuid);
+                    delMsg.setTpmKeyBackupUuid(context.tpmKeyBackupUuid);
+                    bus.makeTargetServiceIdByResourceUuid(delMsg, SERVICE_ID, context.tpmUuid);
+                    bus.send(delMsg, new CloudBusCallBack(trigger) {
+                        @Override
+                        public void run(MessageReply r) {
+                            if (r.isSuccess()) {
+                                context.tpmKeyBackupUuid = null;
+                                trigger.next();
+                            } else {
+                                trigger.fail(r.getError());
+                            }
+                        }
+                    });
+                })
+                .build())
+            .propagateExceptionTo(msg)
+            .done(() -> bus.reply(msg, reply))
+            .error(errorCode -> {
+                reply.setError(errorCode);
                 bus.reply(msg, reply);
-            }
-        });
+            })
+            .start();
     }
 
     public List<VolumeSnapshotVO> getSnapshots() {

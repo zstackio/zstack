@@ -65,6 +65,14 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.host.MigrateVmOnHypervisorMsg.StorageMigrationPolicy;
 import org.zstack.header.image.*;
+import org.zstack.header.secret.SecretHostDefineMsg;
+import org.zstack.header.secret.SecretHostDefineReply;
+import org.zstack.header.secret.SecretHostDeleteMsg;
+import org.zstack.header.secret.SecretHostDeleteReply;
+import org.zstack.header.secret.SecretHostGetMsg;
+import org.zstack.header.secret.SecretHostGetReply;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorMsg;
+import org.zstack.header.secret.ResolveVtpmLibvirtSecretOnHypervisorReply;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -313,6 +321,8 @@ public class KVMHost extends HostBase implements Host {
     private String blockPullPath;
     private String agentPackageName = KVMGlobalProperty.AGENT_PACKAGE_NAME;
     private String hostTakeOverFlagPath = KVMGlobalProperty.TAKEVOERFLAGPATH;
+    private String readVmHostFilePath;
+    private String writeVmHostFilePath;
 
     public KVMHost(KVMHostVO self, KVMHostContext context) {
         super(self);
@@ -543,6 +553,14 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_BLOCK_PULL_VOLUME_PATH);
         blockPullPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.READ_VM_HOST_FILE_PATH);
+        readVmHostFilePath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.WRITE_VM_HOST_FILE_PATH);
+        writeVmHostFilePath = ub.build().toString();
     }
 
     static {
@@ -805,6 +823,14 @@ public class KVMHost extends HostBase implements Host {
             handle((UpdateVmConsolePasswordOnHypervisorMsg) msg);
         } else if (msg instanceof GetBlockDevicesOnHostMsg) {
             handle((GetBlockDevicesOnHostMsg) msg);
+        } else if (msg instanceof SecretHostGetMsg) {
+            handle((SecretHostGetMsg) msg);
+        } else if (msg instanceof ResolveVtpmLibvirtSecretOnHypervisorMsg) {
+            handle((ResolveVtpmLibvirtSecretOnHypervisorMsg) msg);
+        } else if (msg instanceof SecretHostDefineMsg) {
+            handle((SecretHostDefineMsg) msg);
+        } else if (msg instanceof SecretHostDeleteMsg) {
+            handle((SecretHostDeleteMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
@@ -4691,9 +4717,15 @@ public class KVMHost extends HostBase implements Host {
             cmd.setChassisAssetTag(NetworkGlobalProperty.CHASSIS_ASSET_TAG);
         }
 
-        String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
-                VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
-        cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
+        if (spec.getOsSpec().getMachineType() == null) {
+            String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(cmd.getVmInstanceUuid(),
+                    VmInstanceVO.class, VmSystemTags.MACHINE_TYPE_TOKEN);
+            cmd.setMachineType(StringUtils.isNotEmpty(machineType) ? machineType : "pc");
+            spec.getOsSpec().setMachineType(cmd.getMachineType());
+        } else {
+            cmd.setMachineType(spec.getOsSpec().getMachineType());
+        }
+        String machineType = cmd.getMachineType();
 
         if (KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.hasTag(spec.getVmInventory().getUuid())) {
             cmd.setPredefinedPciBridgeNum(Integer.valueOf(KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM.getTokenByResourceUuid(spec.getVmInventory().getUuid(), KVMSystemTags.VM_PREDEFINED_PCI_BRIDGE_NUM_TOKEN)));
@@ -4802,10 +4834,6 @@ public class KVMHost extends HostBase implements Host {
 
         String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(spec.getVmInventory().getUuid(), VmSystemTags.BOOT_MODE_TOKEN);
         cmd.setBootMode(bootMode == null ? ImageBootMode.Legacy.toString() : bootMode);
-        if (cmd.getBootMode().equals(ImageBootMode.UEFI.toString())
-                || cmd.getBootMode().equals(ImageBootMode.UEFI_WITH_CSM.toString())) {
-            cmd.setSecureBoot(VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT.value(Boolean.class));
-        }
 
         deviceBootOrderOperator.updateVmDeviceBootOrder(cmd, spec);
         cmd.setBootDev(toKvmBootDev(spec.getBootOrders()));
@@ -5418,6 +5446,294 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private void handle(SecretHostGetMsg msg) {
+        SecretHostGetReply reply = new SecretHostGetReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for get secret"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String url = buildUrl(KVMConstant.KVM_GET_SECRET_PATH);
+        KVMAgentCommands.SecretHostGetCmd cmd = new KVMAgentCommands.SecretHostGetCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setUsageInstance(msg.getUsageInstance());
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
+        Http<KVMAgentCommands.SecretHostGetResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostGetResponse.class);
+        http.runBeforeAsyncJsonPostExts(headers);
+        restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostGetResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "get secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostGetResponse rsp) {
+                if (rsp != null && rsp.isSuccess() && StringUtils.isNotBlank(rsp.getSecretUuid())) {
+                    reply.setSecretUuid(rsp.getSecretUuid());
+                } else if (rsp != null && rsp.isSuccess()) {
+                    ErrorCode err = new ErrorCode();
+                    err.setCode(SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND);
+                    err.setDetails("get secret succeeded but secretUuid is empty");
+                    reply.setError(err);
+                } else {
+                    reply.setError(buildSecretAgentError(rsp, "get secret failed"));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostGetResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostGetResponse.class;
+            }
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private void handle(ResolveVtpmLibvirtSecretOnHypervisorMsg msg) {
+        ResolveVtpmLibvirtSecretOnHypervisorReply reply = new ResolveVtpmLibvirtSecretOnHypervisorReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getHostUuid())) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid and hostUuid are required for vTPM resolve libvirt secret uuid"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        KVMAgentCommands.ResolveVtpmLibvirtSecretCmd cmd = new KVMAgentCommands.ResolveVtpmLibvirtSecretCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        KVMHostAsyncHttpCallMsg kmsg = new KVMHostAsyncHttpCallMsg();
+        kmsg.setCommand(cmd);
+        kmsg.setPath(KVMConstant.KVM_VTPM_RESOLVE_LIBVIRT_SECRET_UUID_PATH);
+        kmsg.setHostUuid(msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(kmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(kmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                if (!r.isSuccess()) {
+                    reply.setError(r.getError());
+                    bus.reply(msg, reply);
+                    return;
+                }
+                KVMHostAsyncHttpCallReply kreply = r.castReply();
+                KVMAgentCommands.ResolveVtpmLibvirtSecretResponse rsp =
+                        kreply.toResponse(KVMAgentCommands.ResolveVtpmLibvirtSecretResponse.class);
+                if (rsp != null && rsp.isSuccess() && StringUtils.isNotBlank(rsp.getSecretUuid())) {
+                    reply.setSecretUuid(rsp.getSecretUuid());
+                } else if (rsp != null && rsp.isSuccess()) {
+                    reply.setError(operr(ORG_ZSTACK_KVM_10163, "vTPM resolve succeeded but secretUuid is empty"));
+                } else {
+                    reply.setError(buildSecretAgentError(rsp, "vTPM resolve libvirt secret uuid failed"));
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private void handle(SecretHostDefineMsg msg) {
+        SecretHostDefineReply reply = new SecretHostDefineReply();
+        if (org.apache.commons.lang.StringUtils.isBlank(msg.getDekBase64())) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 is required"));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                msg.getKeyVersion() == null || StringUtils.isBlank(msg.getUsageInstance())) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for ensure secret"));
+            bus.reply(msg, reply);
+            return;
+        }
+        String hostUuid = getSelf().getUuid();
+        HostKeyIdentityVO identity = HostKeyIdentityHelper.getHostKeyIdentity(dbf, hostUuid);
+        String pubKey = identity != null ? org.apache.commons.lang.StringUtils.trimToNull(identity.getPublicKey()) : null;
+        Boolean verifyOk = identity != null ? identity.getVerified() : null;
+        if (pubKey == null) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "no public key for host, connect/reconnect did not sync key"));
+            bus.reply(msg, reply);
+            return;
+        }
+        String storedFingerprint = StringUtils.trimToNull(identity.getFingerprint());
+        String computed = HostKeyIdentityHelper.fingerprintFromPublicKey(pubKey);
+        if (storedFingerprint == null || !StringUtils.equals(storedFingerprint, computed)) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "host public key fingerprint mismatch, key may be corrupted or tampered"));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (!Boolean.TRUE.equals(verifyOk)) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "host secret key verify not ok, not synced"));
+            bus.reply(msg, reply);
+            return;
+        }
+        byte[] dekRaw;
+        try {
+            dekRaw = java.util.Base64.getDecoder().decode(msg.getDekBase64().trim());
+        } catch (IllegalArgumentException e) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "invalid dekBase64: %s", e.getMessage()));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (dekRaw == null || dekRaw.length == 0) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 decoded to empty"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        if (dekRaw.length > KVMConstant.MAX_DEK_BYTES) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "dekBase64 decoded payload is too large"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        byte[] pubKeyBytes;
+        try {
+            pubKeyBytes = java.util.Base64.getDecoder().decode(pubKey);
+        } catch (IllegalArgumentException e) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "invalid host public key in DB: %s", e.getMessage()));
+            bus.reply(msg, reply);
+            return;
+        }
+        if (pubKeyBytes == null || pubKeyBytes.length != 32) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "host public key must be 32 bytes (X25519)"));
+            bus.reply(msg, reply);
+            return;
+        }
+        java.util.List<HostSecretEnvelopeCryptoExtensionPoint> sealers = pluginRegistry.getExtensionList(HostSecretEnvelopeCryptoExtensionPoint.class);
+        if (sealers == null || sealers.isEmpty()) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "host secret envelope sealer not available (premium crypto module required)"));
+            bus.reply(msg, reply);
+            return;
+        }
+        byte[] envelope;
+        try {
+            envelope = sealers.get(0).seal(pubKeyBytes, dekRaw);
+        } catch (Exception e) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163, "HPKE seal failed: %s", e.getMessage()));
+            bus.reply(msg, reply);
+            return;
+        }
+        String envelopeDekBase64 = java.util.Base64.getEncoder().encodeToString(envelope);
+        String url = buildUrl(KVMConstant.KVM_ENSURE_SECRET_PATH);
+        KVMAgentCommands.SecretHostDefineCmd cmd = new KVMAgentCommands.SecretHostDefineCmd();
+        cmd.setEncryptedDek(envelopeDekBase64);
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setSecretUuid(msg.getSecretUuid());
+        cmd.setDescription(msg.getDescription() != null ? msg.getDescription() : "");
+        cmd.setUsageInstance(msg.getUsageInstance());
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
+        Http<KVMAgentCommands.SecretHostDefineResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDefineResponse.class);
+        http.runBeforeAsyncJsonPostExts(headers);
+        restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDefineResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "ensure secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostDefineResponse rsp) {
+                if (rsp != null && rsp.isSuccess()) {
+                    if (rsp.getSecretUuid() != null) {
+                        reply.setSecretUuid(rsp.getSecretUuid());
+                    }
+                } else {
+                    reply.setError(buildSecretAgentError(rsp, "ensure secret failed"));
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostDefineResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostDefineResponse.class;
+            }
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private void handle(SecretHostDeleteMsg msg) {
+        SecretHostDeleteReply reply = new SecretHostDeleteReply();
+        if (StringUtils.isBlank(msg.getVmUuid()) || StringUtils.isBlank(msg.getPurpose()) ||
+                StringUtils.isBlank(msg.getUsageInstance()) || msg.getKeyVersion() == null) {
+            reply.setError(operr(ORG_ZSTACK_KVM_10163,
+                    "vmUuid, purpose, keyVersion and usageInstance are required for delete secret"));
+            bus.reply(msg, reply);
+            return;
+        }
+
+        String url = buildUrl(KVMConstant.KVM_DELETE_SECRET_PATH);
+        KVMAgentCommands.SecretHostDeleteCmd cmd = new KVMAgentCommands.SecretHostDeleteCmd();
+        cmd.setVmUuid(msg.getVmUuid());
+        cmd.setPurpose(msg.getPurpose());
+        cmd.setKeyVersion(msg.getKeyVersion());
+        cmd.setUsageInstance(msg.getUsageInstance());
+        Map<String, String> headers = new HashMap<>();
+        headers.put(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID, getSelf().getUuid());
+        Http<KVMAgentCommands.SecretHostDeleteResponse> http = new Http<>(url, cmd, KVMAgentCommands.SecretHostDeleteResponse.class);
+        http.runBeforeAsyncJsonPostExts(headers);
+        restf.asyncJsonPost(url, http.commandStr, headers, new JsonAsyncRESTCallback<KVMAgentCommands.SecretHostDeleteResponse>(msg, reply) {
+            @Override
+            public void fail(ErrorCode err) {
+                reply.setError(err != null ? err : operr(ORG_ZSTACK_KVM_10163, "delete secret on agent failed"));
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void success(KVMAgentCommands.SecretHostDeleteResponse rsp) {
+                if (rsp == null || !rsp.isSuccess()) {
+                    ErrorCode agentErr = buildSecretAgentError(rsp, "delete secret failed");
+                    if (!SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(agentErr.getCode())) {
+                        reply.setError(agentErr);
+                    }
+                }
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public Class<KVMAgentCommands.SecretHostDeleteResponse> getReturnClass() {
+                return KVMAgentCommands.SecretHostDeleteResponse.class;
+            }
+        }, TimeUnit.SECONDS, KVMConstant.ENVELOPE_KEY_HTTP_TIMEOUT_SEC);
+    }
+
+    private ErrorCode buildSecretAgentError(KVMAgentCommands.AgentResponse rsp, String defaultMessage) {
+        String raw = rsp != null ? StringUtils.trimToNull(rsp.getError()) : null;
+        if (raw == null) {
+            return operr(ORG_ZSTACK_KVM_10163, defaultMessage);
+        }
+        String stable = stableKeyAgentErrorCodeFromRawMessage(raw);
+        if (stable != null) {
+            ErrorCode err = new ErrorCode();
+            err.setCode(stable);
+            err.setDetails(raw);
+            return err;
+        }
+        return operr(ORG_ZSTACK_KVM_10163, "%s: %s", defaultMessage, raw);
+    }
+
+    private static String stableKeyAgentErrorCodeFromRawMessage(String raw) {
+        String t = raw.trim();
+        int colon = t.indexOf(':');
+        String head = (colon >= 0 ? t.substring(0, colon) : t).trim();
+        if (head.isEmpty()) {
+            return null;
+        }
+        if (SecretHostGetReply.ERROR_CODE_SECRET_NOT_FOUND.equals(head)) {
+            return head;
+        }
+        if (head.startsWith("KEY_AGENT_")) {
+            return head;
+        }
+        return null;
     }
 
     @Override

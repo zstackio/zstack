@@ -5,6 +5,7 @@ import org.zstack.header.configuration.PythonClass;
 @PythonClass
 public interface VmInstanceConstant {
     String SERVICE_ID = "vmInstance";
+    String SECURE_BOOT_SERVICE_ID = "secureBoot";
     String ACTION_CATEGORY = "instance";
     @PythonClass
     String USER_VM_TYPE = "UserVm";
@@ -25,6 +26,10 @@ public interface VmInstanceConstant {
 
     String L2_TF_VSWITCH_TYPE = "TfL2Network";
     String TF_VIRTUAL_NIC_TYPE = "TFVNIC";
+
+    String SHUTDOWN_DETAIL_BY_HOST = "by host";
+    String SHUTDOWN_DETAIL_BY_GUEST = "by guest";
+    String SHUTDOWN_DETAIL_FINISHED = "finished";
 
     enum Params {
         VmInstanceSpec,

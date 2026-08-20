@@ -4,5 +4,5 @@ public enum VolumeType {
     Root,
     Data,
     Memory,
-    Cache
+    Cache,
 }
