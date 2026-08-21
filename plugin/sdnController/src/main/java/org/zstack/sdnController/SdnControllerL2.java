@@ -4,6 +4,8 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
+import org.zstack.header.network.l2.NetworkCreateContext;
+import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
@@ -20,6 +22,15 @@ import java.util.List;
 public interface SdnControllerL2 {
     void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
     void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Completion completion);
+
+    /**
+     * Creates an L2 network with its creation origin and external-resource identity.
+     * Implementations use the context to distinguish a normal Cloud request from a
+     * remote system that has already committed the network.
+     */
+    default void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, NetworkCreateContext context, Completion completion) {
+        createL2Network(inv, msg, completion);
+    }
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
 
     void preAttachL2NetworkToCluster(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
@@ -30,6 +41,53 @@ public interface SdnControllerL2 {
     void deleteSdnController(SdnControllerDeletionMsg msg, SdnControllerInventory sdn, Completion completion);
     void detachL2NetworkFromCluster(L2VxlanNetworkInventory vxlan, List<String> clusterUuids, Completion completion);
     void deleteL2Network(L2NetworkInventory inv, Completion completion);
+
+    /**
+     * Whether this controller requires the confirmed-delete lifecycle before the
+     * Cloud removes a bound L2 network.
+     */
+    default boolean requiresConfirmedDelete() { return false; }
+
+    /**
+     * Deletes an L2 network using a deletion-operation identity for idempotent
+     * controller-side handling.
+     */
+    default void deleteL2Network(L2NetworkInventory inv, String operationUuid, Completion completion) {
+        deleteL2Network(inv, completion);
+    }
+
+    /**
+     * Deletes an L2 network with the complete confirmed-delete context, including
+     * the operation identity and the already-completed remote deletion state.
+     */
+    default void deleteL2Network(L2NetworkInventory inv, NetworkDeletionContext context,
+                                 Completion completion) {
+        deleteL2Network(inv, context == null ? null : context.getOperationUuid(), completion);
+    }
+
+    /** Reserves controller-side deletion work before Cloud cascade deletion begins. */
+    default void beginConfirmedDelete(L2NetworkInventory inv, NetworkDeletionContext context,
+                                      Completion completion) { completion.success(); }
+
+    /** Verifies that the bound external network can be deleted after cascade cleanup. */
+    default void checkConfirmedDelete(L2NetworkInventory inv, NetworkDeletionContext context,
+                                      Completion completion) { completion.success(); }
+
+    /** Finalizes controller-side deletion after Cloud cascade cleanup succeeds. */
+    default void completeConfirmedDelete(L2NetworkInventory inv, NetworkDeletionContext context,
+                                         Completion completion) { completion.success(); }
+
+    /** Cancels a confirmed-delete reservation when Cloud cascade cleanup fails. */
+    default void cancelConfirmedDelete(L2NetworkInventory inv, NetworkDeletionContext context,
+                                       Completion completion) { completion.success(); }
+
+    /** Removes controller-local metadata after a confirmed deletion completes. */
+    default void deleteConfirmedLocalMetadata(L2NetworkInventory inv) { }
+
+    /** Removes controller-local metadata with the confirmed-delete context. */
+    default void deleteConfirmedLocalMetadata(L2NetworkInventory inv, NetworkDeletionContext context) {
+        deleteConfirmedLocalMetadata(inv);
+    }
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);
     List<SdnVlanRange> getVlanRange(SdnControllerInventory controller);

@@ -6,13 +6,16 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.network.l3.*;
+import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.ForEachFunction;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10093;
 
 public class AddressPoolIpRangeFactory implements IpRangeFactory {
     @Autowired
@@ -26,7 +29,23 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
     }
 
     @Override
-    public void createIpRange(List<IpRangeInventory> iprs, APICreateMessage msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
+    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
+        createIpRange(iprs, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
+                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
+        String resolvedAccountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
+        if (resolvedAccountUuid == null && context != null && context.getExternalRef() != null) {
+            resolvedAccountUuid = context.getExternalRef().getAccountUuid();
+        }
+        if (resolvedAccountUuid == null) {
+            completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10093,
+                    "account uuid is required for address pool creation"));
+            return;
+        }
+        String accountUuid = resolvedAccountUuid;
         List<IpRangeVO> vos = new ArrayList<>();
         for (IpRangeInventory ipr : iprs) {
             AddressPoolVO vo = new SQLBatchWithReturn<AddressPoolVO>() {
@@ -42,7 +61,7 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
                     vo.setNetmask(ipr.getNetmask());
                     vo.setStartIp(ipr.getStartIp());
                     vo.setNetworkCidr(ipr.getNetworkCidr());
-                    vo.setAccountUuid(msg.getSession().getAccountUuid());
+                    vo.setAccountUuid(accountUuid);
                     vo.setIpVersion(ipr.getIpVersion());
                     vo.setAddressMode(ipr.getAddressMode());
                     vo.setPrefixLen(ipr.getPrefixLen());
@@ -60,7 +79,7 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
             CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
                 @Override
                 public void run(AfterAddIpRangeExtensionPoint ext) {
-                    ext.afterAddIpRange(finalIpr, msg.getSystemTags());
+                    ext.afterAddIpRange(finalIpr, msg.getSystemTags(), context);
                 }
             });
         }
