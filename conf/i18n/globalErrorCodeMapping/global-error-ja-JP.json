@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "DPU Baremetal2インスタンスを作成するためのネットワークパラメーターが無効です。",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "指定されたL3ネットワーク[uuid:%s]は存在しません。",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "インスタンス作成時のネットワークパラメーターはDPUシャーシでのみサポートされます。",
   "ORG_ZSTACK_XINFINI_SDK_10001": "APIレスポンスをクラス[%s]にフォーマットできませんでした。resultString: %s、exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "データセンタータイプ [%s] はここではサポートされていません！",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "%s 設定タイプには 'endpoint' 引数を設定する必要があります",

@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Недопустимые сетевые параметры для создания экземпляра DPU Baremetal2.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Указанная сеть L3[uuid:%s] не существует.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Сетевые параметры создания экземпляра поддерживаются только шасси DPU.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "Не удалось отформатировать API-ответ в класс[%s], resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "Тип дата-центра [%s] здесь не поддерживается!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "Аргумент 'endpoint' должен быть установлен для типа конфигурации %s",
