@@ -133,8 +133,37 @@ class ChangeVmGuestOsCase extends SubCase{
     @Override
     void test() {
         env.create {
+            passGuestOsTypeToKvmAgent()
             changeGuestOsTypeToSetAcpi()
             changeGuestOsTypeToDisableX2apic()
+        }
+    }
+
+    void passGuestOsTypeToKvmAgent() {
+        def vm = env.inventoryByName("vm-2") as VmInstanceInventory
+
+        KVMAgentCommands.StartVmCmd cmd = null
+        env.afterSimulator(KVMConstant.KVM_START_VM_PATH) { rsp, HttpEntity<String> e ->
+            cmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.StartVmCmd.class)
+            return rsp
+        }
+
+        rebootVmInstance {
+            uuid = vm.uuid
+        }
+        assert cmd.getGuestOsType() == null
+
+        ["Ubuntu 22.04", "Debian 12", "CentOS 7"].each { expectedGuestOsType ->
+            updateVmInstance {
+                uuid = vm.uuid
+                platform = ImagePlatform.Linux.toString()
+                guestOsType = expectedGuestOsType
+            }
+
+            rebootVmInstance {
+                uuid = vm.uuid
+            }
+            assert cmd.getGuestOsType() == expectedGuestOsType
         }
     }
 
