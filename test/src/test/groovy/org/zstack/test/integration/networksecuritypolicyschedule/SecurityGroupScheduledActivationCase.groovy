@@ -1069,6 +1069,71 @@ class SecurityGroupScheduledActivationCase extends SubCase {
         }
     }
 
+    void testBindExpiredSchedule() {
+        scanTask.stop()
+        scheduleFacade.setClock(Clock.fixed(
+                Instant.parse("2026-07-30T08:00:00Z"), ZoneOffset.UTC))
+        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
+        VmInstanceInventory vm = env.inventoryByName("vm3") as VmInstanceInventory
+        String existingPort = "16600"
+        String addedPort = "16601"
+        SecurityGroupInventory securityGroup = createSecurityGroupWithRule(
+                "expired-schedule-security-group", existingPort, l3)
+        List<KVMAgentCommands.ApplySecurityGroupRuleCmd> commands =
+                recordVmNicRuleCommands([vm.vmNics[0].uuid])
+        addVmNicsAndWaitForRuleApply(
+                securityGroup.uuid, [vm.vmNics[0].uuid], commands, 1)
+
+        NetworkSecurityPolicyScheduleInventory schedule = createNetworkSecurityPolicySchedule {
+            name = "expired-security-group-schedule"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Once"
+            startDate = "2026-07-30"
+            endDate = "2026-07-30"
+            startTime = "09:00"
+            endTime = "10:00"
+        } as NetworkSecurityPolicyScheduleInventory
+
+        commands.clear()
+        scheduleFacade.setClock(Clock.fixed(
+                Instant.parse("2026-07-30T10:00:00Z"), ZoneOffset.UTC))
+        setSchedule(schedule, securityGroup.uuid)
+        retryInSecs {
+            assert commands.size() == 1 : "expired bind refresh count: ${commands.size()}"
+            assert !containsRule(commands.last(), securityGroup.uuid, existingPort) :
+                    "expired bind retained port ${existingPort}"
+        }
+
+        commands.clear()
+        addSecurityGroupRule {
+            securityGroupUuid = securityGroup.uuid
+            delegate.rules = [new SecurityGroupRuleAO(
+                    type: "Ingress",
+                    ipVersion: 4,
+                    protocol: "TCP",
+                    dstPortRange: addedPort,
+                    srcIpRange: "10.0.0.0/24",
+                    state: "Enabled"
+            )]
+        }
+        retryInSecs {
+            assert commands.size() == 1 : "expired rule refresh count: ${commands.size()}"
+            assert !containsRule(commands.last(), securityGroup.uuid, existingPort) :
+                    "expired schedule restored port ${existingPort}"
+            assert !containsRule(commands.last(), securityGroup.uuid, addedPort) :
+                    "expired schedule enabled port ${addedPort}"
+        }
+
+        deleteNetworkSecurityPolicySchedule {
+            uuid = schedule.uuid
+        }
+        deleteSecurityGroup {
+            uuid = securityGroup.uuid
+        }
+    }
+
     @Override
     void test() {
         env.create {
@@ -1085,6 +1150,7 @@ class SecurityGroupScheduledActivationCase extends SubCase {
             testConcurrentStateChange()
             testHostRefreshFailure()
             testSdnRuleCalculation()
+            testBindExpiredSchedule()
         }
     }
 }

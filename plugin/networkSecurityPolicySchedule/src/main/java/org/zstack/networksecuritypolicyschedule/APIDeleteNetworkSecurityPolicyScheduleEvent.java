@@ -11,4 +11,8 @@ public class APIDeleteNetworkSecurityPolicyScheduleEvent extends APIEvent {
     public APIDeleteNetworkSecurityPolicyScheduleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APIDeleteNetworkSecurityPolicyScheduleEvent __example__() {
+        return new APIDeleteNetworkSecurityPolicyScheduleEvent();
+    }
 }

@@ -24,4 +24,11 @@ public class APIGetNetworkSecurityPolicyScheduleMsg extends APISyncCallMessage {
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
     }
+
+    public static APIGetNetworkSecurityPolicyScheduleMsg __example__() {
+        APIGetNetworkSecurityPolicyScheduleMsg msg =
+                new APIGetNetworkSecurityPolicyScheduleMsg();
+        msg.setResourceUuid(uuid());
+        return msg;
+    }
 }

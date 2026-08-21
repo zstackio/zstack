@@ -100,6 +100,14 @@ public class NetworkSecurityPolicyScheduleInventory  {
         return this.weekDays;
     }
 
+    public boolean effective;
+    public void setEffective(boolean effective) {
+        this.effective = effective;
+    }
+    public boolean getEffective() {
+        return this.effective;
+    }
+
     public boolean expired;
     public void setExpired(boolean expired) {
         this.expired = expired;

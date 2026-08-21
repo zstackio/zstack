@@ -11,4 +11,8 @@ public class APISetNetworkSecurityPolicyScheduleEvent extends APIEvent {
     public APISetNetworkSecurityPolicyScheduleEvent(String apiId) {
         super(apiId);
     }
+
+    public static APISetNetworkSecurityPolicyScheduleEvent __example__() {
+        return new APISetNetworkSecurityPolicyScheduleEvent();
+    }
 }

@@ -7,6 +7,7 @@ import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 import org.zstack.header.vo.ResourceVO;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Action(category = NetworkSecurityPolicyScheduleConstant.ACTION_CATEGORY)
@@ -20,7 +21,7 @@ public class APICreateNetworkSecurityPolicyScheduleMsg extends APIMessage {
     @APIParam(maxLength = 255, emptyString = false)
     private String name;
 
-    @APIParam(required = false, maxLength = 2048)
+    @APIParam(required = false, maxLength = 255)
     private String description;
 
     @APIParam(validValues = {
@@ -139,5 +140,23 @@ public class APICreateNetworkSecurityPolicyScheduleMsg extends APIMessage {
 
     public void setWeekDays(List<Integer> weekDays) {
         this.weekDays = weekDays;
+    }
+
+    public static APICreateNetworkSecurityPolicyScheduleMsg __example__() {
+        APICreateNetworkSecurityPolicyScheduleMsg msg =
+                new APICreateNetworkSecurityPolicyScheduleMsg();
+        msg.setName("office-hours");
+        msg.setDescription("Weekday office hours");
+        msg.setResourceType(
+                NetworkSecurityPolicyScheduleConstant.SECURITY_GROUP_RESOURCE_TYPE);
+        msg.setResourceUuid(uuid());
+        msg.setTimeType("UTC");
+        msg.setRepeatType("Weekly");
+        msg.setStartDate("2026-01-01");
+        msg.setEndDate("2026-12-31");
+        msg.setStartTime("09:00");
+        msg.setEndTime("18:00");
+        msg.setWeekDays(Arrays.asList(1, 2, 3, 4, 5));
+        return msg;
     }
 }

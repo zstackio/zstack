@@ -75,6 +75,7 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             String resourceType, String resourceUuid, Map overrides = [:], String sessionId = null) {
         Map fields = [
                 name: "office-hours",
+                description: null,
                 resourceType: resourceType,
                 resourceUuid: resourceUuid,
                 timeType: "UTC",
@@ -88,6 +89,7 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
         fields.putAll(overrides)
         return new CreateNetworkSecurityPolicyScheduleAction(
                 name: fields.name,
+                description: fields.description,
                 resourceType: fields.resourceType,
                 resourceUuid: fields.resourceUuid,
                 timeType: fields.timeType,
@@ -216,7 +218,9 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             weekDays = [3]
         } as NetworkSecurityPolicyScheduleInventory
 
-        assert !upcoming.expired && !active.expired && !laterWeekly.expired
+        assert !upcoming.effective && !upcoming.expired : "upcoming status mismatch"
+        assert active.effective && !active.expired : "active status mismatch"
+        assert !laterWeekly.effective && !laterWeekly.expired : "later weekly status mismatch"
 
         NetworkSecurityPolicyScheduleInventory expired = updateNetworkSecurityPolicySchedule {
             uuid = upcoming.uuid
@@ -228,21 +232,25 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             startTime = "06:00"
             endTime = "07:00"
         } as NetworkSecurityPolicyScheduleInventory
-        assert expired.expired
+        assert !expired.effective && expired.expired : "expired status mismatch"
 
         Map<String, NetworkSecurityPolicyScheduleInventory> queried =
                 getSchedules(securityGroup.uuid).collectEntries {
                     [(it.uuid): it]
                 }
-        assert queried[upcoming.uuid].expired &&
-                !queried[active.uuid].expired &&
-                !queried[laterWeekly.uuid].expired
+        assert !queried[upcoming.uuid].effective && queried[upcoming.uuid].expired :
+                "queried expired status mismatch"
+        assert queried[active.uuid].effective && !queried[active.uuid].expired :
+                "queried active status mismatch"
+        assert !queried[laterWeekly.uuid].effective && !queried[laterWeekly.uuid].expired :
+                "queried future status mismatch"
 
         scheduleFacade.setClock(Clock.fixed(
                 Instant.parse("2026-08-06T00:00:00Z"), ZoneOffset.UTC))
         List<NetworkSecurityPolicyScheduleInventory> allExpired =
                 getSchedules(securityGroup.uuid)
-        assert allExpired.size() == 3 && allExpired.every { it.expired }
+        assert allExpired.size() == 3 && allExpired.every { it.expired && !it.effective } :
+                "all schedules should be expired and ineffective"
 
         scheduleFacade.setClock(Clock.fixed(
                 Instant.parse("2026-07-29T08:00:00Z"), ZoneOffset.UTC))
@@ -448,8 +456,33 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
         unsetSchedule(securityGroup.uuid)
         SetNetworkSecurityPolicyScheduleAction.Result expiredSet = setScheduleResult(
                 schedule.uuid, "SecurityGroup", securityGroup.uuid)
-        assert expiredSet.error != null &&
-                scheduleUuidOf(securityGroup.uuid) == null
+        assert expiredSet.error == null && scheduleUuidOf(securityGroup.uuid) == schedule.uuid :
+                "expired schedule should remain bindable"
+        unsetSchedule(securityGroup.uuid)
+    }
+
+    void testDescriptionLength() {
+        SecurityGroupInventory securityGroup = createSecurityGroup {
+            name = "schedule-description-length-sg"
+            ipVersion = 4
+        } as SecurityGroupInventory
+        String accepted = "a" * 255
+
+        CreateNetworkSecurityPolicyScheduleAction.Result created = createScheduleResult(
+                "SecurityGroup", securityGroup.uuid, [description: accepted])
+        assert created.error == null && created.value.inventory.description == accepted :
+                "255-character description should be accepted"
+
+        expect(ApiException.class) {
+            createScheduleResult("SecurityGroup", securityGroup.uuid, [description: "a" * 256])
+        }
+        expect(ApiException.class) {
+            updateScheduleResult(created.value.inventory, [description: "a" * 256])
+        }
+
+        deleteNetworkSecurityPolicySchedule {
+            uuid = created.value.inventory.uuid
+        }
     }
 
     void testMultipleSchedulesPerResource() {
@@ -651,6 +684,7 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             testExpiredStatus()
             testSecurityGroupScheduleLifecycle()
             testCreateApiValidation()
+            testDescriptionLength()
             testRejectUninstalledResourceBackend()
             testUpdateApiValidation()
             testMultipleSchedulesPerResource()
