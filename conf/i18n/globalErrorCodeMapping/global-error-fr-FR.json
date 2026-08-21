@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Paramètres réseau non valides pour la création d’une instance Baremetal2 DPU.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Le réseau L3 spécifié[uuid:%s] n’existe pas.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Les paramètres réseau de création d’instance sont pris en charge uniquement par les châssis DPU.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "Échec du formatage de la réponse API vers la classe [%s], resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "Type de datacenter [%s] non pris en charge ici !",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "L'argument 'endpoint' doit être défini pour le type de configuration %s",

@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Ungültige Netzwerkparameter zum Erstellen einer DPU-Baremetal2-Instanz.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Das angegebene L3-Netzwerk[uuid:%s] ist nicht vorhanden.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Netzwerkparameter für die Instanzerstellung werden nur von DPU-Chassis unterstützt.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "Formatierung der API-Antwort zur Klasse [%s] fehlgeschlagen, resultString: %s, Ausnahme: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "Der datacenter-Typ [%s] wird hier nicht unterstützt!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "Das Argument 'endpoint' muss für den Konfigurationstyp %s gesetzt werden",
