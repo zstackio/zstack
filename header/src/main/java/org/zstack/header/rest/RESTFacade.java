@@ -85,6 +85,9 @@ public interface RESTFacade {
 
     <T> void registerSyncHttpCallHandler(String path, Class<T> objectType, SyncHttpCallHandler<T> handler);
 
+    <T> void registerSyncHttpStatusBodyCallHandler(String path, Class<T> objectType,
+                                                   SyncHttpStatusBodyCallHandler<T> handler);
+
     String getBaseUrl();
 
     String getSendCommandUrl();

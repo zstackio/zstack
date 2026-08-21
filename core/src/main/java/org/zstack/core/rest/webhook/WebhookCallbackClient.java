@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_10003;
 
 /**
  * Generic async callback client for external systems that use a webhook pattern:
@@ -59,12 +60,17 @@ public class WebhookCallbackClient<T> {
 
     private static class PendingEntry<T> {
         final ReturnValueCompletion<T> completion;
-        final ThreadFacadeImpl.TimeoutTaskReceipt timeoutReceipt;
+        volatile ThreadFacadeImpl.TimeoutTaskReceipt timeoutReceipt;
 
-        PendingEntry(ReturnValueCompletion<T> completion,
-                     ThreadFacadeImpl.TimeoutTaskReceipt timeoutReceipt) {
+        PendingEntry(ReturnValueCompletion<T> completion) {
             this.completion = completion;
-            this.timeoutReceipt = timeoutReceipt;
+        }
+
+        void cancelTimeout() {
+            ThreadFacadeImpl.TimeoutTaskReceipt receipt = timeoutReceipt;
+            if (receipt != null) {
+                receipt.cancel();
+            }
         }
     }
 
@@ -99,15 +105,42 @@ public class WebhookCallbackClient<T> {
      * @return the generated taskId
      */
     public String submit(ReturnValueCompletion<T> completion, TimeUnit unit, long timeout) {
-        String taskId = Platform.getUuid();
+        return submit(Platform.getUuid(), completion, unit, timeout);
+    }
 
-        ThreadFacadeImpl.TimeoutTaskReceipt timeoutReceipt = thdf.submitTimeoutTask(() -> {
-            fail(taskId, operr("[Webhook Timeout] callback timed out for taskId[%s], path[%s]",
+    public String submit(String taskId, ReturnValueCompletion<T> completion,
+                         TimeUnit unit, long timeout) {
+        if (taskId == null || taskId.trim().isEmpty()) {
+            throw new IllegalArgumentException("taskId cannot be empty");
+        }
+
+        PendingEntry<T> entry = new PendingEntry<>(completion);
+        PendingEntry<T> previous = pendingCalls.putIfAbsent(taskId, entry);
+        if (previous != null) {
+            throw new IllegalStateException(String.format(
+                    "webhook taskId[%s] is already pending for path[%s]",
                     taskId, protocol.getCallbackPath()));
-        }, unit, timeout);
+        }
 
-        pendingCalls.put(taskId, new PendingEntry<>(completion, timeoutReceipt));
+        try {
+            entry.timeoutReceipt = thdf.submitTimeoutTask(() -> fail(taskId, entry,
+                    operr(ORG_ZSTACK_CORE_10003, "[Webhook Timeout] callback timed out for taskId[%s], path[%s]",
+                            taskId, protocol.getCallbackPath())), unit, timeout);
+        } catch (RuntimeException e) {
+            pendingCalls.remove(taskId, entry);
+            throw e;
+        }
+        if (pendingCalls.get(taskId) != entry) {
+            entry.cancelTimeout();
+        }
         return taskId;
+    }
+
+    private void fail(String taskId, PendingEntry<T> expected, ErrorCode error) {
+        if (pendingCalls.remove(taskId, expected)) {
+            expected.cancelTimeout();
+            expected.completion.fail(error);
+        }
     }
 
     /**
@@ -119,7 +152,7 @@ public class WebhookCallbackClient<T> {
     public void fail(String taskId, ErrorCode error) {
         PendingEntry<T> entry = pendingCalls.remove(taskId);
         if (entry != null) {
-            entry.timeoutReceipt.cancel();
+            entry.cancelTimeout();
             entry.completion.fail(error);
         }
     }
@@ -173,7 +206,7 @@ public class WebhookCallbackClient<T> {
             return null;
         }
 
-        entry.timeoutReceipt.cancel();
+        entry.cancelTimeout();
 
         if (protocol.isSuccess(cmd)) {
             entry.completion.success(cmd);
