@@ -34,9 +34,4 @@ public interface VmInstanceMigrateExtensionPoint {
         failedToMigrateVm(inv, destHostUuid, reason);
         completion.done();
     }
-
-    default void failedToMigrateVm(VmInstanceInventory inv, String srcHostUuid, String destHostUuid,
-                                   ErrorCode reason, NoErrorCompletion completion) {
-        failedToMigrateVm(inv, destHostUuid, reason, completion);
-    }
 }

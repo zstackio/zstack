@@ -193,78 +193,6 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private boolean vmIsRunningOnHost(String hostUuid) {
-        return hostUuid != null && hostUuid.equals(self.getHostUuid()) &&
-                (self.getState() == VmInstanceState.Running || self.getState() == VmInstanceState.Paused);
-    }
-
-    private void resolveFailedMigrationLocation(String srcHostUuid, String destHostUuid,
-                                                ErrorCode reason, NoErrorCompletion completion) {
-        FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
-        chain.setName(String.format("resolve-failed-migration-location-%s", self.getUuid()));
-        chain.then(new NoRollbackFlow() {
-            String __name__ = "check-vm-on-migration-source-host";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (srcHostUuid == null) {
-                    trigger.next();
-                    return;
-                }
-
-                checkState(srcHostUuid, new NoErrorCompletion(trigger) {
-                    @Override
-                    public void done() {
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "check-vm-on-migration-destination-host";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (vmIsRunningOnHost(srcHostUuid) || destHostUuid == null ||
-                        destHostUuid.equals(srcHostUuid)) {
-                    trigger.next();
-                    return;
-                }
-
-                checkState(destHostUuid, new NoErrorCompletion(trigger) {
-                    @Override
-                    public void done() {
-                        trigger.next();
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "notify-failed-migration-extensions";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), srcHostUuid,
-                        destHostUuid, reason, new NoErrorCompletion(trigger) {
-                            @Override
-                            public void done() {
-                                trigger.next();
-                            }
-                        });
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                completion.done();
-            }
-        }).error(new FlowErrorHandler(completion) {
-            @Override
-            public void handle(ErrorCode errorCode, Map data) {
-                logger.warn(String.format("failed to resolve vm[uuid:%s] location after migration failure, %s",
-                        self.getUuid(), errorCode));
-                completion.done();
-            }
-        }).start();
-    }
-
     protected void destroy(final VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion) {
         if (deletionPolicy == VmInstanceDeletionPolicy.DBOnly) {
             completion.success();
@@ -7525,23 +7453,21 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 String destHostUuid = spec.getDestHost().getUuid().equals(lastHostUuid) ? null : spec.getDestHost().getUuid();
-                if (!HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode,
-                            new NoErrorCompletion(completion) {
-                        @Override
-                        public void done() {
-                            changeVmStateInDb(originState.getDrivenEvent());
-                            completion.fail(errCode);
-                        }
-                    });
-                    return;
-                }
-
-                resolveFailedMigrationLocation(lastHostUuid, destHostUuid, errCode,
-                        new NoErrorCompletion(completion) {
+                extEmitter.failedToMigrateVm(VmInstanceInventory.valueOf(self), destHostUuid, errCode, new NoErrorCompletion(completion) {
                     @Override
                     public void done() {
-                        completion.fail(errCode);
+                        if (!HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
+                            changeVmStateInDb(originState.getDrivenEvent());
+                            completion.fail(errCode);
+                            return;
+                        }
+
+                        checkState(originalCopy.getHostUuid(), new NoErrorCompletion(completion) {
+                            @Override
+                            public void done() {
+                                completion.fail(errCode);
+                            }
+                        });
                     }
                 });
             }

@@ -16,6 +16,7 @@ import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.core.workflow.FlowChain;
@@ -28,6 +29,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
+import org.zstack.header.host.CheckVmStateOnHypervisorReply;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.host.HostVO;
@@ -278,6 +281,16 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return;
         }
 
+        if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(reason.getCode())) {
+            resolveEipLocationAfterFailedMigration(inv, destHostUuid, eips, completion);
+            return;
+        }
+
+        cleanupDestinationThenRestoreSource(inv, destHostUuid, eips, completion);
+    }
+
+    private void cleanupDestinationThenRestoreSource(VmInstanceInventory inv, String destHostUuid,
+                                                     List<EipTO> eips, NoErrorCompletion completion) {
         batchDeleteEips(eips, destHostUuid, new Completion(completion) {
             @Override
             public void success() {
@@ -294,36 +307,78 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
         });
     }
 
-    @Override
-    public void failedToMigrateVm(VmInstanceInventory inv, String srcHostUuid, String destHostUuid,
-                                  ErrorCode reason, NoErrorCompletion completion) {
-        if (!HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(reason.getCode())) {
-            failedToMigrateVm(inv, destHostUuid, reason, completion);
-            return;
-        }
+    private void resolveEipLocationAfterFailedMigration(VmInstanceInventory inv, String destHostUuid,
+                                                        List<EipTO> eips, NoErrorCompletion completion) {
+        String srcHostUuid = inv.getHostUuid();
+        checkVmRunningOnHost(inv.getUuid(), srcHostUuid, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean runningOnSource) {
+                if (runningOnSource) {
+                    cleanupDestinationThenRestoreSource(inv, destHostUuid, eips, completion);
+                    return;
+                }
 
-        List<EipTO> eips = getEipsByVmUuid(inv.getUuid());
-        if (eips == null || eips.isEmpty() || destHostUuid == null) {
-            completion.done();
-            return;
-        }
+                checkDestination();
+            }
 
-        boolean running = VmInstanceState.Running.toString().equals(inv.getState()) ||
-                VmInstanceState.Paused.toString().equals(inv.getState());
-        if (running && destHostUuid.equals(inv.getHostUuid())) {
-            activateDestinationThenDeleteSource(inv, eips, srcHostUuid, destHostUuid, completion);
-            return;
-        }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to check vm[uuid:%s] on migration source host[uuid:%s], %s",
+                        inv.getUuid(), srcHostUuid, errorCode));
+                checkDestination();
+            }
 
-        if (running && srcHostUuid != null && srcHostUuid.equals(inv.getHostUuid())) {
-            failedToMigrateVm(inv, destHostUuid, reason, completion);
-            return;
-        }
+            private void checkDestination() {
+                checkVmRunningOnHost(inv.getUuid(), destHostUuid, new ReturnValueCompletion<Boolean>(completion) {
+                    @Override
+                    public void success(Boolean runningOnDestination) {
+                        if (runningOnDestination) {
+                            activateDestinationThenDeleteSource(inv, eips, srcHostUuid,
+                                    destHostUuid, completion);
+                            return;
+                        }
 
-        logger.warn(String.format("keep prepared EIPs[vips:%s] on source host[uuid:%s] and destination host[uuid:%s] because vm[uuid:%s] placement is unresolved after migration failure",
-                eips.stream().map(e -> e.vip).collect(Collectors.toList()), srcHostUuid,
-                destHostUuid, inv.getUuid()));
-        completion.done();
+                        keepBothSides();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("failed to check vm[uuid:%s] on migration destination host[uuid:%s], %s",
+                                inv.getUuid(), destHostUuid, errorCode));
+                        keepBothSides();
+                    }
+                });
+            }
+
+            private void keepBothSides() {
+                logger.warn(String.format("keep prepared EIPs[vips:%s] on source host[uuid:%s] and destination host[uuid:%s] because vm[uuid:%s] placement is unresolved after migration failure",
+                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), srcHostUuid,
+                        destHostUuid, inv.getUuid()));
+                completion.done();
+            }
+        });
+    }
+
+    private void checkVmRunningOnHost(String vmUuid, String hostUuid,
+                                      ReturnValueCompletion<Boolean> completion) {
+        CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+        msg.setVmInstanceUuids(Collections.singletonList(vmUuid));
+        msg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                CheckVmStateOnHypervisorReply rsp = reply.castReply();
+                String state = rsp.getStates() == null ? null : rsp.getStates().get(vmUuid);
+                completion.success(VmInstanceState.Running.toString().equals(state) ||
+                        VmInstanceState.Paused.toString().equals(state));
+            }
+        });
     }
 
     private void restoreSourceEipsAfterFailedMigration(VmInstanceInventory inv, List<EipTO> eips,
@@ -413,7 +468,6 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                 moveEipsToCurrentHost(trigger);
             }
 
-
             private void vmRunningFromUnknownStateHostChanged(final FlowTrigger trigger) {
                 moveEipsToCurrentHost(trigger);
             }
@@ -453,11 +507,10 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                releaseHostUuidForRollback = null;
                                 logger.warn(String.format("failed to clean EIPs[vips:%s] for vm[uuid:%s] on original host[uuid:%s] after applying them on current host[uuid:%s], %s",
                                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(),
                                         struct.getOriginalHostUuid(), struct.getCurrentHostUuid(), errorCode));
-                                chainTrigger.next();
+                                chainTrigger.fail(errorCode);
                             }
                         });
                     }
