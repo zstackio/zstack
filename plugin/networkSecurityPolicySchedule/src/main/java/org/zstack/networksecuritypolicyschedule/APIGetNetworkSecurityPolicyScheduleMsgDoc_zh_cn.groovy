@@ -1,7 +1,6 @@
 package org.zstack.networksecuritypolicyschedule
 
 import org.zstack.networksecuritypolicyschedule.APIGetNetworkSecurityPolicyScheduleReply
-import org.zstack.header.message.APISyncCallMessage
 
 doc {
     title "GetNetworkSecurityPolicySchedule"
@@ -18,9 +17,38 @@ doc {
 
             clz APIGetNetworkSecurityPolicyScheduleMsg.class
 
-            desc """null"""
+            desc """"""
             
-			params APISyncCallMessage.class
+			params {
+
+				column {
+					name "resourceUuid"
+					enclosedIn ""
+					desc "资源UUID"
+					location "query"
+					type "String"
+					optional false
+					since "5.5.38"
+				}
+				column {
+					name "systemTags"
+					enclosedIn ""
+					desc "系统标签"
+					location "query"
+					type "List"
+					optional true
+					since "5.5.38"
+				}
+				column {
+					name "userTags"
+					enclosedIn ""
+					desc "用户标签"
+					location "query"
+					type "List"
+					optional true
+					since "5.5.38"
+				}
+			}
         }
 
         response {

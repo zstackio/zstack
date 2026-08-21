@@ -26,4 +26,11 @@ public class APIDeleteNetworkSecurityPolicyScheduleMsg extends APIDeleteMessage 
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
+    public static APIDeleteNetworkSecurityPolicyScheduleMsg __example__() {
+        APIDeleteNetworkSecurityPolicyScheduleMsg msg =
+                new APIDeleteNetworkSecurityPolicyScheduleMsg();
+        msg.setUuid(uuid());
+        return msg;
+    }
 }

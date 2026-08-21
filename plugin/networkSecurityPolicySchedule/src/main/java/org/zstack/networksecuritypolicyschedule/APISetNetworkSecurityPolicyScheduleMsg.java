@@ -50,4 +50,14 @@ public class APISetNetworkSecurityPolicyScheduleMsg extends APIMessage {
     public void setResourceUuid(String resourceUuid) {
         this.resourceUuid = resourceUuid;
     }
+
+    public static APISetNetworkSecurityPolicyScheduleMsg __example__() {
+        APISetNetworkSecurityPolicyScheduleMsg msg =
+                new APISetNetworkSecurityPolicyScheduleMsg();
+        msg.setScheduleUuid(uuid());
+        msg.setResourceType(
+                NetworkSecurityPolicyScheduleConstant.SECURITY_GROUP_RESOURCE_TYPE);
+        msg.setResourceUuid(uuid());
+        return msg;
+    }
 }

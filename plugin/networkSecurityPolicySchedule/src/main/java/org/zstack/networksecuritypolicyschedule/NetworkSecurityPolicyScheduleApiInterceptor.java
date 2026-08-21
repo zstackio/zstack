@@ -18,7 +18,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 import static org.zstack.core.Platform.argerr;
@@ -138,18 +137,7 @@ public class NetworkSecurityPolicyScheduleApiInterceptor implements ApiMessageIn
         if (msg.getScheduleUuid() == null) {
             return;
         }
-        NetworkSecurityPolicyScheduleVO schedule = validateScheduleOwner(
-                msg.getScheduleUuid(), msg.getResourceType(), msg.getResourceUuid());
-        if (!Objects.equals(
-                scheduleUuidOf(msg.getResourceType(), msg.getResourceUuid()),
-                msg.getScheduleUuid())
-                && !NetworkSecurityPolicyScheduleTime.valueOf(schedule)
-                        .hasRemainingSchedule(scheduleFacade.now())) {
-            throw new ApiMessageInterceptionException(argerr(
-                    ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10007,
-                    "network security policy schedule[uuid:%s] has no remaining active minute",
-                    msg.getScheduleUuid()));
-        }
+        validateScheduleOwner(msg.getScheduleUuid(), msg.getResourceType(), msg.getResourceUuid());
     }
 
     private NetworkSecurityPolicyScheduleTime validateTime(
@@ -321,10 +309,6 @@ public class NetworkSecurityPolicyScheduleApiInterceptor implements ApiMessageIn
                     "network security policy schedule[uuid:%s] does not belong to %s[uuid:%s]",
                     schedule.getUuid(), resourceType, resourceUuid));
         }
-    }
-
-    private String scheduleUuidOf(String resourceType, String resourceUuid) {
-        return resourceBackend(resourceType).getScheduleUuid(resourceUuid);
     }
 
     private NetworkSecurityPolicyScheduleResourceBackend resourceBackend(String resourceType) {

@@ -45,7 +45,6 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10006;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10007;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10010;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10011;
 
@@ -345,14 +344,6 @@ public class NetworkSecurityPolicyScheduleManagerImpl extends AbstractService {
                             trigger.fail(scheduleOwnerMismatch(
                                     msg.getScheduleUuid(),
                                     msg.getResourceType(), msg.getResourceUuid()));
-                            return;
-                        }
-                        if (!NetworkSecurityPolicyScheduleTime.valueOf(vo)
-                                .hasRemainingSchedule(scheduleFacade.now())) {
-                            trigger.fail(argerr(
-                                    ORG_ZSTACK_NETWORKSECURITYPOLICYSCHEDULE_10007,
-                                    "network security policy schedule[uuid:%s] has no remaining active minute",
-                                    msg.getScheduleUuid()));
                             return;
                         }
                         trigger.next();

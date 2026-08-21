@@ -21,4 +21,11 @@ public class APIUpdateNetworkSecurityPolicyScheduleEvent extends APIEvent {
     public void setInventory(NetworkSecurityPolicyScheduleInventory inventory) {
         this.inventory = inventory;
     }
+
+    public static APIUpdateNetworkSecurityPolicyScheduleEvent __example__() {
+        APIUpdateNetworkSecurityPolicyScheduleEvent event =
+                new APIUpdateNetworkSecurityPolicyScheduleEvent();
+        event.setInventory(NetworkSecurityPolicyScheduleInventory.__example__());
+        return event;
+    }
 }

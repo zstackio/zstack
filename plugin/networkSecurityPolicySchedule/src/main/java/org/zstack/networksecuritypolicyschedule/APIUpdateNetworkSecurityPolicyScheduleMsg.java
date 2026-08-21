@@ -6,6 +6,7 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Action(category = NetworkSecurityPolicyScheduleConstant.ACTION_CATEGORY)
@@ -22,7 +23,7 @@ public class APIUpdateNetworkSecurityPolicyScheduleMsg extends APIMessage {
     @APIParam(maxLength = 255, emptyString = false)
     private String name;
 
-    @APIParam(required = false, maxLength = 2048)
+    @APIParam(required = false, maxLength = 255)
     private String description;
 
     @APIParam(validValues = {"Local", "UTC"})
@@ -126,4 +127,19 @@ public class APIUpdateNetworkSecurityPolicyScheduleMsg extends APIMessage {
         this.weekDays = weekDays;
     }
 
+    public static APIUpdateNetworkSecurityPolicyScheduleMsg __example__() {
+        APIUpdateNetworkSecurityPolicyScheduleMsg msg =
+                new APIUpdateNetworkSecurityPolicyScheduleMsg();
+        msg.setUuid(uuid());
+        msg.setName("office-hours");
+        msg.setDescription("Weekday office hours");
+        msg.setTimeType("UTC");
+        msg.setRepeatType("Weekly");
+        msg.setStartDate("2026-01-01");
+        msg.setEndDate("2026-12-31");
+        msg.setStartTime("09:00");
+        msg.setEndTime("18:00");
+        msg.setWeekDays(Arrays.asList(1, 2, 3, 4, 5));
+        return msg;
+    }
 }

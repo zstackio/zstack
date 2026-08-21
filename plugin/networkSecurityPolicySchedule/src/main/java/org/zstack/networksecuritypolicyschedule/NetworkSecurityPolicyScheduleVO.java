@@ -24,7 +24,7 @@ public class NetworkSecurityPolicyScheduleVO {
     @Column
     private String name;
 
-    @Column(length = 2048)
+    @Column
     private String description;
 
     @Column

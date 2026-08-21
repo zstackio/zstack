@@ -78,6 +78,12 @@ doc {
         since "5.5.38"
     }
     field {
+        name "effective"
+        desc "当前分钟是否处于生效时间段"
+        type "boolean"
+        since "5.5.38"
+    }
+    field {
         name "expired"
         desc "从当前分钟起是否已不存在未来生效时间"
         type "boolean"

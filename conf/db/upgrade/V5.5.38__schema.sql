@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS `NetworkSecurityPolicyScheduleVO` (
     `uuid` varchar(32) NOT NULL,
     `name` varchar(255) NOT NULL,
-    `description` varchar(2048) DEFAULT NULL,
+    `description` varchar(255) DEFAULT NULL,
     `resourceType` varchar(32) NOT NULL,
     `resourceUuid` varchar(32) NOT NULL,
     `timeType` varchar(32) NOT NULL,

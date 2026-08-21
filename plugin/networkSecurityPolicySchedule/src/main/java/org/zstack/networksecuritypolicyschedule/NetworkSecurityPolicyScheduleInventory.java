@@ -25,12 +25,36 @@ public class NetworkSecurityPolicyScheduleInventory {
     private String startTime;
     private String endTime;
     private List<Integer> weekDays;
+    private boolean effective;
     private boolean expired;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
     public static NetworkSecurityPolicyScheduleInventory valueOf(NetworkSecurityPolicyScheduleVO vo) {
         return valueOf(vo, Instant.now());
+    }
+
+    public static NetworkSecurityPolicyScheduleInventory __example__() {
+        NetworkSecurityPolicyScheduleInventory inventory =
+                new NetworkSecurityPolicyScheduleInventory();
+        inventory.setUuid("4c4aa4f9b7254d76b48ad99f6a20c9ee");
+        inventory.setName("office-hours");
+        inventory.setDescription("Weekday office hours");
+        inventory.setResourceType(
+                NetworkSecurityPolicyScheduleConstant.SECURITY_GROUP_RESOURCE_TYPE);
+        inventory.setResourceUuid("f1a72f89f9624c92a84cbd07347be003");
+        inventory.setTimeType("UTC");
+        inventory.setRepeatType("Weekly");
+        inventory.setStartDate("2026-01-01");
+        inventory.setEndDate("2026-12-31");
+        inventory.setStartTime("09:00");
+        inventory.setEndTime("18:00");
+        inventory.setWeekDays(Arrays.asList(1, 2, 3, 4, 5));
+        inventory.setEffective(true);
+        inventory.setExpired(false);
+        inventory.setCreateDate(Timestamp.valueOf("2026-01-01 00:00:00"));
+        inventory.setLastOpDate(Timestamp.valueOf("2026-01-01 00:00:00"));
+        return inventory;
     }
 
     public static NetworkSecurityPolicyScheduleInventory valueOf(NetworkSecurityPolicyScheduleVO vo, Instant now) {
@@ -49,7 +73,9 @@ public class NetworkSecurityPolicyScheduleInventory {
         inventory.endTime = vo.getEndTime().toLocalTime()
                 .truncatedTo(ChronoUnit.MINUTES).toString();
         inventory.weekDays = toWeekDays(vo.getWeekDays());
-        inventory.expired = !NetworkSecurityPolicyScheduleTime.valueOf(vo).hasRemainingSchedule(now);
+        NetworkSecurityPolicyScheduleTime time = NetworkSecurityPolicyScheduleTime.valueOf(vo);
+        inventory.effective = time.isInSchedule(now);
+        inventory.expired = !time.hasRemainingSchedule(now);
         inventory.createDate = vo.getCreateDate();
         inventory.lastOpDate = vo.getLastOpDate();
         return inventory;
@@ -173,6 +199,14 @@ public class NetworkSecurityPolicyScheduleInventory {
 
     public void setWeekDays(List<Integer> weekDays) {
         this.weekDays = weekDays;
+    }
+
+    public boolean isEffective() {
+        return effective;
+    }
+
+    public void setEffective(boolean effective) {
+        this.effective = effective;
     }
 
     public boolean isExpired() {
