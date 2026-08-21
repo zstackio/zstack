@@ -408,6 +408,23 @@ public class VmInstanceExtensionPointEmitter implements Component {
         });
     }
 
+    public void failedToMigrateVm(final VmInstanceInventory inv, final String srcHostUuid,
+                                  final String dstHostUuid, final ErrorCode reason,
+                                  NoErrorCompletion completion) {
+        new While<>(migrateVmExtensions).each((ext, comp) ->
+                ext.failedToMigrateVm(inv, srcHostUuid, dstHostUuid, reason, new NoErrorCompletion(comp) {
+                    @Override
+                    public void done() {
+                        comp.done();
+                    }
+                })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        });
+    }
+
     public void preAttachVolume(VmInstanceInventory vm, VolumeInventory volume, Completion completion) {
         new While<>(attachVolumeExtensions).each((ext, comp) -> ext.preAttachVolume(vm, volume, new Completion(comp) {
             @Override
