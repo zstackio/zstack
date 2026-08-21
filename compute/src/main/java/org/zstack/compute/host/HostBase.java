@@ -1086,6 +1086,7 @@ public abstract class HostBase extends AbstractHost {
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
                 connectMsg.setCalledByAPI(msg.isCalledByAPI());
+                connectMsg.setReconnect(true);
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
                 bus.send(connectMsg, new CloudBusCallBack(msg, chain, completion) {
                     @Override
@@ -1358,9 +1359,10 @@ public abstract class HostBase extends AbstractHost {
 
                                 self = dbf.reload(self);
                                 HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
 
                                 for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
-                                    Flow flow = p.createPreHostConnectFlow(inv);
+                                    Flow flow = p.createPreHostConnectFlow(inv, info);
                                     if (flow != null) {
                                         preConnectChain.then(flow);
                                     }
@@ -1431,8 +1433,10 @@ public abstract class HostBase extends AbstractHost {
                                 changeConnectionState(HostStatusEvent.connected);
                                 tracker.trackHost(self.getUuid());
 
+                                HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(getSelfInventory()));
+                                        ext -> ext.afterHostConnected(inv, info));
                                 completion.success();
                             }
                         });

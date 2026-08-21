@@ -1035,6 +1035,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         for (String uuid : hostsToLoadSorted) {
             ConnectHostMsg connectMsg = new ConnectHostMsg(uuid);
             connectMsg.setNewAdd(false);
+            connectMsg.setReconnect(true);
             connectMsg.setServiceId(serviceId);
             connectMsg.setStartPingTaskOnFailure(true);
             msgs.add(connectMsg);
