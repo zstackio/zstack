@@ -13,11 +13,15 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
-import org.zstack.header.core.NopeCompletion;
+import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
+import org.zstack.header.core.workflow.FlowChain;
+import org.zstack.header.core.workflow.FlowDoneHandler;
+import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -25,6 +29,8 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg;
+import org.zstack.header.host.CheckVmStateOnHypervisorReply;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostErrors;
 import org.zstack.header.host.HostVO;
@@ -221,7 +227,13 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return;
         }
 
-        batchChangeEipMigrationState(eips, inv.getHostUuid(), BATCH_ENABLE_EIP_PATH, new Completion(completion) {
+        activateDestinationThenDeleteSource(inv, eips, srcHostUuid, inv.getHostUuid(), completion);
+    }
+
+    private void activateDestinationThenDeleteSource(VmInstanceInventory inv, List<EipTO> eips,
+                                                     String srcHostUuid, String destHostUuid,
+                                                     NoErrorCompletion completion) {
+        batchChangeEipMigrationState(eips, destHostUuid, BATCH_ENABLE_EIP_PATH, new Completion(completion) {
             @Override
             public void success() {
                 batchDeleteEips(eips, srcHostUuid, new Completion(completion) {
@@ -244,7 +256,7 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             public void fail(ErrorCode errorCode) {
                 logger.warn(String.format("failed to enable EIPs[vips:%s] for migrated vm[uuid:%s] on destination host[uuid:%s], keep source EIPs on host[uuid:%s], %s",
                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(),
-                        inv.getHostUuid(), srcHostUuid, errorCode));
+                        destHostUuid, srcHostUuid, errorCode));
                 completion.done();
             }
         });
@@ -269,6 +281,16 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             return;
         }
 
+        if (HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR.isEqual(reason.getCode())) {
+            resolveEipLocationAfterFailedMigration(inv, destHostUuid, eips, completion);
+            return;
+        }
+
+        cleanupDestinationThenRestoreSource(inv, destHostUuid, eips, completion);
+    }
+
+    private void cleanupDestinationThenRestoreSource(VmInstanceInventory inv, String destHostUuid,
+                                                     List<EipTO> eips, NoErrorCompletion completion) {
         batchDeleteEips(eips, destHostUuid, new Completion(completion) {
             @Override
             public void success() {
@@ -281,6 +303,80 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                         eips.stream().map(e -> e.vip).collect(Collectors.toList()), inv.getUuid(),
                         destHostUuid, errorCode));
                 restoreSourceEipsAfterFailedMigration(inv, eips, completion);
+            }
+        });
+    }
+
+    private void resolveEipLocationAfterFailedMigration(VmInstanceInventory inv, String destHostUuid,
+                                                        List<EipTO> eips, NoErrorCompletion completion) {
+        String srcHostUuid = inv.getHostUuid();
+        checkVmRunningOnHost(inv.getUuid(), srcHostUuid, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean runningOnSource) {
+                if (runningOnSource) {
+                    cleanupDestinationThenRestoreSource(inv, destHostUuid, eips, completion);
+                    return;
+                }
+
+                checkDestination();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to check vm[uuid:%s] on migration source host[uuid:%s], %s",
+                        inv.getUuid(), srcHostUuid, errorCode));
+                checkDestination();
+            }
+
+            private void checkDestination() {
+                checkVmRunningOnHost(inv.getUuid(), destHostUuid, new ReturnValueCompletion<Boolean>(completion) {
+                    @Override
+                    public void success(Boolean runningOnDestination) {
+                        if (runningOnDestination) {
+                            activateDestinationThenDeleteSource(inv, eips, srcHostUuid,
+                                    destHostUuid, completion);
+                            return;
+                        }
+
+                        keepBothSides();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format("failed to check vm[uuid:%s] on migration destination host[uuid:%s], %s",
+                                inv.getUuid(), destHostUuid, errorCode));
+                        keepBothSides();
+                    }
+                });
+            }
+
+            private void keepBothSides() {
+                logger.warn(String.format("keep prepared EIPs[vips:%s] on source host[uuid:%s] and destination host[uuid:%s] because vm[uuid:%s] placement is unresolved after migration failure",
+                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), srcHostUuid,
+                        destHostUuid, inv.getUuid()));
+                completion.done();
+            }
+        });
+    }
+
+    private void checkVmRunningOnHost(String vmUuid, String hostUuid,
+                                      ReturnValueCompletion<Boolean> completion) {
+        CheckVmStateOnHypervisorMsg msg = new CheckVmStateOnHypervisorMsg();
+        msg.setVmInstanceUuids(Collections.singletonList(vmUuid));
+        msg.setHostUuid(hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+
+                CheckVmStateOnHypervisorReply rsp = reply.castReply();
+                String state = rsp.getStates() == null ? null : rsp.getStates().get(vmUuid);
+                completion.success(VmInstanceState.Running.toString().equals(state) ||
+                        VmInstanceState.Paused.toString().equals(state));
             }
         });
     }
@@ -369,38 +465,66 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
             }
 
             private void vmMigrateToAnotherHost(final FlowTrigger trigger) {
-                batchDeleteEips(eips, struct.getOriginalHostUuid(), new NopeCompletion());
-                applyHostUuidForRollback = struct.getOriginalHostUuid();
-                batchApplyEips(eips, struct.getCurrentHostUuid(), new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        releaseHostUuidForRollback = struct.getCurrentHostUuid();
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
+                moveEipsToCurrentHost(trigger);
             }
 
-
             private void vmRunningFromUnknownStateHostChanged(final FlowTrigger trigger) {
-                batchDeleteEips(eips, struct.getOriginalHostUuid(), new NopeCompletion());
-                applyHostUuidForRollback = struct.getOriginalHostUuid();
-                batchApplyEips(eips, struct.getCurrentHostUuid(), new Completion(trigger) {
+                moveEipsToCurrentHost(trigger);
+            }
+
+            private void moveEipsToCurrentHost(final FlowTrigger trigger) {
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName(String.format("move-flat-eips-for-abnormal-vm-%s", vm.getUuid()));
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "apply-flat-eips-on-current-host";
+
                     @Override
-                    public void success() {
-                        releaseHostUuidForRollback = struct.getCurrentHostUuid();
+                    public void run(FlowTrigger chainTrigger, Map data) {
+                        batchApplyEips(eips, struct.getCurrentHostUuid(), new Completion(chainTrigger) {
+                            @Override
+                            public void success() {
+                                releaseHostUuidForRollback = struct.getCurrentHostUuid();
+                                chainTrigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                chainTrigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "delete-flat-eips-on-original-host";
+
+                    @Override
+                    public void run(FlowTrigger chainTrigger, Map data) {
+                        batchDeleteEips(eips, struct.getOriginalHostUuid(), new Completion(chainTrigger) {
+                            @Override
+                            public void success() {
+                                applyHostUuidForRollback = struct.getOriginalHostUuid();
+                                chainTrigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to clean EIPs[vips:%s] for vm[uuid:%s] on original host[uuid:%s] after applying them on current host[uuid:%s], %s",
+                                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(),
+                                        struct.getOriginalHostUuid(), struct.getCurrentHostUuid(), errorCode));
+                                chainTrigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(trigger) {
+                    @Override
+                    public void handle(Map data) {
                         trigger.next();
                     }
-
+                }).error(new FlowErrorHandler(trigger) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
+                    public void handle(ErrorCode errorCode, Map data) {
                         trigger.fail(errorCode);
                     }
-                });
+                }).start();
             }
 
             private void vmStoppedOnTheSameHost(final FlowTrigger trigger) {
@@ -439,26 +563,69 @@ public class FlatEipBackend implements EipBackend, KVMHostConnectExtensionPoint,
                     return;
                 }
 
-                if (releaseHostUuidForRollback != null) {
-                    batchDeleteEips(eips, releaseHostUuidForRollback, new NopeCompletion());
-                }
-                if (applyHostUuidForRollback != null) {
-                    batchApplyEips(eips, applyHostUuidForRollback, new Completion(null) {
-                        @Override
-                        public void success() {
-                            // pass
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName(String.format("rollback-flat-eips-for-abnormal-vm-%s", vm.getUuid()));
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "restore-flat-eips-on-original-host";
+
+                    @Override
+                    public void run(FlowTrigger chainTrigger, Map data) {
+                        if (applyHostUuidForRollback == null) {
+                            chainTrigger.next();
+                            return;
                         }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            logger.warn(String.format("after migration, failed to apply EIPs[uuids:%s] to the vm[uuid:%s, name:%s] on the destination host[uuid:%s], %s." +
-                                            "You may need to reboot the VM to resolve the issue",
-                                    eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(), vm.getName(), applyHostUuidForRollback, errorCode));
-                        }
-                    });
-                }
+                        batchApplyEips(eips, applyHostUuidForRollback, new Completion(chainTrigger) {
+                            @Override
+                            public void success() {
+                                chainTrigger.next();
+                            }
 
-                trigger.rollback();
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                chainTrigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "release-flat-eips-on-current-host";
+
+                    @Override
+                    public void run(FlowTrigger chainTrigger, Map data) {
+                        if (releaseHostUuidForRollback == null) {
+                            chainTrigger.next();
+                            return;
+                        }
+
+                        batchDeleteEips(eips, releaseHostUuidForRollback, new Completion(chainTrigger) {
+                            @Override
+                            public void success() {
+                                chainTrigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to release EIPs[vips:%s] for vm[uuid:%s] on current host[uuid:%s] during rollback, %s",
+                                        eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(),
+                                        releaseHostUuidForRollback, errorCode));
+                                chainTrigger.next();
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(trigger) {
+                    @Override
+                    public void handle(Map data) {
+                        trigger.rollback();
+                    }
+                }).error(new FlowErrorHandler(trigger) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        logger.warn(String.format("failed to restore EIPs[vips:%s] for vm[uuid:%s] on original host[uuid:%s] during rollback, keep current host EIPs, %s",
+                                eips.stream().map(e -> e.vip).collect(Collectors.toList()), vm.getUuid(),
+                                applyHostUuidForRollback, errorCode));
+                        trigger.rollback();
+                    }
+                }).start();
             }
         };
     }
