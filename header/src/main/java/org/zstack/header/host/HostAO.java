@@ -38,6 +38,9 @@ public class HostAO extends ResourceVO {
     private String architecture;
 
     @Column
+    private String serverUuid;
+
+    @Column
     @Enumerated(EnumType.STRING)
     private HostState state;
 
@@ -145,5 +148,13 @@ public class HostAO extends ResourceVO {
 
     public void setArchitecture(String architecture) {
         this.architecture = architecture;
+    }
+
+    public String getServerUuid() {
+        return serverUuid;
+    }
+
+    public void setServerUuid(String serverUuid) {
+        this.serverUuid = serverUuid;
     }
 }

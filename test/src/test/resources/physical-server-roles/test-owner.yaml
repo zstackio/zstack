@@ -1,0 +1,10 @@
+roleType: TEST_OWNER
+applicationMode: RESOURCE_HANDLES
+sliceName: zstack-test-owner.slice
+services:
+  - name: test-owner
+    handleType: OWNER_PID_FILE
+    valueFrom: ownerPidFile
+    required: true
+    restartable: false
+    expectedCommandToken: /usr/bin/test-owner

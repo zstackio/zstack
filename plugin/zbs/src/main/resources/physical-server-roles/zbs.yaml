@@ -1,0 +1,5 @@
+roleType: ZBS
+services:
+  - name: zstone.share.slice
+  - name: zstone.cs.slice
+  - name: zstone.vhost.slice

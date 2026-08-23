@@ -92,7 +92,6 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Autowired
     @Deprecated
     private CloudBus bus;
-
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
     private Config config;
@@ -632,6 +631,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         AddonInfo newAddonInfo = new AddonInfo();
         Config current = JSONObjectUtil.toObject(cfg, Config.class);
         List<MdsInfo> mdsInfos = MdsInfo.valueOf(current.getMdsUrls());
+        inheritMdsSerialNumbers(mdsInfos);
         newAddonInfo.setMdsInfos(mdsInfos);
         final List<ZbsPrimaryStorageMdsBase> mdsList = CollectionUtils.transformToList(newAddonInfo.getMdsInfos(),
                 ZbsPrimaryStorageMdsBase::new);
@@ -795,6 +795,21 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 });
             }
         }).start();
+    }
+
+    private void inheritMdsSerialNumbers(List<MdsInfo> mdsInfos) {
+        if (addonInfo == null || addonInfo.getMdsInfos() == null) {
+            return;
+        }
+
+        for (MdsInfo mdsInfo : mdsInfos) {
+            addonInfo.getMdsInfos().stream()
+                    .filter(mdsInfo::equals)
+                    .map(MdsInfo::getPhysicalServerSerialNumber)
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .ifPresent(mdsInfo::setPhysicalServerSerialNumber);
+        }
     }
 
     private void reconnectSingleMds(ZbsPrimaryStorageMdsBase mdsBase, Completion completion) {

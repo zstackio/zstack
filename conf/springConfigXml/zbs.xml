@@ -29,4 +29,24 @@
             <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
+
+    <bean id="ZbsNodeRefContributor" class="org.zstack.storage.zbs.ZbsNodeRefContributorImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.zbs.ZbsNodeRefContributor" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZbsAgentResourceUsageProvider"
+          class="org.zstack.storage.zbs.ZbsAgentResourceUsageProvider">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.storage.zbs.ZbsResourceUsageProvider" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZbsResourceUsageObserver"
+          class="org.zstack.storage.zbs.ZbsResourceUsageObserver">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver" />
+        </zstack:plugin>
+    </bean>
 </beans>

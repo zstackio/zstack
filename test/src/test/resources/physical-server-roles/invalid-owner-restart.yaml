@@ -1,0 +1,10 @@
+roleType: INVALID_OWNER
+applicationMode: RESOURCE_HANDLES
+sliceName: invalid-owner.slice
+services:
+  - name: invalid-owner
+    handleType: OWNER_PID_FILE
+    value: /run/invalid-owner.pid
+    required: true
+    restartable: true
+    expectedCommandToken: /usr/bin/invalid-owner

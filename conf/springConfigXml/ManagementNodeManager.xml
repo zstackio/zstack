@@ -17,4 +17,18 @@
 			<zstack:extension interface="org.zstack.header.vo.FindSameNodeExtensionPoint"/>
 		</zstack:plugin>
 	</bean>
+
+	<bean id="LocalCpuTopologyCollector" class="org.zstack.portal.managementnode.LocalCpuTopologyCollector" />
+	<bean id="LocalResourceControlExecutor" class="org.zstack.portal.managementnode.LocalResourceControlExecutor" />
+
+	<bean id="ManagementNodePhysicalServerAdapter"
+		  class="org.zstack.portal.managementnode.ManagementNodePhysicalServerAdapter">
+		<zstack:plugin>
+			<zstack:extension interface="org.zstack.header.Component" />
+			<zstack:extension interface="org.zstack.header.Service" />
+			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener" />
+			<zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+			<zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter" />
+		</zstack:plugin>
+	</bean>
 </beans>

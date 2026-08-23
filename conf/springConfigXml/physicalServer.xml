@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+       http://zstack.org/schema/zstack
+       http://zstack.org/schema/zstack/plugin.xsd"
+       default-init-method="init" default-destroy-method="destroy">
+
+    <bean id="PhysicalServerAssignmentRepository"
+          class="org.zstack.physicalserver.PhysicalServerAssignmentRepository"/>
+
+    <bean id="PhysicalServerIdentityService"
+          class="org.zstack.physicalserver.PhysicalServerIdentityService"/>
+
+    <bean id="PhysicalServerCpuPlanner"
+          class="org.zstack.physicalserver.PhysicalServerCpuPlanner"/>
+
+    <bean id="PhysicalServerResourceAssignmentReconciler"
+          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentReconciler"/>
+
+    <bean id="PhysicalServerResourceControlReconciler"
+          class="org.zstack.physicalserver.PhysicalServerResourceControlReconciler"/>
+
+    <bean id="PhysicalServerResourceAssignmentGlobalConfig"
+          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerManager" class="org.zstack.physicalserver.PhysicalServerManagerImpl">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerManager"/>
+        </zstack:plugin>
+    </bean>
+
+    <bean id="PhysicalServerApiInterceptor"
+          class="org.zstack.physicalserver.PhysicalServerApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>
+        </zstack:plugin>
+    </bean>
+</beans>

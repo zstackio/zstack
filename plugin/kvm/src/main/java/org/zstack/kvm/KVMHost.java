@@ -28,6 +28,7 @@ import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.CloudBusGlobalProperty;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.GuestOsHelper;
 import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.Q;
@@ -71,6 +72,7 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.os.OSArchitecture;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentConfig;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -230,6 +232,8 @@ public class KVMHost extends HostBase implements Host {
     private AnsibleFacade asf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private GlobalConfigFacade gcf;
     @Autowired
     private DeviceBootOrderOperator deviceBootOrderOperator;
     @Autowired
@@ -6178,6 +6182,16 @@ public class KVMHost extends HostBase implements Host {
                         kvmHostConfigChecker.setRequireKsmCheck(enableKsm);
                         kvmHostConfigChecker.setRequireReservePorts("49152-49215");
                         deployArguments.setIsEnableKsm(enableKsm);
+
+                        String resourceAssignmentEnabled = String.valueOf(
+                                gcf.getConfigValue(
+                                        PhysicalServerResourceAssignmentConfig.CATEGORY,
+                                        PhysicalServerResourceAssignmentConfig.ENABLED,
+                                        Boolean.class));
+                        kvmHostConfigChecker.setRequireResourceAssignment(
+                                resourceAssignmentEnabled);
+                        deployArguments.setResourceAssignmentEnabled(
+                                resourceAssignmentEnabled);
 
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");
