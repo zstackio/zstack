@@ -52,6 +52,30 @@ public class PlatformServicePackageInventory  {
         return this.imageUuid;
     }
 
+    public java.lang.String backupStorageUuid;
+    public void setBackupStorageUuid(java.lang.String backupStorageUuid) {
+        this.backupStorageUuid = backupStorageUuid;
+    }
+    public java.lang.String getBackupStorageUuid() {
+        return this.backupStorageUuid;
+    }
+
+    public java.lang.String backupStorageFsid;
+    public void setBackupStorageFsid(java.lang.String backupStorageFsid) {
+        this.backupStorageFsid = backupStorageFsid;
+    }
+    public java.lang.String getBackupStorageFsid() {
+        return this.backupStorageFsid;
+    }
+
+    public java.lang.String backupStorageType;
+    public void setBackupStorageType(java.lang.String backupStorageType) {
+        this.backupStorageType = backupStorageType;
+    }
+    public java.lang.String getBackupStorageType() {
+        return this.backupStorageType;
+    }
+
     public java.lang.String status;
     public void setStatus(java.lang.String status) {
         this.status = status;
