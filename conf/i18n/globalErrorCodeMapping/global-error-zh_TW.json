@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "建立 DPU 彈性裸金屬執行個體時，網路參數設定無效",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "指定的三層網路[uuid:%s]不存在",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "僅 DPU 機箱支援建立執行個體時指定網路參數",
   "ORG_ZSTACK_XINFINI_SDK_10001": "格式化 API 結果到類[%s]失敗，resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "不支持的數据中心 [%s] 類型 here!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "arg 'endpoint' 必須在 %s 類型中設置",

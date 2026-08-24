@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "พารามิเตอร์เครือข่ายสำหรับการสร้างอินสแตนซ์ DPU Baremetal2 ไม่ถูกต้อง",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "ไม่มีเครือข่าย L3[uuid:%s] ที่ระบุ",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "พารามิเตอร์เครือข่ายสำหรับการสร้างอินสแตนซ์รองรับเฉพาะ Chassis DPU เท่านั้น",
   "ORG_ZSTACK_XINFINI_SDK_10001": "จัดรูปแบบการตอบกลับ API ไปยัง class[%s] ล้มเหลว, resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "ชนิดศูนย์ข้อมูล [%s] ไม่รองรับที่นี่!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "argument 'endpoint' ต้องถูกตั้งค่าสำหรับชนิดการกำหนดค่า %s",
