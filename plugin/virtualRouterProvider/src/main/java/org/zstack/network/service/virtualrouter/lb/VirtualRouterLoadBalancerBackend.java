@@ -1334,11 +1334,17 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     private ErrorCode validateTcpIpvsZvrVersion(String vmUuid) {
         VirtualRouterMetadataVO metadataVO = dbf.findByUuid(vmUuid, VirtualRouterMetadataVO.class);
         String zvrVersion = metadataVO == null ? null : metadataVO.getZvrVersion();
-        if (!VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion) ||
-                new VersionComparator(zvrVersion).compare(VyosConstants.TCP_IPVS_MIN_ZVR_VERSION) < 0) {
+        if (zvrVersion != null) {
+            zvrVersion = zvrVersion.trim();
+        }
+        if (!VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion)) {
+            return null;
+        }
+
+        if (new VersionComparator(zvrVersion).compare(VyosConstants.TCP_IPVS_MIN_ZVR_VERSION) < 0) {
             return operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10190,
                     "target appliance vm[uuid:%s] zvr version [%s] does not support tcp ipvs listener, required >= %s",
-                    vmUuid, zvrVersion == null ? "unknown" : zvrVersion, VyosConstants.TCP_IPVS_MIN_ZVR_VERSION);
+                    vmUuid, zvrVersion, VyosConstants.TCP_IPVS_MIN_ZVR_VERSION);
         }
 
         return null;

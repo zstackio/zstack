@@ -125,10 +125,15 @@ class TcpIpvsZvrVersionValidationCase extends SubCase {
         setLbProviderType(lb.uuid)
 
         String vrUuid = createVirtualRouterRef(lb.uuid)
-        setZvrVersion(vrUuid, "5.5.28.0")
+
+        CreateLoadBalancerListenerAction.Result result = createTcpIpvsListenerAction(
+                lb.uuid, "tcp-ipvs-unknown-zvr-version", 19094).call()
+        assert result.error == null
+
+        setZvrVersion(vrUuid, " 5.5.28.0 ")
 
         CreateLoadBalancerListenerAction action = createTcpIpvsListenerAction(lb.uuid, "tcp-ipvs-old-zvr-version", 19095)
-        CreateLoadBalancerListenerAction.Result result = action.call()
+        result = action.call()
 
         assert result.error != null
         assert result.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10190"
