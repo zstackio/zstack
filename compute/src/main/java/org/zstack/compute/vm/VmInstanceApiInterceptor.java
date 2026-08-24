@@ -39,6 +39,7 @@ import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.vm.APIRegisterVmInstanceFromMetadataMsg;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO;
 import org.zstack.header.vm.devices.VmInstanceResourceMetadataGroupVO_;
+import org.zstack.header.vm.metadata.VmInstanceMetadataDTO;
 import org.zstack.header.vm.metadata.VmMetadataPathBuildExtensionPoint;
 import org.zstack.header.volume.*;
 import org.zstack.network.l2.L2NetworkHostUtils;
@@ -55,6 +56,7 @@ import org.zstack.utils.network.NicIpAddressInfo;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -1333,12 +1335,13 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIRegisterVmInstanceFromMetadataMsg msg) {
-        String path = msg.getMetadataPath();
-        if (StringUtils.isEmpty(path)) {
-            throw new ApiMessageInterceptionException(argerr("metadataPath cannot be empty or null"));
+        boolean hasMetadataPath = StringUtils.isNotBlank(msg.getMetadataPath());
+        boolean hasMetadata = StringUtils.isNotBlank(msg.getMetadata());
+        if (hasMetadataPath == hasMetadata) {
+            throw new ApiMessageInterceptionException(argerr(
+                    "exactly one of metadataPath and metadata must be specified"));
         }
 
-        // Delegate path validation to the storage-type-specific extension
         String psUuid = msg.getPrimaryStorageUuid();
         String psType = Q.New(PrimaryStorageVO.class).select(PrimaryStorageVO_.type).eq(PrimaryStorageVO_.uuid, psUuid).findValue();
         if (psType == null) {
@@ -1346,15 +1349,31 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                     "primary storage[uuid:%s] not found", psUuid));
         }
 
-        VmMetadataPathBuildExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, VmMetadataPathBuildExtensionPoint.class);
-        if (ext == null) {
-            throw new ApiMessageInterceptionException(argerr(
-                    "primary storage[uuid:%s, type:%s] does not support vm metadata", psUuid, psType));
-        }
+        if (hasMetadataPath) {
+            VmMetadataPathBuildExtensionPoint ext = pluginRgty.getExtensionFromMap(psType, VmMetadataPathBuildExtensionPoint.class);
+            if (ext == null) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "primary storage[uuid:%s, type:%s] does not support vm metadata", psUuid, psType));
+            }
 
-        String error = ext.validateMetadataPath(psUuid, path);
-        if (error != null) {
-            throw new ApiMessageInterceptionException(argerr("%s", error));
+            String error = ext.validateMetadataPath(psUuid, msg.getMetadataPath());
+            if (error != null) {
+                throw new ApiMessageInterceptionException(argerr("%s", error));
+            }
+        } else {
+            long threshold = VmGlobalConfig.VM_METADATA_PAYLOAD_REJECT_THRESHOLD.value(Long.class);
+            int metadataSize = msg.getMetadata().getBytes(StandardCharsets.UTF_8).length;
+            if (metadataSize > threshold) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "metadata payload size[%s bytes] exceeds threshold[%s bytes]", metadataSize, threshold));
+            }
+
+            try {
+                JSONObjectUtil.toObject(msg.getMetadata(), VmInstanceMetadataDTO.class);
+            } catch (Exception e) {
+                throw new ApiMessageInterceptionException(argerr(
+                        "failed to parse metadata JSON: %s", e.getMessage()));
+            }
         }
 
         // Validate cluster belongs to the specified zone
