@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.NetworkSecurityPolicyScheduleTimeStatus;
 
 public class NetworkSecurityPolicyScheduleInventory  {
 
@@ -100,20 +100,20 @@ public class NetworkSecurityPolicyScheduleInventory  {
         return this.weekDays;
     }
 
-    public boolean effective;
-    public void setEffective(boolean effective) {
-        this.effective = effective;
+    public NetworkSecurityPolicyScheduleTimeStatus timeStatus;
+    public void setTimeStatus(NetworkSecurityPolicyScheduleTimeStatus timeStatus) {
+        this.timeStatus = timeStatus;
     }
-    public boolean getEffective() {
-        return this.effective;
+    public NetworkSecurityPolicyScheduleTimeStatus getTimeStatus() {
+        return this.timeStatus;
     }
 
-    public boolean expired;
-    public void setExpired(boolean expired) {
-        this.expired = expired;
+    public boolean expiring;
+    public void setExpiring(boolean expiring) {
+        this.expiring = expiring;
     }
-    public boolean getExpired() {
-        return this.expired;
+    public boolean getExpiring() {
+        return this.expiring;
     }
 
     public java.sql.Timestamp createDate;

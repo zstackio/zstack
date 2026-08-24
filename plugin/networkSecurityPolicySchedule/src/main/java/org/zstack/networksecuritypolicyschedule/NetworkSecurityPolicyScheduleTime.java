@@ -2,6 +2,7 @@ package org.zstack.networksecuritypolicyschedule;
 
 import java.sql.Date;
 import java.sql.Time;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,6 +20,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 class NetworkSecurityPolicyScheduleTime {
+    private static final Duration EXPIRING_WINDOW = Duration.ofHours(24);
     private static final DateTimeFormatter DATE_FORMATTER =
             DateTimeFormatter.ofPattern("uuuu-MM-dd")
                     .withResolverStyle(ResolverStyle.STRICT);
@@ -165,6 +167,28 @@ class NetworkSecurityPolicyScheduleTime {
             }
         }
         return false;
+    }
+
+    NetworkSecurityPolicyScheduleTimeStatus status(Instant instant) {
+        LocalDateTime current = currentDateTime(instant);
+        boolean started = repeatType == NetworkSecurityPolicyScheduleRepeatType.Once
+                ? !current.isBefore(LocalDateTime.of(startDate, startTime))
+                : !current.toLocalDate().isBefore(startDate);
+        if (!started) {
+            return NetworkSecurityPolicyScheduleTimeStatus.NotStarted;
+        }
+        if (isInSchedule(instant)) {
+            return NetworkSecurityPolicyScheduleTimeStatus.InWindow;
+        }
+        return hasRemainingSchedule(instant)
+                ? NetworkSecurityPolicyScheduleTimeStatus.OutOfWindow
+                : NetworkSecurityPolicyScheduleTimeStatus.Ended;
+    }
+
+    boolean isExpiring(Instant instant) {
+        long remainingSeconds = Duration.between(
+                instant.truncatedTo(ChronoUnit.MINUTES), expirationInstant()).getSeconds();
+        return remainingSeconds > 0 && remainingSeconds < EXPIRING_WINDOW.getSeconds();
     }
 
     boolean hasScheduledDay() {
