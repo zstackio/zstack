@@ -177,9 +177,24 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
         ).call()
     }
 
-    void testExpiredStatus() {
+    private static void assertTimeStatus(
+            NetworkSecurityPolicyScheduleInventory schedule,
+            String expected) {
+        String actual = schedule.timeStatus?.toString()
+        assert actual == expected :
+                "timeStatus: expected=${expected}, actual=${actual}, schedule=${schedule.name}"
+    }
+
+    private static void assertExpiring(
+            NetworkSecurityPolicyScheduleInventory schedule,
+            boolean expected) {
+        assert schedule.expiring == expected :
+                "expiring: expected=${expected}, actual=${schedule.expiring}, schedule=${schedule.name}"
+    }
+
+    void testTimeStatus() {
         SecurityGroupInventory securityGroup = createSecurityGroup {
-            name = "schedule-expired-status-sg"
+            name = "schedule-time-status-sg"
             ipVersion = 4
         } as SecurityGroupInventory
 
@@ -205,8 +220,8 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             startTime = "07:00"
             endTime = "09:00"
         } as NetworkSecurityPolicyScheduleInventory
-        NetworkSecurityPolicyScheduleInventory laterWeekly = createNetworkSecurityPolicySchedule {
-            name = "later-weekly"
+        NetworkSecurityPolicyScheduleInventory outOfWindowWeekly = createNetworkSecurityPolicySchedule {
+            name = "out-of-window-weekly"
             resourceType = "SecurityGroup"
             resourceUuid = securityGroup.uuid
             timeType = "UTC"
@@ -217,12 +232,79 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             endTime = "08:00"
             weekDays = [3]
         } as NetworkSecurityPolicyScheduleInventory
+        NetworkSecurityPolicyScheduleInventory notStartedWeekly = createNetworkSecurityPolicySchedule {
+            name = "not-started-weekly"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Weekly"
+            startDate = "2026-07-30"
+            endDate = "2026-08-05"
+            startTime = "07:00"
+            endTime = "09:00"
+            weekDays = [4]
+        } as NetworkSecurityPolicyScheduleInventory
+        NetworkSecurityPolicyScheduleInventory inWindowWeekly = createNetworkSecurityPolicySchedule {
+            name = "in-window-weekly"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Weekly"
+            startDate = "2026-07-29"
+            endDate = "2026-08-05"
+            startTime = "07:00"
+            endTime = "09:00"
+            weekDays = [3]
+        } as NetworkSecurityPolicyScheduleInventory
+        NetworkSecurityPolicyScheduleInventory lastWindow = createNetworkSecurityPolicySchedule {
+            name = "last-window"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Weekly"
+            startDate = "2026-07-29"
+            endDate = "2026-08-02"
+            startTime = "08:00"
+            endTime = "09:00"
+            weekDays = [3]
+        } as NetworkSecurityPolicyScheduleInventory
+        NetworkSecurityPolicyScheduleInventory within24Hours = createNetworkSecurityPolicySchedule {
+            name = "within-24-hours"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Once"
+            startDate = "2026-07-30"
+            endDate = "2026-07-30"
+            startTime = "07:00"
+            endTime = "07:59"
+        } as NetworkSecurityPolicyScheduleInventory
+        NetworkSecurityPolicyScheduleInventory exactly24Hours = createNetworkSecurityPolicySchedule {
+            name = "exactly-24-hours"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Once"
+            startDate = "2026-07-30"
+            endDate = "2026-07-30"
+            startTime = "07:00"
+            endTime = "08:00"
+        } as NetworkSecurityPolicyScheduleInventory
 
-        assert !upcoming.effective && !upcoming.expired : "upcoming status mismatch"
-        assert active.effective && !active.expired : "active status mismatch"
-        assert !laterWeekly.effective && !laterWeekly.expired : "later weekly status mismatch"
+        assertTimeStatus(upcoming, "NotStarted")
+        assertTimeStatus(active, "InWindow")
+        assertTimeStatus(outOfWindowWeekly, "OutOfWindow")
+        assertTimeStatus(notStartedWeekly, "NotStarted")
+        assertTimeStatus(inWindowWeekly, "InWindow")
+        assertTimeStatus(lastWindow, "InWindow")
+        assertTimeStatus(within24Hours, "NotStarted")
+        assertTimeStatus(exactly24Hours, "NotStarted")
+        assertExpiring(outOfWindowWeekly, false)
+        assertExpiring(lastWindow, true)
+        assertExpiring(within24Hours, true)
+        assertExpiring(exactly24Hours, false)
 
-        NetworkSecurityPolicyScheduleInventory expired = updateNetworkSecurityPolicySchedule {
+        NetworkSecurityPolicyScheduleInventory endedOnce = updateNetworkSecurityPolicySchedule {
             uuid = upcoming.uuid
             name = upcoming.name
             timeType = "UTC"
@@ -232,25 +314,46 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             startTime = "06:00"
             endTime = "07:00"
         } as NetworkSecurityPolicyScheduleInventory
-        assert !expired.effective && expired.expired : "expired status mismatch"
+        assertTimeStatus(endedOnce, "Ended")
+        assertExpiring(endedOnce, false)
+        NetworkSecurityPolicyScheduleInventory endedWeekly = updateNetworkSecurityPolicySchedule {
+            uuid = lastWindow.uuid
+            name = lastWindow.name
+            timeType = "UTC"
+            repeatType = "Weekly"
+            startDate = "2026-07-29"
+            endDate = "2026-08-02"
+            startTime = "07:00"
+            endTime = "08:00"
+            weekDays = [3]
+        } as NetworkSecurityPolicyScheduleInventory
+        assertTimeStatus(endedWeekly, "Ended")
+        assertExpiring(endedWeekly, false)
 
         Map<String, NetworkSecurityPolicyScheduleInventory> queried =
                 getSchedules(securityGroup.uuid).collectEntries {
                     [(it.uuid): it]
                 }
-        assert !queried[upcoming.uuid].effective && queried[upcoming.uuid].expired :
-                "queried expired status mismatch"
-        assert queried[active.uuid].effective && !queried[active.uuid].expired :
-                "queried active status mismatch"
-        assert !queried[laterWeekly.uuid].effective && !queried[laterWeekly.uuid].expired :
-                "queried future status mismatch"
+        assertTimeStatus(queried[upcoming.uuid], "Ended")
+        assertTimeStatus(queried[active.uuid], "InWindow")
+        assertTimeStatus(queried[outOfWindowWeekly.uuid], "OutOfWindow")
+        assertTimeStatus(queried[notStartedWeekly.uuid], "NotStarted")
+        assertTimeStatus(queried[inWindowWeekly.uuid], "InWindow")
+        assertTimeStatus(queried[lastWindow.uuid], "Ended")
+        assertTimeStatus(queried[within24Hours.uuid], "NotStarted")
+        assertTimeStatus(queried[exactly24Hours.uuid], "NotStarted")
+        assertExpiring(queried[within24Hours.uuid], true)
+        assertExpiring(queried[exactly24Hours.uuid], false)
 
         scheduleFacade.setClock(Clock.fixed(
                 Instant.parse("2026-08-06T00:00:00Z"), ZoneOffset.UTC))
-        List<NetworkSecurityPolicyScheduleInventory> allExpired =
+        List<NetworkSecurityPolicyScheduleInventory> allEnded =
                 getSchedules(securityGroup.uuid)
-        assert allExpired.size() == 3 && allExpired.every { it.expired && !it.effective } :
-                "all schedules should be expired and ineffective"
+        assert allEnded.size() == 8 : "schedule count: expected=8, actual=${allEnded.size()}"
+        allEnded.each {
+            assertTimeStatus(it, "Ended")
+            assertExpiring(it, false)
+        }
 
         scheduleFacade.setClock(Clock.fixed(
                 Instant.parse("2026-07-29T08:00:00Z"), ZoneOffset.UTC))
@@ -681,7 +784,7 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
             scheduleFacade.setClock(Clock.fixed(
                     Instant.parse("2026-07-29T08:00:00Z"), ZoneOffset.UTC))
 
-            testExpiredStatus()
+            testTimeStatus()
             testSecurityGroupScheduleLifecycle()
             testCreateApiValidation()
             testDescriptionLength()

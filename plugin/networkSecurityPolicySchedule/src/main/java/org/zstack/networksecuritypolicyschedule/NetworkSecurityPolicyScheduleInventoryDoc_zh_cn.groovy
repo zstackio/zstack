@@ -1,5 +1,6 @@
 package org.zstack.networksecuritypolicyschedule
 
+import org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleTimeStatus
 import java.sql.Timestamp
 
 doc {
@@ -77,15 +78,17 @@ doc {
         type "List"
         since "5.5.38"
     }
-    field {
-        name "effective"
-        desc "当前分钟是否处于生效时间段"
-        type "boolean"
+    ref {
+        name "timeStatus"
+        path "org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleInventory.timeStatus"
+        desc "当前分钟的时间状态"
+        type "NetworkSecurityPolicyScheduleTimeStatus"
         since "5.5.38"
+        clz NetworkSecurityPolicyScheduleTimeStatus.class
     }
     field {
-        name "expired"
-        desc "从当前分钟起是否已不存在未来生效时间"
+        name "expiring"
+        desc "距离最后一个有效窗口结束大于0且不足24小时"
         type "boolean"
         since "5.5.38"
     }

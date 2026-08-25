@@ -640,6 +640,7 @@ public class SourceClassMap {
 			put("org.zstack.network.zns.ZnsTenantRouterInventory", "org.zstack.sdk.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.network.zns.ZnsTransportZoneInventory");
 			put("org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleInventory", "org.zstack.sdk.NetworkSecurityPolicyScheduleInventory");
+			put("org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleTimeStatus", "org.zstack.sdk.NetworkSecurityPolicyScheduleTimeStatus");
 			put("org.zstack.observabilityServer.ObservabilityServerOfferingInventory", "org.zstack.sdk.ObservabilityServerOfferingInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerVmInventory", "org.zstack.sdk.ObservabilityServerVmInventory");
 			put("org.zstack.observabilityServer.service.ObservabilityServerServiceDataInventory", "org.zstack.sdk.ObservabilityServerServiceDataInventory");
@@ -1345,6 +1346,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.NetworkRouterAreaRefInventory", "org.zstack.header.protocol.NetworkRouterAreaRefInventory");
 			put("org.zstack.sdk.NetworkRouterFlowMeterRefInventory", "org.zstack.header.flowMeter.NetworkRouterFlowMeterRefInventory");
 			put("org.zstack.sdk.NetworkSecurityPolicyScheduleInventory", "org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleInventory");
+			put("org.zstack.sdk.NetworkSecurityPolicyScheduleTimeStatus", "org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleTimeStatus");
 			put("org.zstack.sdk.NetworkServiceL3NetworkRefInventory", "org.zstack.header.network.service.NetworkServiceL3NetworkRefInventory");
 			put("org.zstack.sdk.NetworkServiceProviderInventory", "org.zstack.header.network.service.NetworkServiceProviderInventory");
 			put("org.zstack.sdk.NfvInstClusterStatus", "org.zstack.network.service.header.nfvinstgroup.NfvInstClusterStatus");

@@ -25,8 +25,8 @@ public class NetworkSecurityPolicyScheduleInventory {
     private String startTime;
     private String endTime;
     private List<Integer> weekDays;
-    private boolean effective;
-    private boolean expired;
+    private NetworkSecurityPolicyScheduleTimeStatus timeStatus;
+    private boolean expiring;
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
@@ -50,8 +50,8 @@ public class NetworkSecurityPolicyScheduleInventory {
         inventory.setStartTime("09:00");
         inventory.setEndTime("18:00");
         inventory.setWeekDays(Arrays.asList(1, 2, 3, 4, 5));
-        inventory.setEffective(true);
-        inventory.setExpired(false);
+        inventory.setTimeStatus(NetworkSecurityPolicyScheduleTimeStatus.InWindow);
+        inventory.setExpiring(false);
         inventory.setCreateDate(Timestamp.valueOf("2026-01-01 00:00:00"));
         inventory.setLastOpDate(Timestamp.valueOf("2026-01-01 00:00:00"));
         return inventory;
@@ -74,8 +74,8 @@ public class NetworkSecurityPolicyScheduleInventory {
                 .truncatedTo(ChronoUnit.MINUTES).toString();
         inventory.weekDays = toWeekDays(vo.getWeekDays());
         NetworkSecurityPolicyScheduleTime time = NetworkSecurityPolicyScheduleTime.valueOf(vo);
-        inventory.effective = time.isInSchedule(now);
-        inventory.expired = !time.hasRemainingSchedule(now);
+        inventory.timeStatus = time.status(now);
+        inventory.expiring = time.isExpiring(now);
         inventory.createDate = vo.getCreateDate();
         inventory.lastOpDate = vo.getLastOpDate();
         return inventory;
@@ -201,20 +201,20 @@ public class NetworkSecurityPolicyScheduleInventory {
         this.weekDays = weekDays;
     }
 
-    public boolean isEffective() {
-        return effective;
+    public NetworkSecurityPolicyScheduleTimeStatus getTimeStatus() {
+        return timeStatus;
     }
 
-    public void setEffective(boolean effective) {
-        this.effective = effective;
+    public void setTimeStatus(NetworkSecurityPolicyScheduleTimeStatus timeStatus) {
+        this.timeStatus = timeStatus;
     }
 
-    public boolean isExpired() {
-        return expired;
+    public boolean isExpiring() {
+        return expiring;
     }
 
-    public void setExpired(boolean expired) {
-        this.expired = expired;
+    public void setExpiring(boolean expiring) {
+        this.expiring = expiring;
     }
 
     public Timestamp getCreateDate() {
