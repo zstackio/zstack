@@ -4755,6 +4755,7 @@
   "ORG_ZSTACK_AI_10164": "模型「%s」(UUID: %s) 与该虚拟机所属账户的共享规则不匹配，无法挂载。\n请确认模型已共享给该账户或设为公开。",
   "ORG_ZSTACK_AI_10165": "模型中心 (UUID: %s) 未找到（关联模型: 「%s」UUID: %s）。\n请检查模型中心是否已被删除。",
   "ORG_ZSTACK_AI_10167": "推理服务实例组[uuid:%s]正在删除，停止等待服务启动",
+  "ORG_ZSTACK_AI_10170": "模型服务[type:%s, uuid:%s]不支持 GPU 厂商[%s]",
   "ORG_ZSTACK_NETWORK_ZNS_10043": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败",
   "ORG_ZSTACK_NETWORK_ZNS_10044": "无法启用 DHCP：三层网络[uuid:%s]没有可用的 IP 范围（不包含 SLAAC）",
   "ORG_ZSTACK_NETWORK_ZNS_10045": "无法启用 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
