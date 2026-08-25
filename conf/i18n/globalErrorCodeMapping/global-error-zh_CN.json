@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "创建 DPU 弹性裸金属实例时，网络参数配置无效",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "指定的三层网络[uuid:%s]不存在",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "仅 DPU 机箱支持创建实例时指定网络参数",
   "ORG_ZSTACK_XINFINI_SDK_10001": "格式化 API 结果到类[%s]失败，resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "不支持的数据中心 [%s] 类型 here!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "arg \u0027endpoint\u0027 必须在 %s 类型中设置",

@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Parameter jaringan tidak valid untuk membuat instans Baremetal2 DPU.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Jaringan L3 yang ditentukan[uuid:%s] tidak ada.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Parameter jaringan untuk pembuatan instans hanya didukung oleh chassis DPU.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "format respons API ke class[%s] gagal, resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "tipe datacenter [%s] tidak didukung di sini!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "argumen 'endpoint' harus diatur untuk tipe konfigurasi %s",
