@@ -28,6 +28,15 @@ public class GetNetworkSecurityPolicyScheduleAction extends AbstractAction {
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
 
+    @Param(required = false, validValues = {"NotStarted","InWindow","OutOfWindow","Ended"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String timeStatus;
+
+    @Param(required = false, validValues = {"Once","Weekly"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String repeatType;
+
+    @Param(required = false, validValues = {"Local","UTC"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String timeType;
+
     @Param(required = false)
     public java.util.List systemTags;
 

@@ -95,12 +95,28 @@ public class NetworkSecurityPolicyScheduleManagerImpl extends AbstractService {
 
     private void handle(APIGetNetworkSecurityPolicyScheduleMsg msg) {
         APIGetNetworkSecurityPolicyScheduleReply reply = new APIGetNetworkSecurityPolicyScheduleReply();
-        List<NetworkSecurityPolicyScheduleVO> vos = Q.New(NetworkSecurityPolicyScheduleVO.class)
-                .eq(NetworkSecurityPolicyScheduleVO_.resourceUuid, msg.getResourceUuid())
-                .list();
+        Q query = Q.New(NetworkSecurityPolicyScheduleVO.class)
+                .eq(NetworkSecurityPolicyScheduleVO_.resourceUuid, msg.getResourceUuid());
+        if (msg.getRepeatType() != null) {
+            query.eq(NetworkSecurityPolicyScheduleVO_.repeatType,
+                    NetworkSecurityPolicyScheduleRepeatType.valueOf(msg.getRepeatType()));
+        }
+        if (msg.getTimeType() != null) {
+            query.eq(NetworkSecurityPolicyScheduleVO_.timeType,
+                    NetworkSecurityPolicyScheduleTimeType.valueOf(msg.getTimeType()));
+        }
+
+        List<NetworkSecurityPolicyScheduleVO> vos = query.list();
         vos.sort(Comparator.comparing(NetworkSecurityPolicyScheduleVO::getCreateDate)
                 .thenComparing(NetworkSecurityPolicyScheduleVO::getUuid));
-        reply.setInventories(NetworkSecurityPolicyScheduleInventory.valueOf(vos, scheduleFacade.now()));
+        List<NetworkSecurityPolicyScheduleInventory> inventories =
+                NetworkSecurityPolicyScheduleInventory.valueOf(vos, scheduleFacade.now());
+        if (msg.getTimeStatus() != null) {
+            NetworkSecurityPolicyScheduleTimeStatus status =
+                    NetworkSecurityPolicyScheduleTimeStatus.valueOf(msg.getTimeStatus());
+            inventories.removeIf(inventory -> inventory.getTimeStatus() != status);
+        }
+        reply.setInventories(inventories);
         bus.reply(msg, reply);
     }
 

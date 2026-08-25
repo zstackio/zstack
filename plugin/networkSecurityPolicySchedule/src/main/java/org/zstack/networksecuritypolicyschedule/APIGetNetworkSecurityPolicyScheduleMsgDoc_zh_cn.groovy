@@ -31,6 +31,36 @@ doc {
 					since "5.5.38"
 				}
 				column {
+					name "timeStatus"
+					enclosedIn ""
+					desc "时间状态"
+					location "query"
+					type "String"
+					optional true
+					since "5.5.38"
+					values ("NotStarted","InWindow","OutOfWindow","Ended")
+				}
+				column {
+					name "repeatType"
+					enclosedIn ""
+					desc "计划类型"
+					location "query"
+					type "String"
+					optional true
+					since "5.5.38"
+					values ("Once","Weekly")
+				}
+				column {
+					name "timeType"
+					enclosedIn ""
+					desc "时区类型"
+					location "query"
+					type "String"
+					optional true
+					since "5.5.38"
+					values ("Local","UTC")
+				}
+				column {
 					name "systemTags"
 					enclosedIn ""
 					desc "系统标签"
