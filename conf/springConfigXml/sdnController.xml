@@ -79,6 +79,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ZnsProxyAnsibleDeployer" class="org.zstack.sdnController.znsproxy.ZnsProxyAnsibleDeployer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="H3cSdnControllerFactory" class="org.zstack.sdnController.h3cVcfc.H3cVcfcSdnControllerFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.sdnController.SdnControllerFactory"/>

@@ -13,6 +13,7 @@ import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.CpuArchitecture;
 import org.zstack.header.host.HostInventory;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectedContext;
@@ -20,18 +21,15 @@ import org.zstack.kvm.KVMHostInventory;
 import org.zstack.sdnController.ZnsProxyGlobalProperty;
 import org.zstack.sdnController.znsproxy.ZnsProxyInstaller;
 import org.zstack.sdnController.znsproxy.ZnsProxyKvmReconnectExtension;
-import org.zstack.sdnController.znsproxy.ZnsProxyPrepareServiceCmd;
 
 import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class ZnsProxyInstallerTest {
@@ -55,67 +53,6 @@ public class ZnsProxyInstallerTest {
         ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = originalPackageRepositoryPath;
         ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = originalProxyPackageName;
         ZnsProxyGlobalProperty.ANSIBLE_MODULE_PATH = originalAnsibleModulePath;
-    }
-
-    @Test
-    public void testBuildInstallCommandUsesPackageDefaults() {
-        String command = ZnsProxyInstaller.buildInstallCommand("/var/lib/zstack/zns-proxy/package/zns-proxy.bin");
-        assertEquals("'/var/lib/zstack/zns-proxy/package/zns-proxy.bin' install", command);
-    }
-
-    @Test
-    public void testResolvePackageByPackageName() throws Exception {
-        File repo = tempFolder.newFolder("repo");
-        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
-        File pkg = new File(repo, "zns-proxy-1.2.3.bin");
-        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
-
-        ZnsProxyPrepareServiceCmd cmd = new ZnsProxyPrepareServiceCmd();
-        cmd.packageName = "zns-proxy-1.2.3.bin";
-
-        assertEquals(pkg.getAbsolutePath(), ZnsProxyInstaller.resolvePackage(cmd).getAbsolutePath());
-    }
-
-    @Test
-    public void testResolvePackageByProxyVersion() throws Exception {
-        File repo = tempFolder.newFolder("repo-version");
-        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
-        File pkg = new File(repo, "zns-proxy-1.2.3.bin");
-        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
-
-        ZnsProxyPrepareServiceCmd cmd = new ZnsProxyPrepareServiceCmd();
-        cmd.proxyVersion = "1.2.3";
-
-        assertEquals(pkg.getAbsolutePath(), ZnsProxyInstaller.resolvePackage(cmd).getAbsolutePath());
-    }
-
-    @Test
-    public void testResolveDefaultPackageUsesProxyPackageName() throws Exception {
-        File repo = tempFolder.newFolder("repo-default");
-        ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
-        ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = "zns-proxy.bin";
-        File pkg = new File(repo, "zns-proxy.bin");
-        FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
-
-        assertEquals(pkg.getAbsolutePath(), ZnsProxyInstaller.resolveDefaultPackage().getAbsolutePath());
-    }
-
-    @Test
-    public void testPrepareServiceCmdAcceptsHostUuidsField() {
-        ZnsProxyPrepareServiceCmd cmd = new Gson().fromJson(
-                "{\"computeManagerUuid\":\"cm-uuid\",\"hostUuids\":[\"host-uuid-1\"]}",
-                ZnsProxyPrepareServiceCmd.class);
-
-        assertEquals(Arrays.asList("host-uuid-1"), cmd.hostUuids);
-    }
-
-    @Test
-    public void testPrepareServiceCmdIgnoresLegacyHostUuidField() {
-        ZnsProxyPrepareServiceCmd cmd = new Gson().fromJson(
-                "{\"computeManagerUuid\":\"cm-uuid\",\"hostUuid\":[\"host-uuid-1\"]}",
-                ZnsProxyPrepareServiceCmd.class);
-
-        assertNull(cmd.hostUuids);
     }
 
     @Test
@@ -147,6 +84,17 @@ public class ZnsProxyInstallerTest {
         TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
         HostInventory host = kvmHost("host-uuid");
         host.setHypervisorType("Simulator");
+
+        extension.connectionReestablished(host);
+
+        assertEquals(0, extension.ensureCount);
+    }
+
+    @Test
+    public void testReconnectSkipsUnsupportedHostArchitecture() throws Exception {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
+        HostInventory host = kvmHost("host-uuid");
+        host.setArchitecture(CpuArchitecture.aarch64.name());
 
         extension.connectionReestablished(host);
 
@@ -196,6 +144,20 @@ public class ZnsProxyInstallerTest {
     }
 
     @Test
+    public void testConnectFlowSkipsUnsupportedHostArchitecture() {
+        TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
+        TestFlowTrigger trigger = new TestFlowTrigger();
+        KVMHostConnectedContext context = connectContext("host-uuid", false);
+        context.getInventory().setArchitecture(CpuArchitecture.aarch64.name());
+
+        extension.createKvmHostConnectingFlow(context).run(trigger, new HashMap<>());
+
+        assertEquals(0, extension.ensureCount);
+        assertEquals(1, trigger.nextCount);
+        assertEquals(0, trigger.failCount);
+    }
+
+    @Test
     public void testConnectFlowPreservesPackageFailureDetails() {
         TestZnsProxyKvmReconnectExtension extension = new TestZnsProxyKvmReconnectExtension();
         TestFlowTrigger trigger = new TestFlowTrigger();
@@ -214,22 +176,18 @@ public class ZnsProxyInstallerTest {
     public void testResolvePackageRejectsPathTraversal() throws Exception {
         File repo = tempFolder.newFolder("repo-traversal");
         ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = "../bad.bin";
 
-        ZnsProxyPrepareServiceCmd cmd = new ZnsProxyPrepareServiceCmd();
-        cmd.packageName = "../bad.bin";
-
-        ZnsProxyInstaller.resolvePackage(cmd);
+        ZnsProxyInstaller.resolveAndVerifyPackage();
     }
 
     @Test(expected = RuntimeException.class)
     public void testResolvePackageFailsWhenMissing() throws Exception {
         File repo = tempFolder.newFolder("repo-missing");
         ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
+        ZnsProxyGlobalProperty.PROXY_PACKAGE_NAME = "missing.bin";
 
-        ZnsProxyPrepareServiceCmd cmd = new ZnsProxyPrepareServiceCmd();
-        cmd.packageName = "missing.bin";
-
-        ZnsProxyInstaller.resolvePackage(cmd);
+        ZnsProxyInstaller.resolveAndVerifyPackage();
     }
 
     @Test
@@ -240,7 +198,7 @@ public class ZnsProxyInstallerTest {
         FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
         writeManifest(repo, pkg, sha256(pkg), "1.2.0.1");
 
-        File resolved = ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+        File resolved = ZnsProxyInstaller.resolveAndVerifyPackage();
 
         assertEquals(pkg.getAbsolutePath(), resolved.getAbsolutePath());
     }
@@ -264,8 +222,7 @@ public class ZnsProxyInstallerTest {
         writeManifest(module, classPathPackage, sha256(classPathPackage), "1.2.0.1");
 
         try {
-            File resolved = ZnsProxyInstaller.resolveAndVerifyPackage(
-                    new ZnsProxyPrepareServiceCmd());
+            File resolved = ZnsProxyInstaller.resolveAndVerifyPackage();
             assertEquals(classPathPackage.getAbsolutePath(), resolved.getAbsolutePath());
         } finally {
             FileUtils.deleteDirectory(module);
@@ -278,7 +235,7 @@ public class ZnsProxyInstallerTest {
         ZnsProxyGlobalProperty.PACKAGE_REPOSITORY_PATH = repo.getAbsolutePath();
         FileUtils.writeStringToFile(new File(repo, "zns-proxy.bin"), "proxy", StandardCharsets.UTF_8);
 
-        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+        ZnsProxyInstaller.resolveAndVerifyPackage();
     }
 
     @Test(expected = RuntimeException.class)
@@ -291,7 +248,7 @@ public class ZnsProxyInstallerTest {
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 "1.2.0.1");
 
-        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+        ZnsProxyInstaller.resolveAndVerifyPackage();
     }
 
     @Test(expected = RuntimeException.class)
@@ -302,13 +259,14 @@ public class ZnsProxyInstallerTest {
         FileUtils.writeStringToFile(pkg, "proxy", StandardCharsets.UTF_8);
         writeManifest(repo, pkg, sha256(pkg), "1.2.0");
 
-        ZnsProxyInstaller.resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd());
+        ZnsProxyInstaller.resolveAndVerifyPackage();
     }
 
     private static HostInventory kvmHost(String uuid) {
         HostInventory host = new HostInventory();
         host.setUuid(uuid);
         host.setHypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+        host.setArchitecture(CpuArchitecture.x86_64.name());
         return host;
     }
 
@@ -316,6 +274,7 @@ public class ZnsProxyInstallerTest {
         KVMHostInventory host = new KVMHostInventory();
         host.setUuid(hostUuid);
         host.setHypervisorType(KVMConstant.KVM_HYPERVISOR_TYPE);
+        host.setArchitecture(CpuArchitecture.x86_64.name());
 
         KVMHostConnectedContext context = new KVMHostConnectedContext();
         context.setInventory(host);
