@@ -1342,6 +1342,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
                     }
                 });
+        VmNicCanonicalEvents.VmNicInfoChangedData data = new VmNicCanonicalEvents.VmNicInfoChangedData();
+        data.setVmInstanceUuid(vm.getUuid());
+        data.setVmNicUuid(nic.getUuid());
+        data.setChangeType(VmNicCanonicalEvents.VmNicInfoChangeType.IP);
+        evtf.fire(VmNicCanonicalEvents.VM_NIC_INFO_CHANGED_PATH, data);
     }
 
     private void notifyVmNameChanged(String oldName, String newName) {
