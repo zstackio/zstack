@@ -70,6 +70,24 @@ public class AddModelAction extends AbstractAction {
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String modelId;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String fineTuningGroupUuid;
+
+    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String fineTuningExportFingerprint;
+
+    @Param(required = false)
+    public java.lang.String fineTuningSourceModelUuid;
+
+    @Param(required = false)
+    public java.lang.String fineTuningSourceModelInstallPath;
+
+    @Param(required = false)
+    public java.lang.String fineTuningSourceFramework;
+
+    @Param(required = false)
+    public java.lang.String fineTuningSourceArchitecture;
+
     @Param(required = false, validValues = {"Public"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String shareMode;
 

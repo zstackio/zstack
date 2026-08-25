@@ -10,6 +10,9 @@ public class SourceClassMap {
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
 			put("org.zstack.accessKey.AccessKeyState", "org.zstack.sdk.AccessKeyState");
 			put("org.zstack.accessKey.AccessKeyType", "org.zstack.sdk.AccessKeyType");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck", "org.zstack.sdk.FineTuneExportCheck");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem", "org.zstack.sdk.FineTuneExportItem");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult", "org.zstack.sdk.FineTuneExportPreflightResult");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
@@ -1132,6 +1135,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FiSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.fiSec.FiSecSecurityMachineInventory");
 			put("org.zstack.sdk.FiberChannelLunInventory", "org.zstack.storage.device.fibreChannel.FiberChannelLunInventory");
 			put("org.zstack.sdk.FiberChannelStorageInventory", "org.zstack.storage.device.fibreChannel.FiberChannelStorageInventory");
+			put("org.zstack.sdk.FineTuneExportCheck", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck");
+			put("org.zstack.sdk.FineTuneExportItem", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem");
+			put("org.zstack.sdk.FineTuneExportPreflightResult", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlkSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.FlkSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory");
