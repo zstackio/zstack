@@ -359,6 +359,101 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
                 Instant.parse("2026-07-29T08:00:00Z"), ZoneOffset.UTC))
     }
 
+    void testGetFilters() {
+        SecurityGroupInventory securityGroup = createSecurityGroup {
+            name = "schedule-filter-sg"
+            ipVersion = 4
+        } as SecurityGroupInventory
+
+        createNetworkSecurityPolicySchedule {
+            name = "once-utc"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Once"
+            startDate = "2026-07-29"
+            endDate = "2026-07-29"
+            startTime = "07:00"
+            endTime = "09:00"
+        }
+        createNetworkSecurityPolicySchedule {
+            name = "weekly-utc"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "UTC"
+            repeatType = "Weekly"
+            startDate = "2026-07-29"
+            endDate = "2026-08-05"
+            startTime = "07:00"
+            endTime = "08:00"
+            weekDays = [3]
+        }
+        createNetworkSecurityPolicySchedule {
+            name = "once-local"
+            resourceType = "SecurityGroup"
+            resourceUuid = securityGroup.uuid
+            timeType = "Local"
+            repeatType = "Once"
+            startDate = "2026-07-28"
+            endDate = "2026-07-30"
+            startTime = "00:00"
+            endTime = "23:59"
+        }
+
+        List<NetworkSecurityPolicyScheduleInventory> byStatus =
+                getNetworkSecurityPolicySchedule {
+                    resourceUuid = securityGroup.uuid
+                    timeStatus = "OutOfWindow"
+                } as List<NetworkSecurityPolicyScheduleInventory>
+        assert byStatus*.name == ["weekly-utc"] :
+                "timeStatus filter: ${byStatus*.name}"
+
+        List<NetworkSecurityPolicyScheduleInventory> byRepeatType =
+                getNetworkSecurityPolicySchedule {
+                    resourceUuid = securityGroup.uuid
+                    repeatType = "Once"
+                } as List<NetworkSecurityPolicyScheduleInventory>
+        assert byRepeatType*.name as Set == ["once-utc", "once-local"] as Set :
+                "repeatType filter: ${byRepeatType*.name}"
+
+        List<NetworkSecurityPolicyScheduleInventory> byTimeType =
+                getNetworkSecurityPolicySchedule {
+                    resourceUuid = securityGroup.uuid
+                    timeType = "Local"
+                } as List<NetworkSecurityPolicyScheduleInventory>
+        assert byTimeType*.name == ["once-local"] :
+                "timeType filter: ${byTimeType*.name}"
+
+        List<NetworkSecurityPolicyScheduleInventory> combined =
+                getNetworkSecurityPolicySchedule {
+                    resourceUuid = securityGroup.uuid
+                    timeStatus = "InWindow"
+                    repeatType = "Once"
+                    timeType = "UTC"
+                } as List<NetworkSecurityPolicyScheduleInventory>
+        assert combined*.name == ["once-utc"] :
+                "combined filters: ${combined*.name}"
+
+        expect(ApiException.class) {
+            getNetworkSecurityPolicySchedule {
+                resourceUuid = securityGroup.uuid
+                timeStatus = "Unknown"
+            }
+        }
+        expect(ApiException.class) {
+            getNetworkSecurityPolicySchedule {
+                resourceUuid = securityGroup.uuid
+                repeatType = "Unknown"
+            }
+        }
+        expect(ApiException.class) {
+            getNetworkSecurityPolicySchedule {
+                resourceUuid = securityGroup.uuid
+                timeType = "Unknown"
+            }
+        }
+    }
+
     void testSecurityGroupScheduleLifecycle() {
         SecurityGroupInventory securityGroup = createSecurityGroup {
             name = "scheduled-security-group"
@@ -785,6 +880,7 @@ class NetworkSecurityPolicyScheduleApiCase extends SubCase {
                     Instant.parse("2026-07-29T08:00:00Z"), ZoneOffset.UTC))
 
             testTimeStatus()
+            testGetFilters()
             testSecurityGroupScheduleLifecycle()
             testCreateApiValidation()
             testDescriptionLength()
