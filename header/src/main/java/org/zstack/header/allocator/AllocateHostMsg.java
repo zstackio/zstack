@@ -10,7 +10,6 @@ import java.util.*;
 public class AllocateHostMsg extends NeedReplyMessage {
     private long cpuCapacity;
     private long memoryCapacity;
-    private long diskSize;
     private String allocatorStrategy;
     private List<String> avoidHostUuids;
     private List<String> softAvoidHostUuids;
@@ -27,6 +26,7 @@ public class AllocateHostMsg extends NeedReplyMessage {
     private Set<String> requiredPrimaryStorageUuids = new HashSet<>();
     // for each set in the list, the primary storage inside is optional
     private final List<Set<String>> optionalPrimaryStorageUuids = new ArrayList<>();
+    private final List<RequiredDiskCapacity> requiredDiskCapacities = new ArrayList<>();
     private boolean fullAllocate = true;
     private long oldMemoryCapacity = 0;
     private AllocationScene allocationScene;
@@ -68,6 +68,14 @@ public class AllocateHostMsg extends NeedReplyMessage {
 
     public void addRequiredPrimaryStorageUuid(String requiredPrimaryStorageUuid) {
         this.requiredPrimaryStorageUuids.add(requiredPrimaryStorageUuid);
+    }
+
+    public List<RequiredDiskCapacity> getRequiredDiskCapacities() {
+        return requiredDiskCapacities;
+    }
+
+    public void addRequiredDiskCapacity(String primaryStorageUuid, long size) {
+        requiredDiskCapacities.add(new RequiredDiskCapacity(primaryStorageUuid, size));
     }
 
     public String getRequiredBackupStorageUuid() {
@@ -143,11 +151,13 @@ public class AllocateHostMsg extends NeedReplyMessage {
     }
 
     public long getDiskSize() {
-        return diskSize;
+        return requiredDiskCapacities.stream().mapToLong(RequiredDiskCapacity::getSize).sum();
     }
 
+    // Compatibility entry for callers that cannot determine primary storage yet.
     public void setDiskSize(long diskSize) {
-        this.diskSize = diskSize;
+        requiredDiskCapacities.clear();
+        requiredDiskCapacities.add(new RequiredDiskCapacity(null, diskSize));
     }
 
     public String getAllocatorStrategy() {
