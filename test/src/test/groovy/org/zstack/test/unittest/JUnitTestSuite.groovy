@@ -6,6 +6,9 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
+import org.zstack.test.unittest.network.sdncontroller.ZnsProxyInstallerGroovyTest
+import org.zstack.test.unittest.network.sdncontroller.ZnsProxyKvmReconnectExtensionTest
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
@@ -20,6 +23,9 @@ import java.util.stream.Collectors
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
         NetworkUtilsCase.class,
+        ZnsProxyAnsibleDeployerTest.class,
+        ZnsProxyInstallerGroovyTest.class,
+        ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
         VmInstanceStateCase.class
