@@ -151,7 +151,7 @@ class ChangeVmGuestOsCase extends SubCase{
         rebootVmInstance {
             uuid = vm.uuid
         }
-        assert cmd.getGuestOsType() == null
+        assert cmd.getGuestOsType() == vm.guestOsType
 
         ["Ubuntu 22.04", "Debian 12", "CentOS 7"].each { expectedGuestOsType ->
             updateVmInstance {
