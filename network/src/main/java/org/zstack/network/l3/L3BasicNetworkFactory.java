@@ -18,7 +18,7 @@ public class L3BasicNetworkFactory implements L3NetworkFactory {
 
     @Override
     @Transactional
-    public L3NetworkInventory createL3Network(L3NetworkVO l3vo, APICreateL3NetworkMsg msg) {
+    public L3NetworkInventory createL3Network(L3NetworkVO l3vo, CreateL3NetworkMsg msg) {
         l3vo.setType(type.toString());
         dbf.getEntityManager().persist(l3vo);
         dbf.getEntityManager().flush();

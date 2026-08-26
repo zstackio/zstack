@@ -995,6 +995,28 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_L3_10081 = "ORG_ZSTACK_NETWORK_L3_10081";
 
     public static final String ORG_ZSTACK_NETWORK_L3_10082 = "ORG_ZSTACK_NETWORK_L3_10082";
+    public static final String ORG_ZSTACK_NETWORK_L3_10083 = "ORG_ZSTACK_NETWORK_L3_10083";
+    public static final String ORG_ZSTACK_NETWORK_L3_10084 = "ORG_ZSTACK_NETWORK_L3_10084";
+    public static final String ORG_ZSTACK_NETWORK_L3_10085 = "ORG_ZSTACK_NETWORK_L3_10085";
+    public static final String ORG_ZSTACK_NETWORK_L3_10086 = "ORG_ZSTACK_NETWORK_L3_10086";
+    public static final String ORG_ZSTACK_NETWORK_L3_10087 = "ORG_ZSTACK_NETWORK_L3_10087";
+    public static final String ORG_ZSTACK_NETWORK_L3_10088 = "ORG_ZSTACK_NETWORK_L3_10088";
+    public static final String ORG_ZSTACK_NETWORK_L3_10089 = "ORG_ZSTACK_NETWORK_L3_10089";
+    public static final String ORG_ZSTACK_NETWORK_L3_10090 = "ORG_ZSTACK_NETWORK_L3_10090";
+    public static final String ORG_ZSTACK_NETWORK_L3_10091 = "ORG_ZSTACK_NETWORK_L3_10091";
+
+    public static final String ORG_ZSTACK_NETWORK_L3_10092 = "ORG_ZSTACK_NETWORK_L3_10092";
+
+    public static final String ORG_ZSTACK_NETWORK_L3_10093 = "ORG_ZSTACK_NETWORK_L3_10093";
+    public static final String ORG_ZSTACK_NETWORK_L3_10094 = "ORG_ZSTACK_NETWORK_L3_10094";
+    public static final String ORG_ZSTACK_NETWORK_L3_10095 = "ORG_ZSTACK_NETWORK_L3_10095";
+    public static final String ORG_ZSTACK_NETWORK_L3_10096 = "ORG_ZSTACK_NETWORK_L3_10096";
+    public static final String ORG_ZSTACK_NETWORK_L3_10097 = "ORG_ZSTACK_NETWORK_L3_10097";
+    public static final String ORG_ZSTACK_NETWORK_L3_10098 = "ORG_ZSTACK_NETWORK_L3_10098";
+    public static final String ORG_ZSTACK_NETWORK_L3_10099 = "ORG_ZSTACK_NETWORK_L3_10099";
+    public static final String ORG_ZSTACK_NETWORK_L3_10100 = "ORG_ZSTACK_NETWORK_L3_10100";
+
+    public static final String ORG_ZSTACK_NETWORK_L3_10101 = "ORG_ZSTACK_NETWORK_L3_10101";
 
     public static final String ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_SUPPLIER_EMAY_10000 = "ORG_ZSTACK_SNS_PLATFORM_UNIVERSALSMS_SUPPLIER_EMAY_10000";
 
@@ -1043,6 +1065,20 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_L2_10020 = "ORG_ZSTACK_NETWORK_L2_10020";
 
     public static final String ORG_ZSTACK_NETWORK_L2_10021 = "ORG_ZSTACK_NETWORK_L2_10021";
+
+    public static final String ORG_ZSTACK_NETWORK_L2_10022 = "ORG_ZSTACK_NETWORK_L2_10022";
+
+    public static final String ORG_ZSTACK_NETWORK_L2_10023 = "ORG_ZSTACK_NETWORK_L2_10023";
+
+    public static final String ORG_ZSTACK_NETWORK_L2_10024 = "ORG_ZSTACK_NETWORK_L2_10024";
+    public static final String ORG_ZSTACK_NETWORK_L2_10025 = "ORG_ZSTACK_NETWORK_L2_10025";
+    public static final String ORG_ZSTACK_NETWORK_L2_10026 = "ORG_ZSTACK_NETWORK_L2_10026";
+    public static final String ORG_ZSTACK_NETWORK_L2_10027 = "ORG_ZSTACK_NETWORK_L2_10027";
+    public static final String ORG_ZSTACK_NETWORK_L2_10028 = "ORG_ZSTACK_NETWORK_L2_10028";
+    public static final String ORG_ZSTACK_NETWORK_L2_10029 = "ORG_ZSTACK_NETWORK_L2_10029";
+    public static final String ORG_ZSTACK_NETWORK_L2_10030 = "ORG_ZSTACK_NETWORK_L2_10030";
+    public static final String ORG_ZSTACK_NETWORK_L2_10031 = "ORG_ZSTACK_NETWORK_L2_10031";
+    public static final String ORG_ZSTACK_NETWORK_L2_10032 = "ORG_ZSTACK_NETWORK_L2_10032";
 
     public static final String ORG_ZSTACK_CONSOLE_10000 = "ORG_ZSTACK_CONSOLE_10000";
 
@@ -1617,6 +1653,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_CORE_10000 = "ORG_ZSTACK_CORE_10000";
 
     public static final String ORG_ZSTACK_CORE_10001 = "ORG_ZSTACK_CORE_10001";
+
+    public static final String ORG_ZSTACK_CORE_10003 = "ORG_ZSTACK_CORE_10003";
 
     public static final String ORG_ZSTACK_VMWARE_CASCADE_10000 = "ORG_ZSTACK_VMWARE_CASCADE_10000";
 
@@ -12250,6 +12288,7 @@ public class CloudOperationsErrorCode {
     // 10046 ZNS DHCP 409 fallback GET returned empty
     // 10047 ZNS DHCP update has no Cloud-reserved DHCPv4 server IP
     // 10048 failed to allocate DHCPv4 server IP in ZNS DHCP backend
+    // 10051 public ZNS L3 requires a VLAN-backed Basic network
     public static final String ORG_ZSTACK_NETWORK_ZNS_10035 = "ORG_ZSTACK_NETWORK_ZNS_10035";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10036 = "ORG_ZSTACK_NETWORK_ZNS_10036";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10037 = "ORG_ZSTACK_NETWORK_ZNS_10037";
@@ -12264,6 +12303,180 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10046 = "ORG_ZSTACK_NETWORK_ZNS_10046";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10047 = "ORG_ZSTACK_NETWORK_ZNS_10047";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10048 = "ORG_ZSTACK_NETWORK_ZNS_10048";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10051 = "ORG_ZSTACK_NETWORK_ZNS_10051";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10052 = "ORG_ZSTACK_NETWORK_ZNS_10052";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10053 = "ORG_ZSTACK_NETWORK_ZNS_10053";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10054 = "ORG_ZSTACK_NETWORK_ZNS_10054";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10055 = "ORG_ZSTACK_NETWORK_ZNS_10055";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10056 = "ORG_ZSTACK_NETWORK_ZNS_10056";
+    // 10057 targeted Tenant Router pull completed without a local projection
+    // 10058 targeted Tenant Router pull returned an unknown projection state
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10057 = "ORG_ZSTACK_NETWORK_ZNS_10057";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10058 = "ORG_ZSTACK_NETWORK_ZNS_10058";
+    // 10059 ZNS L2 owner change found a non-Ready relation
+    // 10060 ZNS L2 owner change found an active or unknown operation step
+    // 10061 ZNS L2 owner change found an invalid L2 ownership reference count
+    // 10062 ZNS L2 owner change found an invalid relation ownership reference count
+    // 10063 ZNS L2 and relation ownership records are inconsistent
+    // 10064 account cascade cannot prove the outcome of a ZNS reservation
+    // 10065 account cascade failed to compensate an exact ZNS binding
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10059 = "ORG_ZSTACK_NETWORK_ZNS_10059";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10060 = "ORG_ZSTACK_NETWORK_ZNS_10060";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10061 = "ORG_ZSTACK_NETWORK_ZNS_10061";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10062 = "ORG_ZSTACK_NETWORK_ZNS_10062";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10063 = "ORG_ZSTACK_NETWORK_ZNS_10063";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10064 = "ORG_ZSTACK_NETWORK_ZNS_10064";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10065 = "ORG_ZSTACK_NETWORK_ZNS_10065";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10066 = "ORG_ZSTACK_NETWORK_ZNS_10066";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10067 = "ORG_ZSTACK_NETWORK_ZNS_10067";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10068 = "ORG_ZSTACK_NETWORK_ZNS_10068";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10069 = "ORG_ZSTACK_NETWORK_ZNS_10069";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10070 = "ORG_ZSTACK_NETWORK_ZNS_10070";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10071 = "ORG_ZSTACK_NETWORK_ZNS_10071";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10072 = "ORG_ZSTACK_NETWORK_ZNS_10072";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10073 = "ORG_ZSTACK_NETWORK_ZNS_10073";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10074 = "ORG_ZSTACK_NETWORK_ZNS_10074";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10075 = "ORG_ZSTACK_NETWORK_ZNS_10075";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10076 = "ORG_ZSTACK_NETWORK_ZNS_10076";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10077 = "ORG_ZSTACK_NETWORK_ZNS_10077";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10078 = "ORG_ZSTACK_NETWORK_ZNS_10078";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10079 = "ORG_ZSTACK_NETWORK_ZNS_10079";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10080 = "ORG_ZSTACK_NETWORK_ZNS_10080";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10081 = "ORG_ZSTACK_NETWORK_ZNS_10081";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10082 = "ORG_ZSTACK_NETWORK_ZNS_10082";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10083 = "ORG_ZSTACK_NETWORK_ZNS_10083";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10084 = "ORG_ZSTACK_NETWORK_ZNS_10084";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10085 = "ORG_ZSTACK_NETWORK_ZNS_10085";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10086 = "ORG_ZSTACK_NETWORK_ZNS_10086";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10087 = "ORG_ZSTACK_NETWORK_ZNS_10087";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10088 = "ORG_ZSTACK_NETWORK_ZNS_10088";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10089 = "ORG_ZSTACK_NETWORK_ZNS_10089";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10090 = "ORG_ZSTACK_NETWORK_ZNS_10090";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10091 = "ORG_ZSTACK_NETWORK_ZNS_10091";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10092 = "ORG_ZSTACK_NETWORK_ZNS_10092";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10093 = "ORG_ZSTACK_NETWORK_ZNS_10093";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10094 = "ORG_ZSTACK_NETWORK_ZNS_10094";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10095 = "ORG_ZSTACK_NETWORK_ZNS_10095";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10096 = "ORG_ZSTACK_NETWORK_ZNS_10096";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10097 = "ORG_ZSTACK_NETWORK_ZNS_10097";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10098 = "ORG_ZSTACK_NETWORK_ZNS_10098";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10099 = "ORG_ZSTACK_NETWORK_ZNS_10099";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10100 = "ORG_ZSTACK_NETWORK_ZNS_10100";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10101 = "ORG_ZSTACK_NETWORK_ZNS_10101";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10102 = "ORG_ZSTACK_NETWORK_ZNS_10102";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10103 = "ORG_ZSTACK_NETWORK_ZNS_10103";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10104 = "ORG_ZSTACK_NETWORK_ZNS_10104";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10105 = "ORG_ZSTACK_NETWORK_ZNS_10105";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10106 = "ORG_ZSTACK_NETWORK_ZNS_10106";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10107 = "ORG_ZSTACK_NETWORK_ZNS_10107";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10108 = "ORG_ZSTACK_NETWORK_ZNS_10108";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10109 = "ORG_ZSTACK_NETWORK_ZNS_10109";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10110 = "ORG_ZSTACK_NETWORK_ZNS_10110";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10111 = "ORG_ZSTACK_NETWORK_ZNS_10111";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10112 = "ORG_ZSTACK_NETWORK_ZNS_10112";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10113 = "ORG_ZSTACK_NETWORK_ZNS_10113";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10114 = "ORG_ZSTACK_NETWORK_ZNS_10114";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10115 = "ORG_ZSTACK_NETWORK_ZNS_10115";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10116 = "ORG_ZSTACK_NETWORK_ZNS_10116";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10117 = "ORG_ZSTACK_NETWORK_ZNS_10117";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10118 = "ORG_ZSTACK_NETWORK_ZNS_10118";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10119 = "ORG_ZSTACK_NETWORK_ZNS_10119";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10120 = "ORG_ZSTACK_NETWORK_ZNS_10120";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10121 = "ORG_ZSTACK_NETWORK_ZNS_10121";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10122 = "ORG_ZSTACK_NETWORK_ZNS_10122";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10123 = "ORG_ZSTACK_NETWORK_ZNS_10123";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10124 = "ORG_ZSTACK_NETWORK_ZNS_10124";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10125 = "ORG_ZSTACK_NETWORK_ZNS_10125";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10126 = "ORG_ZSTACK_NETWORK_ZNS_10126";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10127 = "ORG_ZSTACK_NETWORK_ZNS_10127";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10128 = "ORG_ZSTACK_NETWORK_ZNS_10128";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10129 = "ORG_ZSTACK_NETWORK_ZNS_10129";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10130 = "ORG_ZSTACK_NETWORK_ZNS_10130";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10131 = "ORG_ZSTACK_NETWORK_ZNS_10131";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10132 = "ORG_ZSTACK_NETWORK_ZNS_10132";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10133 = "ORG_ZSTACK_NETWORK_ZNS_10133";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10134 = "ORG_ZSTACK_NETWORK_ZNS_10134";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10135 = "ORG_ZSTACK_NETWORK_ZNS_10135";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10136 = "ORG_ZSTACK_NETWORK_ZNS_10136";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10137 = "ORG_ZSTACK_NETWORK_ZNS_10137";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10138 = "ORG_ZSTACK_NETWORK_ZNS_10138";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10139 = "ORG_ZSTACK_NETWORK_ZNS_10139";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10140 = "ORG_ZSTACK_NETWORK_ZNS_10140";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10141 = "ORG_ZSTACK_NETWORK_ZNS_10141";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10142 = "ORG_ZSTACK_NETWORK_ZNS_10142";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10143 = "ORG_ZSTACK_NETWORK_ZNS_10143";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10144 = "ORG_ZSTACK_NETWORK_ZNS_10144";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10145 = "ORG_ZSTACK_NETWORK_ZNS_10145";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10146 = "ORG_ZSTACK_NETWORK_ZNS_10146";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10147 = "ORG_ZSTACK_NETWORK_ZNS_10147";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10148 = "ORG_ZSTACK_NETWORK_ZNS_10148";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10149 = "ORG_ZSTACK_NETWORK_ZNS_10149";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10150 = "ORG_ZSTACK_NETWORK_ZNS_10150";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10151 = "ORG_ZSTACK_NETWORK_ZNS_10151";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10152 = "ORG_ZSTACK_NETWORK_ZNS_10152";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10153 = "ORG_ZSTACK_NETWORK_ZNS_10153";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10154 = "ORG_ZSTACK_NETWORK_ZNS_10154";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10155 = "ORG_ZSTACK_NETWORK_ZNS_10155";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10156 = "ORG_ZSTACK_NETWORK_ZNS_10156";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10157 = "ORG_ZSTACK_NETWORK_ZNS_10157";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10158 = "ORG_ZSTACK_NETWORK_ZNS_10158";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10159 = "ORG_ZSTACK_NETWORK_ZNS_10159";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10160 = "ORG_ZSTACK_NETWORK_ZNS_10160";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10161 = "ORG_ZSTACK_NETWORK_ZNS_10161";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10162 = "ORG_ZSTACK_NETWORK_ZNS_10162";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10163 = "ORG_ZSTACK_NETWORK_ZNS_10163";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10164 = "ORG_ZSTACK_NETWORK_ZNS_10164";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10165 = "ORG_ZSTACK_NETWORK_ZNS_10165";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10166 = "ORG_ZSTACK_NETWORK_ZNS_10166";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10167 = "ORG_ZSTACK_NETWORK_ZNS_10167";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10168 = "ORG_ZSTACK_NETWORK_ZNS_10168";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10169 = "ORG_ZSTACK_NETWORK_ZNS_10169";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10170 = "ORG_ZSTACK_NETWORK_ZNS_10170";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10171 = "ORG_ZSTACK_NETWORK_ZNS_10171";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10172 = "ORG_ZSTACK_NETWORK_ZNS_10172";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10173 = "ORG_ZSTACK_NETWORK_ZNS_10173";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10174 = "ORG_ZSTACK_NETWORK_ZNS_10174";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10175 = "ORG_ZSTACK_NETWORK_ZNS_10175";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10176 = "ORG_ZSTACK_NETWORK_ZNS_10176";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10177 = "ORG_ZSTACK_NETWORK_ZNS_10177";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10178 = "ORG_ZSTACK_NETWORK_ZNS_10178";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10179 = "ORG_ZSTACK_NETWORK_ZNS_10179";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10180 = "ORG_ZSTACK_NETWORK_ZNS_10180";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10181 = "ORG_ZSTACK_NETWORK_ZNS_10181";
+
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10182 = "ORG_ZSTACK_NETWORK_ZNS_10182";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10183 = "ORG_ZSTACK_NETWORK_ZNS_10183";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10184 = "ORG_ZSTACK_NETWORK_ZNS_10184";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10185 = "ORG_ZSTACK_NETWORK_ZNS_10185";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10186 = "ORG_ZSTACK_NETWORK_ZNS_10186";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10187 = "ORG_ZSTACK_NETWORK_ZNS_10187";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10188 = "ORG_ZSTACK_NETWORK_ZNS_10188";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10189 = "ORG_ZSTACK_NETWORK_ZNS_10189";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10190 = "ORG_ZSTACK_NETWORK_ZNS_10190";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10191 = "ORG_ZSTACK_NETWORK_ZNS_10191";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10192 = "ORG_ZSTACK_NETWORK_ZNS_10192";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10193 = "ORG_ZSTACK_NETWORK_ZNS_10193";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10194 = "ORG_ZSTACK_NETWORK_ZNS_10194";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10195 = "ORG_ZSTACK_NETWORK_ZNS_10195";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10196 = "ORG_ZSTACK_NETWORK_ZNS_10196";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10197 = "ORG_ZSTACK_NETWORK_ZNS_10197";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10198 = "ORG_ZSTACK_NETWORK_ZNS_10198";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10199 = "ORG_ZSTACK_NETWORK_ZNS_10199";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10200 = "ORG_ZSTACK_NETWORK_ZNS_10200";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10201 = "ORG_ZSTACK_NETWORK_ZNS_10201";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10202 = "ORG_ZSTACK_NETWORK_ZNS_10202";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10203 = "ORG_ZSTACK_NETWORK_ZNS_10203";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10204 = "ORG_ZSTACK_NETWORK_ZNS_10204";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10205 = "ORG_ZSTACK_NETWORK_ZNS_10205";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10206 = "ORG_ZSTACK_NETWORK_ZNS_10206";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10207 = "ORG_ZSTACK_NETWORK_ZNS_10207";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10208 = "ORG_ZSTACK_NETWORK_ZNS_10208";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10209 = "ORG_ZSTACK_NETWORK_ZNS_10209";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10210 = "ORG_ZSTACK_NETWORK_ZNS_10210";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10211 = "ORG_ZSTACK_NETWORK_ZNS_10211";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10212 = "ORG_ZSTACK_NETWORK_ZNS_10212";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10213 = "ORG_ZSTACK_NETWORK_ZNS_10213";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10214 = "ORG_ZSTACK_NETWORK_ZNS_10214";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
@@ -15778,6 +15991,14 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_SDNCONTROLLER_10032 = "ORG_ZSTACK_SDNCONTROLLER_10032";
 
     public static final String ORG_ZSTACK_SDNCONTROLLER_10033 = "ORG_ZSTACK_SDNCONTROLLER_10033";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10034 = "ORG_ZSTACK_SDNCONTROLLER_10034";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10035 = "ORG_ZSTACK_SDNCONTROLLER_10035";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10036 = "ORG_ZSTACK_SDNCONTROLLER_10036";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10037 = "ORG_ZSTACK_SDNCONTROLLER_10037";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10038 = "ORG_ZSTACK_SDNCONTROLLER_10038";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10039 = "ORG_ZSTACK_SDNCONTROLLER_10039";
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10040 = "ORG_ZSTACK_SDNCONTROLLER_10040";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000 = "ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000";
 

@@ -22,6 +22,7 @@ import org.zstack.network.l3.L3NetworkHelper;
 import org.zstack.network.securitygroup.*;
 import org.zstack.sdnController.header.*;
 import org.zstack.utils.Utils;
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.NetworkUtils;
 
@@ -29,6 +30,7 @@ import java.util.List;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
@@ -60,6 +62,7 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
         ret.add(APISetVmNicSecurityGroupMsg.class);
         ret.add(APIAddSecurityGroupRuleMsg.class);
         ret.add(APIPullSdnControllerTenantMsg.class);
+        ret.add(APIPullSdnControllerMsg.class);
 
         return ret;
     }
@@ -85,6 +88,8 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIPullSdnControllerTenantMsg) {
             validate((APIPullSdnControllerTenantMsg) msg);
+        } else if (msg instanceof APIPullSdnControllerMsg) {
+            validate((APIPullSdnControllerMsg) msg);
         } else if (msg instanceof APIChangeSdnControllerMsg) {
             validate((APIChangeSdnControllerMsg) msg);
         }
@@ -265,6 +270,44 @@ public class SdnControllerApiInterceptor implements ApiMessageInterceptor, Globa
                     "Only H3C VCFC V2 controllers support this operation",
                     msg.getSdnControllerUuid(), sdnControllerVO.getVendorType(), sdnControllerVO.getVendorVersion()));
         }
+    }
+
+    private void validate(APIPullSdnControllerMsg msg) {
+        if (!SdnControllerConstant.ResourceTypes.Segment.name().equals(msg.getResourceType())
+                && !SdnControllerConstant.ResourceTypes.TenantRouter.name().equals(msg.getResourceType())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10036,
+                    "Unsupported resource type[%s]", msg.getResourceType()));
+        }
+        try {
+            msg.setResourceUuids(normalizeResourceUuids(msg.getResourceUuids()));
+        } catch (IllegalArgumentException e) {
+            throw new ApiMessageInterceptionException(argerr(
+                    ORG_ZSTACK_SDNCONTROLLER_10037, e.getMessage()));
+        }
+        if (msg.getResourceUuids() != null && msg.getResourceUuids().size() > 100) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10038,
+                    "At most 100 resource uuids can be pulled in one request"));
+        }
+        if (dbf.findByUuid(msg.getSdnControllerUuid(), SdnControllerVO.class) == null) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_SDNCONTROLLER_10039,
+                    "SDN controller[uuid:%s] not found", msg.getSdnControllerUuid()));
+        }
+    }
+
+    static List<String> normalizeResourceUuids(List<String> resourceUuids) {
+        if (resourceUuids == null) {
+            return null;
+        }
+        LinkedHashSet<String> normalized = new LinkedHashSet<>();
+        for (String resourceUuid : resourceUuids) {
+            String normalizedUuid = resourceUuid == null ? null : resourceUuid.trim();
+            if (!StringDSL.isUuid(normalizedUuid) && !StringDSL.isZStackUuid(normalizedUuid)) {
+                throw new IllegalArgumentException(String.format(
+                        "Invalid resource uuid[%s]", resourceUuid));
+            }
+            normalized.add(normalizedUuid);
+        }
+        return new ArrayList<>(normalized);
     }
 
     private void validateVlanRanges(List<String> ranges) {

@@ -636,6 +636,8 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
 			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.network.zns.ZnsControllerInventory", "org.zstack.sdk.network.zns.ZnsControllerInventory");
+			put("org.zstack.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory");
+			put("org.zstack.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory");
 			put("org.zstack.network.zns.ZnsTenantInventory", "org.zstack.sdk.network.zns.ZnsTenantInventory");
 			put("org.zstack.network.zns.ZnsTenantRouterInventory", "org.zstack.sdk.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.network.zns.ZnsTransportZoneInventory");
@@ -1746,6 +1748,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
 			put("org.zstack.sdk.network.zns.L2GeneveNetworkInventory", "org.zstack.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.sdk.network.zns.ZnsControllerInventory", "org.zstack.network.zns.ZnsControllerInventory");
+			put("org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.network.zns.ZnsSegmentCloudProjectionInventory");
+			put("org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.network.zns.ZnsSegmentSyncOperationInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantInventory", "org.zstack.network.zns.ZnsTenantInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantRouterInventory", "org.zstack.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.sdk.network.zns.ZnsTransportZoneInventory", "org.zstack.network.zns.ZnsTransportZoneInventory");

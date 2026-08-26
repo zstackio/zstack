@@ -16,6 +16,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
+import org.zstack.network.l2.NetworkDeletionContexts;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -62,6 +63,10 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL3NetworkUuid(iprinv.getL3NetworkUuid());
             msg.setIpRangeUuid(iprinv.getUuid());
+            String l2NetworkUuid = Q.New(L3NetworkVO.class)
+                    .select(L3NetworkVO_.l2NetworkUuid)
+                    .eq(L3NetworkVO_.uuid, iprinv.getL3NetworkUuid()).findValue();
+            msg.setNetworkDeletionContext(NetworkDeletionContexts.get(action, l2NetworkUuid));
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, iprinv.getL3NetworkUuid());
             msgs.add(msg);
         }
