@@ -122,7 +122,9 @@
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider" />
         </zstack:plugin>
     </bean>
 

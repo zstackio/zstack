@@ -8,14 +8,16 @@ import org.zstack.header.core.Completion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.HostNUMANode
 import org.zstack.header.host.HostVO
-import org.zstack.header.physicalserver.PhysicalServerManager
-import org.zstack.header.physicalserver.PhysicalServerIdentitySpec
-import org.zstack.header.physicalserver.PhysicalServerCpuTopology
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage
-import org.zstack.header.physicalserver.PhysicalServerResourceApplicationMode
-import org.zstack.header.physicalserver.PhysicalServerResourceConsumerState
-import org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter
+import org.zstack.header.physicalserver.PhysicalServerCpuSet
+import org.zstack.header.physicalserver.PhysicalServerCpuTopology
+import org.zstack.header.physicalserver.PhysicalServerManager
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode
+import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver
+import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider
+import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
 import org.zstack.header.physicalserver.ResourceControlResponse
 import org.zstack.header.physicalserver.ResourceControlResult
@@ -56,6 +58,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     String forceDeletePhysicalServerUuid
     volatile boolean failResourceControl
     volatile boolean mismatchResourceControl
+    volatile boolean reportExpandedHandleCpuSet
     AtomicInteger resourceControlCalls = new AtomicInteger()
     AtomicInteger capacityRefreshCalls = new AtomicInteger()
     AtomicReference<List<String>> restartedServices = new AtomicReference<>()
@@ -65,7 +68,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     ManagementNodePhysicalServerAdapter managementAdapter
     LocalCpuTopologyCollector localTopology
     LocalResourceControlExecutor localExecutor
-    List<PhysicalServerResourceControlAdapter> dynamicResourceControlAdapters = []
+    List<PhysicalServerResourceAssignmentController> dynamicControllers = []
+    List<PhysicalServerResourceUsageObserver> dynamicUsageObservers = []
+    List<PhysicalServerRoleAssociationProvider> dynamicAssociationProviders = []
     String originalResourceAssignmentEnabled
 
     @Override
@@ -91,11 +96,19 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             env.delete()
         } finally {
             try {
-                localExecutor?.setTestMode(false)
+                localExecutor?.disableTestMode()
                 bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerResourceControlAdapter.class).removeAll(
-                        dynamicResourceControlAdapters)
-                dynamicResourceControlAdapters.clear()
+                        PhysicalServerResourceAssignmentController.class).removeAll(
+                        dynamicControllers)
+                bean(PluginRegistry.class).getExtensionList(
+                        PhysicalServerResourceUsageObserver.class).removeAll(
+                        dynamicUsageObservers)
+                bean(PluginRegistry.class).getExtensionList(
+                        PhysicalServerRoleAssociationProvider.class).removeAll(
+                        dynamicAssociationProviders)
+                dynamicControllers.clear()
+                dynamicUsageObservers.clear()
+                dynamicAssociationProviders.clear()
             } finally {
                 if (originalResourceAssignmentEnabled != null) {
                     PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(
@@ -133,7 +146,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             verifyUnsyncedAndRecovery()
             verifyConcurrentSparseUpdates()
             verifyExclusiveAndSharedCoexistence()
-            verifySharedRolesAndAuxiliaryServiceOwnership()
+            verifySharedHandleOwnership()
             verifyGlobalSwitchGatesEnforcement()
             verifyHostCascadeCleanup()
         }
@@ -181,11 +194,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     }
 
     private void verifyIdentityResolution() {
-        Map<String, String> normalized = physicalServerManager.resolveIdentities([
-                new PhysicalServerIdentitySpec(
-                        "  PHYSICAL-SERVER-SDK-CASE ", host.zoneUuid),
-                new PhysicalServerIdentitySpec(
-                        "physical-server-sdk-case", null)
+        Map<String, String> normalized = physicalServerManager.resolveBySerialNumbers([
+                "  PHYSICAL-SERVER-SDK-CASE ",
+                "physical-server-sdk-case"
         ])
         assert normalized == [
                 "physical-server-sdk-case": physicalServerUuid
@@ -203,27 +214,6 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                 "bulk reverse identity lookup must ignore unknown UUIDs: " +
                         "expected=${physicalServerUuid}:physical-server-sdk-case " +
                         "actual=${reverse}"
-
-        String conflictingZone = Platform.getUuid()
-        assert physicalServerManager.resolveIdentities([
-                new PhysicalServerIdentitySpec(
-                        "physical-server-sdk-case", conflictingZone)
-        ]).isEmpty() :
-                "an existing PhysicalServer must never migrate across zones by observation: " +
-                        "serverUuid=${physicalServerUuid} conflictingZone=${conflictingZone}"
-
-        String ambiguousSerial = "ambiguous-physical-server-case"
-        assert physicalServerManager.resolveIdentities([
-                new PhysicalServerIdentitySpec(ambiguousSerial, host.zoneUuid),
-                new PhysicalServerIdentitySpec(ambiguousSerial, conflictingZone)
-        ]).isEmpty() :
-                "one observation batch with conflicting zones must be rejected: " +
-                        "serial=${ambiguousSerial}"
-        assert (queryPhysicalServer {
-            conditions = ["serialNumber=${ambiguousSerial}"]
-        }).isEmpty() :
-                "ambiguous identity input must not create a PhysicalServer row: " +
-                        "serial=${ambiguousSerial}"
     }
 
     private void verifyDuplicateHostSerialIsRejected() {
@@ -284,9 +274,11 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                 KvmPhysicalServerAdapter.ManagedServiceUsageAgentResponse response =
                         new KvmPhysicalServerAdapter.ManagedServiceUsageAgentResponse()
                 response.services = command.handles.collect {
-                    managedService(
-                            "COMPUTE", it.serviceName, it.restartable,
-                            it.serviceName == "node-exporter")
+                    ManagedServiceResourceUsage usage = managedService(
+                            "COMPUTE", it.serviceName)
+                    usage.restartable = it.restartable
+                    usage.restartRequired = it.serviceName == "node-exporter"
+                    return usage
                 }
                 return response
         }
@@ -388,31 +380,20 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     private void verifyHeaderOnlyDynamicSharedRole() {
         String imageStoreRoleType = "IMAGE_STORE"
         AtomicBoolean associated = new AtomicBoolean(true)
-        PhysicalServerResourceControlAdapter imageStore = [
+        PhysicalServerResourceAssignmentController imageStore = [
                 getRoleType: { imageStoreRoleType },
                 getIsolationMode: {
                     PhysicalServerResourceIsolationMode.SHARED
                 },
-                getApplicationMode: {
-                    PhysicalServerResourceApplicationMode.RESOURCE_HANDLES
-                },
                 getTopologyRoleType: { "COMPUTE" },
-                getAssociatedServerUuids: {
-                    associated.get()
-                            ? [physicalServerUuid] as Set
-                            : Collections.emptySet()
+                getResourceConsumers: { String ignored ->
+                    [restartableSystemdHandle(
+                            imageStoreRoleType, "image-store-agent")]
                 },
-                getState: { String ignored ->
-                    associated.get()
-                            ? PhysicalServerResourceConsumerState.AVAILABLE
-                            : PhysicalServerResourceConsumerState.MISSING
-                },
-                getStates: { Collection<String> serverUuids ->
-                    serverUuids.collectEntries {
-                        [(it): associated.get()
-                                ? PhysicalServerResourceConsumerState.AVAILABLE
-                                : PhysicalServerResourceConsumerState.MISSING]
-                    }
+                collectResourceAssignment: {
+                    String ignoredServer, def completion ->
+                        completion.success(new PhysicalServerResourceBoundary(
+                                cpuSet: "0-7"))
                 },
                 collectTopology: { String serverUuid, def completion ->
                     computeResourceControlAdapter().collectTopology(
@@ -422,24 +403,37 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                          ResourceControlCommand command, def completion ->
                     completion.success(resourceHandleResponse(command))
                 },
-                collectManagedServiceUsage: {
-                    String ignoredServer, boolean ignoredAuxiliary,
-                    def completion ->
-                        completion.success([
-                                managedService(
-                                        imageStoreRoleType, "image-store-agent", true)
-                        ])
-                },
                 restartManagedServices: {
-                    String ignoredServer, boolean ignoredAuxiliary,
+                    String ignoredServer,
                     Collection<String> serviceNames, def completion ->
                         restartedServices.set(new ArrayList<>(serviceNames))
                         completion.success()
                 }
-        ] as PhysicalServerResourceControlAdapter
-        bean(PluginRegistry.class).defineDynamicExtension(
-                PhysicalServerResourceControlAdapter.class, imageStore)
-        dynamicResourceControlAdapters.add(imageStore)
+        ] as PhysicalServerResourceAssignmentController
+        PhysicalServerResourceUsageObserver usage = [
+                getRoleType: { imageStoreRoleType },
+                collectManagedServiceUsage: {
+                    String ignoredServer, def completion ->
+                        completion.success([
+                                restartableManagedService(
+                                        imageStoreRoleType, "image-store-agent")
+                        ])
+                }
+        ] as PhysicalServerResourceUsageObserver
+        PhysicalServerRoleAssociationProvider associations = [
+                getRoleType: { imageStoreRoleType },
+                refreshAssociations: { Collection<String> scope ->
+                    if (!associated.get()) {
+                        return Collections.emptySet()
+                    }
+                    if (scope == null || scope.isEmpty()
+                            || scope.contains(physicalServerUuid)) {
+                        return [physicalServerUuid] as Set
+                    }
+                    return Collections.emptySet()
+                }
+        ] as PhysicalServerRoleAssociationProvider
+        registerDynamicRole(imageStore, usage, associations)
 
         physicalServerManager.ensureResourceAssignment(
                 physicalServerUuid, imageStoreRoleType)
@@ -584,7 +578,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                         roleType: "COMPUTE",
                         serviceNames: ["undefined-service"])
         assert undefinedService.call().error?.details?.contains(
-                "not defined by role") :
+                "SERVICE_NOT_OWNED_BY_ROLE") :
                 "a syntactically valid but unconfigured service must be rejected by the Role manifest"
 
         try {
@@ -661,6 +655,21 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             assert current.cpuSet == "0-1"
             assert current.memory == SizeUnit.MEGABYTE.toByte(64)
             assert current.state == "Synced"
+        }
+
+        reportExpandedHandleCpuSet = true
+        try {
+            updatePhysicalServerResourceAssignment {
+                serverUuid = physicalServerUuid
+                roleType = "COMPUTE"
+                memory = SizeUnit.MEGABYTE.toByte(72)
+            }
+            retryInSecs {
+                assert assignment().state == "Synced" :
+                        "an equivalent per-handle CPUSet format must not make a correctly applied Assignment unsynced"
+            }
+        } finally {
+            reportExpandedHandleCpuSet = false
         }
 
         mismatchResourceControl = true
@@ -787,25 +796,21 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     private void verifyExclusiveAndSharedCoexistence() {
         String storageRoleType = "TEST_STORAGE"
         int capacityCallsBeforeExclusive = capacityRefreshCalls.get()
-        PhysicalServerResourceControlAdapter exclusiveStorage = [
+        PhysicalServerResourceAssignmentController exclusiveStorage = [
                 getRoleType: { storageRoleType },
                 getIsolationMode: {
                     PhysicalServerResourceIsolationMode.EXCLUSIVE
                 },
-                getApplicationMode: {
-                    PhysicalServerResourceApplicationMode.PROVIDER_MANAGED
-                },
                 getTopologyRoleType: { "COMPUTE" },
-                getAssociatedServerUuids: {
-                    [physicalServerUuid] as Set
+                getResourceConsumers: { String ignored ->
+                    [restartableSystemdHandle(
+                            storageRoleType, "test-storage")]
                 },
-                getState: { String ignored ->
-                    PhysicalServerResourceConsumerState.AVAILABLE
-                },
-                getStates: { Collection<String> serverUuids ->
-                    serverUuids.collectEntries {
-                        [(it): PhysicalServerResourceConsumerState.AVAILABLE]
-                    }
+                collectResourceAssignment: {
+                    String ignoredServer, def completion ->
+                        completion.success(new PhysicalServerResourceBoundary(
+                                cpuSet: "2-3,6-7",
+                                memory: SizeUnit.MEGABYTE.toByte(128)))
                 },
                 collectTopology: { String serverUuid, def completion ->
                     computeResourceControlAdapter().collectTopology(
@@ -813,32 +818,36 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                 },
                 apply: { String ignoredServer, String ignoredConsumer,
                          ResourceControlCommand command, def completion ->
-                    ResourceControlResponse response =
-                            new ResourceControlResponse()
-                    boolean release = command.operation == "RELEASE"
-                    response.state = release ? "DISABLED" : "READY"
-                    response.cpuSet = release ? "" : command.cpuSet
-                    response.memory = release ? null : command.memory
-                    completion.success(response)
-                },
-                collectManagedServiceUsage: {
-                    String ignoredServer, boolean ignoredAuxiliary,
-                    def completion ->
-                        completion.success([
-                                managedService(
-                                        storageRoleType,
-                                        "test-storage", false)
-                        ])
+                    completion.success(resourceHandleResponse(command))
                 },
                 restartManagedServices: {
-                    String ignoredServer, boolean ignoredAuxiliary,
-                    Collection<String> ignoredServices, def completion ->
+                    String ignoredServer,
+                    Collection<String> serviceNames, def completion ->
+                        restartedServices.set(new ArrayList<>(serviceNames))
                         completion.success()
                 }
-        ] as PhysicalServerResourceControlAdapter
-        bean(PluginRegistry.class).defineDynamicExtension(
-                PhysicalServerResourceControlAdapter.class, exclusiveStorage)
-        dynamicResourceControlAdapters.add(exclusiveStorage)
+        ] as PhysicalServerResourceAssignmentController
+        PhysicalServerResourceUsageObserver usage = [
+                getRoleType: { storageRoleType },
+                collectManagedServiceUsage: {
+                    String ignoredServer, def completion ->
+                        completion.success([
+                                restartableManagedService(
+                                        storageRoleType, "test-storage")
+                        ])
+                }
+        ] as PhysicalServerResourceUsageObserver
+        PhysicalServerRoleAssociationProvider associations = [
+                getRoleType: { storageRoleType },
+                refreshAssociations: { Collection<String> scope ->
+                    if (scope == null || scope.isEmpty()
+                            || scope.contains(physicalServerUuid)) {
+                        return [physicalServerUuid] as Set
+                    }
+                    return Collections.emptySet()
+                }
+        ] as PhysicalServerRoleAssociationProvider
+        registerDynamicRole(exclusiveStorage, usage, associations)
         physicalServerManager.ensureResourceAssignment(
                 physicalServerUuid, storageRoleType)
 
@@ -848,24 +857,19 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             it.roleType == storageRoleType
         }
         assert service != null :
-                "provider-managed Role must expose its managed service: " +
+                "exclusive Role must expose its managed service: " +
                         "roleType=${storageRoleType} actual=no service"
-        assert !service.restartable :
-                "provider-managed service restart must remain owned by Provider: " +
+        assert service.restartable :
+                "exclusive and shared Roles must use the same managed-service contract: " +
                         "roleType=${storageRoleType} actualRestartable=${service.restartable}"
 
-        RefreshPhysicalServerResourceAssignmentsAction providerRestart =
-                new RefreshPhysicalServerResourceAssignmentsAction(
-                        sessionId: adminSession(),
-                        serverUuid: physicalServerUuid,
-                        roleType: storageRoleType,
-                        serviceNames: ["test-storage"])
-        def providerRestartResult = providerRestart.call()
-        assert providerRestartResult.error?.details?.contains(
-                "SERVICE_RESTART_NOT_SUPPORTED") :
-                "provider-managed Role must reject Cloud service restart: " +
-                        "expected=SERVICE_RESTART_NOT_SUPPORTED " +
-                        "actual=${providerRestartResult.error}"
+        refreshPhysicalServerResourceAssignments {
+            serverUuid = physicalServerUuid
+            roleType = storageRoleType
+            serviceNames = ["test-storage"]
+        }
+        assert restartedServices.get() == ["test-storage"] :
+                "exclusive and shared Roles must use the same restart path"
 
         UpdatePhysicalServerResourceAssignmentAction splitCore =
                 new UpdatePhysicalServerResourceAssignmentAction(
@@ -939,7 +943,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         }
     }
 
-    private void verifySharedRolesAndAuxiliaryServiceOwnership() {
+    private void verifySharedHandleOwnership() {
         managementAdapter = bean(ManagementNodePhysicalServerAdapter.class)
         localTopology = bean(LocalCpuTopologyCollector.class)
         localExecutor = bean(LocalResourceControlExecutor.class)
@@ -958,7 +962,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                                 ["2", "6"], ["3", "7"]
                         ])
         ]))
-        localExecutor.setTestMode(true)
+        localExecutor.enableTestMode()
         managementAdapter.associateLocalNode(Platform.getManagementServerId())
 
         refreshPhysicalServerResourceAssignments {
@@ -976,15 +980,12 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             it.roleType == "MANAGEMENT" &&
                     it.serviceName == "node-exporter"
         } != null :
-                "auxiliary services must be owned by MANAGEMENT when that Role exists"
+                "a shared service handle must have one deterministic Role owner"
         assert services.find {
             it.roleType == "COMPUTE" &&
                     it.serviceName == "node-exporter"
         } == null :
-                "COMPUTE must not duplicate an auxiliary service already owned by MANAGEMENT"
-        assert !inspectedServices.get().contains("node-exporter") :
-                "KVM inspection command must omit auxiliary handles when MANAGEMENT owns them: " +
-                        "actual=${inspectedServices.get()}"
+                "COMPUTE must not duplicate a handle already owned by MANAGEMENT"
     }
 
     private void verifyHostCascadeCleanup() {
@@ -1124,11 +1125,27 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         } as List<PhysicalServerResourceAssignmentInventory>
     }
 
-    private PhysicalServerResourceControlAdapter computeResourceControlAdapter() {
+    private PhysicalServerResourceAssignmentController computeResourceControlAdapter() {
         return bean(PluginRegistry.class).getExtensionList(
-                PhysicalServerResourceControlAdapter.class).find {
+                PhysicalServerResourceAssignmentController.class).find {
             it.roleType == "COMPUTE"
         }
+    }
+
+    private void registerDynamicRole(
+            PhysicalServerResourceAssignmentController controller,
+            PhysicalServerResourceUsageObserver usageObserver,
+            PhysicalServerRoleAssociationProvider associationProvider) {
+        PluginRegistry registry = bean(PluginRegistry.class)
+        registry.defineDynamicExtension(
+                PhysicalServerResourceAssignmentController.class, controller)
+        registry.defineDynamicExtension(
+                PhysicalServerResourceUsageObserver.class, usageObserver)
+        registry.defineDynamicExtension(
+                PhysicalServerRoleAssociationProvider.class, associationProvider)
+        dynamicControllers.add(controller)
+        dynamicUsageObservers.add(usageObserver)
+        dynamicAssociationProviders.add(associationProvider)
     }
 
     private KvmPhysicalServerAdapter.ResourceControlAgentResponse resourceControlResponse(
@@ -1154,7 +1171,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         response.coveredServiceCount = 1
         ResourceControlResult result = new ResourceControlResult()
         result.state = release ? "DISABLED" : "READY"
-        result.cpuSet = response.cpuSet
+        result.cpuSet = reportExpandedHandleCpuSet && !release
+                ? PhysicalServerCpuSet.parse(response.cpuSet).join(",")
+                : response.cpuSet
         result.memory = response.memory
         response.results = [result]
         return response
@@ -1177,19 +1196,38 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         return response
     }
 
+    private ResourceConsumerHandle restartableSystemdHandle(
+            String roleType, String serviceName) {
+        ResourceConsumerHandle handle = new ResourceConsumerHandle()
+        handle.handleType = ResourceConsumerHandle.SYSTEMD_UNIT
+        handle.value = "${serviceName}.service"
+        handle.serviceName = serviceName
+        handle.consumerKey = "test-role:${roleType}"
+        handle.optional = false
+        handle.restartable = true
+        return handle
+    }
+
     private ManagedServiceResourceUsage managedService(
-            String roleType, String serviceName, boolean restartable,
-            boolean restartRequired = false) {
+            String roleType, String serviceName) {
         ManagedServiceResourceUsage usage = new ManagedServiceResourceUsage()
         usage.roleType = roleType
         usage.serviceName = serviceName
-        usage.restartable = restartable
-        usage.restartRequired = restartRequired
+        usage.restartable = false
+        usage.restartRequired = false
         usage.state = "RUNNING"
         usage.cpuSet = "0-7"
         usage.cpuTime = 1000L
         usage.memory = SizeUnit.MEGABYTE.toByte(96)
         usage.memoryLimit = 0L
+        return usage
+    }
+
+    private ManagedServiceResourceUsage restartableManagedService(
+            String roleType, String serviceName) {
+        ManagedServiceResourceUsage usage = managedService(
+                roleType, serviceName)
+        usage.restartable = true
         return usage
     }
 }

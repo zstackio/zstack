@@ -4,7 +4,12 @@ import org.zstack.header.message.Message;
 
 public class ReconcilePhysicalServerMsg extends Message implements PhysicalServerMessage {
     private String serverUuid;
-    private boolean refreshFacts;
+    private Operation operation = Operation.RECONCILE;
+
+    public enum Operation {
+        RECONCILE,
+        REFRESH_AND_RECONCILE
+    }
 
     @Override
     public String getServerUuid() {
@@ -15,11 +20,11 @@ public class ReconcilePhysicalServerMsg extends Message implements PhysicalServe
         this.serverUuid = serverUuid;
     }
 
-    public boolean isRefreshFacts() {
-        return refreshFacts;
+    public Operation getOperation() {
+        return operation;
     }
 
-    public void setRefreshFacts(boolean refreshFacts) {
-        this.refreshFacts = refreshFacts;
+    public void setOperation(Operation operation) {
+        this.operation = operation;
     }
 }

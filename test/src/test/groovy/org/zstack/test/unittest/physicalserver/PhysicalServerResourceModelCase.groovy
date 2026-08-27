@@ -7,10 +7,11 @@ import org.zstack.core.config.GlobalConfigDef
 import org.zstack.header.physicalserver.PhysicalServerCpuSet
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology
 import org.zstack.header.physicalserver.PhysicalServerNumaNode
-import org.zstack.header.physicalserver.PhysicalServerResourceApplicationMode
-import org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver
+import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.RoleServiceManifest
 import org.zstack.kvm.KvmPhysicalServerAdapter
@@ -18,8 +19,7 @@ import org.zstack.kvm.KvmHostConfigChecker
 import org.zstack.physicalserver.PhysicalServerCpuPlanner
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentReconciler
-import org.zstack.physicalserver.PhysicalServerResourceControlAdapterRegistry
-import org.zstack.physicalserver.PhysicalServerResourceUsageObserverRegistry
+import org.zstack.physicalserver.PhysicalServerResourceExtensionRegistry
 import org.zstack.portal.managementnode.ManagementNodePhysicalServerAdapter
 
 import java.nio.file.Files
@@ -59,47 +59,45 @@ class PhysicalServerResourceModelCase {
 
     @Test
     void testKvmAgentBootstrapChecksConfigurationAndRuntimeMembership() {
-        def method = KvmHostConfigChecker.class.getDeclaredMethod(
-                "resourceAssignmentMatches",
-                String.class, Boolean.TYPE, String.class, String.class)
-        method.accessible = true
+        def unified = KvmHostConfigChecker.class.getDeclaredMethod(
+                "unifiedResourceAssignmentMatches",
+                String.class, String.class, String.class)
+        unified.accessible = true
+        def legacy = KvmHostConfigChecker.class.getDeclaredMethod(
+                "legacyResourceAssignmentMatches",
+                String.class, String.class)
+        legacy.accessible = true
 
-        assert method.invoke(
-                null, "true", true,
+        assert unified.invoke(
+                null, "true",
                 "[Service]\nSlice=zstack-compute.slice",
                 "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
                 "enabled bootstrap requires both the exact drop-in and live Role membership"
-        assert method.invoke(
-                null, "true", true,
+        assert unified.invoke(
+                null, "true",
                 "[Service]\r\nSlice=zstack-compute.slice",
                 "0::/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
                 "SSH line ending conversion must not cause repeated deployment"
-        assert !method.invoke(
-                null, "true", true,
+        assert !unified.invoke(
+                null, "true",
                 "[Service]\nSlice=zstack-compute.slice",
                 "/system.slice/zstack-kvmagent.service") :
                 "a staged drop-in alone must not suppress the restart needed to join the Role"
-        assert method.invoke(
-                null, "false", true, "__ABSENT__",
+        assert unified.invoke(
+                null, "false", "__ABSENT__",
                 "/system.slice/zstack-kvmagent.service") :
                 "disabled bootstrap requires no managed drop-in and no live Role membership"
-        assert !method.invoke(
-                null, "false", true, "__ABSENT__",
+        assert !unified.invoke(
+                null, "false", "__ABSENT__",
                 "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
                 "disabling must redeploy a KVM Agent that is still inside the Role slice"
-        assert method.invoke(
-                null, "true", false, "__ABSENT__",
-                "/system.slice/zstack-kvmagent.service") :
+        assert legacy.invoke(null, "true", "__ABSENT__") :
                 "legacy cgroup hosts keep post-start assignment without a v2 bootstrap drop-in"
-        assert method.invoke(
-                null, "true", false,
-                "[Service]\nSlice=zstack-compute.slice",
-                "/system.slice/zstack-kvmagent.service") :
+        assert legacy.invoke(
+                null, "true", "[Service]\nSlice=zstack-compute.slice") :
                 "legacy cgroup hosts let the shared Assignment Adapter own its drop-in"
-        assert !method.invoke(
-                null, "false", false,
-                "[Service]\nSlice=zstack-compute.slice",
-                "/system.slice/zstack-kvmagent.service") :
+        assert !legacy.invoke(
+                null, "false", "[Service]\nSlice=zstack-compute.slice") :
                 "disabling must remove a legacy Assignment Adapter drop-in"
     }
 
@@ -236,12 +234,9 @@ class PhysicalServerResourceModelCase {
     void testRoleManifestsDefineStableHandlesWithoutAdapterCodeChanges() {
         RoleServiceManifest compute = RoleServiceManifest.load(
                 "physical-server-roles/compute.yaml",
-                "COMPUTE",
-                PhysicalServerResourceApplicationMode.RESOURCE_HANDLES)
-        List<ResourceConsumerHandle> computeCore = compute.handles(
-                "host-agent:core", "host-agent:aux", false)
-        List<ResourceConsumerHandle> computeAll = compute.handles(
-                "host-agent:core", "host-agent:aux", true)
+                "COMPUTE")
+        List<ResourceConsumerHandle> computeHandles = compute.handles(
+                "host-agent:test")
 
         assert compute.sliceName == "zstack-compute.slice" :
                 "compute manifest must preserve its stable Role slice: " +
@@ -249,35 +244,33 @@ class PhysicalServerResourceModelCase {
         assert compute.defaultCpuCount == 8 :
                 "compute manifest must make the 8C default explicit: " +
                         "expected=8 actual=${compute.defaultCpuCount}"
-        assert computeCore*.serviceName ==
-                ["kvmagent", "virtlogd", "network-agent", "sharedblock-agent"] :
-                "compute core handles must exclude auxiliary monitoring services: " +
-                        "actual=${computeCore*.serviceName}"
-        assert computeAll*.serviceName.contains("node-exporter") :
-                "compute manifest must add auxiliary services by configuration: " +
-                        "actual=${computeAll*.serviceName}"
-        assert computeAll.find { it.serviceName == "node-exporter" }.restartable :
+        assert computeHandles*.serviceName.containsAll([
+                "kvmagent", "virtlogd", "network-agent",
+                "sharedblock-agent", "node-exporter"
+        ]) :
+                "a Role manifest must generate its complete stable service set: " +
+                        "actual=${computeHandles*.serviceName}"
+        assert computeHandles.find { it.serviceName == "node-exporter" }.restartable :
                 "manifest restartability must reach the generated handle: " +
-                        "service=node-exporter actual=${computeAll.find { it.serviceName == 'node-exporter' }.restartable}"
+                        "service=node-exporter actual=${computeHandles.find { it.serviceName == 'node-exporter' }.restartable}"
 
         List<ResourceConsumerHandle> selected = compute.handlesByServiceNames(
-                ["node-exporter"], "host-agent:core", "host-agent:aux", true,
+                ["node-exporter"], "host-agent:test",
                 Collections.emptyMap())
         assert selected*.serviceName == ["node-exporter"] :
                 "targeted restart must resolve only explicitly selected services: " +
                         "expected=[node-exporter] actual=${selected*.serviceName}"
         assertFailure("are not defined by role") {
             compute.handlesByServiceNames(
-                    ["unknown-service"], "host-agent:core", "host-agent:aux",
-                    true, Collections.emptyMap())
+                    ["unknown-service"], "host-agent:test",
+                    Collections.emptyMap())
         }
 
         RoleServiceManifest owner = RoleServiceManifest.load(
                 "physical-server-roles/test-owner.yaml",
-                "TEST_OWNER",
-                PhysicalServerResourceApplicationMode.RESOURCE_HANDLES)
+                "TEST_OWNER")
         ResourceConsumerHandle ownerHandle = owner.handles(
-                "owner:core", "owner:aux", true,
+                "owner:test",
                 [ownerPidFile: "/run/test-owner.pid"])[0]
         assert ownerHandle.handleType == ResourceConsumerHandle.OWNER_PID_FILE :
                 "valueFrom manifest must retain OWNER_PID_FILE identity: " +
@@ -290,7 +283,7 @@ class PhysicalServerResourceModelCase {
                         "expected=/usr/bin/test-owner actual=${ownerHandle.expectedCommandToken}"
         assertFailure("cannot be resolved") {
             owner.handles(
-                    "owner:core", "owner:aux", true, Collections.emptyMap())
+                    "owner:test", Collections.emptyMap())
         }
 
         RoleServiceManifest zbs = RoleServiceManifest.loadObservation(
@@ -303,106 +296,115 @@ class PhysicalServerResourceModelCase {
         ] :
                 "ZBS observation must expose the canonical ZStone Slice names without allocation defaults: " +
                         "actual=${zbs.services*.name}"
-        assert zbs.applicationMode == null &&
-                zbs.sliceName == null &&
+        assert zbs.sliceName == null &&
                 zbs.defaultCpuCount == null :
-                "an observation-only ZBS manifest must not define an apply mode or CPU plan"
-        assertFailure("does not use resource handles") {
-            zbs.handles("zbs", "zbs", true)
-        }
+                "an observation-only ZBS manifest must not define an allocation plan"
         assertFailure("does not match expected roleType") {
             RoleServiceManifest.load(
                     "physical-server-roles/compute.yaml",
-                    "IMAGE_STORE",
-                    PhysicalServerResourceApplicationMode.RESOURCE_HANDLES)
+                    "IMAGE_STORE")
         }
-        assertFailure("provider-managed role cannot define sliceName") {
-            RoleServiceManifest.load(
+        assertFailure("observation-only role cannot define allocation defaults") {
+            RoleServiceManifest.loadObservation(
                     "physical-server-roles/invalid-provider-slice.yaml",
-                    "INVALID_PROVIDER",
-                    PhysicalServerResourceApplicationMode.PROVIDER_MANAGED)
+                    "INVALID_PROVIDER")
         }
         assertFailure("restartable requires a systemd handle") {
             RoleServiceManifest.load(
                     "physical-server-roles/invalid-owner-restart.yaml",
-                    "INVALID_OWNER",
-                    PhysicalServerResourceApplicationMode.RESOURCE_HANDLES)
+                    "INVALID_OWNER")
         }
     }
 
     @Test
-    void testAdapterRegistryRejectsAmbiguousAndBrokenTopologyRoles() {
-        PhysicalServerResourceControlAdapter compute = adapter("COMPUTE")
-        PhysicalServerResourceControlAdapter imageStore = adapter(
+    void testExtensionRegistryRejectsAmbiguousAndBrokenControllers() {
+        PhysicalServerResourceAssignmentController compute = adapter("COMPUTE")
+        PhysicalServerResourceAssignmentController imageStore = adapter(
                 "IMAGE_STORE", "COMPUTE")
-        PluginRegistry pluginRegistry = registry([compute, imageStore])
+        PluginRegistry pluginRegistry = registry(
+                [compute, imageStore],
+                [],
+                [],
+                [association("COMPUTE"), association("IMAGE_STORE")])
 
-        PhysicalServerResourceControlAdapterRegistry loaded =
-                PhysicalServerResourceControlAdapterRegistry.load(pluginRegistry)
-        assert loaded.orderedRoleTypes() == ["COMPUTE", "IMAGE_STORE"] :
-                "valid adapters must be ordered without enum registration: " +
-                        "expected=[COMPUTE, IMAGE_STORE] actual=${loaded.orderedRoleTypes()}"
+        PhysicalServerResourceExtensionRegistry loaded =
+                PhysicalServerResourceExtensionRegistry.load(pluginRegistry)
+        assert loaded.orderedControllers()*.roleType ==
+                ["COMPUTE", "IMAGE_STORE"] :
+                "valid controllers must be ordered without enum registration: " +
+                        "actual=${loaded.orderedControllers()*.roleType}"
 
-        loaded = PhysicalServerResourceControlAdapterRegistry.load(registry([
-                compute,
-                adapter("IMAGE_STORE", "COMPUTE"),
-                adapter("IMAGE_STORE", "COMPUTE")
-        ]))
-        assert !loaded.contains("IMAGE_STORE") :
-                "duplicate Role adapters must not enter the executable registry: " +
-                        "roleType=IMAGE_STORE actual=${loaded.orderedRoleTypes()}"
-        assert loaded.getError("IMAGE_STORE").contains(
-                "RESOURCE_ASSIGNMENT_ADAPTER_AMBIGUOUS") :
-                "duplicate Role adapters must expose a deterministic reason: " +
-                        "actual=${loaded.getError('IMAGE_STORE')}"
+        loaded = PhysicalServerResourceExtensionRegistry.load(registry(
+                [compute,
+                 adapter("IMAGE_STORE", "COMPUTE"),
+                 adapter("IMAGE_STORE", "COMPUTE")],
+                [],
+                [],
+                [association("COMPUTE"), association("IMAGE_STORE")]))
+        assert loaded.controller("IMAGE_STORE") == null :
+                "duplicate Role controllers must not enter the executable registry"
+        assert loaded.controllerError("IMAGE_STORE").contains(
+                "RESOURCE_ASSIGNMENT_CONTROLLER_AMBIGUOUS") :
+                "duplicate Role controllers must expose a deterministic reason: " +
+                        "actual=${loaded.controllerError('IMAGE_STORE')}"
 
-        loaded = PhysicalServerResourceControlAdapterRegistry.load(registry([
-                adapter("STORAGE", "MISSING")
-        ]))
-        assert !loaded.contains("STORAGE") :
-                "adapter with a missing topology provider must be disabled: " +
-                        "actual=${loaded.orderedRoleTypes()}"
-        assert loaded.getError("STORAGE").contains(
+        loaded = PhysicalServerResourceExtensionRegistry.load(registry(
+                [adapter("STORAGE", "MISSING")],
+                [],
+                [],
+                [association("STORAGE")]))
+        assert loaded.controller("STORAGE") == null :
+                "controller with a missing topology source must be disabled"
+        assert loaded.controllerError("STORAGE").contains(
                 "RESOURCE_ASSIGNMENT_TOPOLOGY_ROLE_UNAVAILABLE") :
                 "missing topology dependency must expose its reason: " +
-                        "actual=${loaded.getError('STORAGE')}"
+                        "actual=${loaded.controllerError('STORAGE')}"
 
-        PhysicalServerResourceControlAdapterRegistry ambiguous =
-                PhysicalServerResourceControlAdapterRegistry.load(registry([
-                        adapter("IMAGE_STORE", "COMPUTE"),
-                        adapter("IMAGE_STORE", "COMPUTE"),
-                        compute
-                ]))
-        assert ambiguous.getError("IMAGE_STORE").contains(
-                "RESOURCE_ASSIGNMENT_ADAPTER_AMBIGUOUS") :
-                "a broken Role must retain its complete registry validation error"
+        loaded = PhysicalServerResourceExtensionRegistry.load(registry(
+                [compute, adapter("IMAGE_STORE", "COMPUTE")],
+                [],
+                [],
+                [association("COMPUTE")]))
+        assert loaded.controller("IMAGE_STORE") == null :
+                "a writable Role without association discovery must be disabled"
+        assert loaded.controllerError("IMAGE_STORE").contains(
+                "RESOURCE_ASSIGNMENT_ASSOCIATION_PROVIDER_MISSING")
     }
 
     @Test
-    void testUsageObserverRegistryKeepsObservationSeparateFromControl() {
-        PhysicalServerResourceControlAdapter compute = adapter("COMPUTE")
+    void testExtensionRegistryKeepsReadWriteAndUsageCapabilitiesIndependent() {
+        PhysicalServerResourceAssignmentController compute = adapter("COMPUTE")
+        PhysicalServerResourceAssignmentObserver zbsAssignment =
+                assignmentObserver("ZBS")
         PhysicalServerResourceUsageObserver zbs = observer("ZBS")
         PluginRegistry pluginRegistry = registry(
-                [compute], [compute, zbs])
+                [compute],
+                [zbsAssignment],
+                [observer("COMPUTE"), zbs],
+                [association("COMPUTE"), association("ZBS")])
 
-        PhysicalServerResourceControlAdapterRegistry controls =
-                PhysicalServerResourceControlAdapterRegistry.load(
-                        pluginRegistry)
-        PhysicalServerResourceUsageObserverRegistry observers =
-                PhysicalServerResourceUsageObserverRegistry.load(
-                        pluginRegistry)
+        PhysicalServerResourceExtensionRegistry extensions =
+                PhysicalServerResourceExtensionRegistry.load(pluginRegistry)
 
-        assert controls.orderedRoleTypes() == ["COMPUTE"] :
+        assert extensions.orderedControllers()*.roleType == ["COMPUTE"] :
                 "an observation-only ZBS integration must not enter the executable Assignment registry: " +
-                        "actual=${controls.orderedRoleTypes()}"
-        assert observers.orderedObservers()*.roleType == ["COMPUTE", "ZBS"] :
-                "display must union control adapters and observation-only integrations exactly once: " +
-                        "actual=${observers.orderedObservers()*.roleType}"
+                        "actual=${extensions.orderedControllers()*.roleType}"
+        assert extensions.orderedReadOnlyObservers()*.roleType == ["ZBS"] :
+                "read-only Assignment must remain separate from writable controllers"
+        assert extensions.observer("COMPUTE").is(compute) :
+                "a writable controller must also satisfy the shared read contract"
+        assert extensions.orderedUsageObservers()*.roleType ==
+                ["COMPUTE", "ZBS"] :
+                "usage observation must be registered independently: " +
+                        "actual=${extensions.orderedUsageObservers()*.roleType}"
 
-        PhysicalServerResourceUsageObserverRegistry ambiguous =
-                PhysicalServerResourceUsageObserverRegistry.load(registry(
-                        [compute], [observer("ZBS"), observer("ZBS")]))
-        assert ambiguous.get("ZBS") == null :
+        PhysicalServerResourceExtensionRegistry ambiguous =
+                PhysicalServerResourceExtensionRegistry.load(registry(
+                        [compute],
+                        [],
+                        [observer("ZBS"), observer("ZBS")],
+                        [association("COMPUTE")]))
+        assert ambiguous.usageObserver("ZBS") == null :
                 "multiple observers for one Role must disable that display source instead of choosing one"
     }
 
@@ -453,18 +455,32 @@ class PhysicalServerResourceModelCase {
         return node
     }
 
-    private static PhysicalServerResourceControlAdapter adapter(
+    private static PhysicalServerResourceAssignmentController adapter(
             String roleType, String topologyRoleType = null) {
         String topologyRole = topologyRoleType ?: roleType
-        PhysicalServerResourceControlAdapter adapter = mock(
-                PhysicalServerResourceControlAdapter.class)
+        PhysicalServerResourceAssignmentController adapter = mock(
+                PhysicalServerResourceAssignmentController.class)
         when(adapter.getRoleType()).thenReturn(roleType)
         when(adapter.getIsolationMode()).thenReturn(
                 PhysicalServerResourceIsolationMode.SHARED)
-        when(adapter.getApplicationMode()).thenReturn(
-                PhysicalServerResourceApplicationMode.RESOURCE_HANDLES)
         when(adapter.getTopologyRoleType()).thenReturn(topologyRole)
         return adapter
+    }
+
+    private static PhysicalServerResourceAssignmentObserver assignmentObserver(
+            String roleType) {
+        PhysicalServerResourceAssignmentObserver observer = mock(
+                PhysicalServerResourceAssignmentObserver.class)
+        when(observer.getRoleType()).thenReturn(roleType)
+        return observer
+    }
+
+    private static PhysicalServerRoleAssociationProvider association(
+            String roleType) {
+        PhysicalServerRoleAssociationProvider provider = mock(
+                PhysicalServerRoleAssociationProvider.class)
+        when(provider.getRoleType()).thenReturn(roleType)
+        return provider
     }
 
     private static PhysicalServerResourceUsageObserver observer(
@@ -476,13 +492,22 @@ class PhysicalServerResourceModelCase {
     }
 
     private static PluginRegistry registry(
-            List<PhysicalServerResourceControlAdapter> adapters,
-            List<PhysicalServerResourceUsageObserver> observers = []) {
+            List<PhysicalServerResourceAssignmentController> controllers,
+            List<PhysicalServerResourceAssignmentObserver> assignmentObservers,
+            List<PhysicalServerResourceUsageObserver> usageObservers,
+            List<PhysicalServerRoleAssociationProvider> associations) {
         PluginRegistry registry = mock(PluginRegistry.class)
         when(registry.getExtensionList(
-                PhysicalServerResourceControlAdapter.class)).thenReturn(adapters)
+                PhysicalServerResourceAssignmentController.class)).thenReturn(controllers)
         when(registry.getExtensionList(
-                PhysicalServerResourceUsageObserver.class)).thenReturn(observers)
+                PhysicalServerResourceAssignmentObserver.class)).thenReturn(
+                assignmentObservers)
+        when(registry.getExtensionList(
+                PhysicalServerResourceUsageObserver.class)).thenReturn(
+                usageObservers)
+        when(registry.getExtensionList(
+                PhysicalServerRoleAssociationProvider.class)).thenReturn(
+                associations)
         return registry
     }
 

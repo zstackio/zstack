@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.physicalserver.PhysicalServerIdentitySpec;
 import org.zstack.header.physicalserver.PhysicalServerManager;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
@@ -14,7 +13,6 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -149,11 +147,7 @@ public class ZbsNodeRefContributorImpl implements ZbsNodeRefContributor {
         if (serialNumbers.isEmpty() || physicalServerManager == null) {
             return Collections.emptyMap();
         }
-        List<PhysicalServerIdentitySpec> identities = new ArrayList<>();
-        for (String serialNumber : serialNumbers) {
-            identities.add(new PhysicalServerIdentitySpec(serialNumber, null));
-        }
-        return physicalServerManager.resolveIdentities(identities);
+        return physicalServerManager.resolveBySerialNumbers(serialNumbers);
     }
 
     private String serialNumber(MdsInfo mds) {

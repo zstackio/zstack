@@ -54,7 +54,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
             env.delete()
         } finally {
             try {
-                executor?.setTestMode(false)
+                executor?.disableTestMode()
             } finally {
                 if (originalResourceAssignmentEnabled != null) {
                     PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(
@@ -84,9 +84,9 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                     "where m.uuid = :uuid")
                     .param("uuid", Platform.getManagementServerId())
                     .execute()
-            adapter.refreshAssociations()
+            adapter.refreshAssociations(Collections.emptySet())
             topologyCollector.setTestTopology(topology())
-            executor.setTestMode(true)
+            executor.enableTestMode()
 
             adapter.associateLocalNode(Platform.getManagementServerId())
             waitForLocalAssociation()
@@ -215,6 +215,14 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         assert restarted[0].value == "prometheus.service" :
                 "restart must use the stable systemd unit from the manifest: " +
                         "actual=${restarted[0].value}"
+
+        refreshPhysicalServerResourceAssignments {
+            delegate.serverUuid = targetUuid
+            roleType = "MANAGEMENT"
+            serviceNames = ["vector"]
+        }
+        assert executor.lastTestRestartHandles*.serviceName == ["vector"] :
+                "every service declared by the Role manifest must be addressable without an auxiliary flag"
 
         RefreshPhysicalServerResourceAssignmentsAction denied =
                 new RefreshPhysicalServerResourceAssignmentsAction(

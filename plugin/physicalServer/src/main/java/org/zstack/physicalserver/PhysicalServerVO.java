@@ -1,6 +1,8 @@
 package org.zstack.physicalserver;
 
 import org.zstack.header.vo.Index;
+import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.zone.ZoneEO;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -19,6 +21,8 @@ public class PhysicalServerVO {
     private String uuid;
 
     @Column
+    @ForeignKey(parentEntityClass = ZoneEO.class,
+            onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
     private String zoneUuid;
 
     @Column

@@ -17,7 +17,6 @@ import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.physicalserver.PhysicalServerIdentitySpec;
 import org.zstack.header.physicalserver.PhysicalServerManager;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 
@@ -52,7 +51,12 @@ public class PhysicalServerManagerImpl extends AbstractService implements
             handleApiMessage((APIMessage) msg);
         } else if (msg instanceof ReconcilePhysicalServerMsg) {
             ReconcilePhysicalServerMsg rmsg = (ReconcilePhysicalServerMsg) msg;
-            reconciler.enqueue(rmsg.getServerUuid(), rmsg.isRefreshFacts());
+            if (rmsg.getOperation()
+                    == ReconcilePhysicalServerMsg.Operation.REFRESH_AND_RECONCILE) {
+                reconciler.refreshAndEnqueue(rmsg.getServerUuid());
+            } else {
+                reconciler.enqueue(rmsg.getServerUuid());
+            }
         } else if (msg instanceof ReconcileAllPhysicalServersMsg) {
             reconciler.enqueueAll();
         } else if (msg instanceof ReleasePhysicalServerResourceAssignmentMsg) {
@@ -64,12 +68,7 @@ public class PhysicalServerManagerImpl extends AbstractService implements
 
     private void handle(ReleasePhysicalServerResourceAssignmentMsg msg) {
         MessageReply reply = new MessageReply();
-        reconciler.releaseAssignment(
-                msg.getServerUuid(),
-                msg.getRoleType(),
-                msg.getConsumerUuid(),
-                msg.isForce(),
-                new Completion(msg) {
+        Completion completion = new Completion(msg) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -80,7 +79,21 @@ public class PhysicalServerManagerImpl extends AbstractService implements
                         reply.setError(errorCode);
                         bus.reply(msg, reply);
                     }
-                });
+                };
+        if (msg.getOperation()
+                == ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE) {
+            reconciler.forceReleaseAssignment(
+                    msg.getServerUuid(),
+                    msg.getRoleType(),
+                    msg.getConsumerUuid(),
+                    completion);
+        } else {
+            reconciler.releaseAssignment(
+                    msg.getServerUuid(),
+                    msg.getRoleType(),
+                    msg.getConsumerUuid(),
+                    completion);
+        }
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -127,7 +140,7 @@ public class PhysicalServerManagerImpl extends AbstractService implements
             @Override
             public void success(PhysicalServerResourceAssignmentInventory inventory) {
                 event.setInventory(inventory);
-                reconcile(msg.getServerUuid(), true);
+                refreshAndReconcile(msg.getServerUuid());
                 bus.publish(event);
             }
 
@@ -157,14 +170,14 @@ public class PhysicalServerManagerImpl extends AbstractService implements
             });
             return;
         }
-        reconcile(msg.getServerUuid(), true);
+        refreshAndReconcile(msg.getServerUuid());
         bus.publish(event);
     }
 
     @Override
-    public Map<String, String> resolveIdentities(
-            Collection<PhysicalServerIdentitySpec> identities) {
-        return identity.resolve(identities);
+    public Map<String, String> resolveBySerialNumbers(
+            Collection<String> serialNumbers) {
+        return identity.resolveBySerialNumbers(serialNumbers);
     }
 
     @Override
@@ -180,13 +193,28 @@ public class PhysicalServerManagerImpl extends AbstractService implements
     }
 
     @Override
-    public void reconcile(String serverUuid, boolean refreshFacts) {
+    public void reconcile(String serverUuid) {
         if (serverUuid == null) {
             return;
         }
         ReconcilePhysicalServerMsg msg = new ReconcilePhysicalServerMsg();
         msg.setServerUuid(serverUuid);
-        msg.setRefreshFacts(refreshFacts);
+        sendReconcile(msg);
+    }
+
+    @Override
+    public void refreshAndReconcile(String serverUuid) {
+        if (serverUuid == null) {
+            return;
+        }
+        ReconcilePhysicalServerMsg msg = new ReconcilePhysicalServerMsg();
+        msg.setServerUuid(serverUuid);
+        msg.setOperation(
+                ReconcilePhysicalServerMsg.Operation.REFRESH_AND_RECONCILE);
+        sendReconcile(msg);
+    }
+
+    private void sendReconcile(ReconcilePhysicalServerMsg msg) {
         bus.makeTargetServiceIdByResourceUuid(
                 msg,
                 PhysicalServerConstant.SERVICE_ID,
@@ -209,14 +237,34 @@ public class PhysicalServerManagerImpl extends AbstractService implements
             String serverUuid,
             String roleType,
             String consumerUuid,
-            boolean force,
             Completion completion) {
         ReleasePhysicalServerResourceAssignmentMsg msg =
                 new ReleasePhysicalServerResourceAssignmentMsg();
         msg.setServerUuid(serverUuid);
         msg.setRoleType(roleType);
         msg.setConsumerUuid(consumerUuid);
-        msg.setForce(force);
+        sendRelease(msg, completion);
+    }
+
+    @Override
+    public void forceReleaseResourceAssignment(
+            String serverUuid,
+            String roleType,
+            String consumerUuid,
+            Completion completion) {
+        ReleasePhysicalServerResourceAssignmentMsg msg =
+                new ReleasePhysicalServerResourceAssignmentMsg();
+        msg.setServerUuid(serverUuid);
+        msg.setRoleType(roleType);
+        msg.setConsumerUuid(consumerUuid);
+        msg.setOperation(
+                ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE);
+        sendRelease(msg, completion);
+    }
+
+    private void sendRelease(
+            ReleasePhysicalServerResourceAssignmentMsg msg,
+            Completion completion) {
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeTargetServiceIdByResourceUuid(
                 msg,

@@ -1,5 +1,4 @@
 roleType: INVALID_OWNER
-applicationMode: RESOURCE_HANDLES
 sliceName: invalid-owner.slice
 services:
   - name: invalid-owner

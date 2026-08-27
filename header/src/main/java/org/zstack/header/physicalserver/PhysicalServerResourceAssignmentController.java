@@ -2,18 +2,15 @@ package org.zstack.header.physicalserver;
 
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.errorcode.ErrorCode;
 
 import java.util.Collection;
-import java.util.Map;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
-public interface PhysicalServerResourceControlAdapter extends
-        PhysicalServerResourceUsageObserver {
+public interface PhysicalServerResourceAssignmentController extends
+        PhysicalServerResourceAssignmentObserver {
     PhysicalServerResourceIsolationMode getIsolationMode();
-
-    PhysicalServerResourceApplicationMode getApplicationMode();
 
     default String getTopologyRoleType() {
         return getRoleType();
@@ -30,18 +27,7 @@ public interface PhysicalServerResourceControlAdapter extends
     default void refreshCapacity(String serverUuid) {
     }
 
-    default Set<String> getEligibleDefaultServerUuids() {
-        return getAssociatedServerUuids();
-    }
-
-    PhysicalServerResourceConsumerState getState(String serverUuid);
-
-    default ErrorCode getUnavailableError(String serverUuid) {
-        return null;
-    }
-
-    Map<String, PhysicalServerResourceConsumerState> getStates(
-            Collection<String> serverUuids);
+    List<ResourceConsumerHandle> getResourceConsumers(String serverUuid);
 
     void collectTopology(
             String serverUuid,
@@ -55,7 +41,6 @@ public interface PhysicalServerResourceControlAdapter extends
 
     void restartManagedServices(
             String serverUuid,
-            boolean includeAuxiliaryServices,
             Collection<String> serviceNames,
             Completion completion);
 }

@@ -21,16 +21,16 @@ class LocalResourceControlExecutorCase {
         previousUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
         CoreGlobalProperty.UNIT_TEST_ON = true
         executor = new LocalResourceControlExecutor()
-        executor.setTestMode(true)
-        restartable = systemdHandle(
-                "prometheus", "prometheus.service", true)
+        executor.enableTestMode()
+        restartable = restartableSystemdHandle(
+                "prometheus", "prometheus.service")
         nonRestartable = systemdHandle(
-                "management-node", "zstack-management.service", false)
+                "management-node", "zstack-management.service")
     }
 
     @After
     void cleanUp() {
-        executor?.setTestMode(false)
+        executor?.disableTestMode()
         CoreGlobalProperty.UNIT_TEST_ON = previousUnitTestOn
     }
 
@@ -108,10 +108,13 @@ class LocalResourceControlExecutorCase {
         assertRestartRejected([nonRestartable],
                 "a non-restartable service must remain outside Cloud restart ownership")
 
-        ResourceConsumerHandle pidFile = new ResourceConsumerHandle(
-                ResourceConsumerHandle.OWNER_PID_FILE,
-                "/run/example.pid", "example", "example",
-                false, true, "example")
+        ResourceConsumerHandle pidFile = new ResourceConsumerHandle()
+        pidFile.handleType = ResourceConsumerHandle.OWNER_PID_FILE
+        pidFile.value = "/run/example.pid"
+        pidFile.serviceName = "example"
+        pidFile.consumerKey = "example"
+        pidFile.restartable = true
+        pidFile.expectedCommandToken = "example"
         assertRestartRejected([pidFile],
                 "restart supports stable systemd units only")
     }
@@ -143,10 +146,19 @@ class LocalResourceControlExecutorCase {
     }
 
     private static ResourceConsumerHandle systemdHandle(
-            String serviceName, String unit, boolean restartable) {
-        return new ResourceConsumerHandle(
-                ResourceConsumerHandle.SYSTEMD_UNIT,
-                unit, serviceName, serviceName,
-                false, restartable, null)
+            String serviceName, String unit) {
+        ResourceConsumerHandle handle = new ResourceConsumerHandle()
+        handle.handleType = ResourceConsumerHandle.SYSTEMD_UNIT
+        handle.value = unit
+        handle.serviceName = serviceName
+        handle.consumerKey = serviceName
+        return handle
+    }
+
+    private static ResourceConsumerHandle restartableSystemdHandle(
+            String serviceName, String unit) {
+        ResourceConsumerHandle handle = systemdHandle(serviceName, unit)
+        handle.restartable = true
+        return handle
     }
 }

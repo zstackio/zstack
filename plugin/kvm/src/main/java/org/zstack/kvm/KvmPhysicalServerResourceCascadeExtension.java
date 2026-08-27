@@ -51,12 +51,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                 each.done();
                 return;
             }
-            physicalServerManager.releaseResourceAssignment(
-                    host.getServerUuid(),
-                    KvmPhysicalServerAdapter.ROLE_TYPE,
-                    host.getUuid(),
-                    forceDelete,
-                    new Completion(each) {
+            Completion releaseCompletion = new Completion(each) {
                         @Override
                         public void success() {
                             each.done();
@@ -77,7 +72,20 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                                     host.getUuid(), errorCode));
                             each.done();
                         }
-                    });
+                    };
+            if (forceDelete) {
+                physicalServerManager.forceReleaseResourceAssignment(
+                        host.getServerUuid(),
+                        KvmPhysicalServerAdapter.ROLE_TYPE,
+                        host.getUuid(),
+                        releaseCompletion);
+            } else {
+                physicalServerManager.releaseResourceAssignment(
+                        host.getServerUuid(),
+                        KvmPhysicalServerAdapter.ROLE_TYPE,
+                        host.getUuid(),
+                        releaseCompletion);
+            }
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {

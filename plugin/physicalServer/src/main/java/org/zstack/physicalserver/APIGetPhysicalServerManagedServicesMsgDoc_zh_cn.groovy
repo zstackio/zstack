@@ -17,7 +17,7 @@ doc {
 
             clz APIGetPhysicalServerManagedServicesMsg.class
 
-            desc """null"""
+            desc """查看指定物理服务器上各Role管控服务当前使用的CPU和内存资源。"""
             
 			params {
 

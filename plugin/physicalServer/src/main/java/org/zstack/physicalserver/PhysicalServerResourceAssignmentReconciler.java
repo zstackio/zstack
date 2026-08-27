@@ -1,6 +1,7 @@
 package org.zstack.physicalserver;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SingleFlightTask;
@@ -8,16 +9,20 @@ import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
-import org.zstack.header.physicalserver.PhysicalServerResourceConsumerState;
-import org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter;
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentConfig;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver;
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver;
-import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
+import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -49,7 +54,8 @@ public class PhysicalServerResourceAssignmentReconciler {
 
     private final ConcurrentMap<String, ReconcileQueueState> reconcileQueues =
             new ConcurrentHashMap<>();
-    private final ReconcileQueueState reconcileAllQueue = new ReconcileQueueState();
+    private final ReconcileQueueState reconcileAllQueue =
+            new ReconcileQueueState();
     private final ConcurrentMap<String, Long> pendingRefreshServers =
             new ConcurrentHashMap<>();
     private final AtomicBoolean refreshBatchScheduled = new AtomicBoolean();
@@ -70,14 +76,11 @@ public class PhysicalServerResourceAssignmentReconciler {
     public void ensureResourceAssignments(
             Collection<String> serverUuids,
             String roleType) {
-        PhysicalServerResourceControlAdapter adapter = adapters().get(roleType);
-        if (adapter == null) {
+        if (extensions().controller(roleType) == null) {
             throw new IllegalArgumentException(String.format(
                     "ROLE_TYPE_NOT_SUPPORTED: roleType[%s]", roleType));
         }
-        assignments.ensureDefaults(
-                serverUuids,
-                roleType);
+        assignments.ensureDefaults(serverUuids, roleType);
     }
 
     public void enqueueAll() {
@@ -114,44 +117,49 @@ public class PhysicalServerResourceAssignmentReconciler {
     }
 
     private void refreshAndEnqueueAll() {
-        PhysicalServerResourceControlAdapterRegistry adapters = adapters();
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
         Set<String> serverUuids = new HashSet<>();
-        for (PhysicalServerResourceControlAdapter adapter :
-                adapters.orderedAdapters()) {
+        for (PhysicalServerResourceAssignmentController controller :
+                extensions.orderedControllers()) {
+            PhysicalServerRoleAssociationProvider associations =
+                    extensions.associationProvider(controller.getRoleType());
             try {
-                adapter.refreshAssociations(Collections.emptySet());
-                Set<String> associated = adapter.getAssociatedServerUuids();
+                Set<String> associated = associations.refreshAssociations(
+                        Collections.emptySet());
+                associated = associated == null
+                        ? Collections.emptySet() : associated;
                 serverUuids.addAll(associated);
                 assignments.ensureDefaults(
-                        adapter.getEligibleDefaultServerUuids(),
-                        adapter.getRoleType());
+                        associated, controller.getRoleType());
             } catch (RuntimeException error) {
                 logger.warn(String.format(
-                        "failed to refresh resource assignment adapter: " +
+                        "failed to refresh resource assignment controller: " +
                                 "roleType[%s], error[%s]",
-                        adapter.getRoleType(), error.getMessage()));
+                        controller.getRoleType(), error.getMessage()));
             }
         }
+        refreshObservedAssociations(
+                extensions, Collections.emptySet(), serverUuids);
         for (PhysicalServerResourceAssignmentVO assignment :
                 assignments.listAssignments()) {
             serverUuids.add(assignment.getServerUuid());
         }
         for (String serverUuid : serverUuids) {
-            enqueue(serverUuid, false);
+            enqueue(serverUuid);
         }
     }
 
-    public void enqueue(String serverUuid, boolean refreshFacts) {
-        if (refreshFacts) {
-            pendingRefreshServers.put(
-                    serverUuid, refreshSequence.incrementAndGet());
-            scheduleRefreshBatch(RECONCILE_REQUEUE_DELAY_MILLIS);
-            return;
-        }
+    public void enqueue(String serverUuid) {
         ReconcileQueueState queue = reconcileQueues.computeIfAbsent(
                 serverUuid, key -> new ReconcileQueueState());
         queue.dirty.set(true);
         scheduleQueuedReconcile(serverUuid, queue);
+    }
+
+    public void refreshAndEnqueue(String serverUuid) {
+        pendingRefreshServers.put(
+                serverUuid, refreshSequence.incrementAndGet());
+        scheduleRefreshBatch(RECONCILE_REQUEUE_DELAY_MILLIS);
     }
 
     private void scheduleRefreshBatch(long delayMillis) {
@@ -209,34 +217,32 @@ public class PhysicalServerResourceAssignmentReconciler {
         if (pending.isEmpty()) {
             return true;
         }
-        Set<String> serverUuids = pending.keySet();
+        Set<String> serverUuids = new HashSet<>(pending.keySet());
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
         boolean refreshed = true;
-        for (PhysicalServerResourceControlAdapter adapter :
-                adapters().orderedAdapters()) {
+        for (PhysicalServerResourceAssignmentController controller :
+                extensions.orderedControllers()) {
+            PhysicalServerRoleAssociationProvider associations =
+                    extensions.associationProvider(controller.getRoleType());
             try {
-                adapter.refreshAssociations(serverUuids);
-                Map<String, PhysicalServerResourceConsumerState> states =
-                        adapter.getStates(serverUuids);
-                Set<String> eligible = new HashSet<>(
-                        adapter.getEligibleDefaultServerUuids());
+                Set<String> associated = associations.refreshAssociations(
+                        serverUuids);
+                Set<String> eligible = associated == null
+                        ? new HashSet<>() : new HashSet<>(associated);
                 eligible.retainAll(serverUuids);
-                for (Map.Entry<String, PhysicalServerResourceConsumerState> state :
-                        states.entrySet()) {
-                    if (state.getValue()
-                            == PhysicalServerResourceConsumerState.MISSING) {
-                        eligible.remove(state.getKey());
-                    }
-                }
                 assignments.ensureDefaults(
-                        eligible,
-                        adapter.getRoleType());
+                        eligible, controller.getRoleType());
             } catch (RuntimeException error) {
                 refreshed = false;
                 logger.warn(String.format(
-                        "failed to refresh resource assignment adapter: " +
+                        "failed to refresh resource assignment controller: " +
                                 "roleType[%s], error[%s]",
-                        adapter.getRoleType(), error.getMessage()));
+                        controller.getRoleType(), error.getMessage()));
             }
+        }
+        if (!refreshObservedAssociations(
+                extensions, serverUuids, new HashSet<>())) {
+            refreshed = false;
         }
 
         if (refreshed) {
@@ -245,14 +251,15 @@ public class PhysicalServerResourceAssignmentReconciler {
             }
         }
         for (String serverUuid : serverUuids) {
-            enqueue(serverUuid, false);
+            enqueue(serverUuid);
         }
         return refreshed;
     }
 
     public void updateAssignment(
             APIUpdatePhysicalServerResourceAssignmentMsg msg,
-            ReturnValueCompletion<PhysicalServerResourceAssignmentInventory> completion) {
+            ReturnValueCompletion<PhysicalServerResourceAssignmentInventory>
+                    completion) {
         if (!resourceAssignmentEnabled()) {
             completion.fail(resourceAssignmentDisabledError());
             return;
@@ -272,7 +279,8 @@ public class PhysicalServerResourceAssignmentReconciler {
                             PhysicalServerResourceAssignmentVO updated =
                                     assignments.update(msg);
                             completion.success(
-                                    PhysicalServerResourceAssignmentInventory.valueOf(updated));
+                                    PhysicalServerResourceAssignmentInventory
+                                            .valueOf(updated));
                         } catch (OperationFailureException error) {
                             completion.fail(error.getErrorCode());
                         } catch (RuntimeException error) {
@@ -345,91 +353,82 @@ public class PhysicalServerResourceAssignmentReconciler {
     private void collectManagedServiceUsageOnce(
             String serverUuid,
             ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
-        List<PhysicalServerResourceAssignmentVO> current =
-                assignments.listAssignments(Collections.singleton(serverUuid));
-        Set<String> assignedRoleTypes = current.stream()
-                .map(PhysicalServerResourceAssignmentVO::getRoleType)
-                .collect(java.util.stream.Collectors.toSet());
-        PhysicalServerResourceUsageObserverRegistry observers =
-                usageObservers();
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
+        refreshObservedAssociations(
+                extensions,
+                Collections.singleton(serverUuid),
+                new HashSet<>());
+        Map<String, PhysicalServerResourceAssignmentVO> snapshot =
+                assignmentsByServer(assignments.listAssignments(
+                        Collections.singleton(serverUuid)))
+                        .getOrDefault(serverUuid, Collections.emptyMap());
         Map<String, PhysicalServerResourceUsageObserver> selected =
-                new HashMap<>();
-        for (String roleType : assignedRoleTypes) {
-            PhysicalServerResourceUsageObserver observer = observers.get(roleType);
-            if (observer == null) {
-                completion.fail(operr(
-                        PhysicalServerConstant.ERROR_CODE,
-                        "RESOURCE_USAGE_OBSERVER_MISSING: roleType[%s]",
-                        roleType));
-                return;
-            }
-            selected.put(roleType, observer);
-        }
-        for (PhysicalServerResourceUsageObserver observer :
-                observers.orderedObservers()) {
-            if (observer instanceof PhysicalServerResourceControlAdapter
-                    || assignedRoleTypes.contains(observer.getRoleType())) {
-                continue;
-            }
-            try {
-                observer.refreshAssociations(
-                        Collections.singleton(serverUuid));
-            } catch (RuntimeException error) {
-                logger.warn(String.format(
-                        "failed to refresh resource usage observer: roleType[%s], physicalServer[uuid:%s], error[%s]",
-                        observer.getRoleType(), serverUuid, error.getMessage()));
-            }
-            if (observer.getAssociatedServerUuids().contains(serverUuid)) {
-                selected.put(observer.getRoleType(), observer);
+                new LinkedHashMap<>();
+        List<String> roleTypes = new ArrayList<>(snapshot.keySet());
+        roleTypes.sort(String::compareTo);
+        for (String roleType : roleTypes) {
+            PhysicalServerResourceUsageObserver observer =
+                    extensions.usageObserver(roleType);
+            if (observer != null) {
+                selected.put(roleType, observer);
             }
         }
-        List<String> ordered = new ArrayList<>(selected.keySet());
-        ordered.sort(String::compareTo);
-        collectManagedServiceUsage(
-                serverUuid, ordered, assignedRoleTypes, selected, 0,
-                new ArrayList<>(), completion);
-    }
+        Map<String, Set<String>> controlledServiceNames =
+                resourceControls.controlledServiceNames(serverUuid, snapshot);
+        List<ManagedServiceResourceUsage> result = new ArrayList<>();
 
-    private void collectManagedServiceUsage(
-            String serverUuid,
-            List<String> roleTypes,
-            Set<String> assignedRoleTypes,
-            Map<String, PhysicalServerResourceUsageObserver> observers,
-            int index,
-            List<ManagedServiceResourceUsage> result,
-            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
-        if (index == roleTypes.size()) {
-            completion.success(result);
-            return;
-        }
-        String roleType = roleTypes.get(index);
-        PhysicalServerResourceUsageObserver observer = observers.get(roleType);
-        boolean includeAuxiliaryServices =
-                PhysicalServerRoleType.MANAGEMENT.equals(roleType)
-                        || !assignedRoleTypes.contains(
-                        PhysicalServerRoleType.MANAGEMENT);
-        observer.collectManagedServiceUsage(
-                serverUuid,
-                includeAuxiliaryServices,
-                new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
+        new While<>(new ArrayList<>(selected.keySet())).each(
+                (roleType, each) -> selected.get(roleType)
+                        .collectManagedServiceUsage(
+                                serverUuid,
+                                new ReturnValueCompletion<
+                                        List<ManagedServiceResourceUsage>>(each) {
+                                    @Override
+                                    public void success(
+                                            List<ManagedServiceResourceUsage> services) {
+                                        appendManagedServiceUsages(
+                                                roleType,
+                                                services,
+                                                controlledServiceNames,
+                                                result);
+                                        each.done();
+                                    }
+
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        each.addError(errorCode);
+                                        each.allDone();
+                                    }
+                                }))
+                .run(new WhileDoneCompletion(completion) {
                     @Override
-                    public void success(List<ManagedServiceResourceUsage> services) {
-                        if (services != null) {
-                            for (ManagedServiceResourceUsage service : services) {
-                                service.setRoleType(roleType);
-                                result.add(service);
-                            }
+                    public void done(ErrorCodeList errors) {
+                        if (errors.getCauses().isEmpty()) {
+                            completion.success(result);
+                        } else {
+                            completion.fail(errors.getCauses().get(0));
                         }
-                        collectManagedServiceUsage(
-                                serverUuid, roleTypes, assignedRoleTypes, observers,
-                                index + 1, result, completion);
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
                     }
                 });
+    }
+
+    private void appendManagedServiceUsages(
+            String roleType,
+            List<ManagedServiceResourceUsage> services,
+            Map<String, Set<String>> controlledServiceNames,
+            List<ManagedServiceResourceUsage> result) {
+        if (services == null) {
+            return;
+        }
+        Set<String> selectedNames = controlledServiceNames.get(roleType);
+        for (ManagedServiceResourceUsage service : services) {
+            if (selectedNames != null
+                    && !selectedNames.contains(service.getServiceName())) {
+                continue;
+            }
+            service.setRoleType(roleType);
+            result.add(service);
+        }
     }
 
     public void restartManagedServices(
@@ -455,46 +454,47 @@ public class PhysicalServerResourceAssignmentReconciler {
                                         Collections.emptyMap());
                 PhysicalServerResourceAssignmentVO assignment =
                         snapshot.get(msg.getRoleType());
-                PhysicalServerResourceControlAdapter adapter =
-                        adapters().get(msg.getRoleType());
-                if (assignment == null || adapter == null) {
-                    try {
-                        completion.fail(operr(
-                                PhysicalServerConstant.ERROR_CODE,
-                                "RESOURCE_ASSIGNMENT_NOT_FOUND: resource assignment for role[%s] does not exist on physical server[uuid:%s]",
-                                msg.getRoleType(), msg.getServerUuid()));
-                    } finally {
-                        chain.next();
-                    }
+                PhysicalServerResourceAssignmentController controller =
+                        extensions().controller(msg.getRoleType());
+                if (assignment == null || controller == null) {
+                    completeChain(
+                            chain,
+                            completion,
+                            operr(
+                                    PhysicalServerConstant.ERROR_CODE,
+                                    "RESOURCE_ASSIGNMENT_NOT_FOUND: resource assignment for role[%s] does not exist on physical server[uuid:%s]",
+                                    msg.getRoleType(), msg.getServerUuid()));
                     return;
                 }
-                boolean hasManagement = snapshot.containsKey(
-                        PhysicalServerRoleType.MANAGEMENT);
-                boolean includeAuxiliaryServices =
-                        PhysicalServerRoleType.MANAGEMENT.equals(msg.getRoleType())
-                                || !hasManagement;
+                Set<String> ownedServices = resourceControls
+                        .controlledServiceNames(msg.getServerUuid(), snapshot)
+                        .getOrDefault(
+                                msg.getRoleType(), Collections.emptySet());
+                if (!ownedServices.containsAll(msg.getServiceNames())) {
+                    completeChain(
+                            chain,
+                            completion,
+                            operr(
+                                    PhysicalServerConstant.ERROR_CODE,
+                                    "SERVICE_NOT_OWNED_BY_ROLE: roleType[%s], serviceNames[%s]",
+                                    msg.getRoleType(), msg.getServiceNames()));
+                    return;
+                }
                 resourceControls.stageForServiceRestart(
                         assignment,
                         snapshot,
-                        adapter,
+                        controller,
                         new Completion(completion) {
                             @Override
                             public void success() {
                                 restartManagedServicesAfterStage(
-                                        msg,
-                                        adapter,
-                                        includeAuxiliaryServices,
-                                        chain,
-                                        completion);
+                                        msg, controller, chain, completion);
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                try {
-                                    completion.fail(errorCode);
-                                } finally {
-                                    chain.next();
-                                }
+                                completeChain(
+                                        chain, completion, errorCode);
                             }
                         });
             }
@@ -510,32 +510,22 @@ public class PhysicalServerResourceAssignmentReconciler {
 
     private void restartManagedServicesAfterStage(
             APIRefreshPhysicalServerResourceAssignmentsMsg msg,
-            PhysicalServerResourceControlAdapter adapter,
-            boolean includeAuxiliaryServices,
+            PhysicalServerResourceAssignmentController controller,
             SyncTaskChain chain,
             Completion completion) {
-        adapter.restartManagedServices(
+        controller.restartManagedServices(
                 msg.getServerUuid(),
-                includeAuxiliaryServices,
                 msg.getServiceNames(),
                 new Completion(completion) {
                     @Override
                     public void success() {
-                        try {
-                            enqueue(msg.getServerUuid(), true);
-                            completion.success();
-                        } finally {
-                            chain.next();
-                        }
+                        refreshAndEnqueue(msg.getServerUuid());
+                        completeChain(chain, completion, null);
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        try {
-                            completion.fail(errorCode);
-                        } finally {
-                            chain.next();
-                        }
+                        completeChain(chain, completion, errorCode);
                     }
                 });
     }
@@ -543,13 +533,14 @@ public class PhysicalServerResourceAssignmentReconciler {
     private void validateUpdate(
             APIUpdatePhysicalServerResourceAssignmentMsg msg,
             Completion completion) {
-        PhysicalServerResourceControlAdapterRegistry adapters = adapters();
-        PhysicalServerResourceControlAdapter adapter =
-                adapters.get(msg.getRoleType());
-        if (adapter == null) {
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
+        PhysicalServerResourceAssignmentController controller =
+                extensions.controller(msg.getRoleType());
+        if (controller == null) {
             completion.fail(operr(
                     PhysicalServerConstant.ERROR_CODE,
-                    "ROLE_TYPE_NOT_SUPPORTED: roleType[%s]", msg.getRoleType()));
+                    "ROLE_TYPE_NOT_SUPPORTED: roleType[%s]",
+                    msg.getRoleType()));
             return;
         }
         PhysicalServerResourceAssignmentVO existing = assignments.find(
@@ -566,13 +557,13 @@ public class PhysicalServerResourceAssignmentReconciler {
             completion.success();
             return;
         }
-        PhysicalServerResourceControlAdapter topologyAdapter =
-                adapters.get(adapter.getTopologyRoleType());
-        if (topologyAdapter == null) {
+        PhysicalServerResourceAssignmentController topologyController =
+                extensions.controller(controller.getTopologyRoleType());
+        if (topologyController == null) {
             completion.fail(operr(
                     PhysicalServerConstant.ERROR_CODE,
                     "CPU_TOPOLOGY_SOURCE_MISSING: roleType[%s] requires topologyRoleType[%s]",
-                    msg.getRoleType(), adapter.getTopologyRoleType()));
+                    msg.getRoleType(), controller.getTopologyRoleType()));
             return;
         }
         Map<String, PhysicalServerResourceAssignmentVO> snapshot =
@@ -580,20 +571,20 @@ public class PhysicalServerResourceAssignmentReconciler {
                         Collections.singleton(msg.getServerUuid())))
                         .getOrDefault(msg.getServerUuid(), Collections.emptyMap());
         try {
-            topologyAdapter.collectTopology(
+            topologyController.collectTopology(
                     msg.getServerUuid(),
                     new ReturnValueCompletion<PhysicalServerCpuTopology>(completion) {
                         @Override
                         public void success(PhysicalServerCpuTopology topology) {
                             try {
                                 String normalized = planner.validateAndNormalize(
-                                        adapter.getIsolationMode(),
+                                        controller.getIsolationMode(),
                                         msg.getCpuSet(),
                                         topology,
                                         reservedExclusiveCpus(
                                                 existing,
                                                 snapshot.values(),
-                                                adapters,
+                                                extensions,
                                                 topology));
                                 msg.setCpuSet(normalized);
                                 completion.success();
@@ -621,7 +612,33 @@ public class PhysicalServerResourceAssignmentReconciler {
             String serverUuid,
             String roleType,
             String consumerUuid,
-            boolean force,
+            Completion completion) {
+        releaseAssignment(
+                serverUuid,
+                roleType,
+                consumerUuid,
+                ReleaseFailureAction.RECONCILE,
+                completion);
+    }
+
+    public void forceReleaseAssignment(
+            String serverUuid,
+            String roleType,
+            String consumerUuid,
+            Completion completion) {
+        releaseAssignment(
+                serverUuid,
+                roleType,
+                consumerUuid,
+                ReleaseFailureAction.FORGET,
+                completion);
+    }
+
+    private void releaseAssignment(
+            String serverUuid,
+            String roleType,
+            String consumerUuid,
+            ReleaseFailureAction failureAction,
             Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
@@ -638,26 +655,20 @@ public class PhysicalServerResourceAssignmentReconciler {
                         new Completion(completion) {
                             @Override
                             public void success() {
-                                try {
-                                    completion.success();
-                                } finally {
-                                    chain.next();
-                                }
+                                enqueue(serverUuid);
+                                completeChain(chain, completion, null);
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                try {
-                                    if (force) {
-                                        resourceControls.forget(
-                                                serverUuid, roleType);
-                                    } else {
-                                        enqueue(serverUuid, false);
-                                    }
-                                    completion.fail(errorCode);
-                                } finally {
-                                    chain.next();
+                                if (failureAction
+                                        == ReleaseFailureAction.FORGET) {
+                                    resourceControls.forget(
+                                            serverUuid, roleType);
                                 }
+                                enqueue(serverUuid);
+                                completeChain(
+                                        chain, completion, errorCode);
                             }
                         });
             }
@@ -721,40 +732,22 @@ public class PhysicalServerResourceAssignmentReconciler {
                 Map<String, PhysicalServerResourceAssignmentVO> current =
                         assignmentsByServer(assignments.listAssignments(
                                 Collections.singleton(serverUuid)))
-                                .getOrDefault(serverUuid, Collections.emptyMap());
-                if (!resourceAssignmentEnabled()) {
-                    current.values().forEach(assignment -> {
-                        assignments.markUnsynced(assignment.getUuid());
-                        assignment.setState(
-                                PhysicalServerResourceAssignmentState.Unsynced);
-                    });
-                    try {
-                        completion.success();
-                    } finally {
-                        chain.next();
-                    }
-                    return;
-                }
-                resourceControls.reconcile(
+                                .getOrDefault(
+                                        serverUuid, Collections.emptyMap());
+                refreshReadOnlyAssignments(
                         serverUuid,
                         current,
                         new Completion(completion) {
                             @Override
                             public void success() {
-                                try {
-                                    completion.success();
-                                } finally {
-                                    chain.next();
-                                }
+                                reconcileControlledAssignments(
+                                        serverUuid, chain, completion);
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                try {
-                                    completion.fail(errorCode);
-                                } finally {
-                                    chain.next();
-                                }
+                                reconcileControlledAssignments(
+                                        serverUuid, chain, completion);
                             }
                         });
             }
@@ -768,19 +761,200 @@ public class PhysicalServerResourceAssignmentReconciler {
         });
     }
 
+    private void refreshReadOnlyAssignments(
+            String serverUuid,
+            Map<String, PhysicalServerResourceAssignmentVO> current,
+            Completion completion) {
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
+        Map<String, PhysicalServerResourceAssignmentObserver> observers =
+                new LinkedHashMap<>();
+        for (PhysicalServerResourceAssignmentObserver observer :
+                extensions.orderedReadOnlyObservers()) {
+            if (current.containsKey(observer.getRoleType())) {
+                observers.put(observer.getRoleType(), observer);
+            }
+        }
+        new While<>(new ArrayList<>(observers.keySet())).each(
+                (roleType, each) -> refreshReadOnlyAssignment(
+                        serverUuid,
+                        current.get(roleType),
+                        observers.get(roleType),
+                        new Completion(each) {
+                            @Override
+                            public void success() {
+                                each.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                each.done();
+                            }
+                        }))
+                .run(new WhileDoneCompletion(completion) {
+                    @Override
+                    public void done(ErrorCodeList ignored) {
+                        completion.success();
+                    }
+                });
+    }
+
+    private void refreshReadOnlyAssignment(
+            String serverUuid,
+            PhysicalServerResourceAssignmentVO assignment,
+            PhysicalServerResourceAssignmentObserver observer,
+            Completion completion) {
+        try {
+            observer.collectResourceAssignment(
+                    serverUuid,
+                    new ReturnValueCompletion<PhysicalServerResourceBoundary>(
+                            completion) {
+                        @Override
+                        public void success(
+                                PhysicalServerResourceBoundary boundary) {
+                            try {
+                                normalizeBoundary(boundary);
+                                assignments.syncObserved(
+                                        serverUuid,
+                                        assignment.getRoleType(),
+                                        boundary);
+                                completion.success();
+                            } catch (RuntimeException error) {
+                                markObservationFailed(
+                                        assignment,
+                                        String.format(
+                                                "failed to update read-only physical server resource assignment: serverUuid[%s], roleType[%s], error[%s]",
+                                                serverUuid,
+                                                assignment.getRoleType(),
+                                                error.getMessage()),
+                                        completion);
+                            }
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            markObservationFailed(
+                                    assignment,
+                                    String.format(
+                                            "failed to observe physical server resource assignment: serverUuid[%s], roleType[%s], error[%s]",
+                                            serverUuid,
+                                            assignment.getRoleType(),
+                                            errorCode),
+                                    completion);
+                        }
+                    });
+        } catch (RuntimeException error) {
+            markObservationFailed(
+                    assignment,
+                    String.format(
+                            "failed to invoke physical server resource assignment observer: serverUuid[%s], roleType[%s], error[%s]",
+                            serverUuid,
+                            assignment.getRoleType(),
+                            error.getMessage()),
+                    completion);
+        }
+    }
+
+    private void markObservationFailed(
+            PhysicalServerResourceAssignmentVO assignment,
+            String message,
+            Completion completion) {
+        assignments.markUnsynced(assignment.getUuid());
+        logger.warn(message);
+        completion.success();
+    }
+
+    private void normalizeBoundary(
+            PhysicalServerResourceBoundary boundary) {
+        if (boundary == null) {
+            throw new IllegalArgumentException(
+                    "RESOURCE_ASSIGNMENT_OBSERVATION_INVALID: boundary is null");
+        }
+        String cpuSet = boundary.getCpuSet();
+        cpuSet = cpuSet == null || cpuSet.trim().isEmpty()
+                ? "" : PhysicalServerCpuSet.normalize(cpuSet);
+        if (cpuSet.length() > 4096) {
+            throw new IllegalArgumentException(
+                    "RESOURCE_ASSIGNMENT_OBSERVATION_INVALID: cpuSet is too long");
+        }
+        if (boundary.getMemory() != null && boundary.getMemory() < 0) {
+            throw new IllegalArgumentException(
+                    "RESOURCE_ASSIGNMENT_OBSERVATION_INVALID: memory must not be negative");
+        }
+        boundary.setCpuSet(cpuSet);
+    }
+
+    private void reconcileControlledAssignments(
+            String serverUuid,
+            SyncTaskChain chain,
+            Completion completion) {
+        Map<String, PhysicalServerResourceAssignmentVO> current =
+                assignmentsByServer(assignments.listAssignments(
+                        Collections.singleton(serverUuid)))
+                        .getOrDefault(serverUuid, Collections.emptyMap());
+        PhysicalServerResourceExtensionRegistry extensions = extensions();
+        Map<String, PhysicalServerResourceAssignmentVO> controlled =
+                new LinkedHashMap<>();
+        for (Map.Entry<String, PhysicalServerResourceAssignmentVO> entry :
+                current.entrySet()) {
+            PhysicalServerResourceAssignmentObserver observer =
+                    extensions.observer(entry.getKey());
+            if (extensions.controller(entry.getKey()) != null
+                    || observer == null) {
+                controlled.put(entry.getKey(), entry.getValue());
+            }
+        }
+        if (!resourceAssignmentEnabled()) {
+            controlled.values().forEach(assignment ->
+                    assignments.markUnsynced(assignment.getUuid()));
+            completeChain(chain, completion, null);
+            return;
+        }
+        resourceControls.reconcile(
+                serverUuid,
+                controlled,
+                new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completeChain(chain, completion, null);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completeChain(chain, completion, errorCode);
+                    }
+                });
+    }
+
+    private void completeChain(
+            SyncTaskChain chain,
+            Completion completion,
+            ErrorCode errorCode) {
+        try {
+            if (errorCode == null) {
+                completion.success();
+            } else {
+                completion.fail(errorCode);
+            }
+        } finally {
+            chain.next();
+        }
+    }
+
     private Set<Integer> reservedExclusiveCpus(
             PhysicalServerResourceAssignmentVO current,
             Collection<PhysicalServerResourceAssignmentVO> assignmentValues,
-            PhysicalServerResourceControlAdapterRegistry adapters,
+            PhysicalServerResourceExtensionRegistry extensions,
             PhysicalServerCpuTopology topology) {
         Set<Integer> result = new HashSet<>();
         for (PhysicalServerResourceAssignmentVO assignment : assignmentValues) {
-            if (current != null && current.getUuid().equals(assignment.getUuid())) {
+            if (current != null
+                    && current.getUuid().equals(assignment.getUuid())) {
                 continue;
             }
-            PhysicalServerResourceControlAdapter adapter =
-                    adapters.get(assignment.getRoleType());
-            if (adapter == null || adapter.getIsolationMode()
+            PhysicalServerResourceAssignmentController controller =
+                    extensions.controller(assignment.getRoleType());
+            if (controller == null
+                    || controller.getIsolationMode()
                     != PhysicalServerResourceIsolationMode.EXCLUSIVE) {
                 continue;
             }
@@ -812,16 +986,45 @@ public class PhysicalServerResourceAssignmentReconciler {
                 PhysicalServerResourceAssignmentConfig.ENABLED);
     }
 
-    private PhysicalServerResourceControlAdapterRegistry adapters() {
-        return PhysicalServerResourceControlAdapterRegistry.load(pluginRgty);
+    private boolean refreshObservedAssociations(
+            PhysicalServerResourceExtensionRegistry extensions,
+            Collection<String> serverUuids,
+            Set<String> affectedServerUuids) {
+        boolean refreshed = true;
+        boolean fullRefresh = serverUuids == null || serverUuids.isEmpty();
+        Set<String> scope = fullRefresh
+                ? Collections.emptySet() : new HashSet<>(serverUuids);
+        for (PhysicalServerResourceAssignmentObserver observer :
+                extensions.orderedReadOnlyObservers()) {
+            PhysicalServerRoleAssociationProvider associations =
+                    extensions.associationProvider(observer.getRoleType());
+            try {
+                Set<String> associated = associations.refreshAssociations(scope);
+                associated = associated == null
+                        ? new HashSet<>() : new HashSet<>(associated);
+                if (!fullRefresh) {
+                    associated.retainAll(scope);
+                }
+                assignments.syncObservedAssociations(
+                        observer.getRoleType(), associated, scope);
+                affectedServerUuids.addAll(associated);
+            } catch (RuntimeException error) {
+                refreshed = false;
+                logger.warn(String.format(
+                        "failed to refresh read-only resource assignment observer: roleType[%s], error[%s]",
+                        observer.getRoleType(), error.getMessage()));
+            }
+        }
+        return refreshed;
     }
 
-    private PhysicalServerResourceUsageObserverRegistry usageObservers() {
-        return PhysicalServerResourceUsageObserverRegistry.load(pluginRgty);
+    private PhysicalServerResourceExtensionRegistry extensions() {
+        return PhysicalServerResourceExtensionRegistry.load(pluginRgty);
     }
 
-    private Map<String, Map<String, PhysicalServerResourceAssignmentVO>> assignmentsByServer(
-            Collection<PhysicalServerResourceAssignmentVO> rows) {
+    private Map<String, Map<String, PhysicalServerResourceAssignmentVO>>
+            assignmentsByServer(
+                    Collection<PhysicalServerResourceAssignmentVO> rows) {
         Map<String, Map<String, PhysicalServerResourceAssignmentVO>> result =
                 new LinkedHashMap<>();
         for (PhysicalServerResourceAssignmentVO row : rows) {
@@ -830,6 +1033,11 @@ public class PhysicalServerResourceAssignmentReconciler {
                     .put(row.getRoleType(), row);
         }
         return result;
+    }
+
+    private enum ReleaseFailureAction {
+        RECONCILE,
+        FORGET
     }
 
     private static class ReconcileQueueState {
