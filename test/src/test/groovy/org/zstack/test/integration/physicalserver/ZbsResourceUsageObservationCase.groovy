@@ -1,6 +1,8 @@
 package org.zstack.test.integration.physicalserver
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
+import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.host.HostNUMANode
@@ -22,8 +24,10 @@ import org.zstack.sdk.UpdatePhysicalServerResourceAssignmentAction
 import org.zstack.storage.zbs.AddonInfo
 import org.zstack.storage.zbs.LogicalPoolInfo
 import org.zstack.storage.zbs.MdsInfo
-import org.zstack.storage.zbs.ZbsCgroupResourceUsage
 import org.zstack.storage.zbs.ZbsAgentResourceUsageProvider
+import org.zstack.storage.zbs.ZbsCgroupResourceUsage
+import org.zstack.storage.zbs.ZbsNodeRef
+import org.zstack.storage.zbs.ZbsNodeRefContributor
 import org.zstack.storage.zbs.ZbsNodeRefContributorImpl
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsResourceUsageGlobalConfig
@@ -81,12 +85,15 @@ class ZbsResourceUsageObservationCase extends SubCase {
 
     @Override
     void clean() {
-        ZbsResourceUsageGlobalConfig.PROVIDER_QUERY_TIMEOUT.resetValue()
-        holdNextProviderQuery.set(false)
-        providerQueryGate?.countDown()
-        providerQueryGate = null
-        PhysicalServerTest.cleanupPhysicalServerRecords()
-        env.delete()
+        try {
+            ZbsResourceUsageGlobalConfig.PROVIDER_QUERY_TIMEOUT.resetValue()
+            holdNextProviderQuery.set(false)
+            providerQueryGate?.countDown()
+            providerQueryGate = null
+            PhysicalServerTest.cleanupPhysicalServerRecords()
+        } finally {
+            env.delete()
+        }
     }
 
     @Override
@@ -100,6 +107,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
             bean(ZbsResourceUsageObserver.class).refreshAssociations()
             serverUuid = physicalServerUuid(SERIAL)
 
+            verifyContributorFailureDoesNotBlockLaterContributors()
             verifyInvalidAddonInfoDoesNotBlockOtherRelations()
             verifyZbsDoesNotCreateResourceAssignment()
             verifyZstoneCgroupUsageIsObserved()
@@ -111,6 +119,40 @@ class ZbsResourceUsageObservationCase extends SubCase {
             verifySerialIdentityWithoutIpFallback()
             verifyAddonInfoMoveChangesOnlyObservationRelation()
             verifyRelationRemovalDoesNotNeedProviderRelease()
+        }
+    }
+
+    private void verifyContributorFailureDoesNotBlockLaterContributors() {
+        String contributedServerUuid = Platform.uuid
+        ZbsNodeRef contributed = new ZbsNodeRef()
+        contributed.serverUuid = contributedServerUuid
+        contributed.serialNumber = "contributed-zbs-server"
+        ZbsNodeRefContributor failing = [
+                bulkList: { Collection<String> ignored ->
+                    throw new IllegalStateException("simulated contributor failure")
+                }
+        ] as ZbsNodeRefContributor
+        ZbsNodeRefContributor succeeding = [
+                bulkList: { Collection<String> requested ->
+                    if (requested && !requested.contains(contributedServerUuid)) {
+                        return [:]
+                    }
+                    return [(contributedServerUuid): contributed]
+                }
+        ] as ZbsNodeRefContributor
+        PluginRegistry registry = bean(PluginRegistry.class)
+        registry.defineDynamicExtension(ZbsNodeRefContributor.class, failing)
+        registry.defineDynamicExtension(ZbsNodeRefContributor.class, succeeding)
+        try {
+            ZbsResourceUsageObserver observer = bean(ZbsResourceUsageObserver.class)
+            observer.refreshAssociations()
+            assert observer.associatedServerUuids.contains(contributedServerUuid) :
+                    "one failed contributor must not discard relations returned by later contributors"
+        } finally {
+            registry.getExtensionList(ZbsNodeRefContributor.class).removeAll([
+                    failing, succeeding
+            ])
+            bean(ZbsResourceUsageObserver.class).refreshAssociations()
         }
     }
 

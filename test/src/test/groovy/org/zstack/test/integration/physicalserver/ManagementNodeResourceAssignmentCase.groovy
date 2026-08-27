@@ -3,6 +3,8 @@ package org.zstack.test.integration.physicalserver
 import org.zstack.core.Platform
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology
@@ -19,6 +21,8 @@ import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
 class ManagementNodeResourceAssignmentCase extends SubCase {
@@ -215,6 +219,29 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         assert restarted[0].value == "prometheus.service" :
                 "restart must use the stable systemd unit from the manifest: " +
                         "actual=${restarted[0].value}"
+
+        CountDownLatch auxiliaryRestart = new CountDownLatch(1)
+        AtomicReference<ErrorCode> auxiliaryRestartError = new AtomicReference<>()
+        adapter.restartManagedServices(
+                targetUuid, false, ["vector"], new Completion(null) {
+            @Override
+            void success() {
+                auxiliaryRestart.countDown()
+            }
+
+            @Override
+            void fail(ErrorCode errorCode) {
+                auxiliaryRestartError.set(errorCode)
+                auxiliaryRestart.countDown()
+            }
+        })
+        assert auxiliaryRestart.await(30, TimeUnit.SECONDS)
+        assert auxiliaryRestartError.get()?.details?.contains(
+                "services[vector] are not defined") :
+                "the MN restart message must preserve includeAuxiliaryServices=false: " +
+                        "actual=${auxiliaryRestartError.get()}"
+        assert executor.lastTestRestartHandles*.serviceName == ["prometheus"] :
+                "a filtered auxiliary service must not reach the local restart executor"
 
         RefreshPhysicalServerResourceAssignmentsAction denied =
                 new RefreshPhysicalServerResourceAssignmentsAction(

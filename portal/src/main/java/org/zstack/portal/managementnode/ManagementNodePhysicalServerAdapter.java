@@ -188,7 +188,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
                             msg.getServiceNames(),
                             Platform.getManagementServerId(),
                             Platform.getManagementServerId(),
-                            true,
+                            msg.isIncludeAuxiliaryServices(),
                             Collections.emptyMap()));
         } catch (RuntimeException error) {
             reply.setError(operr(
@@ -399,6 +399,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
         RestartManagementNodeManagedServicesMsg msg =
                 new RestartManagementNodeManagedServicesMsg();
         msg.setServerUuid(serverUuid);
+        msg.setIncludeAuxiliaryServices(includeAuxiliaryServices);
         msg.setServiceNames(new ArrayList<>(serviceNames));
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);

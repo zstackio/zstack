@@ -191,7 +191,7 @@ public class ZbsResourceUsageObserver implements
                 logger.warn(String.format(
                         "failed to refresh ZBS node relations from contributor[%s]: %s",
                         contributor.getClass().getName(), error.getMessage()));
-                return;
+                continue;
             }
             for (Map.Entry<String, ZbsNodeRef> entry : contribution.entrySet()) {
                 if (loaded.put(entry.getKey(), entry.getValue()) != null) {

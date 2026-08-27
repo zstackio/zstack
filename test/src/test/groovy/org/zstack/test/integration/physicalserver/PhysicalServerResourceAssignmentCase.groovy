@@ -8,9 +8,10 @@ import org.zstack.header.core.Completion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.HostNUMANode
 import org.zstack.header.host.HostVO
-import org.zstack.header.physicalserver.PhysicalServerManager
-import org.zstack.header.physicalserver.PhysicalServerIdentitySpec
+import org.zstack.header.physicalserver.PhysicalServerCpuSet
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology
+import org.zstack.header.physicalserver.PhysicalServerIdentitySpec
+import org.zstack.header.physicalserver.PhysicalServerManager
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage
 import org.zstack.header.physicalserver.PhysicalServerResourceApplicationMode
 import org.zstack.header.physicalserver.PhysicalServerResourceConsumerState
@@ -56,6 +57,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     String forceDeletePhysicalServerUuid
     volatile boolean failResourceControl
     volatile boolean mismatchResourceControl
+    volatile boolean reportExpandedHandleCpuSet
     AtomicInteger resourceControlCalls = new AtomicInteger()
     AtomicInteger capacityRefreshCalls = new AtomicInteger()
     AtomicReference<List<String>> restartedServices = new AtomicReference<>()
@@ -663,6 +665,21 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             assert current.state == "Synced"
         }
 
+        reportExpandedHandleCpuSet = true
+        try {
+            updatePhysicalServerResourceAssignment {
+                serverUuid = physicalServerUuid
+                roleType = "COMPUTE"
+                memory = SizeUnit.MEGABYTE.toByte(72)
+            }
+            retryInSecs {
+                assert assignment().state == "Synced" :
+                        "an equivalent per-handle CPUSet format must not make a correctly applied Assignment unsynced"
+            }
+        } finally {
+            reportExpandedHandleCpuSet = false
+        }
+
         mismatchResourceControl = true
         updatePhysicalServerResourceAssignment {
             serverUuid = physicalServerUuid
@@ -1154,7 +1171,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         response.coveredServiceCount = 1
         ResourceControlResult result = new ResourceControlResult()
         result.state = release ? "DISABLED" : "READY"
-        result.cpuSet = response.cpuSet
+        result.cpuSet = reportExpandedHandleCpuSet && !release
+                ? PhysicalServerCpuSet.parse(response.cpuSet).join(",")
+                : response.cpuSet
         result.memory = response.memory
         response.results = [result]
         return response

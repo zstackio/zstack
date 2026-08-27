@@ -519,8 +519,14 @@ public class PhysicalServerResourceControlReconciler {
             }
             observed++;
             String requiredState = release ? "DISABLED" : "READY";
+            String actualCpuSet;
+            try {
+                actualCpuSet = normalizeCpuSet(result.getCpuSet(), null);
+            } catch (RuntimeException error) {
+                return false;
+            }
             if (!requiredState.equals(result.getState())
-                    || !desiredCpuSet.equals(normalizeEmpty(result.getCpuSet()))
+                    || !desiredCpuSet.equals(actualCpuSet)
                     || desiredMemory != null
                     && !desiredMemory.equals(result.getMemory())
                     && !(desiredMemory == 0L
