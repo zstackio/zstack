@@ -7,7 +7,12 @@ public class ReleasePhysicalServerResourceAssignmentMsg extends NeedReplyMessage
     private String serverUuid;
     private String roleType;
     private String consumerUuid;
-    private boolean force;
+    private Operation operation = Operation.RELEASE;
+
+    public enum Operation {
+        RELEASE,
+        FORCE_RELEASE
+    }
 
     @Override
     public String getServerUuid() {
@@ -34,11 +39,11 @@ public class ReleasePhysicalServerResourceAssignmentMsg extends NeedReplyMessage
         this.consumerUuid = consumerUuid;
     }
 
-    public boolean isForce() {
-        return force;
+    public Operation getOperation() {
+        return operation;
     }
 
-    public void setForce(boolean force) {
-        this.force = force;
+    public void setOperation(Operation operation) {
+        this.operation = operation;
     }
 }

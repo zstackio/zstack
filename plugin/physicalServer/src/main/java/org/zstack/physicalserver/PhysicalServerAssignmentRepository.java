@@ -6,13 +6,16 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Query;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.zstack.core.Platform.operr;
 
@@ -70,6 +73,67 @@ public class PhysicalServerAssignmentRepository {
                 current.getCpuSet(), result.getCpuSet(),
                 current.getMemory(), result.getMemory()));
         return result;
+    }
+
+    @Transactional
+    public void replaceObservedAssociations(
+            String roleType,
+            Collection<String> associatedServerUuids,
+            Collection<String> scopedServerUuids) {
+        Set<String> associated = associatedServerUuids == null
+                ? Collections.emptySet()
+                : new HashSet<>(associatedServerUuids);
+        ensureDefaults(associated, roleType);
+
+        boolean fullRefresh = scopedServerUuids == null
+                || scopedServerUuids.isEmpty();
+        Query delete;
+        if (fullRefresh) {
+            if (associated.isEmpty()) {
+                delete = dbf.getEntityManager().createNativeQuery(
+                        "DELETE FROM PhysicalServerResourceAssignmentVO " +
+                                "WHERE roleType = :roleType");
+            } else {
+                delete = dbf.getEntityManager().createNativeQuery(
+                        "DELETE FROM PhysicalServerResourceAssignmentVO " +
+                                "WHERE roleType = :roleType " +
+                                "AND serverUuid NOT IN (:associatedServerUuids)");
+                delete.setParameter(
+                        "associatedServerUuids", associated);
+            }
+        } else {
+            Set<String> removed = new HashSet<>(scopedServerUuids);
+            removed.removeAll(associated);
+            if (removed.isEmpty()) {
+                return;
+            }
+            delete = dbf.getEntityManager().createNativeQuery(
+                    "DELETE FROM PhysicalServerResourceAssignmentVO " +
+                            "WHERE roleType = :roleType " +
+                            "AND serverUuid IN (:removedServerUuids)");
+            delete.setParameter("removedServerUuids", removed);
+        }
+        delete.setParameter("roleType", roleType);
+        delete.executeUpdate();
+    }
+
+    public PhysicalServerResourceAssignmentVO recordObservation(
+            String serverUuid,
+            String roleType,
+            PhysicalServerResourceBoundary boundary) {
+        String cpuSet = boundary.getCpuSet() == null
+                ? "" : boundary.getCpuSet();
+        SQL.New(
+                        "update PhysicalServerResourceAssignmentVO a set " +
+                                "a.cpuSet = :cpuSet, a.memory = :memory, a.state = :state " +
+                                "where a.serverUuid = :serverUuid and a.roleType = :roleType")
+                .param("cpuSet", cpuSet)
+                .param("memory", boundary.getMemory())
+                .param("state", PhysicalServerResourceAssignmentState.Synced)
+                .param("serverUuid", serverUuid)
+                .param("roleType", roleType)
+                .execute();
+        return find(serverUuid, roleType);
     }
 
     public PhysicalServerResourceAssignmentVO initializeCpuSet(

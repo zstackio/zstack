@@ -1,5 +1,4 @@
 roleType: COMPUTE
-applicationMode: RESOURCE_HANDLES
 sliceName: zstack-compute.slice
 defaultCpuCount: 8
 services:
@@ -28,34 +27,28 @@ services:
     value: node_exporter.service
     required: false
     restartable: true
-    auxiliary: true
   - name: collectd
     handleType: SYSTEMD_UNIT
     value: collectd.service
     required: false
     restartable: true
-    auxiliary: true
   - name: collectd-exporter
     handleType: SYSTEMD_UNIT
     value: collectd_exporter.service
     required: false
     restartable: true
-    auxiliary: true
   - name: process-exporter
     handleType: SYSTEMD_UNIT
     value: process_exporter.service
     required: false
     restartable: true
-    auxiliary: true
   - name: zstack-service-exporter
     handleType: SYSTEMD_UNIT
     value: zstack_service_exporter.service
     required: false
     restartable: true
-    auxiliary: true
   - name: pushgateway
     handleType: SYSTEMD_UNIT
     value: pushgateway.service
     required: false
     restartable: true
-    auxiliary: true

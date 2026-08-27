@@ -1,18 +1,14 @@
 package org.zstack.storage.zbs;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
-import org.zstack.header.rest.JsonAsyncRESTCallback;
-import org.zstack.header.rest.RESTFacade;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_10000;
@@ -20,9 +16,6 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
     public static final String GET_RESOURCE_USAGE_PATH =
             "/zbs/primarystorage/resource/usage";
-
-    @Autowired
-    private RESTFacade restf;
 
     @Override
     public String getProviderType() {
@@ -45,11 +38,13 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
         Collections.sort(addresses);
         ResourceUsageCommand command = new ResourceUsageCommand();
         command.setCgroupNames(new ArrayList<>(cgroupNames));
-        restf.asyncJsonPost(
-                ZbsAgentUrl.primaryStorageUrl(
-                        addresses.get(0), GET_RESOURCE_USAGE_PATH),
+        MdsInfo mds = new MdsInfo();
+        mds.setAddr(addresses.get(0));
+        new ZbsPrimaryStorageMdsBase(mds).httpCall(
+                GET_RESOURCE_USAGE_PATH,
                 command,
-                new JsonAsyncRESTCallback<ResourceUsageResponse>(completion) {
+                ResourceUsageResponse.class,
+                new ReturnValueCompletion<ResourceUsageResponse>(completion) {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         completion.fail(errorCode);
@@ -57,11 +52,6 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
 
                     @Override
                     public void success(ResourceUsageResponse response) {
-                        ErrorCode errorCode = response.buildErrorCode();
-                        if (errorCode != null) {
-                            completion.fail(errorCode);
-                            return;
-                        }
                         String reportedSerial =
                                 Platform.normalizeMachineSerialNumber(
                                         response.getPhysicalServerSerialNumber());
@@ -75,22 +65,7 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
                         }
                         completion.success(response.getUsages());
                     }
-
-                    @Override
-                    public Class<ResourceUsageResponse> getReturnClass() {
-                        return ResourceUsageResponse.class;
-                    }
-                },
-                TimeUnit.MILLISECONDS,
-                providerTimeoutMillis());
-    }
-
-    private long providerTimeoutMillis() {
-        return Math.max(
-                1,
-                TimeUnit.SECONDS.toMillis(
-                        ZbsResourceUsageGlobalConfig.PROVIDER_QUERY_TIMEOUT
-                                .value(Long.class)));
+                });
     }
 
     public static class ResourceUsageCommand {

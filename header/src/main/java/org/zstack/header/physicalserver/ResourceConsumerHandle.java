@@ -15,23 +15,6 @@ public class ResourceConsumerHandle {
     public ResourceConsumerHandle() {
     }
 
-    public ResourceConsumerHandle(
-            String handleType,
-            String value,
-            String serviceName,
-            String consumerKey,
-            boolean optional,
-            boolean restartable,
-            String expectedCommandToken) {
-        this.handleType = handleType;
-        this.value = value;
-        this.serviceName = serviceName;
-        this.consumerKey = consumerKey;
-        this.optional = optional;
-        this.restartable = restartable;
-        this.expectedCommandToken = expectedCommandToken;
-    }
-
     public String getHandleType() {
         return handleType;
     }

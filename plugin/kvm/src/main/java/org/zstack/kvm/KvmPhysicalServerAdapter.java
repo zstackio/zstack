@@ -20,32 +20,29 @@ import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.host.GetHostNumaTopologyMsg;
 import org.zstack.header.host.GetHostNumaTopologyReply;
 import org.zstack.header.host.HostAO_;
-import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostDeleteExtensionPoint;
 import org.zstack.header.host.HostEO;
 import org.zstack.header.host.HostException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostNUMANode;
-import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter;
-import org.zstack.header.physicalserver.PhysicalServerResourceApplicationMode;
-import org.zstack.header.physicalserver.PhysicalServerResourceConsumerState;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
-import org.zstack.header.physicalserver.PhysicalServerIdentitySpec;
 import org.zstack.header.physicalserver.PhysicalServerManager;
+import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver;
+import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.PhysicalServerNumaNode;
 import org.zstack.header.physicalserver.ResourceControlCommand;
 import org.zstack.header.physicalserver.ResourceControlResponse;
 import org.zstack.header.physicalserver.ResourceConsumerHandle;
-import org.zstack.header.physicalserver.ResourceControlResult;
 import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.header.tag.AbstractSystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagInventory;
@@ -73,9 +70,10 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.zstack.core.Platform.operr;
 
 public class KvmPhysicalServerAdapter implements
-        PhysicalServerResourceControlAdapter,
+        PhysicalServerResourceAssignmentController,
+        PhysicalServerResourceUsageObserver,
+        PhysicalServerRoleAssociationProvider,
         PostHostConnectExtensionPoint,
-        HostAfterConnectedExtensionPoint,
         HostDeleteExtensionPoint,
         ManagementNodeReadyExtensionPoint,
         Component {
@@ -93,8 +91,7 @@ public class KvmPhysicalServerAdapter implements
     private static final RoleServiceManifest ROLE_SERVICES =
             RoleServiceManifest.load(
                     ROLE_SERVICE_MANIFEST_PATH,
-                    ROLE_TYPE,
-                    PhysicalServerResourceApplicationMode.RESOURCE_HANDLES);
+                    ROLE_TYPE);
     private final AtomicReference<Map<String, HostRelation>> hostRelations =
             new AtomicReference<>(Collections.emptyMap());
 
@@ -105,8 +102,6 @@ public class KvmPhysicalServerAdapter implements
     @Autowired
     private CloudBus bus;
     @Autowired
-    private KVMHostCapacityExtension capacityExtension;
-
     @Override
     public String getRoleType() {
         return ROLE_TYPE;
@@ -115,11 +110,6 @@ public class KvmPhysicalServerAdapter implements
     @Override
     public PhysicalServerResourceIsolationMode getIsolationMode() {
         return PhysicalServerResourceIsolationMode.SHARED;
-    }
-
-    @Override
-    public PhysicalServerResourceApplicationMode getApplicationMode() {
-        return PhysicalServerResourceApplicationMode.RESOURCE_HANDLES;
     }
 
     @Override
@@ -133,77 +123,44 @@ public class KvmPhysicalServerAdapter implements
     }
 
     @Override
-    public Set<String> getAssociatedServerUuids() {
-        if (hostRelations.get().isEmpty()) {
-            refreshHostRelations(Collections.emptySet());
-        }
-        return new LinkedHashSet<>(hostRelations.get().keySet());
+    public Set<String> discoverAssociations(Collection<String> serverUuids) {
+        return discoverHostRelations(serverUuids);
     }
 
     @Override
-    public void refreshAssociations() {
-        backfill(false);
-        refreshHostRelations(Collections.emptySet());
-    }
-
-    @Override
-    public void refreshAssociations(Collection<String> serverUuids) {
-        if (serverUuids == null || serverUuids.isEmpty()) {
-            refreshAssociations();
-            return;
-        }
-        refreshHostRelations(serverUuids);
-    }
-
-    @Override
-    public PhysicalServerResourceConsumerState getState(String serverUuid) {
-        HostRelation host = hostRelation(serverUuid);
-        if (host == null) {
-            return PhysicalServerResourceConsumerState.MISSING;
-        }
-        return host.status == HostStatus.Connected
-                ? PhysicalServerResourceConsumerState.AVAILABLE
-                : PhysicalServerResourceConsumerState.UNAVAILABLE;
-    }
-
-    @Override
-    public Map<String, PhysicalServerResourceConsumerState> getStates(
-            Collection<String> serverUuids) {
-        if (serverUuids == null || serverUuids.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        refreshMissingHostRelations(serverUuids);
-        Map<String, PhysicalServerResourceConsumerState> result = new HashMap<>();
-        for (String serverUuid : serverUuids) {
-            HostRelation relation = hostRelations.get().get(serverUuid);
-            result.put(serverUuid, relation == null
-                    ? PhysicalServerResourceConsumerState.MISSING
-                    : relation.status == HostStatus.Connected
-                    ? PhysicalServerResourceConsumerState.AVAILABLE
-                    : PhysicalServerResourceConsumerState.UNAVAILABLE);
-        }
-        return result;
-    }
-
-    @Override
-    public void refreshCapacity(String serverUuid) {
+    public List<ResourceConsumerHandle> getResourceConsumers(String serverUuid) {
         String hostUuid = hostUuid(serverUuid, null);
         if (hostUuid == null) {
-            return;
+            throw new IllegalStateException(String.format(
+                    "HOST_RELATION_MISSING: physical server[uuid:%s] has no KVM host",
+                    serverUuid));
         }
-        capacityExtension.reportCapacity(hostUuid, new Completion(null) {
-            @Override
-            public void success() {
-            }
+        return handles(hostUuid);
+    }
 
-            @Override
-            public void fail(ErrorCode errorCode) {
-                logger.warn(String.format(
-                        "failed to refresh capacity for host[uuid:%s] after " +
-                                "physical server resource assignment changed: %s",
-                        hostUuid, errorCode));
-            }
-        });
+    @Override
+    public void collectResourceAssignment(
+            String serverUuid,
+            ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
+        collectManagedServiceUsage(
+                serverUuid,
+                new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
+                    @Override
+                    public void success(List<ManagedServiceResourceUsage> services) {
+                        try {
+                            completion.success(
+                                    PhysicalServerResourceBoundary.fromManagedServiceUsages(
+                                            services));
+                        } catch (RuntimeException error) {
+                            completion.fail(operr(ERROR_CODE, "%s", error.getMessage()));
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
     }
 
     @Override
@@ -266,7 +223,7 @@ public class KvmPhysicalServerAdapter implements
         agentCommand.setCpuSet(command.getCpuSet());
         agentCommand.setMemory(command.getMemory());
         agentCommand.setSliceName(ROLE_SERVICES.getSliceName());
-        agentCommand.setHandles(handles(hostUuid, command.isIncludeAuxiliaryServices()));
+        agentCommand.setHandles(command.getHandles());
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setPath(APPLY_RESOURCE_CONTROL_PATH);
@@ -292,18 +249,16 @@ public class KvmPhysicalServerAdapter implements
     @Override
     public void collectManagedServiceUsage(
             String serverUuid,
-            boolean includeAuxiliaryServices,
             ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
         String hostUuid = hostUuid(serverUuid, null);
         if (hostUuid == null) {
-            completion.success(ROLE_SERVICES.managedServiceUsages(
-                    includeAuxiliaryServices, "UNAVAILABLE"));
+            completion.success(ROLE_SERVICES.managedServiceUsages("UNAVAILABLE"));
             return;
         }
         ManagedServiceAgentCommand command = new ManagedServiceAgentCommand();
         command.setRoleType(ROLE_TYPE);
         command.setSliceName(ROLE_SERVICES.getSliceName());
-        command.setHandles(handles(hostUuid, includeAuxiliaryServices));
+        command.setHandles(handles(hostUuid));
         KVMHostAsyncHttpCallMsg msg = managedServiceCall(
                 hostUuid, GET_MANAGED_SERVICE_USAGE_PATH, command);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -317,14 +272,14 @@ public class KvmPhysicalServerAdapter implements
                             "failed to query managed services on host[uuid:%s]: %s",
                             hostUuid, result.error));
                     completion.success(ROLE_SERVICES.managedServiceUsages(
-                            includeAuxiliaryServices, "UNAVAILABLE"));
+                            "UNAVAILABLE"));
                     return;
                 }
                 List<ManagedServiceResourceUsage> services =
                         result.result.getServices();
                 if (services == null) {
                     completion.success(ROLE_SERVICES.managedServiceUsages(
-                            includeAuxiliaryServices, "UNAVAILABLE"));
+                            "UNAVAILABLE"));
                     return;
                 }
                 for (ManagedServiceResourceUsage usage : services) {
@@ -338,7 +293,6 @@ public class KvmPhysicalServerAdapter implements
     @Override
     public void restartManagedServices(
             String serverUuid,
-            boolean includeAuxiliaryServices,
             Collection<String> serviceNames,
             Completion completion) {
         String hostUuid = hostUuid(serverUuid, null);
@@ -355,8 +309,6 @@ public class KvmPhysicalServerAdapter implements
             command.setHandles(ROLE_SERVICES.handlesByServiceNames(
                     serviceNames,
                     String.format("host-agent:%s", hostUuid),
-                    String.format("host-agent:%s", hostUuid),
-                    includeAuxiliaryServices,
                     Collections.emptyMap()));
         } catch (RuntimeException error) {
             completion.fail(operr(ERROR_CODE, "%s", error.getMessage()));
@@ -404,20 +356,6 @@ public class KvmPhysicalServerAdapter implements
     }
 
     @Override
-    public void afterHostConnected(HostInventory host) {
-        if (physicalServerManager == null) {
-            return;
-        }
-        String serverUuid = Q.New(HostVO.class)
-                .select(HostVO_.serverUuid)
-                .eq(HostVO_.uuid, host.getUuid())
-                .findValue();
-        if (serverUuid != null) {
-            physicalServerManager.reconcile(serverUuid, true);
-        }
-    }
-
-    @Override
     public void preDeleteHost(HostInventory inventory) throws HostException {
     }
 
@@ -441,12 +379,12 @@ public class KvmPhysicalServerAdapter implements
             return;
         }
         removeHostRelation(inventory.getServerUuid());
-        physicalServerManager.reconcile(inventory.getServerUuid(), true);
+        physicalServerManager.associationChanged(inventory.getServerUuid());
     }
 
     @Override
     public void managementNodeReady() {
-        backfill(true);
+        backfill();
     }
 
     @Override
@@ -455,13 +393,13 @@ public class KvmPhysicalServerAdapter implements
                 new AbstractSystemTagLifeCycleListener() {
                     @Override
                     public void tagCreated(SystemTagInventory tag) {
-                        backfill(Collections.singleton(tag.getResourceUuid()), true);
+                        backfill(Collections.singleton(tag.getResourceUuid()));
                     }
 
                     @Override
                     public void tagUpdated(
                             SystemTagInventory old, SystemTagInventory newTag) {
-                        backfill(Collections.singleton(newTag.getResourceUuid()), true);
+                        backfill(Collections.singleton(newTag.getResourceUuid()));
                     }
                 });
         return true;
@@ -483,7 +421,7 @@ public class KvmPhysicalServerAdapter implements
                 .eq(HostVO_.uuid, host.getUuid())
                 .findValue();
         if (current != null) {
-            physicalServerManager.reconcile(current, true);
+            physicalServerManager.associationChanged(current);
             return;
         }
 
@@ -496,13 +434,8 @@ public class KvmPhysicalServerAdapter implements
                             "its machine serial number is unavailable", host.getUuid()));
             return;
         }
-        String zoneUuid = host.getZoneUuid() == null
-                ? Q.New(HostVO.class).select(HostVO_.zoneUuid)
-                .eq(HostVO_.uuid, host.getUuid()).findValue()
-                : host.getZoneUuid();
-        String serverUuid = physicalServerManager.resolveIdentities(
-                Collections.singletonList(
-                        new PhysicalServerIdentitySpec(serialNumber, zoneUuid)))
+        String serverUuid = physicalServerManager.resolveBySerialNumbers(
+                Collections.singleton(serialNumber))
                 .get(serialNumber);
         if (serverUuid == null) {
             return;
@@ -529,49 +462,44 @@ public class KvmPhysicalServerAdapter implements
                     host.getUuid(), serverUuid));
             return;
         }
-        physicalServerManager.reconcile(serverUuid, true);
+        physicalServerManager.associationChanged(serverUuid);
     }
 
     @Transactional
-    private void backfill(boolean requestReconcile) {
-        backfill(Collections.emptySet(), requestReconcile);
+    private void backfill() {
+        backfill(Collections.emptySet());
     }
 
     @Transactional
-    private void backfill(
-            Collection<String> hostUuids, boolean requestReconcile) {
+    private void backfill(Collection<String> hostUuids) {
         if (physicalServerManager == null) {
             return;
         }
         Q hostQuery = Q.New(HostVO.class)
-                .select(HostVO_.uuid, HostVO_.zoneUuid)
+                .select(HostVO_.uuid)
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .isNull(HostVO_.serverUuid);
         if (hostUuids != null && !hostUuids.isEmpty()) {
             hostQuery.in(HostVO_.uuid, hostUuids);
         }
-        List<Tuple> hostTuples = hostQuery.listTuple();
-        if (hostTuples.isEmpty()) {
+        List<String> unresolvedHostUuids = hostQuery.listValues();
+        if (unresolvedHostUuids.isEmpty()) {
             return;
         }
-        Map<String, String> zonesByHost = new LinkedHashMap<>();
-        for (Tuple tuple : hostTuples) {
-            zonesByHost.put(tuple.get(0, String.class), tuple.get(1, String.class));
-        }
-        Map<String, Set<String>> serialsByHost = serialsByHost(zonesByHost.keySet());
+        Map<String, Set<String>> serialsByHost = serialsByHost(unresolvedHostUuids);
         Map<String, List<HostCandidate>> candidatesBySerial = new LinkedHashMap<>();
-        for (Map.Entry<String, String> host : zonesByHost.entrySet()) {
-            Set<String> serials = serialsByHost.get(host.getKey());
+        for (String hostUuid : unresolvedHostUuids) {
+            Set<String> serials = serialsByHost.get(hostUuid);
             if (serials == null || serials.size() != 1) {
                 continue;
             }
             candidatesBySerial
                     .computeIfAbsent(serials.iterator().next(), ignored -> new ArrayList<>())
-                    .add(new HostCandidate(host.getKey(), host.getValue()));
+                    .add(new HostCandidate(hostUuid));
         }
 
         Map<String, HostCandidate> candidates = new LinkedHashMap<>();
-        List<PhysicalServerIdentitySpec> identities = new ArrayList<>();
+        Set<String> serialNumbers = new LinkedHashSet<>();
         for (Map.Entry<String, List<HostCandidate>> candidate : candidatesBySerial.entrySet()) {
             if (candidate.getValue().size() != 1) {
                 logger.warn(String.format(
@@ -582,9 +510,10 @@ public class KvmPhysicalServerAdapter implements
             }
             HostCandidate host = candidate.getValue().get(0);
             candidates.put(candidate.getKey(), host);
-            identities.add(new PhysicalServerIdentitySpec(candidate.getKey(), host.zoneUuid));
+            serialNumbers.add(candidate.getKey());
         }
-        Map<String, String> resolved = physicalServerManager.resolveIdentities(identities);
+        Map<String, String> resolved =
+                physicalServerManager.resolveBySerialNumbers(serialNumbers);
         clearDeletedHostLinks(resolved.values());
         Set<String> used = new HashSet<>(Q.New(HostVO.class)
                 .select(HostVO_.serverUuid)
@@ -599,20 +528,15 @@ public class KvmPhysicalServerAdapter implements
         }
         updateHostLinks(links);
 
-        List<Tuple> linked = links.isEmpty() ? Collections.emptyList() : Q.New(HostVO.class)
-                .select(HostVO_.uuid, HostVO_.serverUuid)
-                .in(HostVO_.uuid, links.keySet())
-                .notNull(HostVO_.serverUuid)
-                .listTuple();
-        Set<String> linkedServers = new LinkedHashSet<>();
-        for (Tuple tuple : linked) {
-            String serverUuid = tuple.get(1, String.class);
-            linkedServers.add(serverUuid);
-        }
-        if (requestReconcile && !linkedServers.isEmpty()) {
-            for (String serverUuid : linkedServers) {
-                physicalServerManager.reconcile(serverUuid, true);
-            }
+        Set<String> linkedServers = links.isEmpty()
+                ? Collections.emptySet()
+                : new LinkedHashSet<>(Q.New(HostVO.class)
+                        .select(HostVO_.serverUuid)
+                        .in(HostVO_.uuid, links.keySet())
+                        .notNull(HostVO_.serverUuid)
+                        .listValues());
+        for (String serverUuid : linkedServers) {
+            physicalServerManager.associationChanged(serverUuid);
         }
     }
 
@@ -731,25 +655,12 @@ public class KvmPhysicalServerAdapter implements
     }
 
     private HostRelation hostRelation(String serverUuid) {
-        HostRelation relation = hostRelations.get().get(serverUuid);
-        if (relation != null) {
-            return relation;
-        }
-        refreshHostRelations(Collections.singleton(serverUuid));
         return hostRelations.get().get(serverUuid);
     }
 
-    private void refreshMissingHostRelations(Collection<String> serverUuids) {
-        Set<String> missing = new LinkedHashSet<>(serverUuids);
-        missing.removeAll(hostRelations.get().keySet());
-        if (!missing.isEmpty()) {
-            refreshHostRelations(missing);
-        }
-    }
-
-    private void refreshHostRelations(Collection<String> serverUuids) {
+    private Set<String> discoverHostRelations(Collection<String> serverUuids) {
         Q query = Q.New(HostVO.class)
-                .select(HostVO_.serverUuid, HostVO_.uuid, HostVO_.status)
+                .select(HostVO_.serverUuid, HostVO_.uuid)
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .notNull(HostVO_.serverUuid);
         boolean partial = serverUuids != null && !serverUuids.isEmpty();
@@ -760,13 +671,11 @@ public class KvmPhysicalServerAdapter implements
         for (Tuple host : (List<Tuple>) query.listTuple()) {
             loaded.put(
                     host.get(0, String.class),
-                    new HostRelation(
-                            host.get(1, String.class),
-                            host.get(2, HostStatus.class)));
+                    new HostRelation(host.get(1, String.class)));
         }
         if (!partial) {
             hostRelations.set(Collections.unmodifiableMap(loaded));
-            return;
+            return new LinkedHashSet<>(loaded.keySet());
         }
         while (true) {
             Map<String, HostRelation> current = hostRelations.get();
@@ -777,7 +686,7 @@ public class KvmPhysicalServerAdapter implements
             replacement.putAll(loaded);
             if (hostRelations.compareAndSet(
                     current, Collections.unmodifiableMap(replacement))) {
-                return;
+                return new LinkedHashSet<>(loaded.keySet());
             }
         }
     }
@@ -799,11 +708,9 @@ public class KvmPhysicalServerAdapter implements
 
     private static class HostRelation {
         private final String hostUuid;
-        private final HostStatus status;
 
-        private HostRelation(String hostUuid, HostStatus status) {
+        private HostRelation(String hostUuid) {
             this.hostUuid = hostUuid;
-            this.status = status;
         }
     }
 
@@ -823,11 +730,9 @@ public class KvmPhysicalServerAdapter implements
         return result;
     }
 
-    private List<ResourceConsumerHandle> handles(
-            String hostUuid, boolean includeAuxiliaryServices) {
+    private List<ResourceConsumerHandle> handles(String hostUuid) {
         String consumerKey = String.format("host-agent:%s", hostUuid);
-        return ROLE_SERVICES.handles(
-                consumerKey, consumerKey, includeAuxiliaryServices);
+        return ROLE_SERVICES.handles(consumerKey);
     }
 
     public static class ResourceControlAgentCommand extends KVMAgentCommands.AgentCommand {
@@ -930,70 +835,28 @@ public class KvmPhysicalServerAdapter implements
     }
 
     public static class ResourceControlAgentResponse extends KVMAgentCommands.AgentResponse {
-        private String cpuSet;
-        private Long memory;
-        private Integer coveredServiceCount;
-        private Integer expectedServiceCount;
-        private List<ResourceControlResult> results = new ArrayList<>();
+        private boolean synced;
 
-        public String getCpuSet() {
-            return cpuSet;
+        public boolean isSynced() {
+            return synced;
         }
 
-        public void setCpuSet(String cpuSet) {
-            this.cpuSet = cpuSet;
-        }
-
-        public Long getMemory() {
-            return memory;
-        }
-
-        public void setMemory(Long memory) {
-            this.memory = memory;
-        }
-
-        public Integer getCoveredServiceCount() {
-            return coveredServiceCount;
-        }
-
-        public void setCoveredServiceCount(Integer coveredServiceCount) {
-            this.coveredServiceCount = coveredServiceCount;
-        }
-
-        public Integer getExpectedServiceCount() {
-            return expectedServiceCount;
-        }
-
-        public void setExpectedServiceCount(Integer expectedServiceCount) {
-            this.expectedServiceCount = expectedServiceCount;
-        }
-
-        public List<ResourceControlResult> getResults() {
-            return results;
-        }
-
-        public void setResults(List<ResourceControlResult> results) {
-            this.results = results;
+        public void setSynced(boolean synced) {
+            this.synced = synced;
         }
 
         private ResourceControlResponse toInventory() {
             ResourceControlResponse response = new ResourceControlResponse();
-            response.setCpuSet(cpuSet);
-            response.setMemory(memory);
-            response.setCoveredServiceCount(coveredServiceCount);
-            response.setExpectedServiceCount(expectedServiceCount);
-            response.setResults(results);
+            response.setSynced(synced);
             return response;
         }
     }
 
     private static class HostCandidate {
         private final String hostUuid;
-        private final String zoneUuid;
 
-        private HostCandidate(String hostUuid, String zoneUuid) {
+        private HostCandidate(String hostUuid) {
             this.hostUuid = hostUuid;
-            this.zoneUuid = zoneUuid;
         }
     }
 }

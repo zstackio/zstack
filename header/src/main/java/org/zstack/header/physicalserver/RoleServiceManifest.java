@@ -18,87 +18,66 @@ import java.util.stream.Collectors;
 
 public class RoleServiceManifest {
     private String roleType;
-    private String applicationMode;
     private String sliceName;
     private Integer defaultCpuCount;
     private List<Service> services = new ArrayList<>();
 
     public static RoleServiceManifest load(
             String resourcePath,
-            String expectedRoleType,
-            PhysicalServerResourceApplicationMode expectedApplicationMode) {
-        RoleServiceManifest manifest = YamlUtils.load(
-                read(resourcePath), RoleServiceManifest.class);
-        if (manifest == null) {
-            throw new IllegalStateException(String.format(
-                    "role service manifest[%s] is empty", resourcePath));
-        }
-        manifest.validate(
-                resourcePath, expectedRoleType, expectedApplicationMode);
-        manifest.services = Collections.unmodifiableList(
-                new ArrayList<>(manifest.services));
-        return manifest;
+            String expectedRoleType) {
+        RoleServiceManifest manifest = loadManifest(resourcePath);
+        manifest.validateControl(resourcePath, expectedRoleType);
+        return manifest.freeze();
     }
 
     public static RoleServiceManifest loadObservation(
             String resourcePath,
             String expectedRoleType) {
+        RoleServiceManifest manifest = loadManifest(resourcePath);
+        manifest.validateObservation(resourcePath, expectedRoleType);
+        return manifest.freeze();
+    }
+
+    private static RoleServiceManifest loadManifest(String resourcePath) {
         RoleServiceManifest manifest = YamlUtils.load(
                 read(resourcePath), RoleServiceManifest.class);
         if (manifest == null) {
             throw new IllegalStateException(String.format(
                     "role service manifest[%s] is empty", resourcePath));
         }
-        manifest.validate(resourcePath, expectedRoleType, null);
-        manifest.services = Collections.unmodifiableList(
-                new ArrayList<>(manifest.services));
         return manifest;
     }
 
-    public List<ResourceConsumerHandle> handles(
-            String primaryConsumerKey,
-            String auxiliaryConsumerKey,
-            boolean includeAuxiliaryServices) {
-        return handles(
-                primaryConsumerKey,
-                auxiliaryConsumerKey,
-                includeAuxiliaryServices,
-                Collections.emptyMap());
+    private RoleServiceManifest freeze() {
+        services = Collections.unmodifiableList(new ArrayList<>(services));
+        return this;
+    }
+
+    public List<ResourceConsumerHandle> handles(String consumerKey) {
+        return handles(consumerKey, Collections.emptyMap());
     }
 
     public List<ResourceConsumerHandle> handles(
-            String primaryConsumerKey,
-            String auxiliaryConsumerKey,
-            boolean includeAuxiliaryServices,
+            String consumerKey,
             Map<String, String> values) {
-        if (!PhysicalServerResourceApplicationMode.RESOURCE_HANDLES.name()
-                .equals(applicationMode)) {
-            throw new IllegalStateException(String.format(
-                    "role[%s] does not use resource handles", roleType));
-        }
         List<ResourceConsumerHandle> result = new ArrayList<>();
         for (Service service : services) {
-            if (service.isAuxiliary() && !includeAuxiliaryServices) {
-                continue;
-            }
-            result.add(new ResourceConsumerHandle(
-                    service.getHandleType(),
-                    service.resolveValue(values),
-                    service.getName(),
-                    service.isAuxiliary()
-                            ? auxiliaryConsumerKey : primaryConsumerKey,
-                    !service.required(),
-                    service.restartable(),
-                    service.getExpectedCommandToken()));
+            ResourceConsumerHandle handle = new ResourceConsumerHandle();
+            handle.setHandleType(service.getHandleType());
+            handle.setValue(service.resolveValue(values));
+            handle.setServiceName(service.getName());
+            handle.setConsumerKey(consumerKey);
+            handle.setOptional(!service.required());
+            handle.setRestartable(service.restartable());
+            handle.setExpectedCommandToken(service.getExpectedCommandToken());
+            result.add(handle);
         }
         return result;
     }
 
     public List<ResourceConsumerHandle> handlesByServiceNames(
             Collection<String> serviceNames,
-            String primaryConsumerKey,
-            String auxiliaryConsumerKey,
-            boolean includeAuxiliaryServices,
+            String consumerKey,
             Map<String, String> values) {
         if (serviceNames == null || serviceNames.isEmpty()) {
             throw new IllegalArgumentException("service names must not be empty");
@@ -107,10 +86,7 @@ public class RoleServiceManifest {
         if (selected.size() != serviceNames.size()) {
             throw new IllegalArgumentException("service names must not be duplicated");
         }
-        List<ResourceConsumerHandle> available = handles(
-                primaryConsumerKey, auxiliaryConsumerKey,
-                includeAuxiliaryServices, values);
-        List<ResourceConsumerHandle> result = available.stream()
+        List<ResourceConsumerHandle> result = handles(consumerKey, values).stream()
                 .filter(handle -> selected.remove(handle.getServiceName()))
                 .collect(Collectors.toList());
         if (!selected.isEmpty()) {
@@ -120,15 +96,10 @@ public class RoleServiceManifest {
         return result;
     }
 
-    public List<ManagedServiceResourceUsage> managedServiceUsages(
-            boolean includeAuxiliaryServices, String state) {
+    public List<ManagedServiceResourceUsage> managedServiceUsages(String state) {
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         for (Service service : services) {
-            if (service.isAuxiliary() && !includeAuxiliaryServices) {
-                continue;
-            }
-            ManagedServiceResourceUsage usage =
-                    new ManagedServiceResourceUsage();
+            ManagedServiceResourceUsage usage = new ManagedServiceResourceUsage();
             usage.setRoleType(roleType);
             usage.setServiceName(service.getName());
             usage.setRestartable(service.restartable());
@@ -138,53 +109,44 @@ public class RoleServiceManifest {
         return result;
     }
 
-    private void validate(
+    private void validateControl(
             String resourcePath,
-            String expectedRoleType,
-            PhysicalServerResourceApplicationMode expectedApplicationMode) {
-        if (!expectedRoleType.equals(roleType)) {
-            throw invalid(resourcePath, String.format(
-                    "roleType[%s] does not match expected roleType[%s]",
-                    roleType, expectedRoleType));
-        }
-        if (expectedApplicationMode == null && !empty(applicationMode)) {
-            throw invalid(resourcePath, String.format(
-                    "observation-only role cannot define applicationMode[%s]",
-                    applicationMode));
-        }
-        if (expectedApplicationMode != null
-                && !expectedApplicationMode.name().equals(applicationMode)) {
-            throw invalid(resourcePath, String.format(
-                    "applicationMode[%s] does not match expected mode[%s]",
-                    applicationMode, expectedApplicationMode));
-        }
-        if (expectedApplicationMode == null
-                && (!empty(sliceName) || defaultCpuCount != null)) {
-            throw invalid(resourcePath,
-                    "observation-only role cannot define allocation defaults");
-        }
-        if (expectedApplicationMode
-                == PhysicalServerResourceApplicationMode.RESOURCE_HANDLES
-                && (empty(sliceName)
-                || !sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice"))) {
+            String expectedRoleType) {
+        validateRoleAndServices(resourcePath, expectedRoleType);
+        if (empty(sliceName)
+                || !sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")) {
             throw invalid(resourcePath, String.format(
                     "sliceName[%s] is invalid", sliceName));
-        }
-        if (expectedApplicationMode
-                == PhysicalServerResourceApplicationMode.PROVIDER_MANAGED
-                && !empty(sliceName)) {
-            throw invalid(resourcePath,
-                    "provider-managed role cannot define sliceName");
         }
         if (defaultCpuCount != null && defaultCpuCount < 1) {
             throw invalid(resourcePath,
                     "defaultCpuCount must be greater than zero");
         }
-        if (expectedApplicationMode
-                == PhysicalServerResourceApplicationMode.PROVIDER_MANAGED
-                && defaultCpuCount != null) {
+        for (Service service : services) {
+            validateHandle(resourcePath, service);
+        }
+    }
+
+    private void validateObservation(
+            String resourcePath,
+            String expectedRoleType) {
+        validateRoleAndServices(resourcePath, expectedRoleType);
+        if (!empty(sliceName) || defaultCpuCount != null) {
             throw invalid(resourcePath,
-                    "provider-managed role cannot define defaultCpuCount");
+                    "observation-only role cannot define allocation defaults");
+        }
+        for (Service service : services) {
+            validateObservationService(resourcePath, service);
+        }
+    }
+
+    private void validateRoleAndServices(
+            String resourcePath,
+            String expectedRoleType) {
+        if (!expectedRoleType.equals(roleType)) {
+            throw invalid(resourcePath, String.format(
+                    "roleType[%s] does not match expected roleType[%s]",
+                    roleType, expectedRoleType));
         }
         if (services == null || services.isEmpty()) {
             throw invalid(resourcePath, "services must not be empty");
@@ -199,12 +161,6 @@ public class RoleServiceManifest {
             if (!names.add(service.getName())) {
                 throw invalid(resourcePath, String.format(
                         "service name[%s] is duplicated", service.getName()));
-            }
-            if (expectedApplicationMode
-                    == PhysicalServerResourceApplicationMode.RESOURCE_HANDLES) {
-                validateHandle(resourcePath, service);
-            } else if (expectedApplicationMode == null) {
-                validateObservationService(resourcePath, service);
             }
         }
     }
@@ -306,14 +262,6 @@ public class RoleServiceManifest {
         this.roleType = roleType;
     }
 
-    public String getApplicationMode() {
-        return applicationMode;
-    }
-
-    public void setApplicationMode(String applicationMode) {
-        this.applicationMode = applicationMode;
-    }
-
     public String getSliceName() {
         return sliceName;
     }
@@ -345,7 +293,6 @@ public class RoleServiceManifest {
         private String valueFrom;
         private Boolean required;
         private Boolean restartable;
-        private boolean auxiliary;
         private String expectedCommandToken;
 
         public String getName() {
@@ -415,14 +362,6 @@ public class RoleServiceManifest {
 
         private boolean restartable() {
             return Boolean.TRUE.equals(restartable);
-        }
-
-        public boolean isAuxiliary() {
-            return auxiliary;
-        }
-
-        public void setAuxiliary(boolean auxiliary) {
-            this.auxiliary = auxiliary;
         }
 
         public String getExpectedCommandToken() {

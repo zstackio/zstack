@@ -171,9 +171,11 @@ public class KvmHostConfigChecker implements AnsibleChecker {
             String processCgroup = output.substring(
                     separator + RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR.length())
                     .trim();
-            boolean matches = resourceAssignmentMatches(
-                    requireResourceAssignment, unifiedCgroupV2,
-                    dropIn, processCgroup);
+            boolean matches = unifiedCgroupV2
+                    ? unifiedResourceAssignmentMatches(
+                    requireResourceAssignment, dropIn, processCgroup)
+                    : legacyResourceAssignmentMatches(
+                    requireResourceAssignment, dropIn);
             if (!matches) {
                 logger.debug(String.format(
                         "KVM Agent resource assignment does not match, " +
@@ -188,14 +190,8 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         }
     }
 
-    static boolean resourceAssignmentMatches(
-            String required, boolean unifiedCgroupV2,
-            String dropIn, String processCgroup) {
-        if (!unifiedCgroupV2) {
-            return Boolean.parseBoolean(required)
-                    || "__ABSENT__".equals(dropIn);
-        }
-
+    static boolean unifiedResourceAssignmentMatches(
+            String required, String dropIn, String processCgroup) {
         boolean enabled = Boolean.parseBoolean(required);
         String normalizedDropIn = dropIn == null
                 ? null : dropIn.replace("\r\n", "\n");
@@ -207,6 +203,12 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         return enabled
                 ? configured && inRoleSlice
                 : "__ABSENT__".equals(dropIn) && !inRoleSlice;
+    }
+
+    static boolean legacyResourceAssignmentMatches(
+            String required, String dropIn) {
+        return Boolean.parseBoolean(required)
+                || "__ABSENT__".equals(dropIn);
     }
 
     @Override

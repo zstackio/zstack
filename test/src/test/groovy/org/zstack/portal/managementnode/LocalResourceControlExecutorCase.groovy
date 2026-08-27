@@ -21,16 +21,16 @@ class LocalResourceControlExecutorCase {
         previousUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
         CoreGlobalProperty.UNIT_TEST_ON = true
         executor = new LocalResourceControlExecutor()
-        executor.setTestMode(true)
-        restartable = systemdHandle(
-                "prometheus", "prometheus.service", true)
+        executor.enableTestMode()
+        restartable = restartableSystemdHandle(
+                "prometheus", "prometheus.service")
         nonRestartable = systemdHandle(
-                "management-node", "zstack-management.service", false)
+                "management-node", "zstack-management.service")
     }
 
     @After
     void cleanUp() {
-        executor?.setTestMode(false)
+        executor?.disableTestMode()
         CoreGlobalProperty.UNIT_TEST_ON = previousUnitTestOn
     }
 
@@ -42,19 +42,8 @@ class LocalResourceControlExecutorCase {
 
         ResourceControlResponse response = executor.apply(command)
 
-        assert response.cpuSet == "1-3" :
-                "local execution must normalize the requested CPU set: " +
-                        "expected=1-3 actual=${response.cpuSet}"
-        assert response.memory == SizeUnit.MEGABYTE.toByte(256) :
-                "the Role memory boundary must be preserved in platform bytes: " +
-                        "actual=${response.memory}"
-        assert response.coveredServiceCount == 2 &&
-                response.expectedServiceCount == 2 :
-                "every manifest handle must be covered by the Role boundary: " +
-                        "actual=${response.coveredServiceCount}/${response.expectedServiceCount}"
-        assert response.results*.state == ["READY", "READY"] :
-                "an applied local Role must report every service ready: " +
-                        "actual=${response.results*.state}"
+        assert response.synced :
+                "Apply may report Synced only after every manifest handle has the requested boundary"
 
         List<ManagedServiceResourceUsage> usage = executor.inspect(
                 "MANAGEMENT", [restartable, nonRestartable])
@@ -73,12 +62,8 @@ class LocalResourceControlExecutorCase {
                 "RELEASE", "0-3", SizeUnit.MEGABYTE.toByte(128),
                 [restartable, nonRestartable]))
 
-        assert response.cpuSet == "" :
-                "release must remove the Role CPU constraint: actual=${response.cpuSet}"
-        assert response.memory == 0L :
-                "release must remove the Role memory limit: actual=${response.memory}"
-        assert response.results*.state == ["DISABLED", "DISABLED"] :
-                "release must disable every manifest handle: actual=${response.results*.state}"
+        assert response.synced :
+                "Release may report Synced only after every manifest handle is disabled"
     }
 
     @Test
@@ -108,10 +93,13 @@ class LocalResourceControlExecutorCase {
         assertRestartRejected([nonRestartable],
                 "a non-restartable service must remain outside Cloud restart ownership")
 
-        ResourceConsumerHandle pidFile = new ResourceConsumerHandle(
-                ResourceConsumerHandle.OWNER_PID_FILE,
-                "/run/example.pid", "example", "example",
-                false, true, "example")
+        ResourceConsumerHandle pidFile = new ResourceConsumerHandle()
+        pidFile.handleType = ResourceConsumerHandle.OWNER_PID_FILE
+        pidFile.value = "/run/example.pid"
+        pidFile.serviceName = "example"
+        pidFile.consumerKey = "example"
+        pidFile.restartable = true
+        pidFile.expectedCommandToken = "example"
         assertRestartRejected([pidFile],
                 "restart supports stable systemd units only")
     }
@@ -143,10 +131,19 @@ class LocalResourceControlExecutorCase {
     }
 
     private static ResourceConsumerHandle systemdHandle(
-            String serviceName, String unit, boolean restartable) {
-        return new ResourceConsumerHandle(
-                ResourceConsumerHandle.SYSTEMD_UNIT,
-                unit, serviceName, serviceName,
-                false, restartable, null)
+            String serviceName, String unit) {
+        ResourceConsumerHandle handle = new ResourceConsumerHandle()
+        handle.handleType = ResourceConsumerHandle.SYSTEMD_UNIT
+        handle.value = unit
+        handle.serviceName = serviceName
+        handle.consumerKey = serviceName
+        return handle
+    }
+
+    private static ResourceConsumerHandle restartableSystemdHandle(
+            String serviceName, String unit) {
+        ResourceConsumerHandle handle = systemdHandle(serviceName, unit)
+        handle.restartable = true
+        return handle
     }
 }

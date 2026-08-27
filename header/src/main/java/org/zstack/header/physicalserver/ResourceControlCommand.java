@@ -10,7 +10,6 @@ public class ResourceControlCommand {
     private String cpuSet;
     private Long memory;
     private String sliceName;
-    private boolean includeAuxiliaryServices;
     private List<ResourceConsumerHandle> handles = new ArrayList<>();
 
     public String getRoleType() {
@@ -59,14 +58,6 @@ public class ResourceControlCommand {
 
     public void setSliceName(String sliceName) {
         this.sliceName = sliceName;
-    }
-
-    public boolean isIncludeAuxiliaryServices() {
-        return includeAuxiliaryServices;
-    }
-
-    public void setIncludeAuxiliaryServices(boolean includeAuxiliaryServices) {
-        this.includeAuxiliaryServices = includeAuxiliaryServices;
     }
 
     public List<ResourceConsumerHandle> getHandles() {
