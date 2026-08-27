@@ -2338,6 +2338,12 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_VMWARE_10135 = "ORG_ZSTACK_VMWARE_10135";
 
+    public static final String ORG_ZSTACK_VMWARE_10136 = "ORG_ZSTACK_VMWARE_10136";
+
+    public static final String ORG_ZSTACK_VMWARE_10137 = "ORG_ZSTACK_VMWARE_10137";
+
+    public static final String ORG_ZSTACK_VMWARE_10138 = "ORG_ZSTACK_VMWARE_10138";
+
     public static final String ORG_ZSTACK_TEST_UNITTEST_MEVOCO_10000 = "ORG_ZSTACK_TEST_UNITTEST_MEVOCO_10000";
 
     public static final String ORG_ZSTACK_CORE_EXTERNALSERVICE_10000 = "ORG_ZSTACK_CORE_EXTERNALSERVICE_10000";
