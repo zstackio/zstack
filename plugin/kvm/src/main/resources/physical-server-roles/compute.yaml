@@ -1,0 +1,61 @@
+roleType: COMPUTE
+applicationMode: RESOURCE_HANDLES
+sliceName: zstack-compute.slice
+defaultCpuCount: 8
+services:
+  - name: kvmagent
+    handleType: SYSTEMD_UNIT
+    value: zstack-kvmagent.service
+    required: true
+    restartable: false
+  - name: virtlogd
+    handleType: SYSTEMD_UNIT
+    value: virtlogd.service
+    required: false
+    restartable: false
+  - name: network-agent
+    handleType: SYSTEMD_UNIT
+    value: zstack-network-agent.service
+    required: false
+    restartable: false
+  - name: sharedblock-agent
+    handleType: SYSTEMD_UNIT
+    value: zstack-sharedblock-agent.service
+    required: false
+    restartable: false
+  - name: node-exporter
+    handleType: SYSTEMD_UNIT
+    value: node_exporter.service
+    required: false
+    restartable: true
+    auxiliary: true
+  - name: collectd
+    handleType: SYSTEMD_UNIT
+    value: collectd.service
+    required: false
+    restartable: true
+    auxiliary: true
+  - name: collectd-exporter
+    handleType: SYSTEMD_UNIT
+    value: collectd_exporter.service
+    required: false
+    restartable: true
+    auxiliary: true
+  - name: process-exporter
+    handleType: SYSTEMD_UNIT
+    value: process_exporter.service
+    required: false
+    restartable: true
+    auxiliary: true
+  - name: zstack-service-exporter
+    handleType: SYSTEMD_UNIT
+    value: zstack_service_exporter.service
+    required: false
+    restartable: true
+    auxiliary: true
+  - name: pushgateway
+    handleType: SYSTEMD_UNIT
+    value: pushgateway.service
+    required: false
+    restartable: true
+    auxiliary: true

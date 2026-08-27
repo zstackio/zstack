@@ -13,4 +13,5 @@ public class ManagementNodeVO_ {
     public static volatile SingularAttribute<ManagementNodeVO, Date> joinDate;
     public static volatile SingularAttribute<ManagementNodeVO, Date> heartBeat;
     public static volatile SingularAttribute<ManagementNodeVO, ManagementNodeState> state;
+    public static volatile SingularAttribute<ManagementNodeVO, String> serverUuid;
 }

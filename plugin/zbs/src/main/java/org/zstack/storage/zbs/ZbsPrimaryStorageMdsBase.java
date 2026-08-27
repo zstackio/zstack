@@ -219,6 +219,11 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                                 }
 
                                 getSelf().setExternalAddr(ret.getExternalAddr());
+                                String serialNumber = Platform.normalizeMachineSerialNumber(
+                                        ret.getPhysicalServerSerialNumber());
+                                if (serialNumber != null) {
+                                    getSelf().setPhysicalServerSerialNumber(serialNumber);
+                                }
                                 trigger.next();
                             }
 
@@ -413,6 +418,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
     public static class SyncMetadataRsp extends ZbsMdsBase.AgentResponse {
         private String externalAddr;
+        private String physicalServerSerialNumber;
 
         public String getExternalAddr() {
             return externalAddr;
@@ -420,6 +426,15 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
 
         public void setExternalAddr(String externalAddr) {
             this.externalAddr = externalAddr;
+        }
+
+        public String getPhysicalServerSerialNumber() {
+            return physicalServerSerialNumber;
+        }
+
+        public void setPhysicalServerSerialNumber(
+                String physicalServerSerialNumber) {
+            this.physicalServerSerialNumber = physicalServerSerialNumber;
         }
     }
 

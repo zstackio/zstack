@@ -33,6 +33,7 @@
         <module>directory</module>
         <module>sshKeyPair</module>
         <module>hostNetworkInterface</module>
+        <module>physicalServer</module>
         <module>vhost</module>
         <module>expon</module>
         <module>externalStorage</module>

@@ -115,6 +115,24 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmPhysicalServerAdapter" class="org.zstack.kvm.KvmPhysicalServerAdapter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.compute.host.PostHostConnectExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="KvmPhysicalServerResourceCascadeExtension"
+          class="org.zstack.kvm.KvmPhysicalServerResourceCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMApiInterceptor" class="org.zstack.kvm.KVMApiInterceptor">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.apimediator.ApiMessageInterceptor"/>

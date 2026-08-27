@@ -206,7 +206,43 @@ class ZbsPrimaryStorageCase extends SubCase {
             testMdsReconnectAfterMaximumPingFailures()
             testGetBackingChainNormalizesCbdParentUri()
             testBatchStatsNormalizesCbdInstallPath()
+            testMdsPhysicalServerSerialPersistsAcrossReconnect()
         }
+    }
+
+    void testMdsPhysicalServerSerialPersistsAcrossReconnect() {
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
+            ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp, HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(
+                        e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+                rsp.physicalServerSerialNumber = "PS-SN-${cmd.addr}"
+                return rsp
+        }
+
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        def firstReconnectMdsInfos = mdsInfos()
+        assert firstReconnectMdsInfos && firstReconnectMdsInfos.every {
+            it.physicalServerSerialNumber == "ps-sn-${it.addr}"
+        }
+
+        env.cleanAfterSimulatorHandlers()
+        reconnectPrimaryStorage {
+            uuid = ps.uuid
+        }
+        def secondReconnectMdsInfos = mdsInfos()
+        assert secondReconnectMdsInfos && secondReconnectMdsInfos.every {
+            it.physicalServerSerialNumber == "ps-sn-${it.addr}"
+        }
+    }
+
+    private List<org.zstack.storage.zbs.MdsInfo> mdsInfos() {
+        String serialized = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
+                .findValue()
+        return JSONObjectUtil.toObject(serialized, AddonInfo.class).mdsInfos
     }
 
     void testSyncPrimaryStorageCapacityConcurrently() {

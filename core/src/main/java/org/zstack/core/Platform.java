@@ -109,19 +109,25 @@ public class Platform {
     private static final String MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM = "sha256:";
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
     private static final String DMIDECODE_COMMAND = "/usr/sbin/dmidecode";
+    private static final String DMI_PRODUCT_SERIAL_FILE =
+            "/sys/class/dmi/id/product_serial";
+    private static final String DMI_SYSTEM_SERIAL_NUMBER =
+            "system-serial-number";
     private static final int DMIDECODE_COMMAND_TIMEOUT_SECONDS = 3;
     private static final int DMI_SOURCE_NAME_INDEX = 0;
     private static final int DMI_SOURCE_FILE_INDEX = 1;
     private static final int DMI_SOURCE_COMMAND_ARG_INDEX = 2;
     private static final String[][] MANAGEMENT_SERVER_FINGERPRINT_DMI_SOURCES = {
             {"dmi:system-uuid", "/sys/class/dmi/id/product_uuid", "system-uuid"},
-            {"dmi:system-serial-number", "/sys/class/dmi/id/product_serial", "system-serial-number"},
+            {"dmi:system-serial-number", DMI_PRODUCT_SERIAL_FILE, DMI_SYSTEM_SERIAL_NUMBER},
             {"dmi:baseboard-serial-number", "/sys/class/dmi/id/board_serial", "baseboard-serial-number"}
     };
     private static final List<String> UNUSABLE_MACHINE_IDENTITIES = Arrays.asList(
             "none",
+            "n/a",
             "unknown",
             "not specified",
+            "to be filled",
             "to be filled by o.e.m.",
             "to be filled by oem",
             "default string",
@@ -894,6 +900,19 @@ public class Platform {
         }
 
         return MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM + DigestUtils.sha256Hex(StringUtils.join(identities, "\n"));
+    }
+
+    public static String getManagementServerSerialNumber() {
+        String serialNumber = normalizeMachineSerialNumber(
+                readMachineIdentity(DMI_PRODUCT_SERIAL_FILE));
+        return serialNumber == null
+                ? normalizeMachineSerialNumber(
+                readDmiMachineIdentity(DMI_SYSTEM_SERIAL_NUMBER))
+                : serialNumber;
+    }
+
+    public static String normalizeMachineSerialNumber(String serialNumber) {
+        return normalizeMachineIdentity(serialNumber);
     }
 
     private static String readMachineIdentity(String path) {

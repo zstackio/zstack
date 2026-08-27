@@ -1,0 +1,5 @@
+roleType: INVALID_PROVIDER
+applicationMode: PROVIDER_MANAGED
+sliceName: invalid-provider.slice
+services:
+  - name: invalid-provider

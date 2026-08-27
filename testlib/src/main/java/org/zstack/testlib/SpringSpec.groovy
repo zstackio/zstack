@@ -114,6 +114,10 @@ class SpringSpec {
         include("cbd.xml")
     }
 
+    void physicalServer() {
+        include("physicalServer.xml")
+    }
+
     void smp() {
         include("sharedMountPointPrimaryStorage.xml")
     }
