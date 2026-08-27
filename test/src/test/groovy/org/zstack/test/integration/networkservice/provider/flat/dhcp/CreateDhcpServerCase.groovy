@@ -16,6 +16,7 @@ import org.zstack.utils.network.IPv6Constants
 
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP_IP
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_SERVICE_FLAT_10037
 
 /**
  * Created by shixin on 2018/12/19.
@@ -276,6 +277,8 @@ class CreateDhcpServerCase extends SubCase {
                 systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "192.168.1.110")]
             }
         }
+
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv4)
     }
 
     void testAddDhcpv6ServerIp() {
@@ -433,6 +436,61 @@ class CreateDhcpServerCase extends SubCase {
                 addressMode = IPv6Constants.Stateful_DHCP
                 systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--12")]
             }
+        }
+
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv6)
+    }
+
+    void testZSTAC86900DeleteReservedIp(L3NetworkInventory l3, int requestedIpVersion) {
+        String reservedIp = getFreeIp {
+            l3NetworkUuid = l3.uuid
+            ipVersion = requestedIpVersion
+            limit = 1
+        }[0].ip
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = reservedIp
+            endIp = reservedIp
+        }
+        UsedIpInventory reservedUsedIp = queryIpAddress {
+            conditions = ["l3NetworkUuid=${l3.uuid}", "ip=${reservedIp}"]
+        }[0]
+
+        GetL3NetworkDhcpIpAddressResult dhcpAddressResult = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3.uuid
+        }
+        String dhcpServerIp = dhcpAddressResult.ip6 ?: dhcpAddressResult.ip
+        UsedIpInventory dhcpUsedIp = queryIpAddress {
+            conditions = ["l3NetworkUuid=${l3.uuid}", "ip=${dhcpServerIp}"]
+        }[0]
+
+        DeleteIpAddressAction batchDelete = new DeleteIpAddressAction(
+                l3NetworkUuid: l3.uuid,
+                usedIpUuids: [reservedUsedIp.uuid, dhcpUsedIp.uuid],
+                sessionId: adminSession()
+        )
+        DeleteIpAddressAction.Result batchResult = batchDelete.call()
+        assert batchResult.error.globalErrorCode == ORG_ZSTACK_NETWORK_SERVICE_FLAT_10037
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, reservedUsedIp.uuid).isExists()
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, dhcpUsedIp.uuid).isExists()
+
+        deleteIpAddress {
+            l3NetworkUuid = l3.uuid
+            usedIpUuids = [reservedUsedIp.uuid]
+        }
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, reservedUsedIp.uuid).isExists()
+
+        DeleteIpAddressAction dhcpDelete = new DeleteIpAddressAction(
+                l3NetworkUuid: l3.uuid,
+                usedIpUuids: [dhcpUsedIp.uuid],
+                sessionId: adminSession()
+        )
+        DeleteIpAddressAction.Result dhcpResult = dhcpDelete.call()
+        assert dhcpResult.error.globalErrorCode == ORG_ZSTACK_NETWORK_SERVICE_FLAT_10037
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, dhcpUsedIp.uuid).isExists()
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
         }
     }
 
