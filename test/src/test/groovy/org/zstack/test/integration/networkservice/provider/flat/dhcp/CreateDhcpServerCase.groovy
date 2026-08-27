@@ -278,7 +278,7 @@ class CreateDhcpServerCase extends SubCase {
             }
         }
 
-        testZSTAC86900DeleteReservedIp(l3, "192.168.0.69")
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv4)
     }
 
     void testAddDhcpv6ServerIp() {
@@ -438,10 +438,15 @@ class CreateDhcpServerCase extends SubCase {
             }
         }
 
-        testZSTAC86900DeleteReservedIp(l3, "1000::159")
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv6)
     }
 
-    void testZSTAC86900DeleteReservedIp(L3NetworkInventory l3, String reservedIp) {
+    void testZSTAC86900DeleteReservedIp(L3NetworkInventory l3, int requestedIpVersion) {
+        String reservedIp = getFreeIp {
+            l3NetworkUuid = l3.uuid
+            ipVersion = requestedIpVersion
+            limit = 1
+        }[0].ip
         ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
             l3NetworkUuid = l3.uuid
             startIp = reservedIp
