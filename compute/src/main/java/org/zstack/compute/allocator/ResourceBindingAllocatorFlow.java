@@ -1,6 +1,5 @@
 package org.zstack.compute.allocator;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,10 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
@@ -32,7 +34,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
  * | 4 | true                 | Soft                    | false                | Migrate Freely    |
  * | 5 | false                | Hard                    | true                 | Migrate in Current Cluster |
  * | 6 | false                | Hard                    | false                | Fail              |
- * | 7 | false                | Soft                    | true                 | Migrate in Current Cluster |
+ * | 7 | false                | Soft                    | true                 | Prefer Current Cluster, Keep Cross-Cluster Fallback |
  * | 8 | false                | Soft                    | false                | Try Other Clusters |
  *
  * @author yh.w (original), refactored for ZSTAC-75428
@@ -64,6 +66,9 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
             return;
         }
 
+        String strategy = rcf.getResourceConfigValue(
+                VmGlobalConfig.RESOURCE_BINDING_STRATEGY, vmUuid, String.class);
+
         // Truth table #5-8: Cross-cluster not allowed, check current cluster resources
         // Cluster resource sufficient: Enabled + Connected hosts excluding current VM's host
         List<HostVO> hostsInCurrentCluster = candidates.stream()
@@ -72,26 +77,34 @@ public class ResourceBindingAllocatorFlow extends AbstractHostAllocatorFlow {
                 .filter(h -> h.getStatus() == HostStatus.Connected)
                 .collect(Collectors.toList());
 
-        // Check if current cluster has sufficient resources
-        boolean clusterHasAvailableHosts = CollectionUtils.isNotEmpty(hostsInCurrentCluster);
+        if (ResourceBindingStrategy.Soft.toString().equals(strategy)) {
+            // Truth table #7: prefer current-cluster hosts without removing cross-cluster fallback.
+            if (!hostsInCurrentCluster.isEmpty()) {
+                Set<String> softAvoidHostUuids = new LinkedHashSet<>();
+                if (spec.getSoftAvoidHostUuids() != null) {
+                    softAvoidHostUuids.addAll(spec.getSoftAvoidHostUuids());
+                }
+                candidates.stream()
+                        .filter(h -> !currentClusterUuid.equals(h.getClusterUuid()))
+                        .map(HostVO::getUuid)
+                        .forEach(softAvoidHostUuids::add);
+                spec.setSoftAvoidHostUuids(new ArrayList<>(softAvoidHostUuids));
+            }
 
-        if (clusterHasAvailableHosts) {
-            // Truth table #5, #7: Current cluster has available hosts, migrate successfully
-            next(hostsInCurrentCluster);
+            // Truth table #8: no current-cluster candidate, try other clusters directly.
+            next(candidates);
             return;
         }
 
-        // Current cluster has no resources, decide behavior based on strategy
-        String strategy = rcf.getResourceConfigValue(VmGlobalConfig.RESOURCE_BINDING_STRATEGY, vmUuid, String.class);
-
-        if (ResourceBindingStrategy.Soft.toString().equals(strategy)) {
-            // Truth table #8: Soft strategy, try other clusters
-            next(candidates);
-        } else {
-            // Truth table #6: Hard strategy, fail
+        if (hostsInCurrentCluster.isEmpty()) {
+            // Truth table #6: Hard strategy, fail.
             fail(Platform.operr(ORG_ZSTACK_COMPUTE_ALLOCATOR_10005,
                     "no available host found in current cluster [uuid:%s], and vm.ha.across.clusters is disabled with Hard binding strategy",
                     currentClusterUuid));
+            return;
         }
+
+        // Truth table #5: Hard strategy only permits the current cluster.
+        next(hostsInCurrentCluster);
     }
 }
