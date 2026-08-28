@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelCenterAction extends AbstractAction {
+public class CleanAiHostModelCacheAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddModelCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelCenterResult value;
+        public org.zstack.sdk.CleanAiHostModelCacheResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,47 +25,23 @@ public class AddModelCenterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String cacheUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer managementPort;
+    public java.lang.String hostUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
+    public java.lang.String primaryStorageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
+    public java.lang.String modelUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceNetworkUuid;
+    public java.util.List statuses;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerRegistry;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    public java.lang.Boolean onlyUnused;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -99,8 +75,8 @@ public class AddModelCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddModelCenterResult value = res.getResult(org.zstack.sdk.AddModelCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelCenterResult() : value; 
+        org.zstack.sdk.CleanAiHostModelCacheResult value = res.getResult(org.zstack.sdk.CleanAiHostModelCacheResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CleanAiHostModelCacheResult() : value; 
 
         return ret;
     }
@@ -129,11 +105,11 @@ public class AddModelCenterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/model-centers";
+        info.httpMethod = "PUT";
+        info.path = "/ai/host-model-caches/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "cleanAiHostModelCache";
         return info;
     }
 

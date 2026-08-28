@@ -319,7 +319,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -532,6 +534,33 @@ abstract class ApiHelper {
 
     def syncVolumeBackup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction.class) Closure c) {
         def a = new org.zstack.heder.storage.volume.backup.SyncVolumeBackupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddAIBusinessGatewayOfferingAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -2179,6 +2208,33 @@ abstract class ApiHelper {
 
     def addModelCenter(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddModelCenterAction.class) Closure c) {
         def a = new org.zstack.sdk.AddModelCenterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def addModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.AddModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.AddModelCenterBusinessNetworkProfileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -6146,6 +6202,33 @@ abstract class ApiHelper {
     }
 
 
+    def changeModelServiceInstanceGroupBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeModelServiceInstanceGroupBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.ChangeModelServiceInstanceGroupBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def changeMonitorTriggerStateAction(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.ChangeMonitorTriggerActionStateAction.class) Closure c) {
         def a = new org.zstack.sdk.ChangeMonitorTriggerActionStateAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -7444,6 +7527,33 @@ abstract class ApiHelper {
 
     def checkVolumeSnapshotGroupAvailability(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CheckVolumeSnapshotGroupAvailabilityAction.class) Closure c) {
         def a = new org.zstack.sdk.CheckVolumeSnapshotGroupAvailabilityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def cleanAiHostModelCache(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CleanAiHostModelCacheAction.class) Closure c) {
+        def a = new org.zstack.sdk.CleanAiHostModelCacheAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -12842,6 +12952,60 @@ abstract class ApiHelper {
     }
 
 
+    def deleteAIBusinessGateway(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAIBusinessGatewayAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAIBusinessGatewayAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def deleteAccessControlList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteAccessControlListAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteAccessControlListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -15868,6 +16032,33 @@ abstract class ApiHelper {
 
     def deleteModelCenter(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteModelCenterAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteModelCenterAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteModelCenterBusinessNetworkProfileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -20996,6 +21187,33 @@ abstract class ApiHelper {
     }
 
 
+    def getAiHostModelCacheCapacity(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetAiHostModelCacheCapacityAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetAiHostModelCacheCapacityAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getAliyunNasAccessGroupRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetAliyunNasAccessGroupRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.GetAliyunNasAccessGroupRemoteAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -24432,19 +24650,16 @@ abstract class ApiHelper {
         c.delegate = a
         c()
 
-
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
             return out
         } else {
             return errorOut(a.call())
@@ -29123,6 +29338,68 @@ abstract class ApiHelper {
     }
 
 
+    def queryAIBusinessGateway(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAIBusinessGatewayAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAIBusinessGatewayAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def queryAccessControlList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAccessControlListAction.class) Closure c) {
         def a = new org.zstack.sdk.QueryAccessControlListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -29130,7 +29407,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29159,7 +29438,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29188,7 +29469,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29217,7 +29500,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29246,7 +29531,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29275,7 +29562,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29304,7 +29593,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29333,7 +29624,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29362,7 +29655,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29391,7 +29686,40 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryAiHostModelCache(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryAiHostModelCacheAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryAiHostModelCacheAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29420,7 +29748,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29449,7 +29779,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29478,7 +29810,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29507,7 +29841,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29536,7 +29872,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29565,7 +29903,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29594,7 +29934,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29623,7 +29965,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29652,7 +29996,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29681,7 +30027,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29710,7 +30058,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29739,7 +30089,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29768,7 +30120,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29797,7 +30151,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29826,7 +30182,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29855,7 +30213,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29884,7 +30244,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29913,7 +30275,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29942,7 +30306,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -29971,7 +30337,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30000,7 +30368,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30029,7 +30399,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30058,7 +30430,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30087,7 +30461,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30116,7 +30492,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30145,7 +30523,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30174,7 +30554,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30203,7 +30585,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30232,7 +30616,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30261,7 +30647,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30290,7 +30678,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30319,7 +30709,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30348,7 +30740,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30377,7 +30771,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30406,7 +30802,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30435,7 +30833,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30464,7 +30864,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30493,7 +30895,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30522,7 +30926,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30551,7 +30957,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30580,7 +30988,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30609,7 +31019,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30638,7 +31050,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30667,7 +31081,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30696,7 +31112,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30725,7 +31143,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30754,7 +31174,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30783,7 +31205,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30812,7 +31236,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30841,7 +31267,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30870,7 +31298,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30899,7 +31329,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30928,7 +31360,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30957,7 +31391,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -30986,7 +31422,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31015,7 +31453,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31044,7 +31484,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31073,7 +31515,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31102,7 +31546,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31131,7 +31577,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31160,7 +31608,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31189,7 +31639,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31218,7 +31670,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31247,7 +31701,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31276,7 +31732,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31305,7 +31763,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31334,7 +31794,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31363,7 +31825,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31392,7 +31856,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31421,7 +31887,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31450,7 +31918,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31479,7 +31949,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31508,7 +31980,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31537,7 +32011,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31566,7 +32042,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31595,7 +32073,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31624,7 +32104,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31653,7 +32135,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31682,7 +32166,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31711,7 +32197,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31740,7 +32228,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31769,7 +32259,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31798,7 +32290,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31827,7 +32321,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31856,7 +32352,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31885,7 +32383,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31914,7 +32414,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31943,7 +32445,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -31972,7 +32476,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32001,7 +32507,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32030,7 +32538,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32059,7 +32569,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32088,7 +32600,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32117,7 +32631,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32146,7 +32662,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32175,7 +32693,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32204,7 +32724,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32233,7 +32755,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32262,7 +32786,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32291,7 +32817,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32320,7 +32848,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32349,7 +32879,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32378,7 +32910,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32407,7 +32941,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32436,7 +32972,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32465,7 +33003,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32494,7 +33034,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32523,7 +33065,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32552,7 +33096,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32581,7 +33127,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32610,7 +33158,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32639,7 +33189,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32668,7 +33220,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32697,7 +33251,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32726,7 +33282,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32755,7 +33313,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32784,7 +33344,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32813,7 +33375,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32842,7 +33406,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32871,7 +33437,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32900,7 +33468,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32929,7 +33499,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32958,7 +33530,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -32987,7 +33561,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33016,7 +33592,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33045,7 +33623,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33074,7 +33654,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33103,7 +33685,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33132,7 +33716,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33161,7 +33747,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33190,7 +33778,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33219,7 +33809,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33248,7 +33840,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33277,7 +33871,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33306,7 +33902,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33335,7 +33933,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33364,7 +33964,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33393,7 +33995,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33422,7 +34026,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33451,7 +34057,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33480,7 +34088,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33509,7 +34119,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33538,7 +34150,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33567,7 +34181,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33596,7 +34212,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33625,7 +34243,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33654,7 +34274,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33683,7 +34305,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33712,7 +34336,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33741,7 +34367,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33770,7 +34398,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33799,7 +34429,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33828,7 +34460,40 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def queryModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.QueryModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.QueryModelCenterBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33857,7 +34522,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33886,7 +34553,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33915,7 +34584,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33944,7 +34615,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -33973,7 +34646,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34002,7 +34677,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34031,7 +34708,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34060,7 +34739,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34089,7 +34770,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34118,7 +34801,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34147,7 +34832,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34176,7 +34863,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34205,7 +34894,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34234,7 +34925,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34263,7 +34956,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34292,7 +34987,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34321,7 +35018,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34350,7 +35049,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34379,7 +35080,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34408,7 +35111,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34437,7 +35142,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34466,7 +35173,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34495,7 +35204,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34524,7 +35235,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34553,7 +35266,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34582,7 +35297,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34611,7 +35328,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34640,7 +35359,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34669,7 +35390,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34698,7 +35421,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34727,7 +35452,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34756,7 +35483,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34785,7 +35514,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34814,7 +35545,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34843,7 +35576,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34872,7 +35607,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34901,7 +35638,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34930,7 +35669,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34959,7 +35700,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -34988,7 +35731,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35017,7 +35762,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35046,7 +35793,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35075,7 +35824,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35104,7 +35855,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35133,7 +35886,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35162,7 +35917,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35191,7 +35948,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35220,7 +35979,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35249,7 +36010,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35278,7 +36041,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35307,7 +36072,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35336,7 +36103,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35365,7 +36134,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35394,7 +36165,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35423,7 +36196,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35452,7 +36227,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35481,7 +36258,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35510,7 +36289,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35539,7 +36320,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35568,7 +36351,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35597,7 +36382,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35626,7 +36413,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35655,7 +36444,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35684,7 +36475,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35713,7 +36506,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35742,7 +36537,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35771,7 +36568,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35800,7 +36599,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35829,7 +36630,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35858,7 +36661,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35887,7 +36692,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35916,7 +36723,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35945,7 +36754,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -35974,7 +36785,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36003,7 +36816,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36032,7 +36847,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36061,7 +36878,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36090,7 +36909,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36119,7 +36940,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36148,7 +36971,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36177,7 +37002,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36206,7 +37033,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36235,7 +37064,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36264,7 +37095,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36293,7 +37126,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36322,7 +37157,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36351,7 +37188,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36380,7 +37219,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36409,7 +37250,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36438,7 +37281,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36467,7 +37312,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36496,7 +37343,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36525,7 +37374,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36554,7 +37405,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36583,7 +37436,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36612,7 +37467,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36641,7 +37498,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36670,7 +37529,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36699,7 +37560,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36728,7 +37591,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36757,7 +37622,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36786,7 +37653,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36815,7 +37684,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36844,7 +37715,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36873,7 +37746,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36902,7 +37777,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36931,7 +37808,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36960,7 +37839,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -36989,7 +37870,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37018,7 +37901,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37047,7 +37932,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37076,7 +37963,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37105,7 +37994,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37134,7 +38025,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37163,7 +38056,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37192,7 +38087,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37221,7 +38118,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37250,7 +38149,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37279,7 +38180,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37308,7 +38211,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37337,7 +38242,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37366,7 +38273,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37395,7 +38304,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37424,7 +38335,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37453,7 +38366,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37482,7 +38397,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37511,7 +38428,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37540,7 +38459,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37569,7 +38490,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37598,7 +38521,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37627,7 +38552,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37656,7 +38583,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37685,7 +38614,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37714,7 +38645,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37743,7 +38676,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37772,7 +38707,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37801,7 +38738,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37830,7 +38769,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -37859,7 +38800,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -38612,6 +39555,33 @@ abstract class ApiHelper {
 
     def recoveryVirtualBorderRouterRemote(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RecoveryVirtualBorderRouterRemoteAction.class) Closure c) {
         def a = new org.zstack.sdk.RecoveryVirtualBorderRouterRemoteAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def refreshAiHostModelCache(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RefreshAiHostModelCacheAction.class) Closure c) {
+        def a = new org.zstack.sdk.RefreshAiHostModelCacheAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -43605,6 +44575,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateAIBusinessGatewayOffering(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAIBusinessGatewayOfferingAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAIBusinessGatewayOfferingAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateAccessControlList(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAccessControlListAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAccessControlListAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -43688,6 +44685,60 @@ abstract class ApiHelper {
 
     def updateAffinityGroup(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAffinityGroupAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateAffinityGroupAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateAiHostModelCachePolicy(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAiHostModelCachePolicyAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAiHostModelCachePolicyAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateAiModelCacheGlobalConfig(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateAiModelCacheGlobalConfigAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateAiModelCacheGlobalConfigAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -46872,6 +47923,33 @@ abstract class ApiHelper {
     }
 
 
+    def updateModelCenterBusinessNetworkProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateModelCenterBusinessNetworkProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateModelCenterBusinessNetworkProfileAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def updateModelEvaluationTask(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateModelEvaluationTaskAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateModelEvaluationTaskAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -48606,6 +49684,7 @@ abstract class ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
+        
 
 
         if (System.getProperty("apipath") != null) {
@@ -49687,7 +50766,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -49959,7 +51040,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -49988,7 +51071,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -50017,7 +51102,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -50046,7 +51133,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51344,7 +52433,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51373,7 +52464,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51402,7 +52495,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51431,7 +52526,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51460,7 +52557,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51489,7 +52588,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51518,7 +52619,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51547,7 +52650,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51576,7 +52681,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51605,7 +52712,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51634,7 +52743,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -51663,7 +52774,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -52097,19 +53210,16 @@ abstract class ApiHelper {
         c.delegate = a
         c()
 
-
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
             return out
         } else {
             return errorOut(a.call())
@@ -52826,7 +53936,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53017,7 +54129,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53345,7 +54459,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53374,7 +54490,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53619,7 +54737,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53648,7 +54768,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53677,7 +54799,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53706,7 +54830,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -53735,7 +54861,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54034,7 +55162,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54063,7 +55193,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54308,7 +55440,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54337,7 +55471,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54366,7 +55502,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54530,7 +55668,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54559,7 +55699,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54723,7 +55865,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54833,7 +55977,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -54943,7 +56089,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55053,7 +56201,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55163,7 +56313,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55300,7 +56452,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55329,7 +56483,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55628,7 +56784,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55657,7 +56815,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55686,7 +56846,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55715,7 +56877,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55744,7 +56908,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55773,7 +56939,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -55802,7 +56970,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56317,7 +57487,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56345,22 +57517,24 @@ abstract class ApiHelper {
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
         c()
-
-        a.conditions = a.conditions.collect { it.toString() }
+        
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
             if (a.apiId == null) {
                 a.apiId = Platform.uuid
             }
-
+    
             def tracker = new ApiPathTracker(a.apiId)
             def out = errorOut(a.call())
             def path = tracker.getApiPath()
             if (!path.isEmpty()) {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
-
+        
             return out
         } else {
             return errorOut(a.call())
@@ -56375,7 +57549,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56404,7 +57580,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56784,7 +57962,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56813,7 +57993,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -56923,7 +58105,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57006,7 +58190,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57494,7 +58680,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57523,7 +58711,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57552,7 +58742,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57581,7 +58773,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57610,7 +58804,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -57990,7 +59186,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58019,7 +59217,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58048,7 +59248,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58077,7 +59279,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58106,7 +59310,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58135,7 +59341,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58164,7 +59372,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58193,7 +59403,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58411,7 +59623,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58548,7 +59762,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58577,7 +59793,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {
@@ -58606,7 +59824,9 @@ abstract class ApiHelper {
         c.delegate = a
         c()
         
-        a.conditions = a.conditions.collect { it.toString() }
+        if (a.conditions != null) {
+            a.conditions = a.conditions.collect { it.toString() }
+        }
 
 
         if (System.getProperty("apipath") != null) {

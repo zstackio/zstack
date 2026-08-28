@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class AddModelCenterAction extends AbstractAction {
+public class UpdateAiHostModelCachePolicyAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class AddModelCenterAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.AddModelCenterResult value;
+        public org.zstack.sdk.UpdateAiHostModelCachePolicyResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,47 +25,29 @@ public class AddModelCenterAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String url;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String hostUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String managementIp;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Integer managementPort;
+    public java.lang.String sourceRoot;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parameters;
+    public java.lang.String primaryStorageUuid;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String storageNetworkUuid;
+    public java.lang.Boolean enabled;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serviceNetworkUuid;
+    public java.lang.Long maxSizeBytes;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerRegistry;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,100L}, noTrim = false)
+    public java.lang.Integer highWatermarkPercent;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerNetwork;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,100L}, noTrim = false)
+    public java.lang.Integer lowWatermarkPercent;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String containerStorageNetwork;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String disabledReason;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -99,8 +81,8 @@ public class AddModelCenterAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.AddModelCenterResult value = res.getResult(org.zstack.sdk.AddModelCenterResult.class);
-        ret.value = value == null ? new org.zstack.sdk.AddModelCenterResult() : value; 
+        org.zstack.sdk.UpdateAiHostModelCachePolicyResult value = res.getResult(org.zstack.sdk.UpdateAiHostModelCachePolicyResult.class);
+        ret.value = value == null ? new org.zstack.sdk.UpdateAiHostModelCachePolicyResult() : value; 
 
         return ret;
     }
@@ -129,11 +111,11 @@ public class AddModelCenterAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/model-centers";
+        info.httpMethod = "PUT";
+        info.path = "/ai/host-model-cache-policies/{hostUuid}/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "param";
+        info.parameterName = "updateAiHostModelCachePolicy";
         return info;
     }
 
