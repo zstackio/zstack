@@ -10,6 +10,52 @@ import java.util.Date;
 public class VmNicCanonicalEvents {
     public static final String VM_NIC_CREATED_PATH = "/vmNic/vmNicCreated";
     public static final String VM_NIC_DELETED_PATH = "/vmNic/vmNicDeleted";
+    public static final String VM_NIC_INFO_CHANGED_PATH = "/vmNic/vmNicInfoChanged";
+
+    public enum VmNicInfoChangeType {
+        MAC,
+        IP
+    }
+
+    @NeedJsonSchema
+    public static class VmNicInfoChangedData {
+        private String vmInstanceUuid;
+        private String vmNicUuid;
+        private VmNicInfoChangeType changeType;
+        private Date date = new Date();
+
+        public String getVmInstanceUuid() {
+            return vmInstanceUuid;
+        }
+
+        public void setVmInstanceUuid(String vmInstanceUuid) {
+            this.vmInstanceUuid = vmInstanceUuid;
+        }
+
+        public String getVmNicUuid() {
+            return vmNicUuid;
+        }
+
+        public void setVmNicUuid(String vmNicUuid) {
+            this.vmNicUuid = vmNicUuid;
+        }
+
+        public VmNicInfoChangeType getChangeType() {
+            return changeType;
+        }
+
+        public void setChangeType(VmNicInfoChangeType changeType) {
+            this.changeType = changeType;
+        }
+
+        public Date getDate() {
+            return date;
+        }
+
+        public void setDate(Date date) {
+            this.date = date;
+        }
+    }
 
     @NeedJsonSchema
     public static class VmNicEventData {
