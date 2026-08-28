@@ -42,7 +42,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
@@ -77,6 +76,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             pluginRegisters = new HashMap<>();
     private final Map<Class<? extends PluginDriver>, PluginValidator>
             pluginValidators = new HashMap<>();
+    private final Map<String, URLClassLoader> pluginClassLoaders = new ConcurrentHashMap<>();
     private String fileDirPath = PathUtil.join(CoreGlobalProperty.DATA_DIR, "/plugins/");
 
     public String getFileDirPath() {
@@ -260,6 +260,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
     @Override
     public boolean stop() {
+        pluginClassLoaders.forEach(this::closePluginClassLoader);
+        pluginClassLoaders.clear();
         return true;
     }
 
@@ -382,14 +384,28 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
     protected void loadPluginsFromJar(File jarFile) {
         URL jarUrl;
+        String classLoaderKey;
         try {
             jarUrl = jarFile.toURI().toURL();
-        } catch (MalformedURLException e) {
+            classLoaderKey = String.format("%s:%s:%s", jarFile.getCanonicalPath(),
+                    jarFile.length(), jarFile.lastModified());
+        } catch (IOException e) {
             throw new CloudRuntimeException(String.format("invalid plugin jar path[%s]",
                     jarFile.getAbsolutePath()), e);
         }
+
+        URLClassLoader classLoader = pluginClassLoaders.get(classLoaderKey);
+        boolean newClassLoader = classLoader == null;
+        if (newClassLoader) {
+            classLoader = new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader());
+        }
+        logger.debug(String.format("plugin jar[%s] uses class loader[%s], reused[%s], key[%s]",
+                jarFile.getAbsolutePath(), System.identityHashCode(classLoader),
+                !newClassLoader, classLoaderKey));
+
+        boolean retainClassLoader = !newClassLoader;
         List<Throwable> registrationFailures = new ArrayList<>();
-        try (URLClassLoader classLoader = new URLClassLoader(new URL[]{jarUrl}, getClass().getClassLoader())) {
+        try {
             try (JarFile jar = new JarFile(jarFile)) {
                 Enumeration<JarEntry> entries = jar.entries();
                 while (entries.hasMoreElements()) {
@@ -439,13 +455,28 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     }
                 }
             }
+
+            throwPluginLoadFailures(String.format("plugin jar[%s]", jarFile.getAbsolutePath()), registrationFailures);
+            if (newClassLoader) {
+                pluginClassLoaders.put(classLoaderKey, classLoader);
+                retainClassLoader = true;
+            }
         } catch (IOException | SecurityException t) {
             logger.warn(String.format("skip unreadable plugin jar[%s]",
                     jarFile.getAbsolutePath()), t);
-            return;
+        } finally {
+            if (!retainClassLoader) {
+                closePluginClassLoader(classLoaderKey, classLoader);
+            }
         }
+    }
 
-        throwPluginLoadFailures(String.format("plugin jar[%s]", jarFile.getAbsolutePath()), registrationFailures);
+    private void closePluginClassLoader(String classLoaderKey, URLClassLoader classLoader) {
+        try {
+            classLoader.close();
+        } catch (IOException e) {
+            logger.warn(String.format("failed to close plugin class loader[%s]", classLoaderKey), e);
+        }
     }
 
     protected void scanAndLoadPlugins(String directoryPath) {
