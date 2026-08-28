@@ -57,7 +57,9 @@ public class SdnControllerConstant {
     public enum ResourceTypes{
         SdnController,
         VxlanNetworkPool,
-        VxlanNetwork
+        VxlanNetwork,
+        Segment,
+        TenantRouter
     }
 
     public enum Params {

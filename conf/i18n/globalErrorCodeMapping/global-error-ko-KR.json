@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "DPU Baremetal2 인스턴스 생성을 위한 네트워크 매개변수가 올바르지 않습니다.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "지정한 L3 네트워크[uuid:%s]가 존재하지 않습니다.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "인스턴스 생성 네트워크 매개변수는 DPU 섀시에서만 지원됩니다.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "API 응답을 클래스[%s]로 포맷 실패, 결과 문자열: %s, 예외: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "여기서 지원되지 않는 데이터센터 타입 [%s]입니다!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "%s 구성 타입에 대해 'endpoint' 인수가 설정되어야 합니다",

@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Invalid network parameters for creating a DPU Baremetal2 instance.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "The specified L3 network[uuid:%s] does not exist.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Network parameters for instance creation are supported only by DPU chassis.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "format API response to class[%s] failed, resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "not supported datacenter type [%s] here!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "arg \u0027endpoint\u0027 must be set for %s configuration type",

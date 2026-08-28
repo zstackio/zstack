@@ -26,6 +26,7 @@
             <zstack:extension interface="org.zstack.sdnController.SdnControllerManager" />
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.L2DeleteConfirmExtensionPoint" />
             <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.network.l3.IpRangeDeletionExtensionPoint"/>
@@ -76,6 +77,12 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostConnectionReestablishExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="ZnsProxyAnsibleDeployer" class="org.zstack.sdnController.znsproxy.ZnsProxyAnsibleDeployer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
         </zstack:plugin>
     </bean>
 
