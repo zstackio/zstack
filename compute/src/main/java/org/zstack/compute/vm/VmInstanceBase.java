@@ -947,7 +947,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
-        amsg.setVmInstance(VmInstanceInventory.valueOf(self));
+        VmInstanceInventory vmInventory = VmInstanceInventory.valueOf(self);
+        amsg.setVmInstance(vmInventory);
+        amsg.setRequiredPrimaryStorageUuids(vmInventory.getAllDiskVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
