@@ -1832,6 +1832,15 @@ public class KVMHost extends HostBase implements Host {
         cmd.setRedirectNum(msg.getRedirectNum());
 
         VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        if (vm == null) {
+            StartColoSyncReply reply = new StartColoSyncReply();
+            reply.setError(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "unable to register colo heartbeat because vm[uuid:%s] has been deleted",
+                    msg.getVmInstanceUuid()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
         List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
         cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
 
@@ -1881,6 +1890,15 @@ public class KVMHost extends HostBase implements Host {
         cmd.setFullSync(msg.isFullSync());
 
         VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        if (vm == null) {
+            StartColoSyncReply reply = new StartColoSyncReply();
+            reply.setError(err(SysErrors.RESOURCE_NOT_FOUND,
+                    "unable to start colo sync because vm[uuid:%s] has been deleted",
+                    msg.getVmInstanceUuid()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
         List<VolumeInventory> volumes = vm.getAllVolumes().stream().filter(v -> v.getType() == VolumeType.Data || v.getType() == VolumeType.Root).map(VolumeInventory::valueOf).collect(Collectors.toList());
         cmd.setVolumes(VolumeTO.valueOf(volumes, KVMHostInventory.valueOf(getSelf())));
 
