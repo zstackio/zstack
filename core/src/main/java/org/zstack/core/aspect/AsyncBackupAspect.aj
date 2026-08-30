@@ -1,5 +1,6 @@
 package org.zstack.core.aspect;
 
+import org.zstack.core.asyncbatch.AsyncForEachCompletion;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -36,6 +37,7 @@ public aspect AsyncBackupAspect {
                 || backup instanceof SyncTaskChain
                 || backup instanceof NoErrorCompletion
                 || backup instanceof WhileDoneCompletion
+                || backup instanceof AsyncForEachCompletion
                 || backup instanceof HaCheckerCompletion
                 || backup instanceof FlowRollback
                 || backup instanceof ChainTask;
@@ -85,6 +87,8 @@ public aspect AsyncBackupAspect {
                 ErrorCodeList errs = new ErrorCodeList();
                 errs.getCauses().add(err);
                 ((WhileDoneCompletion) ancestor).done(errs);
+            } else if (ancestor instanceof AsyncForEachCompletion) {
+                backup(((AsyncForEachCompletion) ancestor).getBackups(), t);
             } else if (ancestor instanceof Message) {
                 bus.logExceptionWithMessageDump((Message) ancestor, t);
                 bus.replyErrorByMessageType((Message) ancestor, err);
@@ -132,6 +136,25 @@ public aspect AsyncBackupAspect {
         try {
             proceed(completion);
         } catch (Throwable  t) {
+            backup(completion.getBackups(), t);
+        }
+    }
+
+    void around(AsyncForEachCompletion completion, ErrorCode error) :
+            execution(private static void org.zstack.core.asyncbatch.AsyncForEach.failCompletion(..))
+            && args(completion, error) {
+        try {
+            backup(completion.getBackups(), new OperationFailureException(error), false);
+        } catch (Throwable t) {
+            logger.error("AsyncForEach failed to notify completion", t);
+        }
+    }
+
+    void around(org.zstack.header.core.AbstractCompletion completion) :
+            this(completion) && execution(void org.zstack.core.asyncbatch.AsyncForEachCompletion+.completed(..)) {
+        try {
+            proceed(completion);
+        } catch (Throwable t) {
             backup(completion.getBackups(), t);
         }
     }
