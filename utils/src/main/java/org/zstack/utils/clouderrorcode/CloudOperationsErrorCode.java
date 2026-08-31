@@ -3838,6 +3838,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_IAM2_API_10031 = "ORG_ZSTACK_IAM2_API_10031";
 
+    public static final String ORG_ZSTACK_IAM2_API_10032 = "ORG_ZSTACK_IAM2_API_10032";
+
     public static final String ORG_ZSTACK_TEST_INTEGRATION_VMWARE_10000 = "ORG_ZSTACK_TEST_INTEGRATION_VMWARE_10000";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_VMWARE_10001 = "ORG_ZSTACK_TEST_INTEGRATION_VMWARE_10001";

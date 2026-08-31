@@ -4409,6 +4409,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "非法操作，無法添加角色[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "無法執行 API 操作。後端网络 [uuid:%s] 已連接至 VPC 路由器 [uuid:%s]，而其他後端网络则連接至 VPC 路由器 [uuid:%s]",
   "ORG_ZSTACK_IAM2_API_10031": "不能操作過时的虚拟ID: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "資源[type:%s, uuid:%s]由 SCIM 管理，不能在本地修改",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "無法執行 API 操作。後端网络 [UUID:%s] 不能是 VPC 网络，因为其他後端网络不是 VPC 网络",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "因为無效的部署類型 %s 無法創建 SLB 组",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] 不在 IPsec [uuid :%s] 的 CIDRs 中",

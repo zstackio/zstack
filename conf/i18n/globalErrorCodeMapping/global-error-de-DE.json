@@ -4319,6 +4319,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "Unzulässiger Vorgang, Rolle[%s] kann nicht hinzugefügt werden",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "Backend-Netzwerk [UUID:%s] ist mit VPC-Router [UUID:%s] verbunden, während andere Backend-Netzwerke mit VPC-Router [UUID:%s] verbunden sind.",
   "ORG_ZSTACK_IAM2_API_10031": "Vorgang auf veralteten virtuellen Maschinen-IDs nicht möglich: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "Ressource[Typ:%s, UUID:%s] wird von SCIM verwaltet und kann nicht lokal geändert werden",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "API-Vorgang konnte nicht ausgeführt werden. Das Backend-Netzwerk [uuid:%s] kann kein VPC-Netzwerk sein, da andere Backend-Netzwerke keine VPC-Netzwerke sind.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "SLB-Gruppe konnte nicht erstellt werden, da ungültiger Bereitstellungstyp %s",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] liegt nicht innerhalb der definierten CIDRs von IPsec UUID [%s]",
