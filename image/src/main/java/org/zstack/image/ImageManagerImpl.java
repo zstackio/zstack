@@ -645,7 +645,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                 List<String> dataVolumeTemplateUuids = msg.getDataVolumeTemplateUuids();
                 List<String> volumesUuids = new ArrayList<>();
                 volumesUuids.add(msg.getRootVolumeTemplateUuid());
-                String groupUuid = Platform.getUuid();
+                String groupUuid = StringUtils.isEmpty(msg.getResourceUuid()) ? Platform.getUuid() : msg.getResourceUuid();
                 ImageGroupVO vo = new ImageGroupVO();
                 vo.setUuid(groupUuid);
                 vo.setName(msg.getName());
