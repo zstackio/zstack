@@ -537,6 +537,26 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudOfferSnapshotVO` (
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsPeerOfferVO` (
+    `controllerUuid` varchar(32) NOT NULL,
+    `peerClusterUuid` varchar(64) NOT NULL,
+    `generation` bigint NOT NULL,
+    `membershipDigest` varchar(128) NOT NULL,
+    `offerDigest` varchar(128) NOT NULL,
+    `complete` boolean NOT NULL,
+    `offerJson` mediumtext NOT NULL,
+    `fetchedAt` timestamp NULL DEFAULT NULL,
+    `validatedAt` timestamp NULL DEFAULT NULL,
+    `lastRefreshError` text DEFAULT NULL,
+    `nextRetryAt` timestamp NULL DEFAULT NULL,
+    `refreshAttempt` int NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`controllerUuid`),
+    KEY `idxZnsPeerOfferVONextRetryAt` (`nextRetryAt`),
+    CONSTRAINT `fkZnsPeerOfferVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentInventoryVO` (
     `uuid` varchar(32) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
