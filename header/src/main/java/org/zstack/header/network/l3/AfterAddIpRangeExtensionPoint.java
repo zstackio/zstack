@@ -11,6 +11,9 @@ public interface AfterAddIpRangeExtensionPoint {
     void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags);
 
     default void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags, NetworkCreateContext context) {
+        if (context != null && context.isProjection()) {
+            return;
+        }
         afterAddIpRange(ipr, systemTags);
     }
 }
