@@ -2893,6 +2893,11 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     @Override
                     public void success(VolumeSnapshotGroupInventory inv) {
                         evt.setInventory(inv);
+                        if (inv.getVolumeSnapshotRefs().size() != inv.getSnapshotCount()
+                                || inv.getVolumeSnapshotRefs().stream().anyMatch(VolumeSnapshotGroupRefInventory::isSnapshotDeleted)) {
+                            evt.setError(operr("failed to create complete volume snapshot group[uuid:%s]", inv.getUuid())
+                                    .withOpaque("volume.snapshot.group.inventory", inv));
+                        }
                         bus.publish(evt);
                         chain.next();
                     }
