@@ -507,6 +507,36 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerCapabilityVO` (
             AND `effectiveState` IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudProtocolIdentityVO` (
+    `identityKey` varchar(32) NOT NULL,
+    `clusterUuid` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`identityKey`),
+    UNIQUE KEY `ukZnsCloudProtocolIdentityVOClusterUuid` (`clusterUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `zstack`.`ZnsCloudProtocolIdentityVO`
+    (`identityKey`, `clusterUuid`, `createDate`, `lastOpDate`)
+VALUES ('zns-cloud-protocol', REPLACE(UUID(), '-', ''), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudOfferSnapshotVO` (
+    `scopeUuid` varchar(64) NOT NULL,
+    `controllerUuid` varchar(32) DEFAULT NULL,
+    `complete` boolean NOT NULL,
+    `membershipDigest` varchar(128) NOT NULL,
+    `membershipTokenDigest` varchar(128) NOT NULL,
+    `factsDigest` varchar(128) NOT NULL,
+    `offerDigest` varchar(128) NOT NULL,
+    `generation` bigint NOT NULL,
+    `offerJson` mediumtext NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`scopeUuid`),
+    UNIQUE KEY `ukZnsCloudOfferSnapshotVOControllerUuid` (`controllerUuid`),
+    CONSTRAINT `fkZnsCloudOfferSnapshotVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentInventoryVO` (
     `uuid` varchar(32) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
