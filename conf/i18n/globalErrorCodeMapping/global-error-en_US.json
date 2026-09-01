@@ -4418,6 +4418,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "illegal operation, cannot add Role[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "Backend network [UUID:%s] is connected to VPC router [UUID:%s], while other backend networks are connected to VPC router [UUID:%s].",
   "ORG_ZSTACK_IAM2_API_10031": "cannot operate on stale virtual machine IDs: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "Resource[type:%s, uuid:%s] is managed by SCIM and cannot be modified locally",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "could not execute the API operation. The backend network [uuid:%s] cannot be a VPC network because other backend networks are not VPC networks.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "could not create SLB group because invalid deployment type %s",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] is not within the IPsec UUID [%s]\u0027s defined CIDRs",

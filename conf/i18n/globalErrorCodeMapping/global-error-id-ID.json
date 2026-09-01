@@ -4409,6 +4409,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "operasi ilegal, tidak dapat menambahkan Role[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "Jaringan backend [UUID:%s] terhubung ke router VPC [UUID:%s], sementara jaringan backend lainnya terhubung ke router VPC [UUID:%s].",
   "ORG_ZSTACK_IAM2_API_10031": "tidak dapat beroperasi pada ID mesin virtual yang usang: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "Resource[type:%s, uuid:%s] dikelola oleh SCIM dan tidak dapat diubah secara lokal",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "tidak dapat mengeksekusi operasi API. Jaringan backend [uuid:%s] tidak dapat menjadi jaringan VPC karena jaringan backend lainnya bukan jaringan VPC.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "tidak dapat membuat grup SLB karena tipe deployment tidak valid %s",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] tidak berada dalam CIDR yang ditentukan IPsec UUID [%s]",

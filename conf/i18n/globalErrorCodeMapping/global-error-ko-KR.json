@@ -4319,6 +4319,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "불법 작업, Role[%s]을(를) 추가할 수 없습니다",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "백엔드 네트워크 [UUID:%s]이(가) VPC 라우터 [UUID:%s]에 연결되어 있는 반면, 다른 백엔드 네트워크들은 VPC 라우터 [UUID:%s]에 연결되어 있습니다.",
   "ORG_ZSTACK_IAM2_API_10031": "오래된 가상 머신 ID에서 작업을 수행할 수 없습니다: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "리소스[type:%s, uuid:%s]는 SCIM에서 관리하므로 로컬에서 수정할 수 없습니다",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "API 작업을 실행할 수 없습니다. 백엔드 네트워크 [uuid:%s]은(는) 다른 백엔드 네트워크들이 VPC 네트워크가 아니므로 VPC 네트워크일 수 없습니다.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "잘못된 배포 유형 %s로 인해 SLB 그룹을 생성할 수 없었습니다",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s]이(가) IPsec UUID [%s]의 정의된 CIDR 내에 있지 않습니다",

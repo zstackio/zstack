@@ -4379,6 +4379,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "不正な操作です。Role[%s]を追加できません",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "バックエンドネットワーク[UUID:%s]はVPCルータ[UUID:%s]に接続されていますが、他のバックエンドネットワークはVPCルータ[UUID:%s]に接続されています。",
   "ORG_ZSTACK_IAM2_API_10031": "古い仮想マシンIDに対しては操作できません: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "リソース[type:%s, uuid:%s]はSCIMによって管理されているため、ローカルでは変更できません",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "API操作を実行できませんでした。バックエンドネットワーク[uuid:%s]はVPCネットワークにできません。他のバックエンドネットワークはVPCネットワークではありません。",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "デプロイメントタイプ %sが無効なため、SLBグループを作成できませんでした",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s]はIPsec UUID [%s]の定義されたCIDR内にありません",

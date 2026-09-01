@@ -4409,6 +4409,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "การดำเนินการไม่ถูกต้อง ไม่สามารถเพิ่ม Role[%s] ได้",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "เครือข่ายแบ็คเอนด์ [UUID:%s] เชื่อมต่อกับ VPC router [UUID:%s] ในขณะที่เครือข่ายแบ็คเอนด์อื่นเชื่อมต่อกับ VPC router [UUID:%s]",
   "ORG_ZSTACK_IAM2_API_10031": "ไม่สามารถดำเนินการกับ virtual machine ID ที่ล้าสมัยได้: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "ทรัพยากร[type:%s, uuid:%s] ถูกจัดการโดย SCIM และไม่สามารถแก้ไขภายในระบบได้",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "ไม่สามารถดำเนินการ API ได้ เครือข่ายแบ็คเอนด์ [uuid:%s] ไม่สามารถเป็นเครือข่าย VPC ได้เนื่องจากเครือข่ายแบ็คเอนด์อื่นไม่ใช่เครือข่าย VPC",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "ไม่สามารถสร้างกลุ่ม SLB ได้เนื่องจากประเภทการติดตั้งไม่ถูกต้อง %s",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] ไม่อยู่ใน CIDR ที่กำหนดไว้ของ IPsec UUID [%s]",
