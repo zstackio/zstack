@@ -21,6 +21,19 @@ CREATE TABLE IF NOT EXISTS `zstack`.`SnmpEngineVO` (
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CREATE TABLE IF NOT EXISTS `zstack`.`AICapacityReservationVO` (
+    `uuid` varchar(32) NOT NULL,
+    `accountUuid` varchar(32) NOT NULL,
+    `quotaName` varchar(255) NOT NULL,
+    `reservedBytes` bigint NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    KEY `idx_ai_capacity_reservation_account_quota` (`accountUuid`, `quotaName`),
+    CONSTRAINT `fkAICapacityReservationVOAccountVO`
+        FOREIGN KEY (`accountUuid`) REFERENCES `zstack`.`AccountVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- AI host-model-cache / business-network / template schema ported from
 -- feature-5.5.32-aios commit 30a51aa3ec (V5.5.32__schema.sql) plus
 -- 0eaaf669a5 (INSERT line) and the ZSTAC-87753 hostUuid-nullable ALTER.
