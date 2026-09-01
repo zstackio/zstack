@@ -8,7 +8,7 @@ doc {
 
     category "物理服务器"
 
-    desc """查询物理服务器上COMPUTE和MANAGEMENT Role的资源分配。返回CPUSet、总体内存上限及Synced/Unsynced同步状态；ZBS第一期只做实时观测，不创建资源分配。"""
+    desc """查询物理服务器各Role的资源分配。返回CPUSet、总体内存上限及Synced/Unsynced同步状态；可写Role由Cloud应用约束，只读Role记录第三方已生效的约束。"""
 
     rest {
         request {

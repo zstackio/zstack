@@ -47,6 +47,8 @@
           class="org.zstack.storage.zbs.ZbsResourceUsageObserver">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider" />
         </zstack:plugin>
     </bean>
 </beans>

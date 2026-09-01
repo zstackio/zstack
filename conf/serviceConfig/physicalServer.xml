@@ -24,4 +24,8 @@
     <message>
         <name>org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsMsg</name>
     </message>
+
+    <message>
+        <name>org.zstack.physicalserver.APIRestartPhysicalServerManagedServicesMsg</name>
+    </message>
 </service>

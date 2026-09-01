@@ -7,7 +7,7 @@ doc {
 
     category "物理服务器"
 
-    desc """增量更新指定物理服务器上一个可控制Role的CPU和内存分配并异步触发同步。未填写的字段保持原值；同一物理服务器上的变更由服务端队列串行处理。v1可控制Role为COMPUTE和MANAGEMENT，其共享CPUSet不扣减计算容量。ZBS在v1只提供实时观测，不创建Assignment且不接受更新。"""
+    desc """增量更新指定物理服务器上一个可控制Role的CPU和内存分配并异步触发同步。未填写的字段保持原值；同一物理服务器上的变更由服务端队列串行处理。v1可控制Role为COMPUTE和MANAGEMENT，其共享CPUSet不扣减计算容量。ZBS在v1提供只读Assignment和实时观测，不接受更新。"""
 
     rest {
         request {
@@ -51,7 +51,7 @@ doc {
 				column {
 					name "memory"
 					enclosedIn "updatePhysicalServerResourceAssignment"
-					desc "Role总体内存上限，单位字节且必须为1MiB的整数倍；0表示不限，未填写表示保持原值。更新先持久化Role Slice与服务归属配置，不主动重启服务；运行中服务可由刷新接口指定重启后进入该Slice"
+					desc "Role总体内存上限，单位字节且必须为1MiB的整数倍；0表示不限，未填写表示保持原值。更新先持久化Role Slice与服务归属配置，不主动重启服务；运行中服务可调用托管服务重启API后进入该Slice"
 					location "body"
 					type "Long"
 					optional true

@@ -6,8 +6,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
 
-import java.util.List;
-
 @Action(category = PhysicalServerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/physical-servers/{serverUuid}/resource-assignments/actions",
@@ -19,12 +17,6 @@ public class APIRefreshPhysicalServerResourceAssignmentsMsg extends APIMessage i
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 
-    @APIParam(required = false, maxLength = 64)
-    private String roleType;
-
-    @APIParam(required = false, maxLength = 64)
-    private List<String> serviceNames;
-
     @Override
     public String getServerUuid() {
         return serverUuid;
@@ -32,22 +24,6 @@ public class APIRefreshPhysicalServerResourceAssignmentsMsg extends APIMessage i
 
     public void setServerUuid(String serverUuid) {
         this.serverUuid = serverUuid;
-    }
-
-    public String getRoleType() {
-        return roleType;
-    }
-
-    public void setRoleType(String roleType) {
-        this.roleType = roleType;
-    }
-
-    public List<String> getServiceNames() {
-        return serviceNames;
-    }
-
-    public void setServiceNames(List<String> serviceNames) {
-        this.serviceNames = serviceNames;
     }
 
     public static APIRefreshPhysicalServerResourceAssignmentsMsg __example__() {

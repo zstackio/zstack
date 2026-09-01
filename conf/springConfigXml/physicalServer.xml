@@ -17,11 +17,11 @@
     <bean id="PhysicalServerCpuPlanner"
           class="org.zstack.physicalserver.PhysicalServerCpuPlanner"/>
 
-    <bean id="PhysicalServerResourceAssignmentReconciler"
-          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentReconciler"/>
+    <bean id="PhysicalServerResourceAssignmentService"
+          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentService"/>
 
-    <bean id="PhysicalServerResourceControlReconciler"
-          class="org.zstack.physicalserver.PhysicalServerResourceControlReconciler"/>
+    <bean id="PhysicalServerResourceAssignmentApplier"
+          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentApplier"/>
 
     <bean id="PhysicalServerResourceAssignmentGlobalConfig"
           class="org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig">

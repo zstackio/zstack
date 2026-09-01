@@ -5,19 +5,19 @@ import org.zstack.header.errorcode.ErrorCode
 
 doc {
 
-	title "在这里输入结构的名称"
+	title "查看物理服务器管控服务资源使用结果"
 
 	ref {
 		name "services"
 		path "org.zstack.physicalserver.APIGetPhysicalServerManagedServicesReply.services"
-		desc "null"
+		desc "物理服务器上由各Role观测到的管控服务资源使用清单"
 		type "List"
 		since "5.5.38"
 		clz PhysicalServerManagedServiceInventory.class
 	}
 	field {
 		name "success"
-		desc ""
+		desc "API调用是否成功"
 		type "boolean"
 		since "5.5.38"
 	}

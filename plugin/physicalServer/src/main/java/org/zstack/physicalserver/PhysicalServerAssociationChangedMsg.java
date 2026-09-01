@@ -1,10 +1,11 @@
-package org.zstack.portal.managementnode;
+package org.zstack.physicalserver;
 
-import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.message.Message;
 
-public class CollectManagementNodeManagedServicesMsg extends NeedReplyMessage {
+public class PhysicalServerAssociationChangedMsg extends Message implements PhysicalServerMessage {
     private String serverUuid;
 
+    @Override
     public String getServerUuid() {
         return serverUuid;
     }
@@ -12,5 +13,4 @@ public class CollectManagementNodeManagedServicesMsg extends NeedReplyMessage {
     public void setServerUuid(String serverUuid) {
         this.serverUuid = serverUuid;
     }
-
 }

@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalServerVO` (
     `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
-    UNIQUE KEY `ukPhysicalServerSerialNumber` (`serialNumber`)
+    UNIQUE KEY `ukPhysicalServerSerialNumber` (`serialNumber`),
+    CONSTRAINT `fkPhysicalServerVOZoneEO` FOREIGN KEY (`zoneUuid`) REFERENCES `zstack`.`ZoneEO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalServerResourceAssignmentVO` (

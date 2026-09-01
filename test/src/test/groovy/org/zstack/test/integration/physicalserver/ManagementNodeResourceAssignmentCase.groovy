@@ -13,7 +13,7 @@ import org.zstack.portal.managementnode.LocalResourceControlExecutor
 import org.zstack.portal.managementnode.ManagementNodePhysicalServerAdapter
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
 import org.zstack.sdk.PhysicalServerResourceAssignmentInventory
-import org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsAction
+import org.zstack.sdk.RestartPhysicalServerManagedServicesAction
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.SubCase
@@ -54,7 +54,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
             env.delete()
         } finally {
             try {
-                executor?.setTestMode(false)
+                executor?.disableTestMode()
             } finally {
                 if (originalResourceAssignmentEnabled != null) {
                     PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(
@@ -84,9 +84,9 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                     "where m.uuid = :uuid")
                     .param("uuid", Platform.getManagementServerId())
                     .execute()
-            adapter.refreshAssociations()
+            adapter.discoverAssociations(Collections.emptySet())
             topologyCollector.setTestTopology(topology())
-            executor.setTestMode(true)
+            executor.enableTestMode()
 
             adapter.associateLocalNode(Platform.getManagementServerId())
             waitForLocalAssociation()
@@ -172,7 +172,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                             "expected=${SizeUnit.MEGABYTE.toByte(256)} " +
                             "actual=${current.memory}"
             assert current.state == "Synced" :
-                    "MANAGEMENT CPU and memory PATCH must reconcile locally: " +
+                    "MANAGEMENT CPU and memory PATCH must apply locally: " +
                             "expected=Synced actual=${current.state}"
         }
     }
@@ -202,7 +202,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                 "manifest restartability must be visible to callers: " +
                         "service=prometheus actual=${prometheus}"
 
-        refreshPhysicalServerResourceAssignments {
+        restartPhysicalServerManagedServices {
             delegate.serverUuid = targetUuid
             roleType = "MANAGEMENT"
             serviceNames = ["prometheus"]
@@ -216,8 +216,16 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                 "restart must use the stable systemd unit from the manifest: " +
                         "actual=${restarted[0].value}"
 
-        RefreshPhysicalServerResourceAssignmentsAction denied =
-                new RefreshPhysicalServerResourceAssignmentsAction(
+        restartPhysicalServerManagedServices {
+            delegate.serverUuid = targetUuid
+            roleType = "MANAGEMENT"
+            serviceNames = ["vector"]
+        }
+        assert executor.lastTestRestartHandles*.serviceName == ["vector"] :
+                "every service declared by the Role manifest must be addressable without an auxiliary flag"
+
+        RestartPhysicalServerManagedServicesAction denied =
+                new RestartPhysicalServerManagedServicesAction(
                         sessionId: adminSession(),
                         serverUuid: targetUuid,
                         roleType: "MANAGEMENT",

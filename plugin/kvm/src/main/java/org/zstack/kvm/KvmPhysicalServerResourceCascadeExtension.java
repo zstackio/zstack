@@ -51,12 +51,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                 each.done();
                 return;
             }
-            physicalServerManager.releaseResourceAssignment(
-                    host.getServerUuid(),
-                    KvmPhysicalServerAdapter.ROLE_TYPE,
-                    host.getUuid(),
-                    forceDelete,
-                    new Completion(each) {
+            Completion releaseCompletion = new Completion(each) {
                         @Override
                         public void success() {
                             each.done();
@@ -73,11 +68,24 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                                     "host[uuid:%s]: %s", host.getUuid(), errorCode));
                             logger.error(String.format(
                                     "failed to release compute resource assignment before force deleting " +
-                                            "host[uuid:%s], continuing without recovery reconcile: %s",
+                                            "host[uuid:%s], continuing without recovery apply: %s",
                                     host.getUuid(), errorCode));
                             each.done();
                         }
-                    });
+                    };
+            if (forceDelete) {
+                physicalServerManager.forceReleaseResourceAssignment(
+                        host.getServerUuid(),
+                        KvmPhysicalServerAdapter.ROLE_TYPE,
+                        host.getUuid(),
+                        releaseCompletion);
+            } else {
+                physicalServerManager.releaseResourceAssignment(
+                        host.getServerUuid(),
+                        KvmPhysicalServerAdapter.ROLE_TYPE,
+                        host.getUuid(),
+                        releaseCompletion);
+            }
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
@@ -88,7 +96,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                 if (!forceDeleteFailures.isEmpty()) {
                     logger.error(String.format(
                             "failed to release compute resource assignment for %s host(s) during " +
-                                    "force deletion; recovery reconcile was skipped: %s",
+                                    "force deletion; recovery apply was skipped: %s",
                             forceDeleteFailures.size(), String.join("; ", forceDeleteFailures)));
                 }
                 completion.success();

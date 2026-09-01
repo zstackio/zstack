@@ -7,7 +7,7 @@ doc {
 
     category "物理服务器"
 
-    desc """未指定serviceNames时，异步触发指定物理服务器全部Role的资源分配事实探测和收敛。指定roleType与serviceNames时，只重启Manifest中允许重启的目标服务；服务重启完成后触发资源分配重算。"""
+    desc """异步重新发现指定物理服务器的Role关联，并同步对应资源分配。该API不重启服务。"""
 
     rest {
         request {
@@ -28,24 +28,6 @@ doc {
 					location "url"
 					type "String"
 					optional false
-					since "5.5.38"
-				}
-				column {
-					name "roleType"
-					enclosedIn "refreshPhysicalServerResourceAssignments"
-					desc "需要重启服务的Role；仅与serviceNames同时填写"
-					location "body"
-					type "String"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "serviceNames"
-					enclosedIn "refreshPhysicalServerResourceAssignments"
-					desc "需要重启的稳定服务名；必须来自管控服务查询结果且restartable为true"
-					location "body"
-					type "List"
-					optional true
 					since "5.5.38"
 				}
 				column {

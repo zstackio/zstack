@@ -7,7 +7,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
-import org.zstack.header.physicalserver.PhysicalServerResourceControlAdapter;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
 import org.zstack.utils.data.SizeUnit;
 
 import java.util.HashSet;
@@ -26,8 +26,8 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
         if (msg instanceof APIUpdatePhysicalServerResourceAssignmentMsg) {
             validate((APIUpdatePhysicalServerResourceAssignmentMsg) msg);
-        } else if (msg instanceof APIRefreshPhysicalServerResourceAssignmentsMsg) {
-            validate((APIRefreshPhysicalServerResourceAssignmentsMsg) msg);
+        } else if (msg instanceof APIRestartPhysicalServerManagedServicesMsg) {
+            validate((APIRestartPhysicalServerManagedServicesMsg) msg);
         }
 
         if (msg instanceof PhysicalServerMessage) {
@@ -39,18 +39,10 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         return msg;
     }
 
-    private void validate(APIRefreshPhysicalServerResourceAssignmentsMsg msg) {
+    private void validate(APIRestartPhysicalServerManagedServicesMsg msg) {
         List<String> serviceNames = msg.getServiceNames();
-        boolean restartServices = serviceNames != null && !serviceNames.isEmpty();
-        if (!restartServices) {
-            if (msg.getRoleType() != null) {
-                throw new ApiMessageInterceptionException(argerr(
-                        PhysicalServerConstant.ERROR_CODE,
-                        "SERVICE_NAMES_REQUIRED: roleType is only valid when serviceNames are specified"));
-            }
-            return;
-        }
-        if (msg.getRoleType() == null || adapters().get(msg.getRoleType()) == null) {
+        if (msg.getRoleType() == null
+                || extensions().controller(msg.getRoleType()) == null) {
             throw new ApiMessageInterceptionException(argerr(
                     PhysicalServerConstant.ERROR_CODE,
                     "ROLE_TYPE_NOT_SUPPORTED: roleType[%s] is not registered",
@@ -74,8 +66,8 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIUpdatePhysicalServerResourceAssignmentMsg msg) {
-        PhysicalServerResourceControlAdapter adapter =
-                adapters().get(msg.getRoleType());
+        PhysicalServerResourceAssignmentController adapter =
+                extensions().controller(msg.getRoleType());
         if (adapter == null) {
             throw new ApiMessageInterceptionException(argerr(
                     PhysicalServerConstant.ERROR_CODE,
@@ -110,7 +102,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         }
     }
 
-    private PhysicalServerResourceControlAdapterRegistry adapters() {
-        return PhysicalServerResourceControlAdapterRegistry.load(pluginRgty);
+    private PhysicalServerResourceExtensionRegistry extensions() {
+        return PhysicalServerResourceExtensionRegistry.load(pluginRgty);
     }
 }
