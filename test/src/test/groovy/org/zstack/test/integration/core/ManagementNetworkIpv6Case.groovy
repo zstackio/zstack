@@ -7,7 +7,11 @@ import org.zstack.appliancevm.ApplianceVmGlobalProperty
 import org.zstack.core.ansible.CallBackNetworkChecker
 import org.zstack.core.ansible.AnsibleRunner
 import org.zstack.core.CoreGlobalProperty
+import org.zstack.core.ManagementEndpointData
 import org.zstack.core.Platform
+import org.zstack.core.aspect.AsyncSafeAspect
+import org.zstack.core.componentloader.ComponentLoader
+import org.zstack.core.errorcode.ErrorFacade
 import org.zstack.header.exception.CloudRuntimeException
 import org.zstack.core.agent.AgentManagerImpl
 import org.zstack.core.cloudbus.CloudBusImpl3
@@ -31,10 +35,12 @@ import org.zstack.storage.primary.nfs.NfsApiParamChecker
 import org.zstack.testlib.SubCase
 import org.zstack.utils.TagUtils
 import org.zstack.utils.URLBuilder
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.utils.ssh.SshShell
 import org.zstack.utils.network.IPv6Constants
 import org.zstack.utils.network.IPv6NetworkUtils
 import org.zstack.utils.network.NetworkUtils
+import org.zstack.utils.zsha2.ZSha2Info
 import org.junit.Test
 
 import java.lang.reflect.Field
@@ -106,6 +112,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         testKvmAgentUrlsIpv6()
         testKvmCallbackPrecheckUsesTargetAwareCallbackUrl()
         testRestFacadeIpv6Urls()
+        testRestFacadeSelectsCallbackUrlByTargetIpVersion()
         testSshTargetUsesRawIpv6Host()
         testScpTargetUsesBracketedIpv6Host()
         testCallbackCheckerUsesIpv6Options()
@@ -132,6 +139,9 @@ class ManagementNetworkIpv6Case extends SubCase {
         testKvmIpmiAddressKeepsIpv6()
         testApplianceVmBootstrapParam()
         testZsha2SearchBackendSelection()
+        testTargetAwareManagementNodeSelectionDoesNotCrossAddressFamily()
+        testDefaultManagementNodeSelectionPrefersIpv4()
+        testHaManagementEndpointSelectionPreservesEndpointKind()
     }
 
     void testSelectManagementServerIpDualStackPolicy() {
@@ -168,7 +178,7 @@ class ManagementNetworkIpv6Case extends SubCase {
         assert ApplianceVmFacadeImpl.selectManagementNodeIpForBootstrap(
                 [IPV4, IPV6],
                 ["10.0.0.0/24"],
-                IPV6) == IPV6
+                IPV6) == IPV4
     }
 
     void testBuildUrlIpv4() {
@@ -255,13 +265,14 @@ class ManagementNetworkIpv6Case extends SubCase {
                         RESTFacadeImpl.buildCallbackUrl(host, REST_PORT, "zstack")
                     }
             ] as RESTFacade
-            String command = KVMHost.buildManagementNodeCallbackCheckCommand(IPV6_2, restf)
+            def command = KVMHost.buildManagementNodeCallbackCheckCommand(IPV6_2, restf)
             String callbackUrl = RESTFacadeImpl.buildCallbackUrl(IPV6, REST_PORT, "zstack")
 
+            assert command.success
             assert callbackUrl == "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
-            assert command.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
-            assert command.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
-            assert !command.contains("http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
+            assert command.result.contains("curl --connect-timeout 10 --max-time 15 ${callbackUrl}")
+            assert command.result.contains("wget --spider -q --connect-timeout=10 --read-timeout=10 --tries=1 ${callbackUrl}")
+            assert !command.result.contains("http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}")
         }
     }
 
@@ -280,17 +291,22 @@ class ManagementNetworkIpv6Case extends SubCase {
                 "management.server.ip6": IPV6,
         ]) {
             String defaultCallbackUrl = "http://${IPV4}:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
-
+            boolean oldUnitTestOn = CoreGlobalProperty.UNIT_TEST_ON
+            try {
+                CoreGlobalProperty.UNIT_TEST_ON = false
+                assert RESTFacadeImpl.selectCallbackUrl(
+                        "http://[${IPV6_2}]:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack").result ==
+                        "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
+            } finally {
+                CoreGlobalProperty.UNIT_TEST_ON = oldUnitTestOn
+            }
             assert RESTFacadeImpl.selectCallbackUrl(
-                    "http://[${IPV6_2}]:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
-                    "http://[${IPV6}]:${REST_PORT}/zstack${RESTConstant.CALLBACK_PATH}"
-            assert RESTFacadeImpl.selectCallbackUrl(
-                    "http://host.example.com:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack") ==
+                    "http://host.example.com:7070/host/ping", [:], defaultCallbackUrl, REST_PORT, "zstack").result ==
                     defaultCallbackUrl
             assert RESTFacadeImpl.selectCallbackUrl(
                     "http://[${IPV6_2}]:7070/host/ping",
                     [(RESTConstant.CALLBACK_URL): "http://override.example.com/callback"],
-                    defaultCallbackUrl, REST_PORT, "zstack") == defaultCallbackUrl
+                    defaultCallbackUrl, REST_PORT, "zstack").result == defaultCallbackUrl
         }
     }
 
@@ -429,6 +445,73 @@ class ManagementNetworkIpv6Case extends SubCase {
         ]) {
             assert Platform.selectManagementServerIpForRemote("192.168.1.20", null) == IPV4
             assert Platform.selectManagementServerIpForRemote("192.168.1.20", "192.168.1.88") == IPV4
+        }
+    }
+
+    void testTargetAwareManagementNodeSelectionDoesNotCrossAddressFamily() {
+        withErrorFacade {
+            withManagementServerIpProperties([
+                    "management.server.ip": IPV4,
+            ]) {
+                assert Platform.selectCurrentNodeAddressByTargetFamily("192.168.1.20").result == IPV4
+                def missingIpv6 = Platform.selectCurrentNodeAddressByTargetFamily(IPV6_2)
+                assert !missingIpv6.success
+                assert missingIpv6.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10001"
+                def hostnameTarget = Platform.selectCurrentNodeAddressByTargetFamily("host.example.com")
+                assert !hostnameTarget.success
+                assert hostnameTarget.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10000"
+            }
+        }
+    }
+
+    void testDefaultManagementNodeSelectionPrefersIpv4() {
+        withManagementServerIpProperties([
+                "management.server.ip" : IPV6,
+                "management.server.ip4": IPV4,
+        ]) {
+            assert Platform.getManagementServerIp() == IPV4
+        }
+    }
+
+    void testHaManagementEndpointSelectionPreservesEndpointKind() {
+        ZSha2Info info = JSONObjectUtil.toObject('''
+            {
+              "ipv4": {"enabled": true, "nodeIp": "192.168.1.11", "peerIp": "192.168.1.12", "virtualIp": "192.168.1.100"},
+              "ipv6": {"enabled": true, "nodeIp": "2001:db8::11", "peerIp": "2001:db8::12", "virtualIp": "2001:db8::100"}
+            }
+        ''', ZSha2Info.class)
+
+        ManagementEndpointData endpoints = new ManagementEndpointData([IPV4, IPV6], info)
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.NODE, IPV6_2).result == IPV6
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, IPV6_2).result == "2001:db8::11"
+        assert endpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2).result == "2001:db8::100"
+
+        withErrorFacade {
+            ZSha2Info missingIpv6Vip = new ZSha2Info()
+            missingIpv6Vip.setIpv6(new ZSha2Info.HaAddressFamily(nodeIp: "2001:db8::11", peerIp: "2001:db8::12", enabled: true))
+            missingIpv6Vip.setDbvip("2001:db8::200")
+            def missingVip = new ManagementEndpointData([IPV4, IPV6], missingIpv6Vip)
+                    .selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2)
+            assert !missingVip.success
+            assert missingVip.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10002"
+
+            ZSha2Info missingIpv6Family = new ZSha2Info()
+            missingIpv6Family.setIpv4(new ZSha2Info.HaAddressFamily(nodeIp: "192.168.1.11", peerIp: "192.168.1.12", virtualIp: "192.168.1.100", enabled: true))
+            missingIpv6Family.setDbvip("2001:db8::200")
+            assert !new ManagementEndpointData([IPV4, IPV6], missingIpv6Family)
+                    .selectForTarget(ManagementEndpointData.EndpointType.VIP, IPV6_2).success
+
+            ZSha2Info legacyIpv4 = new ZSha2Info(nodeip: "192.168.1.11", dbvip: "192.168.1.100")
+            ManagementEndpointData legacyEndpoints = new ManagementEndpointData([IPV4], legacyIpv4)
+            assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.CANONICAL_NODE, "192.168.1.20").result == "192.168.1.11"
+            assert legacyEndpoints.selectForTarget(ManagementEndpointData.EndpointType.VIP, "192.168.1.20").result == "192.168.1.100"
+
+            ZSha2Info ipv6OnlyHaRecord = new ZSha2Info()
+            ipv6OnlyHaRecord.setIpv6(new ZSha2Info.HaAddressFamily(nodeIp: "2001:db8::11", peerIp: "2001:db8::12", virtualIp: "2001:db8::100", enabled: true))
+            def missingDefaultIpv4Vip = new ManagementEndpointData([IPV4, IPV6], ipv6OnlyHaRecord)
+                    .selectDefault(ManagementEndpointData.EndpointType.VIP)
+            assert !missingDefaultIpv4Vip.success
+            assert missingDefaultIpv4Vip.error.globalErrorCode == "ORG_ZSTACK_CORE_PLATFORM_10002"
         }
     }
 
@@ -596,6 +679,36 @@ class ManagementNetworkIpv6Case extends SubCase {
         Field field = Platform.class.getDeclaredField("managementServerIp")
         field.setAccessible(true)
         field.set(null, null)
+    }
+
+    private static void withErrorFacade(Closure closure) {
+        ErrorFacade errorFacade = [
+                instantiateErrorCode : { Enum code, String details, org.zstack.header.errorcode.ErrorCode cause ->
+                    new org.zstack.header.errorcode.ErrorCode(code.name(), "test", details)
+                },
+                stringToInternalError: { String details ->
+                    new org.zstack.header.errorcode.ErrorCode("TEST", "test", details)
+                }
+        ] as ErrorFacade
+
+        Field loaderField = Platform.class.getDeclaredField("loader")
+        loaderField.setAccessible(true)
+        Object oldLoader = loaderField.get(null)
+        AsyncSafeAspect aspect = AsyncSafeAspect.aspectOf()
+        Field errorFacadeField = AsyncSafeAspect.class.getDeclaredField("errf")
+        errorFacadeField.setAccessible(true)
+        ErrorFacade oldErrorFacade = errorFacadeField.get(aspect) as ErrorFacade
+
+        try {
+            loaderField.set(null, [
+                    getComponent: { Class componentClass -> componentClass == ErrorFacade.class ? errorFacade : null }
+            ] as ComponentLoader)
+            errorFacadeField.set(aspect, errorFacade)
+            closure.call()
+        } finally {
+            errorFacadeField.set(aspect, oldErrorFacade)
+            loaderField.set(null, oldLoader)
+        }
     }
 
     void testNfsIpv6UrlParsing() {

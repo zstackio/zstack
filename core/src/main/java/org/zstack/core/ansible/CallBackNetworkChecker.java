@@ -1,7 +1,9 @@
 package org.zstack.core.ansible;
 
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.Platform;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
@@ -11,6 +13,8 @@ import org.zstack.utils.ssh.SshCmdHelper;
 import org.zstack.utils.ssh.SshException;
 import org.zstack.utils.ssh.SshResult;
 import org.zstack.utils.network.IPv6NetworkUtils;
+
+import java.util.List;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.StringDSL.ln;
@@ -28,7 +32,7 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     private String privateKey;
     private int port = 22;
 
-    private String callbackIp = Platform.getManagementServerIp();
+    private String callbackIp;
     private int callBackPort = Platform.getManagementNodeServicePort();
 
     private static final String EMPTY_COMMAND_OPTION = "";
@@ -73,6 +77,15 @@ public class CallBackNetworkChecker implements AnsibleChecker {
     public ErrorCode stopAnsible() {
         if (CoreGlobalProperty.UNIT_TEST_ON || !AnsibleGlobalConfig.CHECK_MANAGEMENT_CALLBACK.value(Boolean.class)) {
             return null;
+        }
+        if (callbackIp == null) {
+            ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                    Platform.resolveManagedComponentEndpointCandidates(targetIp);
+            if (!endpoints.isSuccess()) {
+                return endpoints.error;
+            }
+            callbackIp = endpoints.result.get(0).getCurrentManagementNodeAddress();
+            targetIp = endpoints.result.get(0).getRemoteAddress();
         }
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)

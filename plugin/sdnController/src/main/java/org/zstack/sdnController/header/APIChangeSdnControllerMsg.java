@@ -40,6 +40,9 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
     @APIParam(required = false, maxLength = 255)
     private List<String> vlanRanges;
 
+    @APIParam(required = false, maxLength = 255, emptyString = false)
+    private String ip;
+
     public String getUuid() {
         return uuid;
     }
@@ -77,11 +80,20 @@ public class APIChangeSdnControllerMsg extends APIMessage implements SdnControll
         this.vlanRanges = vlanRanges;
     }
 
+    public String getIp() {
+        return ip;
+    }
+
+    public void setIp(String ip) {
+        this.ip = ip;
+    }
+
     public static APIChangeSdnControllerMsg __example__() {
         APIChangeSdnControllerMsg msg = new APIChangeSdnControllerMsg();
         msg.setUuid(uuid());
         msg.setUserName("sdnuser");
         msg.setPassword("newpassword");
+        msg.setIp("192.168.0.10");
         return msg;
     }
 }

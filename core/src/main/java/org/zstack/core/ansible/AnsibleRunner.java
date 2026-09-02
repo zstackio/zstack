@@ -4,11 +4,14 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
+import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
@@ -63,6 +66,7 @@ public class AnsibleRunner {
     }
 
     private String targetIp;
+    private String managementNodeIp;
     /** targetUuid is an unique resource for cache (see /usr/local/zstack/ansible/.ansible.cache/$targetUuid/),
      *  it should be a phsical resource,
      *  it it option.
@@ -135,6 +139,11 @@ public class AnsibleRunner {
 
     public void setTargetIp(String targetIp) {
         this.targetIp = targetIp;
+    }
+
+    public AnsibleRunner setManagementNodeIp(String managementNodeIp) {
+        this.managementNodeIp = managementNodeIp;
+        return this;
     }
 
     public String getTargetUuid() {
@@ -382,6 +391,21 @@ public class AnsibleRunner {
 
     public void run(ReturnValueCompletion<Boolean> completion) {
         try {
+            ErrorableValue<List<ManagedComponentEndpoint>> resolvedEndpoints =
+                    Platform.resolveManagedComponentEndpointCandidates(targetIp);
+            if (!resolvedEndpoints.isSuccess()) {
+                completion.fail(resolvedEndpoints.error);
+                return;
+            }
+            ManagedComponentEndpoint resolvedEndpoint = resolvedEndpoints.result.get(0);
+            targetIp = resolvedEndpoint.getRemoteAddress();
+
+            String selectedManagementNodeIp = managementNodeIp;
+            if (selectedManagementNodeIp == null) {
+                selectedManagementNodeIp = resolvedEndpoint.getCurrentManagementNodeAddress();
+            }
+            updateCheckerEndpoints(targetIp, selectedManagementNodeIp);
+
             if (!forceRun && !isNeedRun()) {
                 completion.success(false);
                 return;
@@ -393,9 +417,9 @@ public class AnsibleRunner {
                 deployArguments = new AnsibleBasicArguments();
             }
 
-            deployArguments.setPipUrl(buildPipUrl(restf.getHostName(), port));
-            deployArguments.setTrustedHost(restf.getHostName());
-            deployArguments.setYumServer(IPv6NetworkUtils.formatHostPort(restf.getHostName(), port));
+            deployArguments.setPipUrl(buildPipUrl(selectedManagementNodeIp, port));
+            deployArguments.setTrustedHost(selectedManagementNodeIp);
+            deployArguments.setYumServer(IPv6NetworkUtils.formatHostPort(selectedManagementNodeIp, port));
             deployArguments.setRemoteUser(username);
             if (password != null && !password.isEmpty()) {
                 deployArguments.setRemotePass(password);
@@ -416,6 +440,20 @@ public class AnsibleRunner {
             throw new CloudRuntimeException(e);
         }
 
+    }
+
+    private void updateCheckerEndpoints(String targetIp, String managementNodeIp) {
+        for (AnsibleChecker checker : checkers) {
+            if (checker instanceof CallBackNetworkChecker) {
+                CallBackNetworkChecker callbackChecker = (CallBackNetworkChecker) checker;
+                callbackChecker.setTargetIp(targetIp);
+                callbackChecker.setCallbackIp(managementNodeIp);
+            } else if (checker instanceof SshYumRepoChecker) {
+                SshYumRepoChecker yumRepoChecker = (SshYumRepoChecker) checker;
+                yumRepoChecker.setTargetIp(targetIp);
+                yumRepoChecker.setManagementNodeIp(managementNodeIp);
+            }
+        }
     }
 
     public static String buildPipUrl(String hostname, int port) {

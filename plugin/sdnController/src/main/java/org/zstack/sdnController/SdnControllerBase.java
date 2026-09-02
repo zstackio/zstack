@@ -187,6 +187,17 @@ public class SdnControllerBase {
     }
 
     private void doChangeSdnController(APIChangeSdnControllerMsg msg, Completion completion) {
+        if (msg.getIp() != null && !getSdnController().supportsIpChange()) {
+            completion.fail(argerr(ORG_ZSTACK_SDNCONTROLLER_10041,
+                    "SDN controller vendor[%s] does not support changing controller IP", self.getVendorType()));
+            return;
+        }
+        if (msg.getIp() != null && msg.getVlanRanges() != null && !msg.getVlanRanges().isEmpty()) {
+            completion.fail(argerr(ORG_ZSTACK_SDNCONTROLLER_10042,
+                    "cannot change controller IP and VLAN ranges in one request"));
+            return;
+        }
+
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("change-sdn-controller-%s-%s", self.getUuid(), self.getName()));
         chain.then(new Flow() {
@@ -261,13 +272,34 @@ public class SdnControllerBase {
                 trigger.rollback();
             }
         }).then(new NoRollbackFlow() {
+            String __name__ = "change-sdn-controller-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (msg.getIp() == null) {
+                    trigger.next();
+                    return;
+                }
+
+                getSdnController().changeIp(msg, new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).then(new NoRollbackFlow() {
             String __name__ = "ping-sdn-controller";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 boolean changed = data.get(SDN_CONTROLLER_CHANGED) == null ? false : (boolean) data.get(SDN_CONTROLLER_CHANGED);
-                if (!changed) {
-                    // password not changed
+                if (!changed && msg.getIp() == null) {
                     trigger.next();
                     return;
                 }
