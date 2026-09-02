@@ -1980,6 +1980,32 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_HA_10036 = "ORG_ZSTACK_HA_10036";
 
+    public static final String ORG_ZSTACK_HA_10041 = "ORG_ZSTACK_HA_10041";
+
+    public static final String ORG_ZSTACK_HA_10042 = "ORG_ZSTACK_HA_10042";
+
+    public static final String ORG_ZSTACK_HA_10043 = "ORG_ZSTACK_HA_10043";
+
+    public static final String ORG_ZSTACK_HA_10044 = "ORG_ZSTACK_HA_10044";
+
+    public static final String ORG_ZSTACK_HA_10045 = "ORG_ZSTACK_HA_10045";
+
+    public static final String ORG_ZSTACK_HA_10046 = "ORG_ZSTACK_HA_10046";
+
+    public static final String ORG_ZSTACK_HA_10047 = "ORG_ZSTACK_HA_10047";
+
+    public static final String ORG_ZSTACK_HA_10048 = "ORG_ZSTACK_HA_10048";
+
+    public static final String ORG_ZSTACK_HA_10050 = "ORG_ZSTACK_HA_10050";
+
+    public static final String ORG_ZSTACK_HA_10051 = "ORG_ZSTACK_HA_10051";
+
+    public static final String ORG_ZSTACK_HA_10053 = "ORG_ZSTACK_HA_10053";
+
+    public static final String ORG_ZSTACK_HA_10054 = "ORG_ZSTACK_HA_10054";
+
+    public static final String ORG_ZSTACK_HA_10056 = "ORG_ZSTACK_HA_10056";
+
     public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10000 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10000";
 
     public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10001 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10001";

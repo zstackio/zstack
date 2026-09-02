@@ -13,5 +13,7 @@ package org.zstack.header.allocator;
  */
 public enum HostAllocationPurpose {
     ALLOCATE,
-    LIST_CANDIDATES
+    LIST_CANDIDATES,
+    HA_PRECHECK,
+    HA_START
 }

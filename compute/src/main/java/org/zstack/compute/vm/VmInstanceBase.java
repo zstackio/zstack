@@ -852,6 +852,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
         APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+        refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
         final GetVmStartingCandidateClustersHostsMsg gmsg = new GetVmStartingCandidateClustersHostsMsg();
         gmsg.setUuid(msg.getUuid());
         bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
@@ -939,7 +947,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
-        amsg.setVmInstance(VmInstanceInventory.valueOf(self));
+        VmInstanceInventory vmInventory = VmInstanceInventory.valueOf(self);
+        amsg.setVmInstance(vmInventory);
+        amsg.setRequiredPrimaryStorageUuids(vmInventory.getAllDiskVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());

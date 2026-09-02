@@ -19,6 +19,8 @@ public class SoftAvoidHostSortFlow extends AbstractHostSortorFlow {
         }
 
         subCandidates.removeIf(inv -> softAvoidHosts.contains(inv.getUuid()));
+        candidates.removeAll(subCandidates);
+        candidates.addAll(0, subCandidates);
     }
 
     @Override
