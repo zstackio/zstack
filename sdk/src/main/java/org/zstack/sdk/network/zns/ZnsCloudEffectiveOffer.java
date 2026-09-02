@@ -12,12 +12,28 @@ public class ZnsCloudEffectiveOffer  {
         return this.schemaVersion;
     }
 
-    public java.lang.String product;
-    public void setProduct(java.lang.String product) {
-        this.product = product;
+    public java.lang.String systemType;
+    public void setSystemType(java.lang.String systemType) {
+        this.systemType = systemType;
     }
-    public java.lang.String getProduct() {
-        return this.product;
+    public java.lang.String getSystemType() {
+        return this.systemType;
+    }
+
+    public java.lang.String productId;
+    public void setProductId(java.lang.String productId) {
+        this.productId = productId;
+    }
+    public java.lang.String getProductId() {
+        return this.productId;
+    }
+
+    public java.lang.String serviceInstanceUuid;
+    public void setServiceInstanceUuid(java.lang.String serviceInstanceUuid) {
+        this.serviceInstanceUuid = serviceInstanceUuid;
+    }
+    public java.lang.String getServiceInstanceUuid() {
+        return this.serviceInstanceUuid;
     }
 
     public java.lang.String clusterUuid;

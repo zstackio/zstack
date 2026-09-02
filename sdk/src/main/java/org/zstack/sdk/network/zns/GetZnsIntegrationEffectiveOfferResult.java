@@ -1,6 +1,7 @@
 package org.zstack.sdk.network.zns;
 
 import org.zstack.sdk.network.zns.ZnsCloudEffectiveOffer;
+import org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis;
 
 public class GetZnsIntegrationEffectiveOfferResult {
     public ZnsCloudEffectiveOffer offer;
@@ -33,6 +34,14 @@ public class GetZnsIntegrationEffectiveOfferResult {
     }
     public long getGeneration() {
         return this.generation;
+    }
+
+    public ZnsIntegrationProtocolDiagnosis diagnosis;
+    public void setDiagnosis(ZnsIntegrationProtocolDiagnosis diagnosis) {
+        this.diagnosis = diagnosis;
+    }
+    public ZnsIntegrationProtocolDiagnosis getDiagnosis() {
+        return this.diagnosis;
     }
 
 }

@@ -647,6 +647,9 @@ public class SourceClassMap {
 			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.network.zns.ZnsCloudEffectiveOffer", "org.zstack.sdk.network.zns.ZnsCloudEffectiveOffer");
 			put("org.zstack.network.zns.ZnsControllerInventory", "org.zstack.sdk.network.zns.ZnsControllerInventory");
+			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis", "org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis");
+			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Capability", "org.zstack.sdk.network.zns.Capability");
+			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Transition", "org.zstack.sdk.network.zns.Transition");
 			put("org.zstack.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory");
 			put("org.zstack.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory");
 			put("org.zstack.network.zns.ZnsTenantInventory", "org.zstack.sdk.network.zns.ZnsTenantInventory");
@@ -1777,9 +1780,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.LicenseUsageDetailView", "org.zstack.license.header.server.LicenseUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseUsageView", "org.zstack.license.header.server.LicenseUsageView");
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
+			put("org.zstack.sdk.network.zns.Capability", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Capability");
 			put("org.zstack.sdk.network.zns.L2GeneveNetworkInventory", "org.zstack.network.zns.L2GeneveNetworkInventory");
+			put("org.zstack.sdk.network.zns.Transition", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Transition");
 			put("org.zstack.sdk.network.zns.ZnsCloudEffectiveOffer", "org.zstack.network.zns.ZnsCloudEffectiveOffer");
 			put("org.zstack.sdk.network.zns.ZnsControllerInventory", "org.zstack.network.zns.ZnsControllerInventory");
+			put("org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis");
 			put("org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.network.zns.ZnsSegmentCloudProjectionInventory");
 			put("org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.network.zns.ZnsSegmentSyncOperationInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantInventory", "org.zstack.network.zns.ZnsTenantInventory");
