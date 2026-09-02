@@ -1,10 +1,12 @@
 package org.zstack.sdnController.header;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerVO;
 
 public class AddSdnControllerMsg extends NeedReplyMessage implements SdnControllerMessage {
+    @NoLogging
     SdnControllerVO sdnControllerVO;
     String accountUuid;
 

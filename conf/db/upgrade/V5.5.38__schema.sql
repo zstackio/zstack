@@ -452,6 +452,14 @@ CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupV
 
 CALL ADD_COLUMN('ZnsControllerVO', 'zcfAccessKeyId', 'VARCHAR(64)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'zcfAccessKeySecret', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityMode', 'VARCHAR(32)', 0, 'UNBOUND');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProfile', 'VARCHAR(64)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityPeerVersion', 'VARCHAR(32)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProofDigest', 'VARCHAR(128)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProofAt', 'DATETIME', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityEndpoint', 'VARCHAR(255)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityServiceInstanceUuid', 'VARCHAR(64)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityDiagnostic', 'TEXT', 1, NULL);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerStateVO` (
     `sdnControllerUuid` varchar(32) NOT NULL,
@@ -505,6 +513,34 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerCapabilityVO` (
     CONSTRAINT `chk_zns_controller_capability_state`
         CHECK (`observedState` IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY')
             AND `effectiveState` IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY'))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'selectedFields', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'pendingSelectedFields', 'TEXT', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerTransitionVO` (
+    `operationUuid` varchar(36) NOT NULL,
+    `controllerUuid` varchar(32) NOT NULL,
+    `capabilityName` varchar(64) NOT NULL,
+    `transitionType` varchar(24) NOT NULL,
+    `phase` varchar(16) NOT NULL,
+    `fromContract` varchar(32) NOT NULL,
+    `targetContract` varchar(32) NOT NULL,
+    `expectedEpoch` bigint NOT NULL,
+    `cloudOfferDigest` varchar(128) NOT NULL,
+    `znsOfferDigest` varchar(128) NOT NULL,
+    `ownerUuid` varchar(128) NOT NULL,
+    `leaseUntil` timestamp NULL DEFAULT NULL,
+    `immutableResult` mediumtext DEFAULT NULL,
+    `lastError` text DEFAULT NULL,
+    `attempt` int NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`operationUuid`),
+    KEY `idxZnsControllerTransitionVOControllerCapability`
+        (`controllerUuid`, `capabilityName`, `phase`),
+    KEY `idxZnsControllerTransitionVOLease` (`phase`, `leaseUntil`),
+    CONSTRAINT `fkZnsControllerTransitionVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudProtocolIdentityVO` (
