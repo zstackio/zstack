@@ -460,6 +460,8 @@ CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProofAt', 'DATETIME', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityEndpoint', 'VARCHAR(255)', 0, '');
 CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityServiceInstanceUuid', 'VARCHAR(64)', 0, '');
 CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityDiagnostic', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'contractResolutionMode', 'VARCHAR(32)', 0, 'NEGOTIATED');
+CALL ADD_COLUMN('ZnsControllerVO', 'deploymentProfileId', 'VARCHAR(128)', 0, '');
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerStateVO` (
     `sdnControllerUuid` varchar(32) NOT NULL,
