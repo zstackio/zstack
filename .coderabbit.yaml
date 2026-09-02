@@ -1,3 +1,397 @@
 # yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
-remote_config:
-  url: "http://open.zstack.ai:20001/code-reviews/zstack-cloud.yaml"
+language: zh-CN
+tone_instructions: ''
+early_access: false
+enable_free_tier: true
+reviews:
+  profile: chill
+  request_changes_workflow: false
+  high_level_summary: false
+  high_level_summary_placeholder: '@coderabbitai summary'
+  high_level_summary_in_walkthrough: false
+  auto_title_placeholder: '@coderabbitai'
+  auto_title_instructions: ''
+  review_status: true
+  commit_status: true
+  fail_commit_status: false
+  collapse_walkthrough: false
+  changed_files_summary: true
+  sequence_diagrams: true
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+  suggested_labels: true
+  auto_apply_labels: false
+  suggested_reviewers: true
+  auto_assign_reviewers: false
+  pre_merge_checks:
+    title:
+      mode: error
+      requirements: "Must follow **<type>[scope]: <description>** format (e.g., '<fix>[core]: Fix config bug') and be **72 characters or less**."
+    description:
+      mode: warning
+      requirements: 'Should include **motivation** and **behavior contrast**. Add impact tags (e.g., **APIImpact**) if relevant. Use **Resolves/Related: ZSTAC-XXXX** for issue linking.'
+  poem: true
+  labeling_instructions: []
+  path_filters:
+    - '!dist/**'
+    - '!sdk/**'
+    - '!**/*.app'
+    - '!**/*.bin'
+    - '!**/*.bz2'
+    - '!**/*.class'
+    - '!**/*.db'
+    - '!**/*.csv'
+    - '!**/*.tsv'
+    - '!**/*.dat'
+    - '!**/*.dll'
+    - '!**/*.dylib'
+    - '!**/*.egg'
+    - '!**/*.glif'
+    - '!**/*.gz'
+    - '!**/*.xz'
+    - '!**/*.zip'
+    - '!**/*.7z'
+    - '!**/*.rar'
+    - '!**/*.zst'
+    - '!**/*.ico'
+    - '!**/*.jar'
+    - '!**/*.tar'
+    - '!**/*.war'
+    - '!**/*.lo'
+    - '!**/*.log'
+    - '!**/*.mp3'
+    - '!**/*.wav'
+    - '!**/*.wma'
+    - '!**/*.mp4'
+    - '!**/*.avi'
+    - '!**/*.mkv'
+    - '!**/*.wmv'
+    - '!**/*.m4a'
+    - '!**/*.m4v'
+    - '!**/*.3gp'
+    - '!**/*.3g2'
+    - '!**/*.rm'
+    - '!**/*.mov'
+    - '!**/*.flv'
+    - '!**/*.iso'
+    - '!**/*.swf'
+    - '!**/*.flac'
+    - '!**/*.nar'
+    - '!**/*.o'
+    - '!**/*.ogg'
+    - '!**/*.otf'
+    - '!**/*.p'
+    - '!**/*.pdf'
+    - '!**/*.doc'
+    - '!**/*.docx'
+    - '!**/*.xls'
+    - '!**/*.xlsx'
+    - '!**/*.map'
+    - '!**/*.out'
+    - '!**/*.ppt'
+    - '!**/*.pptx'
+    - '!**/*.pkl'
+    - '!**/*.pickle'
+    - '!**/*.pyc'
+    - '!**/*.pyd'
+    - '!**/*.pyo'
+    - '!**/*.pub'
+    - '!**/*.pem'
+    - '!**/*.rkt'
+    - '!**/*.so'
+    - '!**/*.ss'
+    - '!**/*.eot'
+    - '!**/*.exe'
+    - '!**/*.pb.go'
+    - '!**/*.pb.gw.go'
+    - '!**/*.lock'
+    - '!**/*.ttf'
+    - '!**/*.yaml'
+    - '!**/*.yml'
+    - '!**/*.xml'
+    - '!**/*.cfg'
+    - '!**/*.toml'
+    - '!**/*.ini'
+    - '!**/*.mod'
+    - '!**/*.sum'
+    - '!**/*.work'
+    - '!**/*.json'
+    - '!**/*.mmd'
+    - '!**/*.svg'
+    - '!**/*.jpeg'
+    - '!**/*.jpg'
+    - '!**/*.png'
+    - '!**/*.gif'
+    - '!**/*.bmp'
+    - '!**/*.tiff'
+    - '!**/*.webm'
+    - '!**/*.woff'
+    - '!**/*.woff2'
+    - '!**/*.dot'
+    - '!**/*.md5sum'
+    - '!**/*.wasm'
+    - '!**/*.snap'
+    - '!**/*.parquet'
+    - '!**/gen/**'
+    - '!**/_gen/**'
+    - '!**/generated/**'
+    - '!**/@generated/**'
+    - '!**/vendor/**'
+    - '!**/*.min.js'
+    - '!**/*.min.js.map'
+    - '!**/*.min.js.css'
+    - '!**/*.tfstate'
+    - '!**/*.tfstate.backup'
+    - ''
+  path_instructions:
+    - path: '**/*.*'
+      instructions: |
+        - 代码里不应当有有中文，包括报错、注释等都应当使用正确的、无拼写错误的英文来写
+    - path: '**/*.sql'
+      instructions: |
+        - Review the SQL code, make sure has no errors and confirm that:
+        - Upgrading scene has been carefully handled
+        - Schema migration SQL must be idempotent. For index, column, and constraint changes, prefer reusing the idempotent procedures already provided by migration scripts, such as `CREATE_INDEX`, `ADD_COLUMN`, and `ADD_CONSTRAINT`, instead of writing raw non-idempotent DDL.
+        - Do not use `DEFAULT 0000-00-00 00:00:00 `, use `DEFAULT CURRENT_TIMESTAMP ` instead
+        - When `NOT NULL` exists, must use `stored procedure` or other functions to process historical data, this is very very important
+        - 数据库记录中，如果字符串长度不可控，不要用 `vchar`，用 `text` 类型
+        - 所有表名和列名必须使用反引号包裹（例如：WHERE `system` = 1），以避免 MySQL 8.0 / GreatSQL 保留关键字冲突导致的语法错误
+    - path: '**/*Interceptor.java'
+      instructions: |
+        - 注意检查来自 Message 的参数是否做过 trim，用户可能在浏览器上复制粘贴的数据带有空格、换行符等
+    - path: '**/*.java'
+      instructions: |
+        ## 1. API 设计要求
+
+        - **API 命名：**
+          - API 名称必须唯一，不能重复。
+          - API 消息类需要继承 `APIMessage`；其返回类必须继承 `APIReply` 或 `APIEvent`，并在注释中用 `@RestResponse` 进行标注。
+          - API 消息上必须添加注解 `@RestRequest`，并满足如下规范：
+            - **`path`:**  
+              - 针对资源使用复数形式。  
+              - 当 path 中引用消息类变量时，使用 `{variableName}` 格式。
+            - **HTTP 方法对应：**
+              - 查询操作 → `HttpMethod.GET`
+              - 更新操作 → `HttpMethod.PUT`
+              - 创建操作 → `HttpMethod.POST`
+              - 删除操作 → `HttpMethod.DELETE`
+          - API 类需要实现 `__example__` 方法以便生成 API 文档，并确保生成对应的 Groovy API Template 与 API Markdown 文件。
+
+        ---
+
+        ## 2. 命名与格式规范
+
+        - **类名：**
+          - 使用 **UpperCamelCase** 风格。
+          - 特殊情况：
+            - VO/AO/EO 类型类除外。
+            - 抽象类采用 `Abstract` 或 `Base` 前缀/后缀。
+            - 异常类应以 `Exception` 结尾。
+            - 测试类需要以 `Test` 或 `Case` 结尾。
+
+        - **方法名、参数名、成员变量和局部变量：**
+          - 使用 **lowerCamelCase** 风格。
+
+        - **常量命名：**
+          - 全部大写，使用下划线分隔单词。
+          - 要求表达清楚，避免使用含糊或不准确的名称。
+
+        - **包名：**
+          - 统一使用小写，使用点分隔符，每个部分应是一个具有自然语义的英文单词（参考 Spring 框架的结构）。
+
+        - **命名细节：**
+          - 避免在父子类或同一代码块中出现相同名字的成员或局部变量，防止混淆。
+          - **命名缩写：**  
+            - 不允许使用不必要的缩写，如：`AbsSchedulerJob`、`condi`、`Fu` 等。应使用完整单词提升可读性。
+
+        ---
+
+        ## 3. 编写自解释代码
+
+        - **意图表达：**
+          - 避免使用布尔型参数造成含义不明确。例如：
+            - 对于 `stopAgent(boolean ignoreError)`，建议拆分为不同函数（如 `stopAgentIgnoreError()`），或使用枚举表达操作类型。
+          - 命名应尽量用完整的单词组合表达意图，并在名称中体现数据类型或用途（例如在常量与变量名称中，将类型词放在末尾）。
+          - 避免使用魔法值（Magic Value）：
+            - 直接使用未经定义的数值或字符串（如 if (status == 5)）应替换为枚举或常量。
+            - 示例：
+            - // 错误示例：魔法值
+            - if (user.getStatus() == 5) { ... }
+            
+            - // 正确示例：常量或枚举
+            - public static final int STATUS_ACTIVE = 5;
+            - if (user.getStatus() == STATUS_ACTIVE) { ... }
+            
+            - // 或使用枚举
+            - enum UserStatus { ACTIVE, INACTIVE }
+
+        - **注释：**
+          - 代码应尽量做到自解释，对少于两行的说明可以直接写在代码中。
+          - 对于较长的注释，需要仔细校对并随代码更新，确保内容正确。
+          - 接口方法不应有多余的修饰符（例如 `public`），且必须配有有效的 Javadoc 注释。
+
+        ---
+
+        ## 4. 流程控制和结构优化
+
+        - **if...else 的使用：**
+          - 应尽量减少 if...else 结构的使用，建议：
+            - 限制嵌套层级最多为两层，且内层不应再出现 `else` 分支。
+            - 尽早返回（Early Return），将条件判断中的处理逻辑提前结束或抽成独立方法。
+            - 使用 Java Stream 或 Lambda 表达式代替冗长的循环与条件判断。
+
+        - **条件判断：**
+          - if 条件表达不宜过长或过于复杂，必要时可以将条件抽成 boolean 变量描述。
+
+        - **代码块长度：**
+          - 单个 if 代码块不宜超过一屏显示，以提高可读性和后续维护性。
+
+        ---
+
+        ## 5. 异常处理与日志
+
+        - **捕获异常的原则：**
+          - 对于可以通过预检查避免的 RuntimeException（如 `NullPointerException`、`IndexOutOfBoundsException` 等），不建议使用 try-catch 来进行处理。
+          - 捕获异常应仅用于处理真正的意外情况，不应将异常逻辑当作正常流程控制。
+          - 在必要时，应继续抛出异常，使上层业务处理者可以转换为用户友好的错误提示。
+          - 使用 try-with-resources 语法管理资源，确保在 finally 块中正确关闭资源，并避免在 finally 中返回值。
+          - 捕获异常时需严格匹配期望的异常类型或其父类，避免捕获错误的异常类型。
+          - 在事务操作中，捕获异常后要确保触发手动回滚。
+
+        ---
+
+        ## 6. 设计原则和模块划分
+
+        - **单一职责原则：**
+          - 每个模块、类、方法应只承担单一的责任。若某个逻辑过于复杂，应考虑拆分出独立类来处理。
+          - 公共库不能包含业务逻辑。
+          
+        - **策略与机制分离：**
+          - 例如，接口定义一个消息处理机制，而具体业务由不同实现类完成，从而减少耦合性，提高代码可读性。
+          - 当应用了设计模式（如工厂模式），应在命名上体现相应的设计理念（例如 `VmInstanceFactory`）。
+        
+        - **数据库操作规范：**
+          - SQLBatch里尽量避免使用dbf，减少重复事务开销。
+          - 仅查询实际需要的列，避免加载整个实体。
+          - 禁止循环里套查询，避免嵌套查询带来的性能问题。
+          - 新增代码里面避免使用 `TypedQuery`
+
+        - **向后兼容原则**
+          - 之前的代码产生的行为不要直接去改动，即使是 bug 也可能用户有依赖，不应直接改动，可以考虑升级用户一套行为、新安装用户一套行为，开关控制等
+          - 有些配置用户可能跳过平台进行了改动，例如虚拟机内的 IP、Hostname、网关等等，平台不应直接覆盖用户可能自定义修改过的东西，这个非常重要
+          - 实在需要在覆盖用户的某些配置或者需要改动已有行为，应当对原状态做好记录，做好二次确认，做好回退准备，这个非常重要
+
+        - **其他原则**
+          - 注意检查来自 Message 的参数是否做过 trim，用户可能在浏览器上复制粘贴的数据带有空格、换行符等
+  abort_on_close: true
+  auto_review:
+    enabled: true
+    auto_incremental_review: true
+    ignore_title_keywords: []
+    labels: []
+    drafts: false
+    base_branches:
+      - .*
+  finishing_touches:
+    docstrings:
+      enabled: true
+  tools:
+    ast-grep:
+      rule_dirs: []
+      util_dirs: []
+      essential_rules: true
+      packages: []
+    shellcheck:
+      enabled: true
+    ruff:
+      enabled: true
+    markdownlint:
+      enabled: true
+    github-checks:
+      enabled: true
+      timeout_ms: 90000
+    languagetool:
+      enabled: true
+      enabled_rules: []
+      disabled_rules: []
+      enabled_categories: []
+      disabled_categories: []
+      enabled_only: false
+      level: default
+    biome:
+      enabled: true
+    hadolint:
+      enabled: true
+    swiftlint:
+      enabled: true
+    phpstan:
+      enabled: true
+      level: default
+    golangci-lint:
+      enabled: true
+    yamllint:
+      enabled: true
+    gitleaks:
+      enabled: true
+    checkov:
+      enabled: true
+    detekt:
+      enabled: true
+    eslint:
+      enabled: true
+    rubocop:
+      enabled: true
+    buf:
+      enabled: true
+    regal:
+      enabled: true
+    actionlint:
+      enabled: true
+    pmd:
+      enabled: true
+    cppcheck:
+      enabled: true
+    semgrep:
+      enabled: true
+    circleci:
+      enabled: true
+    sqlfluff:
+      enabled: true
+    prismaLint:
+      enabled: true
+    oxc:
+      enabled: true
+chat:
+  auto_reply: true
+  create_issues: true
+  integrations:
+    jira:
+      usage: auto
+    linear:
+      usage: auto
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: true
+  learnings:
+    scope: auto
+  issues:
+    scope: auto
+  jira:
+    usage: enabled
+    project_keys:
+      - ZSTAC
+      - TIC
+      - ZBS
+  linear:
+    usage: auto
+    team_keys: []
+  pull_requests:
+    scope: auto
+  mcp:
+    usage: enabled
+code_generation:
+  docstrings:
+    language: en-US
+
