@@ -614,6 +614,7 @@ public class SourceClassMap {
 			put("org.zstack.network.service.lb.LoadBalancerListenerInventory", "org.zstack.sdk.LoadBalancerListenerInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory", "org.zstack.sdk.LoadBalancerListenerServerGroupRefInventory");
 			put("org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory", "org.zstack.sdk.LoadBalancerListenerVmNicRefInventory");
+			put("org.zstack.network.service.lb.LoadBalancerServerGroupBackendServerInventory", "org.zstack.sdk.LoadBalancerServerGroupBackendServerInventory");
 			put("org.zstack.network.service.lb.LoadBalancerServerGroupInventory", "org.zstack.sdk.LoadBalancerServerGroupInventory");
 			put("org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory", "org.zstack.sdk.LoadBalancerServerGroupServerIpInventory");
 			put("org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory");
@@ -1271,6 +1272,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.LoadBalancerListenerServerGroupRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefInventory");
 			put("org.zstack.sdk.LoadBalancerListenerVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerListenerVmNicRefInventory");
 			put("org.zstack.sdk.LoadBalancerListerAcl", "org.zstack.network.service.lb.APIChangeAccessControlListServerGroupEvent$LoadBalancerListerAcl");
+			put("org.zstack.sdk.LoadBalancerServerGroupBackendServerInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupBackendServerInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupServerIpInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupServerIpInventory");
 			put("org.zstack.sdk.LoadBalancerServerGroupVmNicRefInventory", "org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefInventory");

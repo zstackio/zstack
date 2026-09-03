@@ -197,6 +197,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             createServerGroup()
             TestUpdateLoadBalancerServerGroup()
             TestServerGroupWithBackendServer()
+            TestGetServerGroupBackendServer()
             TestDeleteLoadBalancerServerGroup()
         }
     }
@@ -372,6 +373,155 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
 
 
     }
+
+    void TestGetServerGroupBackendServer(){
+        def lb = env.inventoryByName("lb") as LoadBalancerInventory
+
+        VmInstanceInventory vm2 = queryVmInstance {conditions = ["name=vm-2"]} [0]
+        VmNicInventory nic2 = vm2.vmNics.get(0)
+        VmInstanceInventory vm3 = queryVmInstance {conditions = ["name=vm-3"]} [0]
+        VmNicInventory nic3 = vm3.vmNics.get(0)
+        VmInstanceInventory vm4 = queryVmInstance {conditions = ["name=vm-4"]} [0]
+        VmNicInventory nic4 = vm4.vmNics.get(0)
+
+        def lbl1 = env.inventoryByName("listener-22") as LoadBalancerListenerInventory
+
+        /* group2 is already attached to lbl1, attach group1 so both are covered */
+        addServerGroupToLoadBalancerListener {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+        }
+
+        /* listener view returns backends of all groups attached to the listener */
+        def action = new org.zstack.sdk.GetLoadBalancerServerGroupBackendServerAction()
+        action.listenerUuid = lbl1.uuid
+        action.sessionId = org.zstack.testlib.Test.currentEnvSpec.session.uuid
+        def ret = action.call()
+        assert ret.error == null
+        assert ret.value.total == 3
+        assert ret.value.inventories.size() == 3
+        assert ret.value.inventories.every { it.loadBalancerUuid == lb.uuid }
+        assert ret.value.inventories.every { it.listenerUuid == lbl1.uuid }
+        assert ret.value.inventories.every { it.state == "Enabled" }
+        assert ret.value.inventories.every { it.runtimeStatus == "Active" }
+        assert ret.value.inventories.count { it.serverGroupUuid == servergroup1.uuid } == 2
+        assert ret.value.inventories.count { it.serverGroupUuid == servergroup2.uuid } == 1
+        assert ret.value.inventories.collect { it.uuid }.unique().size() == 3
+        assert ret.value.inventories.every { it.uuid.length() == 32 }
+        assert ret.value.inventories.findAll { it.serverGroupUuid == servergroup1.uuid }.every { it.serverGroupName == "updated name" }
+        assert ret.value.inventories.findAll { it.serverGroupUuid == servergroup2.uuid }.every { it.serverGroupName == "lb-group-2" }
+        assert ret.value.inventories.find { it.vmNicUuid == nic2.uuid }.serverName == "vm-2"
+        assert ret.value.inventories.find { it.vmNicUuid == nic4.uuid }.serverName == "vm-4"
+
+        /* serverGroupUuid filters rows down to one group */
+        def invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+        }
+        assert invs.size() == 2 && invs.every { it.serverGroupUuid == servergroup1.uuid }
+
+        /* search by name across groups */
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            name = "vm-"
+        }
+        assert invs.size() == 3
+
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            name = "vm-4"
+        }
+        assert invs.size() == 1 && invs[0].serverName == "vm-4"
+
+        /* sort by server name asc */
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            sortBy = "serverName"
+            sortDirection = "asc"
+        }
+        assert invs.size() == 3
+        assert invs[0].serverName == "vm-2" && invs[1].serverName == "vm-3" && invs[2].serverName == "vm-4"
+
+        /* pagination: total counts all matches, inventories are sliced */
+        action = new org.zstack.sdk.GetLoadBalancerServerGroupBackendServerAction()
+        action.listenerUuid = lbl1.uuid
+        action.sortBy = "serverName"
+        action.sortDirection = "asc"
+        action.limit = 2
+        action.start = 0
+        action.sessionId = org.zstack.testlib.Test.currentEnvSpec.session.uuid
+        ret = action.call()
+        assert ret.error == null
+        assert ret.value.total == 3
+        assert ret.value.inventories.size() == 2
+        assert ret.value.inventories[0].serverName == "vm-2"
+        assert ret.value.inventories[1].serverName == "vm-3"
+
+        action.start = 2
+        ret = action.call()
+        assert ret.error == null
+        assert ret.value.total == 3
+        assert ret.value.inventories.size() == 1
+        assert ret.value.inventories[0].serverName == "vm-4"
+
+        /* serverGroupUuid filter works together with pagination */
+        action.serverGroupUuid = servergroup1.uuid
+        action.start = 0
+        ret = action.call()
+        assert ret.error == null
+        assert ret.value.total == 2
+        assert ret.value.inventories.size() == 2
+
+        /* disable vm-2 on listener lbl1 */
+        changeLoadBalancerListenerBackendServerState {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+            vmNicUuids = [nic2.uuid]
+            state = "Disabled"
+        }
+
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            state = "Disabled"
+        }
+        assert invs.size() == 1 && invs[0].serverName == "vm-2"
+
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            state = "Enabled"
+        }
+        assert invs.size() == 2
+
+        /* runtime status still reflects vm nic state while state is the enable/disable state */
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+        }
+        assert invs.find { it.serverName == "vm-2" }.state == "Disabled"
+        assert invs.find { it.serverName == "vm-2" }.runtimeStatus == "Active"
+        assert invs.find { it.serverName == "vm-3" }.state == "Enabled"
+
+        /* name search and state filter work together */
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+            name = "vm-3"
+            state = "Enabled"
+        }
+        assert invs.size() == 1 && invs[0].serverName == "vm-3"
+
+        /* re-enable vm-2 */
+        changeLoadBalancerListenerBackendServerState {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+            vmNicUuids = [nic2.uuid]
+            state = "Enabled"
+        }
+
+        invs = getLoadBalancerServerGroupBackendServer {
+            listenerUuid = lbl1.uuid
+        }
+        assert invs.every { it.state == "Enabled" }
+    }
+
 
     void TestDeleteLoadBalancerServerGroup(){
         deleteLoadBalancerServerGroup{

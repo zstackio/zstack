@@ -32,6 +32,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetLoadBalancerServerGroupBackendServerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
     </message>
 

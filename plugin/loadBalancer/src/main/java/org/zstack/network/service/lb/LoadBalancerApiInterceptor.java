@@ -152,6 +152,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
             validate((APIDeleteLoadBalancerServerGroupMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) {
             validate((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg)msg);
+        } else if (msg instanceof APIGetLoadBalancerServerGroupBackendServerMsg) {
+            validate((APIGetLoadBalancerServerGroupBackendServerMsg)msg);
         } else if (msg instanceof APIChangeLoadBalancerBackendServerMsg) {
             validate((APIChangeLoadBalancerBackendServerMsg)msg);
         } else if (msg instanceof APIChangeLoadBalancerListenerBackendServerStateMsg) {
@@ -202,6 +204,18 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
         if (msg.getIpVersion() == null) {
             msg.setIpVersion(4);
         }
+    }
+
+    private void validate(APIGetLoadBalancerServerGroupBackendServerMsg msg) {
+        String loadBalancerUuid = Q.New(LoadBalancerListenerVO.class)
+                .select(LoadBalancerListenerVO_.loadBalancerUuid)
+                .eq(LoadBalancerListenerVO_.uuid, msg.getListenerUuid())
+                .findValue();
+        if (loadBalancerUuid == null) {
+            throw new ApiMessageInterceptionException(
+                    argerr("could not find the load balancer of the listener[uuid:%s], maybe the listener doesn't exist", msg.getListenerUuid()));
+        }
+        msg.setLoadBalancerUuid(loadBalancerUuid);
     }
 
     private void validate(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
