@@ -1,5 +1,7 @@
 roleType: COMPUTE
+isolationMode: SHARED
 sliceName: zstack-compute.slice
+# Refresh resizes the existing cpuSet to this count; removing the field leaves it unchanged.
 defaultCpuCount: 8
 services:
   - name: kvmagent

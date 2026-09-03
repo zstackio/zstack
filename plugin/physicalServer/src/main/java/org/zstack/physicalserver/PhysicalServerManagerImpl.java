@@ -15,17 +15,16 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.physicalserver.PhysicalServerManager;
-import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static org.zstack.core.Platform.operr;
+
 public class PhysicalServerManagerImpl extends AbstractService implements
-        PhysicalServerManager,
-        Component,
-        ManagementNodeReadyExtensionPoint {
+        PhysicalServerManager, Component, ManagementNodeReadyExtensionPoint {
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -41,8 +40,7 @@ public class PhysicalServerManagerImpl extends AbstractService implements
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else if (msg instanceof PhysicalServerAssociationChangedMsg) {
-            assignmentService.refreshAssignments(
-                    ((PhysicalServerAssociationChangedMsg) msg).getServerUuid());
+            assignmentService.associationChanged(((PhysicalServerAssociationChangedMsg) msg).getServerUuid());
         } else if (msg instanceof ReleasePhysicalServerResourceAssignmentMsg) {
             handle((ReleasePhysicalServerResourceAssignmentMsg) msg);
         } else {
@@ -64,27 +62,18 @@ public class PhysicalServerManagerImpl extends AbstractService implements
                         bus.reply(msg, reply);
                     }
                 };
-        if (msg.getOperation()
-                == ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE) {
-            assignmentService.forceReleaseAssignment(
-                    msg.getServerUuid(),
-                    msg.getRoleType(),
-                    msg.getConsumerUuid(),
-                    completion);
+        if (msg.getOperation() == ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE) {
+            assignmentService.forceReleaseAssignment(msg.getServerUuid(), msg.getRoleType(), completion);
         } else {
-            assignmentService.releaseAssignment(
-                    msg.getServerUuid(),
-                    msg.getRoleType(),
-                    msg.getConsumerUuid(),
-                    completion);
+            assignmentService.releaseAssignment(msg.getServerUuid(), msg.getRoleType(), completion);
         }
     }
 
     private void handleApiMessage(APIMessage msg) {
         if (msg instanceof APIUpdatePhysicalServerResourceAssignmentMsg) {
             handle((APIUpdatePhysicalServerResourceAssignmentMsg) msg);
-        } else if (msg instanceof APIRefreshPhysicalServerResourceAssignmentsMsg) {
-            handle((APIRefreshPhysicalServerResourceAssignmentsMsg) msg);
+        } else if (msg instanceof APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
+            handle((APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) msg);
         } else if (msg instanceof APIRestartPhysicalServerManagedServicesMsg) {
             handle((APIRestartPhysicalServerManagedServicesMsg) msg);
         } else if (msg instanceof APIGetPhysicalServerManagedServicesMsg) {
@@ -94,18 +83,15 @@ public class PhysicalServerManagerImpl extends AbstractService implements
         }
     }
 
-    private void handle(
-            APIGetPhysicalServerManagedServicesMsg msg) {
-        APIGetPhysicalServerManagedServicesReply reply =
-                new APIGetPhysicalServerManagedServicesReply();
+    private void handle(APIGetPhysicalServerManagedServicesMsg msg) {
+        APIGetPhysicalServerManagedServicesReply reply = new APIGetPhysicalServerManagedServicesReply();
         assignmentService.collectManagedServiceUsage(
-                msg.getServerUuid(),
-                new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(msg) {
+                msg.getServerUuid(), new ReturnValueCompletion<
+                        PhysicalServerResourceAssignmentService.ManagedServiceUsageResult>(msg) {
                     @Override
-                    public void success(
-                            List<ManagedServiceResourceUsage> usages) {
-                        reply.setServices(
-                                PhysicalServerManagedServiceInventory.valueOf(usages));
+                    public void success(PhysicalServerResourceAssignmentService.ManagedServiceUsageResult result) {
+                        reply.setServices(PhysicalServerManagedServiceInventory.valueOf(result.getServices()));
+                        reply.setRoleErrors(result.getRoleErrors());
                         bus.reply(msg, reply);
                     }
 
@@ -121,13 +107,11 @@ public class PhysicalServerManagerImpl extends AbstractService implements
         APIUpdatePhysicalServerResourceAssignmentEvent event =
                 new APIUpdatePhysicalServerResourceAssignmentEvent(msg.getId());
         assignmentService.updateAssignment(
-                msg,
-                new ReturnValueCompletion<PhysicalServerResourceAssignmentInventory>(msg) {
+                msg, new ReturnValueCompletion<PhysicalServerResourceAssignmentInventory>(msg) {
             @Override
             public void success(PhysicalServerResourceAssignmentInventory inventory) {
                 event.setInventory(inventory);
-                assignmentService.requestAssignmentProcessing(
-                        msg.getServerUuid());
+                assignmentService.requestAssignmentProcessing(msg.getServerUuid());
                 bus.publish(event);
             }
 
@@ -139,10 +123,17 @@ public class PhysicalServerManagerImpl extends AbstractService implements
         });
     }
 
-    private void handle(APIRefreshPhysicalServerResourceAssignmentsMsg msg) {
-        APIRefreshPhysicalServerResourceAssignmentsEvent event =
-                new APIRefreshPhysicalServerResourceAssignmentsEvent(msg.getId());
-        assignmentService.refreshAssignments(msg.getServerUuid());
+    private void handle(APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg msg) {
+        APIRefreshPhysicalServerResourceAssignmentsFromProfileEvent event =
+                new APIRefreshPhysicalServerResourceAssignmentsFromProfileEvent(msg.getId());
+        try {
+            RoleServiceManifest.reloadAll();
+            assignmentService.refreshAssignmentsFromProfile(msg.getServerUuids());
+        } catch (RuntimeException error) {
+            event.setError(operr(
+                    PhysicalServerConstant.ERROR_CODE,
+                    "Failed to reload resource assignment profile: %s", error.getMessage()));
+        }
         bus.publish(event);
     }
 
@@ -164,15 +155,8 @@ public class PhysicalServerManagerImpl extends AbstractService implements
     }
 
     @Override
-    public Map<String, String> resolveBySerialNumbers(
-            Collection<String> serialNumbers) {
+    public Map<String, String> resolveBySerialNumbers(Collection<String> serialNumbers) {
         return identity.resolveBySerialNumbers(serialNumbers);
-    }
-
-    @Override
-    public Map<String, String> findSerialNumbersByServerUuids(
-            Collection<String> serverUuids) {
-        return identity.findSerialNumbersByServerUuids(serverUuids);
     }
 
     @Override
@@ -180,54 +164,34 @@ public class PhysicalServerManagerImpl extends AbstractService implements
         if (serverUuid == null) {
             return;
         }
-        PhysicalServerAssociationChangedMsg msg =
-                new PhysicalServerAssociationChangedMsg();
+        PhysicalServerAssociationChangedMsg msg = new PhysicalServerAssociationChangedMsg();
         msg.setServerUuid(serverUuid);
         bus.makeTargetServiceIdByResourceUuid(
-                msg,
-                PhysicalServerConstant.SERVICE_ID,
-                PhysicalServerConstant.CONTROL_OWNER_KEY);
+                msg, PhysicalServerConstant.SERVICE_ID, PhysicalServerConstant.CONTROL_OWNER_KEY);
         bus.send(msg);
     }
 
     @Override
-    public void releaseResourceAssignment(
-            String serverUuid,
-            String roleType,
-            String consumerUuid,
-            Completion completion) {
-        ReleasePhysicalServerResourceAssignmentMsg msg =
-                new ReleasePhysicalServerResourceAssignmentMsg();
+    public void releaseResourceAssignment(String serverUuid, String roleType, Completion completion) {
+        ReleasePhysicalServerResourceAssignmentMsg msg = new ReleasePhysicalServerResourceAssignmentMsg();
         msg.setServerUuid(serverUuid);
         msg.setRoleType(roleType);
-        msg.setConsumerUuid(consumerUuid);
         sendRelease(msg, completion);
     }
 
     @Override
-    public void forceReleaseResourceAssignment(
-            String serverUuid,
-            String roleType,
-            String consumerUuid,
-            Completion completion) {
-        ReleasePhysicalServerResourceAssignmentMsg msg =
-                new ReleasePhysicalServerResourceAssignmentMsg();
+    public void forceReleaseResourceAssignment(String serverUuid, String roleType, Completion completion) {
+        ReleasePhysicalServerResourceAssignmentMsg msg = new ReleasePhysicalServerResourceAssignmentMsg();
         msg.setServerUuid(serverUuid);
         msg.setRoleType(roleType);
-        msg.setConsumerUuid(consumerUuid);
-        msg.setOperation(
-                ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE);
+        msg.setOperation(ReleasePhysicalServerResourceAssignmentMsg.Operation.FORCE_RELEASE);
         sendRelease(msg, completion);
     }
 
-    private void sendRelease(
-            ReleasePhysicalServerResourceAssignmentMsg msg,
-            Completion completion) {
+    private void sendRelease(ReleasePhysicalServerResourceAssignmentMsg msg, Completion completion) {
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeTargetServiceIdByResourceUuid(
-                msg,
-                PhysicalServerConstant.SERVICE_ID,
-                PhysicalServerConstant.CONTROL_OWNER_KEY);
+                msg, PhysicalServerConstant.SERVICE_ID, PhysicalServerConstant.CONTROL_OWNER_KEY);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
@@ -254,7 +218,7 @@ public class PhysicalServerManagerImpl extends AbstractService implements
 
     private void discoverAllIfOwned() {
         if (destinationMaker.isManagedByUs(PhysicalServerConstant.CONTROL_OWNER_KEY)) {
-            assignmentService.refreshAllAssignments();
+            assignmentService.discoverAllAssignments();
         }
     }
 

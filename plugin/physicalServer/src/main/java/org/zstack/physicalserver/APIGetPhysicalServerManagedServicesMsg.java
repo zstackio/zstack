@@ -12,8 +12,7 @@ import org.zstack.header.rest.RestRequest;
         method = HttpMethod.GET,
         responseClass = APIGetPhysicalServerManagedServicesReply.class
 )
-public class APIGetPhysicalServerManagedServicesMsg
-        extends APISyncCallMessage implements PhysicalServerMessage {
+public class APIGetPhysicalServerManagedServicesMsg extends APISyncCallMessage implements PhysicalServerMessage {
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 
@@ -27,8 +26,7 @@ public class APIGetPhysicalServerManagedServicesMsg
     }
 
     public static APIGetPhysicalServerManagedServicesMsg __example__() {
-        APIGetPhysicalServerManagedServicesMsg msg =
-                new APIGetPhysicalServerManagedServicesMsg();
+        APIGetPhysicalServerManagedServicesMsg msg = new APIGetPhysicalServerManagedServicesMsg();
         msg.setServerUuid(uuid());
         return msg;
     }

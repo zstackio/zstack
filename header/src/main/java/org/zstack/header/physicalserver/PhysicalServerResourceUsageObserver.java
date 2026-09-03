@@ -5,9 +5,8 @@ import org.zstack.header.core.ReturnValueCompletion;
 import java.util.List;
 
 public interface PhysicalServerResourceUsageObserver {
-    String getRoleType();
+    PhysicalServerRoleType getRoleType();
 
     void collectManagedServiceUsage(
-            String serverUuid,
-            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion);
+            String serverUuid, ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion);
 }

@@ -1,4 +1,5 @@
 roleType: ZBS
+isolationMode: EXCLUSIVE
 services:
   - name: zstone.share.slice
   - name: zstone.cs.slice

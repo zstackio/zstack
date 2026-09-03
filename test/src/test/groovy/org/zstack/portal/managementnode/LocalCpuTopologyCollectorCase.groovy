@@ -22,11 +22,14 @@ class LocalCpuTopologyCollectorCase {
             write(node.resolve("node0/cpulist"), "0,2\n")
             write(node.resolve("node1/cpulist"), "1,3\n")
 
-            PhysicalServerCpuTopology topology =
-                    new LocalCpuTopologyCollector(cpu, node).collect()
-            assert topology.fingerprint() == "0:0,2;1:1,3" :
+            PhysicalServerCpuTopology topology = new LocalCpuTopologyCollector(cpu, node).collect()
+            def actual = topology.coreGroups.collect {
+                [it.numaId, it.cpus]
+            }
+            def expected = [["0", [0, 2] as Set], ["1", [1, 3] as Set]]
+            assert actual == expected :
                     "sysfs NUMA and thread-sibling facts must become stable core groups: " +
-                            "expected=0:0,2;1:1,3 actual=${topology.fingerprint()}"
+                            "expected=${expected} actual=${actual}"
         } finally {
             removeTree(root)
         }
@@ -42,12 +45,14 @@ class LocalCpuTopologyCollectorCase {
             write(cpu.resolve("cpu0/topology/thread_siblings_list"), "0-1\n")
             write(cpu.resolve("cpu1/topology/thread_siblings_list"), "0-1\n")
 
-            PhysicalServerCpuTopology topology =
-                    new LocalCpuTopologyCollector(
-                            cpu, missingNodeRoot).collect()
-            assert topology.fingerprint() == "0:0-1" :
+            PhysicalServerCpuTopology topology = new LocalCpuTopologyCollector(cpu, missingNodeRoot).collect()
+            def actual = topology.coreGroups.collect {
+                [it.numaId, it.cpus]
+            }
+            def expected = [["0", [0, 1] as Set]]
+            assert actual == expected :
                     "a machine without NUMA node directories must still expose one complete topology: " +
-                            "expected=0:0-1 actual=${topology.fingerprint()}"
+                            "expected=${expected} actual=${actual}"
         } finally {
             removeTree(root)
         }
@@ -63,14 +68,12 @@ class LocalCpuTopologyCollectorCase {
 
             Throwable failure = null
             try {
-                new LocalCpuTopologyCollector(
-                        cpu, root.resolve("missing-node")).collect()
+                new LocalCpuTopologyCollector(cpu, root.resolve("missing-node")).collect()
             } catch (Throwable error) {
                 failure = error
             }
-            assert failure?.message?.contains("CPU_TOPOLOGY_INVALID") :
-                    "empty sysfs facts must fail with a typed topology reason: " +
-                            "actual=${failure}"
+            assert failure?.message?.contains("CPU list is empty") :
+                    "empty sysfs facts must explain the invalid topology: " + "actual=${failure}"
         } finally {
             removeTree(root)
         }

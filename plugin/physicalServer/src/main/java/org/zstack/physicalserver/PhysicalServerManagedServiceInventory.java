@@ -18,10 +18,8 @@ public class PhysicalServerManagedServiceInventory implements Serializable {
     private Long memory;
     private Long memoryLimit;
 
-    public static PhysicalServerManagedServiceInventory valueOf(
-            ManagedServiceResourceUsage usage) {
-        PhysicalServerManagedServiceInventory inventory =
-                new PhysicalServerManagedServiceInventory();
+    public static PhysicalServerManagedServiceInventory valueOf(ManagedServiceResourceUsage usage) {
+        PhysicalServerManagedServiceInventory inventory = new PhysicalServerManagedServiceInventory();
         inventory.setRoleType(usage.getRoleType());
         inventory.setServiceName(usage.getServiceName());
         inventory.setRestartable(usage.isRestartable());
@@ -34,10 +32,8 @@ public class PhysicalServerManagedServiceInventory implements Serializable {
         return inventory;
     }
 
-    public static List<PhysicalServerManagedServiceInventory> valueOf(
-            Collection<ManagedServiceResourceUsage> usages) {
-        List<PhysicalServerManagedServiceInventory> result =
-                new ArrayList<>();
+    public static List<PhysicalServerManagedServiceInventory> valueOf(Collection<ManagedServiceResourceUsage> usages) {
+        List<PhysicalServerManagedServiceInventory> result = new ArrayList<>();
         for (ManagedServiceResourceUsage usage : usages) {
             result.add(valueOf(usage));
         }

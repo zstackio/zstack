@@ -21,8 +21,7 @@ public class PhysicalServerVO {
     private String uuid;
 
     @Column
-    @ForeignKey(parentEntityClass = ZoneEO.class,
-            onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
+    @ForeignKey(parentEntityClass = ZoneEO.class, onDeleteAction = ForeignKey.ReferenceOption.SET_NULL)
     private String zoneUuid;
 
     @Column

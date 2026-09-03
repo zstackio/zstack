@@ -32,7 +32,7 @@ doc {
 	}
 	field {
 		name "state"
-		desc "服务当前观测状态，例如RUNNING、INACTIVE、NOT_FOUND或UNAVAILABLE"
+		desc "服务当前观测状态，例如RUNNING、INACTIVE或NOT_FOUND；Role观测失败通过roleErrors返回"
 		type "String"
 		since "5.5.38"
 	}

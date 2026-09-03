@@ -9,10 +9,7 @@ import org.zstack.header.rest.RestRequest;
 @Action(category = PhysicalServerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/physical-servers/{serverUuid}/resource-assignments/{roleType}/actions",
-        method = HttpMethod.PUT,
-        responseClass = APIUpdatePhysicalServerResourceAssignmentEvent.class,
-        isAction = true
-)
+        method = HttpMethod.PUT, responseClass = APIUpdatePhysicalServerResourceAssignmentEvent.class, isAction = true)
 public class APIUpdatePhysicalServerResourceAssignmentMsg extends APIMessage implements PhysicalServerMessage {
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
@@ -60,10 +57,9 @@ public class APIUpdatePhysicalServerResourceAssignmentMsg extends APIMessage imp
     }
 
     public static APIUpdatePhysicalServerResourceAssignmentMsg __example__() {
-        APIUpdatePhysicalServerResourceAssignmentMsg msg =
-                new APIUpdatePhysicalServerResourceAssignmentMsg();
+        APIUpdatePhysicalServerResourceAssignmentMsg msg = new APIUpdatePhysicalServerResourceAssignmentMsg();
         msg.setServerUuid(uuid());
-        msg.setRoleType(PhysicalServerRoleType.COMPUTE);
+        msg.setRoleType("COMPUTE");
         msg.setCpuSet("0-3");
         msg.setMemory(4L * 1024 * 1024 * 1024);
         return msg;

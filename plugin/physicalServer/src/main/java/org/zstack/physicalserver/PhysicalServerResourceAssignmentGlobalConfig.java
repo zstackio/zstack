@@ -16,8 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 @GlobalConfigDefinition
-public class PhysicalServerResourceAssignmentGlobalConfig implements
-        GlobalConfigInitExtensionPoint {
+public class PhysicalServerResourceAssignmentGlobalConfig implements GlobalConfigInitExtensionPoint {
     private static final Path CGROUP_ROOT = Paths.get("/sys/fs/cgroup");
 
     @GlobalConfigDef(
@@ -31,21 +30,15 @@ public class PhysicalServerResourceAssignmentGlobalConfig implements
     @Override
     public List<GlobalConfig> getGenerationGlobalConfig() {
         GlobalConfigVO existing = Q.New(GlobalConfigVO.class)
-                .eq(GlobalConfigVO_.category,
-                        PhysicalServerResourceAssignmentConfig.CATEGORY)
-                .eq(GlobalConfigVO_.name,
-                        PhysicalServerResourceAssignmentConfig.ENABLED)
-                .find();
-        boolean enabled = defaultEnabled(
-                existing == null ? null : existing.getDefaultValue(),
-                CGROUP_ROOT);
+                .eq(GlobalConfigVO_.category, PhysicalServerResourceAssignmentConfig.CATEGORY)
+                .eq(GlobalConfigVO_.name, PhysicalServerResourceAssignmentConfig.ENABLED).find();
+        boolean enabled = defaultEnabled(existing == null ? null : existing.getDefaultValue(), CGROUP_ROOT);
 
         org.zstack.core.config.schema.GlobalConfig.Config config =
                 new org.zstack.core.config.schema.GlobalConfig.Config();
         config.setCategory(PhysicalServerResourceAssignmentConfig.CATEGORY);
         config.setName(PhysicalServerResourceAssignmentConfig.ENABLED);
-        config.setDescription(
-                "Enable physical server resource assignment enforcement");
+        config.setDescription("Enable physical server resource assignment enforcement");
         config.setType(Boolean.class.getName());
         config.setDefaultValue(Boolean.toString(enabled));
         config.setValue(Boolean.toString(enabled));

@@ -21,10 +21,8 @@ public class PhysicalServerResourceAssignmentInventory implements Serializable {
     private Timestamp createDate;
     private Timestamp lastOpDate;
 
-    public static PhysicalServerResourceAssignmentInventory valueOf(
-            PhysicalServerResourceAssignmentVO vo) {
-        PhysicalServerResourceAssignmentInventory inventory =
-                new PhysicalServerResourceAssignmentInventory();
+    public static PhysicalServerResourceAssignmentInventory valueOf(PhysicalServerResourceAssignmentVO vo) {
+        PhysicalServerResourceAssignmentInventory inventory = new PhysicalServerResourceAssignmentInventory();
         inventory.setUuid(vo.getUuid());
         inventory.setServerUuid(vo.getServerUuid());
         inventory.setRoleType(vo.getRoleType());
@@ -38,8 +36,7 @@ public class PhysicalServerResourceAssignmentInventory implements Serializable {
 
     public static List<PhysicalServerResourceAssignmentInventory> valueOf(
             Collection<PhysicalServerResourceAssignmentVO> vos) {
-        List<PhysicalServerResourceAssignmentInventory> inventories =
-                new ArrayList<>(vos.size());
+        List<PhysicalServerResourceAssignmentInventory> inventories = new ArrayList<>(vos.size());
         for (PhysicalServerResourceAssignmentVO vo : vos) {
             inventories.add(valueOf(vo));
         }

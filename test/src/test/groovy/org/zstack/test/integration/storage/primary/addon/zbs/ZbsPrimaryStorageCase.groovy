@@ -213,8 +213,7 @@ class ZbsPrimaryStorageCase extends SubCase {
     void testMdsPhysicalServerSerialPersistsAcrossReconnect() {
         env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) {
             ZbsPrimaryStorageMdsBase.SyncMetadataRsp rsp, HttpEntity<String> e ->
-                def cmd = JSONObjectUtil.toObject(
-                        e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+                def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
                 rsp.physicalServerSerialNumber = "PS-SN-${cmd.addr}"
                 return rsp
         }

@@ -8,42 +8,79 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 public class RoleServiceManifest {
+    private static final AtomicReference<Map<ManifestKey, RoleServiceManifest>>
+            MANIFESTS = new AtomicReference<>(Collections.emptyMap());
+
     private String roleType;
+    private PhysicalServerResourceIsolationMode isolationMode = PhysicalServerResourceIsolationMode.SHARED;
     private String sliceName;
     private Integer defaultCpuCount;
     private List<Service> services = new ArrayList<>();
 
-    public static RoleServiceManifest load(
-            String resourcePath,
-            String expectedRoleType) {
-        RoleServiceManifest manifest = loadManifest(resourcePath);
-        manifest.validateControl(resourcePath, expectedRoleType);
-        return manifest.freeze();
+    public static RoleServiceManifest load(String resourcePath, String expectedRoleType) {
+        return load(new ManifestKey(resourcePath, expectedRoleType, ValidationMode.CONTROLLED));
     }
 
-    public static RoleServiceManifest loadObservation(
-            String resourcePath,
-            String expectedRoleType) {
-        RoleServiceManifest manifest = loadManifest(resourcePath);
-        manifest.validateObservation(resourcePath, expectedRoleType);
-        return manifest.freeze();
+    public static RoleServiceManifest loadObservation(String resourcePath, String expectedRoleType) {
+        return load(new ManifestKey(resourcePath, expectedRoleType, ValidationMode.OBSERVED));
+    }
+
+    public static void reloadAll() {
+        while (true) {
+            Map<ManifestKey, RoleServiceManifest> current = MANIFESTS.get();
+            if (current.isEmpty()) {
+                return;
+            }
+            Map<ManifestKey, RoleServiceManifest> reloaded = new LinkedHashMap<>();
+            for (ManifestKey key : current.keySet()) {
+                RoleServiceManifest manifest = key.read();
+                RoleServiceManifest previous = current.get(key);
+                if (!Objects.equals(previous.getSliceName(), manifest.getSliceName())) {
+                    throw invalid(key.resourcePath, String.format(
+                            "sliceName cannot be changed from[%s] to[%s]",
+                            previous.getSliceName(), manifest.getSliceName()));
+                }
+                reloaded.put(key, manifest);
+            }
+            Map<ManifestKey, RoleServiceManifest> snapshot = Collections.unmodifiableMap(reloaded);
+            if (MANIFESTS.compareAndSet(current, snapshot)) {
+                return;
+            }
+        }
+    }
+
+    private static RoleServiceManifest load(ManifestKey key) {
+        while (true) {
+            Map<ManifestKey, RoleServiceManifest> current = MANIFESTS.get();
+            RoleServiceManifest manifest = current.get(key);
+            if (manifest != null) {
+                return manifest;
+            }
+            RoleServiceManifest loaded = key.read();
+            Map<ManifestKey, RoleServiceManifest> updated = new LinkedHashMap<>(current);
+            updated.put(key, loaded);
+            Map<ManifestKey, RoleServiceManifest> snapshot = Collections.unmodifiableMap(updated);
+            if (MANIFESTS.compareAndSet(current, snapshot)) {
+                return loaded;
+            }
+        }
     }
 
     private static RoleServiceManifest loadManifest(String resourcePath) {
-        RoleServiceManifest manifest = YamlUtils.load(
-                read(resourcePath), RoleServiceManifest.class);
+        RoleServiceManifest manifest = YamlUtils.load(read(resourcePath), RoleServiceManifest.class);
         if (manifest == null) {
-            throw new IllegalStateException(String.format(
-                    "role service manifest[%s] is empty", resourcePath));
+            throw new IllegalStateException(String.format("role service manifest[%s] is empty", resourcePath));
         }
         return manifest;
     }
@@ -53,45 +90,16 @@ public class RoleServiceManifest {
         return this;
     }
 
-    public List<ResourceConsumerHandle> handles(String consumerKey) {
-        return handles(consumerKey, Collections.emptyMap());
-    }
-
-    public List<ResourceConsumerHandle> handles(
-            String consumerKey,
-            Map<String, String> values) {
+    public List<ResourceConsumerHandle> handles() {
         List<ResourceConsumerHandle> result = new ArrayList<>();
         for (Service service : services) {
             ResourceConsumerHandle handle = new ResourceConsumerHandle();
             handle.setHandleType(service.getHandleType());
-            handle.setValue(service.resolveValue(values));
+            handle.setValue(service.getValue());
             handle.setServiceName(service.getName());
-            handle.setConsumerKey(consumerKey);
             handle.setOptional(!service.required());
             handle.setRestartable(service.restartable());
-            handle.setExpectedCommandToken(service.getExpectedCommandToken());
             result.add(handle);
-        }
-        return result;
-    }
-
-    public List<ResourceConsumerHandle> handlesByServiceNames(
-            Collection<String> serviceNames,
-            String consumerKey,
-            Map<String, String> values) {
-        if (serviceNames == null || serviceNames.isEmpty()) {
-            throw new IllegalArgumentException("service names must not be empty");
-        }
-        Set<String> selected = new HashSet<>(serviceNames);
-        if (selected.size() != serviceNames.size()) {
-            throw new IllegalArgumentException("service names must not be duplicated");
-        }
-        List<ResourceConsumerHandle> result = handles(consumerKey, values).stream()
-                .filter(handle -> selected.remove(handle.getServiceName()))
-                .collect(Collectors.toList());
-        if (!selected.isEmpty()) {
-            throw new IllegalArgumentException(String.format(
-                    "services%s are not defined by role[%s]", selected, roleType));
         }
         return result;
     }
@@ -109,44 +117,36 @@ public class RoleServiceManifest {
         return result;
     }
 
-    private void validateControl(
-            String resourcePath,
-            String expectedRoleType) {
+    private void validateControl(String resourcePath, String expectedRoleType) {
         validateRoleAndServices(resourcePath, expectedRoleType);
-        if (empty(sliceName)
-                || !sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")) {
-            throw invalid(resourcePath, String.format(
-                    "sliceName[%s] is invalid", sliceName));
+        if (empty(sliceName) || !sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")) {
+            throw invalid(resourcePath, String.format("sliceName[%s] is invalid", sliceName));
         }
         if (defaultCpuCount != null && defaultCpuCount < 1) {
-            throw invalid(resourcePath,
-                    "defaultCpuCount must be greater than zero");
+            throw invalid(resourcePath, "defaultCpuCount must be greater than zero");
         }
         for (Service service : services) {
             validateHandle(resourcePath, service);
         }
     }
 
-    private void validateObservation(
-            String resourcePath,
-            String expectedRoleType) {
+    private void validateObservation(String resourcePath, String expectedRoleType) {
         validateRoleAndServices(resourcePath, expectedRoleType);
         if (!empty(sliceName) || defaultCpuCount != null) {
-            throw invalid(resourcePath,
-                    "observation-only role cannot define allocation defaults");
+            throw invalid(resourcePath, "observation-only role cannot define allocation defaults");
         }
         for (Service service : services) {
             validateObservationService(resourcePath, service);
         }
     }
 
-    private void validateRoleAndServices(
-            String resourcePath,
-            String expectedRoleType) {
+    private void validateRoleAndServices(String resourcePath, String expectedRoleType) {
         if (!expectedRoleType.equals(roleType)) {
             throw invalid(resourcePath, String.format(
-                    "roleType[%s] does not match expected roleType[%s]",
-                    roleType, expectedRoleType));
+                    "roleType[%s] does not match expected roleType[%s]", roleType, expectedRoleType));
+        }
+        if (isolationMode == null) {
+            throw invalid(resourcePath, "isolationMode must not be empty");
         }
         if (services == null || services.isEmpty()) {
             throw invalid(resourcePath, "services must not be empty");
@@ -154,79 +154,41 @@ public class RoleServiceManifest {
         Set<String> names = new HashSet<>();
         for (Service service : services) {
             if (service == null || empty(service.getName())
-                    || !service.getName().matches(
-                    "[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")) {
+                    || !service.getName().matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")) {
                 throw invalid(resourcePath, "service name must not be empty");
             }
             if (!names.add(service.getName())) {
-                throw invalid(resourcePath, String.format(
-                        "service name[%s] is duplicated", service.getName()));
+                throw invalid(resourcePath, String.format("service name[%s] is duplicated", service.getName()));
             }
         }
     }
 
-    private void validateObservationService(
-            String resourcePath, Service service) {
+    private void validateObservationService(String resourcePath, Service service) {
         if (!empty(service.getHandleType())
-                || !empty(service.getValue())
-                || !empty(service.getValueFrom())
-                || service.getRequired() != null
-                || service.getRestartable() != null
-                || !empty(service.getExpectedCommandToken())) {
+                || !empty(service.getValue()) || service.getRequired() != null || service.getRestartable() != null) {
             throw invalid(resourcePath, String.format(
-                    "observation-only service[%s] cannot define a control handle",
-                    service.getName()));
+                    "observation-only service[%s] cannot define a control handle", service.getName()));
         }
     }
 
     private void validateHandle(String resourcePath, Service service) {
-        if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(service.getHandleType())
-                && !ResourceConsumerHandle.OWNER_PID_FILE.equals(
-                service.getHandleType())) {
+        if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(service.getHandleType())) {
             throw invalid(resourcePath, String.format(
-                    "service[%s] has unsupported handleType[%s]",
-                    service.getName(), service.getHandleType()));
+                    "service[%s] has unsupported handleType[%s]", service.getName(), service.getHandleType()));
         }
-        if (empty(service.getValue()) == empty(service.getValueFrom())) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] must specify exactly one of value and valueFrom",
-                    service.getName()));
+        if (empty(service.getValue())) {
+            throw invalid(resourcePath, String.format("service[%s] value must not be empty", service.getName()));
         }
         if (service.getRequired() == null) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] required must be specified", service.getName()));
+            throw invalid(resourcePath, String.format("service[%s] required must be specified", service.getName()));
         }
         if (service.getRestartable() == null) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] restartable must be specified",
-                    service.getName()));
-        }
-        if (service.restartable()
-                && !ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                service.getHandleType())) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] restartable requires a systemd handle",
-                    service.getName()));
-        }
-        if (ResourceConsumerHandle.OWNER_PID_FILE.equals(
-                service.getHandleType())
-                && empty(service.getExpectedCommandToken())) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] command token must not be empty",
-                    service.getName()));
-        }
-        if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(service.getHandleType())
-                && !empty(service.getExpectedCommandToken())) {
-            throw invalid(resourcePath, String.format(
-                    "service[%s] systemd handle cannot have a command token",
-                    service.getName()));
+            throw invalid(resourcePath, String.format("service[%s] restartable must be specified", service.getName()));
         }
     }
 
-    private static IllegalStateException invalid(
-            String resourcePath, String reason) {
-        return new IllegalStateException(String.format(
-                "invalid role service manifest[%s]: %s", resourcePath, reason));
+    private static IllegalStateException invalid(String resourcePath, String reason) {
+        return new IllegalStateException(String.format("invalid role service manifest[%s]: %s", resourcePath, reason));
     }
 
     private static boolean empty(String value) {
@@ -235,18 +197,14 @@ public class RoleServiceManifest {
 
     private static String read(String resourcePath) {
         ClassLoader context = Thread.currentThread().getContextClassLoader();
-        InputStream stream = context == null
-                ? null : context.getResourceAsStream(resourcePath);
+        InputStream stream = context == null ? null : context.getResourceAsStream(resourcePath);
         if (stream == null) {
-            stream = RoleServiceManifest.class.getClassLoader()
-                    .getResourceAsStream(resourcePath);
+            stream = RoleServiceManifest.class.getClassLoader().getResourceAsStream(resourcePath);
         }
         if (stream == null) {
-            throw new IllegalStateException(String.format(
-                    "role service manifest[%s] was not found", resourcePath));
+            throw new IllegalStateException(String.format("role service manifest[%s] was not found", resourcePath));
         }
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                stream, StandardCharsets.UTF_8))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
             return reader.lines().collect(Collectors.joining("\n"));
         } catch (IOException error) {
             throw new IllegalStateException(String.format(
@@ -260,6 +218,14 @@ public class RoleServiceManifest {
 
     public void setRoleType(String roleType) {
         this.roleType = roleType;
+    }
+
+    public PhysicalServerResourceIsolationMode getIsolationMode() {
+        return isolationMode;
+    }
+
+    public void setIsolationMode(PhysicalServerResourceIsolationMode isolationMode) {
+        this.isolationMode = isolationMode;
     }
 
     public String getSliceName() {
@@ -290,10 +256,8 @@ public class RoleServiceManifest {
         private String name;
         private String handleType;
         private String value;
-        private String valueFrom;
         private Boolean required;
         private Boolean restartable;
-        private String expectedCommandToken;
 
         public String getName() {
             return name;
@@ -317,27 +281,6 @@ public class RoleServiceManifest {
 
         public void setValue(String value) {
             this.value = value;
-        }
-
-        public String getValueFrom() {
-            return valueFrom;
-        }
-
-        public void setValueFrom(String valueFrom) {
-            this.valueFrom = valueFrom;
-        }
-
-        private String resolveValue(Map<String, String> values) {
-            if (!empty(value)) {
-                return value;
-            }
-            String resolved = values.get(valueFrom);
-            if (empty(resolved)) {
-                throw new IllegalStateException(String.format(
-                        "role service[%s] valueFrom[%s] cannot be resolved",
-                        name, valueFrom));
-            }
-            return resolved;
         }
 
         public Boolean getRequired() {
@@ -364,12 +307,49 @@ public class RoleServiceManifest {
             return Boolean.TRUE.equals(restartable);
         }
 
-        public String getExpectedCommandToken() {
-            return expectedCommandToken;
+    }
+
+    private enum ValidationMode {
+        CONTROLLED, OBSERVED
+    }
+
+    private static class ManifestKey {
+        private final String resourcePath;
+        private final String expectedRoleType;
+        private final ValidationMode validationMode;
+
+        private ManifestKey(String resourcePath, String expectedRoleType, ValidationMode validationMode) {
+            this.resourcePath = resourcePath;
+            this.expectedRoleType = expectedRoleType;
+            this.validationMode = validationMode;
         }
 
-        public void setExpectedCommandToken(String expectedCommandToken) {
-            this.expectedCommandToken = expectedCommandToken;
+        private RoleServiceManifest read() {
+            RoleServiceManifest manifest = loadManifest(resourcePath);
+            if (validationMode == ValidationMode.CONTROLLED) {
+                manifest.validateControl(resourcePath, expectedRoleType);
+            } else {
+                manifest.validateObservation(resourcePath, expectedRoleType);
+            }
+            return manifest.freeze();
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            if (this == other) {
+                return true;
+            }
+            if (!(other instanceof ManifestKey)) {
+                return false;
+            }
+            ManifestKey key = (ManifestKey) other;
+            return Objects.equals(resourcePath, key.resourcePath)
+                    && Objects.equals(expectedRoleType, key.expectedRoleType) && validationMode == key.validationMode;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(resourcePath, expectedRoleType, validationMode);
         }
     }
 }

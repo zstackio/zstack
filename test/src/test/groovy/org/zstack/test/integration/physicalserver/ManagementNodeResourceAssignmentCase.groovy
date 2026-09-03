@@ -57,8 +57,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                 executor?.disableTestMode()
             } finally {
                 if (originalResourceAssignmentEnabled != null) {
-                    PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(
-                            originalResourceAssignmentEnabled)
+                    PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
                 }
             }
         }
@@ -67,23 +66,18 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
     @Override
     void test() {
         env.create {
-            originalResourceAssignmentEnabled =
-                    PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value()
+            originalResourceAssignmentEnabled = PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value()
             PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
             adapter = bean(ManagementNodePhysicalServerAdapter.class)
             topologyCollector = bean(LocalCpuTopologyCollector.class)
             executor = bean(LocalResourceControlExecutor.class)
             assert Q.New(ManagementNodeVO.class)
                     .select(ManagementNodeVO_.serverUuid)
-                    .eq(ManagementNodeVO_.uuid,
-                            Platform.getManagementServerId())
-                    .findValue() == null :
+                    .eq(ManagementNodeVO_.uuid, Platform.getManagementServerId()).findValue() == null :
                     "unit tests must not associate the MN through the runner's machine identity"
             adapter.setTestSerialNumber("MN-PHYSICAL-SERVER-CASE")
             SQL.New("update ManagementNodeVO m set m.serverUuid = null " +
-                    "where m.uuid = :uuid")
-                    .param("uuid", Platform.getManagementServerId())
-                    .execute()
+                    "where m.uuid = :uuid").param("uuid", Platform.getManagementServerId()).execute()
             adapter.discoverAssociations(Collections.emptySet())
             topologyCollector.setTestTopology(topology())
             executor.enableTestMode()
@@ -102,9 +96,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         retryInSecs {
             associated.set(Q.New(ManagementNodeVO.class)
                     .select(ManagementNodeVO_.serverUuid)
-                    .eq(ManagementNodeVO_.uuid,
-                            Platform.getManagementServerId())
-                    .findValue())
+                    .eq(ManagementNodeVO_.uuid, Platform.getManagementServerId()).findValue())
             assert associated.get() != null :
                     "local MN serial must compose ManagementNodeVO with a PhysicalServer"
         }
@@ -121,14 +113,12 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                         "serverUuid=${serverUuid} actual=${servers.size()}"
         assert servers[0].serialNumber == "mn-physical-server-case" :
                 "MN association must persist the normalized machine serial: " +
-                        "expected=mn-physical-server-case " +
-                        "actual=${servers[0].serialNumber}"
+                        "expected=mn-physical-server-case " + "actual=${servers[0].serialNumber}"
         assert servers[0].zoneUuid == null :
-                "a dedicated management node has no Zone ownership: " +
-                        "actualZoneUuid=${servers[0].zoneUuid}"
+                "a dedicated management node has no Zone ownership: " + "actualZoneUuid=${servers[0].zoneUuid}"
 
-        refreshPhysicalServerResourceAssignments {
-            delegate.serverUuid = targetUuid
+        refreshPhysicalServerResourceAssignmentsFromProfile {
+            serverUuids = [targetUuid]
         }
         retryInSecs {
             PhysicalServerResourceAssignmentInventory current = assignment()
@@ -142,16 +132,9 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
 
         def command = executor.lastTestCommand
         assert command.roleType == "MANAGEMENT" :
-                "local executor must receive the MANAGEMENT Role identity: " +
-                        "actual=${command.roleType}"
+                "local executor must receive the MANAGEMENT Role identity: " + "actual=${command.roleType}"
         assert command.sliceName == "zstack-management.slice" :
-                "MANAGEMENT Role must use its configured systemd slice: " +
-                        "actual=${command.sliceName}"
-        assert command.handles*.consumerKey.unique() == [
-                "management-node:${Platform.getManagementServerId()}"
-        ] :
-                "every management service handle must belong to the local MN: " +
-                        "actual=${command.handles*.consumerKey.unique()}"
+                "MANAGEMENT Role must use its configured systemd slice: " + "actual=${command.sliceName}"
     }
 
     private void verifyCpuAndMemoryPatch() {
@@ -165,15 +148,12 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         retryInSecs {
             PhysicalServerResourceAssignmentInventory current = assignment()
             assert current.cpuSet == "0-1" :
-                    "MANAGEMENT CPU PATCH must become the applied boundary: " +
-                            "expected=0-1 actual=${current.cpuSet}"
+                    "MANAGEMENT CPU PATCH must become the applied boundary: " + "expected=0-1 actual=${current.cpuSet}"
             assert current.memory == SizeUnit.MEGABYTE.toByte(256) :
                     "MANAGEMENT memory PATCH must be stored in bytes: " +
-                            "expected=${SizeUnit.MEGABYTE.toByte(256)} " +
-                            "actual=${current.memory}"
+                            "expected=${SizeUnit.MEGABYTE.toByte(256)} " + "actual=${current.memory}"
             assert current.state == "Synced" :
-                    "MANAGEMENT CPU and memory PATCH must apply locally: " +
-                            "expected=Synced actual=${current.state}"
+                    "MANAGEMENT CPU and memory PATCH must apply locally: " + "expected=Synced actual=${current.state}"
         }
     }
 
@@ -183,38 +163,30 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
             delegate.serverUuid = targetUuid
         }.services
         def managementNode = services.find {
-            it.roleType == "MANAGEMENT" &&
-                    it.serviceName == "management-node"
+            it.roleType == "MANAGEMENT" && it.serviceName == "management-node"
         }
         def prometheus = services.find {
-            it.roleType == "MANAGEMENT" &&
-                    it.serviceName == "prometheus"
+            it.roleType == "MANAGEMENT" && it.serviceName == "prometheus"
         }
         assert managementNode?.state == "RUNNING" :
-                "service inventory must expose the management node process: " +
-                        "actual=${managementNode}"
-        assert managementNode.cpuSet == "0-1" &&
-                managementNode.memoryLimit == SizeUnit.MEGABYTE.toByte(256) :
+                "service inventory must expose the management node process: " + "actual=${managementNode}"
+        assert managementNode.cpuSet == "0-1" && managementNode.memoryLimit == SizeUnit.MEGABYTE.toByte(256) :
                 "service inventory must report the current Role boundary: " +
-                        "actualCpuSet=${managementNode.cpuSet} " +
-                        "actualMemory=${managementNode.memoryLimit}"
+                        "actualCpuSet=${managementNode.cpuSet} " + "actualMemory=${managementNode.memoryLimit}"
         assert prometheus?.restartable :
-                "manifest restartability must be visible to callers: " +
-                        "service=prometheus actual=${prometheus}"
+                "manifest restartability must be visible to callers: " + "service=prometheus actual=${prometheus}"
 
         restartPhysicalServerManagedServices {
             delegate.serverUuid = targetUuid
             roleType = "MANAGEMENT"
             serviceNames = ["prometheus"]
         }
-        List<ResourceConsumerHandle> restarted =
-                executor.lastTestRestartHandles
+        List<ResourceConsumerHandle> restarted = executor.lastTestRestartHandles
         assert restarted*.serviceName == ["prometheus"] :
                 "targeted restart must select only prometheus: " +
                         "expected=[prometheus] actual=${restarted*.serviceName}"
         assert restarted[0].value == "prometheus.service" :
-                "restart must use the stable systemd unit from the manifest: " +
-                        "actual=${restarted[0].value}"
+                "restart must use the stable systemd unit from the manifest: " + "actual=${restarted[0].value}"
 
         restartPhysicalServerManagedServices {
             delegate.serverUuid = targetUuid
@@ -227,24 +199,15 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         RestartPhysicalServerManagedServicesAction denied =
                 new RestartPhysicalServerManagedServicesAction(
                         sessionId: adminSession(),
-                        serverUuid: targetUuid,
-                        roleType: "MANAGEMENT",
-                        serviceNames: ["management-node"])
+                        serverUuid: targetUuid, roleType: "MANAGEMENT", serviceNames: ["management-node"])
         def deniedResult = denied.call()
-        assert deniedResult.error?.details?.contains(
-                "SERVICE_RESTART_NOT_ALLOWED") :
-                "a non-restartable core service must never be restarted by API: " +
-                        "expected=SERVICE_RESTART_NOT_ALLOWED " +
-                        "actual=${deniedResult.error}"
+        assert deniedResult.error?.details?.contains("not a restartable systemd unit") :
+                "a non-restartable core service must never be restarted by API: " + "actual=${deniedResult.error}"
     }
 
     private PhysicalServerResourceAssignmentInventory assignment() {
-        List<PhysicalServerResourceAssignmentInventory> rows =
-                queryPhysicalServerResourceAssignment {
-            conditions = [
-                    "serverUuid=${serverUuid}",
-                    "roleType=MANAGEMENT"
-            ]
+        List<PhysicalServerResourceAssignmentInventory> rows = queryPhysicalServerResourceAssignment {
+            conditions = ["serverUuid=${serverUuid}", "roleType=MANAGEMENT"]
         } as List<PhysicalServerResourceAssignmentInventory>
         assert rows.size() == 1 :
                 "one PhysicalServer may have only one MANAGEMENT Assignment: " +
@@ -256,10 +219,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
         PhysicalServerNumaNode node = new PhysicalServerNumaNode()
         node.nodeId = "0"
         node.onlineCpus = ["0", "1", "2", "3", "4", "5", "6", "7"]
-        node.coreGroups = [
-                ["0", "4"], ["1", "5"],
-                ["2", "6"], ["3", "7"]
-        ]
+        node.coreGroups = [["0", "4"], ["1", "5"], ["2", "6"], ["3", "7"]]
         return PhysicalServerCpuTopology.from(["0": node])
     }
 }

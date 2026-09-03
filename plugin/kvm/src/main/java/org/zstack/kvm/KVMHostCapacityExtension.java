@@ -30,14 +30,10 @@ public class KVMHostCapacityExtension implements KVMHostConnectExtensionPoint, H
     private ResourceConfigFacade rcf;
 
     public void reportCapacity(HostInventory host, Completion completion) {
-        reportCapacity(host.getUuid(), completion);
-    }
-
-    public void reportCapacity(String hostUuid, Completion completion) {
         CheckHostCapacityMsg msg = new CheckHostCapacityMsg();
-        msg.setHostUuid(hostUuid);
+        msg.setHostUuid(host.getUuid());
         msg.setTimeout(TimeUnit.MINUTES.toMillis(30));
-        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, host.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply rly) {

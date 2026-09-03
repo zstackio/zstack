@@ -6,9 +6,9 @@ import org.junit.Before
 import org.junit.Test
 import org.zstack.core.CoreGlobalProperty
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage
+import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
-import org.zstack.header.physicalserver.ResourceControlResponse
 import org.zstack.utils.data.SizeUnit
 
 import java.lang.management.ManagementFactory
@@ -16,7 +16,6 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermission
 
 class LocalResourceControlExecutorFileSystemCase {
     private Path temporaryRoot
@@ -50,8 +49,7 @@ class LocalResourceControlExecutorFileSystemCase {
         executor = new LocalResourceControlExecutor(
                 new LocalResourceControlExecutor.ExecutionEnvironment(
                         v2Root, v1Root, v1MemoryRoot, v1SystemdRoot,
-                        [v1CpuacctRoot], procMounts, systemdUnitRoot,
-                        commands))
+                        [v1CpuacctRoot], procMounts, systemdUnitRoot, commands))
     }
 
     @After
@@ -66,27 +64,22 @@ class LocalResourceControlExecutorFileSystemCase {
         Path slice = configureV2SystemdRole(true)
         long memory = SizeUnit.MEGABYTE.toByte(256)
 
-        ResourceControlResponse applied = executor.apply(command(
-                "APPLY", "3,1-2", memory, [systemdHandle()]))
+        boolean applied = executor.apply(command("3,1-2", memory, [systemdHandle()]))
 
-        assert applied.synced :
+        assert applied :
                 "an active service already under the requested Role boundary must be synchronized"
         assert text(slice.resolve("cpuset.cpus")) == "1-3"
         assert text(slice.resolve("memory.max")) == "${memory}"
-        assert text(dropIn("zstack-management.slice")) ==
-                "[Slice]\nAllowedCPUs=1-3\nMemoryMax=${memory}"
-        assert text(dropIn("prometheus.service")) ==
-                "[Service]\nSlice=zstack-management.slice"
+        assert text(dropIn("zstack-management.slice")) == "[Slice]\nAllowedCPUs=1-3\nMemoryMax=${memory}"
+        assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice"
         assert commands.count("systemctl", "daemon-reload") == 1 :
                 "one transaction must reload systemd once even when two drop-ins change"
 
-        executor.apply(command(
-                "APPLY", "1-3", memory, [systemdHandle()]))
+        executor.apply(command("1-3", memory, [systemdHandle()]))
         assert commands.count("systemctl", "daemon-reload") == 1 :
                 "an idempotent apply must not reload systemd"
 
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [systemdHandle()])
         assert usage.size() == 1 && usage[0].state == "RUNNING"
         assert usage[0].cpuSet == "1-3"
         assert usage[0].cpuTime == 123000L :
@@ -94,13 +87,13 @@ class LocalResourceControlExecutorFileSystemCase {
         assert usage[0].memory == SizeUnit.MEGABYTE.toByte(32)
         assert usage[0].memoryLimit == memory
 
-        executor.restart([systemdHandle()])
+        executor.restart("zstack-management.slice", [systemdHandle()])
         assert commands.count("systemctl", "stop", "prometheus.service") == 1
         assert commands.count("systemctl", "start", "prometheus.service") == 1
 
-        ResourceControlResponse released = executor.apply(command(
-                "RELEASE", "1-3", memory, [systemdHandle()]))
-        assert released.synced
+        boolean released = executor.release(command("1-3", memory, [systemdHandle()]))
+        assert released :
+                "release must report Synced after restoring every Role boundary"
         assert text(slice.resolve("cpuset.cpus")) == "0-7" :
                 "release must restore the parent CPU boundary while the service is still running"
         assert text(slice.resolve("memory.max")) == "max"
@@ -109,34 +102,107 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     @Test
+    void testV2ExclusiveRoleChangesPartitionWithoutRestartingServices() {
+        configureV2(false)
+        Path slice = configureV2SystemdRole(true, false)
+        put(slice.resolve("cpuset.cpus.partition"), "member")
+        put(slice.resolve("cpuset.cpus.exclusive"), "")
+        ResourceControlCommand exclusive = command("2-3", null, [systemdHandle()])
+        exclusive.isolationMode = PhysicalServerResourceIsolationMode.EXCLUSIVE
+
+        boolean applied = executor.apply(exclusive)
+
+        assert applied :
+                "an active service already in its Role slice must become exclusive without restart"
+        assert text(slice.resolve("cpuset.cpus")) == "2-3"
+        assert text(slice.resolve("cpuset.cpus.exclusive")) == "2-3"
+        assert text(slice.resolve("cpuset.cpus.partition")) == "root"
+        assert commands.count("systemctl", "stop", "prometheus.service") == 0
+        assert commands.count("systemctl", "start", "prometheus.service") == 0
+
+        boolean shared = executor.apply(command("1-3", null, [systemdHandle()]))
+
+        assert shared :
+                "changing an existing Role slice back to shared must not require a service restart"
+        assert text(slice.resolve("cpuset.cpus.partition")) == "member"
+        assert text(slice.resolve("cpuset.cpus.exclusive")) == ""
+        assert text(slice.resolve("cpuset.cpus")) == "1-3"
+    }
+
+    @Test
+    void testExclusiveRoleRejectsCgroupV1BeforeWritingSystemdConfig() {
+        configureV1Cpuset()
+        ResourceControlCommand request = command("2-3", null, [systemdHandle()])
+        request.isolationMode = PhysicalServerResourceIsolationMode.EXCLUSIVE
+
+        Throwable failure = capture { executor.apply(request) }
+
+        assert failure?.message == "Exclusive CPU partitions require cgroup v2"
+        assert !Files.exists(dropIn("zstack-management.slice")) :
+                "an unsupported exclusive request must fail before changing persistent config"
+    }
+
+    @Test
+    void testExclusiveRoleRequiresTheRoleSliceBoundary() {
+        configureV2(false)
+        commands.unit("zstack-management.slice", true, "/zstack.slice/zstack-management.slice")
+        ResourceControlCommand request = command("2-3", null, [systemdHandle()])
+        request.isolationMode = PhysicalServerResourceIsolationMode.EXCLUSIVE
+
+        Throwable failure = capture { executor.apply(request) }
+
+        assert failure?.message?.contains("must be active before applying exclusive isolation") :
+                "exclusive CPUs must belong to the Role slice, not separate per-service fallbacks"
+    }
+
+    @Test
+    void testV2SystemdMemoryOnlyRoleDoesNotChangeCpuBoundary() {
+        configureV2(true)
+        Path slice = configureV2SystemdRole(true)
+        long memory = SizeUnit.MEGABYTE.toByte(256)
+
+        boolean applied = executor.apply(command(null, memory, [systemdHandle()]))
+
+        assert applied :
+                "a Role that only owns memory must not require a CPU assignment"
+        assert text(slice.resolve("cpuset.cpus")) == "0-7" :
+                "memory-only apply must preserve the existing CPU boundary"
+        assert text(slice.resolve("memory.max")) == "${memory}"
+        assert text(dropIn("zstack-management.slice")) == "[Slice]\nMemoryMax=${memory}" :
+                "memory-only systemd configuration must not emit AllowedCPUs"
+
+        boolean released = executor.release(command(null, memory, [systemdHandle()]))
+
+        assert released :
+                "memory-only release must report Synced after clearing its limit"
+        assert text(slice.resolve("cpuset.cpus")) == "0-7" :
+                "memory-only release must preserve the existing CPU boundary"
+        assert text(slice.resolve("memory.max")) == "max"
+    }
+
+    @Test
     void testSystemdServiceIsPendingUntilItRestartsIntoTheRoleSlice() {
         configureV2(true)
         configureV2SystemdRole(false)
         long memory = SizeUnit.MEGABYTE.toByte(128)
 
-        ResourceControlResponse pending = executor.apply(command(
-                "APPLY", "4-5", memory, [systemdHandle()]))
-        assert !pending.synced :
+        boolean pending = executor.apply(command("4-5", memory, [systemdHandle()]))
+        assert !pending :
                 "writing the drop-in must not claim that an existing process moved slices"
-        List<ManagedServiceResourceUsage> pendingUsage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        List<ManagedServiceResourceUsage> pendingUsage = executor.inspect("MANAGEMENT", [systemdHandle()])
         assert pendingUsage[0].restartRequired :
                 "a running service outside its configured Role slice must be exposed as restartRequired: " +
                         "expected=true actual=${pendingUsage[0].restartRequired}"
 
-        Path service = v2Root.resolve(
-                "zstack.slice/zstack-management.slice/prometheus.service")
+        Path service = v2Root.resolve("zstack.slice/zstack-management.slice/prometheus.service")
         configureV2Group(service, "", "0", "max", SizeUnit.MEGABYTE.toByte(16))
         put(service.resolve("cpu.stat"), "usage_usec 1\n")
-        commands.unit("prometheus.service", true,
-                "/zstack.slice/zstack-management.slice/prometheus.service")
+        commands.unit("prometheus.service", true, "/zstack.slice/zstack-management.slice/prometheus.service")
 
-        ResourceControlResponse ready = executor.apply(command(
-                "APPLY", "4-5", memory, [systemdHandle()]))
-        assert ready.synced :
+        boolean ready = executor.apply(command("4-5", memory, [systemdHandle()]))
+        assert ready :
                 "the next apply must observe the service in the configured slice after restart"
-        List<ManagedServiceResourceUsage> readyUsage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        List<ManagedServiceResourceUsage> readyUsage = executor.inspect("MANAGEMENT", [systemdHandle()])
         assert !readyUsage[0].restartRequired :
                 "a service already running inside its configured Role slice must not require restart: " +
                         "expected=false actual=${readyUsage[0].restartRequired}"
@@ -147,17 +213,14 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(false)
         Path slice = configureV2SystemdRole(true, false)
         commands.unit("empty.service", true, "")
-        commands.unit("disappeared.service", true,
-                "/system.slice/disappeared.service")
+        commands.unit("disappeared.service", true, "/system.slice/disappeared.service")
 
-        ResourceControlResponse response = executor.apply(command(
-                "APPLY", "4-5", null, [
+        boolean response = executor.apply(command(
+                "4-5", null, [
                         systemdHandle("empty", "empty.service"),
-                        systemdHandle("disappeared", "disappeared.service"),
-                        systemdHandle()
-                ]))
+                        systemdHandle("disappeared", "disappeared.service"), systemdHandle()]))
 
-        assert !response.synced :
+        assert !response :
                 "one stale systemd ControlGroup must not discard another service's successful apply"
         assert text(slice.resolve("cpuset.cpus")) == "4-5" :
                 "the valid service's shared Role slice must retain its applied CPU boundary"
@@ -167,16 +230,13 @@ class LocalResourceControlExecutorFileSystemCase {
     void testRejectsMemoryLimitBelowCurrentSliceUsageBeforeChangingConfig() {
         configureV2(true)
         Path slice = configureV2SystemdRole(true)
-        put(slice.resolve("memory.current"),
-                "${SizeUnit.MEGABYTE.toByte(192)}")
+        put(slice.resolve("memory.current"), "${SizeUnit.MEGABYTE.toByte(192)}")
 
         Throwable failure = capture {
-            executor.apply(command(
-                    "APPLY", "0-1", SizeUnit.MEGABYTE.toByte(128),
-                    [systemdHandle()]))
+            executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
         }
 
-        assert failure?.message == "MEMORY_LIMIT_BELOW_CURRENT_USAGE"
+        assert failure?.message?.contains("is below current usage")
         assert !Files.exists(dropIn("zstack-management.slice")) :
                 "an unsafe shrink must fail before persisting the desired systemd state"
     }
@@ -188,22 +248,16 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV1MemorySystemdRole()
         long memory = SizeUnit.MEGABYTE.toByte(320)
 
-        ResourceControlResponse response = executor.apply(command(
-                "APPLY", "2-3", memory, [systemdHandle()]))
+        boolean response = executor.apply(command("2-3", memory, [systemdHandle()]))
 
-        assert response.synced :
+        assert response :
                 "CPU and memory controllers must be selected independently in a hybrid hierarchy"
         assert text(cpuSlice.resolve("cpuset.cpus")) == "2-3"
-        assert text(v1MemoryRoot.resolve(
-                "zstack.slice/zstack-management.slice/memory.limit_in_bytes")) ==
-                "${memory}"
-        assert text(dropIn("zstack-management.slice")).contains(
-                "AllowedCPUs=2-3")
-        assert text(dropIn("zstack-management.slice")).contains(
-                "MemoryLimit=${memory}")
+        assert text(v1MemoryRoot.resolve("zstack.slice/zstack-management.slice/memory.limit_in_bytes")) == "${memory}"
+        assert text(dropIn("zstack-management.slice")).contains("AllowedCPUs=2-3")
+        assert text(dropIn("zstack-management.slice")).contains("MemoryLimit=${memory}")
 
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [systemdHandle()])
         assert usage[0].cpuSet == "2-3"
         assert usage[0].memory == SizeUnit.MEGABYTE.toByte(24)
         assert usage[0].memoryLimit == memory
@@ -215,11 +269,9 @@ class LocalResourceControlExecutorFileSystemCase {
         Path cpuSlice = configureV2SystemdRole(true, false)
         configureV1MemoryRoot(SizeUnit.GIGABYTE.toByte(4))
 
-        ResourceControlResponse response = executor.apply(command(
-                "APPLY", "2-3", SizeUnit.MEGABYTE.toByte(320),
-                [systemdHandle()]))
+        boolean response = executor.apply(command("2-3", SizeUnit.MEGABYTE.toByte(320), [systemdHandle()]))
 
-        assert !response.synced :
+        assert !response :
                 "a missing active memory cgroup must remain an explicit memory failure"
         assert text(cpuSlice.resolve("cpuset.cpus")) == "2-3" :
                 "an unavailable memory cgroup must not block the independent CPU assignment"
@@ -233,126 +285,26 @@ class LocalResourceControlExecutorFileSystemCase {
         String serviceGroup = "${sliceGroup}/prometheus.service"
         commands.unit("zstack-management.slice", true, sliceGroup)
         commands.unit("prometheus.service", true, serviceGroup, pid)
-        put(v1SystemdRoot.resolve(serviceGroup.substring(1))
-                .resolve("cgroup.procs"), pid)
+        put(v1SystemdRoot.resolve(serviceGroup.substring(1)).resolve("cgroup.procs"), pid)
 
-        ResourceControlResponse response = executor.apply(command(
-                "APPLY", "6-7", null, [systemdHandle()]))
+        boolean response = executor.apply(command("6-7", null, [systemdHandle()]))
 
-        Path managed = v1Root.resolve(
-                "zstack-role-MANAGEMENT-unit-prometheus.service")
-        assert response.synced
+        Path managed = v1Root.resolve("zstack-role-MANAGEMENT-unit-prometheus.service")
+        assert response :
+                "v1 shared CPU assignment must report Synced after moving the service"
         assert text(managed.resolve("cpuset.cpus")) == "6-7"
         assert text(managed.resolve("cgroup.procs")).split(/\s+/).contains(pid) :
                 "v1 cpuset is not systemd delegated, so the stable unit cgroup must supply its process set"
-        put(v1CpuacctRoot.resolve(v1Root.relativize(managed))
-                .resolve("cpuacct.usage"), "987654")
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        put(v1CpuacctRoot.resolve(v1Root.relativize(managed)).resolve("cpuacct.usage"), "987654")
+        List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [systemdHandle()])
         assert usage[0].state == "RUNNING"
         assert usage[0].cpuSet == "6-7" && usage[0].cpuTime == 987654L :
                 "v1 inspection must follow the managed cpuset into cpuacct"
 
-        ResourceControlResponse released = executor.apply(command(
-                "RELEASE", "6-7", null, [systemdHandle()]))
-        assert released.synced
+        boolean released = executor.release(command("6-7", null, [systemdHandle()]))
+        assert released :
+                "v1 release must report Synced after restoring the CPU boundary"
         assert text(managed.resolve("cpuset.cpus")) == "0-7"
-    }
-
-    @Test
-    void testOwnerPidFileHandleAppliesAndReleasesAUnifiedV2Group() {
-        configureV2(true)
-        put(v2Root.resolve("cgroup.procs"), "")
-        String pid = currentPid()
-        ResourceConsumerHandle owner = ownerHandle("owner")
-        long memory = memoryLimitAboveCurrentProcessUsage()
-        ResourceControlCommand apply = command(
-                "APPLY", "0", memory, [owner])
-        apply.sliceName = null
-
-        ResourceControlResponse response = executor.apply(apply)
-
-        Path managed = v2Root.resolve("zstack-role-MANAGEMENT-owner-owner")
-        assert response.synced :
-                "owner apply failed: ${debugState()}"
-        assert text(managed.resolve("cpuset.cpus")) == "0"
-        assert text(managed.resolve("memory.max")) == "${memory}"
-        assert text(managed.resolve("cgroup.procs")).split(/\s+/).contains(pid)
-
-        ResourceControlCommand release = command(
-                "RELEASE", "0", memory, [owner])
-        release.sliceName = null
-        ResourceControlResponse released = executor.apply(release)
-        assert released.synced
-        assert text(managed.resolve("cpuset.cpus")) == ""
-        assert text(managed.resolve("memory.max")) == "max"
-        assert text(v2Root.resolve("cgroup.procs")).split(/\s+/).contains(pid) :
-                "release must move a managed v2 process back to its parent before clearing cpuset"
-    }
-
-    @Test
-    void testOwnerPidFileWorksWithV1CpuAndMemoryControllers() {
-        configureV1Cpuset()
-        String pid = currentPid()
-        ResourceConsumerHandle owner = ownerHandle("legacy-owner")
-        long memory = memoryLimitAboveCurrentProcessUsage()
-        long rootMemory = memory + SizeUnit.GIGABYTE.toByte(4)
-        configureV1MemoryRoot(rootMemory)
-        ResourceControlCommand apply = command(
-                "APPLY", "1", memory, [owner])
-        apply.sliceName = null
-
-        ResourceControlResponse response = executor.apply(apply)
-
-        Path cpu = v1Root.resolve(
-                "zstack-role-MANAGEMENT-owner-legacy-owner")
-        Path memoryGroup = v1MemoryRoot.resolve(
-                "zstack-role-MANAGEMENT-owner-legacy-owner")
-        assert response.synced : debugState()
-        assert text(cpu.resolve("cpuset.cpus")) == "1"
-        assert text(memoryGroup.resolve("memory.limit_in_bytes")) == "${memory}"
-        assert text(memoryGroup.resolve("cgroup.procs"))
-                .split(/\s+/).contains(pid)
-
-        ResourceControlCommand release = command(
-                "RELEASE", "1", memory, [owner])
-        release.sliceName = null
-        ResourceControlResponse released = executor.apply(release)
-        assert released.synced
-        assert text(cpu.resolve("cpuset.cpus")) == "0-7"
-        assert text(memoryGroup.resolve("memory.limit_in_bytes")) ==
-                "${rootMemory}"
-        assert text(v1MemoryRoot.resolve("cgroup.procs"))
-                .split(/\s+/).contains(pid)
-    }
-
-    @Test
-    void testReleaseTreatsMissingManagedMemoryGroupAsAlreadyReleased() {
-        configureV1Cpuset()
-        String pid = currentPid()
-        ResourceConsumerHandle owner = ownerHandle("removed-memory-group")
-        long memory = memoryLimitAboveCurrentProcessUsage()
-        configureV1MemoryRoot(memory + SizeUnit.GIGABYTE.toByte(4))
-        ResourceControlCommand apply = command(
-                "APPLY", "1", memory, [owner])
-        apply.sliceName = null
-
-        assert executor.apply(apply).synced
-        Path cpuGroup = v1Root.resolve(
-                "zstack-role-MANAGEMENT-owner-removed-memory-group")
-        Path memoryGroup = v1MemoryRoot.resolve(
-                "zstack-role-MANAGEMENT-owner-removed-memory-group")
-        assert memoryGroup.toFile().deleteDir()
-
-        ResourceControlCommand release = command(
-                "RELEASE", "1", memory, [owner])
-        release.sliceName = null
-        ResourceControlResponse response = executor.apply(release)
-
-        assert response.synced :
-                "a missing Cloud-managed memory group means its limit is already released"
-        assert text(cpuGroup.resolve("cpuset.cpus")) == "0-7" :
-                "the independent CPU release must still complete"
     }
 
     @Test
@@ -360,15 +312,12 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(false)
         configureV2SystemdRole(true, false)
 
-        ResourceControlResponse withMemory = executor.apply(command(
-                "APPLY", "0-1", SizeUnit.MEGABYTE.toByte(128),
-                [systemdHandle()]))
-        assert !withMemory.synced :
+        boolean withMemory = executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
+        assert !withMemory :
                 "missing memory controller must not be reported as a synchronized memory limit"
 
-        ResourceControlResponse cpuOnly = executor.apply(command(
-                "APPLY", "0-1", null, [systemdHandle()]))
-        assert cpuOnly.synced :
+        boolean cpuOnly = executor.apply(command("0-1", null, [systemdHandle()]))
+        assert cpuOnly :
                 "CPU assignment must remain available independently of the memory controller"
     }
 
@@ -377,34 +326,68 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(false)
         configureV2SystemdRole(true, false)
         commands.missingUnit("optional.service")
-        commands.unit("required.service", false,
-                "/zstack.slice/zstack-management.slice/required.service")
+        commands.unit("required.service", false, "/zstack.slice/zstack-management.slice/required.service")
 
-        ResourceControlResponse response = executor.apply(command(
-                "APPLY", "0-1", null, [
+        boolean response = executor.apply(command(
+                "0-1", null, [
                         systemdHandle("optional", "optional.service", true),
-                        systemdHandle("required", "required.service", false)
-                ]))
+                        systemdHandle("required", "required.service", false)]))
 
-        assert !response.synced :
+        assert !response :
                 "a required inactive service must keep the Role boundary Unsynced"
     }
 
     @Test
     void testRestartReportsMissingInactiveAndFailedUnits() {
+        configureV2(false)
+        configureV2SystemdRole(true, false)
         ResourceConsumerHandle handle = systemdHandle()
         commands.missingUnit(handle.value)
-        assert capture { executor.restart([handle]) }?.message ==
-                "SYSTEMD_UNIT_NOT_FOUND"
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd unit[prometheus.service] does not exist"
 
         commands.unit(handle.value, false, "/system.slice/prometheus.service")
-        assert capture { executor.restart([handle]) }?.message ==
-                "SYSTEMD_UNIT_NOT_ACTIVE"
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd unit[prometheus.service] is not active"
 
         commands.unit(handle.value, true, "/system.slice/prometheus.service")
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd unit[prometheus.service] is not configured for slice[zstack-management.slice]"
+
+        put(dropIn(handle.value), "[Service]\nSlice=zstack-management.slice")
+        commands.unit("zstack-management.slice", true, "")
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd did not report a control group"
+
+        commands.unit("zstack-management.slice", true, "/zstack.slice/zstack-management.slice")
         commands.failStarts.add(handle.value)
-        assert capture { executor.restart([handle]) }?.message ==
-                "SYSTEMD_UNIT_RESTART_FAILED"
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd unit[prometheus.service] is not active after restart"
+    }
+
+    @Test
+    void testRestartAllowsV1SystemdSliceOutsideCpusetHierarchy() {
+        configureV1Cpuset()
+        ResourceConsumerHandle handle = systemdHandle()
+        commands.unit("zstack-management.slice", true, "/zstack.slice/zstack-management.slice")
+        commands.unit(handle.value, true, "/system.slice/prometheus.service")
+        put(dropIn(handle.value), "[Service]\nSlice=zstack-management.slice")
+
+        executor.restart("zstack-management.slice", [handle])
+
+        assert commands.count("systemctl", "stop", "prometheus.service") == 1
+        assert commands.count("systemctl", "start", "prometheus.service") == 1
+    }
+
+    @Test
+    void testRestartFailsWhenServiceDoesNotEnterConfiguredSlice() {
+        configureV2(false)
+        configureV2SystemdRole(false, false)
+        ResourceConsumerHandle handle = systemdHandle()
+        put(dropIn(handle.value), "[Service]\nSlice=zstack-management.slice")
+
+        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd unit[prometheus.service] did not enter slice[zstack-management.slice] after restart"
     }
 
     @Test
@@ -412,52 +395,45 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(false)
         commands.missingUnit("optional.service")
         commands.missingUnit("required.service")
-        ResourceConsumerHandle optional = systemdHandle(
-                "optional", "optional.service", true)
-        ResourceConsumerHandle required = systemdHandle(
-                "required", "required.service", false)
-        ResourceControlCommand request = command(
-                "APPLY", "0-1", null, [optional, required])
+        ResourceConsumerHandle optional = systemdHandle("optional", "optional.service", true)
+        ResourceConsumerHandle required = systemdHandle("required", "required.service", false)
+        ResourceControlCommand request = command("0-1", null, [optional, required])
         request.sliceName = null
 
-        ResourceControlResponse response = executor.apply(request)
+        boolean response = executor.apply(request)
 
-        assert !response.synced :
+        assert !response :
                 "optional absence must not dilute required-service coverage"
     }
 
     @Test
-    void testUnavailableControllersAreObservableInsteadOfReportedReady() {
-        ResourceControlCommand request = command(
-                "APPLY", "0-1", null, [systemdHandle()])
+    void testUnavailableControllersFailRoleInspection() {
+        ResourceControlCommand request = command("0-1", null, [systemdHandle()])
         request.sliceName = null
 
-        ResourceControlResponse response = executor.apply(request)
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        boolean response = executor.apply(request)
+        Throwable failure = capture {
+            executor.inspect("MANAGEMENT", [systemdHandle()])
+        }
 
-        assert !response.synced
-        assert usage*.state == ["UNAVAILABLE"]
+        assert !response :
+                "an unavailable cpuset backend must not report a synchronized assignment"
+        assert failure?.message == "No available cpuset controller was found" :
+                "an unavailable cgroup backend must fail the Role observation instead of fabricating service state"
     }
 
     @Test
     void testInspectionFallsBackToMainPidWhenSystemdOmitsControlGroup() {
         configureV2(false)
         String pid = currentPid()
-        String processGroupLine = new File("/proc/${pid}/cgroup").readLines()
-                .find { it.startsWith("0::") }
-        Assume.assumeTrue(
-                "the MainPID fallback case requires a cgroup v2 process entry",
-                processGroupLine != null)
+        String processGroupLine = new File("/proc/${pid}/cgroup").readLines().find { it.startsWith("0::") }
+        Assume.assumeTrue("the MainPID fallback case requires a cgroup v2 process entry", processGroupLine != null)
         String processGroup = processGroupLine.substring(3)
-        Path target = v2Root.resolve(
-                processGroup.startsWith("/")
-                        ? processGroup.substring(1) : processGroup)
+        Path target = v2Root.resolve(processGroup.startsWith("/") ? processGroup.substring(1) : processGroup)
         configureV2Group(target, "5", "0", null, 0)
         commands.unit("prometheus.service", true, "", pid)
 
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [systemdHandle()])
+        List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [systemdHandle()])
 
         assert usage[0].state == "RUNNING" && usage[0].cpuSet == "5" :
                 "MainPID must keep usage observable when systemd returns no ControlGroup"
@@ -465,8 +441,7 @@ class LocalResourceControlExecutorFileSystemCase {
 
     private void configureV2(boolean memory) {
         Files.createDirectories(v2Root)
-        put(v2Root.resolve("cgroup.controllers"),
-                memory ? "cpuset memory cpu" : "cpuset cpu")
+        put(v2Root.resolve("cgroup.controllers"), memory ? "cpuset memory cpu" : "cpuset cpu")
         put(v2Root.resolve("cgroup.subtree_control"), "")
         put(v2Root.resolve("cpuset.cpus.effective"), "0-7")
         put(v2Root.resolve("cpuset.mems.effective"), "0")
@@ -477,30 +452,21 @@ class LocalResourceControlExecutorFileSystemCase {
         }
     }
 
-    private Path configureV2SystemdRole(
-            boolean serviceInSlice, boolean memory = true) {
+    private Path configureV2SystemdRole(boolean serviceInSlice, boolean memory = true) {
         Path parent = v2Root.resolve("zstack.slice")
         configureV2Group(parent, "0-7", "0", memory ? "max" : null, 0)
-        Path slice = v2Root.resolve(
-                "zstack.slice/zstack-management.slice")
-        configureV2Group(slice, "0-7", "0", memory ? "max" : null,
-                SizeUnit.MEGABYTE.toByte(64))
-        commands.unit("zstack-management.slice", true,
-                "/zstack.slice/zstack-management.slice")
+        Path slice = v2Root.resolve("zstack.slice/zstack-management.slice")
+        configureV2Group(slice, "0-7", "0", memory ? "max" : null, SizeUnit.MEGABYTE.toByte(64))
+        commands.unit("zstack-management.slice", true, "/zstack.slice/zstack-management.slice")
         Path service = serviceInSlice
-                ? slice.resolve("prometheus.service")
-                : v2Root.resolve("system.slice/prometheus.service")
-        configureV2Group(service, "", "0", memory ? "max" : null,
-                SizeUnit.MEGABYTE.toByte(32))
+                ? slice.resolve("prometheus.service") : v2Root.resolve("system.slice/prometheus.service")
+        configureV2Group(service, "", "0", memory ? "max" : null, SizeUnit.MEGABYTE.toByte(32))
         put(service.resolve("cpu.stat"), "usage_usec 123\n")
-        commands.unit("prometheus.service", true,
-                "/${v2Root.relativize(service)}")
+        commands.unit("prometheus.service", true, "/${v2Root.relativize(service)}")
         return slice
     }
 
-    private void configureV2Group(
-            Path group, String cpus, String mems,
-            String memoryLimit, long memoryCurrent) {
+    private void configureV2Group(Path group, String cpus, String mems, String memoryLimit, long memoryCurrent) {
         Files.createDirectories(group)
         put(group.resolve("cpuset.cpus"), cpus)
         put(group.resolve("cpuset.mems"), mems)
@@ -520,12 +486,9 @@ class LocalResourceControlExecutorFileSystemCase {
     private void configureV1MemorySystemdRole() {
         long rootLimit = SizeUnit.GIGABYTE.toByte(4)
         configureV1MemoryRoot(rootLimit)
-        Path slice = v1MemoryRoot.resolve(
-                "zstack.slice/zstack-management.slice")
-        configureV1MemoryGroup(slice, rootLimit,
-                SizeUnit.MEGABYTE.toByte(64))
-        configureV1MemoryGroup(slice.resolve("prometheus.service"),
-                rootLimit, SizeUnit.MEGABYTE.toByte(24))
+        Path slice = v1MemoryRoot.resolve("zstack.slice/zstack-management.slice")
+        configureV1MemoryGroup(slice, rootLimit, SizeUnit.MEGABYTE.toByte(64))
+        configureV1MemoryGroup(slice.resolve("prometheus.service"), rootLimit, SizeUnit.MEGABYTE.toByte(24))
     }
 
     private void configureV1MemoryRoot(long rootLimit) {
@@ -534,25 +497,7 @@ class LocalResourceControlExecutorFileSystemCase {
         put(v1MemoryRoot.resolve("cgroup.procs"), "")
     }
 
-    private ResourceConsumerHandle ownerHandle(String consumerKey) {
-        Path pidFile = temporaryRoot.resolve("${consumerKey}.pid")
-        put(pidFile, currentPid())
-        Files.setPosixFilePermissions(pidFile, [
-                PosixFilePermission.OWNER_READ,
-                PosixFilePermission.OWNER_WRITE,
-                PosixFilePermission.GROUP_READ,
-                PosixFilePermission.OTHERS_READ
-        ] as Set)
-        ResourceConsumerHandle handle = new ResourceConsumerHandle()
-        handle.handleType = ResourceConsumerHandle.OWNER_PID_FILE
-        handle.value = pidFile.toString()
-        handle.serviceName = consumerKey
-        handle.consumerKey = consumerKey
-        return handle
-    }
-
-    private void configureV1MemoryGroup(
-            Path group, long limit, long usage) {
+    private void configureV1MemoryGroup(Path group, long limit, long usage) {
         Files.createDirectories(group)
         put(group.resolve("memory.limit_in_bytes"), "${limit}")
         put(group.resolve("memory.usage_in_bytes"), "${usage}")
@@ -560,8 +505,7 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     private Path dropIn(String unit) {
-        return systemdUnitRoot.resolve(unit + ".d")
-                .resolve("50-zstack-resource-assignment.conf")
+        return systemdUnitRoot.resolve(unit + ".d").resolve("50-zstack-resource-assignment.conf")
     }
 
     private String debugState() {
@@ -574,15 +518,9 @@ class LocalResourceControlExecutorFileSystemCase {
         return "commands=${commands.invocations}, files=${files.sort()}"
     }
 
-    private static ResourceControlCommand command(
-            String operation,
-            String cpuSet,
-            Long memory,
-            List<ResourceConsumerHandle> handles) {
+    private static ResourceControlCommand command(String cpuSet, Long memory, List<ResourceConsumerHandle> handles) {
         ResourceControlCommand command = new ResourceControlCommand()
         command.roleType = "MANAGEMENT"
-        command.isolationMode = "SHARED"
-        command.operation = operation
         command.cpuSet = cpuSet
         command.memory = memory
         command.sliceName = "zstack-management.slice"
@@ -591,14 +529,11 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     private static ResourceConsumerHandle systemdHandle(
-            String serviceName = "prometheus",
-            String unit = "prometheus.service",
-            boolean optional = false) {
+            String serviceName = "prometheus", String unit = "prometheus.service", boolean optional = false) {
         ResourceConsumerHandle handle = new ResourceConsumerHandle()
         handle.handleType = ResourceConsumerHandle.SYSTEMD_UNIT
         handle.value = unit
         handle.serviceName = serviceName
-        handle.consumerKey = serviceName
         handle.optional = optional
         handle.restartable = true
         return handle
@@ -606,20 +541,6 @@ class LocalResourceControlExecutorFileSystemCase {
 
     private static String currentPid() {
         return ManagementFactory.runtimeMXBean.name.split("@")[0]
-    }
-
-    private static long memoryLimitAboveCurrentProcessUsage() {
-        String rss = Files.readAllLines(
-                java.nio.file.Paths.get("/proc/self/status"),
-                StandardCharsets.US_ASCII).find { it.startsWith("VmRSS:") }
-        assert rss != null :
-                "this case requires /proc/self/status to expose VmRSS"
-        long current = Long.parseLong(rss.trim().split(/\s+/)[1]) * 1024L
-        long desired = Math.max(
-                SizeUnit.GIGABYTE.toByte(4),
-                current + SizeUnit.GIGABYTE.toByte(1))
-        long mebibyte = SizeUnit.MEGABYTE.toByte(1)
-        return Math.floorDiv(desired + mebibyte - 1, mebibyte) * mebibyte
     }
 
     private static Throwable capture(Closure action) {
@@ -637,12 +558,10 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     private static String text(Path path) {
-        return new String(Files.readAllBytes(path), StandardCharsets.US_ASCII)
-                .trim()
+        return new String(Files.readAllBytes(path), StandardCharsets.US_ASCII).trim()
     }
 
-    private static class FakeCommandExecutor
-            implements LocalResourceControlExecutor.CommandExecutor {
+    private static class FakeCommandExecutor implements LocalResourceControlExecutor.CommandExecutor {
         private final Path v2Root
         private final Path v1Root
         private final Path v1MemoryRoot
@@ -656,24 +575,14 @@ class LocalResourceControlExecutorFileSystemCase {
             this.v1MemoryRoot = v1MemoryRoot
         }
 
-        void unit(
-                String name, boolean active, String controlGroup,
-                String mainPid = "0") {
+        void unit(String name, boolean active, String controlGroup, String mainPid = "0") {
             units[name] = [
                     LoadState: "loaded",
-                    ActiveState: active ? "active" : "inactive",
-                    ControlGroup: controlGroup,
-                    MainPID: mainPid
-            ]
+                    ActiveState: active ? "active" : "inactive", ControlGroup: controlGroup, MainPID: mainPid]
         }
 
         void missingUnit(String name) {
-            units[name] = [
-                    LoadState: "not-found",
-                    ActiveState: "inactive",
-                    ControlGroup: "",
-                    MainPID: "0"
-            ]
+            units[name] = [LoadState: "not-found", ActiveState: "inactive", ControlGroup: "", MainPID: "0"]
         }
 
         int count(String... suffix) {
@@ -705,8 +614,7 @@ class LocalResourceControlExecutorFileSystemCase {
                 Path source = java.nio.file.Paths.get(args[-2])
                 Path destination = java.nio.file.Paths.get(args[-1])
                 Files.createDirectories(destination.parent)
-                Files.copy(source, destination,
-                        StandardCopyOption.REPLACE_EXISTING)
+                Files.copy(source, destination, StandardCopyOption.REPLACE_EXISTING)
                 return ""
             }
             if (args[0] == "rm" && args[1] == "-f") {
@@ -728,11 +636,7 @@ class LocalResourceControlExecutorFileSystemCase {
             String action = args[1]
             if (action == "show") {
                 Map<String, String> properties = units[args[2]] ?: [
-                        LoadState: "not-found",
-                        ActiveState: "inactive",
-                        ControlGroup: "",
-                        MainPID: "0"
-                ]
+                        LoadState: "not-found", ActiveState: "inactive", ControlGroup: "", MainPID: "0"]
                 return properties.collect { key, value ->
                     "${key}=${value}"
                 }.join("\n") + "\n"
@@ -743,15 +647,9 @@ class LocalResourceControlExecutorFileSystemCase {
             if (action == "start" || action == "stop") {
                 args.drop(2).each { String unit ->
                     if (!units.containsKey(unit)) {
-                        units[unit] = [
-                                LoadState: "loaded",
-                                ActiveState: "inactive",
-                                ControlGroup: "",
-                                MainPID: "0"
-                        ]
+                        units[unit] = [LoadState: "loaded", ActiveState: "inactive", ControlGroup: "", MainPID: "0"]
                     }
-                    units[unit].ActiveState = action == "start" &&
-                            !failStarts.contains(unit) ? "active" : "inactive"
+                    units[unit].ActiveState = action == "start" && !failStarts.contains(unit) ? "active" : "inactive"
                 }
                 return ""
             }
@@ -771,8 +669,7 @@ class LocalResourceControlExecutorFileSystemCase {
             }
             if (path.startsWith(v1MemoryRoot) && path != v1MemoryRoot) {
                 putIfMissing(path.resolve("memory.limit_in_bytes"),
-                        LocalResourceControlExecutorFileSystemCase.text(
-                                v1MemoryRoot.resolve("memory.limit_in_bytes")))
+                        LocalResourceControlExecutorFileSystemCase.text(v1MemoryRoot.resolve("memory.limit_in_bytes")))
                 putIfMissing(path.resolve("memory.usage_in_bytes"), "0")
                 putIfMissing(path.resolve("cgroup.procs"), "")
             }
@@ -781,8 +678,7 @@ class LocalResourceControlExecutorFileSystemCase {
         private void writeKernelFile(Path path, byte[] input) {
             String value = input == null ? "" :
                     new String(input, StandardCharsets.US_ASCII)
-            if (path.fileName.toString() == "cgroup.subtree_control" &&
-                    value.contains("+memory")) {
+            if (path.fileName.toString() == "cgroup.subtree_control" && value.contains("+memory")) {
                 path.parent.toFile().eachDir { File child ->
                     putIfMissing(child.toPath().resolve("memory.max"), "max")
                     putIfMissing(child.toPath().resolve("memory.current"), "0")
@@ -791,12 +687,10 @@ class LocalResourceControlExecutorFileSystemCase {
             if (path.fileName.toString() == "cgroup.procs") {
                 Set<String> pids = [] as LinkedHashSet
                 if (Files.isRegularFile(path)) {
-                    pids.addAll(LocalResourceControlExecutorFileSystemCase
-                            .text(path).split(/\s+/).findAll { it })
+                    pids.addAll(LocalResourceControlExecutorFileSystemCase.text(path).split(/\s+/).findAll { it })
                 }
                 pids.addAll(value.trim().split(/\s+/).findAll { it })
-                LocalResourceControlExecutorFileSystemCase.put(
-                        path, pids.join("\n"))
+                LocalResourceControlExecutorFileSystemCase.put(path, pids.join("\n"))
                 return
             }
             LocalResourceControlExecutorFileSystemCase.put(path, value)
@@ -809,9 +703,7 @@ class LocalResourceControlExecutorFileSystemCase {
         }
 
         private static List<String> normalize(List<String> command) {
-            return command.size() >= 2 &&
-                    command[0] == "sudo" && command[1] == "-n"
-                    ? command.drop(2) : command
+            return command.size() >= 2 && command[0] == "sudo" && command[1] == "-n" ? command.drop(2) : command
         }
     }
 }

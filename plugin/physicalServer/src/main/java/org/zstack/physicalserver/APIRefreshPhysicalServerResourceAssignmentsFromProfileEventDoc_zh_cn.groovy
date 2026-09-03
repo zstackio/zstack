@@ -14,7 +14,7 @@ doc {
 	}
 	ref {
 		name "error"
-		path "org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsEvent.error"
+	path "org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileEvent.error"
 		desc "错误码，若不为null，则表示操作失败, 操作成功时该字段为null",false
 		type "ErrorCode"
 		since "5.5.38"

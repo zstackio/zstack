@@ -1,16 +1,15 @@
 package org.zstack.portal.managementnode;
 
 import org.zstack.header.message.MessageReply;
-import org.zstack.header.physicalserver.ResourceControlResponse;
 
 public class ApplyManagementNodeResourceControlReply extends MessageReply {
-    private ResourceControlResponse response;
+    private boolean synced;
 
-    public ResourceControlResponse getResponse() {
-        return response;
+    public boolean isSynced() {
+        return synced;
     }
 
-    public void setResponse(ResourceControlResponse response) {
-        this.response = response;
+    public void setSynced(boolean synced) {
+        this.synced = synced;
     }
 }

@@ -8,13 +8,12 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.ResourceConsumerHandle;
 import org.zstack.header.physicalserver.ResourceControlCommand;
-import org.zstack.header.physicalserver.ResourceControlResponse;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -33,8 +32,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.zstack.core.Platform.operr;
 
 public class PhysicalServerResourceAssignmentApplier {
-    private static final CLogger logger = Utils.getLogger(
-            PhysicalServerResourceAssignmentApplier.class);
+    private static final CLogger logger = Utils.getLogger(PhysicalServerResourceAssignmentApplier.class);
 
     @Autowired
     private PluginRegistry pluginRgty;
@@ -45,31 +43,36 @@ public class PhysicalServerResourceAssignmentApplier {
 
     public void applyAssignments(
             String serverUuid,
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot, Completion completion) {
+        applyAssignments(serverUuid, assignmentSnapshot, this::keepOrCreateCpuSet, completion);
+    }
+
+    public void applyAssignmentsFromProfile(
+            String serverUuid,
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot, Completion completion) {
+        applyAssignments(serverUuid, assignmentSnapshot, this::matchProfileCpuCount, completion);
+    }
+
+    private void applyAssignments(
+            String serverUuid,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
-            Completion completion) {
+            CpuSetResolver cpuSetResolver, Completion completion) {
         PhysicalServerResourceExtensionRegistry extensions = extensions();
-        ConsumerPlan consumers = consumerPlan(
-                serverUuid, assignmentSnapshot.keySet(), extensions);
+        ConsumerPlan consumers = consumerPlan(serverUuid, assignmentSnapshot.keySet(), extensions);
         List<String> roleTypes = new ArrayList<>();
-        for (PhysicalServerResourceAssignmentVO assignment :
-                assignmentSnapshot.values()) {
-            if (assignment.getState()
-                    == PhysicalServerResourceAssignmentState.Unsynced) {
+        for (PhysicalServerResourceAssignmentVO assignment : assignmentSnapshot.values()) {
+            if (assignment.getState() == PhysicalServerResourceAssignmentState.Unsynced) {
                 roleTypes.add(assignment.getRoleType());
             }
         }
         roleTypes.sort(Comparator
                 .comparingInt((String roleType) -> isolationOrder(
-                        extensions.controller(roleType)))
-                .thenComparing(String::compareTo));
+                        extensions.controller(roleType))).thenComparing(String::compareTo));
         AtomicReference<ErrorCode> firstError = new AtomicReference<>();
 
         new While<>(roleTypes).each((roleType, each) -> applyAssignment(
                 assignmentSnapshot.get(roleType),
-                assignmentSnapshot,
-                extensions,
-                consumers,
-                new Completion(each) {
+                assignmentSnapshot, extensions, consumers, cpuSetResolver, new Completion(each) {
                     @Override
                     public void success() {
                         each.done();
@@ -80,8 +83,7 @@ public class PhysicalServerResourceAssignmentApplier {
                         firstError.compareAndSet(null, errorCode);
                         logger.warn(String.format(
                                 "failed to apply physical server resource assignment: " +
-                                        "serverUuid[%s], roleType[%s], error[%s]",
-                                serverUuid, roleType, errorCode));
+                                        "serverUuid[%s], roleType[%s], error[%s]", serverUuid, roleType, errorCode));
                         each.done();
                     }
                 })).run(new WhileDoneCompletion(completion) {
@@ -100,45 +102,38 @@ public class PhysicalServerResourceAssignmentApplier {
             PhysicalServerResourceAssignmentVO assignment,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
             PhysicalServerResourceExtensionRegistry extensions,
-            ConsumerPlan consumers,
-            Completion completion) {
-        PhysicalServerResourceAssignmentController controller =
-                extensions.controller(assignment.getRoleType());
+            ConsumerPlan consumers, CpuSetResolver cpuSetResolver, Completion completion) {
+        PhysicalServerResourceAssignmentController controller = extensions.controller(assignment.getRoleType());
         if (controller == null) {
-            failUnsynced(
-                    assignment,
-                    controllerUnavailableError(
-                            assignment.getRoleType(), extensions),
-                    completion);
+            failUnsynced(assignment, controllerUnavailableError(assignment.getRoleType()), completion);
             return;
         }
-        RuntimeException consumerError = consumers.error(
-                assignment.getRoleType());
+        RuntimeException consumerError = consumers.error(assignment.getRoleType());
         if (consumerError != null) {
             failUnsynced(
                     assignment,
                     operr(
                             PhysicalServerConstant.ERROR_CODE,
                             "failed to resolve resource consumers for roleType[%s]: %s",
-                            assignment.getRoleType(), consumerError.getMessage()),
-                    completion);
+                            assignment.getRoleType(), consumerError.getMessage()), completion);
+            return;
+        }
+
+        if ((assignment.getCpuSet() == null
+                || assignment.getCpuSet().trim().isEmpty()) && controller.getDefaultCpuCount() == null) {
+            apply(assignment, assignmentSnapshot, controller, consumers.handles(assignment.getRoleType()), completion);
             return;
         }
 
         collectTopology(
-                assignment,
-                controller,
-                extensions,
-                new ReturnValueCompletion<PhysicalServerCpuTopology>(completion) {
+                assignment, controller, new ReturnValueCompletion<PhysicalServerCpuTopology>(completion) {
                     @Override
                     public void success(PhysicalServerCpuTopology topology) {
-                        validateAndApply(
+                        prepareAndApply(
                                 assignment,
                                 assignmentSnapshot,
                                 controller,
-                                consumers.handles(assignment.getRoleType()),
-                                topology,
-                                completion);
+                                consumers.handles(assignment.getRoleType()), topology, cpuSetResolver, completion);
                     }
 
                     @Override
@@ -151,59 +146,34 @@ public class PhysicalServerResourceAssignmentApplier {
     private void collectTopology(
             PhysicalServerResourceAssignmentVO assignment,
             PhysicalServerResourceAssignmentController controller,
-            PhysicalServerResourceExtensionRegistry extensions,
             ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
-        PhysicalServerResourceAssignmentController topologyController =
-                extensions.controller(controller.getTopologyRoleType());
-        if (topologyController == null) {
-            completion.fail(operr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "CPU_TOPOLOGY_SOURCE_MISSING: roleType[%s] requires topologyRoleType[%s]",
-                    assignment.getRoleType(), controller.getTopologyRoleType()));
-            return;
-        }
         try {
-            topologyController.collectTopology(
-                    assignment.getServerUuid(), completion);
+            controller.collectTopology(assignment.getServerUuid(), completion);
         } catch (RuntimeException error) {
             completion.fail(operr(
                     PhysicalServerConstant.ERROR_CODE,
-                    "CPU_TOPOLOGY_EXECUTOR_UNREACHABLE: %s",
-                    error.getMessage()));
+                    "Failed to query physical server CPU topology: %s", error.getMessage()));
         }
     }
 
-    private void validateAndApply(
+    private void prepareAndApply(
             PhysicalServerResourceAssignmentVO assignment,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
             PhysicalServerResourceAssignmentController controller,
             List<ResourceConsumerHandle> consumers,
-            PhysicalServerCpuTopology topology,
-            Completion completion) {
-        Set<Integer> allocatedExclusiveCpus = allocatedExclusiveCpus(
-                assignment,
-                assignmentSnapshot.values(),
-                extensions(),
-                topology);
+            PhysicalServerCpuTopology topology, CpuSetResolver cpuSetResolver, Completion completion) {
+        Set<Integer> allocatedExclusiveCpus =
+                planner.calculateAllocatedExclusiveCpus(
+                        assignment, assignmentSnapshot.values(), extensions(), topology);
         PhysicalServerResourceAssignmentVO current = assignment;
         try {
-            String cpuSet = current.getCpuSet();
-            if (cpuSet == null || cpuSet.isEmpty()) {
-                cpuSet = controller.getDefaultCpuSet(
-                        topology, allocatedExclusiveCpus);
-            }
-            cpuSet = planner.validateAndNormalize(
-                    controller.getIsolationMode(),
-                    cpuSet,
-                    topology,
-                    allocatedExclusiveCpus);
+            String cpuSet = cpuSetResolver.resolve(current, controller, topology, allocatedExclusiveCpus);
             if (!cpuSet.equals(current.getCpuSet())) {
-                current = assignments.initializeCpuSet(current, cpuSet);
+                current = assignments.updateCpuSet(current, cpuSet);
                 if (current == null) {
                     completion.fail(operr(
                             PhysicalServerConstant.ERROR_CODE,
-                            "RESOURCE_ASSIGNMENT_NOT_FOUND: assignmentUuid[%s]",
-                            assignment.getUuid()));
+                            "Resource assignment[uuid:%s] does not exist", assignment.getUuid()));
                     return;
                 }
                 assignmentSnapshot.put(current.getRoleType(), current);
@@ -214,140 +184,96 @@ public class PhysicalServerResourceAssignmentApplier {
                     operr(
                             PhysicalServerConstant.ERROR_CODE,
                             "failed to validate physical server resource assignment: %s",
-                            error.getMessage()),
-                    completion);
+                            error.getMessage()), completion);
             return;
         }
-        apply(
-                current,
-                assignmentSnapshot,
-                controller,
-                consumers,
-                ControlOperation.APPLY,
-                null,
-                completion);
+        apply(current, assignmentSnapshot, controller, consumers, completion);
     }
 
-    public void release(
-            String serverUuid,
-            String roleType,
-            String consumerUuid,
-            Completion completion) {
-        PhysicalServerResourceAssignmentVO assignment =
-                assignments.find(serverUuid, roleType);
+    private String keepOrCreateCpuSet(
+            PhysicalServerResourceAssignmentVO assignment,
+            PhysicalServerResourceAssignmentController controller,
+            PhysicalServerCpuTopology topology, Set<Integer> allocatedExclusiveCpus) {
+        if (empty(assignment.getCpuSet())) {
+            return planner.matchProfileCpuCount(
+                    controller.getDefaultCpuCount(),
+                    assignment.getCpuSet(), controller.getIsolationMode(), topology, allocatedExclusiveCpus);
+        }
+        return planner.validateAndNormalize(
+                controller.getIsolationMode(), assignment.getCpuSet(), topology, allocatedExclusiveCpus);
+    }
+
+    private String matchProfileCpuCount(
+            PhysicalServerResourceAssignmentVO assignment,
+            PhysicalServerResourceAssignmentController controller,
+            PhysicalServerCpuTopology topology, Set<Integer> allocatedExclusiveCpus) {
+        return planner.matchProfileCpuCount(
+                controller.getDefaultCpuCount(),
+                assignment.getCpuSet(), controller.getIsolationMode(), topology, allocatedExclusiveCpus);
+    }
+
+    public void release(String serverUuid, String roleType, Completion completion) {
+        Map<String, PhysicalServerResourceAssignmentVO> snapshot = assignments.mapByRole(serverUuid);
+        PhysicalServerResourceAssignmentVO assignment = snapshot.get(roleType);
         if (assignment == null) {
             completion.success();
             return;
         }
         PhysicalServerResourceExtensionRegistry extensions = extensions();
-        PhysicalServerResourceAssignmentController controller =
-                extensions.controller(roleType);
+        PhysicalServerResourceAssignmentController controller = extensions.controller(roleType);
         if (controller == null) {
-            failUnsynced(
-                    assignment,
-                    controllerUnavailableError(roleType, extensions),
-                    completion);
+            failUnsynced(assignment, controllerUnavailableError(roleType), completion);
             return;
         }
-        Map<String, PhysicalServerResourceAssignmentVO> snapshot =
-                assignmentsByRole(serverUuid);
-        ConsumerPlan consumers = consumerPlan(
-                serverUuid, snapshot.keySet(), extensions);
+        ConsumerPlan consumers = consumerPlan(serverUuid, snapshot.keySet(), extensions);
         if (consumers.error(roleType) != null) {
             failUnsynced(
                     assignment,
                     operr(
                             PhysicalServerConstant.ERROR_CODE,
                             "failed to resolve resource consumers for roleType[%s]: %s",
-                            roleType, consumers.error(roleType).getMessage()),
-                    completion);
+                            roleType, consumers.error(roleType).getMessage()), completion);
             return;
         }
-        apply(
-                assignment,
-                snapshot,
-                controller,
-                consumers.handles(roleType),
-                ControlOperation.RELEASE,
-                consumerUuid,
-                completion);
+        release(assignment, controller, consumers.handles(roleType), completion);
     }
 
     public void forget(String serverUuid, String roleType) {
-        PhysicalServerResourceAssignmentVO assignment =
-                assignments.find(serverUuid, roleType);
+        PhysicalServerResourceAssignmentVO assignment = assignments.find(serverUuid, roleType);
         if (assignment != null) {
             assignments.delete(assignment.getUuid());
         }
     }
 
-    public void stageForServiceRestart(
-            PhysicalServerResourceAssignmentVO assignment,
+    List<ResourceConsumerHandle> resolveRestartConsumers(
+            String serverUuid,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
-            PhysicalServerResourceAssignmentController controller,
-            Completion completion) {
-        ConsumerPlan consumers = consumerPlan(
-                assignment.getServerUuid(),
-                assignmentSnapshot.keySet(),
-                extensions());
-        RuntimeException error = consumers.error(assignment.getRoleType());
+            String roleType, Collection<String> serviceNames) {
+        ConsumerPlan consumers = consumerPlan(serverUuid, assignmentSnapshot.keySet(), extensions());
+        RuntimeException error = consumers.error(roleType);
         if (error != null) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "failed to resolve resource consumers for roleType[%s]: %s",
-                            assignment.getRoleType(), error.getMessage()),
-                    completion);
-            return;
+            throw new IllegalArgumentException(String.format(
+                    "Failed to resolve resource consumers for roleType[%s]: %s", roleType, error.getMessage()), error);
         }
-        ResourceControlCommand command = command(
-                assignment,
-                controller,
-                ControlOperation.APPLY,
-                consumers.handles(assignment.getRoleType()));
-        try {
-            controller.apply(
-                    assignment.getServerUuid(),
-                    null,
-                    command,
-                    new ReturnValueCompletion<ResourceControlResponse>(completion) {
-                        @Override
-                        public void success(ResourceControlResponse response) {
-                            if (response != null) {
-                                completion.success();
-                                return;
-                            }
-                            failUnsynced(
-                                    assignment,
-                                    operr(
-                                            PhysicalServerConstant.ERROR_CODE,
-                                            "resource control controller returned no stage result"),
-                                    completion);
-                        }
 
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            failUnsynced(assignment, errorCode, completion);
-                        }
-                    });
-        } catch (RuntimeException applyError) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "resource control controller failed while staging the assignment: %s",
-                            applyError.getMessage()),
-                    completion);
+        Set<String> selectedNames = new LinkedHashSet<>(serviceNames);
+        List<ResourceConsumerHandle> selected = new ArrayList<>();
+        for (ResourceConsumerHandle consumer : consumers.handles(roleType)) {
+            if (selectedNames.remove(consumer.getServiceName())) {
+                selected.add(consumer);
+            }
         }
+        if (!selectedNames.isEmpty()) {
+            throw new IllegalArgumentException(String.format(
+                    "Services%s are not managed by roleType[%s]", selectedNames, roleType));
+        }
+        return selected;
     }
 
     Map<String, Set<String>> controlledServiceNames(
-            String serverUuid,
-            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot) {
+            String serverUuid, Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot) {
         PhysicalServerResourceExtensionRegistry extensions = extensions();
-        ConsumerPlan consumers = consumerPlan(
-                serverUuid, assignmentSnapshot.keySet(), extensions);
+        ConsumerPlan consumers = consumerPlan(serverUuid, assignmentSnapshot.keySet(), extensions);
         Map<String, Set<String>> result = new LinkedHashMap<>();
         for (String roleType : assignmentSnapshot.keySet()) {
             if (extensions.controller(roleType) == null) {
@@ -369,32 +295,41 @@ public class PhysicalServerResourceAssignmentApplier {
             PhysicalServerResourceAssignmentVO assignment,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
             PhysicalServerResourceAssignmentController controller,
-            List<ResourceConsumerHandle> consumers,
-            ControlOperation operation,
-            String consumerUuid,
-            Completion completion) {
-        ResourceControlCommand command = command(
-                assignment, controller, operation, consumers);
+            List<ResourceConsumerHandle> consumers, Completion completion) {
+        ResourceControlCommand command = applyCommand(assignment, controller.getIsolationMode(), consumers);
         try {
-            controller.apply(
+            controller.apply(assignment.getServerUuid(), command, new ReturnValueCompletion<Boolean>(completion) {
+                @Override
+                public void success(Boolean synced) {
+                    completeApply(assignment, assignmentSnapshot, synced, completion);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    failUnsynced(assignment, errorCode, completion);
+                }
+            });
+        } catch (RuntimeException error) {
+            failUnsynced(
+                    assignment,
+                    operr(
+                            PhysicalServerConstant.ERROR_CODE,
+                            "resource control controller failed while applying the assignment: %s",
+                            error.getMessage()), completion);
+        }
+    }
+
+    private void release(
+            PhysicalServerResourceAssignmentVO assignment,
+            PhysicalServerResourceAssignmentController controller,
+            List<ResourceConsumerHandle> consumers, Completion completion) {
+        try {
+            controller.release(
                     assignment.getServerUuid(),
-                    consumerUuid,
-                    command,
-                    new ReturnValueCompletion<ResourceControlResponse>(completion) {
+                    releaseCommand(assignment, consumers), new ReturnValueCompletion<Boolean>(completion) {
                         @Override
-                        public void success(ResourceControlResponse response) {
-                            if (operation == ControlOperation.RELEASE) {
-                                completeRelease(
-                                        assignment,
-                                        response,
-                                        completion);
-                            } else {
-                                completeApply(
-                                        assignment,
-                                        assignmentSnapshot,
-                                        response,
-                                        completion);
-                            }
+                        public void success(Boolean synced) {
+                            completeRelease(assignment, synced, completion);
                         }
 
                         @Override
@@ -407,27 +342,23 @@ public class PhysicalServerResourceAssignmentApplier {
                     assignment,
                     operr(
                             PhysicalServerConstant.ERROR_CODE,
-                            "resource control controller failed while applying the assignment: %s",
-                            error.getMessage()),
-                    completion);
+                            "resource control controller failed while releasing the assignment: %s",
+                            error.getMessage()), completion);
         }
     }
 
     private void completeApply(
             PhysicalServerResourceAssignmentVO assignment,
-            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
-            ResourceControlResponse response,
-            Completion completion) {
-        if (response == null) {
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot, Boolean synced, Completion completion) {
+        if (synced == null) {
             failUnsynced(
                     assignment,
                     operr(
                             PhysicalServerConstant.ERROR_CODE,
-                            "resource control controller returned no apply result"),
-                    completion);
+                            "resource control controller returned no apply result"), completion);
             return;
         }
-        if (!response.isSynced()) {
+        if (!synced) {
             assignments.markUnsynced(assignment.getUuid());
             assignment.setState(PhysicalServerResourceAssignmentState.Unsynced);
             assignmentSnapshot.put(assignment.getRoleType(), assignment);
@@ -443,68 +374,62 @@ public class PhysicalServerResourceAssignmentApplier {
         completion.success();
     }
 
-    private void completeRelease(
-            PhysicalServerResourceAssignmentVO assignment,
-            ResourceControlResponse response,
-            Completion completion) {
-        if (response == null || !response.isSynced()) {
+    private void completeRelease(PhysicalServerResourceAssignmentVO assignment, Boolean synced, Completion completion) {
+        if (!Boolean.TRUE.equals(synced)) {
             failUnsynced(
                     assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "resource control release is not synced"),
-                    completion);
+                    operr(PhysicalServerConstant.ERROR_CODE, "resource control release is not synced"), completion);
             return;
         }
         if (!assignments.delete(assignment.getUuid())) {
             completion.fail(operr(
                     PhysicalServerConstant.ERROR_CODE,
-                    "RESOURCE_ASSIGNMENT_NOT_FOUND: assignmentUuid[%s]",
-                    assignment.getUuid()));
+                    "Resource assignment[uuid:%s] does not exist", assignment.getUuid()));
             return;
         }
         completion.success();
     }
 
-    private ResourceControlCommand command(
+    private ResourceControlCommand applyCommand(
             PhysicalServerResourceAssignmentVO assignment,
-            PhysicalServerResourceAssignmentController controller,
-            ControlOperation operation,
-            List<ResourceConsumerHandle> consumers) {
+            PhysicalServerResourceIsolationMode isolationMode, List<ResourceConsumerHandle> consumers) {
+        ResourceControlCommand command = command(assignment, consumers);
+        command.setIsolationMode(isolationMode);
+        command.setCpuSet(assignment.getCpuSet());
+        command.setMemory(assignment.getMemory());
+        return command;
+    }
+
+    private ResourceControlCommand releaseCommand(
+            PhysicalServerResourceAssignmentVO assignment, List<ResourceConsumerHandle> consumers) {
+        return command(assignment, consumers);
+    }
+
+    private ResourceControlCommand command(
+            PhysicalServerResourceAssignmentVO assignment, List<ResourceConsumerHandle> consumers) {
         ResourceControlCommand command = new ResourceControlCommand();
         command.setRoleType(assignment.getRoleType());
-        command.setIsolationMode(controller.getIsolationMode().name());
-        command.setOperation(operation.name());
-        command.setCpuSet(operation == ControlOperation.RELEASE
-                ? "" : assignment.getCpuSet());
-        command.setMemory(assignment.getMemory());
         command.setHandles(new ArrayList<>(consumers));
         return command;
     }
 
     private ConsumerPlan consumerPlan(
-            String serverUuid,
-            Collection<String> roleTypes,
-            PhysicalServerResourceExtensionRegistry extensions) {
+            String serverUuid, Collection<String> roleTypes, PhysicalServerResourceExtensionRegistry extensions) {
         ConsumerPlan result = new ConsumerPlan();
         Set<String> claimed = new HashSet<>();
         List<String> ordered = new ArrayList<>(roleTypes);
-        ordered.sort(Comparator
-                .comparingInt(this::consumerPriority)
-                .thenComparing(String::compareTo));
+        ordered.sort(Comparator.comparingInt(this::consumerPriority).thenComparing(String::compareTo));
         for (String roleType : ordered) {
-            PhysicalServerResourceAssignmentController controller =
-                    extensions.controller(roleType);
+            PhysicalServerResourceAssignmentController controller = extensions.controller(roleType);
             if (controller == null) {
                 continue;
             }
             try {
-                List<ResourceConsumerHandle> candidates =
-                        controller.getResourceConsumers(serverUuid);
+                List<ResourceConsumerHandle> candidates = controller.getResourceConsumers(serverUuid);
                 List<ResourceConsumerHandle> owned = new ArrayList<>();
                 if (candidates != null) {
                     for (ResourceConsumerHandle candidate : candidates) {
-                        String key = consumerKey(candidate);
+                        String key = handleIdentity(candidate);
                         if (claimed.add(key)) {
                             owned.add(candidate);
                         }
@@ -518,11 +443,9 @@ public class PhysicalServerResourceAssignmentApplier {
         return result;
     }
 
-    private String consumerKey(ResourceConsumerHandle handle) {
+    private String handleIdentity(ResourceConsumerHandle handle) {
         if (handle == null
-                || empty(handle.getHandleType())
-                || empty(handle.getValue())
-                || empty(handle.getServiceName())) {
+                || empty(handle.getHandleType()) || empty(handle.getValue()) || empty(handle.getServiceName())) {
             throw new IllegalArgumentException(
                     "resource consumer handle must define handleType, value and serviceName");
         }
@@ -530,48 +453,14 @@ public class PhysicalServerResourceAssignmentApplier {
     }
 
     private int consumerPriority(String roleType) {
-        return PhysicalServerRoleType.MANAGEMENT.equals(roleType) ? 0 : 1;
-    }
-
-    private Set<Integer> allocatedExclusiveCpus(
-            PhysicalServerResourceAssignmentVO current,
-            Collection<PhysicalServerResourceAssignmentVO> assignmentValues,
-            PhysicalServerResourceExtensionRegistry extensions,
-            PhysicalServerCpuTopology topology) {
-        Set<Integer> result = new HashSet<>();
-        for (PhysicalServerResourceAssignmentVO assignment : assignmentValues) {
-            if (assignment.getUuid().equals(current.getUuid())) {
-                continue;
-            }
-            PhysicalServerResourceAssignmentController controller =
-                    extensions.controller(assignment.getRoleType());
-            if (controller == null
-                    || controller.getIsolationMode()
-                    != PhysicalServerResourceIsolationMode.EXCLUSIVE
-                    || empty(assignment.getCpuSet())) {
-                continue;
-            }
-            result.addAll(PhysicalServerCpuSet.parse(
-                    assignment.getCpuSet(), topology.getOnlineCpus()));
-        }
-        return result;
+        return "MANAGEMENT".equals(roleType) ? 0 : 1;
     }
 
     private boolean empty(String value) {
         return value == null || value.trim().isEmpty();
     }
 
-    private boolean isExclusive(
-            PhysicalServerResourceAssignmentController controller) {
-        return controller != null
-                && controller.getIsolationMode()
-                == PhysicalServerResourceIsolationMode.EXCLUSIVE;
-    }
-
-    private void failUnsynced(
-            PhysicalServerResourceAssignmentVO assignment,
-            ErrorCode cause,
-            Completion completion) {
+    private void failUnsynced(PhysicalServerResourceAssignmentVO assignment, ErrorCode cause, Completion completion) {
         assignments.markUnsynced(assignment.getUuid());
         assignment.setState(PhysicalServerResourceAssignmentState.Unsynced);
         completion.fail(operr(
@@ -581,53 +470,33 @@ public class PhysicalServerResourceAssignmentApplier {
                 assignment.getUuid(), assignment.getRoleType()));
     }
 
-    private Map<String, PhysicalServerResourceAssignmentVO> assignmentsByRole(
-            String serverUuid) {
-        Map<String, PhysicalServerResourceAssignmentVO> result =
-                new LinkedHashMap<>();
-        for (PhysicalServerResourceAssignmentVO assignment :
-                assignments.listAssignments(Collections.singleton(serverUuid))) {
-            result.put(assignment.getRoleType(), assignment);
-        }
-        return result;
+    private ErrorCode controllerUnavailableError(String roleType) {
+        return operr(
+                PhysicalServerConstant.ERROR_CODE,
+                "resource assignment controller for roleType[%s] is missing", roleType);
     }
 
-    private ErrorCode controllerUnavailableError(
-            String roleType,
-            PhysicalServerResourceExtensionRegistry extensions) {
-        String error = extensions.controllerError(roleType);
-        if (error == null) {
-            return operr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "resource assignment controller for roleType[%s] is missing",
-                    roleType);
-        }
-        return operr(PhysicalServerConstant.ERROR_CODE, "%s", error);
-    }
-
-    private int isolationOrder(
-            PhysicalServerResourceAssignmentController controller) {
-        return isExclusive(controller) ? 0 : 1;
+    private int isolationOrder(PhysicalServerResourceAssignmentController controller) {
+        return controller != null
+                && controller.getIsolationMode() == PhysicalServerResourceIsolationMode.EXCLUSIVE ? 0 : 1;
     }
 
     private PhysicalServerResourceExtensionRegistry extensions() {
         return PhysicalServerResourceExtensionRegistry.load(pluginRgty);
     }
 
-    private enum ControlOperation {
-        APPLY,
-        RELEASE
+    private interface CpuSetResolver {
+        String resolve(
+                PhysicalServerResourceAssignmentVO assignment,
+                PhysicalServerResourceAssignmentController controller,
+                PhysicalServerCpuTopology topology, Set<Integer> allocatedExclusiveCpus);
     }
 
     private static class ConsumerPlan {
-        private final Map<String, List<ResourceConsumerHandle>> handles =
-                new LinkedHashMap<>();
-        private final Map<String, RuntimeException> errors =
-                new LinkedHashMap<>();
+        private final Map<String, List<ResourceConsumerHandle>> handles = new LinkedHashMap<>();
+        private final Map<String, RuntimeException> errors = new LinkedHashMap<>();
 
-        private void put(
-                String roleType,
-                List<ResourceConsumerHandle> roleHandles) {
+        private void put(String roleType, List<ResourceConsumerHandle> roleHandles) {
             handles.put(roleType, roleHandles);
         }
 

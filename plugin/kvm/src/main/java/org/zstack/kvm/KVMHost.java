@@ -6188,10 +6188,8 @@ public class KVMHost extends HostBase implements Host {
                                         PhysicalServerResourceAssignmentConfig.CATEGORY,
                                         PhysicalServerResourceAssignmentConfig.ENABLED,
                                         Boolean.class));
-                        kvmHostConfigChecker.setRequireResourceAssignment(
-                                resourceAssignmentEnabled);
-                        deployArguments.setResourceAssignmentEnabled(
-                                resourceAssignmentEnabled);
+                        kvmHostConfigChecker.setRequireResourceAssignment(resourceAssignmentEnabled);
+                        deployArguments.setResourceAssignmentEnabled(resourceAssignmentEnabled);
 
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");
