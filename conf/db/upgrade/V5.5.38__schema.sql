@@ -627,6 +627,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
     `operationUuid` varchar(36) DEFAULT NULL,
     `operationStep` varchar(32) DEFAULT NULL,
     `operationDigest` varchar(64) DEFAULT NULL,
+    `operationCapabilityName` varchar(64) DEFAULT NULL,
+    `operationCapabilityContract` varchar(32) DEFAULT NULL,
+    `operationCapabilityEpoch` bigint DEFAULT NULL,
+    `operationProviderIdentity` varchar(128) DEFAULT NULL,
+    `operationProfileIdentity` varchar(128) DEFAULT NULL,
+    `operationAdapterIdentity` varchar(128) DEFAULT NULL,
     `currentConfigVersion` bigint DEFAULT NULL,
     `appliedConfigVersion` bigint DEFAULT NULL,
     `lastErrorCode` varchar(128) DEFAULT NULL,
@@ -648,6 +654,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
 -- ZSTAC-86635: Persist ZNS controller connection candidates outside SystemTag.
 CALL ADD_COLUMN('ZnsControllerVO', 'ipOwnership', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'vipEndpoint', 'varchar(255)', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'endpointRevision', 'BIGINT', 0, 0);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerNodeEndpointVO` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT,
