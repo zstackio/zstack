@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateL2GeneveNetworkAction extends AbstractAction {
+public class CheckVniAvailabilityAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.CreateL2NetworkResult value;
+        public org.zstack.sdk.network.zns.CheckVniAvailabilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,38 +25,11 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,16777214L}, noTrim = false)
-    public java.lang.Integer geneveId;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String zoneUuid;
+    public java.lang.String transportZoneUuid;
 
-    @Param(required = false, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String physicalInterface;
-
-    @Param(required = false)
-    public java.lang.String type;
-
-    @Param(required = false, validValues = {"LinuxBridge","OvsDpdk","MacVlan","OvnDpdk"}, maxLength = 1024, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String vSwitchType = "LinuxBridge";
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.Boolean isolated = false;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String pvlan;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,16777214L}, noTrim = false)
+    public int vni = 0;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -76,12 +49,6 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -90,8 +57,8 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.CreateL2NetworkResult value = res.getResult(org.zstack.sdk.CreateL2NetworkResult.class);
-        ret.value = value == null ? new org.zstack.sdk.CreateL2NetworkResult() : value; 
+        org.zstack.sdk.network.zns.CheckVniAvailabilityResult value = res.getResult(org.zstack.sdk.network.zns.CheckVniAvailabilityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.network.zns.CheckVniAvailabilityResult() : value; 
 
         return ret;
     }
@@ -121,9 +88,9 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/l2-networks/geneve";
+        info.path = "/sdn-controller/zns/segments/vni/availability";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "params";
         return info;
     }
