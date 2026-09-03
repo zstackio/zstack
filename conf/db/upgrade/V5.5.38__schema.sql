@@ -651,6 +651,13 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
         CHECK (`znsSegmentUuid` IS NOT NULL OR `state` = 'MigrationFailed')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityName', 'VARCHAR(64)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityContract', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityEpoch', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProviderIdentity', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProfileIdentity', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationAdapterIdentity', 'VARCHAR(128)', 1, NULL);
+
 -- ZSTAC-86635: Persist ZNS controller connection candidates outside SystemTag.
 CALL ADD_COLUMN('ZnsControllerVO', 'ipOwnership', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'vipEndpoint', 'varchar(255)', 1, NULL);
