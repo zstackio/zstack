@@ -31,6 +31,7 @@ import org.zstack.header.core.StaticInit;
 import org.zstack.header.core.encrypt.ENCRYPT;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.identity.IdentityErrors;
@@ -62,7 +63,6 @@ import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.sql.Timestamp;
@@ -75,6 +75,9 @@ import java.util.stream.Collectors;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 import static org.zstack.utils.StringDSL.ln;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10000;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10001;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_PLATFORM_10002;
 
 public class Platform {
     private static final CLogger logger = CLoggerImpl.getLogger(Platform.class);
@@ -83,6 +86,7 @@ public class Platform {
     private static String msId;
     private static String managementServerIp;
     private static String managementServerCidr;
+    private static volatile ZSha2Info managementHaInfo;
     private static MessageSource messageSource;
     private static String encryptionKey = EncryptRSA.generateKeyString("ZStack open source");
     private static final String MANAGEMENT_SERVER_IP_PROPERTY = "management.server.ip";
@@ -491,6 +495,7 @@ public class Platform {
             // if failed to get zsha2 info, this method thrown exception to stop management node from startup
             // so there is no need to handle exceptions
             ZSha2Info info = ZSha2Helper.getInfo(false);
+            managementHaInfo = info;
             if (info.getNodeip() == null) {
                 throw new RuntimeException("the ip of this node was null, please check the config of zsha2");
             }
@@ -1033,7 +1038,17 @@ public class Platform {
         return UUID.nameUUIDFromBytes(name).toString().replace("-", "");
     }
 
+    @Deprecated
     public static String getManagementServerIp() {
+        String endpoint = getManagementNodeAddressInventory().getPrimaryCurrentNodeAddress();
+        if (endpoint != null) {
+            return endpoint;
+        }
+
+        if (hasConfiguredManagementNodeIpProperty()) {
+            throw new CloudRuntimeException("management server IP configuration contains no valid IPv4 or IPv6 address");
+        }
+
         if (managementServerIp == null) {
             managementServerIp = getManagementServerIpInternal();
         }
@@ -1041,15 +1056,137 @@ public class Platform {
         return managementServerIp;
     }
 
+    public static ErrorableValue<String> selectCurrentNodeAddressByTargetFamily(String targetIp) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !hasConfiguredManagementNodeIpProperty()) {
+            return ErrorableValue.of(getManagementServerIp());
+        }
+
+        Integer family = ManagementNodeAddressInventory.addressFamilyOf(targetIp);
+        if (family == null) {
+            return ErrorableValue.ofErrorCode(argerr(ORG_ZSTACK_CORE_PLATFORM_10000,
+                    "cannot select current management node address because target[%s] is not an IPv4 or IPv6 address",
+                    targetIp));
+        }
+
+        String address = getManagementNodeAddressInventory().findCurrentNodeAddress(family).orElse(null);
+        return address != null ? ErrorableValue.of(address) : ErrorableValue.ofErrorCode(operr(
+                ORG_ZSTACK_CORE_PLATFORM_10001,
+                "cannot select current management node address for %s target[%s]: no configured %s address exists",
+                familyName(family), targetIp, familyName(family)));
+    }
+
+    @Deprecated
+    public static ErrorableValue<String> getManagementServerIp(String targetIp) {
+        return selectCurrentNodeAddressByTargetFamily(targetIp);
+    }
+
+    public static ErrorableValue<List<ManagedComponentEndpoint>> resolveManagedComponentEndpointCandidates(
+            String endpoint) {
+        return new ManagedComponentEndpointResolver(getManagementNodeAddressInventory()).resolve(endpoint);
+    }
+
+    public static ErrorableValue<List<ManagedComponentEndpoint>> resolveManagedComponentEndpointCandidates(
+            String endpoint, Collection<String> addresses) {
+        return new ManagedComponentEndpointResolver(getManagementNodeAddressInventory()).resolve(endpoint, addresses);
+    }
+
+    @Deprecated
+    public static ErrorableValue<List<ManagedComponentEndpoint>> resolveManagedComponentEndpoints(String endpoint) {
+        return resolveManagedComponentEndpointCandidates(endpoint);
+    }
+
+    @Deprecated
+    public static ErrorableValue<List<ManagedComponentEndpoint>> resolveManagedComponentEndpoints(
+            String endpoint, Collection<String> addresses) {
+        return resolveManagedComponentEndpointCandidates(endpoint, addresses);
+    }
+
+    @Deprecated
+    public static ErrorableValue<List<RemoteEndpoint>> resolveRemoteEndpoints(String endpoint) {
+        return adaptRemoteEndpoints(resolveManagedComponentEndpointCandidates(endpoint));
+    }
+
+    @Deprecated
+    public static ErrorableValue<List<RemoteEndpoint>> resolveRemoteEndpoints(String endpoint, Collection<String> addresses) {
+        return adaptRemoteEndpoints(resolveManagedComponentEndpointCandidates(endpoint, addresses));
+    }
+
+    private static ErrorableValue<List<RemoteEndpoint>> adaptRemoteEndpoints(
+            ErrorableValue<List<ManagedComponentEndpoint>> resolvedEndpoints) {
+        if (!resolvedEndpoints.isSuccess()) {
+            return ErrorableValue.ofErrorCode(resolvedEndpoints.error);
+        }
+
+        List<RemoteEndpoint> endpoints = resolvedEndpoints.result.stream()
+                .map(endpoint -> new RemoteEndpoint(endpoint.getRemoteAddress(),
+                        endpoint.getCurrentManagementNodeAddress()))
+                .collect(Collectors.toList());
+        return ErrorableValue.of(endpoints);
+    }
+
+    @Deprecated
+    public static class RemoteEndpoint {
+        private final String connectIp;
+        private final String callbackIp;
+
+        public RemoteEndpoint(String connectIp, String callbackIp) {
+            this.connectIp = connectIp;
+            this.callbackIp = callbackIp;
+        }
+
+        public String getConnectIp() {
+            return connectIp;
+        }
+
+        public String getCallbackIp() {
+            return callbackIp;
+        }
+    }
+
     public static int getManagementNodeServicePort() {
         return Integer.parseInt(System.getProperty("RESTFacade.port", "8080"));
     }
 
+    @Deprecated
     public static String getManagementServerVip() {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
         }
-        return ZSha2Helper.getInfo(false).getDbvip();
+
+        ManagementNodeAddressInventory inventory = getManagementNodeAddressInventory();
+        Integer family = ManagementNodeAddressInventory.addressFamilyOf(inventory.getPrimaryCurrentNodeAddress());
+        String address = family == null ? null : inventory.findHaVirtualAddress(family).orElse(null);
+        if (address == null) {
+            throw new CloudRuntimeException("cannot select default management HA virtual address: HA default family record is missing or invalid");
+        }
+        return address;
+    }
+
+    public static ErrorableValue<String> selectHaVirtualAddressByTargetFamily(String targetIp) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && !hasConfiguredManagementNodeIpProperty()) {
+            return ErrorableValue.of(getManagementServerIp());
+        }
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return selectCurrentNodeAddressByTargetFamily(targetIp);
+        }
+
+        Integer family = ManagementNodeAddressInventory.addressFamilyOf(targetIp);
+        if (family == null) {
+            return ErrorableValue.ofErrorCode(argerr(ORG_ZSTACK_CORE_PLATFORM_10000,
+                    "cannot select management HA virtual address because target[%s] is not an IPv4 or IPv6 address",
+                    targetIp));
+        }
+
+        String address = getManagementNodeAddressInventory().findHaVirtualAddress(family).orElse(null);
+        return address != null ? ErrorableValue.of(address) : ErrorableValue.ofErrorCode(operr(
+                ORG_ZSTACK_CORE_PLATFORM_10002,
+                "cannot select management HA virtual address for %s target[%s]: HA %s family record is missing or invalid",
+                familyName(family), targetIp, familyName(family)));
+    }
+
+    @Deprecated
+    public static ErrorableValue<String> getManagementServerVip(String targetIp) {
+        return selectHaVirtualAddressByTargetFamily(targetIp);
     }
 
     public static String getManagementServerVipBaseUrl() {
@@ -1067,12 +1204,43 @@ public class Platform {
         return String.format("http://%s:%d", formattedIp, port);
     }
 
+    @Deprecated
     public static String getCanonicalServerIp() {
         if (!ZSha2Helper.isMNHaEnvironment()) {
             return getManagementServerIp();
         }
 
-        return ZSha2Helper.getInfo(false).getNodeip();
+        ManagementNodeAddressInventory inventory = getManagementNodeAddressInventory();
+        Integer family = ManagementNodeAddressInventory.addressFamilyOf(inventory.getPrimaryCurrentNodeAddress());
+        String address = family == null ? null : inventory.findHaNodeAddress(family).orElse(null);
+        if (address == null) {
+            throw new CloudRuntimeException("cannot select default management HA node address: HA default family record is missing or invalid");
+        }
+        return address;
+    }
+
+    public static ErrorableValue<String> selectHaNodeAddressByTargetFamily(String targetIp) {
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return selectCurrentNodeAddressByTargetFamily(targetIp);
+        }
+
+        Integer family = ManagementNodeAddressInventory.addressFamilyOf(targetIp);
+        if (family == null) {
+            return ErrorableValue.ofErrorCode(argerr(ORG_ZSTACK_CORE_PLATFORM_10000,
+                    "cannot select management HA node address because target[%s] is not an IPv4 or IPv6 address",
+                    targetIp));
+        }
+
+        String address = getManagementNodeAddressInventory().findHaNodeAddress(family).orElse(null);
+        return address != null ? ErrorableValue.of(address) : ErrorableValue.ofErrorCode(operr(
+                ORG_ZSTACK_CORE_PLATFORM_10002,
+                "cannot select management HA node address for %s target[%s]: HA %s family record is missing or invalid",
+                familyName(family), targetIp, familyName(family)));
+    }
+
+    @Deprecated
+    public static ErrorableValue<String> getCanonicalServerIp(String targetIp) {
+        return selectHaNodeAddressByTargetFamily(targetIp);
     }
 
     public static boolean isVIPNode() {
@@ -1234,19 +1402,115 @@ public class Platform {
     }
 
     public static String getManagementServerIp6() {
-        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP6_PROPERTY, IPv6Constants.IPv6);
-        if (ip != null) {
-            return ip;
-        }
-        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv6);
+        return getConfiguredManagementServerIp(IPv6Constants.IPv6);
     }
 
     public static String getManagementServerIp4() {
-        String ip = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
-        if (ip != null) {
-            return ip;
+        return getConfiguredManagementServerIp(IPv6Constants.IPv4);
+    }
+
+    public static ManagementNodeAddressInventory getManagementNodeAddressInventory() {
+        return newManagementNodeAddressInventory(getConfiguredManagementNodeIps());
+    }
+
+    private static ManagementNodeAddressInventory newManagementNodeAddressInventory(List<String> nodeAddresses) {
+        ZSha2Info info = getManagementHaInfo();
+        return info == null ? new ManagementNodeAddressInventory(nodeAddresses) :
+                new ManagementNodeAddressInventory(nodeAddresses, info);
+    }
+
+    private static ZSha2Info getManagementHaInfo() {
+        if (!ZSha2Helper.isMNHaEnvironment()) {
+            return null;
         }
-        return getManagementServerIpOnManagementInterface(IPv6Constants.IPv4);
+        if (managementHaInfo == null) {
+            synchronized (Platform.class) {
+                if (managementHaInfo == null) {
+                    managementHaInfo = ZSha2Helper.getInfo(false);
+                }
+            }
+        }
+        return managementHaInfo;
+    }
+
+    private static List<String> getConfiguredManagementNodeIps() {
+        List<String> nodeIps = new ArrayList<>();
+        String primaryIp = getConfiguredPrimaryManagementServerIp();
+        if (primaryIp != null) {
+            nodeIps.add(primaryIp);
+        }
+
+        String ipv4 = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP4_PROPERTY, IPv6Constants.IPv4);
+        if (ipv4 != null) {
+            nodeIps.add(ipv4);
+        }
+        String ipv6 = getManagementServerSecondaryIpProperty(MANAGEMENT_SERVER_IP6_PROPERTY, IPv6Constants.IPv6);
+        if (ipv6 != null) {
+            nodeIps.add(ipv6);
+        }
+        if (nodeIps.isEmpty()) {
+            if (managementServerIp == null) {
+                managementServerIp = getManagementServerIpInternal();
+            }
+            nodeIps.add(managementServerIp);
+        }
+        return nodeIps;
+    }
+
+    private static boolean hasConfiguredManagementNodeIpProperty() {
+        return !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP4_PROPERTY))
+                || !StringUtils.isBlank(System.getProperty(MANAGEMENT_SERVER_IP6_PROPERTY));
+    }
+
+    private static String familyName(int family) {
+        return family == IPv6Constants.IPv4 ? "IPv4" : "IPv6";
+    }
+
+    private static String getConfiguredManagementServerIp(int ipVersion) {
+        String primaryIp = getConfiguredPrimaryManagementServerIp();
+        if ((ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(primaryIp)) ||
+                (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(primaryIp))) {
+            return primaryIp;
+        }
+
+        String secondaryIp = getManagementServerSecondaryIpProperty(
+                ipVersion == IPv6Constants.IPv4 ? MANAGEMENT_SERVER_IP4_PROPERTY : MANAGEMENT_SERVER_IP6_PROPERTY,
+                ipVersion);
+        if (secondaryIp != null) {
+            return secondaryIp;
+        }
+
+        if (primaryIp == null && !hasConfiguredManagementNodeIpProperty()) {
+            if (managementServerIp == null) {
+                managementServerIp = getManagementServerIpInternal();
+            }
+            if ((ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(managementServerIp)) ||
+                    (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(managementServerIp))) {
+                return managementServerIp;
+            }
+        }
+        return null;
+    }
+
+    private static String getConfiguredPrimaryManagementServerIp() {
+        String primaryIp = System.getProperty(MANAGEMENT_SERVER_IP_PROPERTY);
+        String source = String.format("Java property[%s]", MANAGEMENT_SERVER_IP_PROPERTY);
+        if (StringUtils.isBlank(primaryIp)) {
+            primaryIp = System.getenv(ZSTACK_MANAGEMENT_SERVER_IP_ENV);
+            source = String.format("environment variable[%s]", ZSTACK_MANAGEMENT_SERVER_IP_ENV);
+        }
+        if (StringUtils.isBlank(primaryIp)) {
+            return null;
+        }
+
+        String normalizedPrimaryIp = normalizeManagementIp(primaryIp);
+        if (ManagementNodeAddressInventory.addressFamilyOf(normalizedPrimaryIp) == null) {
+            throw new CloudRuntimeException(String.format(
+                    "management IP[%s] from %s is not IPv4 or IPv6", primaryIp, source));
+        }
+        logger.info(String.format("get management IP[%s] from %s", primaryIp, source));
+        return normalizedPrimaryIp;
     }
 
     private static String getManagementServerSecondaryIpProperty(String property, int ipVersion) {
@@ -1267,57 +1531,13 @@ public class Platform {
         return normalizedIp;
     }
 
-    private static String getManagementServerIpOnManagementInterface(int ipVersion) {
-        try {
-            NetworkInterface iface = findManagementServerInterface();
-            if (iface == null || !iface.isUp()) {
-                return null;
-            }
-
-            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
-                if (address.isLoopbackAddress() || address.isLinkLocalAddress()) {
-                    continue;
-                }
-                if (ipVersion == IPv6Constants.IPv6 && !(address instanceof Inet4Address)) {
-                    return normalizeManagementIp(address.getHostAddress());
-                }
-                if (ipVersion == IPv6Constants.IPv4 && address instanceof Inet4Address) {
-                    return normalizeManagementIp(address.getHostAddress());
-                }
-            }
-        } catch (SocketException e) {
-            throw new CloudRuntimeException(e);
-        }
-
-        return null;
-    }
-
-    private static NetworkInterface findManagementServerInterface() throws SocketException {
-        String currentIp = normalizeManagementIp(getManagementServerIp());
-        Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
-        for (NetworkInterface iface : Collections.list(nets)) {
-            for (InetAddress address : Collections.list(iface.getInetAddresses())) {
-                if (currentIp.equals(normalizeManagementIp(address.getHostAddress()))) {
-                    return iface;
-                }
-            }
-        }
-
-        return null;
-    }
-
     public static String getManagementServerIp6Cidr() {
         String ip6 = getManagementServerIp6();
         return ip6 == null ? null : getManagementServerCidr(ip6);
     }
 
     public static List<String> getManagementServerIps() {
-        LinkedHashSet<String> ips = new LinkedHashSet<>();
-        ips.add(getManagementServerIp());
-        ips.add(getManagementServerIp4());
-        ips.add(getManagementServerIp6());
-        ips.remove(null);
-        return new ArrayList<>(ips);
+        return new ArrayList<>(new LinkedHashSet<>(getConfiguredManagementNodeIps()));
     }
 
     public static List<String> getManagementServerIpsWithLocalFallback() {

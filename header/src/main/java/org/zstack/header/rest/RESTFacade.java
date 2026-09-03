@@ -90,7 +90,23 @@ public interface RESTFacade {
 
     String getBaseUrl();
 
+    /**
+     * Builds the management REST base URL for the specified host.
+     *
+     * @param hostName management host name or IP address
+     * @return base URL using the configured management port and path
+     */
+    String buildBaseUrl(String hostName);
+
     String getSendCommandUrl();
+
+    /**
+     * Builds the management command-channel URL for the specified host.
+     *
+     * @param hostName management host name or IP address
+     * @return command-channel URL using the configured management port and path
+     */
+    String buildSendCommandUrl(String hostName);
 
     String getCallbackUrl();
 

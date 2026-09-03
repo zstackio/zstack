@@ -6,10 +6,12 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
+import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.job.Job;
 import org.zstack.core.job.JobContext;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.StringTemplate;
 import org.zstack.utils.logging.CLogger;
@@ -23,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
@@ -58,11 +61,11 @@ public class SaltSetupMinionJob implements Job {
 
     private static final String SALT_BOOTSTRAP = "salt/salt-bootstrap.sh";
 
-    private File rewriteMinionConfFile(String minionId) throws IOException {
+    private File rewriteMinionConfFile(String minionId, String managementNodeAddress) throws IOException {
         File minionConfTmpt = new File(saltMinionConfPath);
 
         Map<String, String> map = new HashMap<String, String>();
-        map.put("managementNodeIp", Platform.getManagementServerIp());
+        map.put("managementNodeIp", managementNodeAddress);
         map.put("minionId", minionId);
 
         String srcConf = FileUtils.readFileToString(minionConfTmpt);
@@ -78,6 +81,14 @@ public class SaltSetupMinionJob implements Job {
         Ssh ssh = null;
         FileInputStream fis = null;
         try {
+            ErrorableValue<List<ManagedComponentEndpoint>> endpoints =
+                    Platform.resolveManagedComponentEndpointCandidates(targetIp);
+            if (!endpoints.isSuccess()) {
+                completion.fail(endpoints.error);
+                return;
+            }
+            ManagedComponentEndpoint endpoint = endpoints.result.get(0);
+            targetIp = endpoint.getRemoteAddress();
             ssh = new Ssh().setHostname(targetIp).setPassword(password).setPrivateKey(privateKey)
                     .setUsername(username).setPort(port);
             SshResult ret = ssh.checkTool("scp").run();
@@ -100,7 +111,7 @@ public class SaltSetupMinionJob implements Job {
                 logger.debug(String.format("salt-minion is found on system[%s], no need to install new one", targetIp));
             }
 
-            tmpt = rewriteMinionConfFile(minionId);
+            tmpt = rewriteMinionConfFile(minionId, endpoint.getCurrentManagementNodeAddress());
             String minionConfPath = PathUtil.join(SaltConstant.SALT_CONF_HOME, SaltConstant.MINION_CONF_NAME);
             boolean deployMinion = false;
             ret = ssh.reset().command(String.format("md5sum %s", minionConfPath)).run();

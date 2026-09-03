@@ -19,6 +19,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
@@ -202,7 +203,11 @@ public class AnsibleFacadeImpl extends AbstractService implements AnsibleFacade 
         }
 
         arguments.put("host", msg.getTargetIp());
-        arguments.put("mn_ip", Platform.getCanonicalServerIp());
+        ErrorableValue<String> managementNodeAddress = Platform.selectHaNodeAddressByTargetFamily(msg.getTargetIp());
+        if (!managementNodeAddress.isSuccess()) {
+            throw new OperationFailureException(managementNodeAddress.error);
+        }
+        arguments.put("mn_ip", managementNodeAddress.result);
         if (AnsibleGlobalConfig.ENABLE_ANSIBLE_CACHE_SYSTEM_INFO.value(Boolean.class)) {
             arguments.put("host_uuid", msg.getTargetUuid());
         }

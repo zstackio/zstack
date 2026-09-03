@@ -68,6 +68,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_APPLIANCEVM_10007 = "ORG_ZSTACK_APPLIANCEVM_10007";
 
+    public static final String ORG_ZSTACK_APPLIANCEVM_10008 = "ORG_ZSTACK_APPLIANCEVM_10008";
+
+    public static final String ORG_ZSTACK_APPLIANCEVM_10009 = "ORG_ZSTACK_APPLIANCEVM_10009";
+
     public static final String ORG_ZSTACK_PORTAL_APIMEDIATOR_10000 = "ORG_ZSTACK_PORTAL_APIMEDIATOR_10000";
 
     public static final String ORG_ZSTACK_PORTAL_APIMEDIATOR_10001 = "ORG_ZSTACK_PORTAL_APIMEDIATOR_10001";
@@ -519,6 +523,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_VPC_10048 = "ORG_ZSTACK_VPC_10048";
 
     public static final String ORG_ZSTACK_VPC_10049 = "ORG_ZSTACK_VPC_10049";
+
+    public static final String ORG_ZSTACK_VPC_10050 = "ORG_ZSTACK_VPC_10050";
+
+    public static final String ORG_ZSTACK_VPC_10051 = "ORG_ZSTACK_VPC_10051";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_TEST_INTEGRATION_CORE_CLOUDBUS_10000";
 
@@ -2372,6 +2380,12 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_VMWARE_10135 = "ORG_ZSTACK_VMWARE_10135";
 
+    public static final String ORG_ZSTACK_VMWARE_10136 = "ORG_ZSTACK_VMWARE_10136";
+
+    public static final String ORG_ZSTACK_VMWARE_10137 = "ORG_ZSTACK_VMWARE_10137";
+
+    public static final String ORG_ZSTACK_VMWARE_10138 = "ORG_ZSTACK_VMWARE_10138";
+
     public static final String ORG_ZSTACK_TEST_UNITTEST_MEVOCO_10000 = "ORG_ZSTACK_TEST_UNITTEST_MEVOCO_10000";
 
     public static final String ORG_ZSTACK_CORE_EXTERNALSERVICE_10000 = "ORG_ZSTACK_CORE_EXTERNALSERVICE_10000";
@@ -2991,6 +3005,18 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_CORE_ANSIBLE_10006 = "ORG_ZSTACK_CORE_ANSIBLE_10006";
 
     public static final String ORG_ZSTACK_CORE_ANSIBLE_10007 = "ORG_ZSTACK_CORE_ANSIBLE_10007";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10000 = "ORG_ZSTACK_CORE_PLATFORM_10000";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10001 = "ORG_ZSTACK_CORE_PLATFORM_10001";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10002 = "ORG_ZSTACK_CORE_PLATFORM_10002";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10003 = "ORG_ZSTACK_CORE_PLATFORM_10003";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10004 = "ORG_ZSTACK_CORE_PLATFORM_10004";
+
+    public static final String ORG_ZSTACK_CORE_PLATFORM_10005 = "ORG_ZSTACK_CORE_PLATFORM_10005";
 
     public static final String ORG_ZSTACK_SCHEDULER_10000 = "ORG_ZSTACK_SCHEDULER_10000";
 
@@ -6829,6 +6855,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10036 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10036";
 
     public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10037 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10037";
+
+    public static final String ORG_ZSTACK_BAREMETAL_PXESERVER_10038 = "ORG_ZSTACK_BAREMETAL_PXESERVER_10038";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_V2V_10000 = "ORG_ZSTACK_TEST_INTEGRATION_V2V_10000";
 
@@ -12488,6 +12516,20 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10221 = "ORG_ZSTACK_NETWORK_ZNS_10221";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10222 = "ORG_ZSTACK_NETWORK_ZNS_10222";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10223 = "ORG_ZSTACK_NETWORK_ZNS_10223";
+    // 10224 ZNS endpoint has no same-family Cloud management callback address
+    // 10225 ZNS add-controller endpoint is not a literal IP address
+    // 10226 ZNS change-controller endpoint is not a literal IP address
+    // 10227 ZNS internal change-controller endpoint is not a literal IP address
+    // 10228 ZNS change-controller has no computer manager UUID
+    // 10229 ZNS change-controller cluster has no same-family endpoint
+    // 10230 ZNS endpoint cannot be resolved for an asynchronous request
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10224 = "ORG_ZSTACK_NETWORK_ZNS_10224";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10225 = "ORG_ZSTACK_NETWORK_ZNS_10225";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10226 = "ORG_ZSTACK_NETWORK_ZNS_10226";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10227 = "ORG_ZSTACK_NETWORK_ZNS_10227";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10228 = "ORG_ZSTACK_NETWORK_ZNS_10228";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10229 = "ORG_ZSTACK_NETWORK_ZNS_10229";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10230 = "ORG_ZSTACK_NETWORK_ZNS_10230";
 
     public static final String ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000 = "ORG_ZSTACK_PREMIUM_EXTERNALSERVICE_MARKETPLACE_10000";
 
@@ -16016,6 +16058,10 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_SDNCONTROLLER_10038 = "ORG_ZSTACK_SDNCONTROLLER_10038";
     public static final String ORG_ZSTACK_SDNCONTROLLER_10039 = "ORG_ZSTACK_SDNCONTROLLER_10039";
     public static final String ORG_ZSTACK_SDNCONTROLLER_10040 = "ORG_ZSTACK_SDNCONTROLLER_10040";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10041 = "ORG_ZSTACK_SDNCONTROLLER_10041";
+
+    public static final String ORG_ZSTACK_SDNCONTROLLER_10042 = "ORG_ZSTACK_SDNCONTROLLER_10042";
 
     public static final String ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000 = "ORG_ZSTACK_TEST_INTEGRATION_PREMIUM_ZSV_SNAPSHOT_10000";
 

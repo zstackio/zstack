@@ -37,4 +37,18 @@ public interface SdnController {
                 ORG_ZSTACK_SDNCONTROLLER_10035,
                 "Resource pull is not supported by sdn controller[%s]", sdnControllerUuid));
     }
+
+    /**
+     * Returns whether this controller can change its endpoint through the common API.
+     *
+     * Implementations returning {@code true} must override {@link #changeIp(APIChangeSdnControllerMsg, Completion)}.
+     */
+    default boolean supportsIpChange() { return false; }
+
+    /**
+     * Changes this controller's endpoint.
+     *
+     * This method is called only when {@link #supportsIpChange()} returns {@code true}.
+     */
+    default void changeIp(APIChangeSdnControllerMsg msg, Completion completion) { completion.success(); }
 }
