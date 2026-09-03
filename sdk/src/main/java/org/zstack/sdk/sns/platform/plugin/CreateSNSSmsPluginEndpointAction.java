@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSPluginEndpointAction extends AbstractAction {
+public class CreateSNSSmsPluginEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value;
+        public org.zstack.sdk.sns.CreateSNSApplicationEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -24,6 +24,9 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
             return this;
         }
     }
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List receivers;
 
     @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String type;
@@ -81,8 +84,8 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult() : value; 
+        org.zstack.sdk.sns.CreateSNSApplicationEndpointResult value = res.getResult(org.zstack.sdk.sns.CreateSNSApplicationEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.CreateSNSApplicationEndpointResult() : value; 
 
         return ret;
     }
@@ -112,7 +115,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/plugin";
+        info.path = "/sns/application-endpoints/plugin/sms";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

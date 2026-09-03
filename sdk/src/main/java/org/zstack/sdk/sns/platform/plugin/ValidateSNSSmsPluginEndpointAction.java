@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class CreateSNSPluginEndpointAction extends AbstractAction {
+public class ValidateSNSSmsPluginEndpointAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value;
+        public org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,29 +25,14 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String type;
+    @Param(required = true, maxLength = 1024, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String testMessage;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long timeoutInSeconds = 0L;
+    public java.lang.String uuid;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.Map properties;
-
-    @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String name;
-
-    @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String description;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String platformUuid;
-
-    @Param(required = false)
-    public java.lang.String resourceUuid;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tagUuids;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List phoneNumbers;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -81,8 +66,8 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult.class);
-        ret.value = value == null ? new org.zstack.sdk.sns.platform.plugin.CreateSNSPluginEndpointResult() : value; 
+        org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointResult value = res.getResult(org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointResult.class);
+        ret.value = value == null ? new org.zstack.sdk.sns.platform.plugin.ValidateSNSSmsPluginEndpointResult() : value; 
 
         return ret;
     }
@@ -111,11 +96,11 @@ public class CreateSNSPluginEndpointAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/sns/application-endpoints/plugin";
+        info.httpMethod = "PUT";
+        info.path = "/sns/application-endpoints/plugin/sms/{uuid}/validate";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "validateSNSSmsPluginEndpoint";
         return info;
     }
 
