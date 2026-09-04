@@ -664,16 +664,14 @@ public class LoadBalancerBase {
         LoadBalancerListenerVO listener = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
         List<LoadBalancerServerGroupBackendServerInventory> invs = new ArrayList<>();
 
-        /* a backend is Enabled on the listener unless a Disabled ref row exists for it */
+        /* any state ref row means the backend is Disabled, regardless of its state value */
         Set<String> disabledVmNicUuids = new HashSet<>(Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
                 .select(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid)
                 .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, msg.getListenerUuid())
-                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.state, LoadBalancerBackendServerState.Disabled)
                 .listValues());
         Set<Long> disabledServerIpIds = new HashSet<>(Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
                 .select(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId)
                 .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, msg.getListenerUuid())
-                .eq(LoadBalancerListenerServerGroupServerIpRefVO_.state, LoadBalancerBackendServerState.Disabled)
                 .listValues());
 
         List<String> attachedGroupUuids = new ArrayList<>(Q.New(LoadBalancerListenerServerGroupRefVO.class)
@@ -3736,8 +3734,6 @@ public class LoadBalancerBase {
                                 msg.getListenerUuid())
                         .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid,
                                 msg.getServerGroupUuid())
-                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.state,
-                                LoadBalancerBackendServerState.Disabled)
                         .listValues());
         Set<Long> disabledServerIpIds =
                 new HashSet<>(Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
@@ -3746,8 +3742,6 @@ public class LoadBalancerBase {
                                 msg.getListenerUuid())
                         .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid,
                                 msg.getServerGroupUuid())
-                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.state,
-                                LoadBalancerBackendServerState.Disabled)
                         .listValues());
 
         Map<String, VmNicVO> vmNics = new HashMap<>();
@@ -3812,12 +3806,12 @@ public class LoadBalancerBase {
     private boolean isVmNicStateChanged(String listenerUuid, String serverGroupUuid,
                                         String vmNicUuid,
                                         LoadBalancerBackendServerState targetState) {
+        /* a state row means the backend is currently disabled, whatever the state value is;
+         * an illegal row is healed by an Enable which deletes it */
         boolean disabled = Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
                 .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listenerUuid)
                 .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroupUuid)
                 .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, vmNicUuid)
-                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.state,
-                        LoadBalancerBackendServerState.Disabled)
                 .isExists();
         return disabled != (targetState == LoadBalancerBackendServerState.Disabled);
     }
@@ -3829,8 +3823,6 @@ public class LoadBalancerBase {
                 .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, listenerUuid)
                 .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid, serverGroupUuid)
                 .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId, serverIpId)
-                .eq(LoadBalancerListenerServerGroupServerIpRefVO_.state,
-                        LoadBalancerBackendServerState.Disabled)
                 .isExists();
         return disabled != (targetState == LoadBalancerBackendServerState.Disabled);
     }

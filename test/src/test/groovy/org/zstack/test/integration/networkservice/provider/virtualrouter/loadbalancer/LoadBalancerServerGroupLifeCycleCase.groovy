@@ -2,6 +2,11 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
+import org.zstack.network.service.lb.LoadBalancerBackendServerState
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO
+import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -480,6 +485,20 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             state = "Disabled"
         }
 
+        // A legacy Enabled row must still mean Disabled in both query APIs.
+        SQL.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, lbl1.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, servergroup1.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic2.uuid)
+                .set(LoadBalancerListenerServerGroupVmNicRefVO_.state, LoadBalancerBackendServerState.Enabled)
+                .update()
+        def listenerBackends = getLoadBalancerListenerBackendServers {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+        }
+        assert listenerBackends.find { it.vmNicUuid == nic2.uuid }.state == "Disabled"
+        assert listenerBackends.find { it.vmNicUuid == nic2.uuid }.healthStatus == "Unchecked"
+
         invs = getLoadBalancerServerGroupBackendServer {
             listenerUuid = lbl1.uuid
             state = "Disabled"
@@ -520,6 +539,17 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             listenerUuid = lbl1.uuid
         }
         assert invs.every { it.state == "Enabled" }
+        assert !Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, lbl1.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, servergroup1.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic2.uuid)
+                .isExists()
+        listenerBackends = getLoadBalancerListenerBackendServers {
+            listenerUuid = lbl1.uuid
+            serverGroupUuid = servergroup1.uuid
+        }
+        assert listenerBackends.find { it.vmNicUuid == nic2.uuid }.state == "Enabled"
+        assert listenerBackends.find { it.vmNicUuid == nic2.uuid }.healthStatus == "Unknown"
     }
 
 
