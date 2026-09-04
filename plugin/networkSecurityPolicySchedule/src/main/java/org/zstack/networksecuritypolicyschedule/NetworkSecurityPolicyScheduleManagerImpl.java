@@ -477,7 +477,7 @@ public class NetworkSecurityPolicyScheduleManagerImpl extends AbstractService {
                             return;
                         }
                         changeSchedule(resourceType, resourceUuid, null,
-                                Operation.SET, true, completionOf(trigger));
+                                Operation.SET, completionOf(trigger));
                     }
 
                     @Override
