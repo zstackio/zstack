@@ -3,6 +3,7 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
+import org.zstack.core.db.SQL
 import org.zstack.header.acl.AccessControlListEntryVO
 import org.zstack.header.acl.AccessControlListEntryVO_
 import org.zstack.header.network.service.NetworkServiceType
@@ -20,9 +21,12 @@ import org.zstack.network.service.lb.LoadBalancerListenerVO_
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -821,6 +825,31 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             return rsp
         }
 
+        /* the backend server state change is only supported by the load balancer provided
+         * by the openEuler VPC virtual router (ZSTAC-88179) */
+        def vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, load.uuid)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues()
+        assert vrUuids.size() == 1
+        SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_VYOS_GUEST_OS_TYPE).update()
+        expectError {
+            changeLoadBalancerListenerBackendServerState {
+                listenerUuid = listener.uuid
+                serverGroupUuid = serverGroup.uuid
+                vmNicUuids = [nic1.uuid]
+                state = "Disabled"
+            }
+        }
+        assert refreshCmds.isEmpty()
+        assert !Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listener.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroup.uuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, nic1.uuid)
+                .isExists()
+
+        SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE).update()
         def stateResult = changeLoadBalancerListenerBackendServerState {
             listenerUuid = listener.uuid
             serverGroupUuid = serverGroup.uuid
