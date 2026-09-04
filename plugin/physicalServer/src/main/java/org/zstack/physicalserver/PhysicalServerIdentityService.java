@@ -21,29 +21,13 @@ public class PhysicalServerIdentityService {
     private DatabaseFacade dbf;
 
     @Transactional
-    public Map<String, String> resolveBySerialNumbers(
-            Collection<String> serialNumbers) {
+    public Map<String, String> resolveBySerialNumbers(Collection<String> serialNumbers) {
         Set<String> normalized = normalize(serialNumbers);
         if (normalized.isEmpty()) {
             return Collections.emptyMap();
         }
         insertServers(normalized);
         return serversBySerial(normalized);
-    }
-
-    public Map<String, String> findSerialNumbersByServerUuids(
-            Collection<String> serverUuids) {
-        if (serverUuids == null || serverUuids.isEmpty()) {
-            return Collections.emptyMap();
-        }
-        Map<String, String> result = new LinkedHashMap<>();
-        for (Tuple server : Q.New(PhysicalServerVO.class)
-                .select(PhysicalServerVO_.uuid, PhysicalServerVO_.serialNumber)
-                .in(PhysicalServerVO_.uuid, serverUuids)
-                .listTuple()) {
-            result.put(server.get(0, String.class), server.get(1, String.class));
-        }
-        return result;
     }
 
     private Set<String> normalize(Collection<String> serialNumbers) {
@@ -60,32 +44,26 @@ public class PhysicalServerIdentityService {
         return result;
     }
 
-    private Map<String, String> serversBySerial(
-            Collection<String> serialNumbers) {
+    private Map<String, String> serversBySerial(Collection<String> serialNumbers) {
         Map<String, String> result = new LinkedHashMap<>();
         List<Tuple> servers = Q.New(PhysicalServerVO.class)
                 .select(PhysicalServerVO_.uuid, PhysicalServerVO_.serialNumber)
-                .in(PhysicalServerVO_.serialNumber, serialNumbers)
-                .listTuple();
+                .in(PhysicalServerVO_.serialNumber, serialNumbers).listTuple();
         for (Tuple server : servers) {
-            result.put(
-                    server.get(1, String.class),
-                    server.get(0, String.class));
+            result.put(server.get(1, String.class), server.get(0, String.class));
         }
         return result;
     }
 
     private void insertServers(Collection<String> serialNumbers) {
         StringBuilder sql = new StringBuilder(
-                "INSERT IGNORE INTO PhysicalServerVO " +
-                        "(uuid, serialNumber, createDate, lastOpDate) VALUES ");
+                "INSERT IGNORE INTO PhysicalServerVO " + "(uuid, serialNumber, createDate, lastOpDate) VALUES ");
         int index = 0;
         for (String ignored : serialNumbers) {
             if (index > 0) {
                 sql.append(',');
             }
-            sql.append("(:uuid").append(index).append(", :serial").append(index)
-                    .append(", NOW(), NOW())");
+            sql.append("(:uuid").append(index).append(", :serial").append(index).append(", NOW(), NOW())");
             index++;
         }
         Query query = dbf.getEntityManager().createNativeQuery(sql.toString());

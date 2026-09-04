@@ -25,13 +25,12 @@ import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentControll
 import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
-import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
 import org.zstack.header.physicalserver.PhysicalServerManager;
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver;
 import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider;
+import org.zstack.header.physicalserver.PhysicalServerRoleType;
 import org.zstack.header.physicalserver.ResourceControlCommand;
-import org.zstack.header.physicalserver.ResourceControlResponse;
 import org.zstack.header.physicalserver.ResourceConsumerHandle;
 import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.utils.Utils;
@@ -51,27 +50,18 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000;
 
 public class ManagementNodePhysicalServerAdapter extends AbstractService implements
         PhysicalServerResourceAssignmentController,
         PhysicalServerResourceUsageObserver,
         PhysicalServerRoleAssociationProvider,
-        ManagementNodeChangeListener,
-        ManagementNodeReadyExtensionPoint,
-        Component {
-    public static final String ROLE_TYPE = "MANAGEMENT";
-    public static final String ROLE_SERVICE_MANIFEST_PATH =
-            "physical-server-roles/management.yaml";
+        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, Component {
+    public static final PhysicalServerRoleType type = new PhysicalServerRoleType("MANAGEMENT");
+    public static final String ROLE_SERVICE_MANIFEST_PATH = "physical-server-roles/management.yaml";
     private static final String SERVICE_ID = "managementNodePhysicalServerResourceControl";
-    private static final String ERROR_CODE = "ORG_ZSTACK_PORTAL_10000";
-    private static final CLogger logger = Utils.getLogger(
-            ManagementNodePhysicalServerAdapter.class);
-    private static final RoleServiceManifest ROLE_SERVICES =
-            RoleServiceManifest.load(
-                    ROLE_SERVICE_MANIFEST_PATH,
-                    ROLE_TYPE);
-    private final AtomicReference<Map<String, NodeRelation>> nodeRelations =
-            new AtomicReference<>(Collections.emptyMap());
+    private static final CLogger logger = Utils.getLogger(ManagementNodePhysicalServerAdapter.class);
+    private final AtomicReference<Map<String, String>> nodeRelations = new AtomicReference<>(Collections.emptyMap());
     private volatile String testSerialNumber;
 
     @Autowired(required = false)
@@ -102,8 +92,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
     }
 
     private void handle(CollectManagementNodeCpuTopologyMsg msg) {
-        CollectManagementNodeCpuTopologyReply reply =
-                new CollectManagementNodeCpuTopologyReply();
+        CollectManagementNodeCpuTopologyReply reply = new CollectManagementNodeCpuTopologyReply();
         if (!owns(msg.getServerUuid())) {
             reply.setError(notOwner(msg.getServerUuid()));
             bus.reply(msg, reply);
@@ -125,18 +114,17 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
     }
 
     private void handle(ApplyManagementNodeResourceControlMsg msg) {
-        ApplyManagementNodeResourceControlReply reply =
-                new ApplyManagementNodeResourceControlReply();
+        ApplyManagementNodeResourceControlReply reply = new ApplyManagementNodeResourceControlReply();
         if (!owns(msg.getServerUuid())) {
             reply.setError(notOwner(msg.getServerUuid()));
             bus.reply(msg, reply);
             return;
         }
         applyLocalResourceControl(
-                msg.getCommand(), new ReturnValueCompletion<ResourceControlResponse>(null) {
+                msg.getCommand(), new ReturnValueCompletion<Boolean>(null) {
             @Override
-            public void success(ResourceControlResponse response) {
-                reply.setResponse(response);
+            public void success(Boolean synced) {
+                reply.setSynced(Boolean.TRUE.equals(synced));
                 bus.reply(msg, reply);
             }
 
@@ -149,8 +137,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
     }
 
     private void handle(CollectManagementNodeManagedServicesMsg msg) {
-        CollectManagementNodeManagedServicesReply reply =
-                new CollectManagementNodeManagedServicesReply();
+        CollectManagementNodeManagedServicesReply reply = new CollectManagementNodeManagedServicesReply();
         if (!owns(msg.getServerUuid())) {
             reply.setError(notOwner(msg.getServerUuid()));
             bus.reply(msg, reply);
@@ -158,19 +145,15 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
         }
         try {
             List<ManagedServiceResourceUsage> services =
-                    localResourceControlExecutor.inspect(
-                            ROLE_TYPE,
-                            managementHandles(
-                                    Platform.getManagementServerId()));
+                    localResourceControlExecutor.inspect(type.toString(), managementHandles());
             for (ManagedServiceResourceUsage service : services) {
-                service.setRoleType(ROLE_TYPE);
+                service.setRoleType(type.toString());
             }
             reply.setServices(services);
         } catch (RuntimeException error) {
             reply.setError(operr(
-                    ERROR_CODE,
-                    "MANAGED_SERVICE_QUERY_FAILED: %s",
-                    error.getMessage()));
+                    ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                    "Failed to query managed service usage: %s", error.getMessage()));
         }
         bus.reply(msg, reply);
     }
@@ -183,60 +166,55 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             return;
         }
         try {
-            localResourceControlExecutor.restart(
-                    ROLE_SERVICES.handlesByServiceNames(
-                            msg.getServiceNames(),
-                            Platform.getManagementServerId(),
-                            Collections.emptyMap()));
+            localResourceControlExecutor.restart(roleServices().getSliceName(), msg.getConsumers());
         } catch (RuntimeException error) {
             reply.setError(operr(
-                    ERROR_CODE,
-                    "MANAGED_SERVICE_RESTART_FAILED: %s",
-                    error.getMessage()));
+                    ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                    "Failed to restart managed services: %s", error.getMessage()));
         }
         bus.reply(msg, reply);
     }
 
-    private void collectLocalTopology(
-            ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
+    private void collectLocalTopology(ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
         try {
             completion.success(localTopology.collect());
         } catch (RuntimeException error) {
-            completion.fail(operr(ERROR_CODE,
-                    "CPU_TOPOLOGY_COLLECTION_FAILED: %s", error.getMessage()));
+            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                    "Failed to collect management node CPU topology: %s", error.getMessage()));
         }
     }
 
-    private void applyLocalResourceControl(
-            ResourceControlCommand command,
-            ReturnValueCompletion<ResourceControlResponse> completion) {
+    private void applyLocalResourceControl(ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
         try {
-            command.setSliceName(ROLE_SERVICES.getSliceName());
-            completion.success(localResourceControlExecutor.apply(command));
+            command.setSliceName(roleServices().getSliceName());
+            if ("APPLY".equals(command.getOperation())) {
+                completion.success(localResourceControlExecutor.apply(command));
+            } else if ("RELEASE".equals(command.getOperation())) {
+                completion.success(localResourceControlExecutor.release(command));
+            } else {
+                completion.fail(operr(
+                        ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                        "Resource control operation[%s] is unsupported", command.getOperation()));
+            }
         } catch (RuntimeException error) {
-            completion.fail(operr(ERROR_CODE,
-                    "RESOURCE_CONTROL_APPLY_FAILED: %s", error.getMessage()));
+            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                    "Failed to apply management node resource assignment: %s", error.getMessage()));
         }
     }
 
     @Override
-    public String getRoleType() {
-        return ROLE_TYPE;
+    public PhysicalServerRoleType getRoleType() {
+        return type;
     }
 
     @Override
     public PhysicalServerResourceIsolationMode getIsolationMode() {
-        return PhysicalServerResourceIsolationMode.SHARED;
+        return roleServices().getIsolationMode();
     }
 
     @Override
-    public String getDefaultCpuSet(
-            PhysicalServerCpuTopology topology,
-            Set<Integer> allocatedExclusiveCpus) {
-        return PhysicalServerCpuSet.firstAvailableExcludingCpuZeroCore(
-                topology,
-                allocatedExclusiveCpus,
-                ROLE_SERVICES.getDefaultCpuCount());
+    public Integer getDefaultCpuCount() {
+        return roleServices().getDefaultCpuCount();
     }
 
     @Override
@@ -246,30 +224,25 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
 
     @Override
     public List<ResourceConsumerHandle> getResourceConsumers(String serverUuid) {
-        String nodeUuid = nodeUuid(serverUuid, null);
+        String nodeUuid = nodeUuid(serverUuid);
         if (nodeUuid == null) {
             throw new IllegalStateException(String.format(
-                    "MANAGEMENT_NODE_RELATION_MISSING: physical server[uuid:%s] has no management node",
-                    serverUuid));
+                    "Physical server[uuid:%s] has no management node", serverUuid));
         }
-        return managementHandles(nodeUuid);
+        return managementHandles();
     }
 
     @Override
     public void collectResourceAssignment(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
+            String serverUuid, ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
         collectManagedServiceUsage(
-                serverUuid,
-                new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
+                serverUuid, new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
                     @Override
                     public void success(List<ManagedServiceResourceUsage> services) {
                         try {
-                            completion.success(
-                                    PhysicalServerResourceBoundary.fromManagedServiceUsages(
-                                            services));
+                            completion.success(PhysicalServerResourceBoundary.fromManagedServiceUsages(services));
                         } catch (RuntimeException error) {
-                            completion.fail(operr(ERROR_CODE, "%s", error.getMessage()));
+                            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000, "%s", error.getMessage()));
                         }
                     }
 
@@ -281,16 +254,13 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
     }
 
     @Override
-    public void collectTopology(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
-        String nodeUuid = nodeUuid(serverUuid, null);
+    public void collectTopology(String serverUuid, ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
+        String nodeUuid = nodeUuid(serverUuid);
         if (nodeUuid == null) {
             completion.fail(notOwner(serverUuid));
             return;
         }
-        CollectManagementNodeCpuTopologyMsg msg =
-                new CollectManagementNodeCpuTopologyMsg();
+        CollectManagementNodeCpuTopologyMsg msg = new CollectManagementNodeCpuTopologyMsg();
         msg.setServerUuid(serverUuid);
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
@@ -308,18 +278,25 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
     }
 
     @Override
-    public void apply(
-            String serverUuid,
-            String consumerUuid,
-            ResourceControlCommand command,
-            ReturnValueCompletion<ResourceControlResponse> completion) {
-        String nodeUuid = nodeUuid(serverUuid, consumerUuid);
+    public void apply(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
+        command.setOperation("APPLY");
+        sendResourceControl(serverUuid, command, completion);
+    }
+
+    @Override
+    public void release(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
+        command.setOperation("RELEASE");
+        sendResourceControl(serverUuid, command, completion);
+    }
+
+    private void sendResourceControl(String serverUuid, ResourceControlCommand command,
+                                     ReturnValueCompletion<Boolean> completion) {
+        String nodeUuid = nodeUuid(serverUuid);
         if (nodeUuid == null) {
             completion.fail(notOwner(serverUuid));
             return;
         }
-        ApplyManagementNodeResourceControlMsg msg =
-                new ApplyManagementNodeResourceControlMsg();
+        ApplyManagementNodeResourceControlMsg msg = new ApplyManagementNodeResourceControlMsg();
         msg.setServerUuid(serverUuid);
         msg.setCommand(command);
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
@@ -332,22 +309,20 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
                     return;
                 }
                 ApplyManagementNodeResourceControlReply applyReply = reply.castReply();
-                completion.success(applyReply.getResponse());
+                completion.success(applyReply.isSynced());
             }
         });
     }
 
     @Override
     public void collectManagedServiceUsage(
-            String serverUuid,
-            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
-        String nodeUuid = nodeUuid(serverUuid, null);
+            String serverUuid, ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
+        String nodeUuid = nodeUuid(serverUuid);
         if (nodeUuid == null) {
-            completion.success(ROLE_SERVICES.managedServiceUsages("UNAVAILABLE"));
+            completion.fail(notOwner(serverUuid));
             return;
         }
-        CollectManagementNodeManagedServicesMsg msg =
-                new CollectManagementNodeManagedServicesMsg();
+        CollectManagementNodeManagedServicesMsg msg = new CollectManagementNodeManagedServicesMsg();
         msg.setServerUuid(serverUuid);
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
@@ -355,37 +330,31 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
-                    logger.warn(String.format(
-                            "failed to query managed services on management node[uuid:%s]: %s",
-                            nodeUuid, reply.getError()));
-                    completion.success(ROLE_SERVICES.managedServiceUsages(
-                            "UNAVAILABLE"));
+                    completion.fail(reply.getError());
                     return;
                 }
-                CollectManagementNodeManagedServicesReply serviceReply =
-                        reply.castReply();
-                completion.success(serviceReply.getServices() == null
-                        ? ROLE_SERVICES.managedServiceUsages(
-                        "UNAVAILABLE")
-                        : serviceReply.getServices());
+                CollectManagementNodeManagedServicesReply serviceReply = reply.castReply();
+                if (serviceReply.getServices() == null) {
+                    completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                            "Management node[uuid:%s] returned no managed service usage", nodeUuid));
+                    return;
+                }
+                completion.success(serviceReply.getServices());
             }
         });
     }
 
     @Override
     public void restartManagedServices(
-            String serverUuid,
-            Collection<String> serviceNames,
-            Completion completion) {
-        String nodeUuid = nodeUuid(serverUuid, null);
+            String serverUuid, Collection<ResourceConsumerHandle> consumers, Completion completion) {
+        String nodeUuid = nodeUuid(serverUuid);
         if (nodeUuid == null) {
             completion.fail(notOwner(serverUuid));
             return;
         }
-        RestartManagementNodeManagedServicesMsg msg =
-                new RestartManagementNodeManagedServicesMsg();
+        RestartManagementNodeManagedServicesMsg msg = new RestartManagementNodeManagedServicesMsg();
         msg.setServerUuid(serverUuid);
-        msg.setServiceNames(new ArrayList<>(serviceNames));
+        msg.setConsumers(new ArrayList<>(consumers));
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
@@ -430,14 +399,11 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
 
     @Transactional
     public void associateLocalNode(String nodeUuid) {
-        if (physicalServerManager == null
-                || !Platform.getManagementServerId().equals(nodeUuid)) {
+        if (physicalServerManager == null || !Platform.getManagementServerId().equals(nodeUuid)) {
             return;
         }
         String current = Q.New(ManagementNodeVO.class)
-                .select(ManagementNodeVO_.serverUuid)
-                .eq(ManagementNodeVO_.uuid, nodeUuid)
-                .findValue();
+                .select(ManagementNodeVO_.serverUuid).eq(ManagementNodeVO_.uuid, nodeUuid).findValue();
         if (current == null) {
             String serialNumber = managementServerSerialNumber();
             if (serialNumber == null) {
@@ -447,8 +413,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
                 return;
             }
             current = physicalServerManager.resolveBySerialNumbers(
-                    Collections.singleton(serialNumber))
-                    .get(serialNumber);
+                    Collections.singleton(serialNumber)).get(serialNumber);
             if (current == null || linkedNode(current, nodeUuid) != null) {
                 return;
             }
@@ -459,9 +424,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             update.setParameter("nodeUuid", nodeUuid);
             update.executeUpdate();
             current = Q.New(ManagementNodeVO.class)
-                    .select(ManagementNodeVO_.serverUuid)
-                    .eq(ManagementNodeVO_.uuid, nodeUuid)
-                    .findValue();
+                    .select(ManagementNodeVO_.serverUuid).eq(ManagementNodeVO_.uuid, nodeUuid).findValue();
         }
         if (current != null) {
             physicalServerManager.associationChanged(current);
@@ -472,109 +435,76 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
         return Q.New(ManagementNodeVO.class)
                 .select(ManagementNodeVO_.uuid)
                 .eq(ManagementNodeVO_.serverUuid, serverUuid)
-                .notEq(ManagementNodeVO_.uuid, excludedNodeUuid)
-                .findValue();
+                .notEq(ManagementNodeVO_.uuid, excludedNodeUuid).findValue();
     }
 
-    private String nodeUuid(String serverUuid, String consumerUuid) {
-        NodeRelation relation = nodeRelation(serverUuid);
-        if (relation == null) {
-            return null;
-        }
-        return consumerUuid == null || consumerUuid.equals(relation.nodeUuid)
-                ? relation.nodeUuid : null;
-    }
-
-    private NodeRelation nodeRelation(String serverUuid) {
+    private String nodeUuid(String serverUuid) {
         return nodeRelations.get().get(serverUuid);
     }
 
     private Set<String> discoverNodeRelations(Collection<String> serverUuids) {
         Q query = Q.New(ManagementNodeVO.class)
-                .select(
-                        ManagementNodeVO_.serverUuid,
-                        ManagementNodeVO_.uuid)
-                .notNull(ManagementNodeVO_.serverUuid);
+                .select(ManagementNodeVO_.serverUuid, ManagementNodeVO_.uuid).notNull(ManagementNodeVO_.serverUuid);
         boolean partial = serverUuids != null && !serverUuids.isEmpty();
         if (partial) {
             query.in(ManagementNodeVO_.serverUuid, serverUuids);
         }
-        Map<String, NodeRelation> loaded = new LinkedHashMap<>();
+        Map<String, String> loaded = new LinkedHashMap<>();
         for (Tuple node : (List<Tuple>) query.listTuple()) {
-            loaded.put(
-                    node.get(0, String.class),
-                    new NodeRelation(node.get(1, String.class)));
+            loaded.put(node.get(0, String.class), node.get(1, String.class));
         }
         if (!partial) {
             nodeRelations.set(Collections.unmodifiableMap(loaded));
             return new LinkedHashSet<>(loaded.keySet());
         }
-        while (true) {
-            Map<String, NodeRelation> current = nodeRelations.get();
-            Map<String, NodeRelation> replacement = new LinkedHashMap<>(current);
-            for (String serverUuid : serverUuids) {
-                replacement.remove(serverUuid);
-            }
+        nodeRelations.updateAndGet(current -> {
+            Map<String, String> replacement = new LinkedHashMap<>(current);
+            serverUuids.forEach(replacement::remove);
             replacement.putAll(loaded);
-            if (nodeRelations.compareAndSet(
-                    current, Collections.unmodifiableMap(replacement))) {
-                return new LinkedHashSet<>(loaded.keySet());
-            }
-        }
+            return Collections.unmodifiableMap(replacement);
+        });
+        return new LinkedHashSet<>(loaded.keySet());
     }
 
     private void removeNodeRelation(String serverUuid) {
-        while (true) {
-            Map<String, NodeRelation> current = nodeRelations.get();
+        nodeRelations.updateAndGet(current -> {
             if (!current.containsKey(serverUuid)) {
-                return;
+                return current;
             }
-            Map<String, NodeRelation> replacement = new LinkedHashMap<>(current);
+            Map<String, String> replacement = new LinkedHashMap<>(current);
             replacement.remove(serverUuid);
-            if (nodeRelations.compareAndSet(
-                    current, Collections.unmodifiableMap(replacement))) {
-                return;
-            }
-        }
-    }
-
-    private static class NodeRelation {
-        private final String nodeUuid;
-
-        private NodeRelation(String nodeUuid) {
-            this.nodeUuid = nodeUuid;
-        }
+            return Collections.unmodifiableMap(replacement);
+        });
     }
 
     private boolean owns(String serverUuid) {
         return serverUuid != null && serverUuid.equals(Q.New(ManagementNodeVO.class)
                 .select(ManagementNodeVO_.serverUuid)
-                .eq(ManagementNodeVO_.uuid, Platform.getManagementServerId())
-                .findValue());
+                .eq(ManagementNodeVO_.uuid, Platform.getManagementServerId()).findValue());
     }
 
     private ErrorCode notOwner(String serverUuid) {
-        return operr(ERROR_CODE,
+        return operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
                 "management node[uuid:%s] is not associated with physical server[uuid:%s]",
                 Platform.getManagementServerId(), serverUuid);
     }
 
-    private List<ResourceConsumerHandle> managementHandles(String nodeUuid) {
-        String consumerKey = String.format(
-                "management-node:%s", nodeUuid);
-        return ROLE_SERVICES.handles(consumerKey);
+    private List<ResourceConsumerHandle> managementHandles() {
+        return roleServices().handles();
+    }
+
+    private RoleServiceManifest roleServices() {
+        return RoleServiceManifest.load(ROLE_SERVICE_MANIFEST_PATH, type.toString());
     }
 
     private String managementServerSerialNumber() {
         return CoreGlobalProperty.UNIT_TEST_ON
-                ? Platform.normalizeMachineSerialNumber(testSerialNumber)
-                : Platform.getManagementServerSerialNumber();
+                ? Platform.normalizeMachineSerialNumber(testSerialNumber) : Platform.getManagementServerSerialNumber();
     }
 
     public void setTestSerialNumber(String serialNumber) {
         if (!CoreGlobalProperty.UNIT_TEST_ON) {
-            throw new IllegalStateException(
-                    "test serial number is only available in unit-test mode");
+            throw new IllegalStateException("test serial number is only available in unit-test mode");
         }
         testSerialNumber = serialNumber;
     }

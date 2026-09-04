@@ -11,4 +11,12 @@ public class GetPhysicalServerManagedServicesResult {
         return this.services;
     }
 
+    public java.util.Map roleErrors;
+    public void setRoleErrors(java.util.Map roleErrors) {
+        this.roleErrors = roleErrors;
+    }
+    public java.util.Map getRoleErrors() {
+        return this.roleErrors;
+    }
+
 }

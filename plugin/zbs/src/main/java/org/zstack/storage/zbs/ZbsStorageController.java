@@ -806,9 +806,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             addonInfo.getMdsInfos().stream()
                     .filter(mdsInfo::equals)
                     .map(MdsInfo::getPhysicalServerSerialNumber)
-                    .filter(Objects::nonNull)
-                    .findFirst()
-                    .ifPresent(mdsInfo::setPhysicalServerSerialNumber);
+                    .filter(Objects::nonNull).findFirst().ifPresent(mdsInfo::setPhysicalServerSerialNumber);
         }
     }
 

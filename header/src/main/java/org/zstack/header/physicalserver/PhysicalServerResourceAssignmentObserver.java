@@ -3,9 +3,11 @@ package org.zstack.header.physicalserver;
 import org.zstack.header.core.ReturnValueCompletion;
 
 public interface PhysicalServerResourceAssignmentObserver {
-    String getRoleType();
+    PhysicalServerRoleType getRoleType();
 
-    void collectResourceAssignment(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerResourceBoundary> completion);
+    default PhysicalServerResourceIsolationMode getIsolationMode() {
+        return PhysicalServerResourceIsolationMode.SHARED;
+    }
+
+    void collectResourceAssignment(String serverUuid, ReturnValueCompletion<PhysicalServerResourceBoundary> completion);
 }

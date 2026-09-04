@@ -41,23 +41,20 @@ public class PhysicalServerResourceBoundary {
                 if (service.isRestartRequired()) {
                     synced = false;
                 }
-                if (service.getCpuSet() != null
-                        && !service.getCpuSet().trim().isEmpty()) {
-                    cpuSet = PhysicalServerCpuSet.union(
-                            cpuSet, service.getCpuSet());
+                if (service.getCpuSet() != null && !service.getCpuSet().trim().isEmpty()) {
+                    cpuSet = PhysicalServerCpuSet.union(cpuSet, service.getCpuSet());
                 }
                 if (service.getMemoryLimit() == null) {
                     continue;
                 }
                 if (memory != null && !memory.equals(service.getMemoryLimit())) {
                     throw new IllegalStateException(
-                            "RESOURCE_ASSIGNMENT_OBSERVATION_INVALID: service memory limits differ");
+                            "Managed services report different memory limits for the same role");
                 }
                 memory = service.getMemoryLimit();
             }
         }
-        PhysicalServerResourceBoundary boundary =
-                new PhysicalServerResourceBoundary();
+        PhysicalServerResourceBoundary boundary = new PhysicalServerResourceBoundary();
         boundary.setCpuSet(cpuSet);
         boundary.setMemory(memory);
         boundary.setSynced(synced);

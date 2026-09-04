@@ -46,8 +46,7 @@ public class LocalCpuTopologyCollector {
             SortedSet<Integer> online = readCpuSet(cpuRoot.resolve("online"));
             List<Path> nodePaths = nodePaths();
             if (nodePaths.isEmpty()) {
-                return PhysicalServerCpuTopology.from(
-                        Collections.singletonMap("0", node("0", online)));
+                return PhysicalServerCpuTopology.from(Collections.singletonMap("0", node("0", online)));
             }
 
             Map<String, PhysicalServerNumaNode> result = new LinkedHashMap<>();
@@ -61,11 +60,12 @@ public class LocalCpuTopologyCollector {
                 }
             }
             if (result.isEmpty()) {
-                throw new IllegalArgumentException("CPU_TOPOLOGY_UNAVAILABLE: no online NUMA CPU found");
+                throw new IllegalArgumentException("No online NUMA CPU was found");
             }
             return PhysicalServerCpuTopology.from(result);
         } catch (IOException exception) {
-            throw new IllegalArgumentException("CPU_TOPOLOGY_UNAVAILABLE: " + exception.getMessage(), exception);
+            throw new IllegalArgumentException(
+                    "Failed to read local CPU topology: " + exception.getMessage(), exception);
         }
     }
 
@@ -97,8 +97,7 @@ public class LocalCpuTopologyCollector {
         return paths;
     }
 
-    private PhysicalServerNumaNode node(
-            String nodeId, SortedSet<Integer> online) throws IOException {
+    private PhysicalServerNumaNode node(String nodeId, SortedSet<Integer> online) throws IOException {
         PhysicalServerNumaNode node = new PhysicalServerNumaNode();
         node.setNodeId(nodeId);
         node.setOnlineCpus(strings(online));
@@ -109,13 +108,11 @@ public class LocalCpuTopologyCollector {
     private List<List<String>> coreGroups(SortedSet<Integer> online) throws IOException {
         Set<SortedSet<Integer>> groups = new LinkedHashSet<>();
         for (Integer cpu : online) {
-            Path siblings = cpuRoot.resolve(String.format(
-                    "cpu%s/topology/thread_siblings_list", cpu));
+            Path siblings = cpuRoot.resolve(String.format("cpu%s/topology/thread_siblings_list", cpu));
             SortedSet<Integer> group = readCpuSet(siblings);
             group.retainAll(online);
             if (group.isEmpty()) {
-                throw new IllegalArgumentException(String.format(
-                        "CPU_TOPOLOGY_INVALID: CPU[%s] has no online core sibling", cpu));
+                throw new IllegalArgumentException(String.format("CPU[%s] has no online core sibling", cpu));
             }
             groups.add(group);
         }
@@ -131,7 +128,7 @@ public class LocalCpuTopologyCollector {
     private SortedSet<Integer> readCpuSet(Path path) throws IOException {
         String value = new String(Files.readAllBytes(path), StandardCharsets.US_ASCII).trim();
         if (value.isEmpty()) {
-            throw new IllegalArgumentException("CPU_TOPOLOGY_INVALID: empty CPU list at " + path);
+            throw new IllegalArgumentException("CPU list is empty at " + path);
         }
         return PhysicalServerCpuSet.parse(value);
     }

@@ -9,31 +9,23 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_10000;
 
 public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
-    public static final String GET_RESOURCE_USAGE_PATH =
-            "/zbs/primarystorage/resource/usage";
-
-    @Override
-    public String getProviderType() {
-        return "ZBS_AGENT";
-    }
+    public static final String GET_RESOURCE_USAGE_PATH = "/zbs/primarystorage/resource/usage";
 
     @Override
     public boolean isAvailable(ZbsNodeRef nodeRef) {
-        return nodeRef != null
-                && nodeRef.getSerialNumber() != null
-                && !nodeRef.getNodeAddresses().isEmpty();
+        return nodeRef != null && nodeRef.getSerialNumber() != null && !nodeRef.getNodeAddresses().isEmpty();
     }
 
     @Override
     public void query(
             ZbsNodeRef nodeRef,
-            Collection<String> cgroupNames,
-            ReturnValueCompletion<List<ZbsCgroupResourceUsage>> completion) {
+            Collection<String> cgroupNames, ReturnValueCompletion<List<ZbsCgroupResourceUsage>> completion) {
         List<String> addresses = new ArrayList<>(nodeRef.getNodeAddresses());
         Collections.sort(addresses);
         ResourceUsageCommand command = new ResourceUsageCommand();
@@ -42,9 +34,7 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
         mds.setAddr(addresses.get(0));
         new ZbsPrimaryStorageMdsBase(mds).httpCall(
                 GET_RESOURCE_USAGE_PATH,
-                command,
-                ResourceUsageResponse.class,
-                new ReturnValueCompletion<ResourceUsageResponse>(completion) {
+                command, ResourceUsageResponse.class, new ReturnValueCompletion<ResourceUsageResponse>(completion) {
                     @Override
                     public void fail(ErrorCode errorCode) {
                         completion.fail(errorCode);
@@ -53,19 +43,17 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
                     @Override
                     public void success(ResourceUsageResponse response) {
                         String reportedSerial =
-                                Platform.normalizeMachineSerialNumber(
-                                        response.getPhysicalServerSerialNumber());
-                        if (!Objects.equals(
-                                nodeRef.getSerialNumber(), reportedSerial)) {
+                                Platform.normalizeMachineSerialNumber(response.getPhysicalServerSerialNumber());
+                        if (!Objects.equals(nodeRef.getSerialNumber(), reportedSerial)) {
                             completion.fail(operr(
                                     ORG_ZSTACK_CORE_10000,
-                                    "ZBS_RESOURCE_USAGE_IDENTITY_MISMATCH: expected serialNumber[%s], reported[%s]",
+                                    "Expected physical server serialNumber[%s], but ZBS reported[%s]",
                                     nodeRef.getSerialNumber(), reportedSerial));
                             return;
                         }
                         completion.success(response.getUsages());
                     }
-                });
+                }, TimeUnit.MINUTES, 5);
     }
 
     public static class ResourceUsageCommand {
@@ -88,8 +76,7 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
             return physicalServerSerialNumber;
         }
 
-        public void setPhysicalServerSerialNumber(
-                String physicalServerSerialNumber) {
+        public void setPhysicalServerSerialNumber(String physicalServerSerialNumber) {
             this.physicalServerSerialNumber = physicalServerSerialNumber;
         }
 

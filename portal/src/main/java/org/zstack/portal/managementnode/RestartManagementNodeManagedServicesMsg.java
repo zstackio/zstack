@@ -1,13 +1,14 @@
 package org.zstack.portal.managementnode;
 
 import org.zstack.header.message.NeedReplyMessage;
+import org.zstack.header.physicalserver.ResourceConsumerHandle;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class RestartManagementNodeManagedServicesMsg extends NeedReplyMessage {
     private String serverUuid;
-    private List<String> serviceNames = new ArrayList<>();
+    private List<ResourceConsumerHandle> consumers = new ArrayList<>();
 
     public String getServerUuid() {
         return serverUuid;
@@ -17,11 +18,11 @@ public class RestartManagementNodeManagedServicesMsg extends NeedReplyMessage {
         this.serverUuid = serverUuid;
     }
 
-    public List<String> getServiceNames() {
-        return serviceNames;
+    public List<ResourceConsumerHandle> getConsumers() {
+        return consumers;
     }
 
-    public void setServiceNames(List<String> serviceNames) {
-        this.serviceNames = serviceNames;
+    public void setConsumers(List<ResourceConsumerHandle> consumers) {
+        this.consumers = consumers;
     }
 }

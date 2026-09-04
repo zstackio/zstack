@@ -30,54 +30,46 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
             validate((APIRestartPhysicalServerManagedServicesMsg) msg);
         }
 
-        if (msg instanceof PhysicalServerMessage) {
+        if (msg instanceof PhysicalServerMessage
+                || msg instanceof APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
             bus.makeTargetServiceIdByResourceUuid(
-                    msg,
-                    PhysicalServerConstant.SERVICE_ID,
-                    PhysicalServerConstant.CONTROL_OWNER_KEY);
+                    msg, PhysicalServerConstant.SERVICE_ID, PhysicalServerConstant.CONTROL_OWNER_KEY);
         }
         return msg;
     }
 
     private void validate(APIRestartPhysicalServerManagedServicesMsg msg) {
         List<String> serviceNames = msg.getServiceNames();
-        if (msg.getRoleType() == null
-                || extensions().controller(msg.getRoleType()) == null) {
+        if (msg.getRoleType() == null || extensions().controller(msg.getRoleType()) == null) {
             throw new ApiMessageInterceptionException(argerr(
                     PhysicalServerConstant.ERROR_CODE,
-                    "ROLE_TYPE_NOT_SUPPORTED: roleType[%s] is not registered",
-                    msg.getRoleType()));
+                    "RoleType[%s] does not support resource assignment", msg.getRoleType()));
         }
         if (serviceNames.size() > 64) {
             throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "SERVICE_NAME_SET_INVALID: at most 64 services can be restarted"));
+                    PhysicalServerConstant.ERROR_CODE, "At most 64 services can be restarted in one request"));
         }
         Set<String> unique = new HashSet<>();
         for (String serviceName : serviceNames) {
             if (serviceName == null
-                    || !serviceName.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")
-                    || !unique.add(serviceName)) {
+                    || !serviceName.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}") || !unique.add(serviceName)) {
                 throw new ApiMessageInterceptionException(argerr(
-                        PhysicalServerConstant.ERROR_CODE,
-                        "SERVICE_NAME_SET_INVALID: service names must be unique stable names"));
+                        PhysicalServerConstant.ERROR_CODE, "Service names must be non-empty and unique"));
             }
         }
     }
 
     private void validate(APIUpdatePhysicalServerResourceAssignmentMsg msg) {
-        PhysicalServerResourceAssignmentController adapter =
-                extensions().controller(msg.getRoleType());
+        PhysicalServerResourceAssignmentController adapter = extensions().controller(msg.getRoleType());
         if (adapter == null) {
             throw new ApiMessageInterceptionException(argerr(
                     PhysicalServerConstant.ERROR_CODE,
-                    "ROLE_TYPE_NOT_SUPPORTED: roleType[%s] is not registered", msg.getRoleType()));
+                    "RoleType[%s] does not support resource assignment", msg.getRoleType()));
         }
 
         if (msg.getCpuSet() == null && msg.getMemory() == null) {
             throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "RESOURCE_ASSIGNMENT_UPDATE_EMPTY: cpuSet or memory must be specified"));
+                    PhysicalServerConstant.ERROR_CODE, "CpuSet or memory must be specified"));
         }
 
         if (msg.getMemory() != null) {
@@ -85,8 +77,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
             if (msg.getMemory() < 0 || msg.getMemory() % mebibyte != 0) {
                 throw new ApiMessageInterceptionException(argerr(
                         PhysicalServerConstant.ERROR_CODE,
-                        "MEMORY_INVALID: memory[%s] must be 0 or a positive multiple of 1 MiB",
-                        msg.getMemory()));
+                        "Memory[%s] must be zero or a positive multiple of 1 MiB", msg.getMemory()));
             }
         }
 
@@ -97,8 +88,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
             msg.setCpuSet(PhysicalServerCpuSet.normalize(msg.getCpuSet()));
         } catch (IllegalArgumentException error) {
             throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "%s", error.getMessage()));
+                    PhysicalServerConstant.ERROR_CODE, "%s", error.getMessage()));
         }
     }
 

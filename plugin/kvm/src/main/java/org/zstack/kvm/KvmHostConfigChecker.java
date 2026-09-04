@@ -15,15 +15,11 @@ import java.util.Objects;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class KvmHostConfigChecker implements AnsibleChecker {
     private static final CLogger logger = Utils.getLogger(KvmHostConfigChecker.class);
-    private static final String RESOURCE_ASSIGNMENT_DROP_IN =
-            "/etc/systemd/system/zstack-kvmagent.service.d/" +
-                    "50-zstack-resource-assignment.conf";
-    private static final String RESOURCE_ASSIGNMENT_DROP_IN_CONTENT =
-            "[Service]\nSlice=zstack-compute.slice";
-    private static final String RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR =
-            "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP__";
-    private static final String RESOURCE_ASSIGNMENT_CGROUP_V2 =
-            "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP_V2__";
+    private static final String RESOURCE_ASSIGNMENT_DROP_IN = "/etc/systemd/system/zstack-kvmagent.service.d/" +
+            "50-zstack-resource-assignment.conf";
+    private static final String RESOURCE_ASSIGNMENT_DROP_IN_CONTENT = "[Service]\nSlice=zstack-compute.slice";
+    private static final String RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP__";
+    private static final String RESOURCE_ASSIGNMENT_CGROUP_V2 = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP_V2__";
 
     private String username;
     private String password;
@@ -128,8 +124,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
 
         Ssh ssh = new Ssh();
         ssh.setUsername(username).setPrivateKey(privateKey)
-                .setPassword(password).setPort(sshPort)
-                .setHostname(targetIp);
+                .setPassword(password).setPort(sshPort).setHostname(targetIp);
         try {
             ssh.sudoCommand(String.format(
                     "if [ -f /sys/fs/cgroup/cgroup.controllers ]; " +
@@ -156,26 +151,19 @@ public class KvmHostConfigChecker implements AnsibleChecker {
             }
 
             String output = result.getStdout();
-            int separator = output.indexOf(
-                    RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR);
+            int separator = output.indexOf(RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR);
             if (separator < 0) {
                 return true;
             }
             String dropIn = output.substring(0, separator).trim();
-            boolean unifiedCgroupV2 = dropIn.startsWith(
-                    RESOURCE_ASSIGNMENT_CGROUP_V2);
+            boolean unifiedCgroupV2 = dropIn.startsWith(RESOURCE_ASSIGNMENT_CGROUP_V2);
             if (unifiedCgroupV2) {
-                dropIn = dropIn.substring(
-                        RESOURCE_ASSIGNMENT_CGROUP_V2.length()).trim();
+                dropIn = dropIn.substring(RESOURCE_ASSIGNMENT_CGROUP_V2.length()).trim();
             }
-            String processCgroup = output.substring(
-                    separator + RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR.length())
-                    .trim();
+            String processCgroup = output.substring(separator + RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR.length()).trim();
             boolean matches = unifiedCgroupV2
-                    ? unifiedResourceAssignmentMatches(
-                    requireResourceAssignment, dropIn, processCgroup)
-                    : legacyResourceAssignmentMatches(
-                    requireResourceAssignment, dropIn);
+                    ? unifiedResourceAssignmentMatches(requireResourceAssignment, dropIn, processCgroup)
+                    : legacyResourceAssignmentMatches(requireResourceAssignment, dropIn);
             if (!matches) {
                 logger.debug(String.format(
                         "KVM Agent resource assignment does not match, " +
@@ -190,25 +178,18 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         }
     }
 
-    static boolean unifiedResourceAssignmentMatches(
-            String required, String dropIn, String processCgroup) {
+    static boolean unifiedResourceAssignmentMatches(String required, String dropIn, String processCgroup) {
         boolean enabled = Boolean.parseBoolean(required);
-        String normalizedDropIn = dropIn == null
-                ? null : dropIn.replace("\r\n", "\n");
-        boolean configured = RESOURCE_ASSIGNMENT_DROP_IN_CONTENT.equals(
-                normalizedDropIn);
+        String normalizedDropIn = dropIn == null ? null : dropIn.replace("\r\n", "\n");
+        boolean configured = RESOURCE_ASSIGNMENT_DROP_IN_CONTENT.equals(normalizedDropIn);
         boolean inRoleSlice = processCgroup != null && (
                 processCgroup.contains("/zstack-compute.slice/")
                         || processCgroup.endsWith("/zstack-compute.slice"));
-        return enabled
-                ? configured && inRoleSlice
-                : "__ABSENT__".equals(dropIn) && !inRoleSlice;
+        return enabled ? configured && inRoleSlice : "__ABSENT__".equals(dropIn) && !inRoleSlice;
     }
 
-    static boolean legacyResourceAssignmentMatches(
-            String required, String dropIn) {
-        return Boolean.parseBoolean(required)
-                || "__ABSENT__".equals(dropIn);
+    static boolean legacyResourceAssignmentMatches(String required, String dropIn) {
+        return Boolean.parseBoolean(required) || "__ABSENT__".equals(dropIn);
     }
 
     @Override

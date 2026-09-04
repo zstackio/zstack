@@ -109,10 +109,8 @@ public class Platform {
     private static final String MANAGEMENT_SERVER_FINGERPRINT_ALGORITHM = "sha256:";
     private static final String SUDO_COMMAND = "/usr/bin/sudo";
     private static final String DMIDECODE_COMMAND = "/usr/sbin/dmidecode";
-    private static final String DMI_PRODUCT_SERIAL_FILE =
-            "/sys/class/dmi/id/product_serial";
-    private static final String DMI_SYSTEM_SERIAL_NUMBER =
-            "system-serial-number";
+    private static final String DMI_PRODUCT_SERIAL_FILE = "/sys/class/dmi/id/product_serial";
+    private static final String DMI_SYSTEM_SERIAL_NUMBER = "system-serial-number";
     private static final int DMIDECODE_COMMAND_TIMEOUT_SECONDS = 3;
     private static final int DMI_SOURCE_NAME_INDEX = 0;
     private static final int DMI_SOURCE_FILE_INDEX = 1;
@@ -903,11 +901,9 @@ public class Platform {
     }
 
     public static String getManagementServerSerialNumber() {
-        String serialNumber = normalizeMachineSerialNumber(
-                readMachineIdentity(DMI_PRODUCT_SERIAL_FILE));
+        String serialNumber = normalizeMachineSerialNumber(readMachineIdentity(DMI_PRODUCT_SERIAL_FILE));
         return serialNumber == null
-                ? normalizeMachineSerialNumber(
-                readDmiMachineIdentity(DMI_SYSTEM_SERIAL_NUMBER))
+                ? normalizeMachineSerialNumber(readDmiMachineIdentity(DMI_SYSTEM_SERIAL_NUMBER))
                 : serialNumber;
     }
 

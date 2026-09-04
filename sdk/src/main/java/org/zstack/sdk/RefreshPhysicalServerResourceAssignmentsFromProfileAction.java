@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class RefreshPhysicalServerResourceAssignmentsAction extends AbstractAction {
+public class RefreshPhysicalServerResourceAssignmentsFromProfileAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class RefreshPhysicalServerResourceAssignmentsAction extends AbstractActi
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsResult value;
+        public org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,8 +25,8 @@ public class RefreshPhysicalServerResourceAssignmentsAction extends AbstractActi
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String serverUuid;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List serverUuids;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -60,8 +60,8 @@ public class RefreshPhysicalServerResourceAssignmentsAction extends AbstractActi
             return ret;
         }
         
-        org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsResult value = res.getResult(org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsResult() : value; 
+        org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileResult value = res.getResult(org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileResult() : value; 
 
         return ret;
     }
@@ -91,10 +91,10 @@ public class RefreshPhysicalServerResourceAssignmentsAction extends AbstractActi
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
-        info.path = "/physical-servers/{serverUuid}/resource-assignments/actions";
+        info.path = "/physical-servers/resource-assignments/actions";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "refreshPhysicalServerResourceAssignments";
+        info.parameterName = "refreshPhysicalServerResourceAssignmentsFromProfile";
         return info;
     }
 

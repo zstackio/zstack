@@ -20,8 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCascadeExtension {
-    private static final CLogger logger = Utils.getLogger(
-            KvmPhysicalServerResourceCascadeExtension.class);
+    private static final CLogger logger = Utils.getLogger(KvmPhysicalServerResourceCascadeExtension.class);
     private static final String NAME = "PhysicalServerComputeResourceAssignment";
 
     @Autowired(required = false)
@@ -32,8 +31,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
         if (physicalServerManager == null
                 || !HostVO.class.getSimpleName().equals(action.getParentIssuer())
                 || !action.isActionCode(
-                CascadeConstant.DELETION_DELETE_CODE,
-                CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
+                CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
             completion.success();
             return;
         }
@@ -64,8 +62,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                                 each.done();
                                 return;
                             }
-                            forceDeleteFailures.add(String.format(
-                                    "host[uuid:%s]: %s", host.getUuid(), errorCode));
+                            forceDeleteFailures.add(String.format("host[uuid:%s]: %s", host.getUuid(), errorCode));
                             logger.error(String.format(
                                     "failed to release compute resource assignment before force deleting " +
                                             "host[uuid:%s], continuing without recovery apply: %s",
@@ -75,16 +72,10 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                     };
             if (forceDelete) {
                 physicalServerManager.forceReleaseResourceAssignment(
-                        host.getServerUuid(),
-                        KvmPhysicalServerAdapter.ROLE_TYPE,
-                        host.getUuid(),
-                        releaseCompletion);
+                        host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), releaseCompletion);
             } else {
                 physicalServerManager.releaseResourceAssignment(
-                        host.getServerUuid(),
-                        KvmPhysicalServerAdapter.ROLE_TYPE,
-                        host.getUuid(),
-                        releaseCompletion);
+                        host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), releaseCompletion);
             }
         }).run(new WhileDoneCompletion(completion) {
             @Override

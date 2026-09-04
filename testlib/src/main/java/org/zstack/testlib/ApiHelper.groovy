@@ -38880,8 +38880,8 @@ abstract class ApiHelper {
     }
 
 
-    def refreshPhysicalServerResourceAssignments(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsAction.class) Closure c) {
-        def a = new org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsAction()
+    def refreshPhysicalServerResourceAssignmentsFromProfile(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileAction.class) Closure c) {
+        def a = new org.zstack.sdk.RefreshPhysicalServerResourceAssignmentsFromProfileAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a

@@ -1,5 +1,7 @@
 roleType: MANAGEMENT
+isolationMode: SHARED
 sliceName: zstack-management.slice
+# Refresh resizes the existing cpuSet to this count; removing the field leaves it unchanged.
 defaultCpuCount: 8
 services:
   - name: management-node

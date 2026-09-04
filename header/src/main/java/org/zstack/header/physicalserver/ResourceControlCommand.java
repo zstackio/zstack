@@ -5,11 +5,11 @@ import java.util.List;
 
 public class ResourceControlCommand {
     private String roleType;
-    private String isolationMode;
     private String operation;
     private String cpuSet;
     private Long memory;
     private String sliceName;
+    private PhysicalServerResourceIsolationMode isolationMode;
     private List<ResourceConsumerHandle> handles = new ArrayList<>();
 
     public String getRoleType() {
@@ -18,14 +18,6 @@ public class ResourceControlCommand {
 
     public void setRoleType(String roleType) {
         this.roleType = roleType;
-    }
-
-    public String getIsolationMode() {
-        return isolationMode;
-    }
-
-    public void setIsolationMode(String isolationMode) {
-        this.isolationMode = isolationMode;
     }
 
     public String getOperation() {
@@ -58,6 +50,14 @@ public class ResourceControlCommand {
 
     public void setSliceName(String sliceName) {
         this.sliceName = sliceName;
+    }
+
+    public PhysicalServerResourceIsolationMode getIsolationMode() {
+        return isolationMode;
+    }
+
+    public void setIsolationMode(PhysicalServerResourceIsolationMode isolationMode) {
+        this.isolationMode = isolationMode;
     }
 
     public List<ResourceConsumerHandle> getHandles() {

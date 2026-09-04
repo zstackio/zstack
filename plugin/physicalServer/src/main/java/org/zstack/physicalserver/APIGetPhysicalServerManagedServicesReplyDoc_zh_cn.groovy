@@ -10,10 +10,18 @@ doc {
 	ref {
 		name "services"
 		path "org.zstack.physicalserver.APIGetPhysicalServerManagedServicesReply.services"
-		desc "物理服务器上由各Role观测到的管控服务资源使用清单"
+		desc "成功完成观测的Role所返回的管控服务资源使用清单"
 		type "List"
 		since "5.5.38"
 		clz PhysicalServerManagedServiceInventory.class
+	}
+	ref {
+		name "roleErrors"
+		path "org.zstack.physicalserver.APIGetPhysicalServerManagedServicesReply.roleErrors"
+		desc "未能完成观测的Role及其标准错误码；该字段非空不表示整个API失败"
+		type "Map"
+		since "5.5.38"
+		clz ErrorCode.class
 	}
 	field {
 		name "success"

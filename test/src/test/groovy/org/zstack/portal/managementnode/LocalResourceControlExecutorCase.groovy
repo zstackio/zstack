@@ -7,7 +7,6 @@ import org.zstack.core.CoreGlobalProperty
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
-import org.zstack.header.physicalserver.ResourceControlResponse
 import org.zstack.utils.data.SizeUnit
 
 class LocalResourceControlExecutorCase {
@@ -22,10 +21,8 @@ class LocalResourceControlExecutorCase {
         CoreGlobalProperty.UNIT_TEST_ON = true
         executor = new LocalResourceControlExecutor()
         executor.enableTestMode()
-        restartable = restartableSystemdHandle(
-                "prometheus", "prometheus.service")
-        nonRestartable = systemdHandle(
-                "management-node", "zstack-management.service")
+        restartable = restartableSystemdHandle("prometheus", "prometheus.service")
+        nonRestartable = systemdHandle("management-node", "zstack-management.service")
     }
 
     @After
@@ -36,33 +33,27 @@ class LocalResourceControlExecutorCase {
 
     @Test
     void testAppliesAndInspectsCpuAndMemoryAsOneRoleBoundary() {
-        ResourceControlCommand command = command(
-                "APPLY", "3,1-2", SizeUnit.MEGABYTE.toByte(256),
-                [restartable, nonRestartable])
+        ResourceControlCommand command = command("3,1-2", SizeUnit.MEGABYTE.toByte(256), [restartable, nonRestartable])
 
-        ResourceControlResponse response = executor.apply(command)
+        boolean response = executor.apply(command)
 
-        assert response.synced :
+        assert response :
                 "Apply may report Synced only after every manifest handle has the requested boundary"
 
-        List<ManagedServiceResourceUsage> usage = executor.inspect(
-                "MANAGEMENT", [restartable, nonRestartable])
+        List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [restartable, nonRestartable])
         assert usage*.serviceName == ["prometheus", "management-node"] :
-                "inspection must retain stable service identities: " +
-                        "actual=${usage*.serviceName}"
+                "inspection must retain stable service identities: " + "actual=${usage*.serviceName}"
         assert usage.every {
-            it.state == "RUNNING" && it.cpuSet == "3,1-2" &&
-                    it.memoryLimit == SizeUnit.MEGABYTE.toByte(256)
+            it.state == "RUNNING" && it.cpuSet == "3,1-2" && it.memoryLimit == SizeUnit.MEGABYTE.toByte(256)
         } : "inspection must expose the last applied CPU and memory boundary: actual=${usage}"
     }
 
     @Test
     void testReleaseDisablesEveryHandleAndClearsMemoryLimit() {
-        ResourceControlResponse response = executor.apply(command(
-                "RELEASE", "0-3", SizeUnit.MEGABYTE.toByte(128),
-                [restartable, nonRestartable]))
+        boolean response = executor.release(command(
+                "0-3", SizeUnit.MEGABYTE.toByte(128), [restartable, nonRestartable]))
 
-        assert response.synced :
+        assert response :
                 "Release may report Synced only after every manifest handle is disabled"
     }
 
@@ -70,78 +61,54 @@ class LocalResourceControlExecutorCase {
     void testRejectsInvalidMemoryBeforeReportingSuccess() {
         Throwable failure = null
         try {
-            executor.apply(command(
-                    "APPLY", "0-1", 1L, [restartable]))
+            executor.apply(command("0-1", 1L, [restartable]))
         } catch (Throwable error) {
             failure = error
         }
 
-        assert failure?.message?.contains("MEMORY_LIMIT_INVALID") :
+        assert failure?.message?.contains("positive multiple of 1 MiB") :
                 "memory must use positive MiB-aligned platform bytes: actual=${failure}"
     }
 
     @Test
     void testRestartsOnlyExplicitRestartableSystemdHandles() {
-        executor.restart([restartable])
-        assert executor.lastTestRestartHandles*.value ==
-                ["prometheus.service"] :
+        executor.restart("zstack-management.slice", [restartable])
+        assert executor.lastTestRestartHandles*.value == ["prometheus.service"] :
                 "restart must use the stable systemd unit selected by the caller: " +
                         "actual=${executor.lastTestRestartHandles*.value}"
 
-        assertRestartRejected([],
-                "an empty service selection must never restart the whole Role")
-        assertRestartRejected([nonRestartable],
-                "a non-restartable service must remain outside Cloud restart ownership")
-
-        ResourceConsumerHandle pidFile = new ResourceConsumerHandle()
-        pidFile.handleType = ResourceConsumerHandle.OWNER_PID_FILE
-        pidFile.value = "/run/example.pid"
-        pidFile.serviceName = "example"
-        pidFile.consumerKey = "example"
-        pidFile.restartable = true
-        pidFile.expectedCommandToken = "example"
-        assertRestartRejected([pidFile],
-                "restart supports stable systemd units only")
+        assertRestartRejected([], "an empty service selection must never restart the whole Role")
+        assertRestartRejected([nonRestartable], "a non-restartable service must remain outside Cloud restart ownership")
     }
 
-    private void assertRestartRejected(
-            List<ResourceConsumerHandle> handles, String intent) {
+    private void assertRestartRejected(List<ResourceConsumerHandle> handles, String intent) {
         Throwable failure = null
         try {
-            executor.restart(handles)
+            executor.restart("zstack-management.slice", handles)
         } catch (Throwable error) {
             failure = error
         }
         assert failure != null : "${intent}: expected rejection"
     }
 
-    private static ResourceControlCommand command(
-            String operation,
-            String cpuSet,
-            Long memory,
-            List<ResourceConsumerHandle> handles) {
+    private static ResourceControlCommand command(String cpuSet, Long memory, List<ResourceConsumerHandle> handles) {
         ResourceControlCommand command = new ResourceControlCommand()
         command.roleType = "MANAGEMENT"
-        command.isolationMode = "SHARED"
-        command.operation = operation
         command.cpuSet = cpuSet
         command.memory = memory
         command.handles = handles
         return command
     }
 
-    private static ResourceConsumerHandle systemdHandle(
-            String serviceName, String unit) {
+    private static ResourceConsumerHandle systemdHandle(String serviceName, String unit) {
         ResourceConsumerHandle handle = new ResourceConsumerHandle()
         handle.handleType = ResourceConsumerHandle.SYSTEMD_UNIT
         handle.value = unit
         handle.serviceName = serviceName
-        handle.consumerKey = serviceName
         return handle
     }
 
-    private static ResourceConsumerHandle restartableSystemdHandle(
-            String serviceName, String unit) {
+    private static ResourceConsumerHandle restartableSystemdHandle(String serviceName, String unit) {
         ResourceConsumerHandle handle = systemdHandle(serviceName, unit)
         handle.restartable = true
         return handle

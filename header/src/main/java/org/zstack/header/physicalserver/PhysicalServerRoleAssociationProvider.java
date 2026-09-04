@@ -5,11 +5,9 @@ import java.util.Set;
 
 public interface PhysicalServerRoleAssociationProvider {
     /**
-     * Returns the stable Role identifier provided by this extension.
-     *
-     * @return an identifier matching {@code [A-Z][A-Z0-9_]{0,63}}
+     * Returns the Role type provided by this extension.
      */
-    String getRoleType();
+    PhysicalServerRoleType getRoleType();
 
     /**
      * Discovers the complete Role association view in the requested scope.

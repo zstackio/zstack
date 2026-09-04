@@ -4,12 +4,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver;
 import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
+import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver;
 import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider;
+import org.zstack.header.physicalserver.PhysicalServerRoleType;
 import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -30,25 +33,22 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 
 public class ZbsResourceUsageObserver implements
         PhysicalServerResourceUsageObserver,
-        PhysicalServerResourceAssignmentObserver,
-        PhysicalServerRoleAssociationProvider {
-    public static final String ROLE_TYPE = "ZBS";
-    public static final String ROLE_SERVICE_MANIFEST_PATH =
-            "physical-server-roles/zbs.yaml";
-    private static final CLogger logger = Utils.getLogger(
-            ZbsResourceUsageObserver.class);
-    private static final RoleServiceManifest ROLE_SERVICES =
-            RoleServiceManifest.loadObservation(
-                    ROLE_SERVICE_MANIFEST_PATH, ROLE_TYPE);
-
-    private final AtomicReference<Map<String, ZbsNodeRef>> zbsRefs =
-            new AtomicReference<>(Collections.emptyMap());
+        PhysicalServerResourceAssignmentObserver, PhysicalServerRoleAssociationProvider {
+    public static final PhysicalServerRoleType type = new PhysicalServerRoleType("ZBS");
+    public static final String ROLE_SERVICE_MANIFEST_PATH = "physical-server-roles/zbs.yaml";
+    private static final CLogger logger = Utils.getLogger(ZbsResourceUsageObserver.class);
+    private final AtomicReference<Map<String, ZbsNodeRef>> zbsRefs = new AtomicReference<>(Collections.emptyMap());
 
     @Autowired
     private PluginRegistry pluginRgty;
     @Override
-    public String getRoleType() {
-        return ROLE_TYPE;
+    public PhysicalServerRoleType getRoleType() {
+        return type;
+    }
+
+    @Override
+    public PhysicalServerResourceIsolationMode getIsolationMode() {
+        return roleServices().getIsolationMode();
     }
 
     @Override
@@ -58,54 +58,36 @@ public class ZbsResourceUsageObserver implements
 
     @Override
     public void collectResourceAssignment(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
-        ZbsNodeRef ref = zbsRefs.get().get(serverUuid);
-        if (ref == null) {
-            completion.fail(operr(
-                    ORG_ZSTACK_CORE_10000,
-                    "ZBS_RESOURCE_RELATION_MISSING: physical server[uuid:%s] is not associated with ZBS",
-                    serverUuid));
-            return;
-        }
-        if (ref.getUnavailableError() != null) {
-            completion.fail(ref.getUnavailableError());
-            return;
-        }
-        ProviderResolution resolution = resolveProvider(ref);
-        if (resolution.provider == null) {
-            completion.fail(operr(
-                    ORG_ZSTACK_CORE_10000,
-                    "ZBS_RESOURCE_USAGE_PROVIDER_UNAVAILABLE: physical server[uuid:%s] has no unique available Provider",
-                    serverUuid));
+            String serverUuid, ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
+        RoleServiceManifest roleServices = roleServices();
+        ZbsNodeRef ref;
+        ZbsResourceUsageProvider provider;
+        try {
+            ref = requireRef(serverUuid);
+            provider = requireProvider(serverUuid, ref);
+        } catch (OperationFailureException error) {
+            completion.fail(error.getErrorCode());
             return;
         }
         queryProvider(
-                resolution.provider,
+                provider,
                 ref,
-                expectedCgroups(),
-                new ReturnValueCompletion<List<ZbsCgroupResourceUsage>>(completion) {
+                expectedCgroups(roleServices), new ReturnValueCompletion<List<ZbsCgroupResourceUsage>>(completion) {
                     @Override
                     public void success(List<ZbsCgroupResourceUsage> usages) {
                         try {
-                            PhysicalServerResourceBoundary boundary =
-                                    new PhysicalServerResourceBoundary();
+                            PhysicalServerResourceBoundary boundary = new PhysicalServerResourceBoundary();
                             String cpuSet = "";
-                            for (ZbsCgroupResourceUsage usage :
-                                    usagesByCgroup(usages).values()) {
-                                String current = normalizeCpuSet(
-                                        usage.getCpuSet());
+                            for (ZbsCgroupResourceUsage usage : usagesByCgroup(usages, roleServices).values()) {
+                                String current = normalizeCpuSet(usage.getCpuSet());
                                 if (!current.isEmpty()) {
-                                    cpuSet = PhysicalServerCpuSet.union(
-                                            cpuSet, current);
+                                    cpuSet = PhysicalServerCpuSet.union(cpuSet, current);
                                 }
                             }
                             boundary.setCpuSet(cpuSet);
                             completion.success(boundary);
                         } catch (RuntimeException error) {
-                            completion.fail(operr(
-                                    ORG_ZSTACK_CORE_10000,
-                                    "%s", error.getMessage()));
+                            completion.fail(operr(ORG_ZSTACK_CORE_10000, "%s", error.getMessage()));
                         }
                     }
 
@@ -118,52 +100,44 @@ public class ZbsResourceUsageObserver implements
 
     @Override
     public void collectManagedServiceUsage(
-            String serverUuid,
-            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
-        ZbsNodeRef ref = zbsRefs.get().get(serverUuid);
-        ProviderResolution resolution = resolveProvider(ref);
-        if (resolution.provider == null) {
-            completion.success(unavailableUsages());
+            String serverUuid, ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
+        RoleServiceManifest roleServices = roleServices();
+        ZbsNodeRef ref;
+        ZbsResourceUsageProvider provider;
+        try {
+            ref = requireRef(serverUuid);
+            provider = requireProvider(serverUuid, ref);
+        } catch (OperationFailureException error) {
+            completion.fail(error.getErrorCode());
             return;
         }
         queryProvider(
-                resolution.provider,
+                provider,
                 ref,
-                expectedCgroups(),
-                new ReturnValueCompletion<List<ZbsCgroupResourceUsage>>(completion) {
+                expectedCgroups(roleServices), new ReturnValueCompletion<List<ZbsCgroupResourceUsage>>(completion) {
                     @Override
                     public void success(List<ZbsCgroupResourceUsage> usages) {
                         try {
-                            completion.success(toManagedServiceUsages(
-                                    usages));
+                            completion.success(toManagedServiceUsages(usages, roleServices));
                         } catch (RuntimeException error) {
-                            logger.warn(String.format(
-                                    "invalid ZBS cgroup usage on physical server[uuid:%s]: %s",
-                                    serverUuid, error.getMessage()));
-                            completion.success(unavailableUsages());
+                            completion.fail(operr(ORG_ZSTACK_CORE_10000, "%s", error.getMessage()));
                         }
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format(
-                                "failed to query ZBS cgroup usage on physical server[uuid:%s]: %s",
-                                serverUuid, errorCode));
-                        completion.success(unavailableUsages());
+                        completion.fail(errorCode);
                     }
                 });
     }
 
     private List<ManagedServiceResourceUsage> toManagedServiceUsages(
-            List<ZbsCgroupResourceUsage> usages) {
-        Map<String, ZbsCgroupResourceUsage> byCgroup =
-                usagesByCgroup(usages);
+            List<ZbsCgroupResourceUsage> usages, RoleServiceManifest roleServices) {
+        Map<String, ZbsCgroupResourceUsage> byCgroup = usagesByCgroup(usages, roleServices);
 
-        List<ManagedServiceResourceUsage> result =
-                ROLE_SERVICES.managedServiceUsages("UNAVAILABLE");
+        List<ManagedServiceResourceUsage> result = roleServices.managedServiceUsages("NOT_FOUND");
         for (ManagedServiceResourceUsage service : result) {
-            ZbsCgroupResourceUsage usage = byCgroup.get(
-                    service.getServiceName());
+            ZbsCgroupResourceUsage usage = byCgroup.get(service.getServiceName());
             if (usage == null) {
                 continue;
             }
@@ -177,32 +151,26 @@ public class ZbsResourceUsageObserver implements
     }
 
     private Map<String, ZbsCgroupResourceUsage> usagesByCgroup(
-            List<ZbsCgroupResourceUsage> usages) {
+            List<ZbsCgroupResourceUsage> usages, RoleServiceManifest roleServices) {
         if (usages == null) {
-            throw new IllegalArgumentException(
-                    "ZBS_RESOURCE_USAGE_INVALID: Provider returned null");
+            throw new IllegalArgumentException("ZBS resource usage provider returned null");
         }
-        Set<String> expected = new HashSet<>(expectedCgroups());
+        Set<String> expected = new HashSet<>(expectedCgroups(roleServices));
         Map<String, ZbsCgroupResourceUsage> byCgroup = new LinkedHashMap<>();
         for (ZbsCgroupResourceUsage usage : usages) {
             validateUsage(usage, expected);
             if (byCgroup.put(usage.getCgroupName(), usage) != null) {
                 throw new IllegalArgumentException(String.format(
-                        "ZBS_RESOURCE_USAGE_INVALID: cgroupName[%s] is duplicated",
-                        usage.getCgroupName()));
+                        "ZBS resource usage contains duplicate cgroupName[%s]", usage.getCgroupName()));
             }
         }
         return byCgroup;
     }
 
-    private void validateUsage(
-            ZbsCgroupResourceUsage usage,
-            Set<String> expectedCgroups) {
-        if (usage == null || usage.getCgroupName() == null
-                || !expectedCgroups.contains(usage.getCgroupName())) {
+    private void validateUsage(ZbsCgroupResourceUsage usage, Set<String> expectedCgroups) {
+        if (usage == null || usage.getCgroupName() == null || !expectedCgroups.contains(usage.getCgroupName())) {
             throw new IllegalArgumentException(String.format(
-                    "ZBS_RESOURCE_USAGE_INVALID: cgroupName[%s] is not a configured ZBS cgroup",
-                    usage == null ? null : usage.getCgroupName()));
+                    "CgroupName[%s] is not configured for the ZBS role", usage == null ? null : usage.getCgroupName()));
         }
         normalizeCpuSet(usage.getCpuSet());
         requireNonNegative("cpuTime", usage.getCpuTime());
@@ -213,23 +181,16 @@ public class ZbsResourceUsageObserver implements
     private void requireNonNegative(String field, Long value) {
         if (value != null && value < 0) {
             throw new IllegalArgumentException(String.format(
-                    "ZBS_RESOURCE_USAGE_INVALID: %s[%s] must not be negative",
-                    field, value));
+                    "ZBS resource usage %s[%s] must not be negative", field, value));
         }
     }
 
     private String normalizeCpuSet(String cpuSet) {
-        return cpuSet == null || cpuSet.trim().isEmpty()
-                ? "" : PhysicalServerCpuSet.normalize(cpuSet);
-    }
-
-    private List<ManagedServiceResourceUsage> unavailableUsages() {
-        return ROLE_SERVICES.managedServiceUsages("UNAVAILABLE");
+        return cpuSet == null || cpuSet.trim().isEmpty() ? "" : PhysicalServerCpuSet.normalize(cpuSet);
     }
 
     private Set<String> discoverRefs(Collection<String> serverUuids) {
-        List<ZbsNodeRefContributor> contributors =
-                pluginRgty.getExtensionList(ZbsNodeRefContributor.class);
+        List<ZbsNodeRefContributor> contributors = pluginRgty.getExtensionList(ZbsNodeRefContributor.class);
         Map<String, ZbsNodeRef> loaded = new HashMap<>();
         RuntimeException discoveryFailure = null;
         for (ZbsNodeRefContributor contributor : contributors) {
@@ -261,65 +222,77 @@ public class ZbsResourceUsageObserver implements
             zbsRefs.set(Collections.unmodifiableMap(loaded));
             return new HashSet<>(loaded.keySet());
         }
-        while (true) {
-            Map<String, ZbsNodeRef> current = zbsRefs.get();
+        zbsRefs.updateAndGet(current -> {
             Map<String, ZbsNodeRef> replacement = new HashMap<>(current);
-            for (String serverUuid : serverUuids) {
-                replacement.remove(serverUuid);
-            }
+            serverUuids.forEach(replacement::remove);
             replacement.putAll(loaded);
-            if (zbsRefs.compareAndSet(
-                    current, Collections.unmodifiableMap(replacement))) {
-                return new HashSet<>(loaded.keySet());
-            }
-        }
+            return Collections.unmodifiableMap(replacement);
+        });
+        return new HashSet<>(loaded.keySet());
     }
 
-    private ProviderResolution resolveProvider(ZbsNodeRef ref) {
+    private ZbsNodeRef requireRef(String serverUuid) {
+        ZbsNodeRef ref = zbsRefs.get().get(serverUuid);
+        if (ref == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_CORE_10000, "Physical server[uuid:%s] is not associated with ZBS", serverUuid));
+        }
+        if (ref.getUnavailableError() != null) {
+            throw new OperationFailureException(ref.getUnavailableError());
+        }
+        return ref;
+    }
+
+    private ZbsResourceUsageProvider requireProvider(String serverUuid, ZbsNodeRef ref) {
+        ZbsResourceUsageProvider provider = resolveProvider(ref);
+        if (provider == null) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_CORE_10000,
+                    "Physical server[uuid:%s] has no unique available ZBS resource usage provider", serverUuid));
+        }
+        return provider;
+    }
+
+    private ZbsResourceUsageProvider resolveProvider(ZbsNodeRef ref) {
         if (ref == null || ref.getUnavailableError() != null) {
-            return new ProviderResolution(null);
+            return null;
         }
         List<ZbsResourceUsageProvider> available = new ArrayList<>();
-        for (ZbsResourceUsageProvider provider :
-                pluginRgty.getExtensionList(ZbsResourceUsageProvider.class)) {
+        for (ZbsResourceUsageProvider provider : pluginRgty.getExtensionList(ZbsResourceUsageProvider.class)) {
             if (provider.isAvailable(ref)) {
                 available.add(provider);
             }
         }
         if (available.size() != 1) {
-            return new ProviderResolution(null);
+            return null;
         }
-        return new ProviderResolution(available.get(0));
+        return available.get(0);
     }
 
     private void queryProvider(
             ZbsResourceUsageProvider provider,
             ZbsNodeRef ref,
-            Collection<String> cgroupNames,
-            ReturnValueCompletion<List<ZbsCgroupResourceUsage>> completion) {
+            Collection<String> cgroupNames, ReturnValueCompletion<List<ZbsCgroupResourceUsage>> completion) {
         try {
             provider.query(ref, cgroupNames, completion);
         } catch (RuntimeException error) {
             completion.fail(operr(
                     ORG_ZSTACK_CORE_10000,
-                    "ZBS_RESOURCE_USAGE_QUERY_FAILED: Provider[%s] Query failed: %s",
-                    provider.getProviderType(), error.getMessage()));
+                    "ZBS resource usage provider[%s] query failed: %s",
+                    provider.getClass().getName(), error.getMessage()));
         }
     }
 
-    private List<String> expectedCgroups() {
+    private List<String> expectedCgroups(RoleServiceManifest roleServices) {
         List<String> result = new ArrayList<>();
-        for (RoleServiceManifest.Service service : ROLE_SERVICES.getServices()) {
+        for (RoleServiceManifest.Service service : roleServices.getServices()) {
             result.add(service.getName());
         }
         return result;
     }
 
-    private static class ProviderResolution {
-        private final ZbsResourceUsageProvider provider;
-
-        private ProviderResolution(ZbsResourceUsageProvider provider) {
-            this.provider = provider;
-        }
+    private RoleServiceManifest roleServices() {
+        return RoleServiceManifest.loadObservation(ROLE_SERVICE_MANIFEST_PATH, type.toString());
     }
+
 }

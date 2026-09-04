@@ -33,15 +33,14 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
 import org.zstack.header.physicalserver.PhysicalServerResourceBoundary;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
-import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
 import org.zstack.header.physicalserver.PhysicalServerManager;
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver;
 import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider;
+import org.zstack.header.physicalserver.PhysicalServerRoleType;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.PhysicalServerNumaNode;
 import org.zstack.header.physicalserver.ResourceControlCommand;
-import org.zstack.header.physicalserver.ResourceControlResponse;
 import org.zstack.header.physicalserver.ResourceConsumerHandle;
 import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.header.tag.AbstractSystemTagLifeCycleListener;
@@ -68,32 +67,22 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10000;
 
 public class KvmPhysicalServerAdapter implements
         PhysicalServerResourceAssignmentController,
         PhysicalServerResourceUsageObserver,
         PhysicalServerRoleAssociationProvider,
-        PostHostConnectExtensionPoint,
-        HostDeleteExtensionPoint,
-        ManagementNodeReadyExtensionPoint,
-        Component {
-    public static final String ROLE_TYPE = "COMPUTE";
+        PostHostConnectExtensionPoint, HostDeleteExtensionPoint, ManagementNodeReadyExtensionPoint, Component {
+    public static final PhysicalServerRoleType type = new PhysicalServerRoleType("COMPUTE");
     public static final String APPLY_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/apply";
-    public static final String GET_MANAGED_SERVICE_USAGE_PATH =
-            "/host/resourcecontrol/services";
-    public static final String RESTART_MANAGED_SERVICES_PATH =
-            "/host/resourcecontrol/restart";
-    public static final String ROLE_SERVICE_MANIFEST_PATH =
-            "physical-server-roles/compute.yaml";
-    private static final String ERROR_CODE = "ORG_ZSTACK_KVM_10000";
+    public static final String RELEASE_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/release";
+    public static final String GET_MANAGED_SERVICE_USAGE_PATH = "/host/resourcecontrol/services";
+    public static final String RESTART_MANAGED_SERVICES_PATH = "/host/resourcecontrol/restart";
+    public static final String ROLE_SERVICE_MANIFEST_PATH = "physical-server-roles/compute.yaml";
     private static final int HOST_LINK_UPDATE_BATCH_SIZE = 500;
     private static final CLogger logger = Utils.getLogger(KvmPhysicalServerAdapter.class);
-    private static final RoleServiceManifest ROLE_SERVICES =
-            RoleServiceManifest.load(
-                    ROLE_SERVICE_MANIFEST_PATH,
-                    ROLE_TYPE);
-    private final AtomicReference<Map<String, HostRelation>> hostRelations =
-            new AtomicReference<>(Collections.emptyMap());
+    private final AtomicReference<Map<String, String>> hostRelations = new AtomicReference<>(Collections.emptyMap());
 
     @Autowired(required = false)
     private PhysicalServerManager physicalServerManager;
@@ -101,25 +90,19 @@ public class KvmPhysicalServerAdapter implements
     private DatabaseFacade dbf;
     @Autowired
     private CloudBus bus;
-    @Autowired
     @Override
-    public String getRoleType() {
-        return ROLE_TYPE;
+    public PhysicalServerRoleType getRoleType() {
+        return type;
     }
 
     @Override
     public PhysicalServerResourceIsolationMode getIsolationMode() {
-        return PhysicalServerResourceIsolationMode.SHARED;
+        return roleServices().getIsolationMode();
     }
 
     @Override
-    public String getDefaultCpuSet(
-            PhysicalServerCpuTopology topology,
-            Set<Integer> allocatedExclusiveCpus) {
-        return PhysicalServerCpuSet.firstAvailableExcludingCpuZeroCore(
-                topology,
-                allocatedExclusiveCpus,
-                ROLE_SERVICES.getDefaultCpuCount());
+    public Integer getDefaultCpuCount() {
+        return roleServices().getDefaultCpuCount();
     }
 
     @Override
@@ -129,30 +112,24 @@ public class KvmPhysicalServerAdapter implements
 
     @Override
     public List<ResourceConsumerHandle> getResourceConsumers(String serverUuid) {
-        String hostUuid = hostUuid(serverUuid, null);
+        String hostUuid = hostUuid(serverUuid);
         if (hostUuid == null) {
-            throw new IllegalStateException(String.format(
-                    "HOST_RELATION_MISSING: physical server[uuid:%s] has no KVM host",
-                    serverUuid));
+            throw new IllegalStateException(String.format("Physical server[uuid:%s] has no KVM host", serverUuid));
         }
-        return handles(hostUuid);
+        return roleServices().handles();
     }
 
     @Override
     public void collectResourceAssignment(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
+            String serverUuid, ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
         collectManagedServiceUsage(
-                serverUuid,
-                new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
+                serverUuid, new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
                     @Override
                     public void success(List<ManagedServiceResourceUsage> services) {
                         try {
-                            completion.success(
-                                    PhysicalServerResourceBoundary.fromManagedServiceUsages(
-                                            services));
+                            completion.success(PhysicalServerResourceBoundary.fromManagedServiceUsages(services));
                         } catch (RuntimeException error) {
-                            completion.fail(operr(ERROR_CODE, "%s", error.getMessage()));
+                            completion.fail(operr(ORG_ZSTACK_KVM_10000, "%s", error.getMessage()));
                         }
                     }
 
@@ -164,14 +141,10 @@ public class KvmPhysicalServerAdapter implements
     }
 
     @Override
-    public void collectTopology(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
-        String hostUuid = hostUuid(serverUuid, null);
+    public void collectTopology(String serverUuid, ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
+        String hostUuid = hostUuid(serverUuid);
         if (hostUuid == null) {
-            completion.fail(operr(ERROR_CODE,
-                    "HOST_RELATION_MISSING: physical server[uuid:%s] has no KVM host",
-                    serverUuid));
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Physical server[uuid:%s] has no KVM host", serverUuid));
             return;
         }
 
@@ -192,98 +165,123 @@ public class KvmPhysicalServerAdapter implements
     }
 
     private void completeTopology(
-            GetHostNumaTopologyReply reply,
-            ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
+            GetHostNumaTopologyReply reply, ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
         try {
-            completion.success(PhysicalServerCpuTopology.from(
-                    neutralTopology(reply.getNuma())));
+            completion.success(PhysicalServerCpuTopology.from(neutralTopology(reply.getNuma())));
         } catch (RuntimeException error) {
-            completion.fail(operr(ERROR_CODE,
-                    "CPU_TOPOLOGY_FACT_INVALID: %s", error.getMessage()));
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Host returned invalid CPU topology: %s", error.getMessage()));
         }
     }
 
     @Override
-    public void apply(
-            String serverUuid,
-            String consumerUuid,
-            ResourceControlCommand command,
-            ReturnValueCompletion<ResourceControlResponse> completion) {
-        String hostUuid = hostUuid(serverUuid, consumerUuid);
+    public void apply(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
+        String hostUuid = hostUuid(serverUuid);
         if (hostUuid == null) {
-            completion.fail(operr(ERROR_CODE,
-                    "HOST_RELATION_MISSING: physical server[uuid:%s] has no matching KVM host",
-                    serverUuid));
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Physical server[uuid:%s] has no KVM host", serverUuid));
             return;
         }
 
-        ResourceControlAgentCommand agentCommand = new ResourceControlAgentCommand();
-        agentCommand.setRoleType(command.getRoleType());
-        agentCommand.setOperation(command.getOperation());
+        ApplyResourceControlAgentCommand agentCommand = applyAgentCommand(command);
         agentCommand.setCpuSet(command.getCpuSet());
         agentCommand.setMemory(command.getMemory());
-        agentCommand.setSliceName(ROLE_SERVICES.getSliceName());
-        agentCommand.setHandles(command.getHandles());
+        agentCommand.setIsolationMode(
+                command.getIsolationMode() == null
+                        ? PhysicalServerResourceIsolationMode.SHARED.name() : command.getIsolationMode().name());
+        sendApplyResourceControl(hostUuid, agentCommand, completion);
+    }
 
-        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
+    @Override
+    public void release(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
+        String hostUuid = hostUuid(serverUuid);
+        if (hostUuid == null) {
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Physical server[uuid:%s] has no KVM host", serverUuid));
+            return;
+        }
+
+        ManagedServiceAgentCommand agentCommand = new ManagedServiceAgentCommand();
+        agentCommand.setRoleType(command.getRoleType());
+        agentCommand.setSliceName(roleServices().getSliceName());
+        agentCommand.setHandles(command.getHandles());
+        sendReleaseResourceControl(hostUuid, agentCommand, completion);
+    }
+
+    private ApplyResourceControlAgentCommand applyAgentCommand(ResourceControlCommand command) {
+        ApplyResourceControlAgentCommand result = new ApplyResourceControlAgentCommand();
+        result.setRoleType(command.getRoleType());
+        result.setSliceName(roleServices().getSliceName());
+        result.setHandles(command.getHandles());
+        return result;
+    }
+
+    private void sendApplyResourceControl(String hostUuid, ApplyResourceControlAgentCommand agentCommand,
+                                          ReturnValueCompletion<Boolean> completion) {
+        KVMHostAsyncHttpCallMsg msg = resourceControlCall(hostUuid, agentCommand);
         msg.setPath(APPLY_RESOURCE_CONTROL_PATH);
+        sendResourceControl(msg, completion);
+    }
+
+    private void sendReleaseResourceControl(String hostUuid, ManagedServiceAgentCommand agentCommand,
+                                            ReturnValueCompletion<Boolean> completion) {
+        KVMHostAsyncHttpCallMsg msg = resourceControlCall(hostUuid, agentCommand);
+        msg.setPath(RELEASE_RESOURCE_CONTROL_PATH);
+        sendResourceControl(msg, completion);
+    }
+
+    private KVMHostAsyncHttpCallMsg resourceControlCall(String hostUuid, KVMAgentCommands.AgentCommand agentCommand) {
+        KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setHostUuid(hostUuid);
         msg.setCommand(agentCommand);
         msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        return msg;
+    }
+
+    private void sendResourceControl(KVMHostAsyncHttpCallMsg msg, ReturnValueCompletion<Boolean> completion) {
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 ErrorableValue<ResourceControlAgentResponse> result =
-                        KVMHostAsyncHttpCallReply.unwrap(
-                                reply, ResourceControlAgentResponse.class);
+                        KVMHostAsyncHttpCallReply.unwrap(reply, ResourceControlAgentResponse.class);
                 if (!result.isSuccess()) {
                     completion.fail(result.error);
                     return;
                 }
-                completion.success(result.result.toInventory());
+                completion.success(result.result.isSynced());
             }
         });
     }
 
     @Override
     public void collectManagedServiceUsage(
-            String serverUuid,
-            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
-        String hostUuid = hostUuid(serverUuid, null);
+            String serverUuid, ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion) {
+        RoleServiceManifest roleServices = roleServices();
+        String hostUuid = hostUuid(serverUuid);
         if (hostUuid == null) {
-            completion.success(ROLE_SERVICES.managedServiceUsages("UNAVAILABLE"));
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Physical server[uuid:%s] has no KVM host", serverUuid));
             return;
         }
         ManagedServiceAgentCommand command = new ManagedServiceAgentCommand();
-        command.setRoleType(ROLE_TYPE);
-        command.setSliceName(ROLE_SERVICES.getSliceName());
-        command.setHandles(handles(hostUuid));
-        KVMHostAsyncHttpCallMsg msg = managedServiceCall(
-                hostUuid, GET_MANAGED_SERVICE_USAGE_PATH, command);
+        command.setRoleType(type.toString());
+        command.setSliceName(roleServices.getSliceName());
+        command.setHandles(roleServices.handles());
+        KVMHostAsyncHttpCallMsg msg = managedServiceCall(hostUuid, GET_MANAGED_SERVICE_USAGE_PATH, command);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 ErrorableValue<ManagedServiceUsageAgentResponse> result =
-                        KVMHostAsyncHttpCallReply.unwrap(
-                                reply, ManagedServiceUsageAgentResponse.class);
+                        KVMHostAsyncHttpCallReply.unwrap(reply, ManagedServiceUsageAgentResponse.class);
                 if (!result.isSuccess()) {
-                    logger.warn(String.format(
-                            "failed to query managed services on host[uuid:%s]: %s",
-                            hostUuid, result.error));
-                    completion.success(ROLE_SERVICES.managedServiceUsages(
-                            "UNAVAILABLE"));
+                    completion.fail(result.error);
                     return;
                 }
-                List<ManagedServiceResourceUsage> services =
-                        result.result.getServices();
-                if (services == null) {
-                    completion.success(ROLE_SERVICES.managedServiceUsages(
-                            "UNAVAILABLE"));
+                if (result.result == null || result.result.getServices() == null) {
+                    completion.fail(operr(ORG_ZSTACK_KVM_10000,
+                            "Host[uuid:%s] returned no managed service usage", hostUuid));
                     return;
                 }
+                List<ManagedServiceResourceUsage> services = result.result.getServices();
                 for (ManagedServiceResourceUsage usage : services) {
-                    usage.setRoleType(ROLE_TYPE);
+                    usage.setRoleType(type.toString());
                 }
                 completion.success(services);
             }
@@ -292,36 +290,22 @@ public class KvmPhysicalServerAdapter implements
 
     @Override
     public void restartManagedServices(
-            String serverUuid,
-            Collection<String> serviceNames,
-            Completion completion) {
-        String hostUuid = hostUuid(serverUuid, null);
+            String serverUuid, Collection<ResourceConsumerHandle> consumers, Completion completion) {
+        String hostUuid = hostUuid(serverUuid);
         if (hostUuid == null) {
-            completion.fail(operr(ERROR_CODE,
-                    "HOST_RELATION_MISSING: physical server[uuid:%s] has no KVM host",
-                    serverUuid));
+            completion.fail(operr(ORG_ZSTACK_KVM_10000, "Physical server[uuid:%s] has no KVM host", serverUuid));
             return;
         }
         ManagedServiceAgentCommand command = new ManagedServiceAgentCommand();
-        command.setRoleType(ROLE_TYPE);
-        command.setSliceName(ROLE_SERVICES.getSliceName());
-        try {
-            command.setHandles(ROLE_SERVICES.handlesByServiceNames(
-                    serviceNames,
-                    String.format("host-agent:%s", hostUuid),
-                    Collections.emptyMap()));
-        } catch (RuntimeException error) {
-            completion.fail(operr(ERROR_CODE, "%s", error.getMessage()));
-            return;
-        }
-        KVMHostAsyncHttpCallMsg msg = managedServiceCall(
-                hostUuid, RESTART_MANAGED_SERVICES_PATH, command);
+        command.setRoleType(type.toString());
+        command.setSliceName(roleServices().getSliceName());
+        command.setHandles(new ArrayList<>(consumers));
+        KVMHostAsyncHttpCallMsg msg = managedServiceCall(hostUuid, RESTART_MANAGED_SERVICES_PATH, command);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
                 ErrorableValue<KVMAgentCommands.AgentResponse> result =
-                        KVMHostAsyncHttpCallReply.unwrap(
-                                reply, KVMAgentCommands.AgentResponse.class);
+                        KVMHostAsyncHttpCallReply.unwrap(reply, KVMAgentCommands.AgentResponse.class);
                 if (!result.isSuccess()) {
                     completion.fail(result.error);
                     return;
@@ -367,9 +351,7 @@ public class KvmPhysicalServerAdapter implements
         String serverUuid = inventory.getServerUuid();
         org.zstack.core.db.SQL.New(HostEO.class)
                 .eq(HostAO_.uuid, inventory.getUuid())
-                .eq(HostAO_.serverUuid, serverUuid)
-                .set(HostAO_.serverUuid, null)
-                .update();
+                .eq(HostAO_.serverUuid, serverUuid).set(HostAO_.serverUuid, null).update();
         removeHostRelation(serverUuid);
     }
 
@@ -397,8 +379,7 @@ public class KvmPhysicalServerAdapter implements
                     }
 
                     @Override
-                    public void tagUpdated(
-                            SystemTagInventory old, SystemTagInventory newTag) {
+                    public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
                         backfill(Collections.singleton(newTag.getResourceUuid()));
                     }
                 });
@@ -412,14 +393,10 @@ public class KvmPhysicalServerAdapter implements
 
     @Transactional
     public void associate(HostInventory host) {
-        if (physicalServerManager == null
-                || !KVMConstant.KVM_HYPERVISOR_TYPE.equals(host.getHypervisorType())) {
+        if (physicalServerManager == null || !KVMConstant.KVM_HYPERVISOR_TYPE.equals(host.getHypervisorType())) {
             return;
         }
-        String current = Q.New(HostVO.class)
-                .select(HostVO_.serverUuid)
-                .eq(HostVO_.uuid, host.getUuid())
-                .findValue();
+        String current = Q.New(HostVO.class).select(HostVO_.serverUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
         if (current != null) {
             physicalServerManager.associationChanged(current);
             return;
@@ -435,31 +412,25 @@ public class KvmPhysicalServerAdapter implements
             return;
         }
         String serverUuid = physicalServerManager.resolveBySerialNumbers(
-                Collections.singleton(serialNumber))
-                .get(serialNumber);
+                Collections.singleton(serialNumber)).get(serialNumber);
         if (serverUuid == null) {
             return;
         }
-        clearDeletedHostLink(serverUuid);
+        clearDeletedHostLinks(Collections.singleton(serverUuid));
         if (linkedHost(serverUuid, host.getUuid()) != null) {
             return;
         }
 
         Query update = dbf.getEntityManager().createNativeQuery(
-                "UPDATE IGNORE HostEO SET serverUuid = :serverUuid " +
-                        "WHERE uuid = :hostUuid AND serverUuid IS NULL");
+                "UPDATE IGNORE HostEO SET serverUuid = :serverUuid " + "WHERE uuid = :hostUuid AND serverUuid IS NULL");
         update.setParameter("serverUuid", serverUuid);
         update.setParameter("hostUuid", host.getUuid());
         update.executeUpdate();
-        current = Q.New(HostVO.class)
-                .select(HostVO_.serverUuid)
-                .eq(HostVO_.uuid, host.getUuid())
-                .findValue();
+        current = Q.New(HostVO.class).select(HostVO_.serverUuid).eq(HostVO_.uuid, host.getUuid()).findValue();
         if (!serverUuid.equals(current)) {
             logger.warn(String.format(
                     "cannot associate host[uuid:%s] with physical server[uuid:%s] " +
-                            "because the host is already associated elsewhere",
-                    host.getUuid(), serverUuid));
+                            "because the host is already associated elsewhere", host.getUuid(), serverUuid));
             return;
         }
         physicalServerManager.associationChanged(serverUuid);
@@ -477,8 +448,7 @@ public class KvmPhysicalServerAdapter implements
         }
         Q hostQuery = Q.New(HostVO.class)
                 .select(HostVO_.uuid)
-                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
-                .isNull(HostVO_.serverUuid);
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).isNull(HostVO_.serverUuid);
         if (hostUuids != null && !hostUuids.isEmpty()) {
             hostQuery.in(HostVO_.uuid, hostUuids);
         }
@@ -487,43 +457,37 @@ public class KvmPhysicalServerAdapter implements
             return;
         }
         Map<String, Set<String>> serialsByHost = serialsByHost(unresolvedHostUuids);
-        Map<String, List<HostCandidate>> candidatesBySerial = new LinkedHashMap<>();
+        Map<String, List<String>> candidatesBySerial = new LinkedHashMap<>();
         for (String hostUuid : unresolvedHostUuids) {
             Set<String> serials = serialsByHost.get(hostUuid);
             if (serials == null || serials.size() != 1) {
                 continue;
             }
-            candidatesBySerial
-                    .computeIfAbsent(serials.iterator().next(), ignored -> new ArrayList<>())
-                    .add(new HostCandidate(hostUuid));
+            candidatesBySerial.computeIfAbsent(serials.iterator().next(), ignored -> new ArrayList<>()).add(hostUuid);
         }
 
-        Map<String, HostCandidate> candidates = new LinkedHashMap<>();
+        Map<String, String> candidates = new LinkedHashMap<>();
         Set<String> serialNumbers = new LinkedHashSet<>();
-        for (Map.Entry<String, List<HostCandidate>> candidate : candidatesBySerial.entrySet()) {
+        for (Map.Entry<String, List<String>> candidate : candidatesBySerial.entrySet()) {
             if (candidate.getValue().size() != 1) {
                 logger.warn(String.format(
                         "cannot backfill host physical server association for serialNumber[%s] " +
-                                "because it matches multiple hosts",
-                        candidate.getKey()));
+                                "because it matches multiple hosts", candidate.getKey()));
                 continue;
             }
-            HostCandidate host = candidate.getValue().get(0);
+            String host = candidate.getValue().get(0);
             candidates.put(candidate.getKey(), host);
             serialNumbers.add(candidate.getKey());
         }
-        Map<String, String> resolved =
-                physicalServerManager.resolveBySerialNumbers(serialNumbers);
+        Map<String, String> resolved = physicalServerManager.resolveBySerialNumbers(serialNumbers);
         clearDeletedHostLinks(resolved.values());
         Set<String> used = new HashSet<>(Q.New(HostVO.class)
-                .select(HostVO_.serverUuid)
-                .notNull(HostVO_.serverUuid)
-                .listValues());
+                .select(HostVO_.serverUuid).notNull(HostVO_.serverUuid).listValues());
         Map<String, String> links = new LinkedHashMap<>();
-        for (Map.Entry<String, HostCandidate> candidate : candidates.entrySet()) {
+        for (Map.Entry<String, String> candidate : candidates.entrySet()) {
             String serverUuid = resolved.get(candidate.getKey());
             if (serverUuid != null && used.add(serverUuid)) {
-                links.put(candidate.getValue().hostUuid, serverUuid);
+                links.put(candidate.getValue(), serverUuid);
             }
         }
         updateHostLinks(links);
@@ -532,9 +496,7 @@ public class KvmPhysicalServerAdapter implements
                 ? Collections.emptySet()
                 : new LinkedHashSet<>(Q.New(HostVO.class)
                         .select(HostVO_.serverUuid)
-                        .in(HostVO_.uuid, links.keySet())
-                        .notNull(HostVO_.serverUuid)
-                        .listValues());
+                        .in(HostVO_.uuid, links.keySet()).notNull(HostVO_.serverUuid).listValues());
         for (String serverUuid : linkedServers) {
             physicalServerManager.associationChanged(serverUuid);
         }
@@ -546,18 +508,15 @@ public class KvmPhysicalServerAdapter implements
                 .in(SystemTagVO_.resourceUuid, hostUuids)
                 .eq(SystemTagVO_.resourceType, HostVO.class.getSimpleName())
                 .like(SystemTagVO_.tag, TagUtils.tagPatternToSqlPattern(
-                        HostSystemTags.SYSTEM_SERIAL_NUMBER.getTagFormat()))
-                .listTuple();
+                        HostSystemTags.SYSTEM_SERIAL_NUMBER.getTagFormat())).listTuple();
         Map<String, Set<String>> result = new HashMap<>();
         for (Tuple tuple : tagTuples) {
             String hostUuid = tuple.get(0, String.class);
             String serialNumber = Platform.normalizeMachineSerialNumber(
                     HostSystemTags.SYSTEM_SERIAL_NUMBER.getTokenByTag(
-                            tuple.get(1, String.class),
-                            HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN));
+                            tuple.get(1, String.class), HostSystemTags.SYSTEM_SERIAL_NUMBER_TOKEN));
             if (serialNumber != null) {
-                result.computeIfAbsent(hostUuid, ignored -> new LinkedHashSet<>())
-                        .add(serialNumber);
+                result.computeIfAbsent(hostUuid, ignored -> new LinkedHashSet<>()).add(serialNumber);
             }
         }
         return result;
@@ -567,23 +526,17 @@ public class KvmPhysicalServerAdapter implements
         if (links.isEmpty()) {
             return;
         }
-        List<Map.Entry<String, String>> entries =
-                new ArrayList<>(links.entrySet());
-        for (int start = 0; start < entries.size();
-                start += HOST_LINK_UPDATE_BATCH_SIZE) {
-            updateHostLinks(entries.subList(
-                    start,
-                    Math.min(start + HOST_LINK_UPDATE_BATCH_SIZE, entries.size())));
+        List<Map.Entry<String, String>> entries = new ArrayList<>(links.entrySet());
+        for (int start = 0; start < entries.size(); start += HOST_LINK_UPDATE_BATCH_SIZE) {
+            updateHostLinks(entries.subList(start, Math.min(start + HOST_LINK_UPDATE_BATCH_SIZE, entries.size())));
         }
     }
 
     private void updateHostLinks(List<Map.Entry<String, String>> links) {
-        StringBuilder sql = new StringBuilder(
-                "UPDATE IGNORE HostEO SET serverUuid = CASE uuid");
+        StringBuilder sql = new StringBuilder("UPDATE IGNORE HostEO SET serverUuid = CASE uuid");
         int index = 0;
         for (Map.Entry<String, String> ignored : links) {
-            sql.append(" WHEN :host").append(index)
-                    .append(" THEN :server").append(index);
+            sql.append(" WHEN :host").append(index).append(" THEN :server").append(index);
             index++;
         }
         sql.append(" ELSE serverUuid END WHERE serverUuid IS NULL AND uuid IN (");
@@ -611,8 +564,7 @@ public class KvmPhysicalServerAdapter implements
             return;
         }
         StringBuilder sql = new StringBuilder(
-                "UPDATE HostEO SET serverUuid = NULL " +
-                        "WHERE deleted IS NOT NULL AND serverUuid IN (");
+                "UPDATE HostEO SET serverUuid = NULL " + "WHERE deleted IS NOT NULL AND serverUuid IN (");
         for (int i = 0; i < targets.size(); i++) {
             if (i > 0) {
                 sql.append(',');
@@ -629,93 +581,53 @@ public class KvmPhysicalServerAdapter implements
         query.executeUpdate();
     }
 
-    private void clearDeletedHostLink(String serverUuid) {
-        Query query = dbf.getEntityManager().createNativeQuery(
-                "UPDATE HostEO SET serverUuid = NULL " +
-                        "WHERE deleted IS NOT NULL AND serverUuid = :serverUuid");
-        query.setParameter("serverUuid", serverUuid);
-        query.executeUpdate();
-    }
-
     private String linkedHost(String serverUuid, String excludedHostUuid) {
         return Q.New(HostVO.class)
                 .select(HostVO_.uuid)
-                .eq(HostVO_.serverUuid, serverUuid)
-                .notEq(HostVO_.uuid, excludedHostUuid)
-                .findValue();
+                .eq(HostVO_.serverUuid, serverUuid).notEq(HostVO_.uuid, excludedHostUuid).findValue();
     }
 
-    private String hostUuid(String serverUuid, String consumerUuid) {
-        HostRelation relation = hostRelation(serverUuid);
-        if (relation == null) {
-            return null;
-        }
-        return consumerUuid == null || consumerUuid.equals(relation.hostUuid)
-                ? relation.hostUuid : null;
-    }
-
-    private HostRelation hostRelation(String serverUuid) {
+    private String hostUuid(String serverUuid) {
         return hostRelations.get().get(serverUuid);
     }
 
     private Set<String> discoverHostRelations(Collection<String> serverUuids) {
         Q query = Q.New(HostVO.class)
                 .select(HostVO_.serverUuid, HostVO_.uuid)
-                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
-                .notNull(HostVO_.serverUuid);
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).notNull(HostVO_.serverUuid);
         boolean partial = serverUuids != null && !serverUuids.isEmpty();
         if (partial) {
             query.in(HostVO_.serverUuid, serverUuids);
         }
-        Map<String, HostRelation> loaded = new HashMap<>();
+        Map<String, String> loaded = new HashMap<>();
         for (Tuple host : (List<Tuple>) query.listTuple()) {
-            loaded.put(
-                    host.get(0, String.class),
-                    new HostRelation(host.get(1, String.class)));
+            loaded.put(host.get(0, String.class), host.get(1, String.class));
         }
         if (!partial) {
             hostRelations.set(Collections.unmodifiableMap(loaded));
             return new LinkedHashSet<>(loaded.keySet());
         }
-        while (true) {
-            Map<String, HostRelation> current = hostRelations.get();
-            Map<String, HostRelation> replacement = new HashMap<>(current);
-            for (String serverUuid : serverUuids) {
-                replacement.remove(serverUuid);
-            }
+        hostRelations.updateAndGet(current -> {
+            Map<String, String> replacement = new HashMap<>(current);
+            serverUuids.forEach(replacement::remove);
             replacement.putAll(loaded);
-            if (hostRelations.compareAndSet(
-                    current, Collections.unmodifiableMap(replacement))) {
-                return new LinkedHashSet<>(loaded.keySet());
-            }
-        }
+            return Collections.unmodifiableMap(replacement);
+        });
+        return new LinkedHashSet<>(loaded.keySet());
     }
 
     private void removeHostRelation(String serverUuid) {
-        while (true) {
-            Map<String, HostRelation> current = hostRelations.get();
+        hostRelations.updateAndGet(current -> {
             if (!current.containsKey(serverUuid)) {
-                return;
+                return current;
             }
-            Map<String, HostRelation> replacement = new HashMap<>(current);
+            Map<String, String> replacement = new HashMap<>(current);
             replacement.remove(serverUuid);
-            if (hostRelations.compareAndSet(
-                    current, Collections.unmodifiableMap(replacement))) {
-                return;
-            }
-        }
+            return Collections.unmodifiableMap(replacement);
+        });
     }
 
-    private static class HostRelation {
-        private final String hostUuid;
-
-        private HostRelation(String hostUuid) {
-            this.hostUuid = hostUuid;
-        }
-    }
-
-    private Map<String, PhysicalServerNumaNode> neutralTopology(
-            Map<String, HostNUMANode> topology) {
+    private Map<String, PhysicalServerNumaNode> neutralTopology(Map<String, HostNUMANode> topology) {
         Map<String, PhysicalServerNumaNode> result = new LinkedHashMap<>();
         if (topology == null) {
             return result;
@@ -730,34 +642,14 @@ public class KvmPhysicalServerAdapter implements
         return result;
     }
 
-    private List<ResourceConsumerHandle> handles(String hostUuid) {
-        String consumerKey = String.format("host-agent:%s", hostUuid);
-        return ROLE_SERVICES.handles(consumerKey);
+    private RoleServiceManifest roleServices() {
+        return RoleServiceManifest.load(ROLE_SERVICE_MANIFEST_PATH, type.toString());
     }
 
-    public static class ResourceControlAgentCommand extends KVMAgentCommands.AgentCommand {
-        private String roleType;
-        private String operation;
+    public static class ApplyResourceControlAgentCommand extends ManagedServiceAgentCommand {
         private String cpuSet;
         private Long memory;
-        private String sliceName;
-        private List<ResourceConsumerHandle> handles = new ArrayList<>();
-
-        public String getRoleType() {
-            return roleType;
-        }
-
-        public void setRoleType(String roleType) {
-            this.roleType = roleType;
-        }
-
-        public String getOperation() {
-            return operation;
-        }
-
-        public void setOperation(String operation) {
-            this.operation = operation;
-        }
+        private String isolationMode;
 
         public String getCpuSet() {
             return cpuSet;
@@ -775,20 +667,12 @@ public class KvmPhysicalServerAdapter implements
             this.memory = memory;
         }
 
-        public String getSliceName() {
-            return sliceName;
+        public String getIsolationMode() {
+            return isolationMode;
         }
 
-        public void setSliceName(String sliceName) {
-            this.sliceName = sliceName;
-        }
-
-        public List<ResourceConsumerHandle> getHandles() {
-            return handles;
-        }
-
-        public void setHandles(List<ResourceConsumerHandle> handles) {
-            this.handles = handles;
+        public void setIsolationMode(String isolationMode) {
+            this.isolationMode = isolationMode;
         }
     }
 
@@ -845,18 +729,6 @@ public class KvmPhysicalServerAdapter implements
             this.synced = synced;
         }
 
-        private ResourceControlResponse toInventory() {
-            ResourceControlResponse response = new ResourceControlResponse();
-            response.setSynced(synced);
-            return response;
-        }
     }
 
-    private static class HostCandidate {
-        private final String hostUuid;
-
-        private HostCandidate(String hostUuid) {
-            this.hostUuid = hostUuid;
-        }
-    }
 }

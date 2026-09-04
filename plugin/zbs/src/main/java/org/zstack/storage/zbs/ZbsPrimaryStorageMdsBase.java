@@ -432,8 +432,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
             return physicalServerSerialNumber;
         }
 
-        public void setPhysicalServerSerialNumber(
-                String physicalServerSerialNumber) {
+        public void setPhysicalServerSerialNumber(String physicalServerSerialNumber) {
             this.physicalServerSerialNumber = physicalServerSerialNumber;
         }
     }

@@ -2,16 +2,13 @@ package org.zstack.physicalserver;
 
 import org.zstack.header.message.NeedReplyMessage;
 
-public class ReleasePhysicalServerResourceAssignmentMsg extends NeedReplyMessage
-        implements PhysicalServerMessage {
+public class ReleasePhysicalServerResourceAssignmentMsg extends NeedReplyMessage implements PhysicalServerMessage {
     private String serverUuid;
     private String roleType;
-    private String consumerUuid;
     private Operation operation = Operation.RELEASE;
 
     public enum Operation {
-        RELEASE,
-        FORCE_RELEASE
+        RELEASE, FORCE_RELEASE
     }
 
     @Override
@@ -29,14 +26,6 @@ public class ReleasePhysicalServerResourceAssignmentMsg extends NeedReplyMessage
 
     public void setRoleType(String roleType) {
         this.roleType = roleType;
-    }
-
-    public String getConsumerUuid() {
-        return consumerUuid;
-    }
-
-    public void setConsumerUuid(String consumerUuid) {
-        this.consumerUuid = consumerUuid;
     }
 
     public Operation getOperation() {

@@ -45,7 +45,7 @@ public class PhysicalServerCpuTopology {
 
     public static PhysicalServerCpuTopology from(Map<String, PhysicalServerNumaNode> numaNodes) {
         if (numaNodes == null || numaNodes.isEmpty()) {
-            throw new IllegalArgumentException("CPU_TOPOLOGY_UNAVAILABLE: NUMA topology is empty");
+            throw new IllegalArgumentException("NUMA topology is empty");
         }
 
         SortedSet<Integer> online = new TreeSet<>();
@@ -53,14 +53,13 @@ public class PhysicalServerCpuTopology {
         Set<Integer> grouped = new HashSet<>();
         Map<String, PhysicalServerNumaNode> sortedNodes = new LinkedHashMap<>();
         numaNodes.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> sortedNodes.put(entry.getKey(), entry.getValue()));
+                .sorted(Map.Entry.comparingByKey()).forEach(entry -> sortedNodes.put(entry.getKey(), entry.getValue()));
 
         for (Map.Entry<String, PhysicalServerNumaNode> entry : sortedNodes.entrySet()) {
             PhysicalServerNumaNode node = entry.getValue();
             if (node.getOnlineCpus() == null || node.getCoreGroups() == null || node.getCoreGroups().isEmpty()) {
                 throw new IllegalArgumentException(
-                        "CPU_TOPOLOGY_UNSUPPORTED: topology provider did not report online CPUs and core sibling groups");
+                        "Topology provider did not report online CPUs and core sibling groups");
             }
 
             Set<Integer> nodeOnline = parseCpuIds(node.getOnlineCpus());
@@ -68,12 +67,12 @@ public class PhysicalServerCpuTopology {
             for (List<String> rawGroup : node.getCoreGroups()) {
                 Set<Integer> group = parseCpuIds(rawGroup);
                 if (group.isEmpty() || !nodeOnline.containsAll(group)) {
-                    throw new IllegalArgumentException("CPU_TOPOLOGY_INVALID: core group is outside its NUMA online CPUs");
+                    throw new IllegalArgumentException("Core group is outside its NUMA online CPUs");
                 }
                 for (Integer cpu : group) {
                     if (!grouped.add(cpu)) {
                         throw new IllegalArgumentException(String.format(
-                                "CPU_TOPOLOGY_INVALID: CPU[%s] appears in multiple core groups", cpu));
+                                "CPU[%s] appears in multiple core groups", cpu));
                     }
                 }
                 groups.add(new CoreGroup(entry.getKey(), group));
@@ -81,7 +80,7 @@ public class PhysicalServerCpuTopology {
         }
 
         if (!grouped.equals(online)) {
-            throw new IllegalArgumentException("CPU_TOPOLOGY_INVALID: core groups do not cover every online CPU exactly once");
+            throw new IllegalArgumentException("Core groups do not cover every online CPU exactly once");
         }
         groups.sort(Comparator.comparingInt(CoreGroup::firstCpu));
         return new PhysicalServerCpuTopology(online, groups);
@@ -91,11 +90,11 @@ public class PhysicalServerCpuTopology {
         Set<Integer> result = new HashSet<>();
         for (String value : values) {
             if (value == null || !value.matches("[0-9]+")) {
-                throw new IllegalArgumentException(String.format("CPU_TOPOLOGY_INVALID: invalid CPU id[%s]", value));
+                throw new IllegalArgumentException(String.format("Invalid CPU id[%s]", value));
             }
             BigInteger cpu = new BigInteger(value);
             if (cpu.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
-                throw new IllegalArgumentException(String.format("CPU_TOPOLOGY_INVALID: CPU id[%s] is too large", value));
+                throw new IllegalArgumentException(String.format("CPU id[%s] is too large", value));
             }
             result.add(cpu.intValue());
         }
@@ -116,14 +115,7 @@ public class PhysicalServerCpuTopology {
                 return group;
             }
         }
-        throw new IllegalArgumentException("CPU_TOPOLOGY_INVALID: online topology does not contain CPU0");
+        throw new IllegalArgumentException("Online topology does not contain CPU0");
     }
 
-    public String fingerprint() {
-        List<String> encoded = new ArrayList<>();
-        for (CoreGroup group : coreGroups) {
-            encoded.add(group.numaId + ":" + PhysicalServerCpuSet.format(group.cpus));
-        }
-        return String.join(";", encoded);
-    }
 }

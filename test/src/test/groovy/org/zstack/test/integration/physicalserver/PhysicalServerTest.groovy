@@ -2,7 +2,6 @@ package org.zstack.test.integration.physicalserver
 
 import org.zstack.core.db.SQL
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentVO
-import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
 import org.zstack.physicalserver.PhysicalServerVO
 import org.zstack.testlib.SpringSpec
 import org.zstack.testlib.Test
@@ -22,7 +21,6 @@ class PhysicalServerTest extends Test {
     @Override
     void setup() {
         useSpring(springSpec)
-        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
     }
 
     @Override

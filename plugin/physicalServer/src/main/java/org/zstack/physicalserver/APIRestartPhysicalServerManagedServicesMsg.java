@@ -11,12 +11,8 @@ import java.util.List;
 @Action(category = PhysicalServerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/physical-servers/{serverUuid}/managed-services/actions",
-        method = HttpMethod.PUT,
-        responseClass = APIRestartPhysicalServerManagedServicesEvent.class,
-        isAction = true
-)
-public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage
-        implements PhysicalServerMessage {
+        method = HttpMethod.PUT, responseClass = APIRestartPhysicalServerManagedServicesEvent.class, isAction = true)
+public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage implements PhysicalServerMessage {
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 
@@ -52,10 +48,9 @@ public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage
     }
 
     public static APIRestartPhysicalServerManagedServicesMsg __example__() {
-        APIRestartPhysicalServerManagedServicesMsg msg =
-                new APIRestartPhysicalServerManagedServicesMsg();
+        APIRestartPhysicalServerManagedServicesMsg msg = new APIRestartPhysicalServerManagedServicesMsg();
         msg.setServerUuid(uuid());
-        msg.setRoleType(PhysicalServerRoleType.COMPUTE);
+        msg.setRoleType("COMPUTE");
         msg.setServiceNames(java.util.Collections.singletonList("zstack-kvmagent"));
         return msg;
     }

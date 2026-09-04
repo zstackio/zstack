@@ -5,39 +5,19 @@ import org.zstack.header.core.ReturnValueCompletion;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
-public interface PhysicalServerResourceAssignmentController extends
-        PhysicalServerResourceAssignmentObserver {
+public interface PhysicalServerResourceAssignmentController extends PhysicalServerResourceAssignmentObserver {
     PhysicalServerResourceIsolationMode getIsolationMode();
 
-    default String getTopologyRoleType() {
-        return getRoleType();
-    }
-
-    default String getDefaultCpuSet(
-            PhysicalServerCpuTopology topology,
-            Set<Integer> allocatedExclusiveCpus) {
-        Set<Integer> available = new TreeSet<>(topology.getOnlineCpus());
-        available.removeAll(allocatedExclusiveCpus);
-        return PhysicalServerCpuSet.format(available);
-    }
+    Integer getDefaultCpuCount();
 
     List<ResourceConsumerHandle> getResourceConsumers(String serverUuid);
 
-    void collectTopology(
-            String serverUuid,
-            ReturnValueCompletion<PhysicalServerCpuTopology> completion);
+    void collectTopology(String serverUuid, ReturnValueCompletion<PhysicalServerCpuTopology> completion);
 
-    void apply(
-            String serverUuid,
-            String consumerUuid,
-            ResourceControlCommand command,
-            ReturnValueCompletion<ResourceControlResponse> completion);
+    void apply(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion);
 
-    void restartManagedServices(
-            String serverUuid,
-            Collection<String> serviceNames,
-            Completion completion);
+    void release(String serverUuid, ResourceControlCommand command, ReturnValueCompletion<Boolean> completion);
+
+    void restartManagedServices(String serverUuid, Collection<ResourceConsumerHandle> consumers, Completion completion);
 }

@@ -2,30 +2,34 @@ package org.zstack.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.zstack.sdk.*;
 
 public class RestartPhysicalServerManagedServicesAction extends AbstractAction {
+
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
     private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
 
     public static class Result {
         public ErrorCode error;
-        public RestartPhysicalServerManagedServicesResult value;
+        public org.zstack.sdk.RestartPhysicalServerManagedServicesResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
-                throw new ApiException(String.format(
-                        "error[code: %s, description: %s, details: %s, globalErrorCode: %s]",
-                        error.code, error.description, error.details, error.globalErrorCode));
+                throw new ApiException(
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
+                );
             }
+            
             return this;
         }
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String serverUuid;
+    public java.lang.String serverUuid;
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public String roleType;
+    public java.lang.String roleType;
 
     @Param(required = true, maxLength = 64, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List serviceNames;
@@ -54,21 +58,23 @@ public class RestartPhysicalServerManagedServicesAction extends AbstractAction {
     @NonAPIParam
     public long pollingInterval = -1;
 
+
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
         if (res.error != null) {
             ret.error = res.error;
             return ret;
         }
-        RestartPhysicalServerManagedServicesResult value =
-                res.getResult(RestartPhysicalServerManagedServicesResult.class);
-        ret.value = value == null
-                ? new RestartPhysicalServerManagedServicesResult() : value;
+        
+        org.zstack.sdk.RestartPhysicalServerManagedServicesResult value = res.getResult(org.zstack.sdk.RestartPhysicalServerManagedServicesResult.class);
+        ret.value = value == null ? new org.zstack.sdk.RestartPhysicalServerManagedServicesResult() : value; 
+
         return ret;
     }
 
     public Result call() {
-        return makeResult(ZSClient.call(this));
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
     }
 
     public void call(final Completion<Result> completion) {
@@ -80,17 +86,14 @@ public class RestartPhysicalServerManagedServicesAction extends AbstractAction {
         });
     }
 
-    @Override
     protected Map<String, Parameter> getParameterMap() {
         return parameterMap;
     }
 
-    @Override
     protected Map<String, Parameter> getNonAPIParameterMap() {
         return nonAPIParameterMap;
     }
 
-    @Override
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "PUT";
@@ -100,4 +103,5 @@ public class RestartPhysicalServerManagedServicesAction extends AbstractAction {
         info.parameterName = "restartPhysicalServerManagedServices";
         return info;
     }
+
 }

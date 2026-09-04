@@ -3,24 +3,24 @@ package org.zstack.portal.managementnode;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
+import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
 import org.zstack.header.physicalserver.ResourceConsumerHandle;
 import org.zstack.header.physicalserver.ResourceControlCommand;
-import org.zstack.header.physicalserver.ResourceControlResponse;
 import org.zstack.utils.data.SizeUnit;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.attribute.PosixFileAttributes;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,8 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class LocalResourceControlExecutor {
-    private static final String SYSTEMD_DROP_IN =
-            "50-zstack-resource-assignment.conf";
+    private static final String SYSTEMD_DROP_IN = "50-zstack-resource-assignment.conf";
     private static final long COMMAND_TIMEOUT_SECONDS = 30;
     private static final int PROCESS_MOVE_ATTEMPTS = 3;
 
@@ -54,161 +53,137 @@ public class LocalResourceControlExecutor {
         this.environment = environment;
     }
 
-    public ResourceControlResponse apply(ResourceControlCommand command) {
+    public boolean apply(ResourceControlCommand command) {
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             return fakeApply(command);
         }
 
-        ControlOperation operation = ControlOperation.from(command);
+        PhysicalServerResourceIsolationMode isolationMode = isolationMode(command);
+        String desired = normalizeOptional(command.getCpuSet());
+        validateMemoryLimit(command.getMemory());
+        if (isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE && desired.isEmpty()) {
+            throw new ResourceControlException("Exclusive isolation requires a CPU set");
+        }
+        if (desired.isEmpty() && command.getMemory() == null) {
+            return true;
+        }
         Backend backend;
         try {
             backend = backend();
-        } catch (ResourceControlException exception) {
-            if ("RESOURCE_CONTROL_UNAVAILABLE".equals(errorType(exception))) {
-                return unavailable();
-            }
-            throw exception;
+        } catch (ResourceControlUnavailableException exception) {
+            return false;
         }
-        String desired = operation == ControlOperation.APPLY
-                ? PhysicalServerCpuSet.normalize(command.getCpuSet()) : "";
-        validateMemoryLimit(command.getMemory());
-        Long desiredMemory = command.getMemory() == null
-                ? null : operation == ControlOperation.APPLY
-                ? command.getMemory() : 0L;
-        MemoryBackend memoryBackend = null;
-        if (command.getMemory() != null) {
+        if (isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE) {
+            if (backend.version != CgroupVersion.V2) {
+                throw new ResourceControlException("Exclusive CPU partitions require cgroup v2");
+            }
+        }
+        Long desiredMemory = command.getMemory();
+        Backend memoryBackend = null;
+        if (desiredMemory != null) {
             try {
                 memoryBackend = memoryBackend();
-            } catch (ResourceControlException exception) {
-                if (!"MEMORY_CONTROLLER_UNAVAILABLE".equals(
-                        errorType(exception))) {
-                    throw exception;
-                }
+            } catch (MemoryControllerUnavailableException exception) {
             }
         }
         if (command.getSliceName() != null
                 && command.getHandles().stream().anyMatch(handle ->
-                ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                        handle.getHandleType()))) {
-            return applySystemdSlice(
-                    command, backend, memoryBackend,
-                    desired, desiredMemory, operation);
+                ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType()))) {
+            return applySystemdSlice(command, backend, memoryBackend, desired, desiredMemory);
         }
         List<HandleControlResult> results = new ArrayList<>();
-
         for (ResourceConsumerHandle handle : command.getHandles()) {
-            Path target;
-            try {
-                target = resolve(
-                        backend, command.getRoleType(), handle, operation);
-            } catch (ResourceControlException exception) {
-                results.add(result("ERROR", null, null));
-                continue;
-            }
-            if (target == null) {
-                results.add(result("SKIPPED", null, null));
-                continue;
-            }
-            try {
-                String actualCpuSet = applyToGroup(
-                        backend, target, desired, operation);
-                Long actualMemory = null;
-                if (command.getMemory() != null) {
-                    actualMemory = applyMemoryLimit(
-                            backend, memoryBackend,
-                            target, desiredMemory).actualLimit;
-                }
-                results.add(result(
-                        operation.resultState,
-                        actualCpuSet,
-                        actualMemory));
-            } catch (ResourceControlException exception) {
-                results.add(result("ERROR", null, null));
-            }
+            results.add(applyNonSystemdHandle(command, backend, memoryBackend, handle, desired, desiredMemory));
         }
-        return summarize(results, operation, desired, desiredMemory);
+        return summarizeApply(results, desired, desiredMemory);
     }
 
-    private ResourceControlResponse applySystemdSlice(
+    public boolean release(ResourceControlCommand command) {
+        if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
+            return fakeRelease(command);
+        }
+
+        Backend backend;
+        try {
+            backend = backend();
+        } catch (ResourceControlUnavailableException exception) {
+            return false;
+        }
+        Backend memoryBackend = null;
+        try {
+            memoryBackend = memoryBackend();
+        } catch (MemoryControllerUnavailableException exception) {
+        }
+        if (command.getSliceName() != null
+                && command.getHandles().stream().anyMatch(handle ->
+                ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType()))) {
+            return releaseSystemdSlice(command, backend, memoryBackend);
+        }
+        List<HandleControlResult> results = new ArrayList<>();
+        for (ResourceConsumerHandle handle : command.getHandles()) {
+            results.add(releaseNonSystemdHandle(command, backend, memoryBackend, handle));
+        }
+        return summarizeRelease(results);
+    }
+
+    private boolean applySystemdSlice(
             ResourceControlCommand command,
-            Backend backend,
-            MemoryBackend memoryBackend,
-            String desired,
-            Long desiredMemory,
-            ControlOperation operation) {
-        boolean memoryError = command.getMemory() != null
-                && memoryBackend == null;
-        if (operation == ControlOperation.APPLY
-                && desiredMemory != null && desiredMemory > 0) {
+            Backend backend, Backend memoryBackend, String desired, Long desiredMemory) {
+        boolean manageCpu = !desired.isEmpty();
+        boolean memoryError = desiredMemory != null && memoryBackend == null;
+        if (desiredMemory != null && desiredMemory > 0) {
             if (!memoryError) {
                 try {
-                    validateActiveSliceMemory(
-                            memoryBackend,
-                            command.getSliceName(), desiredMemory);
-                } catch (ResourceControlException exception) {
-                    if (!"SYSTEMD_CONTROL_GROUP_NOT_FOUND".equals(
-                            errorType(exception))) {
-                        throw exception;
-                    }
+                    validateActiveSliceMemory(memoryBackend, command.getSliceName(), desiredMemory);
+                } catch (SystemdControlGroupNotFoundException exception) {
                     memoryError = true;
                 }
             }
         }
-        boolean changed = configureSystemdSlice(
-                backend,
-                memoryBackend,
-                command.getSliceName(),
-                desired,
-                desiredMemory,
-                operation);
+        boolean changed = pruneSystemdServiceDropIns(command.getSliceName(), command.getHandles());
+        changed = configureSystemdSlice(
+                backend, memoryBackend, command.getSliceName(), desired, desiredMemory) || changed;
         for (ResourceConsumerHandle handle : command.getHandles()) {
-            if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                    handle.getHandleType())) {
-                changed = configureSystemdService(
-                        handle, command.getSliceName(), operation) || changed;
+            if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                changed = configureSystemdService(handle, command.getSliceName()) || changed;
             }
         }
         boolean legacyCpuFallback = false;
         Map<Integer, HandleControlResult> legacyCpuResults = new HashMap<>();
         Path sliceTarget;
         try {
-            sliceTarget = activeSliceTarget(
-                    backend, command.getSliceName(), operation);
-        } catch (ResourceControlException exception) {
-            if (!"SYSTEMD_CONTROL_GROUP_NOT_FOUND".equals(
-                    errorType(exception))) {
-                throw exception;
+            sliceTarget = ensureActiveSliceTarget(backend, command.getSliceName());
+        } catch (SystemdControlGroupNotFoundException exception) {
+            if (isolationMode(command) == PhysicalServerResourceIsolationMode.EXCLUSIVE) {
+                throw new ResourceControlException(String.format(
+                        "Systemd slice[%s] must be active before applying exclusive isolation",
+                        command.getSliceName()));
             }
             legacyCpuFallback = true;
             sliceTarget = null;
-            for (int index = 0; index < command.getHandles().size(); index++) {
-                ResourceConsumerHandle handle = command.getHandles().get(index);
-                if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                        handle.getHandleType())) {
-                    continue;
+            if (manageCpu) {
+                for (int index = 0; index < command.getHandles().size(); index++) {
+                    ResourceConsumerHandle handle = command.getHandles().get(index);
+                    if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                        continue;
+                    }
+                    legacyCpuResults.put(index, applyNonSystemdHandle(command, backend, null, handle, desired, null));
                 }
-                legacyCpuResults.put(index, applyNonSystemdHandle(
-                        command, backend, null, handle, desired,
-                        null, operation));
+            } else {
+                legacyCpuFallback = false;
             }
         }
-        String actualCpuSet = "";
+        String actualCpuSet = null;
         Long actualMemory = null;
         Path memorySliceTarget = null;
-        if (sliceTarget != null) {
-            actualCpuSet = applyToGroup(
-                    backend, sliceTarget, desired, operation);
+        if (sliceTarget != null && manageCpu) {
+            actualCpuSet = applyCpuBoundary(backend, sliceTarget, desired, isolationMode(command));
         }
-        if (command.getMemory() != null && !memoryError) {
+        if (desiredMemory != null && memoryBackend != null) {
             try {
-                memorySliceTarget = activeControllerSliceTarget(
-                        memoryBackend.root, command.getSliceName());
+                memorySliceTarget = activeControllerSliceTarget(memoryBackend.root, command.getSliceName());
                 if (memorySliceTarget != null) {
-                    actualMemory = applyMemoryTarget(
-                            memoryBackend, memorySliceTarget,
-                            desiredMemory,
-                            MemoryTargetMode.EXISTING,
-                            null).actualLimit;
+                    actualMemory = applyMemoryTarget(memoryBackend, memorySliceTarget, desiredMemory, null);
                 }
             } catch (ResourceControlException exception) {
                 memoryError = true;
@@ -221,31 +196,17 @@ public class LocalResourceControlExecutor {
         List<HandleControlResult> results = new ArrayList<>();
         for (int index = 0; index < command.getHandles().size(); index++) {
             ResourceConsumerHandle handle = command.getHandles().get(index);
-            if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                    handle.getHandleType())) {
-                results.add(applyNonSystemdHandle(
-                        command, backend, memoryBackend, handle, desired,
-                        desiredMemory, operation));
+            if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                results.add(applyNonSystemdHandle(command, backend, memoryBackend, handle, desired, desiredMemory));
                 continue;
             }
             Map<String, String> properties = systemdProperties(handle.getValue());
             if ("not-found".equals(properties.get("LoadState"))) {
-                results.add(result(
-                        handle.isOptional() ? "SKIPPED" : "ERROR",
-                        null, null));
+                results.add(result(handle.isOptional() ? "SKIPPED" : "ERROR", null, null));
                 continue;
             }
             if (!"active".equals(properties.get("ActiveState"))) {
-                results.add(result(
-                        handle.isOptional() ? "SKIPPED" : "ERROR",
-                        null, null));
-                continue;
-            }
-            if (operation == ControlOperation.RELEASE) {
-                results.add(memoryError
-                        ? result("ERROR", null, null)
-                        : result("DISABLED", "",
-                                command.getMemory() == null ? null : 0L));
+                results.add(result(handle.isOptional() ? "SKIPPED" : "ERROR", null, null));
                 continue;
             }
             String serviceCpuSet;
@@ -253,22 +214,15 @@ public class LocalResourceControlExecutor {
                 HandleControlResult cpuResult = legacyCpuResults.get(index);
                 if (cpuResult == null || "ERROR".equals(cpuResult.getState())
                         || "SKIPPED".equals(cpuResult.getState())) {
-                    results.add(cpuResult == null
-                            ? result("ERROR", null, null) : cpuResult);
+                    results.add(cpuResult == null ? result("ERROR", null, null) : cpuResult);
                     continue;
                 }
                 serviceCpuSet = cpuResult.getCpuSet();
             } else {
                 Path current;
                 try {
-                    current = systemdTarget(
-                            backend, properties.get("ControlGroup"));
-                } catch (ResourceControlException exception) {
-                    String type = errorType(exception);
-                    if (!"SYSTEMD_CONTROL_GROUP_MISSING".equals(type)
-                            && !"SYSTEMD_CONTROL_GROUP_NOT_FOUND".equals(type)) {
-                        throw exception;
-                    }
+                    current = systemdTarget(backend, properties.get("ControlGroup"));
+                } catch (SystemdControlGroupException exception) {
                     results.add(result("PENDING_RESTART", null, null));
                     continue;
                 }
@@ -283,92 +237,148 @@ public class LocalResourceControlExecutor {
                 continue;
             }
             if (command.getMemory() != null && memorySliceTarget != null
-                    && !controlGroupInTarget(
-                            memoryBackend.root,
-                            properties.get("ControlGroup"),
-                            memorySliceTarget)) {
+                    && !controlGroupInTarget(memoryBackend.root, properties.get("ControlGroup"), memorySliceTarget)) {
                 results.add(result("PENDING_RESTART", null, null));
                 continue;
             }
             results.add(result("READY", serviceCpuSet, actualMemory));
         }
-        return summarize(results, operation, desired, desiredMemory);
+        return summarizeApply(results, desired, desiredMemory);
     }
 
-    private void validateActiveSliceMemory(
-            MemoryBackend memoryBackend,
-            String sliceName,
-            long desiredMemory) {
+    private boolean releaseSystemdSlice(ResourceControlCommand command, Backend backend, Backend memoryBackend) {
+        boolean changed = removeSystemdServiceDropIns(command.getSliceName());
+        changed = removeDropIn(dropInPath(command.getSliceName())) || changed;
+        for (ResourceConsumerHandle handle : command.getHandles()) {
+            if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                changed = removeDropIn(dropInPath(handle.getValue())) || changed;
+            }
+        }
+
+        Map<Integer, HandleControlResult> legacyResults = new HashMap<>();
+        Path sliceTarget;
+        try {
+            sliceTarget = activeSliceTarget(backend, command.getSliceName());
+        } catch (SystemdControlGroupNotFoundException exception) {
+            sliceTarget = null;
+            for (int index = 0; index < command.getHandles().size(); index++) {
+                ResourceConsumerHandle handle = command.getHandles().get(index);
+                if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                    legacyResults.put(index, releaseNonSystemdHandle(command, backend, null, handle));
+                }
+            }
+        }
+
+        boolean memoryError = false;
+        if (sliceTarget != null) {
+            releaseCpuBoundary(backend, sliceTarget);
+        }
+        if (memoryBackend != null) {
+            try {
+                Path memoryTarget = activeControllerSliceTarget(memoryBackend.root, command.getSliceName());
+                if (memoryTarget != null) {
+                    applyMemoryTarget(memoryBackend, memoryTarget, 0L, null);
+                }
+            } catch (ResourceControlException exception) {
+                memoryError = true;
+            }
+        }
+        if (changed) {
+            run(null, "sudo", "-n", "systemctl", "daemon-reload");
+        }
+
+        List<HandleControlResult> results = new ArrayList<>();
+        for (int index = 0; index < command.getHandles().size(); index++) {
+            ResourceConsumerHandle handle = command.getHandles().get(index);
+            if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                results.add(releaseNonSystemdHandle(command, backend, memoryBackend, handle));
+                continue;
+            }
+            Map<String, String> properties = systemdProperties(handle.getValue());
+            if ("not-found".equals(properties.get("LoadState"))) {
+                results.add(result(handle.isOptional() ? "SKIPPED" : "ERROR", null, null));
+                continue;
+            }
+            if (!"active".equals(properties.get("ActiveState"))) {
+                results.add(result(handle.isOptional() ? "SKIPPED" : "ERROR", null, null));
+                continue;
+            }
+            HandleControlResult legacyResult = legacyResults.get(index);
+            if (legacyResult != null && !"DISABLED".equals(legacyResult.getState())) {
+                results.add(legacyResult);
+                continue;
+            }
+            results.add(memoryError ? result("ERROR", null, null) : result("DISABLED", "", 0L));
+        }
+        return summarizeRelease(results);
+    }
+
+    private void validateActiveSliceMemory(Backend memoryBackend, String sliceName, long desiredMemory) {
         Map<String, String> properties = systemdProperties(sliceName);
         if (!"active".equals(properties.get("ActiveState"))) {
             return;
         }
-        Path memoryTarget = systemdTarget(
-                memoryBackend.root, properties.get("ControlGroup"));
+        Path memoryTarget = systemdTarget(memoryBackend.root, properties.get("ControlGroup"));
         validateMemoryLimitAgainstUsage(
                 memoryTarget.resolve(
                         memoryBackend.version == CgroupVersion.V2
-                                ? "memory.current"
-                                : "memory.usage_in_bytes"),
-                desiredMemory);
+                                ? "memory.current" : "memory.usage_in_bytes"), desiredMemory);
     }
 
     private HandleControlResult applyNonSystemdHandle(
             ResourceControlCommand command,
-            Backend backend,
-            MemoryBackend memoryBackend,
-            ResourceConsumerHandle handle,
-            String desired,
-            Long desiredMemory,
-            ControlOperation operation) {
+            Backend backend, Backend memoryBackend, ResourceConsumerHandle handle, String desired, Long desiredMemory) {
         try {
-            Path target = resolve(
-                    backend, command.getRoleType(), handle, operation);
+            Path target = resolve(backend, command.getRoleType(), handle);
             if (target == null) {
                 return result("SKIPPED", null, null);
             }
-            String actualCpuSet = applyToGroup(
-                    backend, target, desired, operation);
+            String actualCpuSet = !desired.isEmpty()
+                    ? applyCpuBoundary(backend, target, desired, isolationMode(command)) : null;
             Long actualMemory = null;
             if (desiredMemory != null) {
-                actualMemory = applyMemoryLimit(
-                        backend, memoryBackend,
-                        target, desiredMemory).actualLimit;
+                actualMemory = applyMemoryLimit(backend, memoryBackend, target, desiredMemory);
             }
-            return result(
-                    operation.resultState,
-                    actualCpuSet, actualMemory);
+            return result("READY", actualCpuSet, actualMemory);
+        } catch (ResourceControlException exception) {
+            return result("ERROR", null, null);
+        }
+    }
+
+    private HandleControlResult releaseNonSystemdHandle(
+            ResourceControlCommand command, Backend backend, Backend memoryBackend, ResourceConsumerHandle handle) {
+        try {
+            Path target = resolveForRelease(backend, command.getRoleType(), handle);
+            if (target == null) {
+                return result("SKIPPED", null, null);
+            }
+            releaseCpuBoundary(backend, target);
+            Long actualMemory = 0L;
+            if (memoryBackend != null) {
+                actualMemory = applyMemoryLimit(backend, memoryBackend, target, 0L);
+            }
+            return result("DISABLED", "", actualMemory);
         } catch (ResourceControlException exception) {
             return result("ERROR", null, null);
         }
     }
 
     private boolean configureSystemdSlice(
-            Backend backend,
-            MemoryBackend memoryBackend,
-            String sliceName,
-            String cpuSet,
-            Long memory,
-            ControlOperation operation) {
+            Backend backend, Backend memoryBackend, String sliceName, String cpuSet, Long memory) {
         Path path = dropInPath(sliceName);
-        if (operation == ControlOperation.RELEASE) {
-            return removeDropIn(path);
-        }
         List<String> lines = new ArrayList<>();
         lines.add("[Slice]");
-        if (backend.version == CgroupVersion.V2) {
+        if (backend.version == CgroupVersion.V2 && !cpuSet.isEmpty()) {
             lines.add("AllowedCPUs=" + cpuSet);
         }
         if (memory != null && memoryBackend != null) {
             lines.add(String.format(
                     "%s=%s",
                     memoryBackend.version == CgroupVersion.V2
-                            ? "MemoryMax" : "MemoryLimit",
-                    memory == 0 ? "infinity" : memory));
+                            ? "MemoryMax" : "MemoryLimit", memory == 0 ? "infinity" : memory));
         } else if (memory != null && Files.isRegularFile(path)) {
             for (String line : read(path).split("\\R")) {
-                if (line.startsWith("MemoryMax=")
-                        || line.startsWith("MemoryLimit=")) {
+                if (line.startsWith("MemoryMax=") || line.startsWith("MemoryLimit=")) {
                     lines.add(line);
                 }
             }
@@ -376,41 +386,74 @@ public class LocalResourceControlExecutor {
         return writeDropIn(path, String.join("\n", lines) + "\n");
     }
 
-    private boolean configureSystemdService(
-            ResourceConsumerHandle handle,
-            String sliceName,
-            ControlOperation operation) {
+    private boolean configureSystemdService(ResourceConsumerHandle handle, String sliceName) {
         Path path = dropInPath(handle.getValue());
-        if (operation == ControlOperation.RELEASE) {
-            return removeDropIn(path);
+        return writeDropIn(path, "[Service]\nSlice=" + sliceName + "\n");
+    }
+
+    private boolean pruneSystemdServiceDropIns(String sliceName, List<ResourceConsumerHandle> handles) {
+        Set<String> desiredUnits = new LinkedHashSet<>();
+        for (ResourceConsumerHandle handle : handles) {
+            if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+                desiredUnits.add(handle.getValue());
+            }
         }
-        return writeDropIn(
-                path, "[Service]\nSlice=" + sliceName + "\n");
+        return removeSystemdServiceDropInsExcept(sliceName, desiredUnits);
+    }
+
+    private boolean removeSystemdServiceDropIns(String sliceName) {
+        return removeSystemdServiceDropInsExcept(sliceName, Collections.emptySet());
+    }
+
+    private boolean removeSystemdServiceDropInsExcept(String sliceName, Set<String> desiredUnits) {
+        if (!Files.isDirectory(environment.systemdUnitRoot, LinkOption.NOFOLLOW_LINKS)) {
+            return false;
+        }
+
+        boolean changed = false;
+        try (DirectoryStream<Path> directories = Files.newDirectoryStream(environment.systemdUnitRoot, "*.d")) {
+            for (Path directory : directories) {
+                if (!Files.isDirectory(directory, LinkOption.NOFOLLOW_LINKS)) {
+                    continue;
+                }
+                String name = directory.getFileName().toString();
+                if (!name.endsWith(".d")) {
+                    continue;
+                }
+                Path dropIn = directory.resolve(SYSTEMD_DROP_IN);
+                if (!Files.isRegularFile(dropIn, LinkOption.NOFOLLOW_LINKS)
+                        || !sliceName.equals(configuredSlice(dropIn))) {
+                    continue;
+                }
+                String unit = name.substring(0, name.length() - 2);
+                if (!desiredUnits.contains(unit)) {
+                    changed = removeDropIn(dropIn) || changed;
+                }
+            }
+        } catch (IOException exception) {
+            throw new ResourceControlException("Failed to scan systemd service drop-ins: " + exception.getMessage());
+        }
+        return changed;
     }
 
     private Path dropInPath(String unit) {
-        return environment.systemdUnitRoot.resolve(unit + ".d")
-                .resolve(SYSTEMD_DROP_IN);
+        return environment.systemdUnitRoot.resolve(unit + ".d").resolve(SYSTEMD_DROP_IN);
     }
 
     private boolean writeDropIn(Path path, String content) {
-        if (Files.isRegularFile(path)
-                && content.equals(read(path))) {
+        if (Files.isRegularFile(path) && content.equals(read(path))) {
             return false;
         }
         Path temporary = null;
         try {
-            temporary = Files.createTempFile(
-                    "zstack-resource-assignment-", ".conf");
+            temporary = Files.createTempFile("zstack-resource-assignment-", ".conf");
             Files.write(temporary, content.getBytes(StandardCharsets.US_ASCII));
-            run(null, "sudo", "-n", "mkdir", "-p",
-                    path.getParent().toString());
-            run(null, "sudo", "-n", "install", "-m", "0644",
-                    temporary.toString(), path.toString());
+            run(null, "sudo", "-n", "mkdir", "-p", path.getParent().toString());
+            run(null, "sudo", "-n", "install", "-m", "0644", temporary.toString(), path.toString());
             return true;
         } catch (IOException exception) {
-            throw new ResourceControlException(
-                    "SYSTEMD_DROP_IN_WRITE_FAILED:" + exception.getMessage());
+            throw new ResourceControlException(String.format(
+                    "Failed to write systemd drop-in[%s]: %s", path, exception.getMessage()));
         } finally {
             if (temporary != null) {
                 try {
@@ -429,24 +472,23 @@ public class LocalResourceControlExecutor {
         return true;
     }
 
-    private Path activeSliceTarget(
-            Backend backend,
-            String sliceName,
-            ControlOperation operation) {
+    private Path ensureActiveSliceTarget(Backend backend, String sliceName) {
         Map<String, String> properties = systemdProperties(sliceName);
-        if (operation == ControlOperation.APPLY
-                && !"active".equals(properties.get("ActiveState"))) {
+        if (!"active".equals(properties.get("ActiveState"))) {
             run(null, "sudo", "-n", "systemctl", "start", sliceName);
-            properties = systemdProperties(sliceName);
         }
+        return activeSliceTarget(backend, sliceName);
+    }
+
+    private Path activeSliceTarget(Backend backend, String sliceName) {
+        Map<String, String> properties = systemdProperties(sliceName);
         if (!"active".equals(properties.get("ActiveState"))) {
             return null;
         }
         return systemdTarget(backend, properties.get("ControlGroup"));
     }
 
-    private Path activeControllerSliceTarget(
-            Path root, String sliceName) {
+    private Path activeControllerSliceTarget(Path root, String sliceName) {
         Map<String, String> properties = systemdProperties(sliceName);
         if (!"active".equals(properties.get("ActiveState"))) {
             return null;
@@ -460,20 +502,17 @@ public class LocalResourceControlExecutor {
 
     private Path systemdTarget(Path root, String controlGroup) {
         if (controlGroup == null || controlGroup.isEmpty()) {
-            throw new ResourceControlException("SYSTEMD_CONTROL_GROUP_MISSING");
+            throw new SystemdControlGroupMissingException("Systemd did not report a control group");
         }
-        Path target = underRoot(
-                root,
-                root.resolve(stripRoot(controlGroup)).normalize());
+        Path target = underRoot(root, root.resolve(stripRoot(controlGroup)).normalize());
         if (target.equals(root) || !Files.isDirectory(target)) {
-            throw new ResourceControlException(
-                    "SYSTEMD_CONTROL_GROUP_NOT_FOUND");
+            throw new SystemdControlGroupNotFoundException(String.format(
+                    "Systemd control group[%s] does not exist", controlGroup));
         }
         return target;
     }
 
-    private boolean controlGroupInTarget(
-            Path root, String controlGroup, Path target) {
+    private boolean controlGroupInTarget(Path root, String controlGroup, Path target) {
         try {
             return systemdTarget(root, controlGroup).startsWith(target);
         } catch (ResourceControlException exception) {
@@ -481,43 +520,20 @@ public class LocalResourceControlExecutor {
         }
     }
 
-    private ResourceControlResponse unavailable() {
-        ResourceControlResponse response = new ResourceControlResponse();
-        response.setSynced(false);
-        return response;
-    }
-
-    public List<ManagedServiceResourceUsage> inspect(
-            String roleType, List<ResourceConsumerHandle> handles) {
+    public List<ManagedServiceResourceUsage> inspect(String roleType, List<ResourceConsumerHandle> handles) {
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             return fakeInspect(handles);
         }
-        Backend backend;
-        try {
-            backend = backend();
-        } catch (ResourceControlException exception) {
-            List<ManagedServiceResourceUsage> unavailable = new ArrayList<>();
-            for (ResourceConsumerHandle handle : handles) {
-                unavailable.add(serviceUsage(handle, "UNAVAILABLE"));
-            }
-            return unavailable;
-        }
+        Backend backend = backend();
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         Map<String, Path> sliceTargets = new HashMap<>();
         for (ResourceConsumerHandle handle : handles) {
-            ManagedServiceResourceUsage usage = serviceUsage(
-                    handle, "UNAVAILABLE");
-            try {
-                ServiceTarget target = inspectTarget(
-                        backend, roleType, handle);
-                usage.setState(target.state);
-                if (target.path != null) {
-                    usage.setRestartRequired(restartRequired(
-                            backend, roleType, handle,
-                            target.state, target.path, sliceTargets));
-                    fillUsage(usage, backend, target.path, handle);
-                }
-            } catch (ResourceControlException ignored) {
+            ServiceTarget target = inspectTarget(backend, roleType, handle);
+            ManagedServiceResourceUsage usage = serviceUsage(handle, target.state);
+            if (target.path != null) {
+                usage.setRestartRequired(restartRequired(
+                        backend, roleType, handle, target.state, target.path, sliceTargets));
+                fillUsage(usage, backend, target.path, handle);
             }
             result.add(usage);
         }
@@ -527,13 +543,8 @@ public class LocalResourceControlExecutor {
     private boolean restartRequired(
             Backend backend,
             String roleType,
-            ResourceConsumerHandle handle,
-            String state,
-            Path current,
-            Map<String, Path> sliceTargets) {
-        if (!"RUNNING".equals(state)
-                || !ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                handle.getHandleType())) {
+            ResourceConsumerHandle handle, String state, Path current, Map<String, Path> sliceTargets) {
+        if (!"RUNNING".equals(state) || !ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
             return false;
         }
         String sliceName = configuredSlice(handle.getValue());
@@ -541,18 +552,19 @@ public class LocalResourceControlExecutor {
             return false;
         }
         Path managed = backend.root.resolve(String.format(
-                "zstack-role-%s-unit-%s",
-                safeRole(roleType), safeRole(handle.getValue())));
+                "zstack-role-%s-unit-%s", safeRole(roleType), safeRole(handle.getValue())));
         if (current.equals(managed) || groupHasProcesses(managed)) {
             return false;
         }
-        Path sliceTarget = sliceTarget(
-                backend, sliceName, sliceTargets);
+        Path sliceTarget = sliceTarget(backend, sliceName, sliceTargets);
         return sliceTarget == null || !current.startsWith(sliceTarget);
     }
 
     private String configuredSlice(String unit) {
-        Path path = dropInPath(unit);
+        return configuredSlice(dropInPath(unit));
+    }
+
+    private String configuredSlice(Path path) {
         if (!Files.isRegularFile(path)) {
             return null;
         }
@@ -563,18 +575,14 @@ public class LocalResourceControlExecutor {
                     continue;
                 }
                 String slice = value.substring("Slice=".length()).trim();
-                return slice.matches("[A-Za-z0-9_.@-]+\\.slice")
-                        ? slice : null;
+                return slice.matches("[A-Za-z0-9_.@-]+\\.slice") ? slice : null;
             }
         } catch (ResourceControlException ignored) {
         }
         return null;
     }
 
-    private Path sliceTarget(
-            Backend backend,
-            String sliceName,
-            Map<String, Path> sliceTargets) {
+    private Path sliceTarget(Backend backend, String sliceName, Map<String, Path> sliceTargets) {
         if (sliceTargets.containsKey(sliceName)) {
             return sliceTargets.get(sliceName);
         }
@@ -582,8 +590,7 @@ public class LocalResourceControlExecutor {
         try {
             Map<String, String> properties = systemdProperties(sliceName);
             if ("active".equals(properties.get("ActiveState"))) {
-                target = systemdTarget(
-                        backend, properties.get("ControlGroup"));
+                target = systemdTarget(backend, properties.get("ControlGroup"));
             }
         } catch (ResourceControlException ignored) {
         }
@@ -591,51 +598,70 @@ public class LocalResourceControlExecutor {
         return target;
     }
 
-    public void restart(List<ResourceConsumerHandle> handles) {
+    public void restart(String sliceName, List<ResourceConsumerHandle> handles) {
         if (handles == null || handles.isEmpty()) {
-            throw new ResourceControlException("SERVICE_HANDLE_SET_INVALID");
+            throw new ResourceControlException("At least one service handle is required");
         }
         for (ResourceConsumerHandle handle : handles) {
-            if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                    handle.getHandleType()) || !handle.isRestartable()) {
-                throw new ResourceControlException(
-                        "SERVICE_RESTART_NOT_ALLOWED");
+            if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType()) || !handle.isRestartable()) {
+                throw new ResourceControlException(String.format(
+                        "Service[%s] is not a restartable systemd unit", handle.getServiceName()));
             }
         }
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             lastTestRestartHandles.set(new ArrayList<>(handles));
             return;
         }
+
         List<String> units = new ArrayList<>();
         for (ResourceConsumerHandle handle : handles) {
             Map<String, String> properties = systemdProperties(handle.getValue());
             if ("not-found".equals(properties.get("LoadState"))) {
-                throw new ResourceControlException("SYSTEMD_UNIT_NOT_FOUND");
+                throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
             }
             if (!"active".equals(properties.get("ActiveState"))) {
-                throw new ResourceControlException("SYSTEMD_UNIT_NOT_ACTIVE");
+                throw new ResourceControlException(String.format("Systemd unit[%s] is not active", handle.getValue()));
+            }
+            if (!sliceName.equals(configuredSlice(handle.getValue()))) {
+                throw new ResourceControlException(String.format(
+                        "Systemd unit[%s] is not configured for slice[%s]", handle.getValue(), sliceName));
             }
             units.add(handle.getValue());
         }
-        List<String> stop = new ArrayList<>(Arrays.asList(
-                "sudo", "-n", "systemctl", "stop"));
+
+        Backend backend = backend();
+        Path sliceTarget;
+        try {
+            sliceTarget = activeSliceTarget(backend, sliceName);
+        } catch (SystemdControlGroupNotFoundException exception) {
+            sliceTarget = null;
+        }
+        if (backend.version == CgroupVersion.V2 && sliceTarget == null) {
+            throw new ResourceControlException(String.format(
+                    "Systemd slice[%s] is not active in the cpuset hierarchy", sliceName));
+        }
+
+        List<String> stop = new ArrayList<>(Arrays.asList("sudo", "-n", "systemctl", "stop"));
         stop.addAll(units);
         run(null, stop.toArray(new String[0]));
-        List<String> start = new ArrayList<>(Arrays.asList(
-                "sudo", "-n", "systemctl", "start"));
+        List<String> start = new ArrayList<>(Arrays.asList("sudo", "-n", "systemctl", "start"));
         start.addAll(units);
         run(null, start.toArray(new String[0]));
         for (ResourceConsumerHandle handle : handles) {
-            if (!"active".equals(
-                    systemdProperties(handle.getValue()).get("ActiveState"))) {
-                throw new ResourceControlException(
-                        "SYSTEMD_UNIT_RESTART_FAILED");
+            Map<String, String> properties = systemdProperties(handle.getValue());
+            if (!"active".equals(properties.get("ActiveState"))) {
+                throw new ResourceControlException(String.format(
+                        "Systemd unit[%s] is not active after restart", handle.getValue()));
+            }
+            if (sliceTarget != null
+                    && !controlGroupInTarget(backend.root, properties.get("ControlGroup"), sliceTarget)) {
+                throw new ResourceControlException(String.format(
+                        "Systemd unit[%s] did not enter slice[%s] after restart", handle.getValue(), sliceName));
             }
         }
     }
 
-    private List<ManagedServiceResourceUsage> fakeInspect(
-            List<ResourceConsumerHandle> handles) {
+    private List<ManagedServiceResourceUsage> fakeInspect(List<ResourceConsumerHandle> handles) {
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         for (ResourceConsumerHandle handle : handles) {
             ManagedServiceResourceUsage usage = serviceUsage(handle, "RUNNING");
@@ -648,8 +674,7 @@ public class LocalResourceControlExecutor {
         return result;
     }
 
-    private ManagedServiceResourceUsage serviceUsage(
-            ResourceConsumerHandle handle, String state) {
+    private ManagedServiceResourceUsage serviceUsage(ResourceConsumerHandle handle, String state) {
         ManagedServiceResourceUsage usage = new ManagedServiceResourceUsage();
         usage.setServiceName(handle.getServiceName());
         usage.setRestartable(handle.isRestartable());
@@ -658,10 +683,7 @@ public class LocalResourceControlExecutor {
         return usage;
     }
 
-    private ServiceTarget inspectTarget(
-            Backend backend,
-            String roleType,
-            ResourceConsumerHandle handle) {
+    private ServiceTarget inspectTarget(Backend backend, String roleType, ResourceConsumerHandle handle) {
         if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
             Map<String, String> properties = systemdProperties(handle.getValue());
             if ("not-found".equals(properties.get("LoadState"))) {
@@ -672,29 +694,25 @@ public class LocalResourceControlExecutor {
             }
             String controlGroup = properties.get("ControlGroup");
             if (controlGroup != null && !controlGroup.isEmpty()) {
-                Path current = underRoot(
-                        backend.root,
-                        backend.root.resolve(
-                                stripRoot(controlGroup)).normalize());
+                Path current = underRoot(backend.root, backend.root.resolve(stripRoot(controlGroup)).normalize());
                 if (Files.isDirectory(current)) {
                     return new ServiceTarget("RUNNING", current);
                 }
             }
             Path managed = backend.root.resolve(String.format(
-                    "zstack-role-%s-unit-%s",
-                    safeRole(roleType), safeRole(handle.getValue())));
+                    "zstack-role-%s-unit-%s", safeRole(roleType), safeRole(handle.getValue())));
             if (groupHasProcesses(managed)) {
                 return new ServiceTarget("RUNNING", managed);
             }
             String mainPid = properties.get("MainPID");
             if (mainPid != null && mainPid.matches("[1-9][0-9]*")) {
-                return new ServiceTarget(
-                        "RUNNING", processGroup(backend, mainPid));
+                return new ServiceTarget("RUNNING", processGroup(backend, mainPid));
             }
-            throw new ResourceControlException(
-                    "SYSTEMD_CONTROL_GROUP_NOT_FOUND");
+            throw new SystemdControlGroupNotFoundException(String.format(
+                    "No control group was found for systemd unit[%s]", handle.getValue()));
         }
-        throw new ResourceControlException("HANDLE_TYPE_UNSUPPORTED");
+        throw new ResourceControlException(String.format(
+                "Resource consumer handle type[%s] is unsupported", handle.getHandleType()));
     }
 
     private boolean groupHasProcesses(Path target) {
@@ -704,34 +722,23 @@ public class LocalResourceControlExecutor {
     }
 
     private void fillUsage(
-            ManagedServiceResourceUsage usage,
-            Backend backend,
-            Path target,
-            ResourceConsumerHandle handle) {
+            ManagedServiceResourceUsage usage, Backend backend, Path target, ResourceConsumerHandle handle) {
         usage.setCpuSet(effectiveCpuSet(backend, target));
         Path relative = backend.root.relativize(target);
         String controlGroup = null;
-        if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(
-                handle.getHandleType())) {
-            controlGroup = systemdProperties(
-                    handle.getValue()).get("ControlGroup");
+        if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+            controlGroup = systemdProperties(handle.getValue()).get("ControlGroup");
         }
         usage.setCpuTime(cpuTime(relative, controlGroup));
-        MemoryBackend memoryBackend;
+        Backend memoryBackend;
         try {
             memoryBackend = memoryBackend();
-        } catch (ResourceControlException exception) {
-            if (!"MEMORY_CONTROLLER_UNAVAILABLE".equals(
-                    errorType(exception))) {
-                throw exception;
-            }
+        } catch (MemoryControllerUnavailableException exception) {
             return;
         }
         Path memoryTarget = controllerTarget(memoryBackend.root, relative);
         if (controlGroup != null && !controlGroup.isEmpty()) {
-            Path current = controllerTarget(
-                    memoryBackend.root,
-                    Paths.get(stripRoot(controlGroup)));
+            Path current = controllerTarget(memoryBackend.root, Paths.get(stripRoot(controlGroup)));
             if (Files.isDirectory(current)) {
                 memoryTarget = current;
             }
@@ -740,14 +747,11 @@ public class LocalResourceControlExecutor {
             return;
         }
         Path current = memoryTarget.resolve(
-                memoryBackend.version == CgroupVersion.V2
-                        ? "memory.current" : "memory.usage_in_bytes");
-        usage.setMemory(Files.isRegularFile(current)
-                ? parseMemoryLimit(read(current).trim()) : null);
+                memoryBackend.version == CgroupVersion.V2 ? "memory.current" : "memory.usage_in_bytes");
+        usage.setMemory(Files.isRegularFile(current) ? parseMemoryLimit(read(current).trim()) : null);
         usage.setMemoryLimit(memoryBackend.version == CgroupVersion.V2
                 ? effectiveV2MemoryLimit(memoryBackend.root, memoryTarget)
-                : effectiveV1MemoryLimit(
-                        memoryBackend.root, memoryTarget));
+                : effectiveV1MemoryLimit(memoryBackend.root, memoryTarget));
     }
 
     private Long cpuTime(Path relative, String controlGroup) {
@@ -784,8 +788,8 @@ public class LocalResourceControlExecutor {
                 }
             }
             if (current.equals(backend.root)) {
-                throw new ResourceControlException(
-                        "RESOURCE_CONTROL_CPUSET_EMPTY");
+                throw new ResourceControlException(String.format(
+                        "Control group[%s] and its parents have no effective CPU set", target));
             }
             current = underRoot(backend.root, current.getParent());
         }
@@ -797,24 +801,19 @@ public class LocalResourceControlExecutor {
             if (fields.length != 3) {
                 continue;
             }
-            boolean matches = backend.version == CgroupVersion.V2
-                    && "0".equals(fields[0]);
+            boolean matches = backend.version == CgroupVersion.V2 && "0".equals(fields[0]);
             if (backend.version == CgroupVersion.V1) {
-                matches = Arrays.asList(fields[1].split(","))
-                        .contains("cpuset");
+                matches = Arrays.asList(fields[1].split(",")).contains("cpuset");
             }
             if (!matches) {
                 continue;
             }
-            Path target = underRoot(
-                    backend.root,
-                    backend.root.resolve(stripRoot(fields[2])).normalize());
+            Path target = underRoot(backend.root, backend.root.resolve(stripRoot(fields[2])).normalize());
             if (Files.isDirectory(target)) {
                 return target;
             }
         }
-        throw new ResourceControlException(
-                "PROCESS_CONTROL_GROUP_NOT_FOUND");
+        throw new ResourceControlException(String.format("No cpuset control group was found for process[%s]", pid));
     }
 
     private Long v2CpuTime(Path target) {
@@ -825,8 +824,7 @@ public class LocalResourceControlExecutor {
         for (String line : read(stat).split("\\R")) {
             String[] fields = line.trim().split("\\s+");
             if (fields.length == 2 && "usage_usec".equals(fields[0])) {
-                return Math.multiplyExact(
-                        parseMemoryLimit(fields[1]), 1000L);
+                return Math.multiplyExact(parseMemoryLimit(fields[1]), 1000L);
             }
         }
         return null;
@@ -851,8 +849,7 @@ public class LocalResourceControlExecutor {
                 String value = read(limit).trim();
                 if (!"max".equals(value)) {
                     long parsed = parseMemoryLimit(value);
-                    effective = effective == null
-                            ? parsed : Math.min(effective, parsed);
+                    effective = effective == null ? parsed : Math.min(effective, parsed);
                 }
             }
             if (current.equals(root)) {
@@ -876,8 +873,7 @@ public class LocalResourceControlExecutor {
             Path limit = current.resolve("memory.limit_in_bytes");
             if (Files.isRegularFile(limit)) {
                 long parsed = parseMemoryLimit(read(limit).trim());
-                effective = effective == null
-                        ? parsed : Math.min(effective, parsed);
+                effective = effective == null ? parsed : Math.min(effective, parsed);
             }
             if (current.equals(root)) {
                 break;
@@ -925,66 +921,70 @@ public class LocalResourceControlExecutor {
         return handles == null ? null : new ArrayList<>(handles);
     }
 
-    private ResourceControlResponse fakeApply(ResourceControlCommand command) {
+    private boolean fakeApply(ResourceControlCommand command) {
         lastTestCommand = command;
         testCalls.incrementAndGet();
-        ControlOperation operation = ControlOperation.from(command);
-        String actualCpuSet = operation == ControlOperation.APPLY
-                ? PhysicalServerCpuSet.normalize(command.getCpuSet()) : "";
+        String desiredCpuSet = normalizeOptional(command.getCpuSet());
+        String actualCpuSet = desiredCpuSet.isEmpty() ? null : desiredCpuSet;
         Long actualMemory = null;
         if (command.getMemory() != null) {
             validateMemoryLimit(command.getMemory());
-            actualMemory = operation == ControlOperation.APPLY
-                    ? command.getMemory() : 0L;
+            actualMemory = command.getMemory();
         }
         List<HandleControlResult> results = new ArrayList<>();
         for (ResourceConsumerHandle handle : command.getHandles()) {
-            results.add(result(
-                    operation.resultState,
-                    actualCpuSet,
-                    actualMemory));
+            results.add(result("READY", actualCpuSet, actualMemory));
         }
-        return summarize(results, operation, actualCpuSet, actualMemory);
+        return summarizeApply(results, desiredCpuSet, actualMemory);
     }
 
-    private ResourceControlResponse summarize(
-            List<HandleControlResult> results,
-            ControlOperation operation,
-            String desiredCpuSet,
-            Long desiredMemory) {
+    private boolean fakeRelease(ResourceControlCommand command) {
+        lastTestCommand = command;
+        testCalls.incrementAndGet();
+        List<HandleControlResult> results = new ArrayList<>();
+        for (ResourceConsumerHandle handle : command.getHandles()) {
+            results.add(result("DISABLED", "", 0L));
+        }
+        return summarizeRelease(results);
+    }
+
+    private boolean summarizeApply(List<HandleControlResult> results, String desiredCpuSet, Long desiredMemory) {
         int expected = 0;
         boolean synced = true;
+        boolean manageCpu = !desiredCpuSet.isEmpty();
 
         for (HandleControlResult result : results) {
             if ("SKIPPED".equals(result.getState())) {
                 continue;
             }
             expected++;
-            if (!operation.resultState.equals(result.getState())
-                    || !desiredCpuSet.equals(
-                    normalizeOptional(result.getCpuSet()))
+            if (!"READY".equals(result.getState())
+                    || (manageCpu && !desiredCpuSet.equals(normalizeOptional(result.getCpuSet())))
                     || !memoryMatches(result.getMemory(), desiredMemory)) {
                 synced = false;
             }
         }
-        if (operation == ControlOperation.APPLY && expected == 0) {
-            synced = false;
-        }
+        return expected > 0 && synced;
+    }
 
-        ResourceControlResponse response = new ResourceControlResponse();
-        response.setSynced(synced);
-        return response;
+    private boolean summarizeRelease(List<HandleControlResult> results) {
+        for (HandleControlResult result : results) {
+            if ("SKIPPED".equals(result.getState())) {
+                continue;
+            }
+            if (!"DISABLED".equals(result.getState())
+                    || !normalizeOptional(result.getCpuSet()).isEmpty() || !memoryMatches(result.getMemory(), 0L)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private boolean memoryMatches(Long actual, Long desired) {
-        return desired == null || desired.equals(actual)
-                || desired == 0L && actual == null;
+        return desired == null || desired.equals(actual) || desired == 0L && actual == null;
     }
 
-    private HandleControlResult result(
-            String state,
-            String cpuSet,
-            Long memory) {
+    private HandleControlResult result(String state, String cpuSet, Long memory) {
         HandleControlResult result = new HandleControlResult();
         result.setState(state);
         result.setCpuSet(cpuSet);
@@ -996,46 +996,32 @@ public class LocalResourceControlExecutor {
         for (Path root : v2Roots()) {
             Path controllers = root.resolve("cgroup.controllers");
             String values = read(controllers);
-            if (values.matches("(?s).*\\bcpuset\\b.*")
-                    || Files.isRegularFile(
-                            root.resolve("cpuset.cpus.effective"))) {
-                return new Backend(
-                        "CGROUP_V2_CPUSET", root, CgroupVersion.V2);
+            if (values.matches("(?s).*\\bcpuset\\b.*") || Files.isRegularFile(root.resolve("cpuset.cpus.effective"))) {
+                return new Backend(root, CgroupVersion.V2);
             }
         }
-        if (Files.isRegularFile(
-                environment.v1Root.resolve("cpuset.cpus"))) {
-            return new Backend(
-                    "CGROUP_V1_CPUSET",
-                    environment.v1Root,
-                    CgroupVersion.V1);
+        if (Files.isRegularFile(environment.v1Root.resolve("cpuset.cpus"))) {
+            return new Backend(environment.v1Root, CgroupVersion.V1);
         }
-        throw new ResourceControlException("RESOURCE_CONTROL_UNAVAILABLE");
+        throw new ResourceControlUnavailableException("No available cpuset controller was found");
     }
 
-    private MemoryBackend memoryBackend() {
+    private Backend memoryBackend() {
         for (Path root : v2Roots()) {
             String controllers = read(root.resolve("cgroup.controllers"));
-            if (controllers.matches("(?s).*\\bmemory\\b.*")
-                    || Files.isRegularFile(root.resolve("memory.max"))) {
-                return new MemoryBackend(
-                        "CGROUP_V2_MEMORY", root, CgroupVersion.V2);
+            if (controllers.matches("(?s).*\\bmemory\\b.*") || Files.isRegularFile(root.resolve("memory.max"))) {
+                return new Backend(root, CgroupVersion.V2);
             }
         }
-        if (Files.isRegularFile(
-                environment.v1MemoryRoot.resolve("memory.limit_in_bytes"))) {
-            return new MemoryBackend(
-                    "CGROUP_V1_MEMORY",
-                    environment.v1MemoryRoot,
-                    CgroupVersion.V1);
+        if (Files.isRegularFile(environment.v1MemoryRoot.resolve("memory.limit_in_bytes"))) {
+            return new Backend(environment.v1MemoryRoot, CgroupVersion.V1);
         }
-        throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+        throw new MemoryControllerUnavailableException("No available memory controller was found");
     }
 
     private List<Path> v2Roots() {
         Set<Path> roots = new LinkedHashSet<>();
-        if (Files.isRegularFile(
-                environment.v2Root.resolve("cgroup.controllers"))) {
+        if (Files.isRegularFile(environment.v2Root.resolve("cgroup.controllers"))) {
             roots.add(environment.v2Root);
         }
         if (!Files.isRegularFile(environment.procMounts)) {
@@ -1059,30 +1045,51 @@ public class LocalResourceControlExecutor {
         return underRoot(root, root.resolve(relative).normalize());
     }
 
-    private Path resolve(
-            Backend backend,
-            String roleType,
-            ResourceConsumerHandle handle,
-            ControlOperation operation) {
+    private Path resolve(Backend backend, String roleType, ResourceConsumerHandle handle) {
         if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
-            return resolveSystemd(backend, roleType, handle, operation);
+            return resolveSystemd(backend, roleType, handle);
         }
-        if (ResourceConsumerHandle.OWNER_PID_FILE.equals(handle.getHandleType())) {
-            return resolvePidFile(backend, roleType, handle, operation);
-        }
-        throw new ResourceControlException("HANDLE_TYPE_UNSUPPORTED");
+        throw new ResourceControlException(String.format(
+                "Resource consumer handle type[%s] is unsupported", handle.getHandleType()));
     }
 
-    private Path resolveSystemd(
-            Backend backend,
-            String roleType,
-            ResourceConsumerHandle handle,
-            ControlOperation operation) {
+    private Path resolveSystemd(Backend backend, String roleType, ResourceConsumerHandle handle) {
         Path managedTarget = backend.root.resolve(String.format(
-                "zstack-role-%s-unit-%s",
-                safeRole(roleType), safeRole(handle.getValue())));
-        if (operation == ControlOperation.RELEASE
-                && Files.isDirectory(managedTarget)) {
+                "zstack-role-%s-unit-%s", safeRole(roleType), safeRole(handle.getValue())));
+        Map<String, String> properties = systemdProperties(handle.getValue());
+        if ("not-found".equals(properties.get("LoadState"))) {
+            if (handle.isOptional()) {
+                return null;
+            }
+            throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
+        }
+        if (!"active".equals(properties.get("ActiveState"))) {
+            throw new ResourceControlException(String.format("Systemd unit[%s] is not active", handle.getValue()));
+        }
+        String controlGroup = properties.get("ControlGroup");
+        if (controlGroup == null || controlGroup.isEmpty()) {
+            throw new SystemdControlGroupMissingException(String.format(
+                    "Systemd unit[%s] did not report a control group", handle.getValue()));
+        }
+        Path target = underRoot(backend.root, backend.root.resolve(stripRoot(controlGroup)).normalize());
+        if (target.equals(backend.root)) {
+            throw new ResourceControlException(String.format(
+                    "Systemd unit[%s] reported the root control group", handle.getValue()));
+        }
+        if (!Files.isDirectory(target)) {
+        return resolveSystemdV1Fallback(backend, handle, controlGroup, managedTarget);
+        }
+        return target;
+    }
+
+    private Path resolveForRelease(Backend backend, String roleType, ResourceConsumerHandle handle) {
+        if (!ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
+            throw new ResourceControlException(String.format(
+                    "Resource consumer handle type[%s] is unsupported", handle.getHandleType()));
+        }
+        Path managedTarget = backend.root.resolve(String.format(
+                "zstack-role-%s-unit-%s", safeRole(roleType), safeRole(handle.getValue())));
+        if (Files.isDirectory(managedTarget)) {
             return managedTarget;
         }
         Map<String, String> properties = systemdProperties(handle.getValue());
@@ -1090,55 +1097,45 @@ public class LocalResourceControlExecutor {
             if (handle.isOptional()) {
                 return null;
             }
-            throw new ResourceControlException("SYSTEMD_UNIT_NOT_FOUND");
+            throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
         }
         if (!"active".equals(properties.get("ActiveState"))) {
-            if (operation == ControlOperation.RELEASE
-                    && handle.isOptional()) {
+            if (handle.isOptional()) {
                 return null;
             }
-            throw new ResourceControlException("SYSTEMD_UNIT_NOT_ACTIVE");
+            throw new ResourceControlException(String.format("Systemd unit[%s] is not active", handle.getValue()));
         }
         String controlGroup = properties.get("ControlGroup");
         if (controlGroup == null || controlGroup.isEmpty()) {
-            throw new ResourceControlException("SYSTEMD_CONTROL_GROUP_MISSING");
+            throw new SystemdControlGroupMissingException(String.format(
+                    "Systemd unit[%s] did not report a control group", handle.getValue()));
         }
         Path target = underRoot(backend.root, backend.root.resolve(stripRoot(controlGroup)).normalize());
         if (target.equals(backend.root)) {
-            throw new ResourceControlException("SYSTEMD_CONTROL_GROUP_INVALID");
+            throw new ResourceControlException(String.format(
+                    "Systemd unit[%s] reported the root control group", handle.getValue()));
         }
-        if (!Files.isDirectory(target)) {
-            return resolveSystemdV1Fallback(
-                    backend, handle, controlGroup, operation, managedTarget);
-        }
-        return target;
+        return Files.isDirectory(target) ? target : null;
     }
 
     private Path resolveSystemdV1Fallback(
-            Backend backend,
-            ResourceConsumerHandle handle,
-            String controlGroup,
-            ControlOperation operation,
-            Path target) {
-        if (operation == ControlOperation.RELEASE) {
-            return null;
-        }
+            Backend backend, ResourceConsumerHandle handle, String controlGroup, Path target) {
         Path source = underRoot(
-                environment.v1SystemdRoot,
-                environment.v1SystemdRoot.resolve(
-                        stripRoot(controlGroup)).normalize());
+                environment.v1SystemdRoot, environment.v1SystemdRoot.resolve(stripRoot(controlGroup)).normalize());
         Path sourceProcesses = source.resolve("cgroup.procs");
         if (!Files.isRegularFile(sourceProcesses)) {
             if (handle.isOptional()) {
                 return null;
             }
-            throw new ResourceControlException("SYSTEMD_CONTROL_GROUP_NOT_FOUND");
+            throw new SystemdControlGroupNotFoundException(String.format(
+                    "Systemd control group[%s] does not exist", controlGroup));
         }
         if (processIds(sourceProcesses).isEmpty()) {
             if (handle.isOptional()) {
                 return null;
             }
-            throw new ResourceControlException("SYSTEMD_CONTROL_GROUP_EMPTY");
+            throw new ResourceControlException(String.format(
+                    "Systemd control group[%s] contains no processes", controlGroup));
         }
         mkdir(target);
         enableV2Path(backend, target);
@@ -1148,279 +1145,207 @@ public class LocalResourceControlExecutor {
         moveProcesses(
                 sourceProcesses,
                 targetProcesses,
-                "SYSTEMD_CONTROL_GROUP_NOT_FOUND",
-                "SYSTEMD_PROCESS_MOVE_FAILED");
+                "Systemd control group process files are unavailable",
+                "Some systemd unit processes could not be moved");
         return target;
     }
 
-    private Path resolvePidFile(
-            Backend backend,
-            String roleType,
-            ResourceConsumerHandle handle,
-            ControlOperation operation) {
-        Path target = backend.root.resolve(String.format(
-                "zstack-role-%s-owner-%s",
-                safeRole(roleType),
-                safeRole(handle.getConsumerKey() == null
-                        ? handle.getValue() : handle.getConsumerKey())));
-        if (operation == ControlOperation.RELEASE) {
-            return Files.isDirectory(target) ? target : null;
-        }
-        Path pidFile = Paths.get(handle.getValue());
-        if (!Files.exists(pidFile, LinkOption.NOFOLLOW_LINKS)) {
-            if (handle.isOptional()) {
-                return null;
-            }
-            throw new ResourceControlException("PID_FILE_NOT_FOUND");
-        }
-        try {
-            PosixFileAttributes attributes = Files.readAttributes(
-                    pidFile, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            if (!attributes.isRegularFile() || Files.isSymbolicLink(pidFile)) {
-                throw new ResourceControlException("PID_FILE_NOT_REGULAR");
-            }
-            String content = read(pidFile).trim();
-            if (!content.matches("[1-9][0-9]*")) {
-                throw new ResourceControlException("PID_FILE_FORMAT_INVALID");
-            }
-            long parsed = Long.parseLong(content);
-            if (parsed > Integer.MAX_VALUE) {
-                throw new ResourceControlException("PID_FILE_FORMAT_INVALID");
-            }
-            int pid = (int) parsed;
-            Path proc = Paths.get("/proc", String.valueOf(pid));
-            if (!Files.isDirectory(proc)) {
-                throw new ResourceControlException("PID_NOT_RUNNING");
-            }
-            if (attributes.lastModifiedTime().toMillis() + 1000 < processStartTimeMillis(pid)) {
-                throw new ResourceControlException("PID_FILE_STALE");
-            }
-            PosixFileAttributes procAttributes = Files.readAttributes(
-                    proc, PosixFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-            String expected = handle.getExpectedCommandToken();
-            Set<PosixFilePermission> permissions = attributes.permissions();
-            boolean writableByOthers = permissions.contains(PosixFilePermission.GROUP_WRITE)
-                    || permissions.contains(PosixFilePermission.OTHERS_WRITE);
-            boolean trustedRootPidFile = "root".equals(attributes.owner().getName())
-                    && "root".equals(procAttributes.owner().getName())
-                    && expected != null && !expected.isEmpty();
-            if (writableByOthers && !trustedRootPidFile) {
-                throw new ResourceControlException("PID_FILE_PERMISSION_INVALID");
-            }
-            if (!"root".equals(attributes.owner().getName())
-                    && !attributes.owner().equals(procAttributes.owner())) {
-                throw new ResourceControlException("PID_FILE_OWNER_MISMATCH");
-            }
-            String command = new String(Files.readAllBytes(proc.resolve("cmdline")), StandardCharsets.UTF_8)
-                    .replace('\0', ' ');
-            if (expected != null && !command.contains(expected)) {
-                throw new ResourceControlException("PID_COMMAND_MISMATCH");
-            }
-
-            mkdir(target);
-            enableV2Path(backend, target);
-            initializeMems(backend, target);
-            initializeCpus(backend, target);
-            write(target.resolve("cgroup.procs"), String.valueOf(pid));
-            if (!processIds(target.resolve("cgroup.procs")).contains(String.valueOf(pid))) {
-                throw new ResourceControlException("PID_PROCESS_MOVE_FAILED");
-            }
-            return target;
-        } catch (NumberFormatException exception) {
-            throw new ResourceControlException("PID_FILE_FORMAT_INVALID");
-        } catch (IOException exception) {
-            throw new ResourceControlException("PID_FILE_READ_FAILED:" + exception.getMessage());
-        }
-    }
-
-    private long processStartTimeMillis(int pid) {
-        long bootTimeSeconds = -1;
-        for (String line : read(Paths.get("/proc/stat")).split("\\R")) {
-            if (line.startsWith("btime ")) {
-                try {
-                    bootTimeSeconds = Long.parseLong(line.substring("btime ".length()).trim());
-                } catch (NumberFormatException exception) {
-                    throw new ResourceControlException("PID_START_TIME_UNAVAILABLE");
-                }
-                break;
-            }
-        }
-        String stat = read(Paths.get("/proc", String.valueOf(pid), "stat"));
-        int commandEnd = stat.lastIndexOf(')');
-        if (bootTimeSeconds < 0 || commandEnd < 0) {
-            throw new ResourceControlException("PID_START_TIME_UNAVAILABLE");
-        }
-        String[] fields = stat.substring(commandEnd + 1).trim().split("\\s+");
-        if (fields.length <= 19) {
-            throw new ResourceControlException("PID_START_TIME_UNAVAILABLE");
-        }
-        try {
-            long startTicks = Long.parseLong(fields[19]);
-            long clockTicks = Long.parseLong(run(null, "getconf", "CLK_TCK").trim());
-            if (clockTicks <= 0) {
-                throw new ResourceControlException("PID_START_TIME_UNAVAILABLE");
-            }
-            return bootTimeSeconds * 1000 + startTicks * 1000 / clockTicks;
-        } catch (NumberFormatException exception) {
-            throw new ResourceControlException("PID_START_TIME_UNAVAILABLE");
-        }
-    }
-
-    private String applyToGroup(
-            Backend backend,
-            Path target,
-            String desired,
-            ControlOperation operation) {
+    private String applyToGroup(Backend backend, Path target, String desired) {
         enableV2Path(backend, target);
         initializeMems(backend, target);
         Path cpuFile = target.resolve("cpuset.cpus");
         if (!Files.isRegularFile(cpuFile)) {
-            throw new ResourceControlException("CPUSET_CONTROLLER_NOT_DELEGATED");
-        }
-        String value = desired;
-        if (operation == ControlOperation.RELEASE) {
-            if (backend.version == CgroupVersion.V2
-                    && managedGroup(backend.root, target)) {
-                moveProcessesToParent(target);
-                value = "";
-            } else {
-                value = parentCpuSet(target);
-            }
+            throw new ResourceControlException(String.format(
+                    "Cpuset controller is not available for control group[%s]", target));
         }
         String configured = normalizeOptional(read(cpuFile));
-        if (!configured.equals(value)) {
-            write(cpuFile,
-                    value.isEmpty() && backend.version == CgroupVersion.V2
-                            ? "\n" : value);
-        }
-        if (operation == ControlOperation.RELEASE) {
-            if (!normalizeOptional(read(cpuFile)).equals(value)) {
-                throw new ResourceControlException("CPUSET_RELEASE_MISMATCH");
-            }
-            return "";
+        if (!configured.equals(desired)) {
+            write(cpuFile, desired);
         }
         Path effective = target.resolve("cpuset.cpus.effective");
         return normalizeOptional(read(Files.isRegularFile(effective) ? effective : cpuFile));
     }
 
-    private MemoryResult applyMemoryLimit(
-            Backend backend,
-            MemoryBackend memoryBackend,
-            Path cpuTarget,
-            long desiredLimit) {
+    private String applyCpuBoundary(
+            Backend backend, Path target, String desired, PhysicalServerResourceIsolationMode isolationMode) {
+        if (isolationMode != PhysicalServerResourceIsolationMode.EXCLUSIVE) {
+            makePartitionMember(backend, target);
+        }
+        String actual = applyToGroup(backend, target, desired);
+        if (isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE) {
+            makePartitionRoot(backend, target, desired);
+            Path effective = target.resolve("cpuset.cpus.effective");
+            actual = normalizeOptional(read(
+                    Files.isRegularFile(effective) ? effective : target.resolve("cpuset.cpus")));
+        }
+        return actual;
+    }
+
+    private void releaseCpuBoundary(Backend backend, Path target) {
+        makePartitionMember(backend, target);
+        enableV2Path(backend, target);
+        initializeMems(backend, target);
+        Path cpuFile = target.resolve("cpuset.cpus");
+        if (!Files.isRegularFile(cpuFile)) {
+            throw new ResourceControlException(String.format(
+                    "Cpuset controller is not available for control group[%s]", target));
+        }
+        String desired;
+        if (backend.version == CgroupVersion.V2 && managedGroup(backend.root, target)) {
+            moveProcessesToParent(target);
+            desired = "";
+        } else {
+            desired = parentCpuSet(target);
+        }
+        if (!normalizeOptional(read(cpuFile)).equals(desired)) {
+            write(cpuFile, desired.isEmpty() && backend.version == CgroupVersion.V2 ? "\n" : desired);
+        }
+        if (!normalizeOptional(read(cpuFile)).equals(desired)) {
+            throw new ResourceControlException(String.format(
+                    "Failed to release CPU set from control group[%s]", target));
+        }
+    }
+
+    private void makePartitionRoot(Backend backend, Path target, String desired) {
+        if (backend.version != CgroupVersion.V2) {
+            throw new ResourceControlException("Exclusive CPU partitions require cgroup v2");
+        }
+        Path partition = target.resolve("cpuset.cpus.partition");
+        if (!Files.isRegularFile(partition)) {
+            throw new ResourceControlException(String.format(
+                    "CPU partition interface is unavailable for control group[%s]", target));
+        }
+        Path exclusive = target.resolve("cpuset.cpus.exclusive");
+        if (Files.isRegularFile(exclusive) && !desired.equals(normalizeOptional(read(exclusive)))) {
+            write(exclusive, desired);
+        }
+        if (!"root".equals(read(partition).trim())) {
+            write(partition, "root");
+        }
+        if (!"root".equals(read(partition).trim())) {
+            throw new ResourceControlException(String.format(
+                    "Failed to make control group[%s] an exclusive CPU partition", target));
+        }
+        Path effective = target.resolve("cpuset.cpus.exclusive.effective");
+        if (Files.isRegularFile(effective) && !desired.equals(normalizeOptional(read(effective)))) {
+            throw new ResourceControlException(String.format(
+                    "Control group[%s] did not apply exclusive CPU set[%s]", target, desired));
+        }
+    }
+
+    private void makePartitionMember(Backend backend, Path target) {
+        if (backend.version != CgroupVersion.V2) {
+            return;
+        }
+        Path partition = target.resolve("cpuset.cpus.partition");
+        if (!Files.isRegularFile(partition)) {
+            return;
+        }
+        if (!"member".equals(read(partition).trim())) {
+            write(partition, "member");
+        }
+        if (!"member".equals(read(partition).trim())) {
+            throw new ResourceControlException(String.format(
+                    "Failed to return control group[%s] to the shared CPU partition", target));
+        }
+        Path exclusive = target.resolve("cpuset.cpus.exclusive");
+        if (Files.isRegularFile(exclusive) && !normalizeOptional(read(exclusive)).isEmpty()) {
+            write(exclusive, "\n");
+        }
+    }
+
+    private PhysicalServerResourceIsolationMode isolationMode(ResourceControlCommand command) {
+        return command.getIsolationMode() == null
+                ? PhysicalServerResourceIsolationMode.SHARED : command.getIsolationMode();
+    }
+
+    private long applyMemoryLimit(Backend backend, Backend memoryBackend, Path cpuTarget, long desiredLimit) {
         if (memoryBackend == null) {
-            throw new ResourceControlException(
-                    "MEMORY_CONTROLLER_UNAVAILABLE");
+            throw new MemoryControllerUnavailableException(
+                    "Memory controller is unavailable for the target control group");
         }
         Path relative = backend.root.relativize(cpuTarget);
         Path memoryTarget = controllerTarget(memoryBackend.root, relative);
-        boolean managed = managedGroup(backend.root, cpuTarget);
-        return applyMemoryTarget(
-                memoryBackend,
-                memoryTarget,
-                desiredLimit,
-                managed
-                        ? MemoryTargetMode.MANAGED
-                        : MemoryTargetMode.EXISTING,
-                cpuTarget);
+        return applyMemoryTarget(memoryBackend, memoryTarget, desiredLimit, cpuTarget);
     }
 
-    private MemoryResult applyMemoryTarget(
-            MemoryBackend memoryBackend,
-            Path memoryTarget,
-            long desiredLimit,
-            MemoryTargetMode targetMode,
-            Path cpuTarget) {
+    private long applyMemoryTarget(Backend memoryBackend, Path memoryTarget, long desiredLimit, Path cpuTarget) {
+        boolean managed = managedGroup(memoryBackend.root, memoryTarget);
         if (memoryBackend.version == CgroupVersion.V2) {
             if (!Files.isDirectory(memoryTarget)) {
-                if (targetMode == MemoryTargetMode.MANAGED
-                        && desiredLimit == 0) {
-                    return new MemoryResult(memoryBackend.name, 0L);
+                if (managed && desiredLimit == 0) {
+                    return 0L;
                 }
-                if (targetMode == MemoryTargetMode.EXISTING
-                        || desiredLimit == 0) {
-                    throw new ResourceControlException(
-                            "MEMORY_CONTROLLER_UNAVAILABLE");
+                if (!managed || desiredLimit == 0) {
+                    throw new MemoryControllerUnavailableException(String.format(
+                            "Memory controller is unavailable for control group[%s]", memoryTarget));
                 }
                 mkdir(memoryTarget);
             }
             enableV2MemoryPath(memoryBackend, memoryTarget);
             Path limit = memoryTarget.resolve("memory.max");
             if (!Files.isRegularFile(limit)) {
-                throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+                throw new MemoryControllerUnavailableException(String.format(
+                        "Memory controller is unavailable for control group[%s]", memoryTarget));
             }
-            if (targetMode == MemoryTargetMode.MANAGED
-                    && !memoryTarget.equals(cpuTarget)
-                    && desiredLimit > 0) {
-                moveProcesses(cpuTarget.resolve("cgroup.procs"),
-                        memoryTarget.resolve("cgroup.procs"));
+            if (managed && !memoryTarget.equals(cpuTarget) && desiredLimit > 0) {
+                moveProcesses(cpuTarget.resolve("cgroup.procs"), memoryTarget.resolve("cgroup.procs"));
             }
             String desired = desiredLimit == 0 ? "max" : String.valueOf(desiredLimit);
             if (!desired.equals(read(limit).trim())) {
-                validateMemoryLimitAgainstUsage(
-                        memoryTarget.resolve("memory.current"), desiredLimit);
+                validateMemoryLimitAgainstUsage(memoryTarget.resolve("memory.current"), desiredLimit);
                 write(limit, desired);
             }
             String actual = read(limit).trim();
             if (!desired.equals(actual)) {
-                throw new ResourceControlException("MEMORY_LIMIT_MISMATCH");
+                throw new ResourceControlException(String.format(
+                        "Control group[%s] did not apply memory limit[%s]", memoryTarget, desired));
             }
-            if (targetMode == MemoryTargetMode.MANAGED
-                    && !memoryTarget.equals(cpuTarget)
-                    && desiredLimit == 0) {
-                moveProcesses(memoryTarget.resolve("cgroup.procs"),
-                        memoryTarget.getParent().resolve("cgroup.procs"));
+            if (managed && !memoryTarget.equals(cpuTarget) && desiredLimit == 0) {
+                moveProcesses(memoryTarget.resolve("cgroup.procs"), memoryTarget.getParent().resolve("cgroup.procs"));
             }
-            return new MemoryResult(memoryBackend.name,
-                    "max".equals(actual) ? 0L : parseMemoryLimit(actual));
+            return "max".equals(actual) ? 0L : parseMemoryLimit(actual);
         }
 
         Path rootLimit = memoryBackend.root.resolve("memory.limit_in_bytes");
         if (!Files.isRegularFile(rootLimit)) {
-            throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+            throw new MemoryControllerUnavailableException(
+                    "Cgroup v1 memory controller does not expose its root limit");
         }
         if (!Files.isDirectory(memoryTarget)) {
-            if (targetMode == MemoryTargetMode.MANAGED
-                    && desiredLimit == 0) {
-                return new MemoryResult(memoryBackend.name, 0L);
+            if (managed && desiredLimit == 0) {
+                return 0L;
             }
-            if (targetMode == MemoryTargetMode.EXISTING
-                    || desiredLimit == 0) {
-                throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+            if (!managed || desiredLimit == 0) {
+                throw new MemoryControllerUnavailableException(String.format(
+                        "Memory controller is unavailable for control group[%s]", memoryTarget));
             }
             mkdir(memoryTarget);
         }
         Path limit = memoryTarget.resolve("memory.limit_in_bytes");
         if (!Files.isRegularFile(limit)) {
-            throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+            throw new MemoryControllerUnavailableException(String.format(
+                    "Memory controller is unavailable for control group[%s]", memoryTarget));
         }
-        if (targetMode == MemoryTargetMode.MANAGED
-                && desiredLimit > 0) {
-            moveProcesses(cpuTarget.resolve("cgroup.procs"),
-                    memoryTarget.resolve("cgroup.procs"));
+        if (managed && desiredLimit > 0) {
+            moveProcesses(cpuTarget.resolve("cgroup.procs"), memoryTarget.resolve("cgroup.procs"));
         }
-        String desired = desiredLimit == 0
-                ? read(rootLimit).trim()
-                : String.valueOf(desiredLimit);
+        String desired = desiredLimit == 0 ? read(rootLimit).trim() : String.valueOf(desiredLimit);
         if (!desired.equals(read(limit).trim())) {
-            validateMemoryLimitAgainstUsage(
-                    memoryTarget.resolve("memory.usage_in_bytes"), desiredLimit);
+            validateMemoryLimitAgainstUsage(memoryTarget.resolve("memory.usage_in_bytes"), desiredLimit);
             write(limit, desired);
         }
         if (!desired.equals(read(limit).trim())) {
-            throw new ResourceControlException("MEMORY_LIMIT_MISMATCH");
+            throw new ResourceControlException(String.format(
+                    "Control group[%s] did not apply memory limit[%s]", memoryTarget, desired));
         }
-        if (targetMode == MemoryTargetMode.MANAGED
-                && desiredLimit == 0) {
-            moveProcesses(memoryTarget.resolve("cgroup.procs"),
-                    memoryTarget.getParent().resolve("cgroup.procs"));
+        if (managed && desiredLimit == 0) {
+            moveProcesses(memoryTarget.resolve("cgroup.procs"), memoryTarget.getParent().resolve("cgroup.procs"));
         }
-        return new MemoryResult(memoryBackend.name,
-                desiredLimit == 0 ? 0L : parseMemoryLimit(read(limit).trim()));
+        return desiredLimit == 0 ? 0L : parseMemoryLimit(read(limit).trim());
     }
 
-    private void enableV2MemoryPath(
-            MemoryBackend backend, Path target) {
+    private void enableV2MemoryPath(Backend backend, Path target) {
         if (Files.isRegularFile(target.resolve("memory.max"))) {
             return;
         }
@@ -1431,9 +1356,9 @@ public class LocalResourceControlExecutor {
                 Path controllers = current.resolve("cgroup.controllers");
                 Path control = current.resolve("cgroup.subtree_control");
                 if (!Files.isRegularFile(controllers)
-                        || !read(controllers).matches("(?s).*\\bmemory\\b.*")
-                        || !Files.isRegularFile(control)) {
-                    throw new ResourceControlException("MEMORY_CONTROLLER_UNAVAILABLE");
+                        || !read(controllers).matches("(?s).*\\bmemory\\b.*") || !Files.isRegularFile(control)) {
+                    throw new MemoryControllerUnavailableException(String.format(
+                            "Memory controller cannot be delegated below control group[%s]", current));
                 }
                 write(control, "+memory");
             }
@@ -1445,32 +1370,27 @@ public class LocalResourceControlExecutor {
         moveProcesses(
                 source,
                 destination,
-                "MEMORY_CONTROLLER_UNAVAILABLE",
-                "MEMORY_LIMIT_MISMATCH");
+                "Memory controller process files are unavailable",
+                "Some processes could not be moved to the memory control group");
     }
 
     private void moveProcessesToParent(Path target) {
         moveProcesses(
                 target.resolve("cgroup.procs"),
                 target.getParent().resolve("cgroup.procs"),
-                "CPUSET_CONTROLLER_NOT_DELEGATED",
-                "CPUSET_RELEASE_MISMATCH");
+                "Cpuset controller process files are unavailable",
+                "Some processes could not be moved to the parent control group");
     }
 
-    private void moveProcesses(
-            Path source,
-            Path destination,
-            String unavailableReason,
-            String mismatchReason) {
+    private void moveProcesses(Path source, Path destination, String unavailableMessage, String mismatchMessage) {
         if (!Files.isRegularFile(source) || !Files.isRegularFile(destination)) {
-            throw new ResourceControlException(unavailableReason);
+            throw new ResourceControlException(unavailableMessage);
         }
 
         for (int attempt = 0; attempt < PROCESS_MOVE_ATTEMPTS; attempt++) {
             Set<String> destinationPids = processIds(destination);
             for (String pid : processIds(source)) {
-                if (destinationPids.contains(pid)
-                        || !Files.isDirectory(Paths.get("/proc", pid))) {
+                if (destinationPids.contains(pid) || !Files.isDirectory(Paths.get("/proc", pid))) {
                     continue;
                 }
                 try {
@@ -1485,8 +1405,7 @@ public class LocalResourceControlExecutor {
             destinationPids = processIds(destination);
             boolean complete = true;
             for (String pid : processIds(source)) {
-                if (Files.isDirectory(Paths.get("/proc", pid))
-                        && !destinationPids.contains(pid)) {
+                if (Files.isDirectory(Paths.get("/proc", pid)) && !destinationPids.contains(pid)) {
                     complete = false;
                     break;
                 }
@@ -1495,7 +1414,7 @@ public class LocalResourceControlExecutor {
                 return;
             }
         }
-        throw new ResourceControlException(mismatchReason);
+        throw new ResourceControlException(mismatchMessage);
     }
 
     private Set<String> processIds(Path source) {
@@ -1510,15 +1429,14 @@ public class LocalResourceControlExecutor {
 
     private boolean managedGroup(Path root, Path target) {
         Path relative = root.relativize(target);
-        return relative.getNameCount() > 0
-                && relative.getName(0).toString().startsWith("zstack-role-");
+        return relative.getNameCount() > 0 && relative.getName(0).toString().startsWith("zstack-role-");
     }
 
     private long parseMemoryLimit(String value) {
         try {
             return Long.parseLong(value);
         } catch (NumberFormatException exception) {
-            throw new ResourceControlException("MEMORY_LIMIT_INVALID");
+            throw new ResourceControlException(String.format("Memory value[%s] is not a valid byte count", value));
         }
     }
 
@@ -1527,10 +1445,10 @@ public class LocalResourceControlExecutor {
             return;
         }
         long current = Math.max(
-                parseMemoryLimit(read(usage).trim()),
-                residentMemoryUsage(usage.getParent().resolve("cgroup.procs")));
+                parseMemoryLimit(read(usage).trim()), residentMemoryUsage(usage.getParent().resolve("cgroup.procs")));
         if (desiredLimit < current) {
-            throw new ResourceControlException("MEMORY_LIMIT_BELOW_CURRENT_USAGE");
+            throw new ResourceControlException(String.format(
+                    "Memory limit[%s] is below current usage[%s]", desiredLimit, current));
         }
     }
 
@@ -1560,13 +1478,14 @@ public class LocalResourceControlExecutor {
                 }
                 String[] fields = line.trim().split("\\s+");
                 if (fields.length < 2 || !fields[1].matches("[0-9]+")) {
-                    throw new ResourceControlException("MEMORY_USAGE_INVALID");
+                    throw new ResourceControlException(String.format(
+                            "Process[%s] reported invalid resident memory usage[%s]", pid, line));
                 }
                 try {
-                    total = Math.addExact(
-                            total, Math.multiplyExact(Long.parseLong(fields[1]), 1024L));
+                    total = Math.addExact(total, Math.multiplyExact(Long.parseLong(fields[1]), 1024L));
                 } catch (NumberFormatException exception) {
-                    throw new ResourceControlException("MEMORY_USAGE_INVALID");
+                    throw new ResourceControlException(String.format(
+                            "Process[%s] reported invalid resident memory usage[%s]", pid, fields[1]));
                 } catch (ArithmeticException exception) {
                     return Long.MAX_VALUE;
                 }
@@ -1582,7 +1501,8 @@ public class LocalResourceControlExecutor {
         }
         long mebibyte = SizeUnit.MEGABYTE.toByte(1);
         if (value < 0 || value % mebibyte != 0) {
-            throw new ResourceControlException("MEMORY_LIMIT_INVALID");
+            throw new ResourceControlException(String.format(
+                    "Memory limit[%s] must be zero or a positive multiple of 1 MiB", value));
         }
     }
 
@@ -1596,7 +1516,8 @@ public class LocalResourceControlExecutor {
             if (!Files.isRegularFile(child.resolve("cpuset.cpus"))) {
                 Path control = current.resolve("cgroup.subtree_control");
                 if (!Files.isRegularFile(control)) {
-                    throw new ResourceControlException("CGROUP_V2_SUBTREE_CONTROL_MISSING");
+                    throw new ResourceControlException(String.format(
+                            "Cgroup v2 subtree control is unavailable for control group[%s]", current));
                 }
                 write(control, "+cpuset");
             }
@@ -1616,7 +1537,8 @@ public class LocalResourceControlExecutor {
         }
         String value = read(source).trim();
         if (value.isEmpty()) {
-            throw new ResourceControlException("CPUSET_MEMS_EMPTY");
+            throw new ResourceControlException(String.format(
+                    "Control group[%s] has no effective memory node set", target.getParent()));
         }
         write(mems, value);
     }
@@ -1639,7 +1561,8 @@ public class LocalResourceControlExecutor {
         }
         String value = normalizeOptional(read(source));
         if (value.isEmpty()) {
-            throw new ResourceControlException("PARENT_CPUSET_EMPTY");
+            throw new ResourceControlException(String.format(
+                    "Parent control group[%s] has no effective CPU set", parent));
         }
         return value;
     }
@@ -1647,8 +1570,7 @@ public class LocalResourceControlExecutor {
     private Map<String, String> systemdProperties(String unit) {
         String output = run(null,
                 "systemctl", "show", unit,
-                "--property=LoadState", "--property=ActiveState",
-                "--property=ControlGroup", "--property=MainPID");
+                "--property=LoadState", "--property=ActiveState", "--property=ControlGroup", "--property=MainPID");
         Map<String, String> properties = new HashMap<>();
         for (String line : output.split("\\R")) {
             int separator = line.indexOf('=');
@@ -1670,13 +1592,13 @@ public class LocalResourceControlExecutor {
         try {
             return new String(Files.readAllBytes(path), StandardCharsets.US_ASCII);
         } catch (IOException exception) {
-            throw new ResourceControlException("READ_FAILED:" + path + ":" + exception.getMessage());
+            throw new ResourceControlException(String.format(
+                    "Failed to read file[%s]: %s", path, exception.getMessage()));
         }
     }
 
     private void write(Path path, String value) {
-        run(value.getBytes(StandardCharsets.US_ASCII),
-                "sudo", "-n", "tee", path.toString());
+        run(value.getBytes(StandardCharsets.US_ASCII), "sudo", "-n", "tee", path.toString());
     }
 
     private String run(byte[] input, String... command) {
@@ -1695,19 +1617,20 @@ public class LocalResourceControlExecutor {
             }
             if (!process.waitFor(COMMAND_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
                 process.destroyForcibly();
-                throw new ResourceControlException("COMMAND_TIMEOUT:" + command[0]);
+                throw new ResourceControlException(String.format(
+                        "Command[%s] timed out after %s seconds", command[0], COMMAND_TIMEOUT_SECONDS));
             }
             String output = readStream(process.getInputStream());
             if (process.exitValue() != 0) {
-                throw new ResourceControlException(
-                        "COMMAND_FAILED:" + command[0] + ":" + output.trim());
+                throw new ResourceControlException(String.format("Command[%s] failed: %s", command[0], output.trim()));
             }
             return output;
         } catch (IOException exception) {
-            throw new ResourceControlException("COMMAND_FAILED:" + command[0] + ":" + exception.getMessage());
+            throw new ResourceControlException(String.format(
+                    "Failed to execute command[%s]: %s", command[0], exception.getMessage()));
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
-            throw new ResourceControlException("COMMAND_INTERRUPTED:" + command[0]);
+            throw new ResourceControlException(String.format("Command[%s] was interrupted", command[0]));
         } finally {
             if (process != null) {
                 process.destroy();
@@ -1732,7 +1655,7 @@ public class LocalResourceControlExecutor {
 
     private Path underRoot(Path root, Path path) {
         if (!path.equals(root) && !path.startsWith(root)) {
-            throw new ResourceControlException("CONTROL_GROUP_PATH_INVALID");
+            throw new ResourceControlException(String.format("Control group path[%s] is outside root[%s]", path, root));
         }
         return path;
     }
@@ -1742,27 +1665,15 @@ public class LocalResourceControlExecutor {
     }
 
     private String decodeMountPath(String value) {
-        return value.replace("\\040", " ")
-                .replace("\\011", "\t")
-                .replace("\\012", "\n")
-                .replace("\\134", "\\");
+        return value.replace("\\040", " ").replace("\\011", "\t").replace("\\012", "\n").replace("\\134", "\\");
     }
 
     private String safeRole(String roleType) {
         String value = roleType == null ? "" : roleType.replaceAll("[^a-zA-Z0-9_.-]", "-");
         if (value.isEmpty()) {
-            throw new ResourceControlException("ROLE_TYPE_INVALID");
+            throw new ResourceControlException("Role type must contain at least one valid path character");
         }
         return value;
-    }
-
-    private String errorType(ResourceControlException exception) {
-        String message = exception.getMessage();
-        if (message == null || message.isEmpty()) {
-            return "RESOURCE_CONTROL_ERROR";
-        }
-        int separator = message.indexOf(':');
-        return separator > 0 ? message.substring(0, separator) : message;
     }
 
     private static class HandleControlResult {
@@ -1796,73 +1707,17 @@ public class LocalResourceControlExecutor {
     }
 
     private static class Backend {
-        private final String name;
         private final Path root;
         private final CgroupVersion version;
 
-        private Backend(
-                String name,
-                Path root,
-                CgroupVersion version) {
-            this.name = name;
-            this.root = root;
-            this.version = version;
-        }
-    }
-
-    private static class MemoryBackend {
-        private final String name;
-        private final Path root;
-        private final CgroupVersion version;
-
-        private MemoryBackend(
-                String name,
-                Path root,
-                CgroupVersion version) {
-            this.name = name;
+        private Backend(Path root, CgroupVersion version) {
             this.root = root;
             this.version = version;
         }
     }
 
     private enum CgroupVersion {
-        V1,
-        V2
-    }
-
-    private enum MemoryTargetMode {
-        EXISTING,
-        MANAGED
-    }
-
-    private enum ControlOperation {
-        APPLY("READY"),
-        RELEASE("DISABLED");
-
-        private final String resultState;
-
-        ControlOperation(String resultState) {
-            this.resultState = resultState;
-        }
-
-        private static ControlOperation from(ResourceControlCommand command) {
-            try {
-                return valueOf(command.getOperation());
-            } catch (IllegalArgumentException | NullPointerException error) {
-                throw new ResourceControlException(
-                        "RESOURCE_CONTROL_OPERATION_INVALID");
-            }
-        }
-    }
-
-    private static class MemoryResult {
-        private final String backend;
-        private final long actualLimit;
-
-        private MemoryResult(String backend, long actualLimit) {
-            this.backend = backend;
-            this.actualLimit = actualLimit;
-        }
+        V1, V2
     }
 
     private static class ServiceTarget {
@@ -1894,10 +1749,7 @@ public class LocalResourceControlExecutor {
                 Path v1Root,
                 Path v1MemoryRoot,
                 Path v1SystemdRoot,
-                List<Path> v1CpuacctRoots,
-                Path procMounts,
-                Path systemdUnitRoot,
-                CommandExecutor commandExecutor) {
+                List<Path> v1CpuacctRoots, Path procMounts, Path systemdUnitRoot, CommandExecutor commandExecutor) {
             this.v2Root = v2Root;
             this.v1Root = v1Root;
             this.v1MemoryRoot = v1MemoryRoot;
@@ -1914,17 +1766,43 @@ public class LocalResourceControlExecutor {
                     Paths.get("/sys/fs/cgroup/cpuset"),
                     Paths.get("/sys/fs/cgroup/memory"),
                     Paths.get("/sys/fs/cgroup/systemd"),
-                    Arrays.asList(
-                            Paths.get("/sys/fs/cgroup/cpu,cpuacct"),
-                            Paths.get("/sys/fs/cgroup/cpuacct")),
-                    Paths.get("/proc/mounts"),
-                    Paths.get("/etc/systemd/system"),
-                    null);
+                    Arrays.asList(Paths.get("/sys/fs/cgroup/cpu,cpuacct"), Paths.get("/sys/fs/cgroup/cpuacct")),
+                    Paths.get("/proc/mounts"), Paths.get("/etc/systemd/system"), null);
         }
     }
 
     public static class ResourceControlException extends RuntimeException {
         public ResourceControlException(String message) {
+            super(message);
+        }
+    }
+
+    private static class ResourceControlUnavailableException extends ResourceControlException {
+        private ResourceControlUnavailableException(String message) {
+            super(message);
+        }
+    }
+
+    private static class MemoryControllerUnavailableException extends ResourceControlException {
+        private MemoryControllerUnavailableException(String message) {
+            super(message);
+        }
+    }
+
+    private abstract static class SystemdControlGroupException extends ResourceControlException {
+        private SystemdControlGroupException(String message) {
+            super(message);
+        }
+    }
+
+    private static class SystemdControlGroupMissingException extends SystemdControlGroupException {
+        private SystemdControlGroupMissingException(String message) {
+            super(message);
+        }
+    }
+
+    private static class SystemdControlGroupNotFoundException extends SystemdControlGroupException {
+        private SystemdControlGroupNotFoundException(String message) {
             super(message);
         }
     }

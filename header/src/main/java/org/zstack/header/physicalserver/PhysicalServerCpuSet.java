@@ -8,8 +8,10 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.math.BigInteger;
+import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
+import java.util.TreeMap;
 import java.util.TreeSet;
 
 public final class PhysicalServerCpuSet {
@@ -27,14 +29,12 @@ public final class PhysicalServerCpuSet {
             long width = (long) range.end - range.start + 1;
             if (width > allowed.size()) {
                 throw new IllegalArgumentException(String.format(
-                        "CPU_SET_INVALID: CPU_SET range[%s-%s] contains CPUs outside the online topology",
-                        range.start, range.end));
+                        "CPU set range[%s-%s] contains CPUs outside the online topology", range.start, range.end));
             }
             for (long cursor = range.start; cursor <= range.end; cursor++) {
                 int cpu = (int) cursor;
                 if (!allowed.contains(cpu)) {
-                    throw new IllegalArgumentException(String.format(
-                            "CPU_SET_INVALID: CPU[%s] is outside the online topology", cpu));
+                    throw new IllegalArgumentException(String.format("CPU[%s] is outside the online topology", cpu));
                 }
                 cpus.add(cpu);
             }
@@ -49,8 +49,7 @@ public final class PhysicalServerCpuSet {
             long width = (long) range.end - range.start + 1;
             if (width > 1048576) {
                 throw new IllegalArgumentException(String.format(
-                        "CPU_SET_INVALID: CPU_SET range[%s-%s] is too large",
-                        range.start, range.end));
+                        "CPU set range[%s-%s] is too large", range.start, range.end));
             }
             for (long cursor = range.start; cursor <= range.end; cursor++) {
                 cpus.add((int) cursor);
@@ -90,8 +89,7 @@ public final class PhysicalServerCpuSet {
         for (Range range : parseRanges(value)) {
             count += (long) range.end - range.start + 1;
             if (count > Integer.MAX_VALUE) {
-                throw new IllegalArgumentException(
-                        "CPU_SET_INVALID: CPU_SET contains too many CPUs");
+                throw new IllegalArgumentException("CPU set contains too many CPUs");
             }
         }
         return (int) count;
@@ -112,13 +110,9 @@ public final class PhysicalServerCpuSet {
         return normalize(left + "," + right);
     }
 
-    public static String firstAvailable(
-            PhysicalServerCpuTopology topology,
-            Set<Integer> unavailable,
-            int count) {
+    public static String firstAvailable(PhysicalServerCpuTopology topology, Set<Integer> unavailable, int count) {
         if (count < 1) {
-            throw new IllegalArgumentException(
-                    "CPU_SET_INVALID: CPU count must be greater than zero");
+            throw new IllegalArgumentException("CPU count must be greater than zero");
         }
         SortedSet<Integer> available = topology.getOnlineCpus();
         if (unavailable != null) {
@@ -135,39 +129,43 @@ public final class PhysicalServerCpuSet {
     }
 
     public static String firstAvailableExcludingCpuZeroCore(
-            PhysicalServerCpuTopology topology,
-            Set<Integer> unavailable,
-            int count) {
-        Set<Integer> excluded = unavailable == null
-                ? new HashSet<>() : new HashSet<>(unavailable);
+            PhysicalServerCpuTopology topology, Set<Integer> unavailable, int count) {
+        Set<Integer> excluded = unavailable == null ? new HashSet<>() : new HashSet<>(unavailable);
         excluded.addAll(topology.getCpuZeroGroup().getCpus());
+        Map<String, SortedSet<Integer>> cpusByNuma = new TreeMap<>();
+        for (PhysicalServerCpuTopology.CoreGroup group : topology.getCoreGroups()) {
+            cpusByNuma.computeIfAbsent(group.getNumaId(), ignored -> new TreeSet<>()).addAll(group.getCpus());
+        }
+        for (SortedSet<Integer> numaCpus : cpusByNuma.values()) {
+            numaCpus.removeAll(excluded);
+            if (numaCpus.size() >= count) {
+                return format(new ArrayList<>(numaCpus).subList(0, count));
+            }
+        }
         return firstAvailable(topology, excluded, count);
     }
 
     private static List<Range> parseRanges(String value) {
         if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException("CPU_SET_INVALID: CPU_SET cannot be empty");
+            throw new IllegalArgumentException("CPU set cannot be empty");
         }
 
         List<Range> ranges = new ArrayList<>();
         for (String item : value.split(",")) {
             String part = item.trim();
             if (part.isEmpty()) {
-                throw new IllegalArgumentException(
-                        "CPU_SET_INVALID: CPU_SET contains an empty item");
+                throw new IllegalArgumentException("CPU set contains an empty item");
             }
 
             String[] range = part.split("-", -1);
             if (range.length > 2) {
-                throw new IllegalArgumentException(String.format(
-                        "CPU_SET_INVALID: invalid CPU_SET item[%s]", part));
+                throw new IllegalArgumentException(String.format("Invalid CPU set item[%s]", part));
             }
 
             int start = parseCpu(range[0]);
             int end = range.length == 1 ? start : parseCpu(range[1]);
             if (start > end) {
-                throw new IllegalArgumentException(String.format(
-                        "CPU_SET_INVALID: invalid CPU_SET range[%s]", part));
+                throw new IllegalArgumentException(String.format("Invalid CPU set range[%s]", part));
             }
             ranges.add(new Range(start, end));
         }
@@ -199,13 +197,11 @@ public final class PhysicalServerCpuSet {
     private static int parseCpu(String value) {
         String normalized = value.trim();
         if (!normalized.matches("[0-9]+")) {
-            throw new IllegalArgumentException(String.format(
-                    "CPU_SET_INVALID: invalid CPU id[%s]", value));
+            throw new IllegalArgumentException(String.format("Invalid CPU id[%s]", value));
         }
         BigInteger cpu = new BigInteger(normalized);
         if (cpu.compareTo(BigInteger.valueOf(Integer.MAX_VALUE)) > 0) {
-            throw new IllegalArgumentException(String.format(
-                    "CPU_SET_INVALID: CPU id[%s] is too large", value));
+            throw new IllegalArgumentException(String.format("CPU id[%s] is too large", value));
         }
         return cpu.intValue();
     }
