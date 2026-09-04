@@ -621,6 +621,8 @@ public class LoadBalancerBase {
             handle((APIDeleteLoadBalancerServerGroupMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) {
             handle((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIGetLoadBalancerServerGroupBackendServerMsg) {
+            handle((APIGetLoadBalancerServerGroupBackendServerMsg) msg);
         } else if(msg instanceof APIChangeLoadBalancerBackendServerMsg){
             handle((APIChangeLoadBalancerBackendServerMsg) msg);
         } else if (msg instanceof APIChangeLoadBalancerListenerBackendServerStateMsg) {
@@ -655,6 +657,174 @@ public class LoadBalancerBase {
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
     }
+
+    private void handle(APIGetLoadBalancerServerGroupBackendServerMsg msg) {
+        APIGetLoadBalancerServerGroupBackendServerReply reply = new APIGetLoadBalancerServerGroupBackendServerReply();
+
+        LoadBalancerListenerVO listener = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        List<LoadBalancerServerGroupBackendServerInventory> invs = new ArrayList<>();
+
+        /* a backend is Enabled on the listener unless a Disabled ref row exists for it */
+        Set<String> disabledVmNicUuids = new HashSet<>(Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .select(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.state, LoadBalancerBackendServerState.Disabled)
+                .listValues());
+        Set<Long> disabledServerIpIds = new HashSet<>(Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                .select(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId)
+                .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, msg.getListenerUuid())
+                .eq(LoadBalancerListenerServerGroupServerIpRefVO_.state, LoadBalancerBackendServerState.Disabled)
+                .listValues());
+
+        List<String> attachedGroupUuids = new ArrayList<>(Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid)
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
+                .listValues());
+        if (msg.getServerGroupUuid() != null) {
+            attachedGroupUuids.retainAll(Collections.singletonList(msg.getServerGroupUuid()));
+        }
+
+        List<LoadBalancerServerGroupVmNicRefVO> nicRefs = new ArrayList<>();
+        List<LoadBalancerServerGroupServerIpVO> serverIpVOs = new ArrayList<>();
+        Map<String, String> serverGroupNames = new HashMap<>();
+        if (!attachedGroupUuids.isEmpty()) {
+            nicRefs.addAll(Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, attachedGroupUuids).list());
+            serverIpVOs.addAll(Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .in(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, attachedGroupUuids).list());
+            List<LoadBalancerServerGroupVO> attachedGroups = Q.New(LoadBalancerServerGroupVO.class)
+                    .in(LoadBalancerServerGroupVO_.uuid, attachedGroupUuids).list();
+            for (LoadBalancerServerGroupVO group : attachedGroups) {
+                serverGroupNames.put(group.getUuid(), group.getName());
+            }
+        }
+
+        if (!nicRefs.isEmpty()) {
+            List<String> nicUuids = nicRefs.stream().map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
+            List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, nicUuids).list();
+            Map<String, VmNicVO> nicMap = new HashMap<>();
+            for (VmNicVO nic : nics) {
+                nicMap.put(nic.getUuid(), nic);
+            }
+
+            Map<String, VmInstanceVO> vmMap = new HashMap<>();
+            List<String> vmUuids = new ArrayList<>();
+            for (VmNicVO nic : nicMap.values()) {
+                if (nic.getVmInstanceUuid() != null) {
+                    vmUuids.add(nic.getVmInstanceUuid());
+                }
+            }
+            if (!vmUuids.isEmpty()) {
+                List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, vmUuids).list();
+                for (VmInstanceVO vm : vms) {
+                    vmMap.put(vm.getUuid(), vm);
+                }
+            }
+
+            for (LoadBalancerServerGroupVmNicRefVO ref : nicRefs) {
+                LoadBalancerServerGroupBackendServerInventory inv = new LoadBalancerServerGroupBackendServerInventory();
+                inv.setUuid(Platform.getUuidFromBytes(
+                        String.format("VmInstance:%s", ref.getId()).getBytes()));
+                inv.setServerGroupUuid(ref.getServerGroupUuid());
+                inv.setServerGroupName(serverGroupNames.get(ref.getServerGroupUuid()));
+                inv.setListenerUuid(listener.getUuid());
+                inv.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+                inv.setServerType("VmInstance");
+                inv.setVmNicUuid(ref.getVmNicUuid());
+                inv.setWeight(ref.getWeight());
+                inv.setIpVersion(ref.getIpVersion());
+                inv.setState(disabledVmNicUuids.contains(ref.getVmNicUuid())
+                        ? LoadBalancerBackendServerState.Disabled.toString()
+                        : LoadBalancerBackendServerState.Enabled.toString());
+                inv.setRuntimeStatus(ref.getStatus() == null ? null : ref.getStatus().toString());
+                inv.setCreateDate(ref.getCreateDate());
+                inv.setLastOpDate(ref.getLastOpDate());
+
+                VmNicVO nic = nicMap.get(ref.getVmNicUuid());
+                if (nic != null) {
+                    inv.setVmInstanceUuid(nic.getVmInstanceUuid());
+                    inv.setIp(nic.getIp());
+                    inv.setL3NetworkUuid(nic.getL3NetworkUuid());
+                    VmInstanceVO vm = vmMap.get(nic.getVmInstanceUuid());
+                    if (vm != null) {
+                        inv.setServerName(vm.getName());
+                    }
+                }
+
+                invs.add(inv);
+            }
+        }
+
+        for (LoadBalancerServerGroupServerIpVO serverIp : serverIpVOs) {
+            LoadBalancerServerGroupBackendServerInventory inv = new LoadBalancerServerGroupBackendServerInventory();
+            inv.setUuid(Platform.getUuidFromBytes(
+                    String.format("ServerIp:%s", serverIp.getId()).getBytes()));
+            inv.setServerGroupUuid(serverIp.getServerGroupUuid());
+            inv.setServerGroupName(serverGroupNames.get(serverIp.getServerGroupUuid()));
+            inv.setListenerUuid(listener.getUuid());
+            inv.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+            inv.setServerType("ServerIp");
+            inv.setServerName(serverIp.getIpAddress());
+            inv.setIp(serverIp.getIpAddress());
+            inv.setWeight(serverIp.getWeight());
+            inv.setState(disabledServerIpIds.contains(serverIp.getId())
+                    ? LoadBalancerBackendServerState.Disabled.toString()
+                    : LoadBalancerBackendServerState.Enabled.toString());
+            inv.setRuntimeStatus(serverIp.getStatus() == null ? null : serverIp.getStatus().toString());
+            inv.setCreateDate(serverIp.getCreateDate());
+            inv.setLastOpDate(serverIp.getLastOpDate());
+            invs.add(inv);
+        }
+
+        if (!StringUtils.isEmpty(msg.getName())) {
+            String keyword = msg.getName().toLowerCase();
+            invs = invs.stream().filter(inv -> inv.getServerName() != null && inv.getServerName().toLowerCase().contains(keyword)).collect(Collectors.toList());
+        }
+
+        if (!StringUtils.isEmpty(msg.getState())) {
+            invs = invs.stream().filter(inv -> msg.getState().equals(inv.getState())).collect(Collectors.toList());
+        }
+
+        invs.sort(makeBackendServerComparator(msg));
+
+        reply.setTotal(invs.size());
+        reply.setInventories(msg.filter(invs));
+        bus.reply(msg, reply);
+    }
+
+    private Comparator<LoadBalancerServerGroupBackendServerInventory> makeBackendServerComparator(APIGetLoadBalancerServerGroupBackendServerMsg msg) {
+        boolean desc = "desc".equalsIgnoreCase(msg.getSortDirection());
+        String sortBy = StringUtils.isEmpty(msg.getSortBy()) ? "createDate" : msg.getSortBy();
+
+        Comparator<LoadBalancerServerGroupBackendServerInventory> cmp;
+        switch (sortBy) {
+            case "serverName":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getServerName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "ip":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getIp, Comparator.nullsLast(BACKEND_SERVER_IP_COMPARATOR));
+                break;
+            case "weight":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getWeight, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            case "state":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getState, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                break;
+            default:
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getCreateDate, Comparator.nullsFirst(Comparator.naturalOrder()));
+                break;
+        }
+
+        cmp = cmp.thenComparing(LoadBalancerServerGroupBackendServerInventory::getUuid, Comparator.nullsLast(Comparator.naturalOrder()));
+        return desc ? cmp.reversed() : cmp;
+    }
+
+    private static final Comparator<String> BACKEND_SERVER_IP_COMPARATOR = (ip1, ip2) -> {
+        if (NetworkUtils.isIpv4Address(ip1) && NetworkUtils.isIpv4Address(ip2)) {
+            return Long.compare(NetworkUtils.ipv4StringToLong(ip1), NetworkUtils.ipv4StringToLong(ip2));
+        }
+        return ip1.compareToIgnoreCase(ip2);
+    };
 
     private void handle(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
         APIGetCandidateL3NetworksForLoadBalancerReply reply = new APIGetCandidateL3NetworksForLoadBalancerReply();
