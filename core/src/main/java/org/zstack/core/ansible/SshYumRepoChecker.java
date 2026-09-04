@@ -13,6 +13,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
+import org.zstack.utils.ssh.SshCmdHelper;
 import org.zstack.utils.ssh.SshResult;
 
 import java.util.List;
@@ -74,8 +75,21 @@ public class SshYumRepoChecker implements AnsibleChecker {
     }
 
     static String buildYumRepoEndpointRewriteCommand(String managementNodeEndpoint, int restPort) {
-        return String.format("sed -i '/baseurl/s#\\(\\[[^]]*\\]\\|\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}\\):\\([0-9]\\+\\)#%s#g' /etc/yum.repos.d/{zstack,qemu-kvm-ev}-mn.repo",
-                IPv6NetworkUtils.formatHostPort(managementNodeEndpoint, restPort));
+        return buildYumRepoEndpointRewriteCommand(managementNodeEndpoint, restPort, "/etc/yum.repos.d");
+    }
+
+    static String buildYumRepoEndpointRewriteCommand(String managementNodeEndpoint, int restPort,
+                                                     String repoDirectory) {
+        String endpoint = IPv6NetworkUtils.formatHostPort(managementNodeEndpoint, restPort);
+        String zstackRepo = repoDirectory + "/zstack-mn.repo";
+        String qemuRepo = repoDirectory + "/qemu-kvm-ev-mn.repo";
+        String script = String.join(" && ",
+                String.format("sed -i '/baseurl/s#\\(\\[[^]]*\\]\\|\\([0-9]\\{1,3\\}\\.\\)\\{3\\}[0-9]\\{1,3\\}\\):\\([0-9]\\+\\)#%s#g' %s %s",
+                        endpoint, SshCmdHelper.shellQuote(zstackRepo), SshCmdHelper.shellQuote(qemuRepo)),
+                "test -s " + SshCmdHelper.shellQuote(zstackRepo),
+                "test -s " + SshCmdHelper.shellQuote(qemuRepo)
+        );
+        return "bash -c " + SshCmdHelper.shellQuote(script);
     }
 
     @Override
