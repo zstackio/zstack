@@ -2266,6 +2266,13 @@ public class LoadBalancerBase {
         List<String> sgUuids = new ArrayList<>();
         if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
             sgUuids = lblVo.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
+            // server groups bound through acl refs (redirect rules) also serve traffic of the listener
+            List<String> aclSgUuids = lblVo.getAclRefs().stream()
+                    .map(LoadBalancerListenerACLRefVO::getServerGroupUuid)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            aclSgUuids.removeAll(sgUuids);
+            sgUuids.addAll(aclSgUuids);
         } else {
             sgUuids = serverGroupUuids;
         }
@@ -2487,6 +2494,11 @@ public class LoadBalancerBase {
                 if (msg.getSecurityPolicyType() != null || msg.getInstancePort() != null) {
                     lblVo = dbf.updateAndRefresh(lblVo);
                 }
+                if (!Objects.equals(oldInstancePort, lblVo.getInstancePort())) {
+                    // redirect acl entries snapshot the listener's instancePort; keep them in sync
+                    // or the generated router config keeps forwarding to the old backend port
+                    updateListenerAclRedirectPort(msg.getUuid(), oldInstancePort, lblVo.getInstancePort());
+                }
 
                 Set<String> oldListenerTagValues = oldListenerTags.stream()
                         .map(SystemTagVO::getTag).collect(Collectors.toSet());
@@ -2515,7 +2527,7 @@ public class LoadBalancerBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             restoreListenerConfigSnapshot(msg.getUuid(), oldInstancePort,
-                                    oldSecurityPolicyType, oldListenerTags);
+                                    finalLblVo.getInstancePort(), oldSecurityPolicyType, oldListenerTags);
                             oldStruct.setRollback(true);
                             getBackend().refresh(oldStruct, new Completion(trigger) {
                                 @Override
@@ -2581,6 +2593,7 @@ public class LoadBalancerBase {
     }
 
     private void restoreListenerConfigSnapshot(String listenerUuid, Integer instancePort,
+                                               Integer appliedInstancePort,
                                                String securityPolicyType,
                                                List<SystemTagVO> listenerTags) {
         new SQLBatch() {
@@ -2598,6 +2611,36 @@ public class LoadBalancerBase {
                         .update();
             }
         }.execute();
+        updateListenerAclRedirectPort(listenerUuid, appliedInstancePort, instancePort);
+    }
+
+    private void updateListenerAclRedirectPort(String listenerUuid, Integer oldPort, Integer newPort) {
+        if (oldPort == null || oldPort.equals(newPort)) {
+            return;
+        }
+
+        List<String> redirectAclUuids = Q.New(LoadBalancerListenerACLRefVO.class)
+                .eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid)
+                .eq(LoadBalancerListenerACLRefVO_.type, LoadBalancerAclType.redirect)
+                .select(LoadBalancerListenerACLRefVO_.aclUuid)
+                .listValues();
+        if (redirectAclUuids.isEmpty()) {
+            return;
+        }
+
+        // entries stamped with the old instancePort (or legacy null ones) belong to this listener
+        SQL.New(AccessControlListEntryVO.class)
+                .in(AccessControlListEntryVO_.aclUuid, redirectAclUuids)
+                .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                .eq(AccessControlListEntryVO_.redirectPort, oldPort)
+                .set(AccessControlListEntryVO_.redirectPort, newPort)
+                .update();
+        SQL.New(AccessControlListEntryVO.class)
+                .in(AccessControlListEntryVO_.aclUuid, redirectAclUuids)
+                .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                .isNull(AccessControlListEntryVO_.redirectPort)
+                .set(AccessControlListEntryVO_.redirectPort, newPort)
+                .update();
     }
 
     private <K, V> void updateLoadBalancerListenerSystemTag(PatternedSystemTag systemTag, String resourceUuid, K token, V value) {
