@@ -2,6 +2,8 @@ package org.zstack.storage.snapshot.group;
 
 import org.zstack.core.db.Q;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
@@ -10,6 +12,7 @@ import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupTreeInventory
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupTreeRefInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
+import org.zstack.header.volume.VolumeType;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -55,8 +58,23 @@ public class VolumeSnapshotGroupTreeBuilder {
                         HashMap::putAll);
 
         linkParents(groupNodeMap, refsByGroup, parentMap, snapToGroup, groupCreateDate);
+        List<VolumeSnapshotGroupTreeInventory> forest = assembleForest(groupNodeMap);
+        markCurrent(groupNodeMap, loadCurrentTreeUuids(liveSnapVOs));
+        return forest;
+    }
 
-        return assembleForest(groupNodeMap);
+    private Set<String> loadCurrentTreeUuids(Map<String, VolumeSnapshotVO> snapVOs) {
+        Set<String> treeUuids = snapVOs.values().stream()
+                .map(VolumeSnapshotVO::getTreeUuid)
+                .collect(Collectors.toSet());
+        if (treeUuids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return new HashSet<>(Q.New(VolumeSnapshotTreeVO.class)
+                .in(VolumeSnapshotTreeVO_.uuid, treeUuids)
+                .eq(VolumeSnapshotTreeVO_.current, true)
+                .select(VolumeSnapshotTreeVO_.uuid)
+                .listValues());
     }
 
     private Map<String, VolumeSnapshotVO> loadSnapshotVOsWithAncestors(List<VolumeSnapshotGroupRefVO> refs) {
@@ -232,12 +250,31 @@ public class VolumeSnapshotGroupTreeBuilder {
             node.getChildren().sort(byCreateDateAsc);
         }
 
-        markCurrent(groupNodeMap);
         return forest;
     }
 
-    private void markCurrent(Map<String, VolumeSnapshotGroupTreeInventory> groupNodeMap) {
+    private void markCurrent(Map<String, VolumeSnapshotGroupTreeInventory> groupNodeMap,
+                             Set<String> currentTreeUuids) {
         VolumeSnapshotGroupTreeInventory current = null;
+        // A restored group may still have children. latest is meaningful only in a current tree.
+        for (VolumeSnapshotGroupTreeInventory node : groupNodeMap.values()) {
+            // Memory restore does not update the disk snapshot latest/current-tree markers.
+            List<VolumeSnapshotGroupTreeRefInventory> diskRefs = node.getRefs().stream()
+                    .filter(ref -> !VolumeType.Memory.toString().equals(ref.getVolumeType()))
+                    .collect(Collectors.toList());
+            if (!diskRefs.isEmpty() && diskRefs.stream().allMatch(ref ->
+                    !ref.isSnapshotDeleted() && ref.getSnapshot() != null
+                            && ref.getSnapshot().isLatest()
+                            && currentTreeUuids.contains(ref.getSnapshot().getTreeUuid()))) {
+                current = pickNewer(current, node);
+            }
+        }
+        if (current != null) {
+            current.setCurrent(true);
+            return;
+        }
+
+        // Preserve the existing selection when no group matches the active snapshot point.
         for (VolumeSnapshotGroupTreeInventory node : groupNodeMap.values()) {
             if (!node.getChildren().isEmpty()) {
                 continue;
