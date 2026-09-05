@@ -634,3 +634,12 @@ END $$
 DELIMITER ;
 CALL UpgradeSNSPluginEndpointForeignKeys();
 DROP PROCEDURE IF EXISTS UpgradeSNSPluginEndpointForeignKeys;
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `spaceId` varchar(128) NOT NULL COMMENT 'production space identifier owned by the zsdataset VM',
+    `appInstanceUuid` varchar(32) NOT NULL COMMENT 'marketplace application instance hosting the VM',
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukZsDatasetSpaceRefVOInstanceSpace` (`appInstanceUuid`, `spaceId`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
