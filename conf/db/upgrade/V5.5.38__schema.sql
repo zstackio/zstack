@@ -452,6 +452,16 @@ CALL ADD_CONSTRAINT('ModelServiceInstanceGroupVO', 'fkModelServiceInstanceGroupV
 
 CALL ADD_COLUMN('ZnsControllerVO', 'zcfAccessKeyId', 'VARCHAR(64)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'zcfAccessKeySecret', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityMode', 'VARCHAR(32)', 0, 'UNBOUND');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProfile', 'VARCHAR(64)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityPeerVersion', 'VARCHAR(32)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProofDigest', 'VARCHAR(128)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityProofAt', 'DATETIME', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityEndpoint', 'VARCHAR(255)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityServiceInstanceUuid', 'VARCHAR(64)', 0, '');
+CALL ADD_COLUMN('ZnsControllerVO', 'compatibilityDiagnostic', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'contractResolutionMode', 'VARCHAR(32)', 0, 'NEGOTIATED');
+CALL ADD_COLUMN('ZnsControllerVO', 'deploymentProfileId', 'VARCHAR(128)', 0, '');
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerStateVO` (
     `sdnControllerUuid` varchar(32) NOT NULL,
@@ -507,6 +517,84 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerCapabilityVO` (
             AND `effectiveState` IN ('NOT_ACTIVATED', 'MIGRATING_READ_ONLY', 'ACTIVE', 'INCOMPATIBLE_READ_ONLY'))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'selectedFields', 'TEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'pendingSelectedFields', 'TEXT', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerTransitionVO` (
+    `operationUuid` varchar(36) NOT NULL,
+    `controllerUuid` varchar(32) NOT NULL,
+    `capabilityName` varchar(64) NOT NULL,
+    `transitionType` varchar(24) NOT NULL,
+    `phase` varchar(16) NOT NULL,
+    `fromContract` varchar(32) NOT NULL,
+    `targetContract` varchar(32) NOT NULL,
+    `expectedEpoch` bigint NOT NULL,
+    `cloudOfferDigest` varchar(128) NOT NULL,
+    `znsOfferDigest` varchar(128) NOT NULL,
+    `ownerUuid` varchar(128) NOT NULL,
+    `leaseUntil` timestamp NULL DEFAULT NULL,
+    `immutableResult` mediumtext DEFAULT NULL,
+    `lastError` text DEFAULT NULL,
+    `attempt` int NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`operationUuid`),
+    KEY `idxZnsControllerTransitionVOControllerCapability`
+        (`controllerUuid`, `capabilityName`, `phase`),
+    KEY `idxZnsControllerTransitionVOLease` (`phase`, `leaseUntil`),
+    CONSTRAINT `fkZnsControllerTransitionVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudProtocolIdentityVO` (
+    `identityKey` varchar(32) NOT NULL,
+    `clusterUuid` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`identityKey`),
+    UNIQUE KEY `ukZnsCloudProtocolIdentityVOClusterUuid` (`clusterUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+INSERT IGNORE INTO `zstack`.`ZnsCloudProtocolIdentityVO`
+    (`identityKey`, `clusterUuid`, `createDate`, `lastOpDate`)
+VALUES ('zns-cloud-protocol', REPLACE(UUID(), '-', ''), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudOfferSnapshotVO` (
+    `scopeUuid` varchar(64) NOT NULL,
+    `controllerUuid` varchar(32) DEFAULT NULL,
+    `complete` boolean NOT NULL,
+    `membershipDigest` varchar(128) NOT NULL,
+    `membershipTokenDigest` varchar(128) NOT NULL,
+    `factsDigest` varchar(128) NOT NULL,
+    `offerDigest` varchar(128) NOT NULL,
+    `generation` bigint NOT NULL,
+    `offerJson` mediumtext NOT NULL,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`scopeUuid`),
+    UNIQUE KEY `ukZnsCloudOfferSnapshotVOControllerUuid` (`controllerUuid`),
+    CONSTRAINT `fkZnsCloudOfferSnapshotVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsPeerOfferVO` (
+    `controllerUuid` varchar(32) NOT NULL,
+    `peerClusterUuid` varchar(64) NOT NULL,
+    `generation` bigint NOT NULL,
+    `membershipDigest` varchar(128) NOT NULL,
+    `offerDigest` varchar(128) NOT NULL,
+    `complete` boolean NOT NULL,
+    `offerJson` mediumtext NOT NULL,
+    `fetchedAt` timestamp NULL DEFAULT NULL,
+    `validatedAt` timestamp NULL DEFAULT NULL,
+    `lastRefreshError` text DEFAULT NULL,
+    `nextRetryAt` timestamp NULL DEFAULT NULL,
+    `refreshAttempt` int NOT NULL DEFAULT 0,
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`controllerUuid`),
+    KEY `idxZnsPeerOfferVONextRetryAt` (`nextRetryAt`),
+    CONSTRAINT `fkZnsPeerOfferVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentInventoryVO` (
     `uuid` varchar(32) NOT NULL,
     `sdnControllerUuid` varchar(32) NOT NULL,
@@ -539,6 +627,12 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
     `operationUuid` varchar(36) DEFAULT NULL,
     `operationStep` varchar(32) DEFAULT NULL,
     `operationDigest` varchar(64) DEFAULT NULL,
+    `operationCapabilityName` varchar(64) DEFAULT NULL,
+    `operationCapabilityContract` varchar(32) DEFAULT NULL,
+    `operationCapabilityEpoch` bigint DEFAULT NULL,
+    `operationProviderIdentity` varchar(128) DEFAULT NULL,
+    `operationProfileIdentity` varchar(128) DEFAULT NULL,
+    `operationAdapterIdentity` varchar(128) DEFAULT NULL,
     `currentConfigVersion` bigint DEFAULT NULL,
     `appliedConfigVersion` bigint DEFAULT NULL,
     `lastErrorCode` varchar(128) DEFAULT NULL,
@@ -557,9 +651,17 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRefVO` (
         CHECK (`znsSegmentUuid` IS NOT NULL OR `state` = 'MigrationFailed')
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityName', 'VARCHAR(64)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityContract', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationCapabilityEpoch', 'BIGINT', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProviderIdentity', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProfileIdentity', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationAdapterIdentity', 'VARCHAR(128)', 1, NULL);
+
 -- ZSTAC-86635: Persist ZNS controller connection candidates outside SystemTag.
 CALL ADD_COLUMN('ZnsControllerVO', 'ipOwnership', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'vipEndpoint', 'varchar(255)', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerVO', 'endpointRevision', 'BIGINT', 0, 0);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerNodeEndpointVO` (
     `id` bigint unsigned NOT NULL AUTO_INCREMENT,

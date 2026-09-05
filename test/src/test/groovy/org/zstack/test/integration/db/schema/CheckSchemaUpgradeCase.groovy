@@ -33,6 +33,7 @@ class CheckSchemaUpgradeCase extends SubCase {
     @Override
     void test() {
         testLoadBalancerListenerDataPlaneUpgradeSchema()
+        testZnsSegmentOperationContextUpgradeSchema()
     }
 
     void testLoadBalancerListenerDataPlaneUpgradeSchema() {
@@ -46,5 +47,23 @@ class CheckSchemaUpgradeCase extends SubCase {
         assert sql.contains("WHERE protocol = 'udp' AND data_plane IS NULL")
         assert sql.contains("SET data_plane = 'haproxy'")
         assert sql.contains("WHERE data_plane IS NULL")
+    }
+
+    void testZnsSegmentOperationContextUpgradeSchema() {
+        String upgradeSchemaDir = Paths.get("../conf/db/upgrade").toAbsolutePath().normalize().toString()
+        File schema = new File(upgradeSchemaDir + "/V5.5.38__schema.sql")
+        assert schema.exists()
+
+        String sql = schema.text
+        [
+                "operationCapabilityName": "VARCHAR(64)",
+                "operationCapabilityContract": "VARCHAR(32)",
+                "operationCapabilityEpoch": "BIGINT",
+                "operationProviderIdentity": "VARCHAR(128)",
+                "operationProfileIdentity": "VARCHAR(128)",
+                "operationAdapterIdentity": "VARCHAR(128)"
+        ].each { String column, String type ->
+            assert sql.contains("CALL ADD_COLUMN('ZnsSegmentRefVO', '${column}', '${type}', 1, NULL)")
+        }
     }
 }
