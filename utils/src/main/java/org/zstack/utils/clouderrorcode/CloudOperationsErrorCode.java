@@ -16446,4 +16446,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10034 = "ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10034";
 
     public static final String ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10035 = "ORG_ZSTACK_STORAGE_LOCALVOLUMECACHE_10035";
+    public static final String ORG_ZSTACK_AI_10175 = "ORG_ZSTACK_AI_10175";
+
+    public static final String ORG_ZSTACK_AI_10176 = "ORG_ZSTACK_AI_10176";
+
+    public static final String ORG_ZSTACK_AI_10177 = "ORG_ZSTACK_AI_10177";
+
+    public static final String ORG_ZSTACK_AI_10178 = "ORG_ZSTACK_AI_10178";
+
 }
