@@ -2,7 +2,7 @@ package org.zstack.sdk.network.zns.protocol;
 
 
 
-public class Event  {
+public class ProtocolEventDescriptor  {
 
     public java.lang.String id;
     public void setId(java.lang.String id) {

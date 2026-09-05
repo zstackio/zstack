@@ -657,12 +657,12 @@ public class SourceClassMap {
 			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.network.zns.ZnsTransportZoneInventory");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Contract", "org.zstack.sdk.network.zns.protocol.Contract");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Domain", "org.zstack.sdk.network.zns.protocol.Domain");
-			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Event", "org.zstack.sdk.network.zns.protocol.Event");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$EventVersion", "org.zstack.sdk.network.zns.protocol.EventVersion");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Field", "org.zstack.sdk.network.zns.protocol.Field");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Migration", "org.zstack.sdk.network.zns.protocol.Migration");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$Operation", "org.zstack.sdk.network.zns.protocol.Operation");
 			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$OperationVersion", "org.zstack.sdk.network.zns.protocol.OperationVersion");
+			put("org.zstack.network.zns.protocol.ZnsProtocolManifest$ProtocolEventDescriptor", "org.zstack.sdk.network.zns.protocol.ProtocolEventDescriptor");
 			put("org.zstack.observabilityServer.ObservabilityServerOfferingInventory", "org.zstack.sdk.ObservabilityServerOfferingInventory");
 			put("org.zstack.observabilityServer.ObservabilityServerVmInventory", "org.zstack.sdk.ObservabilityServerVmInventory");
 			put("org.zstack.observabilityServer.service.ObservabilityServerServiceDataInventory", "org.zstack.sdk.ObservabilityServerServiceDataInventory");
@@ -1793,12 +1793,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.network.zns.ZnsTransportZoneInventory", "org.zstack.network.zns.ZnsTransportZoneInventory");
 			put("org.zstack.sdk.network.zns.protocol.Contract", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Contract");
 			put("org.zstack.sdk.network.zns.protocol.Domain", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Domain");
-			put("org.zstack.sdk.network.zns.protocol.Event", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Event");
 			put("org.zstack.sdk.network.zns.protocol.EventVersion", "org.zstack.network.zns.protocol.ZnsProtocolManifest$EventVersion");
 			put("org.zstack.sdk.network.zns.protocol.Field", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Field");
 			put("org.zstack.sdk.network.zns.protocol.Migration", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Migration");
 			put("org.zstack.sdk.network.zns.protocol.Operation", "org.zstack.network.zns.protocol.ZnsProtocolManifest$Operation");
 			put("org.zstack.sdk.network.zns.protocol.OperationVersion", "org.zstack.network.zns.protocol.ZnsProtocolManifest$OperationVersion");
+			put("org.zstack.sdk.network.zns.protocol.ProtocolEventDescriptor", "org.zstack.network.zns.protocol.ZnsProtocolManifest$ProtocolEventDescriptor");
 			put("org.zstack.sdk.sns.SNSAliyunSmsEndpointInventory", "org.zstack.sns.SNSAliyunSmsEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationEndpointInventory", "org.zstack.sns.SNSApplicationEndpointInventory");
 			put("org.zstack.sdk.sns.SNSApplicationPlatformInventory", "org.zstack.sns.SNSApplicationPlatformInventory");
