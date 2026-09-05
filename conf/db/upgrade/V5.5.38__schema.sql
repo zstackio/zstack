@@ -643,3 +643,14 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `ukZsDatasetSpaceRefVOInstanceSpace` (`appInstanceUuid`, `spaceId`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
+    `uuid` varchar(32) NOT NULL UNIQUE,
+    `appInstanceUuid` varchar(32) NOT NULL COMMENT 'zsdataset application instance this key authenticates to',
+    `keyId` varchar(64) NOT NULL,
+    `secret` varchar(512) NOT NULL COMMENT 'never returned by any API; see ZsDatasetServiceKeyInventory',
+    `createDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `lastOpDate` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukZsDatasetServiceKeyVOAppInstance` (`appInstanceUuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
