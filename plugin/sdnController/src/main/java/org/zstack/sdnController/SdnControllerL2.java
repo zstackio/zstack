@@ -48,6 +48,15 @@ public interface SdnControllerL2 {
      */
     default boolean requiresConfirmedDelete() { return false; }
 
+    default boolean requiresConfirmedDelete(L2NetworkInventory network) {
+        return requiresConfirmedDelete();
+    }
+
+    default void prepareL2NetworkForCluster(L2NetworkInventory network, String clusterUuid,
+                                           Completion completion) {
+        completion.success();
+    }
+
     /**
      * Deletes an L2 network using a deletion-operation identity for idempotent
      * controller-side handling.

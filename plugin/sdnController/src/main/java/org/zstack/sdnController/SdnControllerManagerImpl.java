@@ -48,6 +48,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, L2DeleteConfirmExtensionPoint,
+        L2NetworkPrepareClusterExtensionPoint,
         SecurityGroupGetSdnBackendExtensionPoint,
         AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint,
         AfterAllocateSdnNicExtensionPoint {
@@ -375,9 +376,19 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     @Override
+    public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
+        SdnControllerL2 controller = findSdnControllerL2(network);
+        if (controller == null) {
+            completion.success();
+            return;
+        }
+        controller.prepareL2NetworkForCluster(network, clusterUuid, completion);
+    }
+
+    @Override
     public boolean requiresConfirmedDelete(L2NetworkInventory inv) {
         SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
-        return controllerL2 != null && controllerL2.requiresConfirmedDelete();
+        return controllerL2 != null && controllerL2.requiresConfirmedDelete(inv);
     }
 
     @Override

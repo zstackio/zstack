@@ -1263,7 +1263,7 @@ public class L2NoVlanNetwork implements L2Network {
                 .eq(HostVO_.status,HostStatus.Connected).list();
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
-        prepareL2NetworkOnHosts(hvinvs, msg.getL2ProviderType(), new Completion(msg,completion) {
+        prepareL2NetworkForCluster(msg, hvinvs, new Completion(msg,completion) {
             @Override
             public void success() {
                 try {
@@ -1294,6 +1294,51 @@ public class L2NoVlanNetwork implements L2Network {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    private void prepareL2NetworkForCluster(AttachL2NetworkToClusterMsg msg,
+                                           List<HostInventory> hosts, Completion completion) {
+        FlowChainBuilder.newSimpleFlowChain().then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new While<>(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class))
+                        .each((extension, next) -> extension.prepareAttach(getSelfInventory(), msg.getClusterUuid(),
+                                new Completion(next) {
+                                    @Override
+                                    public void success() { next.done(); }
+                                    @Override
+                                    public void fail(ErrorCode error) {
+                                        next.addError(error);
+                                        next.allDone();
+                                    }
+                                })).run(new WhileDoneCompletion(trigger) {
+                            @Override
+                            public void done(ErrorCodeList errors) {
+                                if (errors.getCauses().isEmpty()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(errors.getCauses().get(0));
+                                }
+                            }
+                        });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                prepareL2NetworkOnHosts(hosts, msg.getL2ProviderType(), new Completion(trigger) {
+                    @Override
+                    public void success() { trigger.next(); }
+                    @Override
+                    public void fail(ErrorCode error) { trigger.fail(error); }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) { completion.success(); }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode error, Map data) { completion.fail(error); }
+        }).start();
     }
 
     @Override
