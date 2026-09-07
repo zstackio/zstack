@@ -7,6 +7,7 @@ public class DownloadVolumeTemplateToPrimaryStorageMsg extends NeedReplyMessage 
     private String primaryStorageUuid;
     private ImageSpec templateSpec;
     private String hostUuid;
+    private String targetVolumeInstallUrl;
 
     @Override
     public String getPrimaryStorageUuid() {
@@ -31,5 +32,13 @@ public class DownloadVolumeTemplateToPrimaryStorageMsg extends NeedReplyMessage 
 
     public void setHostUuid(String hostUuid) {
         this.hostUuid = hostUuid;
+    }
+
+    public String getTargetVolumeInstallUrl() {
+        return targetVolumeInstallUrl;
+    }
+
+    public void setTargetVolumeInstallUrl(String targetVolumeInstallUrl) {
+        this.targetVolumeInstallUrl = targetVolumeInstallUrl;
     }
 }
