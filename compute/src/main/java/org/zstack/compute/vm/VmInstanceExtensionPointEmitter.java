@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.Component;
@@ -35,6 +36,8 @@ public class VmInstanceExtensionPointEmitter implements Component {
     private PluginRegistry pluginRgty;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private EventFacade evtf;
 
     private List<VmInstanceBeforeStartExtensionPoint> VmInstanceBeforeStartExtensions;
     private List<VmInstanceResumeExtensionPoint> VmInstanceResumeExtensionPoints;
@@ -586,6 +589,11 @@ public class VmInstanceExtensionPointEmitter implements Component {
 
     public void afterUpdateVmNicMac(final VmNicInventory nic, final String oldMac, final String newMac) {
         CollectionUtils.safeForEach(afterUpdateVmNicMacExtensionPoints, arg -> arg.afterUpdateVmNicMac(nic, oldMac, newMac));
+        VmNicCanonicalEvents.VmNicInfoChangedData data = new VmNicCanonicalEvents.VmNicInfoChangedData();
+        data.setVmInstanceUuid(nic.getVmInstanceUuid());
+        data.setVmNicUuid(nic.getUuid());
+        data.setChangeType(VmNicCanonicalEvents.VmNicInfoChangeType.MAC);
+        evtf.fire(VmNicCanonicalEvents.VM_NIC_INFO_CHANGED_PATH, data);
     }
 
     public List<ErrorCode> associateSshKeyPair(String vmUuid, List<String> sshKeyUuids) {

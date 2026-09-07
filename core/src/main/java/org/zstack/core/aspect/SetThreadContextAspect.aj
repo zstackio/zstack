@@ -1,6 +1,7 @@
 package org.zstack.core.aspect;
 
 import org.zstack.core.thread.Task;
+import org.zstack.core.asyncbatch.AsyncForEachCompletion;
 import org.zstack.header.HasThreadContext;
 import org.apache.logging.log4j.ThreadContext;
 import org.zstack.utils.TaskContext;
@@ -48,6 +49,10 @@ public aspect SetThreadContextAspect {
     }
 
     before(org.zstack.header.core.ReturnValueCompletion c) : target(c) && execution(* org.zstack.header.core.ReturnValueCompletion+.fail(..)) {
+        setThreadContext(c);
+    }
+
+    before(AsyncForEachCompletion c) : target(c) && execution(* AsyncForEachCompletion+.completed(..)) {
         setThreadContext(c);
     }
 

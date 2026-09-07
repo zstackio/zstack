@@ -404,7 +404,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
+                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
@@ -431,7 +431,7 @@ public class VxlanNetwork extends L2NoVlanNetwork implements ReportQuotaExtensio
 
             @Override
             public String getName() {
-                return getSyncSignature();
+                return String.format("change-l2-network-%s-vni", msg.getL2NetworkUuid());
             }
         });
     }

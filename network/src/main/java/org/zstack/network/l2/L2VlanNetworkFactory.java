@@ -51,6 +51,12 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
 
     @Override
     public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
+        createL2Network(ovo, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, NetworkCreateContext context,
+                                ReturnValueCompletion<L2NetworkInventory> completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName("create-no-vlan-network");
         chain.then(new Flow() {
@@ -78,7 +84,7 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
                 L2VlanNetworkInventory inv = L2VlanNetworkInventory.valueOf(
                         dbf.findByUuid(ovo.getUuid(), L2VlanNetworkVO.class));
                 new While<>(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.postCreateL2Network(inv, msg, new Completion(trigger) {
+                        .each((exp, wcompl) -> exp.postCreateL2Network(inv, msg, context, new Completion(trigger) {
                             @Override
                             public void success() {
                                 wcompl.done();

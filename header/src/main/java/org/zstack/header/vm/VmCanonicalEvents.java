@@ -11,6 +11,8 @@ import java.time.LocalDateTime;
 public class VmCanonicalEvents {
     public static final String VM_LIBVIRT_REPORT_SHUTDOWN = "/vm/libvirtreportshutdown";
     public static final String VM_FULL_STATE_CHANGED_PATH = "/vm/state/change";
+    public static final String VM_CREATED_PATH = "/vm/create";
+    public static final String VM_INFO_CHANGED_PATH = "/vm/info/change";
     public static final String VM_INSTANCE_OFFERING_CHANGED_PATH = "/vm/instanceoffering/change";
     public static final String VM_CONFIG_CHANGED_PATH = "/vm/config/change";
     public static final String VM_LIBVIRT_REPORT_REBOOT = "/vm/libvirtReportReboot";
@@ -21,6 +23,32 @@ public class VmCanonicalEvents {
     public static final String VM_NIC_INFO_IPRANGE_CONFLICT_PATH = "/vm/nicinfo/iprangeConflict";
     public static final String VM_GPU_STATUS_ABNORMAL = "/vm/gpu/status/abnormal";
     public static final String VM_GPU_XID_ERROR = "/vm/gpu/xid/error";
+
+    @NeedJsonSchema
+    public static class VmCreatedData {
+        private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class VmInfoChangedData {
+        private String vmUuid;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+    }
 
     @NeedJsonSchema
     public static class VmCrashReportData {

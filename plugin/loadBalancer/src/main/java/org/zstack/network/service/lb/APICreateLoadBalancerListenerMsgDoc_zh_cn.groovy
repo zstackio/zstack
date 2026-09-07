@@ -225,6 +225,26 @@ doc {
 					optional true
 					since "5.0.0"
 				}
+				column {
+					name "dataPlane"
+					enclosedIn "params"
+					desc "监听器使用的数据平面。haproxy 表示使用 HAProxy，ipvs 表示使用 IPVS。"
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+					values ("haproxy","ipvs")
+				}
+				column {
+					name "forwardMode"
+					enclosedIn "params"
+					desc "监听器使用 IPVS 数据平面时的转发模式。当前 TCP IPVS 监听器支持 full_nat、nat、dr。"
+					location "body"
+					type "String"
+					optional true
+					since "5.5.28"
+					values ("full_nat","nat","dr")
+				}
 			}
         }
 

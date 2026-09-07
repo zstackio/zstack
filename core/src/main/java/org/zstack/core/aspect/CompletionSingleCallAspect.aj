@@ -3,6 +3,7 @@ package org.zstack.core.aspect;
 import org.zstack.header.core.AbstractCompletion;
 import org.zstack.header.core.HaCheckerCompletion;
 import org.zstack.header.core.WhileCompletion;
+import org.zstack.core.asyncbatch.AsyncForEachCompletion;
 import org.zstack.utils.DebugUtils;
 
 /**
@@ -38,6 +39,15 @@ public aspect CompletionSingleCallAspect {
     void around(AbstractCompletion completion) : this(completion) && execution(void org.zstack.header.core.ReturnValueCompletion+.fail(*)) {
         if (!completion.getFailCalled().compareAndSet(false, true)) {
             DebugUtils.dumpStackTrace("ReturnValueCompletion.fail() is mistakenly called twice");
+            return;
+        }
+
+        proceed(completion);
+    }
+
+    void around(AbstractCompletion completion) : this(completion) && execution(void org.zstack.core.asyncbatch.AsyncForEachCompletion+.completed(*)) {
+        if (!completion.getSuccessCalled().compareAndSet(false, true)) {
+            DebugUtils.dumpStackTrace("AsyncForEachCompletion.completed() is mistakenly called twice");
             return;
         }
 

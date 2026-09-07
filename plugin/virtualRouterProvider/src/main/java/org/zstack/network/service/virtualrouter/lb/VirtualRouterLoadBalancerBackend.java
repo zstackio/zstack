@@ -47,6 +47,7 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
@@ -250,6 +251,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
                 throw new CloudRuntimeException("not support separate vr with multiple networks vpc!");
             }
+            return vrInventory;
         }
 
         DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
@@ -267,6 +269,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         int instancePort;
         int loadBalancerPort;
         String mode;
+        String dataPlane;
+        String forwardMode;
         List<String> parameters;
         String certificateUuid;
         String securityPolicyType;
@@ -460,6 +464,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setMode(String mode) {
             this.mode = mode;
+        }
+
+        public String getDataPlane() {
+            return dataPlane;
+        }
+
+        public void setDataPlane(String dataPlane) {
+            this.dataPlane = dataPlane;
+        }
+
+        public String getForwardMode() {
+            return forwardMode;
+        }
+
+        public void setForwardMode(String forwardMode) {
+            this.forwardMode = forwardMode;
         }
 
         public String getCertificateUuid() {
@@ -898,6 +918,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setLbUuid(l.getLoadBalancerUuid());
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
+                to.setDataPlane(l.getDataPlane());
+                to.setForwardMode(l.getForwardMode());
                 if (vip != null) {
                     to.setVip(vip.getIp());
                 }
@@ -1280,6 +1302,52 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void validateBeforeCreateListener(LoadBalancerVO lbVO, APICreateLoadBalancerListenerMsg msg, Completion completion) {
+        if (!isTcpIpvsListener(msg)) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmInventory vr = findVirtualRouterVm(lbVO.getUuid());
+        if (vr == null) {
+            completion.success();
+            return;
+        }
+
+        ErrorCode errorCode = validateTcpIpvsZvrVersion(vr.getUuid());
+        if (errorCode != null) {
+            completion.fail(errorCode);
+            return;
+        }
+
+        completion.success();
+    }
+
+    private boolean isTcpIpvsListener(APICreateLoadBalancerListenerMsg msg) {
+        return LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol()) &&
+                LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane());
+    }
+
+    private ErrorCode validateTcpIpvsZvrVersion(String vmUuid) {
+        VirtualRouterMetadataVO metadataVO = dbf.findByUuid(vmUuid, VirtualRouterMetadataVO.class);
+        String zvrVersion = metadataVO == null ? null : metadataVO.getZvrVersion();
+        if (zvrVersion != null) {
+            zvrVersion = zvrVersion.trim();
+        }
+        if (!VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion)) {
+            return null;
+        }
+
+        if (new VersionComparator(zvrVersion).compare(VyosConstants.TCP_IPVS_MIN_ZVR_VERSION) < 0) {
+            return operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10190,
+                    "target appliance vm[uuid:%s] zvr version [%s] does not support tcp ipvs listener, required >= %s",
+                    vmUuid, zvrVersion, VyosConstants.TCP_IPVS_MIN_ZVR_VERSION);
+        }
+
+        return null;
     }
 
     public void refreshCertsAndListeners(VirtualRouterVmInventory vr,

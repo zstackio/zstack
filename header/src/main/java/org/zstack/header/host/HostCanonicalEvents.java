@@ -10,6 +10,8 @@ import org.zstack.header.message.NeedJsonSchema;
 public class HostCanonicalEvents {
     public static final String HOST_STATUS_CHANGED_PATH = "/host/status/change";
     public static final String HOST_DELETED_PATH = "/host/delete";
+    public static final String HOST_CREATED_PATH = "/host/create";
+    public static final String HOST_INFO_CHANGED_PATH = "/host/info/change";
     public static final String HOST_DISCONNECTED_PATH = "/host/disconnected";
     public static final String HOST_HARDWARE_CHANGED_PATH = "/host/hardware/changed";
     public static final String HOST_CHECK_MOUNT_FAULT = "/host/mount/path/fault";
@@ -613,6 +615,32 @@ public class HostCanonicalEvents {
 
         public void setInventory(HostInventory inventory) {
             this.inventory = inventory;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostCreatedData {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostInfoChangedData {
+        private String hostUuid;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
         }
     }
 

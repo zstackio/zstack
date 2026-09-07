@@ -37,6 +37,12 @@ public class DeployDistributedModelServiceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String businessNetworkProfileUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableDeveloperEndpoint;
+
     @Param(required = false)
     public java.lang.String resourceUuid;
 

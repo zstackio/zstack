@@ -18,6 +18,7 @@ import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.Component;
 import org.zstack.header.console.ConsoleBackend;
 import org.zstack.header.console.ConsoleConstants;
+import org.zstack.header.console.ConsoleHypervisorBackend;
 import org.zstack.header.console.ConsoleInventory;
 import org.zstack.header.console.ConsoleProxy;
 import org.zstack.header.console.ConsoleProxyInventory;
@@ -38,6 +39,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.rest.RESTFacade;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.utils.Utils;
@@ -72,6 +74,8 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
     protected ErrorFacade errf;
     @Autowired
     protected Timer timer;
+    @Autowired
+    protected ConsoleManager consoleMgr;
 
     protected static final String ANSIBLE_PLAYBOOK_NAME = "consoleproxy.py";
 
@@ -138,11 +142,16 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             return;
         }
 
+        boolean recreateExpiredExclusiveSession = false;
         if (timer.getCurrentTimestamp().after(vo.getExpiredDate())) {
-            dbf.remove(vo);
-            ConsoleProxy proxy = getConsoleProxy(session, vm);
-            establishNewProxy(proxy, vm, complete);
-            return;
+            ConsoleHypervisorBackend backend = consoleMgr.getHypervisorConsoleBackend(HypervisorType.valueOf(vm.getHypervisorType()));
+            if (!backend.requireExclusiveConsoleSessionRenewal()) {
+                dbf.remove(vo);
+                ConsoleProxy proxy = getConsoleProxy(session, vm);
+                establishNewProxy(proxy, vm, complete);
+                return;
+            }
+            recreateExpiredExclusiveSession = true;
         }
 
         String hostIp = getHostIp(vm);
@@ -150,7 +159,7 @@ public abstract class AbstractConsoleProxyBackend implements ConsoleBackend, Com
             throw new OperationFailureException(operr(ORG_ZSTACK_CONSOLE_10012, "cannot find host IP of the vm[uuid:%s], is the vm running???", vm.getUuid()));
         }
 
-        if (vo.getTargetHostname().equals(hostIp)) {
+        if (vo.getTargetHostname().equals(hostIp) && !recreateExpiredExclusiveSession) {
             // vm is on the same host
             updateConsoleProxy(vm, vo, complete);
         } else {

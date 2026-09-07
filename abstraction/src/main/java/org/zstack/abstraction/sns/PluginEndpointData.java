@@ -9,6 +9,7 @@ public class PluginEndpointData {
     private Map metadata;
     private String message;
     private Map properties;
+    private Map runtime;
 
     public Map getMetadata() {
         return metadata;
@@ -32,5 +33,13 @@ public class PluginEndpointData {
 
     public void setProperties(Map properties) {
         this.properties = properties;
+    }
+
+    public Map getRuntime() {
+        return runtime;
+    }
+
+    public void setRuntime(Map runtime) {
+        this.runtime = runtime;
     }
 }

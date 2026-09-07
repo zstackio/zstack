@@ -733,16 +733,19 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
 
                 String port = ts[1];
                 if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(protocol) && !"default".equals(port)) {
-                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10014, "invalid health target[%s], health check protocol none only supports default target", systemTag));
+                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10192, "invalid health target[%s], health check protocol none only supports default target", systemTag));
                 }
 
                 LoadBalancerListenerVO listener = Q.New(LoadBalancerListenerVO.class)
                         .eq(LoadBalancerListenerVO_.uuid, resourceUuid)
                         .find();
                 if (listener != null) {
+                    boolean isTcpIpvsListener = LoadBalancerConstants.LB_PROTOCOL_TCP.equals(listener.getProtocol()) &&
+                            LoadBalancerConstants.DATA_PLANE_IPVS.equals(listener.getDataPlane());
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(protocol) &&
-                            !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol())) {
-                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10014, "invalid health target[%s], health check protocol none is only supported by udp listener", systemTag));
+                            !LoadBalancerConstants.LB_PROTOCOL_UDP.equals(listener.getProtocol()) &&
+                            !isTcpIpvsListener) {
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10193, "invalid health target[%s], health check protocol none is only supported by udp listener and tcp ipvs listener", systemTag));
                     }
                 }
 

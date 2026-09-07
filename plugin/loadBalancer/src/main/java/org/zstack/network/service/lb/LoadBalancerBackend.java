@@ -21,6 +21,10 @@ public interface LoadBalancerBackend {
 
     void addListener(LoadBalancerStruct struct,  LoadBalancerListenerInventory listener, Completion completion);
 
+    default void validateBeforeCreateListener(LoadBalancerVO lbVO, APICreateLoadBalancerListenerMsg msg, Completion completion) {
+        completion.success();
+    }
+
     void removeListener(LoadBalancerStruct struct,  LoadBalancerListenerInventory listener, Completion completion);
 
     void destroyLoadBalancer(LoadBalancerStruct struct, Completion completion);

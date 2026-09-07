@@ -48,6 +48,12 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
     @Column
     private String protocol;
 
+    @Column(name = "data_plane")
+    private String dataPlane;
+
+    @Column(name = "forward_mode")
+    private String forwardMode;
+
     @Column
     private String securityPolicyType;
 
@@ -154,6 +160,22 @@ public class LoadBalancerListenerVO extends ResourceVO implements OwnedByAccount
 
     public void setProtocol(String protocol) {
         this.protocol = protocol;
+    }
+
+    public String getDataPlane() {
+        return dataPlane;
+    }
+
+    public void setDataPlane(String dataPlane) {
+        this.dataPlane = dataPlane;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public String getSecurityPolicyType() {

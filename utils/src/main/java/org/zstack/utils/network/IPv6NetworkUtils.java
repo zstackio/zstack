@@ -518,6 +518,11 @@ public class IPv6NetworkUtils {
         return getIpv6AddressCanonicalString(ip);
     }
 
+    public static String normalizeHost(String host) {
+        String normalizedHost = stripHostUrlBrackets(host);
+        return isIpv6Address(normalizedHost) ? normalizeIpv6(normalizedHost) : normalizedHost;
+    }
+
     public static String formatHostForUrl(String host) {
         if (host == null) {
             return null;

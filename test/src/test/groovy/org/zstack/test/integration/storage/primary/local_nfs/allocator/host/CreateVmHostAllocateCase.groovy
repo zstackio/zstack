@@ -116,6 +116,8 @@ class CreateVmHostAllocateCase extends SubCase {
         env.create {
             testGetCandidateZonesClustersHostsForCreatingVm()
 
+            testCreateVmAssignLocalAndNfs()
+
             testCreateVmAssignNfs()
         }
     }
@@ -140,6 +142,60 @@ class CreateVmHostAllocateCase extends SubCase {
         }.getHosts()
 
         assert 2 == hosts.size()
+    }
+
+    void testCreateVmAssignLocalAndNfs() {
+        InstanceOfferingInventory instanceOffering = env.inventoryByName("instanceOffering") as InstanceOfferingInventory
+        DiskOfferingInventory diskOffering = env.inventoryByName("diskOffering") as DiskOfferingInventory
+        ImageInventory image = env.inventoryByName("image") as ImageInventory
+        L3NetworkInventory l3 = env.inventoryByName("l3") as L3NetworkInventory
+        HostInventory host = env.inventoryByName("kvm")
+        PrimaryStorageInventory nfs = env.inventoryByName("nfs")
+        PrimaryStorageInventory local = env.inventoryByName("local")
+
+        CreateVmInstanceAction rootAndDataLocalAction = new CreateVmInstanceAction(
+                name : "rootAndDataLocalVm",
+                instanceOfferingUuid : instanceOffering.uuid,
+                imageUuid : image.uuid,
+                l3NetworkUuids : [l3.uuid],
+                hostUuid : host.uuid,
+                dataDiskOfferingUuids : [diskOffering.uuid],
+                primaryStorageUuidForRootVolume : local.uuid,
+                systemTags : [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): local.uuid])],
+                sessionId : currentEnvSpec.session.uuid
+        )
+        assert null != rootAndDataLocalAction.call().error
+
+        CreateVmInstanceAction rootLocalDataNfsAction = new CreateVmInstanceAction(
+                name : "rootLocalDataNfsVm",
+                instanceOfferingUuid : instanceOffering.uuid,
+                imageUuid : image.uuid,
+                l3NetworkUuids : [l3.uuid],
+                hostUuid : host.uuid,
+                dataDiskOfferingUuids : [diskOffering.uuid],
+                primaryStorageUuidForRootVolume : local.uuid,
+                systemTags : [VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME.instantiateTag([(VmSystemTags.PRIMARY_STORAGE_UUID_FOR_DATA_VOLUME_TOKEN): nfs.uuid])],
+                sessionId : currentEnvSpec.session.uuid
+        )
+        CreateVmInstanceAction.Result rootLocalDataNfsResult = rootLocalDataNfsAction.call()
+        assert null == rootLocalDataNfsResult.error
+        checkVmRootDiskPs(rootLocalDataNfsResult.value.inventory, local.uuid)
+        checkVmDataDiskPs(rootLocalDataNfsResult.value.inventory, nfs.uuid)
+
+        CreateVmInstanceAction rootLocalDataUnspecifiedAction = new CreateVmInstanceAction(
+                name : "rootLocalDataUnspecifiedVm",
+                instanceOfferingUuid : instanceOffering.uuid,
+                imageUuid : image.uuid,
+                l3NetworkUuids : [l3.uuid],
+                hostUuid : host.uuid,
+                dataDiskOfferingUuids : [diskOffering.uuid],
+                primaryStorageUuidForRootVolume : local.uuid,
+                sessionId : currentEnvSpec.session.uuid
+        )
+        CreateVmInstanceAction.Result rootLocalDataUnspecifiedResult = rootLocalDataUnspecifiedAction.call()
+        assert null == rootLocalDataUnspecifiedResult.error
+        checkVmRootDiskPs(rootLocalDataUnspecifiedResult.value.inventory, local.uuid)
+        checkVmDataDiskPs(rootLocalDataUnspecifiedResult.value.inventory, nfs.uuid)
     }
 
     void testCreateVmAssignNfs(){
@@ -183,5 +239,20 @@ class CreateVmHostAllocateCase extends SubCase {
                 sessionId : currentEnvSpec.session.uuid
         )
         assert null != createVmInstanceAction.call().error
+    }
+
+    void checkVmRootDiskPs(VmInstanceInventory vm, String psUuid) {
+        VolumeInventory rootDisk = vm.allVolumes.find { it.uuid == vm.rootVolumeUuid }
+        assert rootDisk != null
+        assert psUuid == rootDisk.primaryStorageUuid
+    }
+
+    void checkVmDataDiskPs(VmInstanceInventory vm, String psUuid) {
+        assert vm.allVolumes.size() > 1
+        for (VolumeInventory disk : vm.allVolumes) {
+            if (disk.uuid != vm.rootVolumeUuid) {
+                assert psUuid == disk.primaryStorageUuid
+            }
+        }
     }
 }

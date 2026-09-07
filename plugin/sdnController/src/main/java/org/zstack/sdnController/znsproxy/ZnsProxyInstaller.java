@@ -17,7 +17,6 @@ import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -43,20 +42,8 @@ public class ZnsProxyInstaller {
         this.dbf = dbf;
     }
 
-    public void install(ZnsProxyPrepareServiceCmd cmd) {
-        if (cmd == null) {
-            throw new CloudRuntimeException("prepare zns-proxy service failed: command is empty");
-        }
-        List<String> hostUuids = normalizeHostUuids(cmd.hostUuids);
-
-        File localPackage = resolveAndVerifyPackage(cmd);
-        for (String hostUuid : hostUuids) {
-            installOnHost(hostUuid, localPackage);
-        }
-    }
-
     public void ensureHost(String hostUuid) {
-        installOnHost(hostUuid, resolveAndVerifyPackage(new ZnsProxyPrepareServiceCmd()));
+        installOnHost(hostUuid, resolveAndVerifyPackage());
     }
 
     void installOnHost(String hostUuid, File localPackage) {
@@ -102,49 +89,8 @@ public class ZnsProxyInstaller {
         }
     }
 
-    public static String buildInstallCommand(String packagePath) {
-        return shellQuote(packagePath) + " install";
-    }
-
-    public static File resolvePackage(ZnsProxyPrepareServiceCmd cmd) {
-        if (cmd == null) {
-            throw new CloudRuntimeException("prepare zns-proxy service failed: command is empty");
-        }
-
-        String packageName;
-        if (StringUtils.hasText(cmd.packageName)) {
-            packageName = cmd.packageName.trim();
-        } else if (StringUtils.hasText(cmd.proxyVersion)) {
-            packageName = "zns-proxy-" + cmd.proxyVersion.trim() + ".bin";
-        } else {
-            packageName = PROXY_PACKAGE_NAME;
-        }
-
-        File localPackage = packageInRepository(packageName);
-        if (localPackage.exists() && localPackage.isFile()) {
-            return localPackage;
-        }
-
-        File classPathPackage = packageInAnsibleModule(packageName);
-        if (classPathPackage == null || !classPathPackage.exists() || !classPathPackage.isFile()) {
-            throw new CloudRuntimeException(String.format(
-                    "prepare zns-proxy service failed: package %s not found in %s or classpath %s",
-                    packageName, PACKAGE_REPOSITORY_PATH, ANSIBLE_MODULE_PATH));
-        }
-        return classPathPackage;
-    }
-
-    public static File resolveDefaultPackage() {
-        ZnsProxyPrepareServiceCmd cmd = new ZnsProxyPrepareServiceCmd();
-        return resolvePackage(cmd);
-    }
-
-    public static File resolveAndVerifyPackage(ZnsProxyPrepareServiceCmd cmd) {
-        if (cmd == null) {
-            throw new CloudRuntimeException("prepare zns-proxy service failed: command is empty");
-        }
-
-        String packageName = resolvePackageName(cmd);
+    public static File resolveAndVerifyPackage() {
+        String packageName = PROXY_PACKAGE_NAME;
         File classPathPackage = packageInAnsibleModule(packageName);
         File localPackage;
         File manifestFile;
@@ -182,28 +128,6 @@ public class ZnsProxyInstaller {
         return "http://127.0.0.1:" + PROXY_AGENT_PORT + "/zns-proxy/api/v1/health";
     }
 
-    private static List<String> normalizeHostUuids(List<String> hostUuids) {
-        if (hostUuids == null || hostUuids.isEmpty()) {
-            throw new CloudRuntimeException("prepare zns-proxy service failed: hostUuids is empty");
-        }
-
-        List<String> normalized = new ArrayList<String>(hostUuids.size());
-        for (String hostUuid : hostUuids) {
-            if (!StringUtils.hasText(hostUuid)) {
-                throw new CloudRuntimeException("prepare zns-proxy service failed: hostUuids is empty");
-            }
-            normalized.add(hostUuid.trim());
-        }
-        return normalized;
-    }
-
-    private static String shellQuote(String value) {
-        if (value == null) {
-            return "''";
-        }
-        return "'" + value.replace("'", "'\"'\"'") + "'";
-    }
-
     private static File packageInRepository(String packageName) {
         validatePackageName(packageName);
         return new File(PACKAGE_REPOSITORY_PATH, packageName);
@@ -220,16 +144,6 @@ public class ZnsProxyInstaller {
 
     private static boolean isFile(File file) {
         return file != null && file.exists() && file.isFile();
-    }
-
-    private static String resolvePackageName(ZnsProxyPrepareServiceCmd cmd) {
-        if (StringUtils.hasText(cmd.packageName)) {
-            return cmd.packageName.trim();
-        }
-        if (StringUtils.hasText(cmd.proxyVersion)) {
-            return "zns-proxy-" + cmd.proxyVersion.trim() + ".bin";
-        }
-        return PROXY_PACKAGE_NAME;
     }
 
     private static void verifyManifest(File localPackage, File manifestFile, ZnsProxyManifest manifest) {

@@ -366,9 +366,16 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(APIUpdateHostMsg msg) {
+        boolean topologyChanged =
+                (msg.getName() != null && !Objects.equals(msg.getName(), self.getName())) ||
+                (msg.getManagementIp() != null &&
+                        !Objects.equals(msg.getManagementIp(), self.getManagementIp()));
         HostVO vo = updateHost(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
+            if (topologyChanged) {
+                fireHostInfoChangedEvent();
+            }
         }
         APIUpdateHostEvent evt = new APIUpdateHostEvent(msg.getId());
         evt.setInventory(getSelfInventory());
@@ -758,6 +765,13 @@ public abstract class HostBase extends AbstractHost {
         extpEmitter.afterChange(self, event, currentState);
         logger.debug(String.format("Host[%s]'s state changed from %s to %s", self.getUuid(), currentState, self.getState()));
         return self.getState();
+    }
+
+    private void fireHostInfoChangedEvent() {
+        HostCanonicalEvents.HostInfoChangedData data =
+                new HostCanonicalEvents.HostInfoChangedData();
+        data.setHostUuid(self.getUuid());
+        evtf.fire(HostCanonicalEvents.HOST_INFO_CHANGED_PATH, data);
     }
 
     private boolean doChangeStateAndCheckHostOutOfMaintenance(HostStateEvent stateEvent) {

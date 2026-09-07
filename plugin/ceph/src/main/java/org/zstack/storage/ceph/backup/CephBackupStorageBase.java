@@ -49,6 +49,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.utils.network.IPv6NetworkUtils;
 
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
@@ -859,14 +860,15 @@ public class CephBackupStorageBase extends BackupStorageBase {
 
         GetImageDownloadProgressReply r = new GetImageDownloadProgressReply();
 
+        String hostname = IPv6NetworkUtils.normalizeHost(msg.getHostname());
         CephBackupStorageMonVO monvo = Q.New(CephBackupStorageMonVO.class)
                 .eq(CephBackupStorageMonVO_.backupStorageUuid, msg.getBackupStorageUuid())
-                .eq(CephBackupStorageMonVO_.hostname, msg.getHostname())
+                .eq(CephBackupStorageMonVO_.hostname, hostname)
                 .find();
         if (monvo == null) {
             r.setError(operr(
             ORG_ZSTACK_STORAGE_CEPH_BACKUP_10002,         "CephMon[hostname:%s] not found on backup storage[uuid:%s]",
-                    msg.getHostname(), msg.getBackupStorageUuid()));
+                    hostname, msg.getBackupStorageUuid()));
             bus.reply(msg, r);
             return;
         }

@@ -1811,9 +1811,33 @@ public class LoadBalancerBase {
                     return;
                 }
 
-                createListener(msg, new NoErrorCompletion(chain) {
+                LoadBalancerBackend backend = getBackend();
+                if (backend == null) {
+                    createListener(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
+                backend.validateBeforeCreateListener(self, msg, new Completion(chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        createListener(msg, new NoErrorCompletion(chain) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
+                        evt.setError(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });
@@ -1836,6 +1860,8 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setDataPlane(msg.getDataPlane());
+        vo.setForwardMode(LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane()) ? msg.getForwardMode() : null);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo = dbf.persistAndRefresh(vo);
@@ -1860,7 +1886,9 @@ public class LoadBalancerBase {
 
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
-        evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+        LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(vo);
+        inv.applyTcpIpvsSupportedParameterSystemTags(msg.getSystemTags());
+        evt.setInventory(inv);
         bus.publish(evt);
         completion.done();
     }
@@ -2489,7 +2517,9 @@ public class LoadBalancerBase {
                                     }
                                 }
                             } else {
-                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                                LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(lblVo);
+                                inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                                evt.setInventory(inv);
                             }
                             bus.publish(evt);
                         }
@@ -2498,7 +2528,9 @@ public class LoadBalancerBase {
                     chain.next();
                     return;
                 }
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(lblVo);
+                inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                evt.setInventory(inv);
                 bus.publish(evt);
                 chain.next();
             }

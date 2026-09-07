@@ -2434,7 +2434,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         for (String uuid : msg.getUsedIpUuids()) {
             UsedIpVO vo = dbf.findByUuid(uuid, UsedIpVO.class);
             Map<String, String> dhcpMap = getExistingDhcpServerIp(vo.getL3NetworkUuid(), vo.getIpVersion());
-            if (!dhcpMap.isEmpty()) {
+            if (dhcpMap.containsKey(vo.getIp())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10037, "could delete ip address, " +
                         "because ip [%s] is dhcp server ip", vo.getIp()));
             }
