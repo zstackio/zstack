@@ -9,6 +9,8 @@ import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerAclStatus
 import org.zstack.network.service.lb.LoadBalancerAclType
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO_
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO
@@ -789,6 +791,15 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> rollbackCmds =
                 Collections.synchronizedList(new ArrayList<VirtualRouterLoadBalancerBackend.RefreshLbCmd>())
+        def beforeTags = querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort()
+        def beforeInterval = LoadBalancerSystemTags.HEALTH_INTERVAL.getTokenByResourceUuid(
+                lblRes.value.inventory.uuid, LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN)
+        def nicUuid = vm.vmNics.find { it.l3NetworkUuid == l3.uuid }.uuid
+        def defaultGroup = Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, lblRes.value.inventory.uuid).find().serverGroupUuid
+        def weightRef = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, defaultGroup)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, nicUuid).find()
+        def oldWeight = weightRef.weight
         boolean failNextRefresh = true
         env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
             rollbackCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
@@ -801,12 +812,19 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         }
         action.healthCheckMethod = "GET"
         action.healthCheckURI = "/rollback.html"
+        action.healthCheckInterval = 7
+        action.systemTags = ["balancerWeight::${nicUuid}::37".toString()]
         action.healthCheckProtocol = "https"
         res = action.call()
         assert res.error != null
         retryInSecs {
             assert rollbackCmds.size() == 2
         }
+        assert querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort() == beforeTags
+        assert Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.id, weightRef.id).find().weight == oldWeight
+        assert rollbackCmds[0].lbs.any { it.parameters.contains("healthCheckInterval::7") }
+        assert rollbackCmds[1].lbs.any { it.parameters.contains("healthCheckInterval::${beforeInterval}".toString()) }
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid)
         assert tokens[0].get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
 
@@ -1479,7 +1497,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         def oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
         assert oldAclStatus == "disable"
 
-        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { HttpEntity<String> e ->
             VirtualRouterLoadBalancerBackend.RefreshLbRsp rspFail = new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
             rspFail.setError("Acl refresh failed")
             rspFail.setSuccess(false)
@@ -1491,6 +1509,10 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         changeAction.aclStatus = LoadBalancerAclStatus.enable.toString()
         changeAction.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result changeRes = changeAction.call()
+        assert changeRes.error != null
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { HttpEntity<String> e ->
+            return new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
+        }
         def rollbackedStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
         assert rollbackedStatus == "disable"
     }

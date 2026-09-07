@@ -40,6 +40,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
@@ -2298,226 +2300,274 @@ public class LoadBalancerBase {
     private void handle(APIChangeLoadBalancerListenerMsg msg) {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public String getSyncSignature() {
-                return getSyncId();
-            }
+            public String getSyncSignature() { return getSyncId(); }
 
             @Override
             public void run(SyncTaskChain chain) {
                 APIChangeLoadBalancerListenerEvent evt = new APIChangeLoadBalancerListenerEvent(msg.getId());
                 LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
-
-                if (msg.getBalancerAlgorithm() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
+                LoadBalancerStruct oldStruct = lbMgr.makeStruct(self);
+                oldStruct.setSynchronous(true);
+                oldStruct.setRollback(true);
+                String oldSecurityPolicyType = lblVo.getSecurityPolicyType();
+                List<SystemTagVO> currentTags = Q.New(SystemTagVO.class)
+                        .eq(SystemTagVO_.resourceUuid, msg.getUuid())
+                        .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .list();
+                List<SystemTagVO> oldTags = currentTags.stream().map(SystemTagVO::new).collect(Collectors.toList());
+                Map<Long, Long> oldWeights = new HashMap<>();
+                Set<String> changedNics = new LoadBalancerWeightOperator().getWeight(msg.getSystemTags()).keySet();
+                if (lblVo.getServerGroupUuid() != null && !changedNics.isEmpty()) {
+                    List<LoadBalancerServerGroupVmNicRefVO> refs = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, lblVo.getServerGroupUuid())
+                            .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, changedNics).list();
+                    refs.forEach(ref -> oldWeights.put(ref.getId(), ref.getWeight()));
                 }
+                boolean[] refreshAttempted = {false};
+                FlowChain flow = FlowChainBuilder.newSimpleFlowChain();
+                flow.setName("change-lb-listener-" + msg.getUuid());
+                flow.then(new Flow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) { trigger.next(); }
 
-                if (msg.getSessionPersistence() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_PERSISTENCE, msg.getUuid(), LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, msg.getSessionPersistence());
-                }
-
-                if (msg.getSessionIdleTimeout() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN, msg.getSessionIdleTimeout());
-                }
-
-                if (msg.getCookieName() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.COOKIE_NAME, msg.getUuid(), LoadBalancerSystemTags.COOKIE_NAME_TOKEN, msg.getCookieName());
-                }
-
-                if (msg.getHttpRedirectHttps() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS, msg.getUuid(), LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS_TOKEN, msg.getHttpRedirectHttps());
-                }
-
-                if (msg.getRedirectPort() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.REDIRECT_PORT, msg.getUuid(), LoadBalancerSystemTags.REDIRECT_PORT_TOKEN, msg.getRedirectPort());
-                }
-
-                if (msg.getStatusCode() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.STATUS_CODE, msg.getUuid(), LoadBalancerSystemTags.STATUS_CODE_TOKEN, msg.getStatusCode());
-                }
-
-                if (msg.getConnectionIdleTimeout() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
-                }
-
-                if (msg.getHealthCheckInterval() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
-                }
-
-                if (msg.getHealthCheckTimeout() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT,
-                            msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN,
-                            msg.getHealthCheckTimeout());
-                }
-
-                if (msg.getNbprocess() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.NUMBER_OF_PROCESS, msg.getUuid(), LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess());
-                }
-
-                if (msg.getHttpMode() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_MODE, msg.getUuid(), LoadBalancerSystemTags.HTTP_MODE_TOKEN, msg.getHttpMode());
-                }
-
-                if (msg.getHealthCheckTarget() != null) {
-                    String[] ts = getHeathCheckTarget(msg.getLoadBalancerListenerUuid());
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TARGET, msg.getUuid(), LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", ts[0], msg.getHealthCheckTarget()));
-                }
-
-                if (msg.getHealthyThreshold() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN, msg.getHealthyThreshold());
-                }
-
-                if (msg.getUnhealthyThreshold() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold());
-                }
-
-                if (msg.getMaxConnection() != null) {
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.MAX_CONNECTION, msg.getUuid(), LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection());
-                }
-
-                if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
-                    String httpVersions = String.join(",", msg.getHttpVersions());
-                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersions);
-                }
-
-                if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
-                    if (msg.getTcpProxyProtocol().equals(LoadBalancerConstants.DisableLbSupportTcpProxyProtocol)) {
-                        LoadBalancerSystemTags.TCP_PROXYPROTOCOL.delete(msg.getUuid());
-                    } else {
-                        updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.TCP_PROXYPROTOCOL, msg.getUuid(), LoadBalancerSystemTags.TCP_PROXYPROTOCOL_TOKEN, msg.getTcpProxyProtocol());
-                    }
-                }
-
-                if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
-                    if (msg.getHttpCompressAlgos().contains(LoadBalancerConstants.DisableLbSupportHttpCompressAlgos)) {
-                        LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.delete(msg.getUuid());
-                    } else {
-                        updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS, msg.getUuid(), LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN, String.join(" ", msg.getHttpCompressAlgos()));
-                    }
-                }
-
-                String[] ts = getHeathCheckTarget(msg.getUuid());
-                if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
-                            isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
-                        DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
-                                "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
-                        String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
-                        if (msg.getHealthCheckHttpCode() != null) {
-                            code = msg.getHealthCheckHttpCode();
-                        }
-                        SystemTagCreator creator = LoadBalancerSystemTags.HEALTH_PARAMETER.newSystemTagCreator(msg.getUuid());
-                        creator.setTagByTokens(map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN,
-                                String.format("%s:%s:%s", msg.getHealthCheckMethod(), msg.getHealthCheckURI(), code))
-                            ));
-                        creator.create();
-                    }
-
-                    if (isHttpBasedHealthCheck(ts[0]) &&
-                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
-                        LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
-                    }
-
-                    String target = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(msg.getHealthCheckProtocol()) ? "default" : ts[1];
-                    LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
-                                LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
-                                        e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), target)))
-                                ));
-                    ts = getHeathCheckTarget(msg.getUuid());
-                }
-
-                if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
-                    if (isHttpBasedHealthCheck(ts[0])) {
-                        String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
-                                LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
-                        String[] pm = param.split(":");
-                        if (pm.length != 3) {
-                            throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10026, "invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx", param));
-                        }
-
-                        if (msg.getHealthCheckMethod() != null) {
-                            pm[0] = msg.getHealthCheckMethod();
-                        }
-                        if (msg.getHealthCheckURI() != null) {
-                            pm[1] = msg.getHealthCheckURI();
-                        }
-                        if (msg.getHealthCheckHttpCode() != null) {
-                             pm[2] = msg.getHealthCheckHttpCode();
-                        }
-                        LoadBalancerSystemTags.HEALTH_PARAMETER.update(msg.getUuid(),
-                                LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(
-                                        map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, String.format("%s:%s:%s", pm[0], pm[1], pm[2]))
-                                        )));
-                    }
-                }
-
-                final String oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(
-                        msg.getUuid(), LoadBalancerSystemTags.BALANCER_ACL_TOKEN);
-                if (msg.getAclStatus() != null) {
-                    if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(msg.getUuid())) {
-                        LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
-                                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
-                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
-                                )));
-                    } else {
-                        SystemTagCreator creator = LoadBalancerSystemTags.BALANCER_ACL.newSystemTagCreator(msg.getUuid());
-                        creator.setTagByTokens(map(
-                                e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
-                        ));
-                        creator.inherent = false;
-                        creator.create();
-                    }
-                }
-
-                if (msg.getSystemTags() != null) {
-                    new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
-                }
-
-                if (msg.getSecurityPolicyType() != null) {
-                    lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
-                    dbf.updateAndRefresh(lblVo);
-                }
-
-                boolean refresh = isListenerNeedRefresh(lblVo, null);
-                if (refresh) {
-                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
-                    rmsg.setUuid(lblVo.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(rmsg, new CloudBusCallBack(chain) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
-                                evt.setError(reply.getError());
-                                if (msg.getAclStatus() != null) {
-                                    logger.warn(String.format( "rollback acl status for listener [uuid:%s]", msg.getUuid()));
-                                    if (oldAclStatus != null) {
-                                        LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
-                                                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
-                                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, oldAclStatus)
-                                                )));
-                                    } else {
-                                        LoadBalancerSystemTags.BALANCER_ACL.delete(msg.getUuid());
-                                    }
-                                }
-                            } else {
-                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                sql(SystemTagVO.class).eq(SystemTagVO_.resourceUuid, msg.getUuid())
+                                        .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName()).delete();
+                                oldTags.forEach(this::persist);
+                                oldWeights.forEach((id, weight) -> sql(LoadBalancerServerGroupVmNicRefVO.class)
+                                        .eq(LoadBalancerServerGroupVmNicRefVO_.id, id)
+                                        .set(LoadBalancerServerGroupVmNicRefVO_.weight, weight).update());
+                                sql(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, msg.getUuid())
+                                        .set(LoadBalancerListenerVO_.securityPolicyType, oldSecurityPolicyType).update();
                             }
-                            bus.publish(evt);
+                        }.execute();
+                        if (!refreshAttempted[0]) {
+                            trigger.rollback();
+                            return;
                         }
-                    });
+                        getBackend().refresh(oldStruct, new Completion(trigger) {
+                            @Override
+                            public void success() { trigger.rollback(); }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format("failed to restore listener[uuid:%s]: %s", msg.getUuid(), errorCode));
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (msg.getBalancerAlgorithm() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
+                        }
 
-                    chain.next();
-                    return;
-                }
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
-                bus.publish(evt);
-                chain.next();
+                        if (msg.getSessionPersistence() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_PERSISTENCE, msg.getUuid(), LoadBalancerSystemTags.SESSION_PERSISTENCE_TOKEN, msg.getSessionPersistence());
+                        }
+
+                        if (msg.getSessionIdleTimeout() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.SESSION_IDLE_TIMEOUT_TOKEN, msg.getSessionIdleTimeout());
+                        }
+
+                        if (msg.getCookieName() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.COOKIE_NAME, msg.getUuid(), LoadBalancerSystemTags.COOKIE_NAME_TOKEN, msg.getCookieName());
+                        }
+
+                        if (msg.getHttpRedirectHttps() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS, msg.getUuid(), LoadBalancerSystemTags.HTTP_REDIRECT_HTTPS_TOKEN, msg.getHttpRedirectHttps());
+                        }
+
+                        if (msg.getRedirectPort() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.REDIRECT_PORT, msg.getUuid(), LoadBalancerSystemTags.REDIRECT_PORT_TOKEN, msg.getRedirectPort());
+                        }
+
+                        if (msg.getStatusCode() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.STATUS_CODE, msg.getUuid(), LoadBalancerSystemTags.STATUS_CODE_TOKEN, msg.getStatusCode());
+                        }
+
+                        if (msg.getConnectionIdleTimeout() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT, msg.getUuid(), LoadBalancerSystemTags.CONNECTION_IDLE_TIMEOUT_TOKEN, msg.getConnectionIdleTimeout());
+                        }
+
+                        if (msg.getHealthCheckInterval() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
+                        }
+
+                        if (msg.getHealthCheckTimeout() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT,
+                                    msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN,
+                                    msg.getHealthCheckTimeout());
+                        }
+
+                        if (msg.getNbprocess() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.NUMBER_OF_PROCESS, msg.getUuid(), LoadBalancerSystemTags.NUMBER_OF_PROCESS_TOKEN, msg.getNbprocess());
+                        }
+
+                        if (msg.getHttpMode() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_MODE, msg.getUuid(), LoadBalancerSystemTags.HTTP_MODE_TOKEN, msg.getHttpMode());
+                        }
+
+                        if (msg.getHealthCheckTarget() != null) {
+                            String[] ts = getHeathCheckTarget(msg.getLoadBalancerListenerUuid());
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TARGET, msg.getUuid(), LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", ts[0], msg.getHealthCheckTarget()));
+                        }
+
+                        if (msg.getHealthyThreshold() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.HEALTHY_THRESHOLD_TOKEN, msg.getHealthyThreshold());
+                        }
+
+                        if (msg.getUnhealthyThreshold() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.UNHEALTHY_THRESHOLD, msg.getUuid(), LoadBalancerSystemTags.UNHEALTHY_THRESHOLD_TOKEN, msg.getUnhealthyThreshold());
+                        }
+
+                        if (msg.getMaxConnection() != null) {
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.MAX_CONNECTION, msg.getUuid(), LoadBalancerSystemTags.MAX_CONNECTION_TOKEN, msg.getMaxConnection());
+                        }
+
+                        if (!CollectionUtils.isEmpty(msg.getHttpVersions())) {
+                            String httpVersions = String.join(",", msg.getHttpVersions());
+                            updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_VERSIONS, msg.getUuid(), LoadBalancerSystemTags.HTTP_VERSIONS_TOKEN, httpVersions);
+                        }
+
+                        if (!StringUtils.isEmpty(msg.getTcpProxyProtocol())) {
+                            if (msg.getTcpProxyProtocol().equals(LoadBalancerConstants.DisableLbSupportTcpProxyProtocol)) {
+                                LoadBalancerSystemTags.TCP_PROXYPROTOCOL.delete(msg.getUuid());
+                            } else {
+                                updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.TCP_PROXYPROTOCOL, msg.getUuid(), LoadBalancerSystemTags.TCP_PROXYPROTOCOL_TOKEN, msg.getTcpProxyProtocol());
+                            }
+                        }
+
+                        if (!CollectionUtils.isEmpty(msg.getHttpCompressAlgos())) {
+                            if (msg.getHttpCompressAlgos().contains(LoadBalancerConstants.DisableLbSupportHttpCompressAlgos)) {
+                                LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS.delete(msg.getUuid());
+                            } else {
+                                updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS, msg.getUuid(), LoadBalancerSystemTags.HTTP_COMPRESS_ALGOS_TOKEN, String.join(" ", msg.getHttpCompressAlgos()));
+                            }
+                        }
+
+                        String[] ts = getHeathCheckTarget(msg.getUuid());
+                        if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
+                            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
+                                    isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
+                                DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
+                                        "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
+                                String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
+                                if (msg.getHealthCheckHttpCode() != null) {
+                                    code = msg.getHealthCheckHttpCode();
+                                }
+                                SystemTagCreator creator = LoadBalancerSystemTags.HEALTH_PARAMETER.newSystemTagCreator(msg.getUuid());
+                                creator.setTagByTokens(map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN,
+                                        String.format("%s:%s:%s", msg.getHealthCheckMethod(), msg.getHealthCheckURI(), code))
+                                    ));
+                                creator.create();
+                            }
+
+                            if (isHttpBasedHealthCheck(ts[0]) &&
+                                    LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
+                                LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
+                            }
+
+                            String target = LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE.equals(msg.getHealthCheckProtocol()) ? "default" : ts[1];
+                            LoadBalancerSystemTags.HEALTH_TARGET.update(msg.getUuid(),
+                                        LoadBalancerSystemTags.HEALTH_TARGET.instantiateTag(map(
+                                                e(LoadBalancerSystemTags.HEALTH_TARGET_TOKEN, String.format("%s:%s", msg.getHealthCheckProtocol(), target)))
+                                        ));
+                            ts = getHeathCheckTarget(msg.getUuid());
+                        }
+
+                        if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
+                            if (isHttpBasedHealthCheck(ts[0])) {
+                                String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
+                                        LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
+                                String[] pm = param.split(":");
+                                if (pm.length != 3) {
+                                    throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10026, "invalid health checking parameters[%s], the format is method:URI:code, for example, GET:/index.html:http_2xx", param));
+                                }
+
+                                if (msg.getHealthCheckMethod() != null) {
+                                    pm[0] = msg.getHealthCheckMethod();
+                                }
+                                if (msg.getHealthCheckURI() != null) {
+                                    pm[1] = msg.getHealthCheckURI();
+                                }
+                                if (msg.getHealthCheckHttpCode() != null) {
+                                     pm[2] = msg.getHealthCheckHttpCode();
+                                }
+                                LoadBalancerSystemTags.HEALTH_PARAMETER.update(msg.getUuid(),
+                                        LoadBalancerSystemTags.HEALTH_PARAMETER.instantiateTag(
+                                                map(e(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN, String.format("%s:%s:%s", pm[0], pm[1], pm[2]))
+                                                )));
+                            }
+                        }
+
+                        if (msg.getAclStatus() != null) {
+                            if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(msg.getUuid())) {
+                                LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
+                                        LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
+                                                e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
+                                        )));
+                            } else {
+                                SystemTagCreator creator = LoadBalancerSystemTags.BALANCER_ACL.newSystemTagCreator(msg.getUuid());
+                                creator.setTagByTokens(map(
+                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, msg.getAclStatus())
+                                ));
+                                creator.inherent = false;
+                                creator.create();
+                            }
+                        }
+
+                        if (msg.getSystemTags() != null) {
+                            new LoadBalancerWeightOperator().setWeight(msg.getSystemTags(), msg.getLoadBalancerListenerUuid());
+                        }
+
+                        if (msg.getSecurityPolicyType() != null) {
+                            lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
+                            dbf.updateAndRefresh(lblVo);
+                        }
+                        trigger.next();
+                    }
+                }).then(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!isListenerNeedRefresh(lblVo, null) || getBackend() == null) {
+                            trigger.next();
+                            return;
+                        }
+                        LoadBalancerStruct struct = lbMgr.makeStruct(self);
+                        struct.setSynchronous(true);
+                        refreshAttempted[0] = true;
+                        // Do not enqueue RefreshLoadBalancerMsg on this same LB chain.
+                        getBackend().refresh(struct, new Completion(trigger) {
+                            @Override
+                            public void success() { trigger.next(); }
+                            @Override
+                            public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
+                        });
+                    }
+                }).done(new FlowDoneHandler(chain) {
+                    @Override
+                    public void handle(Map data) {
+                        evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(chain) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                }).start();
             }
 
             @Override
-            public String getName() {
-                return "change-lb-listener";
-            }
+            public String getName() { return "change-lb-listener"; }
         });
     }
 
