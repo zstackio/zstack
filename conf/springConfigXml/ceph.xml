@@ -91,6 +91,7 @@
     <bean id="CephVmImageChangeExtension" class="org.zstack.storage.ceph.CephVmImageChangeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.vm.ChangeVmImageExtensionPoint" />
+            <zstack:extension interface="org.zstack.compute.vm.CleanUpAfterVmChangeImageExtensionPoint" />
         </zstack:plugin>
     </bean>
 

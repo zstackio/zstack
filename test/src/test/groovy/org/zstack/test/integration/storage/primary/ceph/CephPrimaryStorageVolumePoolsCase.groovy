@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmInstanceExtensionPointEmitter
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
@@ -274,6 +275,18 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert defaultDataVolumePoolName != null
         assert dataVolume != null
         assert !dataVolume.installPath.contains(defaultDataVolumePoolName)
+
+        def poolTag = querySystemTag {
+            conditions = ["resourceUuid=${rootVolume.uuid}", "tag=${CephSystemTags.USE_CEPH_ROOT_POOL.getTag(rootVolume.uuid)}"]
+        }[0]
+        updateSystemTag {
+            uuid = poolTag.uuid
+            tag = "ceph::rootPoolName::${ROOT_ONLY_POOL_NAME}"
+        }
+        bean(VmInstanceExtensionPointEmitter.class).cleanUpAfterVmChangeImage(
+                new org.zstack.header.vm.VmInstanceInventory(rootVolumeUuid: rootVolume.uuid))
+        String updatedPool = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(rootVolume.uuid, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
+        assert updatedPool == rootVolumePoolName : "Change image must sync the root pool tag: expected ${rootVolumePoolName}, actual ${updatedPool}"
     }
 
     void testVmRootVolumeUseDefaultPool() {
