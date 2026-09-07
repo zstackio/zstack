@@ -634,4 +634,3 @@ END $$
 DELIMITER ;
 CALL UpgradeSNSPluginEndpointForeignKeys();
 DROP PROCEDURE IF EXISTS UpgradeSNSPluginEndpointForeignKeys;
-
