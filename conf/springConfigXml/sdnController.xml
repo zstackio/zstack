@@ -25,6 +25,7 @@
             <zstack:extension interface="org.zstack.header.Service" />
             <zstack:extension interface="org.zstack.sdnController.SdnControllerManager" />
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkCreateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.network.l2.L2NetworkPrepareClusterExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint" />
             <zstack:extension interface="org.zstack.header.network.l2.L2DeleteConfirmExtensionPoint" />
             <zstack:extension interface="org.zstack.network.securitygroup.SecurityGroupGetSdnBackendExtensionPoint"/>

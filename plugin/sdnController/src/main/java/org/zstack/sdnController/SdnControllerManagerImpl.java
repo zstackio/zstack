@@ -48,6 +48,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
         L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, L2DeleteConfirmExtensionPoint,
+        L2NetworkPrepareClusterExtensionPoint,
         SecurityGroupGetSdnBackendExtensionPoint,
         AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint,
         AfterAllocateSdnNicExtensionPoint {
@@ -375,9 +376,25 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     @Override
+    public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
+        if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
+            completion.success();
+            return;
+        }
+        SdnControllerL2 controller = findSdnControllerL2(network);
+        if (controller == null) {
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10043,
+                    "cannot prepare L2Network[uuid:%s, vswitchType:%s] for Cluster[uuid:%s] because its SDN controller is missing",
+                    network.getUuid(), network.getvSwitchType(), clusterUuid));
+            return;
+        }
+        controller.prepareL2NetworkForCluster(network, clusterUuid, completion);
+    }
+
+    @Override
     public boolean requiresConfirmedDelete(L2NetworkInventory inv) {
         SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
-        return controllerL2 != null && controllerL2.requiresConfirmedDelete();
+        return controllerL2 != null && controllerL2.requiresConfirmedDelete(inv);
     }
 
     @Override
