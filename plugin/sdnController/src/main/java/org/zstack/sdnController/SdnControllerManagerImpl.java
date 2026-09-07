@@ -377,9 +377,15 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
+        if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
+            completion.success();
+            return;
+        }
         SdnControllerL2 controller = findSdnControllerL2(network);
         if (controller == null) {
-            completion.success();
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10043,
+                    "cannot prepare L2Network[uuid:%s, vswitchType:%s] for Cluster[uuid:%s] because its SDN controller is missing",
+                    network.getUuid(), network.getvSwitchType(), clusterUuid));
             return;
         }
         controller.prepareL2NetworkForCluster(network, clusterUuid, completion);
