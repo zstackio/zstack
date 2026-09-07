@@ -122,6 +122,10 @@ class SpringSpec {
         include("SecurityGroupManager.xml")
     }
 
+    void networkSecurityPolicySchedule() {
+        include("networkSecurityPolicySchedule.xml")
+    }
+
     void console() {
         include("ConsoleManager.xml")
     }

@@ -10817,6 +10817,33 @@ abstract class ApiHelper {
     }
 
 
+    def createNetworkSecurityPolicySchedule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateNetworkSecurityPolicyScheduleAction.class) Closure c) {
+        def a = new org.zstack.sdk.CreateNetworkSecurityPolicyScheduleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def createNfvInst(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.CreateNfvInstAction.class) Closure c) {
         def a = new org.zstack.sdk.CreateNfvInstAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -16381,6 +16408,33 @@ abstract class ApiHelper {
 
     def deleteNasMountTarget(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteNasMountTargetAction.class) Closure c) {
         def a = new org.zstack.sdk.DeleteNasMountTargetAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def deleteNetworkSecurityPolicySchedule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.DeleteNetworkSecurityPolicyScheduleAction.class) Closure c) {
+        def a = new org.zstack.sdk.DeleteNetworkSecurityPolicyScheduleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -24670,6 +24724,33 @@ abstract class ApiHelper {
 
     def getMonitorItem(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetMonitorItemAction.class) Closure c) {
         def a = new org.zstack.sdk.GetMonitorItemAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def getNetworkSecurityPolicySchedule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.GetNetworkSecurityPolicyScheduleAction.class) Closure c) {
+        def a = new org.zstack.sdk.GetNetworkSecurityPolicyScheduleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -41129,6 +41210,33 @@ abstract class ApiHelper {
     }
 
 
+    def setNetworkSecurityPolicySchedule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetNetworkSecurityPolicyScheduleAction.class) Closure c) {
+        def a = new org.zstack.sdk.SetNetworkSecurityPolicyScheduleAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def setNicQos(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.SetNicQosAction.class) Closure c) {
         def a = new org.zstack.sdk.SetNicQosAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -47503,6 +47611,33 @@ abstract class ApiHelper {
 
     def updateNativeClusterZakuHealthStatus(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateNativeClusterZakuHealthStatusAction.class) Closure c) {
         def a = new org.zstack.sdk.UpdateNativeClusterZakuHealthStatusAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+        
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+    
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+        
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def updateNetworkSecurityPolicySchedule(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.UpdateNetworkSecurityPolicyScheduleAction.class) Closure c) {
+        def a = new org.zstack.sdk.UpdateNetworkSecurityPolicyScheduleAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
