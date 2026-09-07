@@ -42,4 +42,9 @@ public class UploadFileToHostMsg extends NeedReplyMessage implements HostMessage
     public void setInstallPath(String installPath) {
         this.installPath = installPath;
     }
+
+    public boolean isDirectUpload() {
+        String directUploadScheme = "upload://";
+        return url != null && url.regionMatches(true, 0, directUploadScheme, 0, directUploadScheme.length());
+    }
 }

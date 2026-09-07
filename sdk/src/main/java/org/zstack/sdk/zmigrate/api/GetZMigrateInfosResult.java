@@ -51,4 +51,12 @@ public class GetZMigrateInfosResult {
         return this.zmigrateStartTime;
     }
 
+    public boolean vddkUploaded;
+    public void setVddkUploaded(boolean vddkUploaded) {
+        this.vddkUploaded = vddkUploaded;
+    }
+    public boolean getVddkUploaded() {
+        return this.vddkUploaded;
+    }
+
 }
