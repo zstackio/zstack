@@ -9,6 +9,8 @@ import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
 import org.zstack.utils.data.SizeUnit
 
+import static groovy.test.GroovyAssert.shouldFail
+
 class LocalResourceControlExecutorCase {
     private LocalResourceControlExecutor executor
     private ResourceConsumerHandle restartable
@@ -59,11 +61,8 @@ class LocalResourceControlExecutorCase {
 
     @Test
     void testRejectsInvalidMemoryBeforeReportingSuccess() {
-        Throwable failure = null
-        try {
+        Throwable failure = shouldFail {
             executor.apply(command("0-1", 1L, [restartable]))
-        } catch (Throwable error) {
-            failure = error
         }
 
         assert failure?.message?.contains("positive multiple of 1 MiB") :
@@ -82,13 +81,10 @@ class LocalResourceControlExecutorCase {
     }
 
     private void assertRestartRejected(List<ResourceConsumerHandle> handles, String intent) {
-        Throwable failure = null
-        try {
+        Throwable failure = shouldFail {
             executor.restart("zstack-management.slice", handles)
-        } catch (Throwable error) {
-            failure = error
         }
-        assert failure != null : "${intent}: expected rejection"
+        assert failure != null : intent
     }
 
     private static ResourceControlCommand command(String cpuSet, Long memory, List<ResourceConsumerHandle> handles) {

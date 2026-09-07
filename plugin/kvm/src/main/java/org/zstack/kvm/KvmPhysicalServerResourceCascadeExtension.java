@@ -6,6 +6,7 @@ import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -15,7 +16,6 @@ import org.zstack.header.physicalserver.PhysicalServerManager;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -41,58 +41,50 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
             completion.success();
             return;
         }
-        boolean forceDelete = action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE);
-        List<String> forceDeleteFailures = Collections.synchronizedList(new ArrayList<>());
-
         new While<>(hosts).each((host, each) -> {
             if (host.getServerUuid() == null) {
                 each.done();
                 return;
             }
-            Completion releaseCompletion = new Completion(each) {
+            physicalServerManager.releaseResourceAssignment(
+                    host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), new Completion(each) {
                         @Override
                         public void success() {
-                            each.done();
+                            forget(host, each);
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            if (!forceDelete) {
-                                each.addError(errorCode);
-                                each.done();
-                                return;
-                            }
-                            forceDeleteFailures.add(String.format("host[uuid:%s]: %s", host.getUuid(), errorCode));
-                            logger.error(String.format(
-                                    "failed to release compute resource assignment before force deleting " +
-                                            "host[uuid:%s], continuing without recovery apply: %s",
-                                    host.getUuid(), errorCode));
-                            each.done();
+                            logger.warn(String.format(
+                                    "failed to release compute resource assignment before deleting host[uuid:%s], " +
+                                            "forgetting the Assignment: %s", host.getUuid(), errorCode));
+                            forget(host, each);
                         }
-                    };
-            if (forceDelete) {
-                physicalServerManager.forceReleaseResourceAssignment(
-                        host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), releaseCompletion);
-            } else {
-                physicalServerManager.releaseResourceAssignment(
-                        host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), releaseCompletion);
-            }
+                    });
         }).run(new WhileDoneCompletion(completion) {
             @Override
-            public void done(ErrorCodeList errorCodeList) {
-                if (!forceDelete && !errorCodeList.getCauses().isEmpty()) {
-                    completion.fail(errorCodeList.getCauses().get(0));
-                    return;
-                }
-                if (!forceDeleteFailures.isEmpty()) {
-                    logger.error(String.format(
-                            "failed to release compute resource assignment for %s host(s) during " +
-                                    "force deletion; recovery apply was skipped: %s",
-                            forceDeleteFailures.size(), String.join("; ", forceDeleteFailures)));
-                }
+            public void done(ErrorCodeList ignored) {
                 completion.success();
             }
         });
+    }
+
+    private void forget(HostInventory host, NoErrorCompletion completion) {
+        physicalServerManager.forgetResourceAssignment(
+                host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), new Completion(completion) {
+                    @Override
+                    public void success() {
+                        completion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        logger.warn(String.format(
+                                "failed to forget compute resource assignment while deleting host[uuid:%s]: %s",
+                                host.getUuid(), errorCode));
+                        completion.done();
+                    }
+                });
     }
 
     @Override

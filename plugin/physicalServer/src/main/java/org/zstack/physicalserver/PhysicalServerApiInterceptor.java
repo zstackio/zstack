@@ -84,12 +84,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         if (msg.getCpuSet() == null) {
             return;
         }
-        try {
-            msg.setCpuSet(PhysicalServerCpuSet.normalize(msg.getCpuSet()));
-        } catch (IllegalArgumentException error) {
-            throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE, "%s", error.getMessage()));
-        }
+        msg.setCpuSet(PhysicalServerCpuSet.normalize(msg.getCpuSet()));
     }
 
     private PhysicalServerResourceExtensionRegistry extensions() {

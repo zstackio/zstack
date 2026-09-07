@@ -1,12 +1,9 @@
 package org.zstack.header.physicalserver;
 
+import org.zstack.utils.StringDSL;
 import org.zstack.utils.YamlUtils;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,7 +13,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 public class RoleServiceManifest {
     private static final AtomicReference<Map<ManifestKey, RoleServiceManifest>>
@@ -204,12 +200,7 @@ public class RoleServiceManifest {
         if (stream == null) {
             throw new IllegalStateException(String.format("role service manifest[%s] was not found", resourcePath));
         }
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-            return reader.lines().collect(Collectors.joining("\n"));
-        } catch (IOException error) {
-            throw new IllegalStateException(String.format(
-                    "cannot read role service manifest[%s]", resourcePath), error);
-        }
+        return StringDSL.inputStreamToString(stream);
     }
 
     public String getRoleType() {

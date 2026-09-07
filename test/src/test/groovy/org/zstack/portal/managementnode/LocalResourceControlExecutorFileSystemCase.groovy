@@ -17,6 +17,8 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 
+import static groovy.test.GroovyAssert.shouldFail
+
 class LocalResourceControlExecutorFileSystemCase {
     private Path temporaryRoot
     private Path v2Root
@@ -98,7 +100,30 @@ class LocalResourceControlExecutorFileSystemCase {
                 "release must restore the parent CPU boundary while the service is still running"
         assert text(slice.resolve("memory.max")) == "max"
         assert !Files.exists(dropIn("zstack-management.slice"))
-        assert !Files.exists(dropIn("prometheus.service"))
+        assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice" :
+                "release must remove limits without changing the service's Role membership"
+    }
+
+    @Test
+    void testFirstRoleToWriteSliceOwnsSharedService() {
+        configureV2(true)
+        configureV2SystemdRole(true)
+        assert executor.apply(command("1-3", null, [systemdHandle()]))
+
+        Path computeSlice = v2Root.resolve("zstack.slice/zstack-compute.slice")
+        configureV2Group(computeSlice, "0-7", "0", "max", 0)
+        commands.unit("zstack-compute.slice", true, "/zstack.slice/zstack-compute.slice")
+        ResourceControlCommand compute = command("4-5", null, [systemdHandle()])
+        compute.roleType = "COMPUTE"
+        compute.sliceName = "zstack-compute.slice"
+
+        assert !executor.apply(compute) : "a Role with no owned services must remain Unsynced"
+        assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice"
+        assert executor.inspect("COMPUTE", "zstack-compute.slice", [systemdHandle()]).isEmpty() :
+                "service usage must be shown only under the Role that first wrote Slice="
+        assert executor.release(compute)
+        assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice" :
+                "releasing another Role must preserve the first owner's service drop-in"
     }
 
     @Test
@@ -135,7 +160,7 @@ class LocalResourceControlExecutorFileSystemCase {
         ResourceControlCommand request = command("2-3", null, [systemdHandle()])
         request.isolationMode = PhysicalServerResourceIsolationMode.EXCLUSIVE
 
-        Throwable failure = capture { executor.apply(request) }
+        Throwable failure = shouldFail { executor.apply(request) }
 
         assert failure?.message == "Exclusive CPU partitions require cgroup v2"
         assert !Files.exists(dropIn("zstack-management.slice")) :
@@ -149,7 +174,7 @@ class LocalResourceControlExecutorFileSystemCase {
         ResourceControlCommand request = command("2-3", null, [systemdHandle()])
         request.isolationMode = PhysicalServerResourceIsolationMode.EXCLUSIVE
 
-        Throwable failure = capture { executor.apply(request) }
+        Throwable failure = shouldFail { executor.apply(request) }
 
         assert failure?.message?.contains("must be active before applying exclusive isolation") :
                 "exclusive CPUs must belong to the Role slice, not separate per-service fallbacks"
@@ -232,7 +257,7 @@ class LocalResourceControlExecutorFileSystemCase {
         Path slice = configureV2SystemdRole(true)
         put(slice.resolve("memory.current"), "${SizeUnit.MEGABYTE.toByte(192)}")
 
-        Throwable failure = capture {
+        Throwable failure = shouldFail {
             executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
         }
 
@@ -312,9 +337,10 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(false)
         configureV2SystemdRole(true, false)
 
-        boolean withMemory = executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
-        assert !withMemory :
-                "missing memory controller must not be reported as a synchronized memory limit"
+        Throwable failure = shouldFail {
+            executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
+        }
+        assert failure.message == "No available memory controller was found"
 
         boolean cpuOnly = executor.apply(command("0-1", null, [systemdHandle()]))
         assert cpuOnly :
@@ -343,25 +369,25 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2SystemdRole(true, false)
         ResourceConsumerHandle handle = systemdHandle()
         commands.missingUnit(handle.value)
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
                 "Systemd unit[prometheus.service] does not exist"
 
         commands.unit(handle.value, false, "/system.slice/prometheus.service")
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
                 "Systemd unit[prometheus.service] is not active"
 
         commands.unit(handle.value, true, "/system.slice/prometheus.service")
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
                 "Systemd unit[prometheus.service] is not configured for slice[zstack-management.slice]"
 
         put(dropIn(handle.value), "[Service]\nSlice=zstack-management.slice")
         commands.unit("zstack-management.slice", true, "")
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
-                "Systemd did not report a control group"
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
+                "Systemd slice[zstack-management.slice] is not active in the cpuset hierarchy"
 
         commands.unit("zstack-management.slice", true, "/zstack.slice/zstack-management.slice")
         commands.failStarts.add(handle.value)
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
                 "Systemd unit[prometheus.service] is not active after restart"
     }
 
@@ -386,7 +412,7 @@ class LocalResourceControlExecutorFileSystemCase {
         ResourceConsumerHandle handle = systemdHandle()
         put(dropIn(handle.value), "[Service]\nSlice=zstack-management.slice")
 
-        assert capture { executor.restart("zstack-management.slice", [handle]) }?.message ==
+        assert shouldFail { executor.restart("zstack-management.slice", [handle]) }?.message ==
                 "Systemd unit[prometheus.service] did not enter slice[zstack-management.slice] after restart"
     }
 
@@ -400,10 +426,9 @@ class LocalResourceControlExecutorFileSystemCase {
         ResourceControlCommand request = command("0-1", null, [optional, required])
         request.sliceName = null
 
-        boolean response = executor.apply(request)
-
-        assert !response :
-                "optional absence must not dilute required-service coverage"
+        Throwable failure = shouldFail { executor.apply(request) }
+        assert failure.message == "Systemd unit[required.service] does not exist" :
+                "optional absence must not hide a required-service failure"
     }
 
     @Test
@@ -411,14 +436,12 @@ class LocalResourceControlExecutorFileSystemCase {
         ResourceControlCommand request = command("0-1", null, [systemdHandle()])
         request.sliceName = null
 
-        boolean response = executor.apply(request)
-        Throwable failure = capture {
-            executor.inspect("MANAGEMENT", [systemdHandle()])
-        }
+        Throwable applyFailure = shouldFail { executor.apply(request) }
+        Throwable inspectFailure = shouldFail { executor.inspect("MANAGEMENT", [systemdHandle()]) }
 
-        assert !response :
-                "an unavailable cpuset backend must not report a synchronized assignment"
-        assert failure?.message == "No available cpuset controller was found" :
+        assert applyFailure.message == "No available cpuset controller was found" :
+                "an unavailable cpuset backend must fail the Assignment"
+        assert inspectFailure.message == "No available cpuset controller was found" :
                 "an unavailable cgroup backend must fail the Role observation instead of fabricating service state"
     }
 
@@ -541,15 +564,6 @@ class LocalResourceControlExecutorFileSystemCase {
 
     private static String currentPid() {
         return ManagementFactory.runtimeMXBean.name.split("@")[0]
-    }
-
-    private static Throwable capture(Closure action) {
-        try {
-            action.call()
-            return null
-        } catch (Throwable failure) {
-            return failure
-        }
     }
 
     private static void put(Path path, String value) {

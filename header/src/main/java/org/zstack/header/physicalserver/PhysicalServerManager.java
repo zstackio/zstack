@@ -14,9 +14,9 @@ public interface PhysicalServerManager {
      */
     Map<String, String> resolveBySerialNumbers(Collection<String> serialNumbers);
 
-    void associationChanged(String serverUuid);
+    void refreshResourceAssignment(String serverUuid, String roleType, Completion completion);
 
     void releaseResourceAssignment(String serverUuid, String roleType, Completion completion);
 
-    void forceReleaseResourceAssignment(String serverUuid, String roleType, Completion completion);
+    void forgetResourceAssignment(String serverUuid, String roleType, Completion completion);
 }

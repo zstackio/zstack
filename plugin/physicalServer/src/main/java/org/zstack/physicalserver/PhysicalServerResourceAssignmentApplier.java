@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,24 +42,30 @@ public class PhysicalServerResourceAssignmentApplier {
 
     public void applyAssignments(
             String serverUuid,
-            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot, Completion completion) {
-        applyAssignments(serverUuid, assignmentSnapshot, this::keepOrCreateCpuSet, completion);
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
+            Collection<String> roleTypes, Completion completion) {
+        applyAssignments(serverUuid, assignmentSnapshot, roleTypes, this::keepOrCreateCpuSet, completion);
     }
 
     public void applyAssignmentsFromProfile(
             String serverUuid,
-            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot, Completion completion) {
-        applyAssignments(serverUuid, assignmentSnapshot, this::matchProfileCpuCount, completion);
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
+            Collection<String> roleTypes, Completion completion) {
+        applyAssignments(serverUuid, assignmentSnapshot, roleTypes, this::matchProfileCpuCount, completion);
     }
 
     private void applyAssignments(
             String serverUuid,
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
-            CpuSetResolver cpuSetResolver, Completion completion) {
+            Collection<String> selectedRoleTypes, CpuSetResolver cpuSetResolver, Completion completion) {
         PhysicalServerResourceExtensionRegistry extensions = extensions();
-        ConsumerPlan consumers = consumerPlan(serverUuid, assignmentSnapshot.keySet(), extensions);
+        ConsumerPlan consumers = consumerPlan(serverUuid, selectedRoleTypes, extensions);
         List<String> roleTypes = new ArrayList<>();
-        for (PhysicalServerResourceAssignmentVO assignment : assignmentSnapshot.values()) {
+        for (String roleType : selectedRoleTypes) {
+            PhysicalServerResourceAssignmentVO assignment = assignmentSnapshot.get(roleType);
+            if (assignment == null) {
+                continue;
+            }
             if (assignment.getState() == PhysicalServerResourceAssignmentState.Unsynced) {
                 roleTypes.add(assignment.getRoleType());
             }
@@ -108,17 +113,6 @@ public class PhysicalServerResourceAssignmentApplier {
             failUnsynced(assignment, controllerUnavailableError(assignment.getRoleType()), completion);
             return;
         }
-        RuntimeException consumerError = consumers.error(assignment.getRoleType());
-        if (consumerError != null) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "failed to resolve resource consumers for roleType[%s]: %s",
-                            assignment.getRoleType(), consumerError.getMessage()), completion);
-            return;
-        }
-
         if ((assignment.getCpuSet() == null
                 || assignment.getCpuSet().trim().isEmpty()) && controller.getDefaultCpuCount() == null) {
             apply(assignment, assignmentSnapshot, controller, consumers.handles(assignment.getRoleType()), completion);
@@ -147,13 +141,7 @@ public class PhysicalServerResourceAssignmentApplier {
             PhysicalServerResourceAssignmentVO assignment,
             PhysicalServerResourceAssignmentController controller,
             ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
-        try {
-            controller.collectTopology(assignment.getServerUuid(), completion);
-        } catch (RuntimeException error) {
-            completion.fail(operr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "Failed to query physical server CPU topology: %s", error.getMessage()));
-        }
+        controller.collectTopology(assignment.getServerUuid(), completion);
     }
 
     private void prepareAndApply(
@@ -166,26 +154,16 @@ public class PhysicalServerResourceAssignmentApplier {
                 planner.calculateAllocatedExclusiveCpus(
                         assignment, assignmentSnapshot.values(), extensions(), topology);
         PhysicalServerResourceAssignmentVO current = assignment;
-        try {
-            String cpuSet = cpuSetResolver.resolve(current, controller, topology, allocatedExclusiveCpus);
-            if (!cpuSet.equals(current.getCpuSet())) {
-                current = assignments.updateCpuSet(current, cpuSet);
-                if (current == null) {
-                    completion.fail(operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "Resource assignment[uuid:%s] does not exist", assignment.getUuid()));
-                    return;
-                }
-                assignmentSnapshot.put(current.getRoleType(), current);
+        String cpuSet = cpuSetResolver.resolve(current, controller, topology, allocatedExclusiveCpus);
+        if (!cpuSet.equals(current.getCpuSet())) {
+            current = assignments.updateCpuSet(current, cpuSet);
+            if (current == null) {
+                completion.fail(operr(
+                        PhysicalServerConstant.ERROR_CODE,
+                        "Resource assignment[uuid:%s] does not exist", assignment.getUuid()));
+                return;
             }
-        } catch (RuntimeException error) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "failed to validate physical server resource assignment: %s",
-                            error.getMessage()), completion);
-            return;
+            assignmentSnapshot.put(current.getRoleType(), current);
         }
         apply(current, assignmentSnapshot, controller, consumers, completion);
     }
@@ -212,37 +190,47 @@ public class PhysicalServerResourceAssignmentApplier {
                 assignment.getCpuSet(), controller.getIsolationMode(), topology, allocatedExclusiveCpus);
     }
 
-    public void release(String serverUuid, String roleType, Completion completion) {
-        Map<String, PhysicalServerResourceAssignmentVO> snapshot = assignments.mapByRole(serverUuid);
-        PhysicalServerResourceAssignmentVO assignment = snapshot.get(roleType);
-        if (assignment == null) {
-            completion.success();
-            return;
-        }
+    public void release(
+            String serverUuid,
+            Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
+            Collection<String> roleTypes, Completion completion) {
         PhysicalServerResourceExtensionRegistry extensions = extensions();
-        PhysicalServerResourceAssignmentController controller = extensions.controller(roleType);
-        if (controller == null) {
-            failUnsynced(assignment, controllerUnavailableError(roleType), completion);
-            return;
-        }
-        ConsumerPlan consumers = consumerPlan(serverUuid, snapshot.keySet(), extensions);
-        if (consumers.error(roleType) != null) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "failed to resolve resource consumers for roleType[%s]: %s",
-                            roleType, consumers.error(roleType).getMessage()), completion);
-            return;
-        }
-        release(assignment, controller, consumers.handles(roleType), completion);
-    }
+        ConsumerPlan consumers = consumerPlan(serverUuid, roleTypes, extensions);
+        AtomicReference<ErrorCode> firstError = new AtomicReference<>();
+        new While<>(new ArrayList<>(roleTypes)).each((roleType, each) -> {
+            PhysicalServerResourceAssignmentController controller = extensions.controller(roleType);
+            PhysicalServerResourceAssignmentVO assignment = assignmentSnapshot.get(roleType);
+            if (controller == null || assignment == null) {
+                each.done();
+                return;
+            }
+            release(assignment, controller, consumers.handles(roleType), new ReturnValueCompletion<Boolean>(each) {
+                @Override
+                public void success(Boolean synced) {
+                    if (!Boolean.TRUE.equals(synced)) {
+                        firstError.compareAndSet(null, operr(
+                                PhysicalServerConstant.ERROR_CODE,
+                                "resource assignment for roleType[%s] was not released", roleType));
+                    }
+                    each.done();
+                }
 
-    public void forget(String serverUuid, String roleType) {
-        PhysicalServerResourceAssignmentVO assignment = assignments.find(serverUuid, roleType);
-        if (assignment != null) {
-            assignments.delete(assignment.getUuid());
-        }
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    firstError.compareAndSet(null, errorCode);
+                    each.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList ignored) {
+                if (firstError.get() == null) {
+                    completion.success();
+                } else {
+                    completion.fail(firstError.get());
+                }
+            }
+        });
     }
 
     List<ResourceConsumerHandle> resolveRestartConsumers(
@@ -250,12 +238,6 @@ public class PhysicalServerResourceAssignmentApplier {
             Map<String, PhysicalServerResourceAssignmentVO> assignmentSnapshot,
             String roleType, Collection<String> serviceNames) {
         ConsumerPlan consumers = consumerPlan(serverUuid, assignmentSnapshot.keySet(), extensions());
-        RuntimeException error = consumers.error(roleType);
-        if (error != null) {
-            throw new IllegalArgumentException(String.format(
-                    "Failed to resolve resource consumers for roleType[%s]: %s", roleType, error.getMessage()), error);
-        }
-
         Set<String> selectedNames = new LinkedHashSet<>(serviceNames);
         List<ResourceConsumerHandle> selected = new ArrayList<>();
         for (ResourceConsumerHandle consumer : consumers.handles(roleType)) {
@@ -279,9 +261,6 @@ public class PhysicalServerResourceAssignmentApplier {
             if (extensions.controller(roleType) == null) {
                 continue;
             }
-            if (consumers.error(roleType) != null) {
-                continue;
-            }
             Set<String> names = new LinkedHashSet<>();
             for (ResourceConsumerHandle handle : consumers.handles(roleType)) {
                 names.add(handle.getServiceName());
@@ -297,54 +276,24 @@ public class PhysicalServerResourceAssignmentApplier {
             PhysicalServerResourceAssignmentController controller,
             List<ResourceConsumerHandle> consumers, Completion completion) {
         ResourceControlCommand command = applyCommand(assignment, controller.getIsolationMode(), consumers);
-        try {
-            controller.apply(assignment.getServerUuid(), command, new ReturnValueCompletion<Boolean>(completion) {
-                @Override
-                public void success(Boolean synced) {
-                    completeApply(assignment, assignmentSnapshot, synced, completion);
-                }
+        controller.apply(assignment.getServerUuid(), command, new ReturnValueCompletion<Boolean>(completion) {
+            @Override
+            public void success(Boolean synced) {
+                completeApply(assignment, assignmentSnapshot, synced, completion);
+            }
 
-                @Override
-                public void fail(ErrorCode errorCode) {
-                    failUnsynced(assignment, errorCode, completion);
-                }
-            });
-        } catch (RuntimeException error) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "resource control controller failed while applying the assignment: %s",
-                            error.getMessage()), completion);
-        }
+            @Override
+            public void fail(ErrorCode errorCode) {
+                failUnsynced(assignment, errorCode, completion);
+            }
+        });
     }
 
     private void release(
             PhysicalServerResourceAssignmentVO assignment,
             PhysicalServerResourceAssignmentController controller,
-            List<ResourceConsumerHandle> consumers, Completion completion) {
-        try {
-            controller.release(
-                    assignment.getServerUuid(),
-                    releaseCommand(assignment, consumers), new ReturnValueCompletion<Boolean>(completion) {
-                        @Override
-                        public void success(Boolean synced) {
-                            completeRelease(assignment, synced, completion);
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            failUnsynced(assignment, errorCode, completion);
-                        }
-                    });
-        } catch (RuntimeException error) {
-            failUnsynced(
-                    assignment,
-                    operr(
-                            PhysicalServerConstant.ERROR_CODE,
-                            "resource control controller failed while releasing the assignment: %s",
-                            error.getMessage()), completion);
-        }
+            List<ResourceConsumerHandle> consumers, ReturnValueCompletion<Boolean> completion) {
+        controller.release(assignment.getServerUuid(), releaseCommand(assignment, consumers), completion);
     }
 
     private void completeApply(
@@ -374,22 +323,6 @@ public class PhysicalServerResourceAssignmentApplier {
         completion.success();
     }
 
-    private void completeRelease(PhysicalServerResourceAssignmentVO assignment, Boolean synced, Completion completion) {
-        if (!Boolean.TRUE.equals(synced)) {
-            failUnsynced(
-                    assignment,
-                    operr(PhysicalServerConstant.ERROR_CODE, "resource control release is not synced"), completion);
-            return;
-        }
-        if (!assignments.delete(assignment.getUuid())) {
-            completion.fail(operr(
-                    PhysicalServerConstant.ERROR_CODE,
-                    "Resource assignment[uuid:%s] does not exist", assignment.getUuid()));
-            return;
-        }
-        completion.success();
-    }
-
     private ResourceControlCommand applyCommand(
             PhysicalServerResourceAssignmentVO assignment,
             PhysicalServerResourceIsolationMode isolationMode, List<ResourceConsumerHandle> consumers) {
@@ -416,44 +349,17 @@ public class PhysicalServerResourceAssignmentApplier {
     private ConsumerPlan consumerPlan(
             String serverUuid, Collection<String> roleTypes, PhysicalServerResourceExtensionRegistry extensions) {
         ConsumerPlan result = new ConsumerPlan();
-        Set<String> claimed = new HashSet<>();
         List<String> ordered = new ArrayList<>(roleTypes);
-        ordered.sort(Comparator.comparingInt(this::consumerPriority).thenComparing(String::compareTo));
+        ordered.sort(String::compareTo);
         for (String roleType : ordered) {
             PhysicalServerResourceAssignmentController controller = extensions.controller(roleType);
             if (controller == null) {
                 continue;
             }
-            try {
-                List<ResourceConsumerHandle> candidates = controller.getResourceConsumers(serverUuid);
-                List<ResourceConsumerHandle> owned = new ArrayList<>();
-                if (candidates != null) {
-                    for (ResourceConsumerHandle candidate : candidates) {
-                        String key = handleIdentity(candidate);
-                        if (claimed.add(key)) {
-                            owned.add(candidate);
-                        }
-                    }
-                }
-                result.put(roleType, owned);
-            } catch (RuntimeException error) {
-                result.fail(roleType, error);
-            }
+            List<ResourceConsumerHandle> candidates = controller.getResourceConsumers(serverUuid);
+            result.put(roleType, candidates == null ? Collections.emptyList() : candidates);
         }
         return result;
-    }
-
-    private String handleIdentity(ResourceConsumerHandle handle) {
-        if (handle == null
-                || empty(handle.getHandleType()) || empty(handle.getValue()) || empty(handle.getServiceName())) {
-            throw new IllegalArgumentException(
-                    "resource consumer handle must define handleType, value and serviceName");
-        }
-        return handle.getHandleType().trim() + "\u0000" + handle.getValue().trim();
-    }
-
-    private int consumerPriority(String roleType) {
-        return "MANAGEMENT".equals(roleType) ? 0 : 1;
     }
 
     private boolean empty(String value) {
@@ -494,22 +400,14 @@ public class PhysicalServerResourceAssignmentApplier {
 
     private static class ConsumerPlan {
         private final Map<String, List<ResourceConsumerHandle>> handles = new LinkedHashMap<>();
-        private final Map<String, RuntimeException> errors = new LinkedHashMap<>();
 
         private void put(String roleType, List<ResourceConsumerHandle> roleHandles) {
             handles.put(roleType, roleHandles);
-        }
-
-        private void fail(String roleType, RuntimeException error) {
-            errors.put(roleType, error);
         }
 
         private List<ResourceConsumerHandle> handles(String roleType) {
             return handles.getOrDefault(roleType, Collections.emptyList());
         }
 
-        private RuntimeException error(String roleType) {
-            return errors.get(roleType);
-        }
     }
 }

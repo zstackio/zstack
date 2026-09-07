@@ -143,18 +143,12 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             bus.reply(msg, reply);
             return;
         }
-        try {
-            List<ManagedServiceResourceUsage> services =
-                    localResourceControlExecutor.inspect(type.toString(), managementHandles());
-            for (ManagedServiceResourceUsage service : services) {
-                service.setRoleType(type.toString());
-            }
-            reply.setServices(services);
-        } catch (RuntimeException error) {
-            reply.setError(operr(
-                    ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
-                    "Failed to query managed service usage: %s", error.getMessage()));
+        List<ManagedServiceResourceUsage> services = localResourceControlExecutor.inspect(
+                type.toString(), roleServices().getSliceName(), managementHandles());
+        for (ManagedServiceResourceUsage service : services) {
+            service.setRoleType(type.toString());
         }
+        reply.setServices(services);
         bus.reply(msg, reply);
     }
 
@@ -165,40 +159,24 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             bus.reply(msg, reply);
             return;
         }
-        try {
-            localResourceControlExecutor.restart(roleServices().getSliceName(), msg.getConsumers());
-        } catch (RuntimeException error) {
-            reply.setError(operr(
-                    ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
-                    "Failed to restart managed services: %s", error.getMessage()));
-        }
+        localResourceControlExecutor.restart(roleServices().getSliceName(), msg.getConsumers());
         bus.reply(msg, reply);
     }
 
     private void collectLocalTopology(ReturnValueCompletion<PhysicalServerCpuTopology> completion) {
-        try {
-            completion.success(localTopology.collect());
-        } catch (RuntimeException error) {
-            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
-                    "Failed to collect management node CPU topology: %s", error.getMessage()));
-        }
+        completion.success(localTopology.collect());
     }
 
     private void applyLocalResourceControl(ResourceControlCommand command, ReturnValueCompletion<Boolean> completion) {
-        try {
-            command.setSliceName(roleServices().getSliceName());
-            if ("APPLY".equals(command.getOperation())) {
-                completion.success(localResourceControlExecutor.apply(command));
-            } else if ("RELEASE".equals(command.getOperation())) {
-                completion.success(localResourceControlExecutor.release(command));
-            } else {
-                completion.fail(operr(
-                        ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
-                        "Resource control operation[%s] is unsupported", command.getOperation()));
-            }
-        } catch (RuntimeException error) {
-            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
-                    "Failed to apply management node resource assignment: %s", error.getMessage()));
+        command.setSliceName(roleServices().getSliceName());
+        if ("APPLY".equals(command.getOperation())) {
+            completion.success(localResourceControlExecutor.apply(command));
+        } else if ("RELEASE".equals(command.getOperation())) {
+            completion.success(localResourceControlExecutor.release(command));
+        } else {
+            completion.fail(operr(
+                    ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000,
+                    "Resource control operation[%s] is unsupported", command.getOperation()));
         }
     }
 
@@ -239,11 +217,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
                 serverUuid, new ReturnValueCompletion<List<ManagedServiceResourceUsage>>(completion) {
                     @Override
                     public void success(List<ManagedServiceResourceUsage> services) {
-                        try {
-                            completion.success(PhysicalServerResourceBoundary.fromManagedServiceUsages(services));
-                        } catch (RuntimeException error) {
-                            completion.fail(operr(ORG_ZSTACK_PORTAL_MANAGEMENTNODE_10000, "%s", error.getMessage()));
-                        }
+                        completion.success(PhysicalServerResourceBoundary.fromManagedServiceUsages(services));
                     }
 
                     @Override
@@ -379,7 +353,7 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             removeNodeRelation(inv.getServerUuid());
         }
         if (physicalServerManager != null && inv.getServerUuid() != null) {
-            physicalServerManager.associationChanged(inv.getServerUuid());
+            refreshResourceAssignment(inv.getServerUuid());
         }
     }
 
@@ -427,8 +401,24 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
                     .select(ManagementNodeVO_.serverUuid).eq(ManagementNodeVO_.uuid, nodeUuid).findValue();
         }
         if (current != null) {
-            physicalServerManager.associationChanged(current);
+            rememberNodeRelation(current, nodeUuid);
+            refreshResourceAssignment(current);
         }
+    }
+
+    private void refreshResourceAssignment(String serverUuid) {
+        physicalServerManager.refreshResourceAssignment(serverUuid, type.toString(), new Completion(null) {
+            @Override
+            public void success() {
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format(
+                        "failed to refresh MANAGEMENT resource assignment for physical server[uuid:%s]: %s",
+                        serverUuid, errorCode));
+            }
+        });
     }
 
     private String linkedNode(String serverUuid, String excludedNodeUuid) {
@@ -473,6 +463,14 @@ public class ManagementNodePhysicalServerAdapter extends AbstractService impleme
             }
             Map<String, String> replacement = new LinkedHashMap<>(current);
             replacement.remove(serverUuid);
+            return Collections.unmodifiableMap(replacement);
+        });
+    }
+
+    private void rememberNodeRelation(String serverUuid, String nodeUuid) {
+        nodeRelations.updateAndGet(current -> {
+            Map<String, String> replacement = new LinkedHashMap<>(current);
+            replacement.put(serverUuid, nodeUuid);
             return Collections.unmodifiableMap(replacement);
         });
     }

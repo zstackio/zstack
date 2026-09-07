@@ -5,6 +5,8 @@ import org.apache.commons.lang.StringUtils;
 import org.zstack.core.ansible.SyncTimeRequestedDeployArguments;
 import org.zstack.header.errorcode.OperationFailureException;
 
+import java.util.List;
+
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
@@ -39,6 +41,10 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
     private String enableCgroupDeviceAcl;
     @SerializedName("resource_assignment_enabled")
     private String resourceAssignmentEnabled;
+    @SerializedName("resource_assignment_slice_name")
+    private String resourceAssignmentSliceName;
+    @SerializedName("resource_assignment_systemd_units")
+    private List<String> resourceAssignmentSystemdUnits;
     @SerializedName("restart_libvirtd")
     private String restartLibvirtd;
     @SerializedName("extra_packages")
@@ -179,6 +185,22 @@ public class KVMHostDeployArguments extends SyncTimeRequestedDeployArguments {
 
     public void setResourceAssignmentEnabled(String resourceAssignmentEnabled) {
         this.resourceAssignmentEnabled = resourceAssignmentEnabled;
+    }
+
+    public String getResourceAssignmentSliceName() {
+        return resourceAssignmentSliceName;
+    }
+
+    public void setResourceAssignmentSliceName(String resourceAssignmentSliceName) {
+        this.resourceAssignmentSliceName = resourceAssignmentSliceName;
+    }
+
+    public List<String> getResourceAssignmentSystemdUnits() {
+        return resourceAssignmentSystemdUnits;
+    }
+
+    public void setResourceAssignmentSystemdUnits(List<String> resourceAssignmentSystemdUnits) {
+        this.resourceAssignmentSystemdUnits = resourceAssignmentSystemdUnits;
     }
 
     public String getRestartLibvirtd() {
