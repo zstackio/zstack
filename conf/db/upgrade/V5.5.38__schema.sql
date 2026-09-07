@@ -409,12 +409,12 @@ CALL CREATE_INDEX('AiHostModelCacheVO', 'idxAiHostModelCacheVOPrimaryStorage', '
 CALL CREATE_INDEX('AiHostCacheStorageVO', 'idxAiHostCacheStorageVOPrimaryStorage', 'primaryStorageUuid');
 CALL CREATE_INDEX('AiHostModelCachePolicyVO', 'idxAiHostModelCachePolicyVOPrimaryStorage', 'primaryStorageUuid');
 
-SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
-                     WHERE table_schema = 'zstack'
-                       AND table_name = 'ModelVO'
-                       AND index_name = 'ukModelVOFineTuningExportId');
+SET @index_exists = (SELECT COUNT(*) FROM `information_schema`.`statistics`
+                     WHERE `table_schema` = DATABASE()
+                       AND `table_name` = 'ModelVO'
+                       AND `index_name` = 'ukModelVOFineTuningExportId');
 SET @sql = IF(@index_exists = 0,
-              'ALTER TABLE `zstack`.`ModelVO` ADD UNIQUE KEY `ukModelVOFineTuningExportId` (`fineTuningExportId`)',
+              'ALTER TABLE `ModelVO` ADD UNIQUE KEY `ukModelVOFineTuningExportId` (`fineTuningExportId`)',
               'SELECT 1');
 PREPARE stmt FROM @sql;
 EXECUTE stmt;
