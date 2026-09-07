@@ -12619,6 +12619,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_NETWORK_ZNS_10281 = "ORG_ZSTACK_NETWORK_ZNS_10281";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10282 = "ORG_ZSTACK_NETWORK_ZNS_10282";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10283 = "ORG_ZSTACK_NETWORK_ZNS_10283";
+    public static final String ORG_ZSTACK_NETWORK_ZNS_10284 = "ORG_ZSTACK_NETWORK_ZNS_10284";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10253 = "ORG_ZSTACK_NETWORK_ZNS_10253";
     public static final String ORG_ZSTACK_NETWORK_ZNS_10254 = "ORG_ZSTACK_NETWORK_ZNS_10254";
 
