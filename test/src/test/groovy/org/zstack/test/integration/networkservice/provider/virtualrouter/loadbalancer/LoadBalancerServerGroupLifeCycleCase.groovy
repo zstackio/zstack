@@ -16,6 +16,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
 
@@ -56,6 +57,7 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                 image {
                     name = "vr"
                     url = "http://zstack.org/download/vr.qcow2"
+                    guestOsType = VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE
                 }
             }
 
