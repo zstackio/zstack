@@ -1,6 +1,9 @@
 package org.zstack.test.unittest.physicalserver
 
+import org.junit.After
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.config.GlobalConfigDef
@@ -32,10 +35,29 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
+import static groovy.test.GroovyAssert.shouldFail
 import static org.mockito.Mockito.mock
 import static org.mockito.Mockito.when
 
 class PhysicalServerResourceModelCase {
+    private static final Map<String, PhysicalServerRoleType> testRoleTypes = [:]
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder()
+    private ClassLoader previousContextClassLoader
+    private URLClassLoader profileClassLoader
+
+    @After
+    void restoreRoleProfiles() {
+        if (previousContextClassLoader == null) {
+            return
+        }
+        Thread.currentThread().contextClassLoader = previousContextClassLoader
+        profileClassLoader.close()
+        previousContextClassLoader = null
+        profileClassLoader = null
+        RoleServiceManifest.reloadAll()
+    }
+
     @Test
     void testRoleTypeUsesTheRegisteredZStackTypePattern() {
         PhysicalServerRoleType type = registeredRoleType("UNIT_TEST_ROLE")
@@ -52,58 +74,48 @@ class PhysicalServerResourceModelCase {
         assert fallback.defaultValue() == "false" :
                 "contexts without the dynamic detector must retain a linkable, safe-off default"
 
-        Path legacy = Files.createTempDirectory("resource-assignment-v1-")
-        Path unified = Files.createTempDirectory("resource-assignment-v2-")
+        Path legacy = temporaryFolder.newFolder("resource-assignment-v1").toPath()
+        Path unified = temporaryFolder.newFolder("resource-assignment-v2").toPath()
         Files.createFile(unified.resolve("cgroup.controllers"))
         def method = PhysicalServerResourceAssignmentGlobalConfig.class
                 .getDeclaredMethod("defaultEnabled", String.class, Path.class)
         method.accessible = true
-        try {
-            assert !method.invoke(null, null, legacy) :
-                    "a fresh non-v2 environment must default resource assignment off"
-            assert method.invoke(null, null, unified) :
-                    "a fresh unified cgroup v2 environment must default resource assignment on"
-            assert !method.invoke(null, "false", unified) :
-                    "an upgrade-time false default must win over local cgroup v2 detection"
-        } finally {
-            Files.deleteIfExists(unified.resolve("cgroup.controllers"))
-            Files.deleteIfExists(unified)
-            Files.deleteIfExists(legacy)
-        }
+        assert !method.invoke(null, null, legacy) :
+                "a fresh non-v2 environment must default resource assignment off"
+        assert method.invoke(null, null, unified) :
+                "a fresh unified cgroup v2 environment must default resource assignment on"
+        assert !method.invoke(null, "false", unified) :
+                "an upgrade-time false default must win over local cgroup v2 detection"
     }
 
     @Test
     void testKvmAgentBootstrapChecksConfigurationAndRuntimeMembership() {
+        def needDeploy = KvmHostConfigChecker.class.getDeclaredMethod("needDeployResourceAssignment")
+        needDeploy.accessible = true
         def unified = KvmHostConfigChecker.class.getDeclaredMethod(
-                "unifiedResourceAssignmentMatches", String.class, String.class, String.class)
+                "unifiedResourceAssignmentMatches", String.class, String.class)
         unified.accessible = true
-        def legacy = KvmHostConfigChecker.class.getDeclaredMethod(
-                "legacyResourceAssignmentMatches", String.class, String.class)
+        def legacy = KvmHostConfigChecker.class.getDeclaredMethod("legacyResourceAssignmentMatches", String.class)
         legacy.accessible = true
 
+        assert !needDeploy.invoke(new KvmHostConfigChecker()) :
+                "disabled bootstrap must not inspect or modify an existing Role membership"
         assert unified.invoke(
-                null, "true",
+                null,
                 "[Service]\nSlice=zstack-compute.slice", "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
                 "enabled bootstrap requires both the exact drop-in and live Role membership"
         assert unified.invoke(
-                null, "true",
+                null,
                 "[Service]\r\nSlice=zstack-compute.slice",
                 "0::/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
                 "SSH line ending conversion must not cause repeated deployment"
         assert !unified.invoke(
-                null, "true", "[Service]\nSlice=zstack-compute.slice", "/system.slice/zstack-kvmagent.service") :
+                null, "[Service]\nSlice=zstack-compute.slice", "/system.slice/zstack-kvmagent.service") :
                 "a staged drop-in alone must not suppress the restart needed to join the Role"
-        assert unified.invoke(null, "false", "__ABSENT__", "/system.slice/zstack-kvmagent.service") :
-                "disabled bootstrap requires no managed drop-in and no live Role membership"
-        assert !unified.invoke(
-                null, "false", "__ABSENT__", "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
-                "disabling must redeploy a KVM Agent that is still inside the Role slice"
-        assert legacy.invoke(null, "true", "__ABSENT__") :
-                "legacy cgroup hosts keep post-start assignment without a v2 bootstrap drop-in"
-        assert legacy.invoke(null, "true", "[Service]\nSlice=zstack-compute.slice") :
-                "legacy cgroup hosts let the shared Assignment Adapter own its drop-in"
-        assert !legacy.invoke(null, "false", "[Service]\nSlice=zstack-compute.slice") :
-                "disabling must remove a legacy Assignment Adapter drop-in"
+        assert !legacy.invoke(null, "__ABSENT__") :
+                "enabled legacy hosts must receive install-time Role membership"
+        assert legacy.invoke(null, "[Service]\nSlice=zstack-compute.slice") :
+                "enabled legacy hosts require the exact Role drop-in"
     }
 
     @Test
@@ -302,70 +314,59 @@ class PhysicalServerResourceModelCase {
 
     @Test
     void testRoleProfilesReloadOnlyWhenExplicitlyRequested() {
-        Path root = Files.createTempDirectory("resource-assignment-profile-")
+        Path root = temporaryFolder.newFolder("resource-assignment-profile").toPath()
         Path profiles = Files.createDirectories(root.resolve("physical-server-roles"))
         Path compute = profiles.resolve("compute.yaml")
         Path management = profiles.resolve("management.yaml")
         Path zbs = profiles.resolve("zbs.yaml")
-        ClassLoader previous = Thread.currentThread().contextClassLoader
-        URLClassLoader loader = new URLClassLoader([root.toUri().toURL()] as URL[], (ClassLoader) null)
-        try {
-            Thread.currentThread().contextClassLoader = loader
-            Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 2)
-                    .getBytes(StandardCharsets.UTF_8))
-            Files.write(management, controlledRoleManifest("MANAGEMENT", "zstack-management.slice", 3)
-                    .getBytes(StandardCharsets.UTF_8))
-            Files.write(zbs, observedRoleManifest("first.slice", PhysicalServerResourceIsolationMode.EXCLUSIVE)
-                    .getBytes(StandardCharsets.UTF_8))
-            RoleServiceManifest.reloadAll()
+        previousContextClassLoader = Thread.currentThread().contextClassLoader
+        profileClassLoader = new URLClassLoader([root.toUri().toURL()] as URL[], (ClassLoader) null)
+        Thread.currentThread().contextClassLoader = profileClassLoader
+        Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 2)
+                .getBytes(StandardCharsets.UTF_8))
+        Files.write(management, controlledRoleManifest("MANAGEMENT", "zstack-management.slice", 3)
+                .getBytes(StandardCharsets.UTF_8))
+        Files.write(zbs, observedRoleManifest("first.slice", PhysicalServerResourceIsolationMode.EXCLUSIVE)
+                .getBytes(StandardCharsets.UTF_8))
+        RoleServiceManifest.reloadAll()
 
-            PhysicalServerCpuTopology topology = largeTopology()
-            KvmPhysicalServerAdapter kvm = new KvmPhysicalServerAdapter()
-            ManagementNodePhysicalServerAdapter mn = new ManagementNodePhysicalServerAdapter()
-            ZbsResourceUsageObserver zbsObserver = new ZbsResourceUsageObserver()
-            assert defaultCpuSet(kvm, topology) == "1-2" :
-                    "compute must read the current external profile without a management-node restart"
-            assert defaultCpuSet(mn, topology) == "1-3" :
-                    "management must read the current external profile without a management-node restart"
-            assert observedZbsServices(zbsObserver) == ["first.slice"] :
-                    "ZBS observation must read the current external profile without a management-node restart"
-            assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
-                    "ZBS must read its Exclusive reservation policy from the external profile"
+        PhysicalServerCpuTopology topology = largeTopology()
+        KvmPhysicalServerAdapter kvm = new KvmPhysicalServerAdapter()
+        ManagementNodePhysicalServerAdapter mn = new ManagementNodePhysicalServerAdapter()
+        ZbsResourceUsageObserver zbsObserver = new ZbsResourceUsageObserver()
+        assert defaultCpuSet(kvm, topology) == "1-2" :
+                "compute must read the current external profile without a management-node restart"
+        assert defaultCpuSet(mn, topology) == "1-3" :
+                "management must read the current external profile without a management-node restart"
+        assert observedZbsServices(zbsObserver) == ["first.slice"] :
+                "ZBS observation must read the current external profile without a management-node restart"
+        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
+                "ZBS must read its Exclusive reservation policy from the external profile"
 
-            Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 4)
-                    .getBytes(StandardCharsets.UTF_8))
-            Files.write(management, controlledRoleManifest("MANAGEMENT", "zstack-management.slice", 5)
-                    .getBytes(StandardCharsets.UTF_8))
-            Files.write(zbs, observedRoleManifest("second.slice", PhysicalServerResourceIsolationMode.SHARED)
-                    .getBytes(StandardCharsets.UTF_8))
-            assert defaultCpuSet(kvm, topology) == "1-2" :
-                    "editing a Profile must not change COMPUTE before the explicit reload API"
-            assert defaultCpuSet(mn, topology) == "1-3" :
-                    "editing a Profile must not change MANAGEMENT before the explicit reload API"
-            assert observedZbsServices(zbsObserver) == ["first.slice"] :
-                    "editing a Profile must not change ZBS observation before the explicit reload API"
-            assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
-                    "editing a Profile must not change ZBS isolation before the explicit reload API"
+        Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 4)
+                .getBytes(StandardCharsets.UTF_8))
+        Files.write(management, controlledRoleManifest("MANAGEMENT", "zstack-management.slice", 5)
+                .getBytes(StandardCharsets.UTF_8))
+        Files.write(zbs, observedRoleManifest("second.slice", PhysicalServerResourceIsolationMode.SHARED)
+                .getBytes(StandardCharsets.UTF_8))
+        assert defaultCpuSet(kvm, topology) == "1-2" :
+                "editing a Profile must not change COMPUTE before the explicit reload API"
+        assert defaultCpuSet(mn, topology) == "1-3" :
+                "editing a Profile must not change MANAGEMENT before the explicit reload API"
+        assert observedZbsServices(zbsObserver) == ["first.slice"] :
+                "editing a Profile must not change ZBS observation before the explicit reload API"
+        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
+                "editing a Profile must not change ZBS isolation before the explicit reload API"
 
-            RoleServiceManifest.reloadAll()
-            assert defaultCpuSet(kvm, topology) == "1-4" :
-                    "the explicit reload API must activate the changed COMPUTE Profile"
-            assert defaultCpuSet(mn, topology) == "1-5" :
-                    "the explicit reload API must activate the changed MANAGEMENT Profile"
-            assert observedZbsServices(zbsObserver) == ["second.slice"] :
-                    "the explicit reload API must activate the changed ZBS Profile"
-            assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.SHARED :
-                    "the explicit reload API must activate the changed ZBS isolation policy"
-        } finally {
-            Thread.currentThread().contextClassLoader = previous
-            RoleServiceManifest.reloadAll()
-            loader.close()
-            Files.deleteIfExists(compute)
-            Files.deleteIfExists(management)
-            Files.deleteIfExists(zbs)
-            Files.deleteIfExists(profiles)
-            Files.deleteIfExists(root)
-        }
+        RoleServiceManifest.reloadAll()
+        assert defaultCpuSet(kvm, topology) == "1-4" :
+                "the explicit reload API must activate the changed COMPUTE Profile"
+        assert defaultCpuSet(mn, topology) == "1-5" :
+                "the explicit reload API must activate the changed MANAGEMENT Profile"
+        assert observedZbsServices(zbsObserver) == ["second.slice"] :
+                "the explicit reload API must activate the changed ZBS Profile"
+        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.SHARED :
+                "the explicit reload API must activate the changed ZBS isolation policy"
     }
 
     @Test
@@ -587,11 +588,12 @@ services:
         if (ZbsResourceUsageObserver.type.toString() == typeName) {
             return ZbsResourceUsageObserver.type
         }
-        try {
-            return PhysicalServerRoleType.valueOf(typeName)
-        } catch (IllegalArgumentException ignored) {
-            return new PhysicalServerRoleType(typeName)
+        PhysicalServerRoleType type = testRoleTypes[typeName]
+        if (type == null) {
+            type = new PhysicalServerRoleType(typeName)
+            testRoleTypes[typeName] = type
         }
+        return type
     }
 
     private static PluginRegistry registry(
@@ -608,15 +610,7 @@ services:
     }
 
     private static void assertFailure(String expectedMessage, Closure operation) {
-        Throwable failure = null
-        try {
-            operation.call()
-        } catch (Throwable error) {
-            failure = error
-        }
-        assert failure != null :
-                "operation must fail with a typed validation error: " +
-                        "expectedMessage=${expectedMessage} actual=no failure"
+        Throwable failure = shouldFail(operation)
         assert failure.message?.contains(expectedMessage) :
                 "validation failure must expose the expected reason: " +
                         "expectedMessage=${expectedMessage} " +

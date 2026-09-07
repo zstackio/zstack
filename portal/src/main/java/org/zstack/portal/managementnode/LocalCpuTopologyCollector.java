@@ -4,10 +4,9 @@ import org.zstack.core.CoreGlobalProperty;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology;
 import org.zstack.header.physicalserver.PhysicalServerNumaNode;
+import org.zstack.utils.path.PathUtil;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,31 +41,26 @@ public class LocalCpuTopologyCollector {
         if (CoreGlobalProperty.UNIT_TEST_ON && testTopology != null) {
             return testTopology;
         }
-        try {
-            SortedSet<Integer> online = readCpuSet(cpuRoot.resolve("online"));
-            List<Path> nodePaths = nodePaths();
-            if (nodePaths.isEmpty()) {
-                return PhysicalServerCpuTopology.from(Collections.singletonMap("0", node("0", online)));
-            }
-
-            Map<String, PhysicalServerNumaNode> result = new LinkedHashMap<>();
-            for (Path nodePath : nodePaths) {
-                String nodeId = nodePath.getFileName().toString().substring("node".length());
-                SortedSet<Integer> cpus = readCpuSet(nodePath.resolve("cpulist"));
-                SortedSet<Integer> nodeOnline = new TreeSet<>(cpus);
-                nodeOnline.retainAll(online);
-                if (!nodeOnline.isEmpty()) {
-                    result.put(nodeId, node(nodeId, nodeOnline));
-                }
-            }
-            if (result.isEmpty()) {
-                throw new IllegalArgumentException("No online NUMA CPU was found");
-            }
-            return PhysicalServerCpuTopology.from(result);
-        } catch (IOException exception) {
-            throw new IllegalArgumentException(
-                    "Failed to read local CPU topology: " + exception.getMessage(), exception);
+        SortedSet<Integer> online = readCpuSet(cpuRoot.resolve("online"));
+        List<Path> nodePaths = nodePaths();
+        if (nodePaths.isEmpty()) {
+            return PhysicalServerCpuTopology.from(Collections.singletonMap("0", node("0", online)));
         }
+
+        Map<String, PhysicalServerNumaNode> result = new LinkedHashMap<>();
+        for (Path nodePath : nodePaths) {
+            String nodeId = nodePath.getFileName().toString().substring("node".length());
+            SortedSet<Integer> cpus = readCpuSet(nodePath.resolve("cpulist"));
+            SortedSet<Integer> nodeOnline = new TreeSet<>(cpus);
+            nodeOnline.retainAll(online);
+            if (!nodeOnline.isEmpty()) {
+                result.put(nodeId, node(nodeId, nodeOnline));
+            }
+        }
+        if (result.isEmpty()) {
+            throw new IllegalArgumentException("No online NUMA CPU was found");
+        }
+        return PhysicalServerCpuTopology.from(result);
     }
 
     public void setTestTopology(PhysicalServerCpuTopology testTopology) {
@@ -80,16 +74,18 @@ public class LocalCpuTopologyCollector {
         testTopology = null;
     }
 
-    private List<Path> nodePaths() throws IOException {
+    private List<Path> nodePaths() {
         if (!Files.isDirectory(nodeRoot)) {
             return Collections.emptyList();
         }
         List<Path> paths = new ArrayList<>();
-        try (DirectoryStream<Path> stream = Files.newDirectoryStream(nodeRoot, "node[0-9]*")) {
-            for (Path path : stream) {
-                if (path.getFileName().toString().matches("node[0-9]+")) {
-                    paths.add(path);
-                }
+        java.io.File[] nodes = nodeRoot.toFile().listFiles(file -> file.getName().matches("node[0-9]+"));
+        if (nodes == null) {
+            return paths;
+        }
+        for (java.io.File node : nodes) {
+            if (node.isDirectory()) {
+                paths.add(node.toPath());
             }
         }
         paths.sort(Comparator.comparingInt(path -> Integer.parseInt(
@@ -97,7 +93,7 @@ public class LocalCpuTopologyCollector {
         return paths;
     }
 
-    private PhysicalServerNumaNode node(String nodeId, SortedSet<Integer> online) throws IOException {
+    private PhysicalServerNumaNode node(String nodeId, SortedSet<Integer> online) {
         PhysicalServerNumaNode node = new PhysicalServerNumaNode();
         node.setNodeId(nodeId);
         node.setOnlineCpus(strings(online));
@@ -105,7 +101,7 @@ public class LocalCpuTopologyCollector {
         return node;
     }
 
-    private List<List<String>> coreGroups(SortedSet<Integer> online) throws IOException {
+    private List<List<String>> coreGroups(SortedSet<Integer> online) {
         Set<SortedSet<Integer>> groups = new LinkedHashSet<>();
         for (Integer cpu : online) {
             Path siblings = cpuRoot.resolve(String.format("cpu%s/topology/thread_siblings_list", cpu));
@@ -125,8 +121,8 @@ public class LocalCpuTopologyCollector {
         return result;
     }
 
-    private SortedSet<Integer> readCpuSet(Path path) throws IOException {
-        String value = new String(Files.readAllBytes(path), StandardCharsets.US_ASCII).trim();
+    private SortedSet<Integer> readCpuSet(Path path) {
+        String value = PathUtil.readFileToString(path.toString(), StandardCharsets.US_ASCII).trim();
         if (value.isEmpty()) {
             throw new IllegalArgumentException("CPU list is empty at " + path);
         }

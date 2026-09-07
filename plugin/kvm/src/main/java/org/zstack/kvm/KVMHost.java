@@ -73,6 +73,8 @@ import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.os.OSArchitecture;
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentConfig;
+import org.zstack.header.physicalserver.ResourceConsumerHandle;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
@@ -6183,13 +6185,22 @@ public class KVMHost extends HostBase implements Host {
                         kvmHostConfigChecker.setRequireReservePorts("49152-49215");
                         deployArguments.setIsEnableKsm(enableKsm);
 
-                        String resourceAssignmentEnabled = String.valueOf(
-                                gcf.getConfigValue(
-                                        PhysicalServerResourceAssignmentConfig.CATEGORY,
-                                        PhysicalServerResourceAssignmentConfig.ENABLED,
-                                        Boolean.class));
+                        boolean resourceAssignmentEnabled = gcf.getConfigValue(
+                                PhysicalServerResourceAssignmentConfig.CATEGORY,
+                                PhysicalServerResourceAssignmentConfig.ENABLED,
+                                Boolean.class);
                         kvmHostConfigChecker.setRequireResourceAssignment(resourceAssignmentEnabled);
-                        deployArguments.setResourceAssignmentEnabled(resourceAssignmentEnabled);
+                        deployArguments.setResourceAssignmentEnabled(Boolean.toString(resourceAssignmentEnabled));
+                        if (resourceAssignmentEnabled) {
+                            RoleServiceManifest computeServices = RoleServiceManifest.load(
+                                    KvmPhysicalServerAdapter.ROLE_SERVICE_MANIFEST_PATH,
+                                    KvmPhysicalServerAdapter.type.toString());
+                            deployArguments.setResourceAssignmentSliceName(computeServices.getSliceName());
+                            deployArguments.setResourceAssignmentSystemdUnits(computeServices.handles().stream()
+                                    .filter(handle -> ResourceConsumerHandle.SYSTEMD_UNIT.equals(
+                                            handle.getHandleType()))
+                                    .map(ResourceConsumerHandle::getValue).collect(Collectors.toList()));
+                        }
 
                         if (NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES) {
                             deployArguments.setBridgeDisableIptables("true");

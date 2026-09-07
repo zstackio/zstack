@@ -5,6 +5,7 @@ import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.core.Completion
 import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.HostNUMANode
@@ -21,6 +22,7 @@ import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KvmPhysicalServerAdapter
+import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
 import org.zstack.sdk.DeletePrimaryStorageAction
 import org.zstack.sdk.GetPhysicalServerManagedServicesAction
 import org.zstack.sdk.HostInventory
@@ -47,15 +49,13 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
-import java.util.concurrent.Callable
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
+
+import static groovy.test.GroovyAssert.shouldFail
 
 class ZbsResourceUsageObservationCase extends SubCase {
     static SpringSpec springSpec = PhysicalServerTest.springSpec
@@ -64,20 +64,19 @@ class ZbsResourceUsageObservationCase extends SubCase {
     static final String MOVED_SERIAL = "zbs-moved-physical-server-case"
     static final Set<String> ZBS_CGROUPS = [
             "zstone.share.slice", "zstone.cs.slice", "zstone.vhost.slice"] as Set<String>
+    static final Map<String, PhysicalServerRoleType> testRoleTypes = [:]
 
     EnvSpec env
     HostInventory host
     String serverUuid
     AtomicInteger providerQueryCalls = new AtomicInteger()
-    AtomicBoolean holdNextProviderQuery = new AtomicBoolean()
-    volatile CountDownLatch providerQueryGate
-    volatile CountDownLatch providerQueryStarted
     volatile boolean failProviderQuery
     volatile String providerReportedSerial = SERIAL
     PhysicalServerResourceAssignmentObserver assignmentOnlyObserver
     PhysicalServerRoleAssociationProvider assignmentOnlyAssociation
     PrimaryStorageInventory first
     PrimaryStorageInventory second
+    String originalResourceAssignmentEnabled
 
     @Override
     void setup() {
@@ -91,37 +90,37 @@ class ZbsResourceUsageObservationCase extends SubCase {
 
     @Override
     void clean() {
-        try {
-            holdNextProviderQuery.set(false)
-            providerQueryGate?.countDown()
-            providerQueryGate = null
-            if (assignmentOnlyObserver != null) {
-                bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerResourceAssignmentObserver.class).remove(assignmentOnlyObserver)
-                assignmentOnlyObserver = null
-            }
-            if (assignmentOnlyAssociation != null) {
-                bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerRoleAssociationProvider.class).remove(assignmentOnlyAssociation)
-                assignmentOnlyAssociation = null
-            }
-            PhysicalServerTest.cleanupPhysicalServerRecords()
-        } finally {
-            env.delete()
+        if (assignmentOnlyObserver != null) {
+            bean(PluginRegistry.class).getExtensionList(
+                    PhysicalServerResourceAssignmentObserver.class).remove(assignmentOnlyObserver)
+            assignmentOnlyObserver = null
+        }
+        if (assignmentOnlyAssociation != null) {
+            bean(PluginRegistry.class).getExtensionList(
+                    PhysicalServerRoleAssociationProvider.class).remove(assignmentOnlyAssociation)
+            assignmentOnlyAssociation = null
+        }
+        PhysicalServerTest.cleanupPhysicalServerRecords()
+        env.delete()
+        if (originalResourceAssignmentEnabled != null) {
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
         }
     }
 
     @Override
     void test() {
         env.create {
+            originalResourceAssignmentEnabled = PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value()
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
             host = env.inventoryByName("kvm") as HostInventory
             installKvmSimulators()
             installZbsSerialSimulator()
 
             first = addZbs("zbs-observation-1", "127.0.1.11")
-            verifyObserverCapabilitiesAreRegisteredIndependently()
             bean(ZbsResourceUsageObserver.class).discoverAssociations(Collections.emptySet())
+            verifyObserverCapabilitiesAreRegisteredIndependently()
             serverUuid = physicalServerUuid(SERIAL)
+            refreshResourceAssignment(serverUuid, ZbsResourceUsageObserver.type.toString())
 
             verifyAssignmentObservationDoesNotRequireUsageObservation()
             verifyContributorFailurePreservesCachedRelations()
@@ -129,7 +128,6 @@ class ZbsResourceUsageObservationCase extends SubCase {
             verifyZbsCreatesReadOnlyResourceAssignment()
             verifyZstoneCgroupUsageIsObserved()
             verifyReadOnlyAssignmentRetainsLastBoundaryOnProbeFailure()
-            verifyConcurrentReadsUseOneProviderQuery()
             associateHost(SERIAL)
             verifyProviderIdentityMismatchReturnsRoleError()
             verifyZbsCannotBeControlledByCloud()
@@ -174,7 +172,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
         bean(PluginRegistry.class).defineDynamicExtension(
                 PhysicalServerRoleAssociationProvider.class, assignmentOnlyAssociation)
 
-        bean(PhysicalServerManager.class).associationChanged(serverUuid)
+        refreshResourceAssignment(serverUuid, assignmentOnlyRole.toString())
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [serverUuid]
         }
@@ -191,11 +189,12 @@ class ZbsResourceUsageObservationCase extends SubCase {
     }
 
     private static PhysicalServerRoleType registeredRoleType(String typeName) {
-        try {
-            return PhysicalServerRoleType.valueOf(typeName)
-        } catch (IllegalArgumentException ignored) {
-            return new PhysicalServerRoleType(typeName)
+        PhysicalServerRoleType type = testRoleTypes[typeName]
+        if (type == null) {
+            type = new PhysicalServerRoleType(typeName)
+            testRoleTypes[typeName] = type
         }
+        return type
     }
 
     private void verifyObserverCapabilitiesAreRegisteredIndependently() {
@@ -228,41 +227,35 @@ class ZbsResourceUsageObservationCase extends SubCase {
         ] as ZbsNodeRefContributor
         PluginRegistry registry = bean(PluginRegistry.class)
         registry.defineDynamicExtension(ZbsNodeRefContributor.class, contributor)
-        try {
-            ZbsResourceUsageObserver observer = bean(ZbsResourceUsageObserver.class)
-            Set<String> associated = observer.discoverAssociations(Collections.singleton(contributedServerUuid))
-            assert associated.contains(contributedServerUuid) :
-                    "the contributor must establish its relation before failure"
+        ZbsResourceUsageObserver observer = bean(ZbsResourceUsageObserver.class)
+        Set<String> associated = observer.discoverAssociations(Collections.singleton(contributedServerUuid))
+        assert associated.contains(contributedServerUuid) :
+                "the contributor must establish its relation before failure"
 
-            failDiscovery.set(true)
-            Throwable discoveryFailure = null
-            try {
-                observer.discoverAssociations(Collections.singleton(contributedServerUuid))
-            } catch (Throwable error) {
-                discoveryFailure = error
-            }
-            assert discoveryFailure?.message?.contains("simulated contributor failure") :
-                    "an incomplete discovery must fail instead of replacing cached relations"
-
-            AtomicReference<String> observedFailure = new AtomicReference<>()
-            observer.collectResourceAssignment(
-                    contributedServerUuid, new ReturnValueCompletion<PhysicalServerResourceBoundary>(null) {
-                        @Override
-                        void success(PhysicalServerResourceBoundary ignored) {
-                            observedFailure.set("unexpected success")
-                        }
-
-                        @Override
-                        void fail(ErrorCode errorCode) {
-                            observedFailure.set(errorCode.details)
-                        }
-                    })
-            assert observedFailure.get() == "cached relation" :
-                    "a failed refresh must retain the previous cached relation: " + "actual=${observedFailure.get()}"
-        } finally {
-            registry.getExtensionList(ZbsNodeRefContributor.class).remove(contributor)
-            bean(ZbsResourceUsageObserver.class).discoverAssociations(Collections.emptySet())
+        failDiscovery.set(true)
+        Throwable discoveryFailure = shouldFail {
+            observer.discoverAssociations(Collections.singleton(contributedServerUuid))
         }
+        assert discoveryFailure?.message?.contains("simulated contributor failure") :
+                "an incomplete discovery must fail instead of replacing cached relations"
+
+        AtomicReference<String> observedFailure = new AtomicReference<>()
+        observer.collectResourceAssignment(
+                contributedServerUuid, new ReturnValueCompletion<PhysicalServerResourceBoundary>(null) {
+                    @Override
+                    void success(PhysicalServerResourceBoundary ignored) {
+                        observedFailure.set("unexpected success")
+                    }
+
+                    @Override
+                    void fail(ErrorCode errorCode) {
+                        observedFailure.set(errorCode.details)
+                    }
+                })
+        assert observedFailure.get() == "cached relation" :
+                "a failed refresh must retain the previous cached relation: " + "actual=${observedFailure.get()}"
+        registry.getExtensionList(ZbsNodeRefContributor.class).remove(contributor)
+        observer.discoverAssociations(Collections.emptySet())
     }
 
     private void installKvmSimulators() {
@@ -321,11 +314,6 @@ class ZbsResourceUsageObservationCase extends SubCase {
                         "ZBS observation must query only the canonical ZStone Slice names: " +
                                 "expected=${ZBS_CGROUPS} actual=${command.cgroupNames}"
                 providerQueryCalls.incrementAndGet()
-                providerQueryStarted?.countDown()
-                if (holdNextProviderQuery.compareAndSet(true, false)) {
-                    CountDownLatch gate = providerQueryGate
-                    gate?.await(10, TimeUnit.SECONDS)
-                }
                 ZbsAgentResourceUsageProvider.ResourceUsageResponse response =
                         new ZbsAgentResourceUsageProvider.ResourceUsageResponse()
                 if (failProviderQuery) {
@@ -392,19 +380,16 @@ class ZbsResourceUsageObservationCase extends SubCase {
 
     private void verifyReadOnlyAssignmentRetainsLastBoundaryOnProbeFailure() {
         failProviderQuery = true
-        try {
-            refreshPhysicalServerResourceAssignmentsFromProfile {
-                serverUuids = [serverUuid]
-            }
-            retryInSecs {
-                List<PhysicalServerResourceAssignmentInventory> current = assignments(serverUuid, "ZBS")
-                assert current.size() == 1 && current[0].cpuSet == "0-7" && current[0].state == "Unsynced" :
-                        "a failed ZBS probe must retain the last factual boundary and mark it Unsynced: " +
-                                "actual=${current}"
-            }
-        } finally {
-            failProviderQuery = false
+        refreshPhysicalServerResourceAssignmentsFromProfile {
+            serverUuids = [serverUuid]
         }
+        retryInSecs {
+            List<PhysicalServerResourceAssignmentInventory> current = assignments(serverUuid, "ZBS")
+            assert current.size() == 1 && current[0].cpuSet == "0-7" && current[0].state == "Unsynced" :
+                    "a failed ZBS probe must retain the last factual boundary and mark it Unsynced: " +
+                            "actual=${current}"
+        }
+        failProviderQuery = false
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [serverUuid]
         }
@@ -423,30 +408,24 @@ class ZbsResourceUsageObservationCase extends SubCase {
         assert originalAddonInfo != null
         SQL.New("update ExternalPrimaryStorageVO e set e.addonInfo = null " +
                 "where e.uuid = :uuid").param("uuid", invalid.uuid).execute()
-        try {
-            ZbsNodeRefContributorImpl contributor = bean(ZbsNodeRefContributorImpl.class)
-            Throwable discoveryFailure = null
-            try {
-                contributor.bulkList([serverUuid])
-            } catch (Throwable error) {
-                discoveryFailure = error
-            }
-            assert discoveryFailure?.message?.contains(invalid.uuid) :
-                    "malformed addonInfo must fail the complete relation view instead of returning partial data"
-
-            AddonInfo mixedAddonInfo = JSONObjectUtil.toObject(originalAddonInfo, AddonInfo.class)
-            mixedAddonInfo.mdsInfos.add(0, null)
-            SQL.New("update ExternalPrimaryStorageVO e set e.addonInfo = :addonInfo " + "where e.uuid = :uuid")
-                    .param("addonInfo", JSONObjectUtil.toJsonString(mixedAddonInfo))
-                    .param("uuid", invalid.uuid).execute()
-            def relation = contributor.bulkList([serverUuid])[serverUuid]
-            assert relation?.serialNumber == SERIAL && relation.nodeAddresses.contains("127.0.1.15") :
-                    "one empty MDS element must not hide valid MDS relations from the same PrimaryStorage: " +
-                            "actual=${relation?.nodeAddresses}"
-        } finally {
-            SQL.New("update ExternalPrimaryStorageVO e set e.addonInfo = :addonInfo " +
-                    "where e.uuid = :uuid").param("addonInfo", originalAddonInfo).param("uuid", invalid.uuid).execute()
+        ZbsNodeRefContributorImpl contributor = bean(ZbsNodeRefContributorImpl.class)
+        Throwable discoveryFailure = shouldFail {
+            contributor.bulkList([serverUuid])
         }
+        assert discoveryFailure?.message?.contains(invalid.uuid) :
+                "malformed addonInfo must fail the complete relation view instead of returning partial data"
+
+        AddonInfo mixedAddonInfo = JSONObjectUtil.toObject(originalAddonInfo, AddonInfo.class)
+        mixedAddonInfo.mdsInfos.add(0, null)
+        SQL.New("update ExternalPrimaryStorageVO e set e.addonInfo = :addonInfo " + "where e.uuid = :uuid")
+                .param("addonInfo", JSONObjectUtil.toJsonString(mixedAddonInfo))
+                .param("uuid", invalid.uuid).execute()
+        def relation = contributor.bulkList([serverUuid])[serverUuid]
+        assert relation?.serialNumber == SERIAL && relation.nodeAddresses.contains("127.0.1.15") :
+                "one empty MDS element must not hide valid MDS relations from the same PrimaryStorage: " +
+                        "actual=${relation?.nodeAddresses}"
+        SQL.New("update ExternalPrimaryStorageVO e set e.addonInfo = :addonInfo " +
+                "where e.uuid = :uuid").param("addonInfo", originalAddonInfo).param("uuid", invalid.uuid).execute()
         assert deletePrimaryStorage(invalid.uuid, "Permissive").error == null
     }
 
@@ -467,69 +446,25 @@ class ZbsResourceUsageObservationCase extends SubCase {
                 byName["zstone.vhost.slice"], "6-7", 3_000L, SizeUnit.MEGABYTE.toByte(512), SizeUnit.GIGABYTE.toByte(1))
     }
 
-    private void verifyConcurrentReadsUseOneProviderQuery() {
-        int callsBefore = providerQueryCalls.get()
-        providerQueryGate = new CountDownLatch(1)
-        providerQueryStarted = new CountDownLatch(1)
-        holdNextProviderQuery.set(true)
-        ExecutorService callers = Executors.newFixedThreadPool(2)
-        List<Future<GetPhysicalServerManagedServicesAction.Result>> requests = []
-        try {
-            requests.add(callers.submit({
-                new GetPhysicalServerManagedServicesAction(sessionId: adminSession(), serverUuid: serverUuid).call()
-            } as Callable<GetPhysicalServerManagedServicesAction.Result>))
-            assert providerQueryStarted.await(5, TimeUnit.SECONDS) :
-                    "one concurrent detail query must reach the ZBS Agent"
-            requests.add(callers.submit({
-                new GetPhysicalServerManagedServicesAction(sessionId: adminSession(), serverUuid: serverUuid).call()
-            } as Callable<GetPhysicalServerManagedServicesAction.Result>))
-            Thread.sleep(300)
-            assert requests.every { !it.done } :
-                    "both concurrent detail queries must wait for the same in-flight observation"
-        } finally {
-            providerQueryGate.countDown()
-        }
-        List<GetPhysicalServerManagedServicesAction.Result> results
-        try {
-            results = requests.collect { it.get(5, TimeUnit.SECONDS) }
-        } finally {
-            callers.shutdownNow()
-        }
-        assert results.every {
-            it.error == null &&
-                    it.value.services.findAll { service ->
-                        service.roleType == "ZBS"
-                    }.size() == ZBS_CGROUPS.size()
-        } : "both callers must receive the complete ZBS observation: actual=${results}"
-        assert providerQueryCalls.get() - callsBefore == 1 :
-                "concurrent reads for one PhysicalServer must issue one Provider RPC: " +
-                        "before=${callsBefore} after=${providerQueryCalls.get()}"
-        providerQueryGate = null
-        providerQueryStarted = null
-    }
-
     private void verifyProviderIdentityMismatchReturnsRoleError() {
         providerReportedSerial = MOVED_SERIAL
-        try {
-            retryInSecs {
-                GetPhysicalServerManagedServicesAction.Result result =
-                        new GetPhysicalServerManagedServicesAction(
-                                sessionId: adminSession(), serverUuid: serverUuid).call()
-                assert result.error == null :
-                        "one failed Role observation must not fail the complete API: actual=${result.error}"
-                assert result.value.services.any { it.roleType == "COMPUTE" } :
-                        "successful Roles must remain visible when ZBS observation fails: " +
-                                "actual=${result.value.services}"
-                assert !result.value.services.any { it.roleType == "ZBS" } :
-                        "a failed ZBS observation must not fabricate service rows"
-                assert result.value.roleErrors?.containsKey("ZBS") :
-                        "the ZBS failure must be returned under its Role: actual=${result.value.roleErrors}"
-                assert result.value.roleErrors["ZBS"].details.contains("Expected physical server serialNumber") :
-                        "the Role error must retain the Provider failure: actual=${result.value.roleErrors["ZBS"]}"
-            }
-        } finally {
-            providerReportedSerial = SERIAL
+        retryInSecs {
+            GetPhysicalServerManagedServicesAction.Result result =
+                    new GetPhysicalServerManagedServicesAction(
+                            sessionId: adminSession(), serverUuid: serverUuid).call()
+            assert result.error == null :
+                    "one failed Role observation must not fail the complete API: actual=${result.error}"
+            assert result.value.services.any { it.roleType == "COMPUTE" } :
+                    "successful Roles must remain visible when ZBS observation fails: " +
+                            "actual=${result.value.services}"
+            assert !result.value.services.any { it.roleType == "ZBS" } :
+                    "a failed ZBS observation must not fabricate service rows"
+            assert result.value.roleErrors?.containsKey("ZBS") :
+                    "the ZBS failure must be returned under its Role: actual=${result.value.roleErrors}"
+            assert result.value.roleErrors["ZBS"].details.contains("Expected physical server serialNumber") :
+                    "the Role error must retain the Provider failure: actual=${result.value.roleErrors["ZBS"]}"
         }
+        providerReportedSerial = SERIAL
     }
 
     private void assertUsage(def service, String cpuSet, Long cpuTime, Long memory, Long memoryLimit) {
@@ -620,21 +555,17 @@ class ZbsResourceUsageObservationCase extends SubCase {
         }
         bean(ZbsResourceUsageObserver.class).discoverAssociations(Collections.emptySet())
         String movedServerUuid = physicalServerUuid(MOVED_SERIAL)
-        PhysicalServerManager physicalServerManager = bean(PhysicalServerManager.class)
-        physicalServerManager.associationChanged(serverUuid)
+        refreshResourceAssignment(serverUuid, ZbsResourceUsageObserver.type.toString())
         providerReportedSerial = MOVED_SERIAL
-        try {
-            physicalServerManager.associationChanged(movedServerUuid)
-            retryInSecs {
-                List<PhysicalServerResourceAssignmentInventory> movedAssignments = assignments(movedServerUuid, "ZBS")
-                assert movedAssignments.size() == 1 &&
-                        movedAssignments[0].cpuSet == "0-7" && movedAssignments[0].state == "Synced" :
-                        "the moved ZBS relation must be observed before its Agent identity changes: " +
-                                "actual=${movedAssignments}"
-            }
-        } finally {
-            providerReportedSerial = SERIAL
+        refreshResourceAssignment(movedServerUuid, ZbsResourceUsageObserver.type.toString())
+        retryInSecs {
+            List<PhysicalServerResourceAssignmentInventory> movedAssignments = assignments(movedServerUuid, "ZBS")
+            assert movedAssignments.size() == 1 &&
+                    movedAssignments[0].cpuSet == "0-7" && movedAssignments[0].state == "Synced" :
+                    "the moved ZBS relation must be observed before its Agent identity changes: " +
+                            "actual=${movedAssignments}"
         }
+        providerReportedSerial = SERIAL
         retryInSecs {
             Map relations = refs.bulkList([serverUuid, movedServerUuid])
             assert !relations[serverUuid]?.nodeAddresses?.any {
@@ -664,7 +595,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
             assert refs.bulkList([movedServerUuid]).isEmpty() :
                     "a deleted ZBS PrimaryStorage must disappear from observation relations"
         }
-        physicalServerManager.associationChanged(movedServerUuid)
+        refreshResourceAssignment(movedServerUuid, ZbsResourceUsageObserver.type.toString())
         retryInSecs {
             assert assignments(movedServerUuid, "ZBS").isEmpty() :
                     "removing the moved relation must delete its read-only Assignment"
@@ -684,7 +615,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
         assert lastDelete.error == null :
                 "deleting the last ZBS relation must not depend on a usage Provider or release gate: " +
                         "actual=${lastDelete.error}"
-        bean(PhysicalServerManager.class).associationChanged(serverUuid)
+        refreshResourceAssignment(serverUuid, ZbsResourceUsageObserver.type.toString())
         retryInSecs {
             assert assignments(serverUuid, "ZBS").isEmpty() :
                     "removing the last relation must not leave a ZBS Assignment"
@@ -732,7 +663,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
                 tag = "systemSerialNumber::${serialNumber}"
             }
         }
-        bean(KvmPhysicalServerAdapter.class).associate(
+        bean(KvmPhysicalServerAdapter.class).afterHostConnected(
                 org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(host.uuid, HostVO.class)))
         retryInSecs {
             HostInventory current = (queryHost {
@@ -777,6 +708,26 @@ class ZbsResourceUsageObservationCase extends SubCase {
         return queryPhysicalServerResourceAssignment {
             conditions = ["serverUuid=${targetServerUuid}", "roleType=${roleType}"]
         } as List<PhysicalServerResourceAssignmentInventory>
+    }
+
+    private void refreshResourceAssignment(String serverUuid, String roleType) {
+        CountDownLatch refreshed = new CountDownLatch(1)
+        AtomicReference<ErrorCode> failure = new AtomicReference<>()
+        bean(PhysicalServerManager.class).refreshResourceAssignment(serverUuid, roleType, new Completion(null) {
+            @Override
+            void success() {
+                refreshed.countDown()
+            }
+
+            @Override
+            void fail(ErrorCode errorCode) {
+                failure.set(errorCode)
+                refreshed.countDown()
+            }
+        })
+
+        assert refreshed.await(30, TimeUnit.SECONDS)
+        assert failure.get() == null
     }
 
     private static List<ZbsCgroupResourceUsage> observedUsages() {

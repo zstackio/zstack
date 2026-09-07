@@ -1,11 +1,13 @@
 package org.zstack.test.integration.physicalserver
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.PostHostConnectExtensionPoint
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.SQL
 import org.zstack.header.core.Completion
 import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.host.HostAfterConnectedExtensionPoint
 import org.zstack.header.host.HostNUMANode
 import org.zstack.header.host.HostVO
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage
@@ -42,14 +44,18 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
+import static groovy.test.GroovyAssert.shouldFail
+
 class PhysicalServerResourceAssignmentCase extends SubCase {
     static SpringSpec springSpec = PhysicalServerTest.springSpec
+    static final Map<String, PhysicalServerRoleType> testRoleTypes = [:]
 
     EnvSpec env
     PhysicalServerManager physicalServerManager
@@ -60,6 +66,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     volatile boolean failResourceControl
     volatile boolean mismatchResourceControl
     AtomicInteger resourceControlCalls = new AtomicInteger()
+    AtomicInteger imageStoreAssociationCalls = new AtomicInteger()
     AtomicReference<List<String>> restartedServices = new AtomicReference<>()
     AtomicReference<KvmPhysicalServerAdapter.ApplyResourceControlAgentCommand> lastResourceControlCommand =
             new AtomicReference<>()
@@ -84,32 +91,26 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
 
     @Override
     void clean() {
-        try {
-            if (managementAdapter != null) {
-                managementAdapter.setTestSerialNumber(null)
-            }
-            if (localTopology != null) {
-                localTopology.clearTestTopology()
-            }
-            PhysicalServerTest.cleanupPhysicalServerRecords()
-            env.delete()
-        } finally {
-            try {
-                localExecutor?.disableTestMode()
-                bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerResourceAssignmentController.class).removeAll(dynamicControllers)
-                bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerResourceUsageObserver.class).removeAll(dynamicUsageObservers)
-                bean(PluginRegistry.class).getExtensionList(
-                        PhysicalServerRoleAssociationProvider.class).removeAll(dynamicAssociationProviders)
-                dynamicControllers.clear()
-                dynamicUsageObservers.clear()
-                dynamicAssociationProviders.clear()
-            } finally {
-                if (originalResourceAssignmentEnabled != null) {
-                    PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
-                }
-            }
+        if (managementAdapter != null) {
+            managementAdapter.setTestSerialNumber(null)
+        }
+        if (localTopology != null) {
+            localTopology.clearTestTopology()
+        }
+        PhysicalServerTest.cleanupPhysicalServerRecords()
+        env.delete()
+        localExecutor?.disableTestMode()
+        bean(PluginRegistry.class).getExtensionList(
+                PhysicalServerResourceAssignmentController.class).removeAll(dynamicControllers)
+        bean(PluginRegistry.class).getExtensionList(
+                PhysicalServerResourceUsageObserver.class).removeAll(dynamicUsageObservers)
+        bean(PluginRegistry.class).getExtensionList(
+                PhysicalServerRoleAssociationProvider.class).removeAll(dynamicAssociationProviders)
+        dynamicControllers.clear()
+        dynamicUsageObservers.clear()
+        dynamicAssociationProviders.clear()
+        if (originalResourceAssignmentEnabled != null) {
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
         }
     }
 
@@ -146,7 +147,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
 
     private HostInventory associateHostThroughSerialTag(HostInventory target, String serialNumber) {
         setHostSerialTag(target, serialNumber)
-        bean(KvmPhysicalServerAdapter.class).associate(
+        bean(KvmPhysicalServerAdapter.class).afterHostConnected(
                 org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(target.uuid, HostVO.class)))
         AtomicReference<HostInventory> associated = new AtomicReference<>()
         retryInSecs {
@@ -190,7 +191,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
 
     private void verifyDuplicateHostSerialIsRejected() {
         setHostSerialTag(forceDeleteHost, "physical-server-sdk-case")
-        bean(KvmPhysicalServerAdapter.class).associate(
+        bean(KvmPhysicalServerAdapter.class).afterHostConnected(
                 org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(forceDeleteHost.uuid, HostVO.class)))
         List<HostInventory> hosts = queryHost {
             conditions = ["uuid=${forceDeleteHost.uuid}"]
@@ -326,12 +327,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                             "expected=Synced actual=${currentState}"
         }
 
-        ApiException emptyScope = null
-        try {
+        ApiException emptyScope = shouldFail(ApiException) {
             new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
                     sessionId: adminSession(), serverUuids: []).call()
-        } catch (ApiException error) {
-            emptyScope = error
         }
         assert emptyScope?.message?.contains("field[serverUuids] cannot be an empty list") :
                 "an explicit empty serverUuids list must be rejected instead of " +
@@ -419,6 +417,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         PhysicalServerRoleAssociationProvider associations = [
                 getRoleType: { imageStoreRole },
                 discoverAssociations: { Collection<String> scope ->
+                    imageStoreAssociationCalls.incrementAndGet()
                     if (!associated.get()) {
                         return Collections.emptySet()
                     }
@@ -437,7 +436,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         assert !servicesBeforeDiscovery.any { it.roleType == imageStoreRoleType } :
                 "managed-service GET must not discover relations or create Assignments"
 
-        physicalServerManager.associationChanged(physicalServerUuid)
+        refreshResourceAssignment(physicalServerUuid, imageStoreRole.toString())
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [physicalServerUuid]
         }
@@ -533,7 +532,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                     "removing defaultCpuCount must leave the current Assignment unchanged"
         }
         associated.set(false)
-        verifyReleaseDeletesAssignment(imageStoreRoleType)
+        verifyReleaseAndForgetDeletesAssignment(imageStoreRoleType)
     }
 
     private void verifyInvalidUpdateDoesNotChangeAssignment() {
@@ -607,27 +606,26 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         assert undefinedService.call().error?.details?.contains("are not managed by roleType") :
                 "a syntactically valid but unconfigured service must be rejected by the Role manifest"
 
-        try {
-            env.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
-                HostNUMANode node = new HostNUMANode()
-                node.nodeID = "0"
-                node.cpus = ["0", "1"]
-                node.onlineCpus = node.cpus
-                node.coreGroups = [["0"]]
-                KVMAgentCommands.GetHostNUMATopologyResponse response =
-                        new KVMAgentCommands.GetHostNUMATopologyResponse()
-                response.topology = ["0": node]
-                return response
-            }
-            UpdatePhysicalServerResourceAssignmentAction invalidTopology =
-                    new UpdatePhysicalServerResourceAssignmentAction(
-                            sessionId: adminSession(), serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0")
-            assert invalidTopology.call().error?.details?.contains("Host returned invalid CPU topology") :
-                    "Cloud must reject an incomplete Host topology before changing the ledger"
-        } finally {
-            env.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
-                return validTopologyResponse()
-            }
+        env.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
+            HostNUMANode node = new HostNUMANode()
+            node.nodeID = "0"
+            node.cpus = ["0", "1"]
+            node.onlineCpus = node.cpus
+            node.coreGroups = [["0"]]
+            KVMAgentCommands.GetHostNUMATopologyResponse response =
+                    new KVMAgentCommands.GetHostNUMATopologyResponse()
+            response.topology = ["0": node]
+            return response
+        }
+        UpdatePhysicalServerResourceAssignmentAction invalidTopology =
+                new UpdatePhysicalServerResourceAssignmentAction(
+                        sessionId: adminSession(), serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0")
+        def error = invalidTopology.call().error
+        assert error?.code == "SYS.1000"
+        assert error.details.contains("Core groups do not cover every online CPU exactly once") :
+                "Cloud must reject an incomplete Host topology before changing the ledger"
+        env.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
+            return validTopologyResponse()
         }
 
         PhysicalServerResourceAssignmentInventory after = assignment()
@@ -701,54 +699,52 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                     "an HTTP-success response with synced=false must keep the Assignment Unsynced"
         }
         mismatchResourceControl = false
-        refreshPhysicalServerResourceAssignmentsFromProfile {
-            serverUuids = [physicalServerUuid]
-        }
+        int callsBeforeHostConnected = resourceControlCalls.get()
+        int imageStoreCallsBeforeHostConnected = imageStoreAssociationCalls.get()
+        List<HostAfterConnectedExtensionPoint> connectedExtensions =
+                bean(PluginRegistry.class).getExtensionList(HostAfterConnectedExtensionPoint.class)
+        HostAfterConnectedExtensionPoint connectedExtension =
+                connectedExtensions.find { it instanceof KvmPhysicalServerAdapter }
+        assert connectedExtension != null : "KVM resource assignment must register for Host Connected events"
+        assert !bean(PluginRegistry.class).getExtensionList(PostHostConnectExtensionPoint.class).any {
+            it instanceof KvmPhysicalServerAdapter
+        } : "KVM resource assignment must run only after Host reaches Connected"
+        def connectedHost = org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(host.uuid, HostVO.class))
+        connectedExtension.afterHostConnected(connectedHost)
         retryInSecs {
+            assert resourceControlCalls.get() > callsBeforeHostConnected :
+                    "Host Connected must retry an Assignment that could not be applied while the Host was Connecting"
             assert assignment().state == "Synced" :
-                    "the same Assignment must recover after complete coverage is observed"
+                    "the same Assignment must recover without a manual Refresh after Host Connected"
+            assert imageStoreAssociationCalls.get() == imageStoreCallsBeforeHostConnected :
+                    "Host Connected must refresh only the COMPUTE Role"
         }
     }
 
     private void verifyConcurrentSparseUpdates() {
         CountDownLatch start = new CountDownLatch(1)
-        CountDownLatch finished = new CountDownLatch(2)
-        List<Throwable> failures = Collections.synchronizedList([])
         String sessionUuid = adminSession()
 
-        Thread.start {
-            try {
-                start.await()
-                UpdatePhysicalServerResourceAssignmentAction.Result result =
-                        new UpdatePhysicalServerResourceAssignmentAction(
-                                sessionId: sessionUuid,
-                                serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0-2").call()
-                assert result.error == null : result.error
-            } catch (Throwable error) {
-                failures.add(error)
-            } finally {
-                finished.countDown()
-            }
-        }
-        Thread.start {
-            try {
-                start.await()
-                UpdatePhysicalServerResourceAssignmentAction.Result result =
-                        new UpdatePhysicalServerResourceAssignmentAction(
-                                sessionId: sessionUuid,
-                                serverUuid: physicalServerUuid,
-                                roleType: "COMPUTE", memory: SizeUnit.MEGABYTE.toByte(96)).call()
-                assert result.error == null : result.error
-            } catch (Throwable error) {
-                failures.add(error)
-            } finally {
-                finished.countDown()
-            }
-        }
+        CompletableFuture<Void> cpuUpdate = CompletableFuture.runAsync({
+            start.await()
+            UpdatePhysicalServerResourceAssignmentAction.Result result =
+                    new UpdatePhysicalServerResourceAssignmentAction(
+                            sessionId: sessionUuid,
+                            serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0-2").call()
+            assert result.error == null : result.error
+        } as Runnable)
+        CompletableFuture<Void> memoryUpdate = CompletableFuture.runAsync({
+            start.await()
+            UpdatePhysicalServerResourceAssignmentAction.Result result =
+                    new UpdatePhysicalServerResourceAssignmentAction(
+                            sessionId: sessionUuid,
+                            serverUuid: physicalServerUuid,
+                            roleType: "COMPUTE", memory: SizeUnit.MEGABYTE.toByte(96)).call()
+            assert result.error == null : result.error
+        } as Runnable)
 
         start.countDown()
-        assert finished.await(30, TimeUnit.SECONDS)
-        assert failures.isEmpty() : failures
+        CompletableFuture.allOf(cpuUpdate, memoryUpdate).get(30, TimeUnit.SECONDS)
         retryInSecs {
             PhysicalServerResourceAssignmentInventory current = assignment()
             assert current.cpuSet == "0-2" :
@@ -773,25 +769,41 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     }
 
     private void verifyGlobalSwitchGatesEnforcement() {
+        int callsBeforeDisable = resourceControlCalls.get()
         PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("false")
-        try {
-            refreshPhysicalServerResourceAssignmentsFromProfile {
-                serverUuids = [physicalServerUuid]
-            }
-            retryInSecs {
-                assert assignment().state == "Unsynced" :
-                        "disabled resource assignment must retain the ledger without applying it"
-            }
-
-            UpdatePhysicalServerResourceAssignmentAction.Result result =
-                    new UpdatePhysicalServerResourceAssignmentAction(
-                            sessionId: adminSession(),
-                            serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0-1").call()
-            assert result.error?.details?.contains("Resource assignment is disabled") :
-                    "disabled resource assignment must reject enforcement updates: " + "actual=${result.error}"
-        } finally {
-            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
+        retryInSecs {
+            assert resourceControlCalls.get() > callsBeforeDisable :
+                    "disabling must remove live CPU and memory limits through the Role controller"
         }
+        KvmPhysicalServerAdapter adapter = bean(KvmPhysicalServerAdapter.class)
+        def relationField = KvmPhysicalServerAdapter.class.getDeclaredField("hostRelations")
+        relationField.accessible = true
+        AtomicReference hostRelations = relationField.get(adapter) as AtomicReference
+        hostRelations.set(Collections.emptyMap())
+        int callsBeforeDisabledReconnect = resourceControlCalls.get()
+        int imageStoreCallsBeforeDisabledReconnect = imageStoreAssociationCalls.get()
+        adapter.afterHostConnected(org.zstack.header.host.HostInventory.valueOf(dbFindByUuid(host.uuid, HostVO.class)))
+        retryInSecs {
+            assert resourceControlCalls.get() > callsBeforeDisabledReconnect :
+                    "a disabled reconnect must remove stale limits without association discovery"
+            assert imageStoreAssociationCalls.get() == imageStoreCallsBeforeDisabledReconnect :
+                    "a disabled reconnect must not discover unrelated Roles"
+        }
+        refreshPhysicalServerResourceAssignmentsFromProfile {
+            serverUuids = [physicalServerUuid]
+        }
+        retryInSecs {
+            assert assignment().state == "Unsynced" :
+                    "disabled resource assignment must retain the ledger without applying it"
+        }
+
+        UpdatePhysicalServerResourceAssignmentAction.Result result =
+                new UpdatePhysicalServerResourceAssignmentAction(
+                        sessionId: adminSession(),
+                        serverUuid: physicalServerUuid, roleType: "COMPUTE", cpuSet: "0-1").call()
+        assert result.error?.details?.contains("Resource assignment is disabled") :
+                "disabled resource assignment must reject enforcement updates: " + "actual=${result.error}"
+        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
 
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [physicalServerUuid]
@@ -854,7 +866,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                 }
         ] as PhysicalServerRoleAssociationProvider
         registerDynamicRole(exclusiveStorage, usage, associations)
-        physicalServerManager.associationChanged(physicalServerUuid)
+        refreshResourceAssignment(physicalServerUuid, storageRole.toString())
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [physicalServerUuid]
         }
@@ -929,7 +941,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         }
 
         storageAssociated.set(false)
-        verifyReleaseDeletesAssignment(storageRoleType)
+        verifyReleaseAndForgetDeletesAssignment(storageRoleType)
     }
 
     private void verifySharedHandleOwnership() {
@@ -957,50 +969,28 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             assert assignment(physicalServerUuid, "MANAGEMENT").state == "Synced" :
                     "MANAGEMENT and COMPUTE shared Roles must coexist on one PhysicalServer"
         }
-        def services = getPhysicalServerManagedServices {
-            serverUuid = physicalServerUuid
-        }.services
-        assert services.find {
-            it.roleType == "MANAGEMENT" && it.serviceName == "node-exporter"
-        } != null :
-                "a shared service handle must have one deterministic Role owner"
-        assert services.find {
-            it.roleType == "COMPUTE" && it.serviceName == "node-exporter"
-        } == null :
-                "COMPUTE must not duplicate a handle already owned by MANAGEMENT"
+        assert localExecutor.testCalls > 0 :
+                "the MANAGEMENT Role must apply independently from the COMPUTE Role"
     }
 
     private void verifyHostCascadeCleanup() {
         failResourceControl = true
-        DeleteHostAction.Result blocked = new DeleteHostAction(
+        DeleteHostAction.Result deletedAfterReleaseFailure = new DeleteHostAction(
                 sessionId: adminSession(), uuid: host.uuid, deleteMode: "Permissive").call()
-        assert blocked.error != null :
-                "normal Host deletion must stop when resource release fails: " + "hostUuid=${host.uuid} actual=success"
-        assert queryHost {
-            conditions = ["uuid=${host.uuid}"]
-        }.size() == 1 :
-                "blocked Host deletion must preserve the Host relation: " + "hostUuid=${host.uuid} actual=missing"
-        assert assignment().state == "Unsynced" :
-                "failed cascade release must preserve an Unsynced ledger for retry: " +
-                        "expected=Unsynced actual=${assignment().state}"
-
-        failResourceControl = false
-        DeleteHostAction.Result deleted = new DeleteHostAction(
-                sessionId: adminSession(), uuid: host.uuid, deleteMode: "Permissive").call()
-        assert deleted.error == null :
-                "normal Host deletion must continue after release succeeds: " +
-                        "hostUuid=${host.uuid} actual=${deleted.error}"
+        assert deletedAfterReleaseFailure.error == null :
+                "Host deletion must forget the Assignment when runtime release fails: " +
+                        "hostUuid=${host.uuid} actual=${deletedAfterReleaseFailure.error}"
         retryInSecs {
             assert (queryHost {
                 conditions = ["uuid=${host.uuid}"]
             }).isEmpty() :
-                    "successful Host cascade must delete the Host: " + "hostUuid=${host.uuid} actual=still present"
+                    "release failure must not block Host deletion: " + "hostUuid=${host.uuid} actual=still present"
             assert assignments(physicalServerUuid, "COMPUTE").isEmpty() :
-                    "successful Host cascade must delete the COMPUTE Assignment: " +
+                    "release failure must still forget the COMPUTE Assignment: " +
                             "serverUuid=${physicalServerUuid} actual=${assignments(physicalServerUuid, 'COMPUTE')}"
         }
 
-        failResourceControl = true
+        failResourceControl = false
         DeleteHostAction.Result forceDeleted = new DeleteHostAction(
                 sessionId: adminSession(), uuid: forceDeleteHost.uuid, deleteMode: "Enforcing").call()
         assert forceDeleted.error == null :
@@ -1016,10 +1006,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                             "serverUuid=${forceDeletePhysicalServerUuid} " +
                             "actual=${assignments(forceDeletePhysicalServerUuid, 'COMPUTE')}"
         }
-        failResourceControl = false
     }
 
-    private void verifyReleaseDeletesAssignment(String roleType) {
+    private void verifyReleaseAndForgetDeletesAssignment(String roleType) {
         CountDownLatch released = new CountDownLatch(1)
         AtomicReference<ErrorCode> failure = new AtomicReference<>()
         physicalServerManager.releaseResourceAssignment(physicalServerUuid, roleType, new Completion(null) {
@@ -1037,10 +1026,48 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
 
         assert released.await(30, TimeUnit.SECONDS)
         assert failure.get() == null
+        assert !assignments(physicalServerUuid, roleType).isEmpty() :
+                "release must remove runtime limits without deleting the Assignment"
+
+        CountDownLatch forgotten = new CountDownLatch(1)
+        physicalServerManager.forgetResourceAssignment(physicalServerUuid, roleType, new Completion(null) {
+            @Override
+            void success() {
+                forgotten.countDown()
+            }
+
+            @Override
+            void fail(ErrorCode errorCode) {
+                failure.set(errorCode)
+                forgotten.countDown()
+            }
+        })
+        assert forgotten.await(30, TimeUnit.SECONDS)
+        assert failure.get() == null
         List<PhysicalServerResourceAssignmentInventory> assignments = queryPhysicalServerResourceAssignment {
             conditions = ["serverUuid=${physicalServerUuid}", "roleType=${roleType}"]
         }
         assert assignments.isEmpty()
+    }
+
+    private void refreshResourceAssignment(String serverUuid, String roleType) {
+        CountDownLatch refreshed = new CountDownLatch(1)
+        AtomicReference<ErrorCode> failure = new AtomicReference<>()
+        physicalServerManager.refreshResourceAssignment(serverUuid, roleType, new Completion(null) {
+            @Override
+            void success() {
+                refreshed.countDown()
+            }
+
+            @Override
+            void fail(ErrorCode errorCode) {
+                failure.set(errorCode)
+                refreshed.countDown()
+            }
+        })
+
+        assert refreshed.await(30, TimeUnit.SECONDS)
+        assert failure.get() == null
     }
 
     private PhysicalServerResourceAssignmentInventory assignment() {
@@ -1072,11 +1099,12 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
     }
 
     private static PhysicalServerRoleType registeredRoleType(String typeName) {
-        try {
-            return PhysicalServerRoleType.valueOf(typeName)
-        } catch (IllegalArgumentException ignored) {
-            return new PhysicalServerRoleType(typeName)
+        PhysicalServerRoleType type = testRoleTypes[typeName]
+        if (type == null) {
+            type = new PhysicalServerRoleType(typeName)
+            testRoleTypes[typeName] = type
         }
+        return type
     }
 
     private void registerDynamicRole(

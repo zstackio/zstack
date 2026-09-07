@@ -43,23 +43,17 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
 
     @Override
     void clean() {
-        try {
-            if (adapter != null) {
-                adapter.setTestSerialNumber(null)
-            }
-            if (topologyCollector != null) {
-                topologyCollector.clearTestTopology()
-            }
-            PhysicalServerTest.cleanupPhysicalServerRecords()
-            env.delete()
-        } finally {
-            try {
-                executor?.disableTestMode()
-            } finally {
-                if (originalResourceAssignmentEnabled != null) {
-                    PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
-                }
-            }
+        if (adapter != null) {
+            adapter.setTestSerialNumber(null)
+        }
+        if (topologyCollector != null) {
+            topologyCollector.clearTestTopology()
+        }
+        PhysicalServerTest.cleanupPhysicalServerRecords()
+        env.delete()
+        executor?.disableTestMode()
+        if (originalResourceAssignmentEnabled != null) {
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue(originalResourceAssignmentEnabled)
         }
     }
 
