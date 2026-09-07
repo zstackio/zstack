@@ -465,6 +465,50 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
     }
 
+    public static class ResizeVolumeCmd extends AgentCommand {
+        private String installPath;
+        private long size;
+        private boolean force;
+
+        public String getInstallPath() {
+            return installPath;
+        }
+
+        public void setInstallPath(String installPath) {
+            this.installPath = installPath;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+
+        public boolean isForce() {
+            return force;
+        }
+
+        public void setForce(boolean force) {
+            this.force = force;
+        }
+    }
+
+    public static class ResizeVolumeRsp extends AgentResponse {
+        private long size;
+
+        public long getSize() {
+            return size;
+        }
+
+        public void setSize(long size) {
+            this.size = size;
+        }
+    }
+
+    public static final String RESIZE_VOLUME_PATH = "/ceph/primarystorage/volume/resize";
+
     public static class CloneCmd extends AgentCommand {
         String srcPath;
         String dstPath;
@@ -2787,6 +2831,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     public void run(final FlowTrigger trigger, Map data) {
                         ResizeVolumeOnPrimaryStorageMsg rmsg = new ResizeVolumeOnPrimaryStorageMsg();
                         rmsg.setVolume(msg.getVolume());
+                        rmsg.getVolume().setInstallPath(volumePath);
                         rmsg.setSize(msg.getVolume().getSize());
                         rmsg.setPrimaryStorageUuid(msg.getVolume().getPrimaryStorageUuid());
                         bus.makeTargetServiceIdByResourceUuid(rmsg, PrimaryStorageConstant.SERVICE_ID, msg.getVolume().getPrimaryStorageUuid());
@@ -2800,7 +2845,6 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                 }
                             }
                         });
-                        trigger.next();
                     }
                 });
 
@@ -4580,9 +4624,37 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         creator.create();
     }
 
+    protected void handle(final ResizeVolumeOnPrimaryStorageMsg msg) {
+        final ResizeVolumeOnPrimaryStorageReply reply = new ResizeVolumeOnPrimaryStorageReply();
+        final VolumeInventory volume = msg.getVolume();
+        ResizeVolumeCmd cmd = new ResizeVolumeCmd();
+        cmd.setInstallPath(volume.getInstallPath());
+        cmd.setSize(msg.getSize());
+        cmd.setForce(msg.isForce());
+
+        httpCall(RESIZE_VOLUME_PATH, cmd, ResizeVolumeRsp.class, new ReturnValueCompletion<ResizeVolumeRsp>(null) {
+            @Override
+            public void success(ResizeVolumeRsp returnValue) {
+                logger.debug(String.format("successfully resize the volume[uuid:%s] to %d", volume.getUuid(), returnValue.getSize()));
+                volume.setSize(returnValue.getSize());
+                reply.setVolume(volume);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.error(String.format("fail to resize volume[uuid:%s] to %d", volume.getUuid(), msg.getSize()));
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
     @Override
     protected void handleLocalMessage(Message msg) {
-        if (msg instanceof TakeSnapshotMsg) {
+        if (msg instanceof ResizeVolumeOnPrimaryStorageMsg) {
+            handle((ResizeVolumeOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof TakeSnapshotMsg) {
             handle((TakeSnapshotMsg) msg);
         } else if (msg instanceof CheckSnapshotMsg) {
             handle((CheckSnapshotMsg) msg);

@@ -1,6 +1,9 @@
 package org.zstack.test.integration.storage.primary.ceph.capacity
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.ImageCacheVolumeRefVO
+import org.zstack.header.storage.primary.ImageCacheVolumeRefVO_
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.GetPrimaryStorageCapacityResult
@@ -85,17 +88,22 @@ class CephCreateVmByImageCapacityCase extends SubCase {
             primaryStorageUuids = [ps.uuid]
         }
 
-        createVmInstance {
+        def vm = createVmInstance {
             name = "crt-vm"
             instanceOfferingUuid = instanceOffering.uuid
             imageUuid = sizedImage.uuid
+            rootDiskOfferingUuid = diskOffering.uuid
             l3NetworkUuids = [l3.uuid]
         }
+
+        def refs = Q.New(ImageCacheVolumeRefVO.class)
+                .eq(ImageCacheVolumeRefVO_.volumeUuid, vm.rootVolumeUuid).list()
+        assert refs.size() == 1 : "Root volume resize must complete once: expected 1 cache ref, actual ${refs.size()}"
 
         GetPrimaryStorageCapacityResult capacityResult = getPrimaryStorageCapacity {
             primaryStorageUuids = [ps.uuid]
         }
-        assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity + image_virtual_size + image_physical_size
+        assert beforeCapacityResult.availableCapacity == capacityResult.availableCapacity + diskOffering.diskSize + image_physical_size
 
         env.simulator(CephPrimaryStorageBase.INIT_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.InitCmd.class)

@@ -384,6 +384,12 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.UnprotectedSnapshotRsp()
             }
 
+            simulator(CephPrimaryStorageBase.RESIZE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.ResizeVolumeCmd.class)
+                assert cmd.installPath != null
+                return new CephPrimaryStorageBase.ResizeVolumeRsp(size: cmd.size)
+            }
+
             simulator(CephPrimaryStorageBase.CLONE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CloneCmd.class)
                 def rsp = new CephPrimaryStorageBase.CloneRsp()
