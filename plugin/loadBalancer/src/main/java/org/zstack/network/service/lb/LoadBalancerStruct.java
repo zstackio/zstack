@@ -21,6 +21,14 @@ public class LoadBalancerStruct implements Serializable {
     private Map<String, List<LoadBalancerServerGroupInventory>> deletedListenerServerGroupMap = new HashMap<>();
     private Map<String, List<String>> tags;
     private boolean init;
+    // Listener changes wait for every target; other operations retain their existing policy.
+    private boolean synchronous;
+    private boolean rollback;
+
+    public boolean isSynchronous() { return synchronous; }
+    public void setSynchronous(boolean synchronous) { this.synchronous = synchronous; }
+    public boolean isRollback() { return rollback; }
+    public void setRollback(boolean rollback) { this.rollback = rollback; }
 
     public Map<String, VmNicInventory> getVmNics() {
         return vmNics;
