@@ -811,3 +811,76 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerServerGroupServerIpRefV
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 ALTER TABLE `RolePolicyStatementVO` MODIFY COLUMN `statement` MEDIUMTEXT NOT NULL;
+
+-- ZCF-5438: preserve Cloud network identities across Stretch L2 promotion.
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkType', 'VARCHAR(32)', 0, 'Segment');
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkSnapshot', 'LONGTEXT', 1, NULL);
+
+DROP PROCEDURE IF EXISTS UpgradeZnsSegmentRefZoneIdentity;
+DELIMITER $$
+CREATE PROCEDURE UpgradeZnsSegmentRefZoneIdentity()
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = 'zstack'
+          AND TABLE_NAME = 'ZnsSegmentRefVO'
+          AND INDEX_NAME = 'uk_zns_seg_ref_controller_segment_zone'
+    ) THEN
+        ALTER TABLE `zstack`.`ZnsSegmentRefVO`
+            ADD UNIQUE KEY `uk_zns_seg_ref_controller_segment_zone`
+                (`sdnControllerUuid`, `znsSegmentUuid`, `zoneUuid`);
+    END IF;
+
+    IF EXISTS (
+        SELECT 1 FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = 'zstack'
+          AND TABLE_NAME = 'ZnsSegmentRefVO'
+          AND INDEX_NAME = 'uk_zns_seg_ref_controller_segment'
+    ) THEN
+        ALTER TABLE `zstack`.`ZnsSegmentRefVO`
+            DROP INDEX `uk_zns_seg_ref_controller_segment`;
+    END IF;
+END $$
+DELIMITER ;
+CALL UpgradeZnsSegmentRefZoneIdentity();
+DROP PROCEDURE IF EXISTS UpgradeZnsSegmentRefZoneIdentity;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsLogicalNetworkMemberRefVO` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `segmentRefUuid` varchar(32) NOT NULL,
+    `memberSegmentUuid` varchar(36) NOT NULL,
+    `siteUuid` varchar(36) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_zns_logical_member_ref_segment` (`segmentRefUuid`, `memberSegmentUuid`),
+    KEY `idx_zns_logical_member_segment` (`memberSegmentUuid`),
+    CONSTRAINT `fkZnsLogicalNetworkMemberRefVOZnsSegmentRefVO`
+        FOREIGN KEY (`segmentRefUuid`) REFERENCES `zstack`.`ZnsSegmentRefVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ZnsLogicalNetworkMemberRefVO', 'transportZoneUuid', 'VARCHAR(36)', 1, NULL);
+CALL ADD_COLUMN('ZnsLogicalNetworkMemberRefVO', 'znsRouterUuid', 'VARCHAR(36)', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsT1PeeringRefVO` (
+    `uuid` varchar(32) NOT NULL,
+    `sdnControllerUuid` varchar(32) NOT NULL,
+    `znsPeeringUuid` varchar(36) NOT NULL,
+    `localTenantRouterUuid` varchar(32) NOT NULL,
+    `peerZnsRouterUuid` varchar(36) NOT NULL,
+    `peerSiteUuid` varchar(36) DEFAULT NULL,
+    `peerLocalTenantRouterUuid` varchar(32) DEFAULT NULL,
+    `crossSite` tinyint(1) NOT NULL,
+    `fullAccess` tinyint(1) NOT NULL,
+    `configState` varchar(32) NOT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uk_zns_peering_controller_local` (`sdnControllerUuid`, `znsPeeringUuid`, `localTenantRouterUuid`),
+    CONSTRAINT `fkZnsT1PeeringRefVOController`
+        FOREIGN KEY (`sdnControllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkZnsT1PeeringRefVOLocalTenantRouter`
+        FOREIGN KEY (`localTenantRouterUuid`) REFERENCES `zstack`.`ZnsTenantRouterVO` (`uuid`) ON DELETE CASCADE,
+    CONSTRAINT `fkZnsT1PeeringRefVOPeerLocalTenantRouter`
+        FOREIGN KEY (`peerLocalTenantRouterUuid`) REFERENCES `zstack`.`ZnsTenantRouterVO` (`uuid`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

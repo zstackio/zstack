@@ -14,6 +14,7 @@ import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_10003;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_WEBHOOK_10001;
 
 /**
  * Generic async callback client for external systems that use a webhook pattern:
@@ -212,7 +213,8 @@ public class WebhookCallbackClient<T> {
             entry.completion.success(cmd);
         } else {
             String error = protocol.extractError(cmd);
-            entry.completion.fail(operr("webhook callback failed for taskId[%s], path[%s], error: %s",
+            entry.completion.fail(operr(ORG_ZSTACK_CORE_WEBHOOK_10001,
+                    "webhook callback failed for taskId[%s], path[%s], error: %s",
                     taskId, protocol.getCallbackPath(), error != null ? error : "unknown"));
         }
 
