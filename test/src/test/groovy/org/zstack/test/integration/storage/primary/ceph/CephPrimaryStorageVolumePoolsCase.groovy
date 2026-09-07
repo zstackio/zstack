@@ -10,6 +10,7 @@ import org.zstack.header.storage.primary.ImageCacheInventory
 import org.zstack.header.storage.primary.ImageCacheShadowVO
 import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVolumeRefVO
+import org.zstack.header.storage.primary.ImageCacheVolumeRefVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeVO
@@ -1107,6 +1108,10 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             assert cpCmd.dstPath.contains(NEW_ROOT_POOL_NAME)
             assert cloneCmd != null
             assert cloneCmd.srcPath.contains(NEW_ROOT_POOL_NAME)
+            def refs = Q.New(ImageCacheVolumeRefVO.class).eq(ImageCacheVolumeRefVO_.volumeUuid, reimageVm.rootVolumeUuid).list()
+            assert refs.size() == 1 : "Reimage must retain one cache ref: expected 1, actual ${refs.size()}"
+            def cache = dbFindById(refs[0].imageCacheId, ImageCacheVO.class)
+            assert cache.installUrl == cloneCmd.srcPath : "Reimage cache ref must follow clone source: expected ${cloneCmd.srcPath}, actual ${cache.installUrl}"
         } finally {
             CephGlobalConfig.IMAGE_CACHE_POOL_STRATEGY.updateValue(CephImageCachePoolStrategy.DefaultImageCachePool.toString())
 

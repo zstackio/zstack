@@ -5530,6 +5530,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
             final String targetPoolName = getTargetPoolNameFromAllocatedUrl(msg.getAllocatedInstallUrl());
             String volumePath = makeResetImageRootVolumeInstallPath(msg.getVolume().getUuid(), targetPoolName);
             String installUrl;
+            long imageCacheId;
 
             @Override
             public void setup() {
@@ -5543,6 +5544,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                                     @Override
                                     public void success(ImageCacheVO cache) {
                                         installUrl = ImageCacheUtil.getImageCachePath(cache.getInstallUrl());
+                                        imageCacheId = cache.getId();
                                         trigger.next();
                                     }
 
@@ -5612,6 +5614,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                     @Override
                     public void handle(Map data) {
                         reply.setNewVolumeInstallPath(volumePath);
+                        reply.setImageCacheId(imageCacheId);
                         bus.reply(msg, reply);
                     }
                 });

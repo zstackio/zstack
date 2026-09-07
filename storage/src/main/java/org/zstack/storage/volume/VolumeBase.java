@@ -312,8 +312,18 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 reinitNewVolumeInstallPath = re.getNewVolumeInstallPath();
                                 primaryStorageReinitSucceeded = true;
 
-                                vo.setInstallPath(reinitNewVolumeInstallPath);
-                                vo = dbf.updateAndRefresh(vo);
+                                new SQLBatch() {
+                                    @Override
+                                    protected void scripts() {
+                                        vo.setInstallPath(reinitNewVolumeInstallPath);
+                                        vo = reload(merge(vo));
+                                        if (re.getImageCacheId() != null) {
+                                            sql(ImageCacheVolumeRefVO.class)
+                                                    .eq(ImageCacheVolumeRefVO_.volumeUuid, vo.getUuid())
+                                                    .set(ImageCacheVolumeRefVO_.imageCacheId, re.getImageCacheId()).update();
+                                        }
+                                    }
+                                }.execute();
                                 dbInstallPathSwitched = true;
                                 trigger.next();
                             }
@@ -1687,6 +1697,12 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 .set(VolumeVO_.actualSize, transientVolume.getActualSize())
                                 .set(VolumeVO_.protocol, transientVolume.getProtocol())
                                 .update();
+
+                        sql("update ImageCacheVolumeRefVO ref set ref.volumeUuid = " +
+                                "case when ref.volumeUuid = :originUuid then :transientUuid else :originUuid end " +
+                                "where ref.volumeUuid in (:originUuid, :transientUuid)")
+                                .param("originUuid", volume.getUuid())
+                                .param("transientUuid", transientVolume.getUuid()).execute();
 
                         pluginRgty.getExtensionList(OverwriteVolumeExtensionPoint.class).forEach(it ->
                                 it.innerOverwriteVolume(volume, transientVolume, originVolumeDeletionPolicy));
