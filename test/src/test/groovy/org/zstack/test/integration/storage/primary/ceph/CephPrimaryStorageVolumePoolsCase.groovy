@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.ceph
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmInstanceExtensionPointEmitter
 import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
@@ -10,6 +11,7 @@ import org.zstack.header.storage.primary.ImageCacheInventory
 import org.zstack.header.storage.primary.ImageCacheShadowVO
 import org.zstack.header.storage.primary.ImageCacheShadowVO_
 import org.zstack.header.storage.primary.ImageCacheVolumeRefVO
+import org.zstack.header.storage.primary.ImageCacheVolumeRefVO_
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceTreeVO
@@ -273,6 +275,18 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert defaultDataVolumePoolName != null
         assert dataVolume != null
         assert !dataVolume.installPath.contains(defaultDataVolumePoolName)
+
+        def poolTag = querySystemTag {
+            conditions = ["resourceUuid=${rootVolume.uuid}", "tag=${CephSystemTags.USE_CEPH_ROOT_POOL.getTag(rootVolume.uuid)}"]
+        }[0]
+        updateSystemTag {
+            uuid = poolTag.uuid
+            tag = "ceph::rootPoolName::${ROOT_ONLY_POOL_NAME}"
+        }
+        bean(VmInstanceExtensionPointEmitter.class).cleanUpAfterVmChangeImage(
+                new org.zstack.header.vm.VmInstanceInventory(rootVolumeUuid: rootVolume.uuid))
+        String updatedPool = CephSystemTags.USE_CEPH_ROOT_POOL.getTokenByResourceUuid(rootVolume.uuid, CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN)
+        assert updatedPool == rootVolumePoolName : "Change image must sync the root pool tag: expected ${rootVolumePoolName}, actual ${updatedPool}"
     }
 
     void testVmRootVolumeUseDefaultPool() {
@@ -1107,6 +1121,10 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             assert cpCmd.dstPath.contains(NEW_ROOT_POOL_NAME)
             assert cloneCmd != null
             assert cloneCmd.srcPath.contains(NEW_ROOT_POOL_NAME)
+            def refs = Q.New(ImageCacheVolumeRefVO.class).eq(ImageCacheVolumeRefVO_.volumeUuid, reimageVm.rootVolumeUuid).list()
+            assert refs.size() == 1 : "Reimage must retain one cache ref: expected 1, actual ${refs.size()}"
+            def cache = dbFindById(refs[0].imageCacheId, ImageCacheVO.class)
+            assert cache.installUrl == cloneCmd.srcPath : "Reimage cache ref must follow clone source: expected ${cloneCmd.srcPath}, actual ${cache.installUrl}"
         } finally {
             CephGlobalConfig.IMAGE_CACHE_POOL_STRATEGY.updateValue(CephImageCachePoolStrategy.DefaultImageCachePool.toString())
 
