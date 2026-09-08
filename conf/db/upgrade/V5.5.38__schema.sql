@@ -797,3 +797,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`LoadBalancerListenerServerGroupServerIpRefV
     CONSTRAINT `fkLbListenerServerIpRefServerIp`
         FOREIGN KEY (`serverIpId`) REFERENCES `LoadBalancerServerGroupServerIpVO` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+ALTER TABLE `RolePolicyStatementVO` MODIFY COLUMN `statement` MEDIUMTEXT NOT NULL;
