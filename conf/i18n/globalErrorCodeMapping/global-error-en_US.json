@@ -401,6 +401,7 @@
   "ORG_ZSTACK_NETWORK_SECURITYGROUP_10127": "vm nic with UUID:%s has been attached to security group with UUID:%s",
   "ORG_ZSTACK_ALIYUN_IMAGE_10011": "image [%s] is not enabled now",
   "ORG_ZSTACK_NETWORK_SECURITYGROUP_10129": "security group with UUID [%s] is not owned by your account with UUID [%s] or an administrator",
+  "ORG_ZSTACK_NETWORK_SECURITYGROUP_10130": "cannot bind %s security groups to a vm nic, the maximum allowed number is %s",
   "ORG_ZSTACK_IAM2_ATTRIBUTE_ORGANIZATION_10004": "virtual ID[uuid:%s] does not belong to organization[uuid:%s]",
   "ORG_ZSTACK_IAM2_ATTRIBUTE_ORGANIZATION_10005": "organization[uuid:%s] already has a designated supervisor",
   "ORG_ZSTACK_ALIYUN_CORE_10001": "add endpoint to SDK failed, due to: %s",

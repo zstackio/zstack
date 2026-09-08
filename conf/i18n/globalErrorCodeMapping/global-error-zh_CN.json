@@ -401,6 +401,7 @@
   "ORG_ZSTACK_NETWORK_SECURITYGROUP_10127": "vm nic[uuid:%s] 已经被附加到安全组[uuid:%s]",
   "ORG_ZSTACK_ALIYUN_IMAGE_10011": "图像 [%s] �现未启用",
   "ORG_ZSTACK_NETWORK_SECURITYGROUP_10129": "安全组[uuid:%s]不属于账户[uuid:%s]或管理员",
+  "ORG_ZSTACK_NETWORK_SECURITYGROUP_10130": "无法为网卡绑定 %s 个安全组，最多允许绑定 %s 个",
   "ORG_ZSTACK_IAM2_ATTRIBUTE_ORGANIZATION_10004": "虚拟ID[uuid:%s]不在组织[uuid:%s]中",
   "ORG_ZSTACK_IAM2_ATTRIBUTE_ORGANIZATION_10005": "组织[uuid:%s]已经有一个管理员",
   "ORG_ZSTACK_ALIYUN_CORE_10001": "添加端点到SDK失败，原因：%s",
