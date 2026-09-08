@@ -75,5 +75,10 @@
         <id>1014</id>
         <description>Failed to import activation package to ZMigrate</description>
     </code>
+
+    <code>
+        <id>1015</id>
+        <description>Failed to list package files from ZMigrate</description>
+    </code>
 </error>
 
