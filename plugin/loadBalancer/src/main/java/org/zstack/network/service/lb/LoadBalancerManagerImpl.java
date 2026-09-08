@@ -954,13 +954,51 @@ public class LoadBalancerManagerImpl extends AbstractService implements LoadBala
             for (LoadBalancerListenerServerGroupRefVO groupRef : l.getServerGroupRefs()) {
                 LoadBalancerServerGroupVO groupVO = dbf.findByUuid(groupRef.getServerGroupUuid(), LoadBalancerServerGroupVO.class);
                 for (LoadBalancerServerGroupVmNicRefVO nicRef : groupVO.getLoadBalancerServerGroupVmNicRefs()) {
-                    if (nicRef.getStatus() == LoadBalancerVmNicStatus.Active || nicRef.getStatus() == LoadBalancerVmNicStatus.Pending) {
-                        activeNicUuids.add(nicRef.getVmNicUuid());
-                    }
+                    activeNicUuids.add(nicRef.getVmNicUuid());
                 }
                 groupInventories.add(LoadBalancerServerGroupInventory.valueOf(groupVO));
             }
         struct.getListenerServerGroupMap().put(l.getUuid(), groupInventories);
+        }
+
+        List<String> listenerUuids = vo.getListeners().stream()
+                .map(LoadBalancerListenerVO::getUuid).collect(Collectors.toList());
+        if (!listenerUuids.isEmpty()) {
+            List<LoadBalancerListenerServerGroupVmNicRefVO> stateRefs =
+                    Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                            .in(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listenerUuids)
+                            .list();
+            /* a state row means the backend is disabled on the listener, regardless of
+             * the state value, so an illegal state can never re-enable forwarding */
+            stateRefs.stream()
+                    .filter(ref -> ref.getState() != LoadBalancerBackendServerState.Disabled)
+                    .forEach(ref -> logger.warn(String.format(
+                            "backend vmNic state row[listener: %s, serverGroup: %s, vmNic: %s] has illegal state[%s], treat as Disabled",
+                            ref.getListenerUuid(), ref.getServerGroupUuid(),
+                            ref.getVmNicUuid(), ref.getState())));
+            struct.setDisabledVmNics(stateRefs.stream()
+                    .map(ref -> LoadBalancerStruct.vmNicStateKey(
+                            ref.getListenerUuid(), ref.getServerGroupUuid(),
+                            ref.getVmNicUuid()))
+                    .collect(Collectors.toSet()));
+
+            List<LoadBalancerListenerServerGroupServerIpRefVO> serverIpStateRefs =
+                    Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                            .in(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid,
+                                    listenerUuids)
+                            .list();
+            /* same as vmNic state rows: presence means disabled */
+            serverIpStateRefs.stream()
+                    .filter(ref -> ref.getState() != LoadBalancerBackendServerState.Disabled)
+                    .forEach(ref -> logger.warn(String.format(
+                            "backend serverIp state row[listener: %s, serverGroup: %s, serverIpId: %s] has illegal state[%s], treat as Disabled",
+                            ref.getListenerUuid(), ref.getServerGroupUuid(),
+                            ref.getServerIpId(), ref.getState())));
+            struct.setDisabledServerIps(serverIpStateRefs.stream()
+                    .map(ref -> LoadBalancerStruct.serverIpStateKey(
+                            ref.getListenerUuid(), ref.getServerGroupUuid(),
+                            ref.getServerIpId()))
+                    .collect(Collectors.toSet()));
         }
 
         if (activeNicUuids.isEmpty()) {

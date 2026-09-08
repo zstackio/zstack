@@ -15,6 +15,9 @@ import static java.util.Arrays.asList;
 public class LoadBalancerConstants {
     public static final String SERVICE_ID = "loadBalancer";
 
+    public static final String BACKEND_HEALTH_STATUS_UNCHECKED = "Unchecked";
+    public static final String BACKEND_HEALTH_STATUS_UNKNOWN = "Unknown";
+
     public static final String LB_NETWORK_SERVICE_TYPE_STRING = "LoadBalancer";
 
     public static final NetworkServiceType LB_NETWORK_SERVICE_TYPE = new NetworkServiceType(LB_NETWORK_SERVICE_TYPE_STRING);

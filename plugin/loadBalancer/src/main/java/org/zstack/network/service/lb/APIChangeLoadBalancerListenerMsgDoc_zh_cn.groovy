@@ -40,6 +40,15 @@ doc {
 					since "3.4"
 				}
 				column {
+					name "instancePort"
+					enclosedIn "changeLoadBalancerListener"
+					desc "后端服务器端口"
+					location "body"
+					type "Integer"
+					optional true
+					since "5.5.38"
+				}
+				column {
 					name "maxConnection"
 					enclosedIn "changeLoadBalancerListener"
 					desc "最大并发连接数"
