@@ -2,6 +2,10 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
+import org.zstack.core.db.SQL
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_
 import org.zstack.core.db.Q
 import org.zstack.header.acl.AccessControlListEntryVO
 import org.zstack.header.acl.AccessControlListEntryVO_
@@ -709,6 +713,56 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
     private void testLoadBalancerHealthCheckCase() {
         def load = env.inventoryByName("lb") as LoadBalancerInventory
+        // Establish the provider association before checking its runtime OS.
+        def bootstrapListener = createLoadBalancerListener {
+            loadBalancerUuid = load.uuid
+            name = "provider-association"
+            loadBalancerPort = 57
+            instancePort = 57
+            protocol = "tcp"
+        }
+        def backendVm = env.inventoryByName("vm") as VmInstanceInventory
+        def backendL3 = env.inventoryByName("l3") as L3NetworkInventory
+        addVmNicToLoadBalancer {
+            listenerUuid = bootstrapListener.uuid
+            vmNicUuids = [backendVm.vmNics.find { it.l3NetworkUuid == backendL3.uuid }.uuid]
+        }
+        def vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, load.uuid)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues()
+        assert !vrUuids.empty
+        List refreshes = Collections.synchronizedList([])
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            refreshes.add(e.body)
+            return rsp
+        }
+        def originalListeners = queryLoadBalancerListener { conditions = ["loadBalancerUuid=${load.uuid}"] }.collect { it.uuid }.sort()
+        [VirtualRouterConstant.X86_VPC_VYOS_GUEST_OS_TYPE, "unknown", null].each { guestOs ->
+            SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                    .set(VirtualRouterVmVO_.guestOsType, guestOs).update()
+            [false, true].each { useTag ->
+                def rejected = new CreateLoadBalancerListenerAction()
+                rejected.loadBalancerUuid = load.uuid
+                rejected.name = "unsupported-https"
+                rejected.loadBalancerPort = 56
+                rejected.instancePort = 56
+                rejected.protocol = "tcp"
+                rejected.healthCheckURI = "/health"
+                rejected.sessionId = adminSession()
+                if (useTag) {
+                    rejected.systemTags = ["healthCheckTarget::https:default"]
+                } else {
+                    rejected.healthCheckProtocol = "https"
+                }
+                def result = rejected.call()
+                assert result.error != null
+                assert result.error.details.contains("only supported by openEuler VPC")
+            }
+        }
+        assert refreshes.empty
+        assert queryLoadBalancerListener { conditions = ["loadBalancerUuid=${load.uuid}"] }.collect { it.uuid }.sort() == originalListeners
+        SQL.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids)
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE).update()
         def _name = "test5"
 
         CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
@@ -733,6 +787,35 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/health.html:http_2xx"
         }
 
+        def beforePlatformCheckTags = querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort()
+        SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_VYOS_GUEST_OS_TYPE).update()
+        refreshes.clear()
+        ["https", null].each { requestedProtocol ->
+            def rejected = new ChangeLoadBalancerListenerAction()
+            rejected.uuid = lblRes.value.inventory.uuid
+            rejected.healthCheckProtocol = requestedProtocol
+            rejected.healthCheckInterval = 7
+            rejected.healthCheckURI = "/rejected"
+            rejected.sessionId = adminSession()
+            def result = rejected.call()
+            assert result.error != null
+            assert result.error.details.contains("only supported by openEuler VPC")
+        }
+        assert refreshes.empty
+        assert querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort() == beforePlatformCheckTags
+        // Moving away from HTTPS remains available on an unsupported router.
+        changeLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+            healthCheckProtocol = "http"
+            healthCheckURI = "/health"
+        }
+        changeLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+            healthCheckProtocol = "tcp"
+        }
+        SQL.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids)
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE).update()
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
         action.uuid  = lblRes.value.inventory.uuid
         action.healthCheckURI = "/abcd.html"
@@ -834,6 +917,9 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         assert tokens == null || tokens.isEmpty()
+        deleteLoadBalancerListener {
+            uuid = bootstrapListener.uuid
+        }
     }
 
     private void testOperateLBRedirectAclCase() {
