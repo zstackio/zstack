@@ -3705,6 +3705,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "ディスク AO パラメータが正しくありません。size、template UUID、disk offering UUID、または source UUID-source type のいずれかのプロパティを設定する必要があります。これらのプロパティのうち、1つだけが指定されている必要があります。",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "アクセスグループ [%s] はデータセンター [%s] に既に存在します",
   "ORG_ZSTACK_COMPUTE_VM_10068": "L3 ネットワーク [%s] で利用可能なネットワークインターフェースタイプがありません",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "VM[uuid:%s]の状態[%s]ではマシンタイプを変更できません。Stopped 状態のみサポートされます",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "VM[uuid:%s]のマシンタイプを[%s]から[%s]へ変更することはできません",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "プライマリ仮想マシンが停止状態であるため、セカンダリ仮想マシンの作成できません。セカンダリ仮想マシンを作成する前にプライマリ仮想マシンを起動してください。",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "VM に L3 ネットワークを接続する際に SR-IOV と VFHA を同時に有効にすることはできません。いずれか一方のみが構成されていることを確認してください。",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "仮想ファンクションネットワークインターフェースを標準タイプに変更できません",

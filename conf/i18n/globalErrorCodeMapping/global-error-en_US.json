@@ -455,6 +455,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10332": "VM NIC lifecycle extension[%s] setup on host[uuid:%s] failed unexpectedly: %s",
   "ORG_ZSTACK_COMPUTE_VM_10333": "VM NIC lifecycle pre-migration failed while selecting applicable NICs: %s",
   "ORG_ZSTACK_COMPUTE_VM_10334": "VM NIC lifecycle extension[%s] pre-migration from host[uuid:%s] to host[uuid:%s] failed unexpectedly: %s",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "cannot change machine type of vm[uuid:%s] in state[%s], only Stopped is supported",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "cannot change machine type of vm[uuid:%s] from[%s] to[%s]",
   "ORG_ZSTACK_COMPUTE_HOST_10013": "networkInterface[name:%s] of instance[uuid:%s] cannot be found",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_INTEGRITY_10008": "encryption %s[id:%s] failed: %s",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_SMP_10000": "the shared mount point primary storage[uuid:%s, name:%s] cannot find any available host within the attached compute clusters",

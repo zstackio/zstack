@@ -3735,6 +3735,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "磁碟AO參數不正確。需要設置以下属性之一，並且只能設置其中一個：size、templateUuid、diskOfferingUuid、sourceUuid-sourceType",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "访问组 [%s] 已经儲在於數据中心 [%s] 中",
   "ORG_ZSTACK_COMPUTE_VM_10068": "在 L3 网络 [%s] 中没有可用的 nicType",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "虛擬機[uuid:%s]目前狀態為[%s]，僅支援在已停止狀態修改主機板類型",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "不支援將虛擬機[uuid:%s]的主機板類型從[%s]修改為[%s]",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "無法創建次要VM，因为主要VM已停止",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "無法将L3网络附加到VM，因为enableSRIOV和enableVFHA不能同时設置",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "無法将vf网卡類型更改为普通類型",
