@@ -2458,6 +2458,11 @@ public class LoadBalancerBase {
         return ts;
     }
 
+    private boolean isHttpBasedHealthCheck(String protocol) {
+        return LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(protocol);
+    }
+
     private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo, List<String> serverGroupUuids) {
         List<String> sgUuids = new ArrayList<>();
         if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
@@ -2527,6 +2532,15 @@ public class LoadBalancerBase {
                 List<SystemTagVO> oldListenerTags = currentListenerTags.stream()
                         .map(SystemTagVO::new).collect(Collectors.toList());
 
+                Map<Long, Long> oldWeights = new HashMap<>();
+                Set<String> changedNics = new LoadBalancerWeightOperator().getWeight(msg.getSystemTags()).keySet();
+                if (lblVo.getServerGroupUuid() != null && !changedNics.isEmpty()) {
+                    List<LoadBalancerServerGroupVmNicRefVO> refs = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, lblVo.getServerGroupUuid())
+                            .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, changedNics).list();
+                    refs.forEach(ref -> oldWeights.put(ref.getId(), ref.getWeight()));
+                }
+
                 if (msg.getBalancerAlgorithm() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
                 }
@@ -2561,6 +2575,11 @@ public class LoadBalancerBase {
 
                 if (msg.getHealthCheckInterval() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
+                }
+
+                if (msg.getHealthCheckTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT,
+                            msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, msg.getHealthCheckTimeout());
                 }
 
                 if (msg.getNbprocess() != null) {
@@ -2612,7 +2631,7 @@ public class LoadBalancerBase {
                 String[] ts = getHeathCheckTarget(msg.getUuid());
                 if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
-                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                            isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
                         DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
                                 "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
                         String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
@@ -2626,7 +2645,7 @@ public class LoadBalancerBase {
                         creator.create();
                     }
 
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0]) &&
+                    if (isHttpBasedHealthCheck(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
                         LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
                     }
@@ -2640,7 +2659,7 @@ public class LoadBalancerBase {
                 }
 
                 if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0])) {
+                    if (isHttpBasedHealthCheck(ts[0])) {
                         String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                                 LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
                         String[] pm = param.split(":");
@@ -2706,7 +2725,17 @@ public class LoadBalancerBase {
                         .eq(SystemTagVO_.resourceUuid, msg.getUuid())
                         .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
                         .listValues().stream().map(String::valueOf).collect(Collectors.toSet());
-                boolean configChanged =
+                boolean weightsChanged = false;
+                if (!oldWeights.isEmpty()) {
+                    List<LoadBalancerServerGroupVmNicRefVO> refs = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .in(LoadBalancerServerGroupVmNicRefVO_.id, oldWeights.keySet()).list();
+                    weightsChanged = refs.stream().anyMatch(ref ->
+                            !Objects.equals(oldWeights.get(ref.getId()), ref.getWeight()));
+                }
+                boolean healthCheckChanged = !getHealthCheckTags(oldListenerTagValues)
+                        .equals(getHealthCheckTags(newListenerTagValues));
+                oldStruct.setSyncAllInstances(healthCheckChanged);
+                boolean configChanged = weightsChanged ||
                         !Objects.equals(oldInstancePort, lblVo.getInstancePort()) ||
                                 !Objects.equals(oldSecurityPolicyType, lblVo.getSecurityPolicyType()) ||
                                 !Objects.equals(oldListenerTagValues, newListenerTagValues);
@@ -2726,7 +2755,7 @@ public class LoadBalancerBase {
                         @Override
                         public void rollback(FlowRollback trigger, Map data) {
                             restoreListenerConfigSnapshot(msg.getUuid(), oldInstancePort,
-                                    finalLblVo.getInstancePort(), oldSecurityPolicyType, oldListenerTags);
+                                    finalLblVo.getInstancePort(), oldSecurityPolicyType, oldListenerTags, oldWeights);
                             oldStruct.setRollback(true);
                             getBackend().refresh(oldStruct, new Completion(trigger) {
                                 @Override
@@ -2748,7 +2777,9 @@ public class LoadBalancerBase {
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
-                            getBackend().refresh(lbMgr.makeStruct(self), new Completion(trigger) {
+                            LoadBalancerStruct struct = lbMgr.makeStruct(self);
+                            struct.setSyncAllInstances(healthCheckChanged);
+                            getBackend().refresh(struct, new Completion(trigger) {
                                 @Override
                                 public void success() {
                                     trigger.next();
@@ -2795,10 +2826,19 @@ public class LoadBalancerBase {
         });
     }
 
+    private Set<String> getHealthCheckTags(Set<String> tags) {
+        return tags.stream().filter(tag -> LoadBalancerSystemTags.HEALTH_TARGET.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_PARAMETER.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_INTERVAL.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_TIMEOUT.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTHY_THRESHOLD.isMatch(tag) ||
+                LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.isMatch(tag)).collect(Collectors.toSet());
+    }
+
     private void restoreListenerConfigSnapshot(String listenerUuid, Integer instancePort,
                                                Integer appliedInstancePort,
                                                String securityPolicyType,
-                                               List<SystemTagVO> listenerTags) {
+                                               List<SystemTagVO> listenerTags, Map<Long, Long> oldWeights) {
         new SQLBatch() {
             @Override
             protected void scripts() {
@@ -2807,6 +2847,9 @@ public class LoadBalancerBase {
                         .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
                         .delete();
                 listenerTags.forEach(this::persist);
+                oldWeights.forEach((id, weight) -> sql(LoadBalancerServerGroupVmNicRefVO.class)
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.id, id)
+                        .set(LoadBalancerServerGroupVmNicRefVO_.weight, weight).update());
                 sql(LoadBalancerListenerVO.class)
                         .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
                         .set(LoadBalancerListenerVO_.instancePort, instancePort)

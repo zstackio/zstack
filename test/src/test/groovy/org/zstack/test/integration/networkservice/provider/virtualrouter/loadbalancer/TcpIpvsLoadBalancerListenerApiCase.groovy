@@ -617,6 +617,11 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         }
         assertUnsupportedHealthCheckTimeoutError(timeoutResult.error)
 
+        def explicitTimeoutResult = assertCreateTcpIpvsListenerError(11108) { CreateLoadBalancerListenerAction action ->
+            action.healthCheckTimeout = 1
+        }
+        assertUnsupportedHealthCheckTimeoutError(explicitTimeoutResult.error)
+
         LoadBalancerListenerInventory invalidNoneTargetListener = createTcpIpvsListener(
                 "tcp-ipvs-invalid-none-target", 11107, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
         CreateSystemTagAction invalidNoneTargetAction = new CreateSystemTagAction()
@@ -660,6 +665,12 @@ class TcpIpvsLoadBalancerListenerApiCase extends SubCase {
         ]), createOffset)
         assertTcpIpvsTO(to, listener.uuid, 11110, LoadBalancerConstants.BALANCE_ALGORITHM_ROUND_ROBIN)
         assertNoHealthCheckTimeout(to)
+
+        def changeTimeoutResult = assertChangeListenerError(listener.uuid) { ChangeLoadBalancerListenerAction action ->
+            action.healthCheckTimeout = 1
+        }
+        assertUnsupportedHealthCheckTimeoutError(changeTimeoutResult.error)
+        assert !LoadBalancerSystemTags.HEALTH_TIMEOUT.hasTag(listener.uuid, LoadBalancerListenerVO.class)
 
         int changeOffset = refreshCmds.size()
         assertChangeListenerSuccess(listener.uuid) { ChangeLoadBalancerListenerAction action ->

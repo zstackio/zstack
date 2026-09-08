@@ -2,14 +2,19 @@ package org.zstack.test.integration.networkservice.provider.virtualrouter.loadba
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
-import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.network.service.virtualrouter.VirtualRouterConstant
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
+import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_
+import org.zstack.core.db.Q
 import org.zstack.header.acl.AccessControlListEntryVO
 import org.zstack.header.acl.AccessControlListEntryVO_
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerAclStatus
 import org.zstack.network.service.lb.LoadBalancerAclType
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO
+import org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO_
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO
@@ -21,12 +26,9 @@ import org.zstack.network.service.lb.LoadBalancerListenerVO_
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerListenerACLRefVO_
 import org.zstack.network.service.portforwarding.PortForwardingConstant
-import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO_
 import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerBackend
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO
-import org.zstack.network.service.virtualrouter.lb.VirtualRouterLoadBalancerRefVO_
 import org.zstack.network.service.virtualrouter.vyos.VyosConstants
 import org.zstack.sdk.*
 import org.zstack.test.integration.networkservice.provider.NetworkServiceProviderTest
@@ -714,6 +716,56 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
 
     private void testLoadBalancerHealthCheckCase() {
         def load = env.inventoryByName("lb") as LoadBalancerInventory
+        // Establish the provider association before checking its runtime OS.
+        def bootstrapListener = createLoadBalancerListener {
+            loadBalancerUuid = load.uuid
+            name = "provider-association"
+            loadBalancerPort = 57
+            instancePort = 57
+            protocol = "tcp"
+        }
+        def backendVm = env.inventoryByName("vm") as VmInstanceInventory
+        def backendL3 = env.inventoryByName("l3") as L3NetworkInventory
+        addVmNicToLoadBalancer {
+            listenerUuid = bootstrapListener.uuid
+            vmNicUuids = [backendVm.vmNics.find { it.l3NetworkUuid == backendL3.uuid }.uuid]
+        }
+        def vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, load.uuid)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues()
+        assert !vrUuids.empty
+        List refreshes = Collections.synchronizedList([])
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            refreshes.add(e.body)
+            return rsp
+        }
+        def originalListeners = queryLoadBalancerListener { conditions = ["loadBalancerUuid=${load.uuid}"] }.collect { it.uuid }.sort()
+        [VirtualRouterConstant.X86_VPC_VYOS_GUEST_OS_TYPE, "unknown", null].each { guestOs ->
+            SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                    .set(VirtualRouterVmVO_.guestOsType, guestOs).update()
+            [false, true].each { useTag ->
+                def rejected = new CreateLoadBalancerListenerAction()
+                rejected.loadBalancerUuid = load.uuid
+                rejected.name = "unsupported-https"
+                rejected.loadBalancerPort = 56
+                rejected.instancePort = 56
+                rejected.protocol = "tcp"
+                rejected.healthCheckURI = "/health"
+                rejected.sessionId = adminSession()
+                if (useTag) {
+                    rejected.systemTags = ["healthCheckTarget::https:default"]
+                } else {
+                    rejected.healthCheckProtocol = "https"
+                }
+                def result = rejected.call()
+                assert result.error != null
+                assert result.error.details.contains("only supported by openEuler VPC")
+            }
+        }
+        assert refreshes.empty
+        assert queryLoadBalancerListener { conditions = ["loadBalancerUuid=${load.uuid}"] }.collect { it.uuid }.sort() == originalListeners
+        SQL.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids)
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE).update()
         def _name = "test5"
 
         CreateLoadBalancerListenerAction listenerAction = new CreateLoadBalancerListenerAction()
@@ -722,7 +774,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         listenerAction.loadBalancerPort = 55
         listenerAction.instancePort = 55
         listenerAction.protocol = "tcp"
-        listenerAction.healthCheckProtocol = "http"
+        listenerAction.healthCheckProtocol = "https"
         listenerAction.sessionId = adminSession()
 
         CreateLoadBalancerListenerAction.Result lblRes = listenerAction.call()
@@ -738,19 +790,61 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/health.html:http_2xx"
         }
 
+        def beforePlatformCheckTags = querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort()
+        SQL.New(VirtualRouterVmVO.class).eq(VirtualRouterVmVO_.uuid, vrUuids[0])
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_VYOS_GUEST_OS_TYPE).update()
+        refreshes.clear()
+        ["https", null].each { requestedProtocol ->
+            def rejected = new ChangeLoadBalancerListenerAction()
+            rejected.uuid = lblRes.value.inventory.uuid
+            rejected.healthCheckProtocol = requestedProtocol
+            rejected.healthCheckInterval = 7
+            rejected.healthCheckURI = "/rejected"
+            rejected.sessionId = adminSession()
+            def result = rejected.call()
+            assert result.error != null
+            assert result.error.details.contains("only supported by openEuler VPC")
+        }
+        assert refreshes.empty
+        assert querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort() == beforePlatformCheckTags
+        // Moving away from HTTPS remains available on an unsupported router.
+        changeLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+            healthCheckProtocol = "http"
+            healthCheckURI = "/health"
+        }
+        changeLoadBalancerListener {
+            uuid = lblRes.value.inventory.uuid
+            healthCheckProtocol = "tcp"
+        }
+        SQL.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids)
+                .set(VirtualRouterVmVO_.guestOsType, VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE).update()
         ChangeLoadBalancerListenerAction action = new ChangeLoadBalancerListenerAction()
         action.uuid  = lblRes.value.inventory.uuid
         action.healthCheckURI = "/abcd.html"
         action.healthCheckMethod = "GET"
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
+        action.healthCheckTarget = "https:8443"
+        action.healthCheckHttpCode = "http_2xx,http_3xx"
         action.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result res = action.call()
         assert res.error == null
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
 
         for (Map<String, String>  token: tokens) {
-            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abcd.html:http_2xx"
+            assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/abcd.html:http_2xx,http_3xx"
         }
+
+        assert LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(action.uuid,
+                LoadBalancerSystemTags.HEALTH_TARGET_TOKEN) == "https:8443"
+        action.healthCheckTarget = null
+        action.healthCheckProtocol = "http"
+        action.healthCheckURI = "/http.html"
+        action.healthCheckHttpCode = "http_2xx"
+        res = action.call()
+        assert res.error == null
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid)
+        assert tokens[0].get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "GET:/http.html:http_2xx"
 
         action.healthCheckProtocol = "tcp"
         res = action.call()
@@ -758,14 +852,19 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         assert tokens == null || tokens.isEmpty()
 
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
         action.healthCheckMethod = null
         action.healthCheckURI = null
         res = action.call()
         assert res.error != null
 
         action.healthCheckURI = "/abc.html"
-        action.healthCheckProtocol = "http"
+        action.healthCheckProtocol = "https"
+        action.healthCheckHttpCode = "invalid-code"
+        res = action.call()
+        assert res.error != null
+
+        action.healthCheckHttpCode = "http_2xx"
         res = action.call()
         assert res.error == null
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
@@ -774,12 +873,60 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
             assert token.get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
         }
 
+        def vm = env.inventoryByName("vm") as VmInstanceInventory
+        def l3 = env.inventoryByName("l3") as L3NetworkInventory
+        addVmNicToLoadBalancer {
+            listenerUuid = lblRes.value.inventory.uuid
+            vmNicUuids = [vm.vmNics.find { it.l3NetworkUuid == l3.uuid }.uuid]
+        }
+        List<VirtualRouterLoadBalancerBackend.RefreshLbCmd> rollbackCmds =
+                Collections.synchronizedList(new ArrayList<VirtualRouterLoadBalancerBackend.RefreshLbCmd>())
+        def beforeTags = querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort()
+        def beforeInterval = LoadBalancerSystemTags.HEALTH_INTERVAL.getTokenByResourceUuid(
+                lblRes.value.inventory.uuid, LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN)
+        def nicUuid = vm.vmNics.find { it.l3NetworkUuid == l3.uuid }.uuid
+        def defaultGroup = Q.New(LoadBalancerListenerVO.class).eq(LoadBalancerListenerVO_.uuid, lblRes.value.inventory.uuid).find().serverGroupUuid
+        def weightRef = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, defaultGroup)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, nicUuid).find()
+        def oldWeight = weightRef.weight
+        boolean failNextRefresh = true
+        env.afterSimulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+            rollbackCmds.add(JSONObjectUtil.toObject(e.body, VirtualRouterLoadBalancerBackend.RefreshLbCmd.class))
+            if (failNextRefresh) {
+                failNextRefresh = false
+                rsp.error = "on purpose"
+                rsp.success = false
+            }
+            return rsp
+        }
+        action.healthCheckMethod = "GET"
+        action.healthCheckURI = "/rollback.html"
+        action.healthCheckInterval = 7
+        action.systemTags = ["balancerWeight::${nicUuid}::37".toString()]
+        action.healthCheckProtocol = "https"
+        res = action.call()
+        assert res.error != null
+        retryInSecs {
+            assert rollbackCmds.size() == 2
+        }
+        assert querySystemTag { conditions = ["resourceUuid=${lblRes.value.inventory.uuid}"] }.collect { it.tag }.sort() == beforeTags
+        assert Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerServerGroupVmNicRefVO_.id, weightRef.id).find().weight == oldWeight
+        assert rollbackCmds[0].lbs.any { it.parameters.contains("healthCheckInterval::7") }
+        assert rollbackCmds[1].lbs.any { it.parameters.contains("healthCheckInterval::${beforeInterval}".toString()) }
+        tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid)
+        assert tokens[0].get(LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN) == "HEAD:/abc.html:http_2xx"
+
         deleteLoadBalancerListener {
             uuid = lblRes.value.inventory.uuid
         }
 
         tokens = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokensOfTagsByResourceUuid(lblRes.value.inventory.uuid);
         assert tokens == null || tokens.isEmpty()
+        deleteLoadBalancerListener {
+            uuid = bootstrapListener.uuid
+        }
     }
 
     private void testBackendServerStateAndInstancePortCase() {
@@ -1678,7 +1825,7 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         def oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
         assert oldAclStatus == "disable"
 
-        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { rsp, HttpEntity<String> e ->
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { HttpEntity<String> e ->
             VirtualRouterLoadBalancerBackend.RefreshLbRsp rspFail = new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
             rspFail.setError("Acl refresh failed")
             rspFail.setSuccess(false)
@@ -1690,6 +1837,10 @@ class VirtualRouterLoadBalancerListenerCase extends SubCase{
         changeAction.aclStatus = LoadBalancerAclStatus.enable.toString()
         changeAction.sessionId = adminSession()
         ChangeLoadBalancerListenerAction.Result changeRes = changeAction.call()
+        assert changeRes.error != null
+        env.simulator(VirtualRouterLoadBalancerBackend.REFRESH_LB_PATH) { HttpEntity<String> e ->
+            return new VirtualRouterLoadBalancerBackend.RefreshLbRsp()
+        }
         def rollbackedStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(listenerUuid_lb, LoadBalancerSystemTags.BALANCER_ACL_TOKEN)
         assert rollbackedStatus == "disable"
     }
