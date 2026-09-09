@@ -1265,6 +1265,15 @@ public class L3BasicNetwork implements L3Network {
 
             for (long i = start; i <= end && ipr != null; i++) {
                 String newIp = NetworkUtils.longToIpv4String(i);
+                while (ipr != null && NetworkUtils.compareIpv4Address(newIp, ipr.getEndIp()) > 0) {
+                    ipr = ip4.hasNext() ? ip4.next() : null;
+                }
+                if (ipr == null) {
+                    break;
+                }
+                if (!NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    continue;
+                }
                 /* ip address is used, can not be reserved */
                 if (Q.New(UsedIpVO.class)
                         .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
@@ -1272,42 +1281,44 @@ public class L3BasicNetwork implements L3Network {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
-                    UsedIpVO vo = new UsedIpVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setIpRangeUuid(ipr.getUuid());
-                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                    //vo.setVmNicUuid(nic.getUuid());
-                    vo.setIpVersion(ipr.getIpVersion());
-                    vo.setIp(newIp);
-                    vo.setNetmask(ipr.getNetmask());
-                    vo.setGateway(ipr.getGateway());
-                    vo.setIpInLong(i);
-                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
-                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
-                    vo.setMetaData(reservedIpRangeVO.getUuid());
+                UsedIpVO vo = new UsedIpVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setIpRangeUuid(ipr.getUuid());
+                vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                //vo.setVmNicUuid(nic.getUuid());
+                vo.setIpVersion(ipr.getIpVersion());
+                vo.setIp(newIp);
+                vo.setNetmask(ipr.getNetmask());
+                vo.setGateway(ipr.getGateway());
+                vo.setIpInLong(i);
+                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
+                vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                vo.setMetaData(reservedIpRangeVO.getUuid());
 
-                    usedIpVOS.add(vo);
-                } else if (ip4.hasNext()) {
-                    ipr = ip4.next();
-                } else {
-                    ipr = null;
-                }
+                usedIpVOS.add(vo);
             }
         } else if (IPv6NetworkUtils.isValidIpv6(msg.getStartIp()) && !ipv6Ranges.isEmpty()){
             BigInteger start = IPv6Address.fromString(msg.getStartIp()).toBigInteger();
             BigInteger end = IPv6Address.fromString(msg.getEndIp()).toBigInteger();
-            Comparator<IpRangeVO> ipv6Comparator
-                    = Comparator.comparing(
-                    IpRangeVO::getStartIp, (s1, s2) -> {
-                        return IPv6NetworkUtils.compareIpv6Address(msg.getStartIp(), msg.getEndIp());
-                    });
+            Comparator<IpRangeVO> ipv6Comparator = Comparator.comparing(
+                    IpRangeVO::getStartIp,
+                    (s1, s2) -> IPv6Address.fromString(s1).toBigInteger()
+                            .compareTo(IPv6Address.fromString(s2).toBigInteger()));
             ipv6Ranges.sort(ipv6Comparator);
             Iterator<IpRangeVO> ip6 = ipv6Ranges.iterator();
             IpRangeVO ipr = ip6.next();
 
             for (BigInteger i = start; i.compareTo(end) <= 0 && ipr != null; i = i.add(BigInteger.ONE)) {
                 String newIp = IPv6NetworkUtils.IPv6AddressToString(i);
+                while (ipr != null && i.compareTo(IPv6Address.fromString(ipr.getEndIp()).toBigInteger()) > 0) {
+                    ipr = ip6.hasNext() ? ip6.next() : null;
+                }
+                if (ipr == null) {
+                    break;
+                }
+                if (!IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    continue;
+                }
                 /* ip address is used, can not be reserved */
                 if (Q.New(UsedIpVO.class)
                         .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid())
@@ -1315,26 +1326,20 @@ public class L3BasicNetwork implements L3Network {
                     continue;
                 }
 
-                if (IPv6NetworkUtils.isIpv6InRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
-                    UsedIpVO vo = new UsedIpVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setIpRangeUuid(ipr.getUuid());
-                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                    //vo.setVmNicUuid(nic.getUuid());
-                    vo.setIpVersion(ipr.getIpVersion());
-                    vo.setIp(newIp);
-                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
-                    vo.setNetmask(ipr.getNetmask());
-                    vo.setGateway(ipr.getGateway());
-                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
-                    vo.setMetaData(reservedIpRangeVO.getUuid());
+                UsedIpVO vo = new UsedIpVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setIpRangeUuid(ipr.getUuid());
+                vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                //vo.setVmNicUuid(nic.getUuid());
+                vo.setIpVersion(ipr.getIpVersion());
+                vo.setIp(newIp);
+                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
+                vo.setNetmask(ipr.getNetmask());
+                vo.setGateway(ipr.getGateway());
+                vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                vo.setMetaData(reservedIpRangeVO.getUuid());
 
-                    usedIpVOS.add(vo);
-                } else if (ip6.hasNext()) {
-                    ipr = ip6.next();
-                } else {
-                    ipr = null;
-                }
+                usedIpVOS.add(vo);
             }
         }
 
@@ -1377,7 +1382,11 @@ public class L3BasicNetwork implements L3Network {
     @Override
     public CheckIpAvailabilityReply checkIpAvailability(CheckIpAvailabilityMsg msg) {
         CheckIpAvailabilityReply reply = new CheckIpAvailabilityReply();
-        final int ipversion = IPv6NetworkUtils.isIpv6Address(msg.getIp()) ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
+        String ip = msg.getIp();
+        final int ipversion = IPv6NetworkUtils.isIpv6Address(ip) ? IPv6Constants.IPv6 : IPv6Constants.IPv4;
+        if (ipversion == IPv6Constants.IPv6) {
+            ip = IPv6NetworkUtils.getIpv6AddressCanonicalString(ip);
+        }
         SimpleQuery<IpRangeVO> rq = dbf.createQuery(IpRangeVO.class);
         rq.select(IpRangeVO_.startIp, IpRangeVO_.endIp, IpRangeVO_.gateway);
         rq.add(IpRangeVO_.l3NetworkUuid, Op.EQ, self.getUuid());
@@ -1406,12 +1415,15 @@ public class L3BasicNetwork implements L3Network {
                 String sip = t.get(0, String.class);
                 String eip = t.get(1, String.class);
                 String gw = t.get(2, String.class);
-                if (msg.getIp().equals(gw) && !addressPoolGateways.contains(gw)) {
+                if (ipversion == IPv6Constants.IPv6 && gw != null) {
+                    gw = IPv6NetworkUtils.getIpv6AddressCanonicalString(gw);
+                }
+                if (ip.equals(gw) && !addressPoolGateways.contains(gw)) {
                     isGateway = true;
                     break;
                 }
 
-                if (NetworkUtils.isInRange(msg.getIp(), sip, eip)) {
+                if (NetworkUtils.isInRange(ip, sip, eip)) {
                     inRange = true;
                     break;
                 }
@@ -1429,7 +1441,7 @@ public class L3BasicNetwork implements L3Network {
         } else {
             SimpleQuery<UsedIpVO> q = dbf.createQuery(UsedIpVO.class);
             q.add(UsedIpVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(UsedIpVO_.ip, Op.EQ, msg.getIp());
+            q.add(UsedIpVO_.ip, Op.EQ, ip);
             if (q.isExists()) {
                 reply.setAvailable(false);
                 reply.setReason(IpNotAvailabilityReason.USED.toString());
