@@ -3238,6 +3238,8 @@
   "ORG_ZSTACK_KVM_10030": "check host capacity failed, because:%s",
   "ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10082": "cannot create flag file [%s] on instance [%s], because: %s",
   "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10060": "get logical switch failed: uuid: %s",
+  "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10061": "get logical router of sdn controller [ip:%s] failed",
+  "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10062": "get logical router of sdn controller [ip:%s] failed because %s",
   "ORG_ZSTACK_KVM_10032": "The host [UUID: %s]\u0027s available memory capacity [%s MB] is lower than the reserved capacity [%s MB]",
   "ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10083": "There is no LocalStorage primary storage (state\u003d%s, status\u003d%s) on the cluster (%s). When the cluster mounts multiple primary storages, the system defaults to using the local primary storage. Please verify the state and status of the primary storage and ensure it has been attached to the cluster.",
   "ORG_ZSTACK_KVM_10033": "unable to register colo heartbeat for vm[uuid:%s] on kvm host [uuid:%s, ip:%s], due to %s",
