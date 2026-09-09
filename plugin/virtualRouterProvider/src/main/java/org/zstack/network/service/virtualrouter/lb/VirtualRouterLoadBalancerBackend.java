@@ -1221,6 +1221,47 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
+        if (struct.isSyncAllInstances()) {
+            List<String> targets = new ArrayList<>();
+            targets.add(vr.getUuid());
+            String peerUuid = haBackend.getVirtualRouterPeerUuid(vr.getUuid());
+            if (peerUuid != null && !targets.contains(peerUuid)) {
+                targets.add(peerUuid);
+            }
+            // Listener changes must observe peer failures, rather than the best-effort HA GC policy.
+            new While<>(targets).each((uuid, next) -> {
+                VirtualRouterVmVO target = dbf.findByUuid(uuid, VirtualRouterVmVO.class);
+                if (target == null) {
+                    next.addError(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10003, "virtual router[uuid:%s] no longer exists", uuid));
+                    next.done();
+                    return;
+                }
+                VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(target);
+                refreshCertsAndListeners(inv, getListenerCertificates(struct),
+                        makeLbTOs(struct, inv), true, new Completion(next) {
+                            @Override
+                            public void success() {
+                                new VirtualRouterRoleManager().makeLoadBalancerRole(uuid);
+                                next.done();
+                            }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                next.addError(errorCode);
+                                next.done();
+                            }
+                        });
+            }).run(new WhileDoneCompletion(completion) {
+                @Override
+                public void done(ErrorCodeList errors) {
+                    if (errors.getCauses().isEmpty()) {
+                        completion.success();
+                    } else {
+                        completion.fail(errors.getCauses().get(0));
+                    }
+                }
+            });
+            return;
+        }
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("refresh-lb-to-virtualRouter");
         chain.then(new ShareFlow() {
