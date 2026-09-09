@@ -3505,6 +3505,8 @@ public class VmInstanceBase extends AbstractVmInstance {
             handle((APISetVmHostnameMsg) msg);
         } else if (msg instanceof APISetVmBootModeMsg) {
             handle((APISetVmBootModeMsg) msg);
+        } else if (msg instanceof APISetVmMachineTypeMsg) {
+            handle((APISetVmMachineTypeMsg) msg);
         } else if (msg instanceof APIDeleteVmBootModeMsg) {
             handle((APIDeleteVmBootModeMsg) msg);
         } else if (msg instanceof APIDeleteVmHostnameMsg) {
@@ -4017,6 +4019,33 @@ public class VmInstanceBase extends AbstractVmInstance {
         APIDeleteVmBootModeEvent evt = new APIDeleteVmBootModeEvent(msg.getId());
         VmSystemTags.BOOT_MODE.delete(self.getUuid());
         bus.publish(evt);
+    }
+
+    private void handle(APISetVmMachineTypeMsg msg) {
+        if (self.getState() != VmInstanceState.Stopped) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10335, "cannot change machine type of vm[uuid:%s] in state[%s], only Stopped is supported",
+                    self.getUuid(), self.getState()));
+        }
+
+        String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(self.getUuid(), VmSystemTags.MACHINE_TYPE_TOKEN);
+        if (machineType != null && !VmMachineType.pc.toString().equals(machineType) && !VmMachineType.q35.toString().equals(machineType)) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_COMPUTE_VM_10336, "cannot change machine type of vm[uuid:%s] from[%s] to[%s]",
+                    self.getUuid(), machineType, msg.getMachineType()));
+        }
+
+        if (!VmMachineType.q35.toString().equals(machineType)) {
+            SystemTagCreator creator = VmSystemTags.MACHINE_TYPE.newSystemTagCreator(self.getUuid());
+            creator.setTagByTokens(map(e(VmSystemTags.MACHINE_TYPE_TOKEN, VmMachineType.q35.toString())));
+            creator.recreate = true;
+            creator.create();
+
+            ErrorCode err = vidm.deleteAllDeviceAddressesByVm(self.getUuid());
+            if (err != null) {
+                throw new OperationFailureException(err);
+            }
+        }
+
+        bus.publish(new APISetVmMachineTypeEvent(msg.getId()));
     }
 
     private void setVmHostName(String vmInstanceUuid, Completion completion) {

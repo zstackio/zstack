@@ -455,6 +455,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10332": "虚拟机网卡生命周期扩展[%s]在主机[uuid:%s]上执行 setup 失败：%s",
   "ORG_ZSTACK_COMPUTE_VM_10333": "虚拟机网卡生命周期迁移前阶段筛选适用网卡失败：%s",
   "ORG_ZSTACK_COMPUTE_VM_10334": "虚拟机网卡生命周期扩展[%s]执行从主机[uuid:%s]到主机[uuid:%s]的迁移前检查失败：%s",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "云主机[uuid:%s]当前状态为[%s]，仅支持已停止状态修改主板类型",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "不支持将云主机[uuid:%s]的主板类型从[%s]修改为[%s]",
   "ORG_ZSTACK_COMPUTE_HOST_10013": "网络接口[name:%s]主机[uuid:%s]未找到",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_INTEGRITY_10008": "加密 %s[id:%s] 错误: %s",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_SMP_10000": "共享挂载点主存储[uuid:%s, 名称:%s]无法在附加的集群中找到任何可用主机",

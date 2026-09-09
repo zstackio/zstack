@@ -3645,6 +3645,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "Der Datenträger-AO-Parameter ist falsch. Sie müssen eine der folgenden Eigenschaften festlegen: Größe, Vorlagen-UUID, Datenträgerangebot-UUID oder Quell-UUID-Quelltyp. Nur eine dieser Eigenschaften sollte angegeben werden.",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "Zugriffsgruppe [%s] existiert bereits im Rechenzentrum [%s]",
   "ORG_ZSTACK_COMPUTE_VM_10068": "Es ist kein verfügbarer Netzwerkschnittstellentyp im L3-Netzwerk [%s] vorhanden",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "Der Maschinentyp der VM[uuid:%s] kann im Status[%s] nicht geändert werden; nur Stopped wird unterstützt",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "Der Maschinentyp der VM[uuid:%s] kann nicht von[%s] zu[%s] geändert werden",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "Eine sekundäre virtuelle Maschine kann nicht erstellt werden, da sich die primäre virtuelle Maschine in einem gestoppten Zustand befindet. Bitte starten Sie die primäre virtuelle Maschine, bevor Sie eine sekundäre erstellen.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "SR-IOV und VFHA können nicht gleichzeitig für die Anbindung eines L3-Netzwerks an eine VM aktiviert sein. Bitte stellen Sie sicher, dass nur eine dieser Optionen konfiguriert ist.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "Virtueller Funktions-Netzwerkadapter kann nicht auf Standardtyp geändert werden",

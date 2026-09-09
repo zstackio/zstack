@@ -3735,6 +3735,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "Parameter disk AO salah. Anda perlu mengatur salah satu properti berikut: ukuran, UUID template, UUID disk offering, atau UUID sumber-tipe sumber. Hanya satu dari properti ini yang harus ditentukan.",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "grup akses [%s] sudah ada di datacenter [%s]",
   "ORG_ZSTACK_COMPUTE_VM_10068": "tidak ada tipe antarmuka jaringan yang tersedia pada jaringan L3 [%s]",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "Tipe mesin VM[uuid:%s] tidak dapat diubah dalam status[%s], hanya status Stopped yang didukung",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "Tipe mesin VM[uuid:%s] tidak dapat diubah dari[%s] menjadi[%s]",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "Tidak dapat membuat mesin virtual sekunder karena mesin virtual utama dalam keadaan berhenti. Harap mulai mesin virtual utama sebelum membuat mesin virtual sekunder.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "SR-IOV dan VFHA tidak dapat diaktifkan secara bersamaan untuk memasang jaringan L3 ke VM. Harap pastikan hanya satu dari opsi ini yang dikonfigurasi.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "Tidak dapat mengubah antarmuka jaringan fungsi virtual ke tipe standar",

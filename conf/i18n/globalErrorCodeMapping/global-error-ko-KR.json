@@ -3645,6 +3645,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "디스크 AO 매개변수가 잘못되었습니다. size, 템플릿 UUID, 디스크 오퍼링 UUID 또는 source UUID-source 유형 중 하나의 속성을 설정해야 합니다. 이 속성 중 하나만 지정해야 합니다.",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "액세스 그룹 [%s]이(가) 데이터센터 [%s]에 이미 존재합니다",
   "ORG_ZSTACK_COMPUTE_VM_10068": "L3 네트워크 [%s]에서 사용 가능한 네트워크 인터페이스 유형이 없습니다",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "VM[uuid:%s]의 상태가 [%s]이므로 머신 유형을 변경할 수 없습니다. Stopped 상태만 지원됩니다",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "VM[uuid:%s]의 머신 유형을 [%s]에서 [%s]로 변경할 수 없습니다",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "보조 가상 머신을 생성할 수 없습니다. 주 가상 머신이 중지 상태입니다. 보조 가상 머신을 생성하기 전에 주 가상 머신을 시작하세요.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "L3 네트워크를 VM에 연결할 때 SR-IOV와 VFHA를 동시에 활성화할 수 없습니다. 이 옵션 중 하나만 구성되어 있는지 확인하세요.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "가상 기능 네트워크 인터페이스를 표준 유형으로 변경할 수 없습니다",

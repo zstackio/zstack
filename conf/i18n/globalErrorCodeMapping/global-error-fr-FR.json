@@ -3735,6 +3735,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10060": "le paramètre AO du disque est incorrect. Vous devez définir l'une des propriétés suivantes : taille, UUID de modèle, UUID d'offre de disque ou UUID source-type source. Une seule de ces propriétés doit être spécifiée.",
   "ORG_ZSTACK_ALIYUN_NAS_FILESYSTEM_10010": "le groupe d'accès [%s] existe déjà dans le centre de données [%s]",
   "ORG_ZSTACK_COMPUTE_VM_10068": "il n'y a pas de type d'interface réseau disponible sur le réseau L3 [%s]",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "Le type de machine de la VM[uuid:%s] ne peut pas être modifié dans l’état[%s] ; seul l’état Stopped est pris en charge",
+  "ORG_ZSTACK_COMPUTE_VM_10336": "Le type de machine de la VM[uuid:%s] ne peut pas être modifié de[%s] vers[%s]",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "Impossible de créer une machine virtuelle secondaire car la machine virtuelle principale est à l'arrêt. Veuillez démarrer la machine virtuelle principale avant de créer une machine virtuelle secondaire.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "SR-IOV et VFHA ne peuvent pas être activés simultanément pour connecter un réseau L3 à une machine virtuelle. Veuillez vous assurer qu'une seule de ces options est configurée.",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "Impossible de modifier l'interface réseau de fonction virtuelle en type standard",
