@@ -252,6 +252,15 @@ public class VmInstanceExtensionPointEmitter implements Component {
         return null;
     }
 
+    public boolean needStopBeforeDestroy(VmInstanceInventory inv) {
+        for (VmInstanceDestroyExtensionPoint ext : destroyVmExtensions) {
+            if (ext.needStopBeforeDestroy(inv)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void beforeDestroyVm(final VmInstanceInventory inv) {
         CollectionUtils.safeForEach(destroyVmExtensions, new ForEachFunction<VmInstanceDestroyExtensionPoint>() {
             @Override

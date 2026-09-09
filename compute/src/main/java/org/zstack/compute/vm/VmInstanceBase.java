@@ -8097,6 +8097,29 @@ public class VmInstanceBase extends AbstractVmInstance {
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
+                    refreshVO();
+                    if (self.getState() != VmInstanceState.Running ||
+                            !extEmitter.needStopBeforeDestroy(getSelfInventory())) {
+                        trigger.next();
+                        return;
+                    }
+
+                    stopVm(msg, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            s.setInventory(getSelfInventory());
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
                     casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
