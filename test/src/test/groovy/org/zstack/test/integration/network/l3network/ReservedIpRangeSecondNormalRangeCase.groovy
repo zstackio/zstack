@@ -39,10 +39,10 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
     }
 
     void reserveIpAddressFromSecondNormalRange() {
-        L3NetworkInventory l3_1 = env.inventoryByName("l3-1")
+        L3NetworkInventory sourceL3Network = env.inventoryByName("l3-1")
         L3NetworkInventory l3 = createL3Network {
             name = "l3-reserve-ip-in-second-range"
-            l2NetworkUuid = l3_1.l2NetworkUuid
+            l2NetworkUuid = sourceL3Network.l2NetworkUuid
             category = L3NetworkCategory.Private
         }
 
