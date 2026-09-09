@@ -9,6 +9,7 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.header.network.l3.IpRangeInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.vm.VmNicInventory;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.network.l2.vxlan.vxlanNetwork.L2VxlanNetworkInventory;
 import org.zstack.header.network.sdncontroller.SdnControllerDeletionMsg;
 import org.zstack.header.network.sdncontroller.SdnControllerInventory;
@@ -17,7 +18,9 @@ import org.zstack.sdnController.header.SdnVniRange;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public interface SdnControllerL2 {
     void preCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
@@ -104,6 +107,13 @@ public interface SdnControllerL2 {
     default List<Tuple> getL2NetworkOfSdnController() { return new ArrayList<>();};
 
     default void addVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
+    default void addVmNics(List<VmNicInventory> nics, VmInstanceSpec spec, Completion completion) {
+        addVmNics(nics, completion);
+    }
+    /** Called before Start allocation; returned pre-existing ports are not owned by its rollback. */
+    default Set<String> getVmNicUuidsToPreserveOnStartRollback(List<VmNicInventory> nics) {
+        return Collections.emptySet();
+    }
     default void removeVmNics(List<VmNicInventory> nics, Completion completion) {completion.success();};
     default void releaseNicIps(List<VmNicInventory> nics, Completion completion) {completion.success();};
 

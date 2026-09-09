@@ -30,6 +30,30 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.znsSegmentUuid;
     }
 
+    public boolean isStretched;
+    public void setIsStretched(boolean isStretched) {
+        this.isStretched = isStretched;
+    }
+    public boolean getIsStretched() {
+        return this.isStretched;
+    }
+
+    public java.lang.String stretchL2Uuid;
+    public void setStretchL2Uuid(java.lang.String stretchL2Uuid) {
+        this.stretchL2Uuid = stretchL2Uuid;
+    }
+    public java.lang.String getStretchL2Uuid() {
+        return this.stretchL2Uuid;
+    }
+
+    public java.util.List vpcRouterUuids;
+    public void setVpcRouterUuids(java.util.List vpcRouterUuids) {
+        this.vpcRouterUuids = vpcRouterUuids;
+    }
+    public java.util.List getVpcRouterUuids() {
+        return this.vpcRouterUuids;
+    }
+
     public java.lang.String zoneUuid;
     public void setZoneUuid(java.lang.String zoneUuid) {
         this.zoneUuid = zoneUuid;

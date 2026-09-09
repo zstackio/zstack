@@ -506,7 +506,17 @@ public class L3BasicNetwork implements L3Network {
                                             Long.class)
                                     .setParameter("l3Uuid", current.getUuid())
                                     .getSingleResult();
-                            if (usedIpCount > 0 || vmNicCount > 0) {
+                            boolean preserveIpReservations = false;
+                            if (vmNicCount == 0 && usedIpCount > 0) {
+                                for (L3NetworkTypeConversionExtensionPoint extension :
+                                        pluginRgty.getExtensionList(L3NetworkTypeConversionExtensionPoint.class)) {
+                                    if (extension.canPreserveIpReservations(msg, L3NetworkInventory.valueOf(current))) {
+                                        preserveIpReservations = true;
+                                        break;
+                                    }
+                                }
+                            }
+                            if (vmNicCount > 0 || (usedIpCount > 0 && !preserveIpReservations)) {
                                 return String.format("L3 network[uuid:%s] has active dependencies[usedIp:%d, vmNic:%d]",
                                         current.getUuid(), usedIpCount, vmNicCount);
                             }

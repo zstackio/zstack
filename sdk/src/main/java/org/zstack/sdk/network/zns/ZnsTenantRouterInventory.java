@@ -60,6 +60,22 @@ public class ZnsTenantRouterInventory  {
         return this.state;
     }
 
+    public boolean hasPeering;
+    public void setHasPeering(boolean hasPeering) {
+        this.hasPeering = hasPeering;
+    }
+    public boolean getHasPeering() {
+        return this.hasPeering;
+    }
+
+    public java.util.List peerings;
+    public void setPeerings(java.util.List peerings) {
+        this.peerings = peerings;
+    }
+    public java.util.List getPeerings() {
+        return this.peerings;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;

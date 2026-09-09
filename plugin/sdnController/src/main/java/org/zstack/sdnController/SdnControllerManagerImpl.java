@@ -54,6 +54,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         AfterAllocateSdnNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
+    private static final String PRESERVED_START_NICS = SdnControllerManagerImpl.class.getName() + ".preservedStartNics";
 
     @Autowired
     private CloudBus bus;
@@ -507,7 +508,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     }
 
-    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
+    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics,
+                             VmInstanceSpec spec, Completion completion) {
         SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         if (factory == null) {
@@ -516,12 +518,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.addVmNics(nics, completion);
+        controller.addVmNics(nics, spec, completion);
     }
 
-    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
+    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps,
+                              VmInstanceSpec spec, Completion completion) {
         new While<>(nicMaps.entrySet()).each((e, wcomp) -> {
-            sdnAddVmNic(e.getKey(), e.getValue(), new Completion(wcomp) {
+            sdnAddVmNic(e.getKey(), e.getValue(), spec, new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -829,7 +832,19 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        sdnAddVmNics(nicMaps, completion);
+        if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Start) {
+            Set<String> preservedNics = new HashSet<>();
+            for (Map.Entry<String, List<VmNicInventory>> entry : nicMaps.entrySet()) {
+                SdnControllerVO vo = dbf.findByUuid(entry.getKey(), SdnControllerVO.class);
+                SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+                if (factory != null) {
+                    preservedNics.addAll(factory.getSdnControllerL2(vo)
+                            .getVmNicUuidsToPreserveOnStartRollback(entry.getValue()));
+                }
+            }
+            spec.putExtensionData(PRESERVED_START_NICS, preservedNics);
+        }
+        sdnAddVmNics(nicMaps, spec, completion);
     }
 
     @Override
@@ -839,8 +854,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
+        Set<String> preservedNics = spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Start
+                ? spec.getExtensionData(PRESERVED_START_NICS, Set.class) : null;
         Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
         for (VmNicInventory nic : nics) {
+            if (preservedNics != null && preservedNics.contains(nic.getUuid())) {
+                continue;
+            }
             L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
             if (l3Vo == null) {
                 continue;
