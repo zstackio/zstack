@@ -66,17 +66,20 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
 
         ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
             l3NetworkUuid = l3.uuid
-            startIp = "192.168.250.36"
-            endIp = "192.168.250.36"
+            startIp = "192.168.250.40"
+            endIp = "192.168.250.41"
         }
 
-        assertReservedUsedIp(l3.uuid, "192.168.250.36", secondIpRange.uuid, reservedIpRange.uuid)
-        assertIpUnavailable(l3.uuid, "192.168.250.36")
+        assertReservedUsedIp(l3.uuid, "192.168.250.40", secondIpRange.uuid, reservedIpRange.uuid)
+        assertReservedUsedIp(l3.uuid, "192.168.250.41", secondIpRange.uuid, reservedIpRange.uuid)
+        assertIpUnavailable(l3.uuid, "192.168.250.40")
+        assertIpUnavailable(l3.uuid, "192.168.250.41")
     }
 
     void assertReservedUsedIp(String l3NetworkUuid, String ip, String ipRangeUuid, String reservedIpRangeUuid) {
         UsedIpVO usedIp = Q.New(UsedIpVO.class)
                 .eq(UsedIpVO_.l3NetworkUuid, l3NetworkUuid)
+                .eq(UsedIpVO_.ip, ip)
                 .eq(UsedIpVO_.metaData, reservedIpRangeUuid)
                 .find()
         assert usedIp != null
