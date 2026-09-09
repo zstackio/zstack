@@ -658,6 +658,7 @@ public class SourceClassMap {
 			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Transition", "org.zstack.sdk.network.zns.Transition");
 			put("org.zstack.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory");
 			put("org.zstack.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory");
+			put("org.zstack.network.zns.ZnsT1PeeringInventory", "org.zstack.sdk.network.zns.ZnsT1PeeringInventory");
 			put("org.zstack.network.zns.ZnsTenantInventory", "org.zstack.sdk.network.zns.ZnsTenantInventory");
 			put("org.zstack.network.zns.ZnsTenantRouterInventory", "org.zstack.sdk.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.network.zns.ZnsTransportZoneInventory", "org.zstack.sdk.network.zns.ZnsTransportZoneInventory");
@@ -1804,6 +1805,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis");
 			put("org.zstack.sdk.network.zns.ZnsSegmentCloudProjectionInventory", "org.zstack.network.zns.ZnsSegmentCloudProjectionInventory");
 			put("org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory", "org.zstack.network.zns.ZnsSegmentSyncOperationInventory");
+			put("org.zstack.sdk.network.zns.ZnsT1PeeringInventory", "org.zstack.network.zns.ZnsT1PeeringInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantInventory", "org.zstack.network.zns.ZnsTenantInventory");
 			put("org.zstack.sdk.network.zns.ZnsTenantRouterInventory", "org.zstack.network.zns.ZnsTenantRouterInventory");
 			put("org.zstack.sdk.network.zns.ZnsTransportZoneInventory", "org.zstack.network.zns.ZnsTransportZoneInventory");
