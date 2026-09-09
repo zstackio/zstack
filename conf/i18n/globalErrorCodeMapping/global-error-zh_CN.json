@@ -3238,6 +3238,8 @@
   "ORG_ZSTACK_KVM_10030": "检查主机容量失败，因为:%s",
   "ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10082": "无法在主机 [%s] 上创建标志文件 [%s]，原因：%s",
   "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10060": "获取逻辑交换机失败：uuid: %s",
+  "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10061": "获取SDN控制器[ip:%s]的逻辑路由器失败",
+  "ORG_ZSTACK_NETWORK_HUAWEI_IMASTER_10062": "获取SDN控制器[ip:%s]的逻辑路由器失败，原因：%s",
   "ORG_ZSTACK_KVM_10032": "主机[uuid:%s]的可用内存容量[%s]低于预留容量[%s]",
   "ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10083": "在集群[%s]中不存在LocalStorage主存储[state\u003d%s,status\u003d%s]，当集群挂载多个主存储时，默认使用本地主存储。请检查主存储的状态/状态，并确保它们已连接到集群。",
   "ORG_ZSTACK_KVM_10033": "无法在 KVM 主机 [uuid:%s, ip:%s] 上为 VM[uuid:%s] 注册colo心跳，因为 %s",
