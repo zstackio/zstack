@@ -11,6 +11,7 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.test.integration.network.NetworkTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
+import org.zstack.utils.network.IPv6Constants
 
 class ReservedIpRangeSecondNormalRangeCase extends SubCase {
     EnvSpec env
@@ -34,11 +35,12 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
     @Override
     void test() {
         env.create {
-            reserveIpAddressFromSecondNormalRange()
+            reserveIpv4AddressFromSecondNormalRange()
+            reserveIpv6AddressFromSecondNormalRange()
         }
     }
 
-    void reserveIpAddressFromSecondNormalRange() {
+    void reserveIpv4AddressFromSecondNormalRange() {
         L3NetworkInventory sourceL3Network = env.inventoryByName("l3-1")
         L3NetworkInventory l3 = createL3Network {
             name = "l3-reserve-ip-in-second-range"
@@ -64,16 +66,93 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
             netmask = "255.255.255.0"
         }
 
+        IpRangeInventory singleIpRange = addIpRange {
+            name = "single-ip-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.250.51"
+            endIp = "192.168.250.51"
+            gateway = "192.168.250.1"
+            netmask = "255.255.255.0"
+        }
+
         ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
             l3NetworkUuid = l3.uuid
             startIp = "192.168.250.40"
             endIp = "192.168.250.41"
         }
 
+        ReservedIpRangeInventory singleReservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = "192.168.250.51"
+            endIp = "192.168.250.51"
+        }
+
         assertReservedUsedIp(l3.uuid, "192.168.250.40", secondIpRange.uuid, reservedIpRange.uuid)
         assertReservedUsedIp(l3.uuid, "192.168.250.41", secondIpRange.uuid, reservedIpRange.uuid)
+        assertReservedUsedIp(l3.uuid, "192.168.250.51", singleIpRange.uuid, singleReservedIpRange.uuid)
         assertIpUnavailable(l3.uuid, "192.168.250.40")
         assertIpUnavailable(l3.uuid, "192.168.250.41")
+        assertIpUnavailable(l3.uuid, "192.168.250.51")
+    }
+
+    void reserveIpv6AddressFromSecondNormalRange() {
+        L3NetworkInventory sourceL3Network = env.inventoryByName("l3-1")
+        L3NetworkInventory l3 = createL3Network {
+            name = "l3-reserve-ipv6-in-second-range"
+            l2NetworkUuid = sourceL3Network.l2NetworkUuid
+            category = L3NetworkCategory.Private
+        }
+
+        addIpv6Range {
+            name = "first-ipv6-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:28::2"
+            endIp = "2024:5:28::30"
+            gateway = "2024:5:28::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        IpRangeInventory secondIpRange = addIpv6Range {
+            name = "second-ipv6-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:28::31"
+            endIp = "2024:5:28::50"
+            gateway = "2024:5:28::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        IpRangeInventory singleIpRange = addIpv6Range {
+            name = "single-ipv6-range"
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:28::51"
+            endIp = "2024:5:28::51"
+            gateway = "2024:5:28::1"
+            prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:28::40"
+            endIp = "2024:5:28::41"
+        }
+
+        ReservedIpRangeInventory singleReservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = "2024:5:28::51"
+            endIp = "2024:5:28::51"
+        }
+
+        assertReservedUsedIp(l3.uuid, "2024:5:28::40", secondIpRange.uuid, reservedIpRange.uuid)
+        assertReservedUsedIp(l3.uuid, "2024:5:28::41", secondIpRange.uuid, reservedIpRange.uuid)
+        assertReservedUsedIp(l3.uuid, "2024:5:28::51", singleIpRange.uuid, singleReservedIpRange.uuid)
+        assertIpUnavailable(l3.uuid, "2024:5:28::40")
+        assertIpUnavailable(l3.uuid, "2024:0005:0028:0000:0000:0000:0000:0040")
+        assertIpUnavailable(l3.uuid, "2024:0005:0028:0000:0000:0000:0000:0001", IpNotAvailabilityReason.GATEWAY.toString())
+        assertIpUnavailable(l3.uuid, "2024:5:28::41")
+        assertIpUnavailable(l3.uuid, "2024:5:28::51")
     }
 
     void assertReservedUsedIp(String l3NetworkUuid, String ip, String ipRangeUuid, String reservedIpRangeUuid) {
@@ -90,6 +169,10 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
     }
 
     void assertIpUnavailable(String l3NetworkUuid, String ip) {
+        assertIpUnavailable(l3NetworkUuid, ip, IpNotAvailabilityReason.USED.toString())
+    }
+
+    void assertIpUnavailable(String l3NetworkUuid, String ip, String reason) {
         CheckIpAvailabilityAction check = new CheckIpAvailabilityAction()
         check.ip = ip
         check.l3NetworkUuid = l3NetworkUuid
@@ -97,6 +180,6 @@ class ReservedIpRangeSecondNormalRangeCase extends SubCase {
         CheckIpAvailabilityAction.Result result = check.call()
         assert result.error == null
         assert result.value.available == false
-        assert result.value.reason == IpNotAvailabilityReason.USED.toString()
+        assert result.value.reason == reason
     }
 }
