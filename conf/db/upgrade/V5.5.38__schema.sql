@@ -884,3 +884,26 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsT1PeeringRefVO` (
     CONSTRAINT `fkZnsT1PeeringRefVOPeerLocalTenantRouter`
         FOREIGN KEY (`peerLocalTenantRouterUuid`) REFERENCES `zstack`.`ZnsTenantRouterVO` (`uuid`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentProjectionDeleteVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `operationUuid` VARCHAR(32) NOT NULL,
+    `sdnControllerUuid` VARCHAR(32) NOT NULL,
+    `segmentUuid` VARCHAR(32) NOT NULL,
+    `zoneUuid` VARCHAR(32) NOT NULL,
+    `l2NetworkUuid` VARCHAR(32) NOT NULL,
+    `accountUuid` VARCHAR(32),
+    `relationUuid` VARCHAR(32),
+    `requestDigest` VARCHAR(64) NOT NULL,
+    `requestJson` LONGTEXT NOT NULL,
+    `snapshotJson` LONGTEXT NOT NULL,
+    `receiptJson` LONGTEXT NOT NULL,
+    `state` VARCHAR(32) NOT NULL,
+    `expectedConfigVersion` BIGINT NOT NULL,
+    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uk_zns_projection_delete_identity` (`operationUuid`,`sdnControllerUuid`,`segmentUuid`,`zoneUuid`,`l2NetworkUuid`),
+    KEY `idx_zns_projection_delete_l2` (`l2NetworkUuid`,`state`),
+    KEY `idx_zns_projection_delete_active` (`sdnControllerUuid`,`segmentUuid`,`state`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;

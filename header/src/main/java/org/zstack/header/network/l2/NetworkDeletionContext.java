@@ -6,7 +6,8 @@ import java.util.List;
 
 public class NetworkDeletionContext {
     public enum Origin {
-        WHOLE_L2_SEGMENT_DELETE
+        WHOLE_L2_SEGMENT_DELETE,
+        ZNS_SEGMENT_PROJECTION_DELETE
     }
 
     private Origin origin;
@@ -67,6 +68,14 @@ public class NetworkDeletionContext {
 
     public boolean isWholeL2SegmentDelete() {
         return Origin.WHOLE_L2_SEGMENT_DELETE == origin;
+    }
+
+    public boolean isZnsSegmentProjectionDelete() {
+        return Origin.ZNS_SEGMENT_PROJECTION_DELETE == origin;
+    }
+
+    public boolean isCoordinatedProjectionCleanup() {
+        return isWholeL2SegmentDelete() || isZnsSegmentProjectionDelete();
     }
 
     public boolean isForceDelete() {
