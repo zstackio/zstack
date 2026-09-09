@@ -25,6 +25,7 @@ import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.RunInQueue;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
@@ -88,6 +89,7 @@ import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -132,6 +134,10 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private String getSecurityGroupSyncThreadName(String securityGroupUuid) {
         return String.format("SecurityGroup-%s", securityGroupUuid);
+    }
+
+    private RunInQueue inHostQueue(String hostUuid) {
+        return new RunInQueue(String.format("SecurityGroup-Host-%s", hostUuid), thdf, 1);
     }
 
     private String getVmNicSecurityGroupRefSyncThreadName() {
@@ -534,18 +540,27 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 return new ArrayList<>(htoMap.values());
             }
 
-            List<Tuple> ts = SQL.New("select vm.hostUuid, vm.hypervisorType, nic.uuid, nic.internalName, nic.mac" +
+            String sql = "select vm.hostUuid, vm.hypervisorType, nic.uuid, nic.internalName, nic.mac" +
                     " from VmInstanceVO vm, VmNicVO nic" +
-                    " where nic.uuid in (:vmNicUuids) and nic.vmInstanceUuid = vm.uuid and vm.state in (:vmStates)", Tuple.class)
+                    " where nic.uuid in (:vmNicUuids) and nic.vmInstanceUuid = vm.uuid and vm.state in (:vmStates)";
+            if (hostUuids != null) {
+                // Keep the target host constraint in the query that reads the VM's current host.
+                sql += " and vm.hostUuid in (:hostUuids)";
+            }
+            SQL query = SQL.New(sql, Tuple.class)
                     .param("vmNicUuids", vmNicUuids)
-                    .param("vmStates", vmStates)
-                    .list();
+                    .param("vmStates", vmStates);
+            if (hostUuids != null) {
+                query.param("hostUuids", hostUuids);
+            }
+            List<Tuple> ts = query.list();
 
             if (ts.isEmpty()) {
                 logger.debug(String.format("security group calcuateByVmNic: no match nics[%s] ", vmNicUuids));
                 return new ArrayList<>(htoMap.values());
             }
 
+            vmNicUuids = ts.stream().map(t -> t.get(2, String.class)).collect(Collectors.toList());
             List<UsedIpVO> usedIps = Q.New(UsedIpVO.class).in(UsedIpVO_.vmNicUuid, vmNicUuids).list();
             List<VmNicSecurityPolicyVO> policies = Q.New(VmNicSecurityPolicyVO.class).in(VmNicSecurityPolicyVO_.vmNicUuid, vmNicUuids).list();
 
@@ -650,6 +665,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private void handleLocalMessage(Message msg) {
         if (msg instanceof RefreshSecurityGroupRulesOnHostMsg) {
             handle((RefreshSecurityGroupRulesOnHostMsg) msg);
+        } else if (msg instanceof ApplySecurityGroupRulesOnHostMsg) {
+            handle((ApplySecurityGroupRulesOnHostMsg) msg);
         } else if (msg instanceof AddSecurityGroupRuleMsg) {
             handle((AddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof CreateSecurityGroupMsg) {
@@ -796,30 +813,38 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             return;
         }
 
-        RuleCalculator cal = new RuleCalculator();
-        cal.securityGroupUuids = Collections.singletonList(securityGroupUuid);
-        applyScheduleRules(cal.calculate(), completion);
-    }
-
-    private void applyScheduleRules(Collection<HostRuleTO> hostRules, Completion completion) {
-        new While<>(hostRules).step((hostRule, whileCompletion) -> {
-            getHypervisorBackend(hostRule.getHypervisorType()).applyRules(
-                    hostRule, new Completion(whileCompletion) {
-                        @Override
-                        public void success() {
-                            whileCompletion.done();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            logger.debug(String.format(
-                                    "failed to refresh security group rules on host[uuid:%s], " +
-                                            "because %s, will try it later",
-                                    hostRule.getHostUuid(), errorCode));
-                            createFailureHostTask(hostRule.getHostUuid());
-                            whileCompletion.done();
-                        }
-                    });
+        List<String> hostUuids = SQL.New(
+                        "select distinct vm.hostUuid" +
+                                " from VmNicSecurityGroupRefVO ref, VmNicVO nic, VmInstanceVO vm, HostVO host" +
+                                " where ref.securityGroupUuid = :securityGroupUuid" +
+                                " and ref.vmNicUuid = nic.uuid" +
+                                " and nic.vmInstanceUuid = vm.uuid" +
+                                " and vm.hostUuid = host.uuid" +
+                                " and vm.state in (:vmStates)" +
+                                " and host.status = :hostStatus", String.class)
+                .param("securityGroupUuid", securityGroupUuid)
+                .param("vmStates", asList(VmInstanceState.Running, VmInstanceState.Unknown))
+                .param("hostStatus", HostStatus.Connected)
+                .list();
+        new While<>(hostUuids).step((hostUuid, whileCompletion) -> {
+            ApplySecurityGroupRulesOnHostMsg hmsg = new ApplySecurityGroupRulesOnHostMsg();
+            hmsg.setHostUuid(hostUuid);
+            hmsg.setSecurityGroupUuid(securityGroupUuid);
+            bus.makeTargetServiceIdByResourceUuid(
+                    hmsg, SecurityGroupConstant.SERVICE_ID, hostUuid);
+            bus.send(hmsg, new CloudBusCallBack(whileCompletion) {
+                @Override
+                public void run(MessageReply reply) {
+                    if (!reply.isSuccess()) {
+                        logger.debug(String.format(
+                                "failed to refresh security group rules on host[uuid:%s], " +
+                                        "because %s, will try it later",
+                                hostUuid, reply.getError()));
+                        createFailureHostTask(hostUuid);
+                    }
+                    whileCompletion.done();
+                }
+            });
         }, 10).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
@@ -1284,17 +1309,68 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handle(RefreshSecurityGroupRulesOnHostMsg msg) {
-        // this message is sent after host reconnected, sdn controller will not handle it
-        RuleCalculator cal = new RuleCalculator();
-        cal.hostUuids = Collections.singletonList(msg.getHostUuid());
-        // refreshing may happen when host is reconnecting; at that time VMs' states are Unknown
-        cal.vmStates = asList(VmInstanceState.Unknown, VmInstanceState.Running);
-        List<HostRuleTO> htos = cal.calculate();
-        for (HostRuleTO hto : htos) {
-            hto.setRefreshHost(true);
-        }
-        logger.debug(String.format("required to refresh rules on host[uuid:%s]", msg.getHostUuid()));
-        applyRules(htos);
+        applyRulesInHostQueue(msg, msg.getHostUuid(),
+                String.format("refresh-security-group-rules-on-host-%s", msg.getHostUuid()), () -> {
+            // this message is sent after host reconnected, sdn controller will not handle it
+            RuleCalculator cal = new RuleCalculator();
+            cal.hostUuids = Collections.singletonList(msg.getHostUuid());
+            // refreshing may happen when host is reconnecting; at that time VMs' states are Unknown
+            cal.vmStates = asList(VmInstanceState.Unknown, VmInstanceState.Running);
+            List<HostRuleTO> htos = cal.calculate();
+            for (HostRuleTO hto : htos) {
+                hto.setRefreshHost(true);
+            }
+            logger.debug(String.format(
+                    "required to refresh rules on host[uuid:%s]", msg.getHostUuid()));
+            return htos;
+        });
+    }
+
+    private void handle(ApplySecurityGroupRulesOnHostMsg msg) {
+        applyRulesInHostQueue(msg, msg.getHostUuid(),
+                String.format("apply-security-group-%s-rules-on-host-%s",
+                        msg.getSecurityGroupUuid(), msg.getHostUuid()), () -> {
+            RuleCalculator cal = new RuleCalculator();
+            cal.securityGroupUuids = Collections.singletonList(msg.getSecurityGroupUuid());
+            cal.hostUuids = Collections.singletonList(msg.getHostUuid());
+            cal.vmStates = asList(VmInstanceState.Unknown, VmInstanceState.Running);
+            return cal.calculate();
+        });
+    }
+
+    private void applyRulesInHostQueue(Message msg, String hostUuid, String taskName,
+                                       Supplier<Collection<HostRuleTO>> rules) {
+        inHostQueue(hostUuid).name(taskName).asyncBackup(msg).run(chain -> {
+            MessageReply reply = new MessageReply();
+            FlowChain fchain = FlowChainBuilder.newSimpleFlowChain();
+            fchain.setName(taskName);
+            fchain.then(new NoRollbackFlow() {
+                String __name__ = "calculate-and-apply-security-group-rules";
+
+                @Override
+                public void run(FlowTrigger trigger, Map data) {
+                    doApplyRules(rules.get(), new NoErrorCompletion(trigger) {
+                        @Override
+                        public void done() {
+                            trigger.next();
+                        }
+                    });
+                }
+            }).done(new FlowDoneHandler(msg) {
+                @Override
+                public void handle(Map data) {
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+            }).error(new FlowErrorHandler(msg) {
+                @Override
+                public void handle(ErrorCode errorCode, Map data) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
+            }).start();
+        });
     }
 
     private void handleApiMessage(APIMessage msg) {
@@ -3236,6 +3312,35 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
             });
         }
+    }
+
+    private void doApplyRules(Collection<HostRuleTO> htos, NoErrorCompletion completion) {
+        new While<>(htos).step((h, whileCompletion) -> {
+            SecurityGroupHypervisorBackend bkend = hypervisorBackends.get(h.getHypervisorType());
+            bkend.applyRules(h, new Completion(whileCompletion) {
+                private void copeWithFailureHost() {
+                    createFailureHostTask(h.getHostUuid());
+                }
+
+                @Override
+                public void success() {
+                    logger.debug(String.format("successfully applied security rules on host[uuid:%s]", h.getHostUuid()));
+                    whileCompletion.done();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    logger.debug(String.format("failed to apply security rules on host[uuid:%s], because %s, will try it later", h.getHostUuid(), errorCode));
+                    copeWithFailureHost();
+                    whileCompletion.done();
+                }
+            });
+        }, 10).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        });
     }
 
     private void checkDefaultRulesOnHost(String hostUuid) {
