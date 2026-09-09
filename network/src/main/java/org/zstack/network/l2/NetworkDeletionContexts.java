@@ -5,6 +5,7 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
 
 public final class NetworkDeletionContexts {
     private static final String KEY_PREFIX = NetworkDeletionContext.class.getName() + ":";
+    private static final String PROJECTION_DELETE_KEY = KEY_PREFIX + "znsProjectionDelete";
     private static final String PREPARED_KEY_PREFIX = KEY_PREFIX + "prepared:";
 
     private NetworkDeletionContexts() {
@@ -16,6 +17,13 @@ public final class NetworkDeletionContexts {
 
     public static void put(CascadeAction action, NetworkDeletionContext context) {
         action.putContext(KEY_PREFIX + context.getL2NetworkUuid(), context);
+        if (context.isZnsSegmentProjectionDelete()) {
+            action.putContext(PROJECTION_DELETE_KEY, context);
+        }
+    }
+
+    public static NetworkDeletionContext projectionDelete(CascadeAction action) {
+        return action.getContext(PROJECTION_DELETE_KEY);
     }
 
     public static boolean isPrepared(CascadeAction action, String l2NetworkUuid) {

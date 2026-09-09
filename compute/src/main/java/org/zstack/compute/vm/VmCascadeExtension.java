@@ -1,5 +1,10 @@
 package org.zstack.compute.vm;
 
+import org.zstack.network.l2.NetworkDeletionContexts;
+import org.zstack.header.network.l2.NetworkDeletionContext;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10341;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
@@ -122,6 +127,19 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
+        NetworkDeletionContext projectionDelete = NetworkDeletionContexts.projectionDelete(action);
+        if (projectionDelete != null && projectionDelete.isZnsSegmentProjectionDelete()) {
+            List<String> l3Uuids = Q.New(L3NetworkVO.class)
+                    .select(L3NetworkVO_.uuid)
+                    .eq(L3NetworkVO_.l2NetworkUuid, projectionDelete.getL2NetworkUuid()).listValues();
+            if (!l3Uuids.isEmpty() && Q.New(VmNicVO.class)
+                    .in(VmNicVO_.l3NetworkUuid, l3Uuids).isExists()) {
+                completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10341,
+                        "ZNS Segment deletion cannot cascade VM NICs on L2 network[uuid:%s]",
+                        projectionDelete.getL2NetworkUuid()));
+                return;
+            }
+        }
         if (action.isActionCode(CascadeConstant.DELETION_CHECK_CODE)) {
             handleDeletionCheck(action, completion);
         } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
