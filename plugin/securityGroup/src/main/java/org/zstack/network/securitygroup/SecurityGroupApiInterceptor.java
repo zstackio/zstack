@@ -878,10 +878,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private void validate(APIAddVmNicToSecurityGroupMsg msg) {
-        SimpleQuery<VmNicVO> q = dbf.createQuery(VmNicVO.class);
-        q.select(VmNicVO_.uuid);
-        q.add(VmNicVO_.uuid, Op.IN, msg.getVmNicUuids());
-        List<String> uuids = q.listValue();
+        List<String> uuids = Q.New(VmNicVO.class).select(VmNicVO_.uuid).in(VmNicVO_.uuid, msg.getVmNicUuids()).listValues();
         if (!uuids.containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10090, SysErrors.RESOURCE_NOT_FOUND,
@@ -889,13 +886,22 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             ));
         }
 
-        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.securityGroupUuid, msg.getSecurityGroupUuid()).list();
-        if (!refs.isEmpty()) {
-            refs.stream().forEach(ref -> {
-                if (uuids.contains(ref.getVmNicUuid())) {
-                    throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10091, "vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
-                }
-            });
+        List<VmNicSecurityGroupRefVO> refs = Q.New(VmNicSecurityGroupRefVO.class).in(VmNicSecurityGroupRefVO_.vmNicUuid, uuids).list();
+        for (VmNicSecurityGroupRefVO ref : refs) {
+            if (ref.getSecurityGroupUuid().equals(msg.getSecurityGroupUuid())) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10091,
+                        "vm nic[uuid:%s] has been attach to security group[uuid:%s]", ref.getVmNicUuid(), msg.getSecurityGroupUuid()));
+            }
+        }
+
+        Map<String, Long> counts = refs.stream().collect(Collectors.groupingBy(VmNicSecurityGroupRefVO::getVmNicUuid, Collectors.counting()));
+        int limit = SecurityGroupGlobalConfig.VMNIC_SECURITY_GROUP_NUM_LIMIT.value(Integer.class);
+        for (String uuid : uuids) {
+            long count = counts.getOrDefault(uuid, 0L) + 1;
+            if (count > limit) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10130,
+                        "cannot bind %d security groups to a vm nic, the maximum allowed number is %d", count, limit));
+            }
         }
 
         checkIfL3NetworkSupportSecurityGroup(uuids);
