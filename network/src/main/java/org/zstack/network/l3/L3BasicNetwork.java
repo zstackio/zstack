@@ -1262,27 +1262,31 @@ public class L3BasicNetwork implements L3Network {
                     continue;
                 }
 
-                if (NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
-                    UsedIpVO vo = new UsedIpVO();
-                    vo.setUuid(Platform.getUuid());
-                    vo.setIpRangeUuid(ipr.getUuid());
-                    vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
-                    //vo.setVmNicUuid(nic.getUuid());
-                    vo.setIpVersion(ipr.getIpVersion());
-                    vo.setIp(newIp);
-                    vo.setNetmask(ipr.getNetmask());
-                    vo.setGateway(ipr.getGateway());
-                    vo.setIpInLong(i);
-                    vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
-                    vo.setUsedFor(IpAllocatedReason.Reserved.toString());
-                    vo.setMetaData(reservedIpRangeVO.getUuid());
-
-                    usedIpVOS.add(vo);
-                } else if (ip4.hasNext()) {
-                    ipr = ip4.next();
-                } else {
-                    ipr = null;
+                while (ipr != null && NetworkUtils.compareIpv4Address(newIp, ipr.getEndIp()) > 0) {
+                    ipr = ip4.hasNext() ? ip4.next() : null;
                 }
+                if (ipr == null) {
+                    break;
+                }
+                if (!NetworkUtils.isInRange(newIp, ipr.getStartIp(), ipr.getEndIp())) {
+                    continue;
+                }
+
+                UsedIpVO vo = new UsedIpVO();
+                vo.setUuid(Platform.getUuid());
+                vo.setIpRangeUuid(ipr.getUuid());
+                vo.setL3NetworkUuid(ipr.getL3NetworkUuid());
+                //vo.setVmNicUuid(nic.getUuid());
+                vo.setIpVersion(ipr.getIpVersion());
+                vo.setIp(newIp);
+                vo.setNetmask(ipr.getNetmask());
+                vo.setGateway(ipr.getGateway());
+                vo.setIpInLong(i);
+                vo.setIpInBinary(NetworkUtils.ipStringToBytes(vo.getIp()));
+                vo.setUsedFor(IpAllocatedReason.Reserved.toString());
+                vo.setMetaData(reservedIpRangeVO.getUuid());
+
+                usedIpVOS.add(vo);
             }
         } else if (IPv6NetworkUtils.isValidIpv6(msg.getStartIp()) && !ipv6Ranges.isEmpty()){
             BigInteger start = IPv6Address.fromString(msg.getStartIp()).toBigInteger();
