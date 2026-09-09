@@ -17,7 +17,7 @@ doc {
     }
     field {
         name "roleType"
-        desc "资源使用角色；第一期可写Role为MANAGEMENT和COMPUTE，只读Role为ZBS"
+        desc "资源使用角色；可写Role为MANAGEMENT、COMPUTE和IMAGE_STORE，只读Role为ZBS"
         type "String"
         since "5.5.38"
     }

@@ -17,7 +17,6 @@ public class KvmHostConfigChecker implements AnsibleChecker {
     private static final CLogger logger = Utils.getLogger(KvmHostConfigChecker.class);
     private static final String RESOURCE_ASSIGNMENT_DROP_IN = "/etc/systemd/system/zstack-kvmagent.service.d/" +
             "50-zstack-resource-assignment.conf";
-    private static final String RESOURCE_ASSIGNMENT_DROP_IN_CONTENT = "[Service]\nSlice=zstack-compute.slice";
     private static final String RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP__";
     private static final String RESOURCE_ASSIGNMENT_CGROUP_V2 = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP_V2__";
 
@@ -28,6 +27,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
     private String requireKsmCheck;
     private String requireReservePorts;
     private boolean requireResourceAssignment;
+    private String resourceAssignmentSliceName;
     private int sshPort = 22;
 
     @Override
@@ -161,7 +161,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         }
         String processCgroup = output.substring(separator + RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR.length()).trim();
         boolean matches = unifiedCgroupV2
-                ? unifiedResourceAssignmentMatches(dropIn, processCgroup)
+                ? unifiedResourceAssignmentMatches(dropIn, processCgroup, resourceAssignmentSliceName)
                 : legacyResourceAssignmentMatches(dropIn);
         if (!matches) {
             logger.debug(String.format(
@@ -174,18 +174,42 @@ public class KvmHostConfigChecker implements AnsibleChecker {
         return !matches;
     }
 
-    static boolean unifiedResourceAssignmentMatches(String dropIn, String processCgroup) {
-        String normalizedDropIn = dropIn == null ? null : dropIn.replace("\r\n", "\n");
-        boolean configured = RESOURCE_ASSIGNMENT_DROP_IN_CONTENT.equals(normalizedDropIn);
+    static boolean unifiedResourceAssignmentMatches(String dropIn, String processCgroup, String sliceName) {
+        String configuredSlice = configuredSlice(dropIn);
+        if (configuredSlice == null) {
+            return false;
+        }
+        if (!configuredSlice.equals(sliceName)) {
+            return true;
+        }
         boolean inRoleSlice = processCgroup != null && (
-                processCgroup.contains("/zstack-compute.slice/")
-                        || processCgroup.endsWith("/zstack-compute.slice"));
-        return configured && inRoleSlice;
+                processCgroup.contains("/" + sliceName + "/") || processCgroup.endsWith("/" + sliceName));
+        return inRoleSlice;
     }
 
     static boolean legacyResourceAssignmentMatches(String dropIn) {
-        String normalizedDropIn = dropIn == null ? null : dropIn.replace("\r\n", "\n");
-        return RESOURCE_ASSIGNMENT_DROP_IN_CONTENT.equals(normalizedDropIn);
+        return configuredSlice(dropIn) != null;
+    }
+
+    private static String configuredSlice(String dropIn) {
+        if (dropIn == null) {
+            return null;
+        }
+        boolean serviceSection = false;
+        String sliceName = null;
+        for (String line : dropIn.split("\\r?\\n")) {
+            String entry = line.trim();
+            if (entry.startsWith("[")) {
+                serviceSection = "[Service]".equals(entry);
+            } else if (serviceSection && entry.contains("=")) {
+                int separator = entry.indexOf('=');
+                if ("Slice".equals(entry.substring(0, separator).trim())) {
+                    sliceName = entry.substring(separator + 1).trim();
+                }
+            }
+        }
+        return sliceName != null && sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")
+                ? sliceName : null;
     }
 
     @Override
@@ -247,6 +271,10 @@ public class KvmHostConfigChecker implements AnsibleChecker {
 
     public void setRequireResourceAssignment(boolean requireResourceAssignment) {
         this.requireResourceAssignment = requireResourceAssignment;
+    }
+
+    public void setResourceAssignmentSliceName(String resourceAssignmentSliceName) {
+        this.resourceAssignmentSliceName = resourceAssignmentSliceName;
     }
 
     public int getSshPort() {

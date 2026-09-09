@@ -2,25 +2,21 @@ package org.zstack.physicalserver;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
-import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController;
 import org.zstack.utils.data.SizeUnit;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import static org.zstack.core.Platform.argerr;
 
 public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
     @Autowired
     private CloudBus bus;
     @Autowired
-    private PluginRegistry pluginRgty;
+    private PhysicalServerManagerImpl manager;
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
@@ -40,9 +36,8 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
 
     private void validate(APIRestartPhysicalServerManagedServicesMsg msg) {
         List<String> serviceNames = msg.getServiceNames();
-        if (msg.getRoleType() == null || extensions().controller(msg.getRoleType()) == null) {
-            throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE,
+        if (msg.getRoleType() == null || manager.getFactory(msg.getRoleType()).roleServices().getSliceName() == null) {
+            throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
                     "RoleType[%s] does not support resource assignment", msg.getRoleType()));
         }
         if (serviceNames.size() > 64) {
@@ -60,10 +55,9 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIUpdatePhysicalServerResourceAssignmentMsg msg) {
-        PhysicalServerResourceAssignmentController adapter = extensions().controller(msg.getRoleType());
-        if (adapter == null) {
-            throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE,
+        String sliceName = manager.getFactory(msg.getRoleType()).roleServices().getSliceName();
+        if (sliceName == null) {
+            throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
                     "RoleType[%s] does not support resource assignment", msg.getRoleType()));
         }
 
@@ -75,8 +69,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         if (msg.getMemory() != null) {
             long mebibyte = SizeUnit.MEGABYTE.toByte(1);
             if (msg.getMemory() < 0 || msg.getMemory() % mebibyte != 0) {
-                throw new ApiMessageInterceptionException(argerr(
-                        PhysicalServerConstant.ERROR_CODE,
+                throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
                         "Memory[%s] must be zero or a positive multiple of 1 MiB", msg.getMemory()));
             }
         }
@@ -87,7 +80,4 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         msg.setCpuSet(PhysicalServerCpuSet.normalize(msg.getCpuSet()));
     }
 
-    private PhysicalServerResourceExtensionRegistry extensions() {
-        return PhysicalServerResourceExtensionRegistry.load(pluginRgty);
-    }
 }

@@ -5,7 +5,6 @@ import java.util.List;
 
 public class ResourceControlCommand {
     private String roleType;
-    private String operation;
     private String cpuSet;
     private Long memory;
     private String sliceName;
@@ -18,14 +17,6 @@ public class ResourceControlCommand {
 
     public void setRoleType(String roleType) {
         this.roleType = roleType;
-    }
-
-    public String getOperation() {
-        return operation;
-    }
-
-    public void setOperation(String operation) {
-        this.operation = operation;
     }
 
     public String getCpuSet() {

@@ -320,17 +320,21 @@ class ZbsPrimaryStorageCase extends SubCase {
     }
 
     void testUpdateExternalPrimaryStorage() {
-        expect(AssertionError.class) {
-            updateExternalPrimaryStorage {
-                uuid = ps.uuid
-                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
-            }
+        List<String> mdsUrls = ["root:password@127.0.1.1", "root:password@127.0.1.2", "root:password@127.0.1.3"]
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = JSONObjectUtil.toJsonString([
+                    mdsUrls: mdsUrls + [mdsUrls[0], "root:other@127.0.1.1:2222"], logicalPoolName: "lpool1"])
         }
+        String deduplicated = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.config)
+                .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+        assert JSONObjectUtil.toObject(deduplicated, Config.class).mdsUrls == mdsUrls :
+                "config must retain the first URL for each MDS IP in request order: actual=${deduplicated}"
 
         expect(AssertionError.class) {
             updateExternalPrimaryStorage {
                 uuid = ps.uuid
-                config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.1\"],\"logicalPoolName\":\"lpool1\"}"
+                config = "{\"mdsUrls\":[],\"logicalPoolName\":\"lpool1\"}"
             }
         }
 

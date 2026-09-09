@@ -2,7 +2,7 @@ package org.zstack.portal.managementnode;
 
 import org.zstack.header.message.MessageReply;
 
-public class ApplyManagementNodeResourceControlReply extends MessageReply {
+public class ManagementNodeResourceControlReply extends MessageReply {
     private boolean synced;
 
     public boolean isSynced() {

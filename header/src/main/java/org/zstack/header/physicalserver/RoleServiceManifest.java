@@ -2,8 +2,13 @@ package org.zstack.header.physicalserver;
 
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.YamlUtils;
+import org.zstack.utils.path.PathUtil;
 
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -22,6 +27,7 @@ public class RoleServiceManifest {
     private PhysicalServerResourceIsolationMode isolationMode = PhysicalServerResourceIsolationMode.SHARED;
     private String sliceName;
     private Integer defaultCpuCount;
+    private Long defaultMemory;
     private List<Service> services = new ArrayList<>();
 
     public static RoleServiceManifest load(String resourcePath, String expectedRoleType) {
@@ -100,6 +106,14 @@ public class RoleServiceManifest {
         return result;
     }
 
+    public Long getDefaultMemory() {
+        return defaultMemory;
+    }
+
+    public void setDefaultMemory(Long defaultMemory) {
+        this.defaultMemory = defaultMemory;
+    }
+
     public List<ManagedServiceResourceUsage> managedServiceUsages(String state) {
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         for (Service service : services) {
@@ -121,6 +135,10 @@ public class RoleServiceManifest {
         if (defaultCpuCount != null && defaultCpuCount < 1) {
             throw invalid(resourcePath, "defaultCpuCount must be greater than zero");
         }
+        if (defaultMemory != null && (defaultMemory < 0 || defaultMemory % (1024 * 1024) != 0)) {
+            throw invalid(resourcePath, String.format(
+                    "defaultMemory[%s] must be non-negative and aligned to 1 MiB", defaultMemory));
+        }
         for (Service service : services) {
             validateHandle(resourcePath, service);
         }
@@ -128,7 +146,7 @@ public class RoleServiceManifest {
 
     private void validateObservation(String resourcePath, String expectedRoleType) {
         validateRoleAndServices(resourcePath, expectedRoleType);
-        if (!empty(sliceName) || defaultCpuCount != null) {
+        if (!empty(sliceName) || defaultCpuCount != null || defaultMemory != null) {
             throw invalid(resourcePath, "observation-only role cannot define allocation defaults");
         }
         for (Service service : services) {
@@ -192,14 +210,20 @@ public class RoleServiceManifest {
     }
 
     private static String read(String resourcePath) {
-        ClassLoader context = Thread.currentThread().getContextClassLoader();
-        InputStream stream = context == null ? null : context.getResourceAsStream(resourcePath);
-        if (stream == null) {
-            stream = RoleServiceManifest.class.getClassLoader().getResourceAsStream(resourcePath);
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        URL resource = loader == null ? null : loader.getResource(resourcePath);
+        if (resource == null) {
+            loader = RoleServiceManifest.class.getClassLoader();
+            resource = loader.getResource(resourcePath);
         }
-        if (stream == null) {
+        if (resource == null) {
             throw new IllegalStateException(String.format("role service manifest[%s] was not found", resourcePath));
         }
+        if ("file".equals(resource.getProtocol())) {
+            return PathUtil.readFileToString(Paths.get(URI.create(resource.toExternalForm())).toString(),
+                    StandardCharsets.UTF_8);
+        }
+        InputStream stream = loader.getResourceAsStream(resourcePath);
         return StringDSL.inputStreamToString(stream);
     }
 

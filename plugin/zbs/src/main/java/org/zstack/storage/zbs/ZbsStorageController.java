@@ -92,6 +92,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Autowired
     @Deprecated
     private CloudBus bus;
+    @Autowired
+    private ZbsResourceAssignmentFactory resourceAssignments;
     private ExternalPrimaryStorageVO self;
     private AddonInfo addonInfo;
     private Config config;
@@ -628,6 +630,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void connect(String cfg, String url, ReturnValueCompletion<org.zstack.header.storage.addon.primary.AddonInfo> completion) {
+        Set<String> previousSerialNumbers = ZbsNodeRefContributorImpl.serialNumbers(addonInfo);
         AddonInfo newAddonInfo = new AddonInfo();
         Config current = JSONObjectUtil.toObject(cfg, Config.class);
         List<MdsInfo> mdsInfos = MdsInfo.valueOf(current.getMdsUrls());
@@ -782,7 +785,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     @Override
                     public void handle(Map data) {
                         addonInfo = newAddonInfo;
+                        previousSerialNumbers.removeAll(ZbsNodeRefContributorImpl.serialNumbers(newAddonInfo));
                         completion.success(newAddonInfo);
+                        forgetRemovedNodes(previousSerialNumbers);
                     }
                 });
 
@@ -908,6 +913,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     @Override
     public void ping(ReturnValueCompletion<PingResult> completion) {
         reloadDbInfo();
+        Set<String> previousSerialNumbers = ZbsNodeRefContributorImpl.serialNumbers(addonInfo);
 
         if (addonInfo == null || addonInfo.getClusterInfo() == null) {
             completion.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10016, String.format("addon info is null, primary storage[uuid:%s] is not ready, skip ping task", self.getUuid())));
@@ -935,7 +941,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 List<ZbsPrimaryStorageMdsBase> mdsNeedToReconnect = getMdssNeedToReconnect(mds);
 
                 if (mdsNeedToReconnect.isEmpty()) {
-                    completion.success(new PingResult(addonInfo));
+                    completePing(new PingResult(addonInfo), previousSerialNumbers, completion);
                     return;
                 }
 
@@ -951,7 +957,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                 reconnectMdss(mdsNeedToReconnect, new Completion(completion) {
                     @Override
                     public void success() {
-                        completion.success(new PingResult(addonInfo));
+                        completePing(new PingResult(addonInfo), previousSerialNumbers, completion);
                     }
 
                     @Override
@@ -960,9 +966,9 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         boolean allDisconnected = allMdssDisconnected(mds);
 
                         if (allDisconnected) {
-                            completion.success(new PingResult(addonInfo,
+                            completePing(new PingResult(addonInfo,
                                     String.format("All MDS are still disconnected after reconnection for ZBS primary storage[uuid:%s]",
-                                            self.getUuid())));
+                                            self.getUuid())), previousSerialNumbers, completion);
                             return;
                         }
 
@@ -975,10 +981,33 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                         logger.warn(String.format("Some MDS are still disconnected after reconnection for ZBS primary storage[uuid:%s], disconnected MDS : %s, error: %s",
                                 self.getUuid(), stillDisconnectedMdsInfo, errorCode));
 
-                        completion.success(new PingResult(addonInfo));
+                        completePing(new PingResult(addonInfo), previousSerialNumbers, completion);
                     }
                 });
 
+            }
+        });
+    }
+
+    private void completePing(PingResult result, Set<String> previousSerialNumbers,
+                              ReturnValueCompletion<PingResult> completion) {
+        previousSerialNumbers.removeAll(ZbsNodeRefContributorImpl.serialNumbers(addonInfo));
+        completion.success(result);
+        forgetRemovedNodes(previousSerialNumbers);
+    }
+
+    private void forgetRemovedNodes(Set<String> serialNumbers) {
+        if (serialNumbers.isEmpty()) {
+            return;
+        }
+        resourceAssignments.forgetAssignments(serialNumbers, new Completion(null) {
+            @Override
+            public void success() {
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                logger.warn(String.format("failed to forget removed ZBS nodes %s: %s", serialNumbers, errorCode));
             }
         });
     }
@@ -1596,15 +1625,12 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_ZBS_10024, "ensure at least one MDS is configured"));
         }
 
-        List<MdsInfo> newMdsInfos = MdsInfo.valueOf(current.getMdsUrls());
-        List<MdsInfo> duplicateMdsInfos = newMdsInfos.stream().collect(Collectors.groupingBy(MdsInfo::getAddr))
-                .values().stream().filter(addr -> addr.size() > 1).flatMap(List::stream).collect(Collectors.toList());
-        if (!duplicateMdsInfos.isEmpty()) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_ZBS_10025, "do not allow to add duplicate MDS[%s]",
-                    duplicateMdsInfos.stream().map(MdsInfo::getAddr).distinct().collect(Collectors.joining(", "))
-            ));
+        Map<String, String> mdsUrls = new LinkedHashMap<>();
+        for (String mdsUrl : current.getMdsUrls()) {
+            mdsUrls.putIfAbsent(MdsInfo.valueOf(mdsUrl).getAddr(), mdsUrl);
         }
-
+        current.setMdsUrls(new ArrayList<>(mdsUrls.values()));
+        List<MdsInfo> newMdsInfos = MdsInfo.valueOf(current.getMdsUrls());
         List<MdsInfo> oldMdsInfos = MdsInfo.valueOf(old.getMdsUrls());
         List<MdsInfo> changedMdsInfos = newMdsInfos.stream().filter(n -> oldMdsInfos.stream().noneMatch(o -> o.equals(n))).collect(Collectors.toList());
         if (!changedMdsInfos.isEmpty() && !CoreGlobalProperty.UNIT_TEST_ON) {

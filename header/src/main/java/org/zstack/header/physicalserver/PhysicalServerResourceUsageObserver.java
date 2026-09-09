@@ -8,5 +8,6 @@ public interface PhysicalServerResourceUsageObserver {
     PhysicalServerRoleType getRoleType();
 
     void collectManagedServiceUsage(
-            String serverUuid, ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion);
+            String serverUuid, ResourceControlCommand command,
+            ReturnValueCompletion<List<ManagedServiceResourceUsage>> completion);
 }

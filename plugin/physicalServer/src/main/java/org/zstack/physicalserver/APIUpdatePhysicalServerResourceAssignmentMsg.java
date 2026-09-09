@@ -10,7 +10,7 @@ import org.zstack.header.rest.RestRequest;
 @RestRequest(
         path = "/physical-servers/{serverUuid}/resource-assignments/{roleType}/actions",
         method = HttpMethod.PUT, responseClass = APIUpdatePhysicalServerResourceAssignmentEvent.class, isAction = true)
-public class APIUpdatePhysicalServerResourceAssignmentMsg extends APIMessage implements PhysicalServerMessage {
+public class APIUpdatePhysicalServerResourceAssignmentMsg extends APIMessage implements PhysicalServerResourceAssignmentMessage {
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 

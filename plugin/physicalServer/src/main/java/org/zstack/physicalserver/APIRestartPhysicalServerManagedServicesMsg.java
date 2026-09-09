@@ -5,14 +5,13 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
-
 import java.util.List;
 
 @Action(category = PhysicalServerConstant.ACTION_CATEGORY)
 @RestRequest(
         path = "/physical-servers/{serverUuid}/managed-services/actions",
         method = HttpMethod.PUT, responseClass = APIRestartPhysicalServerManagedServicesEvent.class, isAction = true)
-public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage implements PhysicalServerMessage {
+public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage implements PhysicalServerResourceAssignmentMessage {
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 

@@ -15,19 +15,24 @@ import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentControll
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode
 import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver
-import org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider
+import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory
+import org.zstack.physicalserver.PhysicalServerManagerImpl
+import org.zstack.header.physicalserver.PhysicalServerResourceBoundary
+import org.zstack.header.core.ReturnValueCompletion
 import org.zstack.header.physicalserver.PhysicalServerRoleType
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.RoleServiceManifest
 import org.zstack.header.rest.RestRequest
 import org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg
-import org.zstack.kvm.KvmPhysicalServerAdapter
+import org.zstack.kvm.KvmResourceAssignmentFactory
+import org.zstack.kvm.KvmResourceAssignmentController
 import org.zstack.kvm.KvmHostConfigChecker
 import org.zstack.physicalserver.PhysicalServerCpuPlanner
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
-import org.zstack.physicalserver.PhysicalServerResourceExtensionRegistry
-import org.zstack.portal.managementnode.ManagementNodePhysicalServerAdapter
-import org.zstack.storage.zbs.ZbsResourceUsageObserver
+import org.zstack.portal.managementnode.ManagementNodeResourceAssignmentFactory
+import org.zstack.portal.managementnode.ManagementNodeResourceAssignmentController
+import org.zstack.storage.zbs.ZbsResourceAssignmentFactory
+import org.zstack.storage.zbs.ZbsResourceAssignmentObserver
 
 import java.net.URL
 import java.net.URLClassLoader
@@ -93,29 +98,34 @@ class PhysicalServerResourceModelCase {
         def needDeploy = KvmHostConfigChecker.class.getDeclaredMethod("needDeployResourceAssignment")
         needDeploy.accessible = true
         def unified = KvmHostConfigChecker.class.getDeclaredMethod(
-                "unifiedResourceAssignmentMatches", String.class, String.class)
+                "unifiedResourceAssignmentMatches", String.class, String.class, String.class)
         unified.accessible = true
         def legacy = KvmHostConfigChecker.class.getDeclaredMethod("legacyResourceAssignmentMatches", String.class)
         legacy.accessible = true
 
         assert !needDeploy.invoke(new KvmHostConfigChecker()) :
                 "disabled bootstrap must not inspect or modify an existing Role membership"
-        assert unified.invoke(
-                null,
-                "[Service]\nSlice=zstack-compute.slice", "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
+        assert unified.invoke(null,
+                "[Service]\nSlice=zstack-compute.slice", "/zstack.slice/zstack-compute.slice/zstack-kvmagent.service",
+                "zstack-compute.slice") :
                 "enabled bootstrap requires both the exact drop-in and live Role membership"
-        assert unified.invoke(
-                null,
-                "[Service]\r\nSlice=zstack-compute.slice",
-                "0::/zstack.slice/zstack-compute.slice/zstack-kvmagent.service") :
+        assert unified.invoke(null, "[Service]\r\nSlice=zstack-compute.slice",
+                "0::/zstack.slice/zstack-compute.slice/zstack-kvmagent.service", "zstack-compute.slice") :
                 "SSH line ending conversion must not cause repeated deployment"
-        assert !unified.invoke(
-                null, "[Service]\nSlice=zstack-compute.slice", "/system.slice/zstack-kvmagent.service") :
+        assert !unified.invoke(null, "[Service]\nSlice=zstack-compute.slice", "/system.slice/zstack-kvmagent.service",
+                "zstack-compute.slice") :
                 "a staged drop-in alone must not suppress the restart needed to join the Role"
         assert !legacy.invoke(null, "__ABSENT__") :
                 "enabled legacy hosts must receive install-time Role membership"
         assert legacy.invoke(null, "[Service]\nSlice=zstack-compute.slice") :
                 "enabled legacy hosts require the exact Role drop-in"
+        assert unified.invoke(null, "# generated\r\n[Service]\r\n\n Slice = custom:role.slice\n",
+                "0::/custom:role.slice/zstack-kvmagent.service", "custom:role.slice") :
+                "custom initial slices and semantically equivalent drop-ins must not trigger redeployment"
+        assert unified.invoke(null, "[Service]\nSlice=zstack-management.slice",
+                "/zstack.slice/zstack-management.slice/zstack-kvmagent.service", "zstack-compute.slice") :
+                "the first Role to own a service must retain ownership"
+        assert !legacy.invoke(null, "[Service]\nSlice=../../invalid.slice") : "invalid slice paths must be rejected"
     }
 
     @Test
@@ -228,8 +238,7 @@ class PhysicalServerResourceModelCase {
                 "Profile shrink must remove CPUs from the existing assignment: " + "before=${expanded} after=${shrunk}"
         assert PhysicalServerCpuSet.count(shrunk) == 2
 
-        assert planner.matchProfileCpuCount(
-                null,
+        assert planner.matchProfileCpuCount(null,
                 expanded, PhysicalServerResourceIsolationMode.SHARED, topology, Collections.emptySet()) == expanded :
                 "removing defaultCpuCount must not clear an existing CPU assignment"
     }
@@ -261,19 +270,37 @@ class PhysicalServerResourceModelCase {
     }
 
     @Test
+    void testInitialAllocationAndExpansionUseTheSameCpuSetGrowth() {
+        PhysicalServerCpuPlanner planner = new PhysicalServerCpuPlanner()
+        PhysicalServerCpuTopology topology = topology()
+        for (PhysicalServerResourceIsolationMode mode : PhysicalServerResourceIsolationMode.values()) {
+            String initial = planner.matchProfileCpuCount(6, "", mode, topology, Collections.emptySet())
+            String existing = planner.matchProfileCpuCount(2, "", mode, topology, Collections.emptySet())
+            String expanded = planner.matchProfileCpuCount(6, existing, mode, topology, Collections.emptySet())
+            assert initial == "1-3,5-7" && expanded == initial :
+                    "initial and incremental allocation must both span NUMA when needed: " +
+                            "mode=${mode} initial=${initial} expanded=${expanded}"
+            assert PhysicalServerCpuSet.parse(expanded).containsAll(PhysicalServerCpuSet.parse(existing)) :
+                    "growth must retain the existing CPUs: before=${existing} after=${expanded}"
+        }
+    }
+
+    @Test
     void testManagementAndComputeDefaultsUseEightAvailableCpus() {
         PhysicalServerCpuTopology large = largeTopology()
         Set<Integer> exclusive = [8, 9, 18, 19] as Set<Integer>
         PhysicalServerCpuPlanner planner = new PhysicalServerCpuPlanner()
-        KvmPhysicalServerAdapter kvm = new KvmPhysicalServerAdapter()
-        ManagementNodePhysicalServerAdapter mn = new ManagementNodePhysicalServerAdapter()
+        KvmResourceAssignmentFactory kvm = new KvmResourceAssignmentFactory()
+        ManagementNodeResourceAssignmentFactory mn = new ManagementNodeResourceAssignmentFactory()
 
-        assert kvm.defaultCpuCount == 8 :
+        assert kvm.roleServices().defaultCpuCount == 8 :
                 "COMPUTE Profile must expose its CPU count without choosing CPUs"
-        assert mn.defaultCpuCount == 8 :
+        assert mn.roleServices().defaultCpuCount == 8 :
                 "MANAGEMENT Profile must expose its CPU count without choosing CPUs"
-        String compute = planner.calculateDefaultCpuSet(kvm.defaultCpuCount, large, exclusive)
-        String management = planner.calculateDefaultCpuSet(mn.defaultCpuCount, large, exclusive)
+        String compute = planner.matchProfileCpuCount(
+                kvm.roleServices().defaultCpuCount, "", PhysicalServerResourceIsolationMode.SHARED, large, exclusive)
+        String management = planner.matchProfileCpuCount(
+                mn.roleServices().defaultCpuCount, "", PhysicalServerResourceIsolationMode.SHARED, large, exclusive)
 
         assert compute == "1-7,11" :
                 "compute default must select eight logical CPUs without the CPU0 CoreGroup: " +
@@ -288,18 +315,18 @@ class PhysicalServerResourceModelCase {
                 "automatic shared defaults must exclude every SMT sibling of CPU0: " +
                         "cpuSet=${compute} cpuZeroGroup=${large.cpuZeroGroup.cpus}"
 
-        String constrained = PhysicalServerCpuSet
-                .firstAvailableExcludingCpuZeroCore(topology(), [2, 3, 6, 7] as Set<Integer>, 2)
+        String constrained = planner.matchProfileCpuCount(
+                2, "", PhysicalServerResourceIsolationMode.SHARED, topology(), [2, 3, 6, 7] as Set<Integer>)
         assert constrained == "1,5" :
                 "a constrained default must still reserve the complete CPU0 CoreGroup: " +
                         "expected=1,5 actual=${constrained}"
 
-        String secondNuma = PhysicalServerCpuSet
-                .firstAvailableExcludingCpuZeroCore(topology(), Collections.emptySet(), 4)
+        String secondNuma = planner.matchProfileCpuCount(
+                4, "", PhysicalServerResourceIsolationMode.SHARED, topology(), Collections.emptySet())
         assert secondNuma == "2-3,6-7" :
                 "automatic CPU allocation must stay inside one NUMA node: " + "expected=2-3,6-7 actual=${secondNuma}"
-        String crossNuma = PhysicalServerCpuSet
-                .firstAvailableExcludingCpuZeroCore(topology(), Collections.emptySet(), 5)
+        String crossNuma = planner.matchProfileCpuCount(
+                5, "", PhysicalServerResourceIsolationMode.SHARED, topology(), Collections.emptySet())
         assert crossNuma == "1-3,5-6" :
                 "automatic CPU allocation must fall back across NUMA nodes when one node cannot " +
                         "satisfy the requested count: " +
@@ -331,16 +358,16 @@ class PhysicalServerResourceModelCase {
         RoleServiceManifest.reloadAll()
 
         PhysicalServerCpuTopology topology = largeTopology()
-        KvmPhysicalServerAdapter kvm = new KvmPhysicalServerAdapter()
-        ManagementNodePhysicalServerAdapter mn = new ManagementNodePhysicalServerAdapter()
-        ZbsResourceUsageObserver zbsObserver = new ZbsResourceUsageObserver()
+        KvmResourceAssignmentFactory kvm = new KvmResourceAssignmentFactory()
+        ManagementNodeResourceAssignmentFactory mn = new ManagementNodeResourceAssignmentFactory()
+        ZbsResourceAssignmentFactory zbsObserver = new ZbsResourceAssignmentFactory()
         assert defaultCpuSet(kvm, topology) == "1-2" :
                 "compute must read the current external profile without a management-node restart"
         assert defaultCpuSet(mn, topology) == "1-3" :
                 "management must read the current external profile without a management-node restart"
         assert observedZbsServices(zbsObserver) == ["first.slice"] :
                 "ZBS observation must read the current external profile without a management-node restart"
-        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
+        assert zbsObserver.roleServices().isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
                 "ZBS must read its Exclusive reservation policy from the external profile"
 
         Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 4)
@@ -355,7 +382,7 @@ class PhysicalServerResourceModelCase {
                 "editing a Profile must not change MANAGEMENT before the explicit reload API"
         assert observedZbsServices(zbsObserver) == ["first.slice"] :
                 "editing a Profile must not change ZBS observation before the explicit reload API"
-        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
+        assert zbsObserver.roleServices().isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
                 "editing a Profile must not change ZBS isolation before the explicit reload API"
 
         RoleServiceManifest.reloadAll()
@@ -365,8 +392,60 @@ class PhysicalServerResourceModelCase {
                 "the explicit reload API must activate the changed MANAGEMENT Profile"
         assert observedZbsServices(zbsObserver) == ["second.slice"] :
                 "the explicit reload API must activate the changed ZBS Profile"
-        assert zbsObserver.isolationMode == PhysicalServerResourceIsolationMode.SHARED :
+        assert zbsObserver.roleServices().isolationMode == PhysicalServerResourceIsolationMode.SHARED :
                 "the explicit reload API must activate the changed ZBS isolation policy"
+
+        [0L, 1048576L].each { memory ->
+            Files.write(compute, (controlledRoleManifest("COMPUTE", "zstack-compute.slice", 4) +
+                    "\ndefaultMemory: ${memory}\n").getBytes(StandardCharsets.UTF_8))
+            RoleServiceManifest.reloadAll()
+            assert kvm.roleServices().defaultMemory == memory :
+                    "zero and whole MiB defaults must be accepted: actual=${kvm.roleServices().defaultMemory}"
+        }
+        [-1L, 1L].each { memory ->
+            Files.write(compute, (controlledRoleManifest("COMPUTE", "zstack-compute.slice", 6) +
+                    "\ndefaultMemory: ${memory}\n").getBytes(StandardCharsets.UTF_8))
+            shouldFail(IllegalStateException) { RoleServiceManifest.reloadAll() }
+            assert kvm.roleServices().defaultMemory == 1048576L && kvm.roleServices().defaultCpuCount == 4 :
+                    "invalid memory must reject the entire reload and preserve the last valid snapshot"
+        }
+    }
+
+    @Test
+    void testExplicitReloadBypassesClassLoaderContentCache() {
+        Path root = temporaryFolder.newFolder("cached-profile").toPath()
+        Path profiles = Files.createDirectories(root.resolve("physical-server-roles"))
+        Path compute = profiles.resolve("compute.yaml")
+        Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", 1).getBytes("UTF-8"))
+        previousContextClassLoader = Thread.currentThread().contextClassLoader
+        profileClassLoader = new URLClassLoader([root.toUri().toURL()] as URL[], new ClassLoader(null) {}) {
+            private final Map<String, byte[]> content = [:]
+
+            @Override
+            InputStream getResourceAsStream(String name) {
+                if (!content.containsKey(name)) {
+                    InputStream stream = super.getResourceAsStream(name)
+                    if (stream == null) {
+                        return null
+                    }
+                    content[name] = stream.withCloseable { it.bytes }
+                }
+                return new ByteArrayInputStream(content[name])
+            }
+        }
+        Thread.currentThread().contextClassLoader = profileClassLoader
+        RoleServiceManifest.reloadAll()
+        def manifest = { RoleServiceManifest.load("physical-server-roles/compute.yaml", "COMPUTE") }
+        assert manifest().defaultCpuCount == 1 : "the initial external Profile must allocate one CPU"
+
+        [3, 2, 4].each { int count ->
+            int previous = manifest().defaultCpuCount
+            Files.write(compute, controlledRoleManifest("COMPUTE", "zstack-compute.slice", count).getBytes("UTF-8"))
+            assert manifest().defaultCpuCount == previous : "editing YAML alone must not reload the Profile"
+            RoleServiceManifest.reloadAll()
+            assert manifest().defaultCpuCount == count :
+                    "explicit reload must bypass cached content: expected=${count} actual=${manifest().defaultCpuCount}"
+        }
     }
 
     @Test
@@ -417,7 +496,7 @@ class PhysicalServerResourceModelCase {
         assert zbs.sliceName == null && zbs.defaultCpuCount == null :
                 "an observation-only ZBS manifest must not define an allocation plan"
         assertFailure("does not match expected roleType") {
-            RoleServiceManifest.load("physical-server-roles/compute.yaml", "IMAGE_STORE")
+            RoleServiceManifest.load("physical-server-roles/compute.yaml", "TEST_SHARED_STORAGE")
         }
         assertFailure("observation-only role cannot define allocation defaults") {
             RoleServiceManifest.loadObservation("physical-server-roles/invalid-provider-slice.yaml", "INVALID_PROVIDER")
@@ -425,94 +504,89 @@ class PhysicalServerResourceModelCase {
     }
 
     @Test
-    void testExtensionRegistryKeepsPeerRolesIndependentAndRejectsAmbiguity() {
-        PhysicalServerResourceAssignmentController compute = adapter("COMPUTE")
-        PhysicalServerResourceAssignmentController imageStore = adapter("IMAGE_STORE")
-        PhysicalServerResourceExtensionRegistry loaded =
-                PhysicalServerResourceExtensionRegistry.load(registry(
-                        [imageStore], [], [], [association("IMAGE_STORE")]))
-        assert loaded.controller("IMAGE_STORE").is(imageStore) :
-                "a peer Role controller must not depend on another Role as its topology source"
+    void testFactoriesCreateControllersWithoutRoleBaseOrMessageHandlers() {
+        PhysicalServerRoleType role = registeredRoleType("TEST_SHARED_STORAGE")
+        PhysicalServerResourceAssignmentFactory factory = [
+                getRoleType: { role },
+                roleServices: { new RoleServiceManifest(roleType: role.toString(), sliceName: "zstack-store.slice") },
+                getResourceAssignment: { String serverUuid -> new TestController(serverUuid, role) }
+        ] as PhysicalServerResourceAssignmentFactory
+        PluginRegistry plugins = mock(PluginRegistry.class)
+        when(plugins.getExtensionList(PhysicalServerResourceAssignmentFactory.class)).thenReturn([factory])
+        PhysicalServerManagerImpl manager = new PhysicalServerManagerImpl()
+        manager.@pluginRgty = plugins
+        assert manager.getFactory(role.toString()).is(factory) : "Manager must select the factory by roleType"
+        def first = factory.getResourceAssignment("server-1")
+        def second = factory.getResourceAssignment("server-2")
+        assert !first.is(second) : "different servers must not share a Controller instance"
+        assert first.serverUuid == "server-1" && second.serverUuid == "server-2" :
+                "each Controller must be bound to the requested server without an Assignment VO"
+        assert first.class.superclass == Object : "external Controllers must not inherit a physicalServer Base"
+        assert !PhysicalServerResourceAssignmentObserver.methods.any { it.name == "handleMessage" } :
+                "message handling belongs to physicalServer, not the Observer contract"
+        assert PhysicalServerResourceAssignmentFactory.getMethod("getResourceAssignment", String).returnType ==
+                PhysicalServerResourceAssignmentObserver : "the Factory must accept both read-only and writable Roles"
+        assert PhysicalServerResourceAssignmentObserver.isAssignableFrom(PhysicalServerResourceAssignmentController) :
+                "the existing Controller must retain its Observer contract"
+        [KvmResourceAssignmentController, ManagementNodeResourceAssignmentController,
+         ZbsResourceAssignmentObserver].each { controller ->
+            assert controller.superclass == Object : "${controller.name} must not inherit Assignment orchestration"
+            assert !controller.methods.any { it.name == "handleMessage" } :
+                    "${controller.name} must only implement Role operations"
+            assert !controller.methods.any { it.name in ["roleServices", "getDefaultCpuCount", "getResourceConsumers"] } :
+                    "${controller.name} must consume execution parameters instead of reading Profiles"
+        }
+        when(plugins.getExtensionList(PhysicalServerResourceAssignmentFactory.class)).thenReturn([factory, factory])
+        assertFailure("Duplicate resource assignment factory") { manager.getFactory(role.toString()) }
+    }
 
-        PluginRegistry pluginRegistry = registry(
-                [compute, imageStore], [], [], [association("COMPUTE"), association("IMAGE_STORE")])
+    private static class TestController implements PhysicalServerResourceAssignmentObserver {
+        final String serverUuid
+        final PhysicalServerRoleType roleType
 
-        loaded = PhysicalServerResourceExtensionRegistry.load(pluginRegistry)
-        assert loaded.orderedControllers().collect {
-            it.roleType.toString()
-        } ==
-                ["COMPUTE", "IMAGE_STORE"] :
-                "valid controllers must be ordered without enum registration: " +
-                        "actual=${loaded.orderedControllers()*.roleType}"
-
-        assertFailure("duplicate PhysicalServer Role extensions") {
-            PhysicalServerResourceExtensionRegistry.load(registry(
-                    [compute,
-                     adapter("IMAGE_STORE"),
-                     adapter("IMAGE_STORE")], [], [], [association("COMPUTE"), association("IMAGE_STORE")]))
+        TestController(String serverUuid, PhysicalServerRoleType roleType) {
+            this.serverUuid = serverUuid
+            this.roleType = roleType
         }
 
-        assertFailure("no PhysicalServer Role association provider") {
-            PhysicalServerResourceExtensionRegistry.load(registry(
-                    [compute, adapter("IMAGE_STORE")], [], [], [association("COMPUTE")]))
+        @Override
+        boolean resourceExists() { return true }
+
+        @Override
+        void collectResourceAssignment(String uuid, List<String> serviceNames,
+                ReturnValueCompletion<PhysicalServerResourceBoundary> completion) {
+            completion.success(new PhysicalServerResourceBoundary(cpuSet: "1-2"))
         }
     }
 
     @Test
-    void testExtensionRegistryKeepsReadWriteAndUsageCapabilitiesIndependent() {
-        PhysicalServerResourceAssignmentController compute = adapter("COMPUTE")
-        PhysicalServerResourceAssignmentObserver zbsAssignment =
-                assignmentObserver("ZBS", PhysicalServerResourceIsolationMode.EXCLUSIVE)
-        PhysicalServerResourceUsageObserver zbs = observer("ZBS")
-        PluginRegistry pluginRegistry = registry(
-                [compute], [zbsAssignment], [observer("COMPUTE"), zbs], [association("COMPUTE"), association("ZBS")])
-
-        PhysicalServerResourceExtensionRegistry extensions =
-                PhysicalServerResourceExtensionRegistry.load(pluginRegistry)
-
-        assert extensions.orderedControllers().collect {
-            it.roleType.toString()
-        } == ["COMPUTE"] :
-                "an observation-only ZBS integration must not enter the executable Assignment registry: " +
-                        "actual=${extensions.orderedControllers()*.roleType}"
-        assert extensions.orderedReadOnlyObservers().collect {
-            it.roleType.toString()
-        } == ["ZBS"] :
-                "read-only Assignment must remain separate from writable controllers"
-        assert extensions.observer("ZBS").isolationMode == PhysicalServerResourceIsolationMode.EXCLUSIVE :
-                "read-only Assignments must expose the isolation policy used by conflict checks"
-        assert extensions.observer("COMPUTE").is(compute) :
-                "a writable controller must also satisfy the shared read contract"
-        assert extensions.usageObserver("COMPUTE") != null :
-                "controlled Role must expose its usage observer"
-        assert extensions.usageObserver("ZBS") != null :
-                "read-only Role must expose its usage observer independently"
-
-        assertFailure("duplicate PhysicalServer Role extensions") {
-            PhysicalServerResourceExtensionRegistry.load(registry(
-                        [compute], [], [observer("ZBS"), observer("ZBS")], [association("COMPUTE")]))
-        }
+    void testControllerWriteAndUsageCapabilitiesRemainIndependent() {
+        def zbs = new ZbsResourceAssignmentFactory().getResourceAssignment("server-1")
+        def observationOnly = new TestController("server-1", registeredRoleType("ZBS"))
+        assert zbs instanceof PhysicalServerResourceAssignmentObserver : "ZBS must expose boundary observation"
+        assert !(zbs instanceof PhysicalServerResourceAssignmentController) : "ZBS must never expose Apply or Release"
+        assert zbs instanceof PhysicalServerResourceUsageObserver : "ZBS must expose its service usage"
+        assert !(observationOnly instanceof PhysicalServerResourceUsageObserver) :
+                "boundary-only Controllers must not be forced to fabricate service usage"
     }
 
     private static PhysicalServerCpuTopology topology() {
         return PhysicalServerCpuTopology.from([
-                "1": node("1", ["2", "3", "6", "7"],
-                        [["2", "6"], ["3", "7"]]), "0": node("0", ["0", "1", "4", "5"], [["0", "4"], ["1", "5"]])])
+                "1": node("1", ["2", "3", "6", "7"], [["2", "6"], ["3", "7"]]),
+                "0": node("0", ["0", "1", "4", "5"], [["0", "4"], ["1", "5"]])])
     }
 
     private static PhysicalServerCpuTopology largeTopology() {
         return PhysicalServerCpuTopology.from([
-                "0": node(
-                        "0",
-                        (0..19).collect { it.toString() },
-                        (0..9).collect { [it.toString(), (it + 10).toString()] })
+                "0": node("0",
+                        (0..19).collect { it.toString() }, (0..9).collect { [it.toString(), (it + 10).toString()] })
         ])
     }
 
     private static String defaultCpuSet(
-            PhysicalServerResourceAssignmentController controller, PhysicalServerCpuTopology topology) {
-        return new PhysicalServerCpuPlanner().calculateDefaultCpuSet(
-                controller.defaultCpuCount, topology, Collections.emptySet())
+            PhysicalServerResourceAssignmentFactory factory, PhysicalServerCpuTopology topology) {
+        return new PhysicalServerCpuPlanner().matchProfileCpuCount(factory.roleServices().defaultCpuCount, "",
+                PhysicalServerResourceIsolationMode.SHARED, topology, Collections.emptySet())
     }
 
     private static PhysicalServerNumaNode node(String nodeId, List<String> online, List<List<String>> coreGroups) {
@@ -545,48 +619,26 @@ services:
 """
     }
 
-    private static List<String> observedZbsServices(ZbsResourceUsageObserver observer) {
-        return RoleServiceManifest.loadObservation(
-                ZbsResourceUsageObserver.ROLE_SERVICE_MANIFEST_PATH,
+    private static List<String> observedZbsServices(ZbsResourceAssignmentFactory observer) {
+        return RoleServiceManifest.loadObservation(ZbsResourceAssignmentFactory.ROLE_SERVICE_MANIFEST_PATH,
                 observer.roleType.toString()).managedServiceUsages("NOT_FOUND")*.serviceName
     }
 
     private static PhysicalServerResourceAssignmentController adapter(String roleType) {
         PhysicalServerResourceAssignmentController adapter = mock(PhysicalServerResourceAssignmentController.class)
         when(adapter.getRoleType()).thenReturn(registeredRoleType(roleType))
-        when(adapter.getIsolationMode()).thenReturn(PhysicalServerResourceIsolationMode.SHARED)
         return adapter
     }
 
-    private static PhysicalServerResourceAssignmentObserver assignmentObserver(
-            String roleType, PhysicalServerResourceIsolationMode isolationMode) {
-        PhysicalServerResourceAssignmentObserver observer = mock(PhysicalServerResourceAssignmentObserver.class)
-        when(observer.getRoleType()).thenReturn(registeredRoleType(roleType))
-        when(observer.getIsolationMode()).thenReturn(isolationMode)
-        return observer
-    }
-
-    private static PhysicalServerRoleAssociationProvider association(String roleType) {
-        PhysicalServerRoleAssociationProvider provider = mock(PhysicalServerRoleAssociationProvider.class)
-        when(provider.getRoleType()).thenReturn(registeredRoleType(roleType))
-        return provider
-    }
-
-    private static PhysicalServerResourceUsageObserver observer(String roleType) {
-        PhysicalServerResourceUsageObserver observer = mock(PhysicalServerResourceUsageObserver.class)
-        when(observer.getRoleType()).thenReturn(registeredRoleType(roleType))
-        return observer
-    }
-
     private static PhysicalServerRoleType registeredRoleType(String typeName) {
-        if (KvmPhysicalServerAdapter.type.toString() == typeName) {
-            return KvmPhysicalServerAdapter.type
+        if (KvmResourceAssignmentFactory.type.toString() == typeName) {
+            return KvmResourceAssignmentFactory.type
         }
-        if (ManagementNodePhysicalServerAdapter.type.toString() == typeName) {
-            return ManagementNodePhysicalServerAdapter.type
+        if (ManagementNodeResourceAssignmentFactory.type.toString() == typeName) {
+            return ManagementNodeResourceAssignmentFactory.type
         }
-        if (ZbsResourceUsageObserver.type.toString() == typeName) {
-            return ZbsResourceUsageObserver.type
+        if (ZbsResourceAssignmentFactory.type.toString() == typeName) {
+            return ZbsResourceAssignmentFactory.type
         }
         PhysicalServerRoleType type = testRoleTypes[typeName]
         if (type == null) {
@@ -594,19 +646,6 @@ services:
             testRoleTypes[typeName] = type
         }
         return type
-    }
-
-    private static PluginRegistry registry(
-            List<PhysicalServerResourceAssignmentController> controllers,
-            List<PhysicalServerResourceAssignmentObserver> assignmentObservers,
-            List<PhysicalServerResourceUsageObserver> usageObservers,
-            List<PhysicalServerRoleAssociationProvider> associations) {
-        PluginRegistry registry = mock(PluginRegistry.class)
-        when(registry.getExtensionList(PhysicalServerResourceAssignmentController.class)).thenReturn(controllers)
-        when(registry.getExtensionList(PhysicalServerResourceAssignmentObserver.class)).thenReturn(assignmentObservers)
-        when(registry.getExtensionList(PhysicalServerResourceUsageObserver.class)).thenReturn(usageObservers)
-        when(registry.getExtensionList(PhysicalServerRoleAssociationProvider.class)).thenReturn(associations)
-        return registry
     }
 
     private static void assertFailure(String expectedMessage, Closure operation) {

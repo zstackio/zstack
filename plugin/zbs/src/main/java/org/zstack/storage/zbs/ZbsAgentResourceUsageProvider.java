@@ -6,7 +6,6 @@ import org.zstack.header.errorcode.ErrorCode;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -19,19 +18,17 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
 
     @Override
     public boolean isAvailable(ZbsNodeRef nodeRef) {
-        return nodeRef != null && nodeRef.getSerialNumber() != null && !nodeRef.getNodeAddresses().isEmpty();
+        return nodeRef != null && nodeRef.getSerialNumber() != null && nodeRef.getNodeAddress() != null;
     }
 
     @Override
     public void query(
             ZbsNodeRef nodeRef,
             Collection<String> cgroupNames, ReturnValueCompletion<List<ZbsCgroupResourceUsage>> completion) {
-        List<String> addresses = new ArrayList<>(nodeRef.getNodeAddresses());
-        Collections.sort(addresses);
         ResourceUsageCommand command = new ResourceUsageCommand();
         command.setCgroupNames(new ArrayList<>(cgroupNames));
         MdsInfo mds = new MdsInfo();
-        mds.setAddr(addresses.get(0));
+        mds.setAddr(nodeRef.getNodeAddress());
         new ZbsPrimaryStorageMdsBase(mds).httpCall(
                 GET_RESOURCE_USAGE_PATH,
                 command, ResourceUsageResponse.class, new ReturnValueCompletion<ResourceUsageResponse>(completion) {

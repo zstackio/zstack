@@ -49,6 +49,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`PhysicalServerResourceAssignmentVO` (
 
 CALL ADD_COLUMN('HostEO', 'serverUuid', 'VARCHAR(32)', 1, NULL);
 CALL ADD_COLUMN('ManagementNodeVO', 'serverUuid', 'VARCHAR(32)', 1, NULL);
+CALL ADD_COLUMN('ImageStoreBackupStorageVO', 'serverUuid', 'VARCHAR(32)', 1, NULL);
 
 UPDATE `zstack`.`HostEO`
 SET `serverUuid` = NULL

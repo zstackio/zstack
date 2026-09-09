@@ -17,12 +17,6 @@
     <bean id="PhysicalServerCpuPlanner"
           class="org.zstack.physicalserver.PhysicalServerCpuPlanner"/>
 
-    <bean id="PhysicalServerResourceAssignmentService"
-          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentService"/>
-
-    <bean id="PhysicalServerResourceAssignmentApplier"
-          class="org.zstack.physicalserver.PhysicalServerResourceAssignmentApplier"/>
-
     <bean id="PhysicalServerResourceAssignmentGlobalConfig"
           class="org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig">
         <zstack:plugin>
@@ -34,7 +28,6 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerManager"/>
         </zstack:plugin>
     </bean>

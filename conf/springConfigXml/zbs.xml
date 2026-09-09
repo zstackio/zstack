@@ -43,12 +43,18 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="ZbsResourceUsageObserver"
-          class="org.zstack.storage.zbs.ZbsResourceUsageObserver">
+    <bean id="ZbsResourceAssignmentFactory"
+          class="org.zstack.storage.zbs.ZbsResourceAssignmentFactory">
         <zstack:plugin>
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentObserver" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory" />
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+    <bean id="ZbsResourceAssignmentCascadeExtension"
+          class="org.zstack.storage.zbs.ZbsResourceAssignmentCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint" />
         </zstack:plugin>
     </bean>
 </beans>

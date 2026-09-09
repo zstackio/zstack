@@ -4,14 +4,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.math.BigInteger;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedSet;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 public final class PhysicalServerCpuSet {
@@ -108,41 +105,6 @@ public final class PhysicalServerCpuSet {
             return normalize(left);
         }
         return normalize(left + "," + right);
-    }
-
-    public static String firstAvailable(PhysicalServerCpuTopology topology, Set<Integer> unavailable, int count) {
-        if (count < 1) {
-            throw new IllegalArgumentException("CPU count must be greater than zero");
-        }
-        SortedSet<Integer> available = topology.getOnlineCpus();
-        if (unavailable != null) {
-            available.removeAll(unavailable);
-        }
-        List<Integer> selected = new ArrayList<>();
-        for (Integer cpu : available) {
-            selected.add(cpu);
-            if (selected.size() == count) {
-                break;
-            }
-        }
-        return format(selected);
-    }
-
-    public static String firstAvailableExcludingCpuZeroCore(
-            PhysicalServerCpuTopology topology, Set<Integer> unavailable, int count) {
-        Set<Integer> excluded = unavailable == null ? new HashSet<>() : new HashSet<>(unavailable);
-        excluded.addAll(topology.getCpuZeroGroup().getCpus());
-        Map<String, SortedSet<Integer>> cpusByNuma = new TreeMap<>();
-        for (PhysicalServerCpuTopology.CoreGroup group : topology.getCoreGroups()) {
-            cpusByNuma.computeIfAbsent(group.getNumaId(), ignored -> new TreeSet<>()).addAll(group.getCpus());
-        }
-        for (SortedSet<Integer> numaCpus : cpusByNuma.values()) {
-            numaCpus.removeAll(excluded);
-            if (numaCpus.size() >= count) {
-                return format(new ArrayList<>(numaCpus).subList(0, count));
-            }
-        }
-        return firstAvailable(topology, excluded, count);
     }
 
     private static List<Range> parseRanges(String value) {
