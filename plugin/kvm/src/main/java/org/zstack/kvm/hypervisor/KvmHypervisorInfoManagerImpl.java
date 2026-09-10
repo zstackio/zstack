@@ -9,10 +9,11 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
-import org.zstack.core.thread.SyncTask;
-import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.Component;
 import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
@@ -31,6 +32,7 @@ import org.zstack.utils.logging.CLogger;
 import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -56,73 +58,88 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     private CloudBus bus;
     @Autowired
     private KvmHypervisorMetadataStore metadataStore;
-    @Autowired
-    private ThreadFacade thdf;
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
-        final String hostUuid = rsp.getHostInfo().getUuid();
-        final List<ResourceHypervisorInfo> list = rsp.getVmInfoList().stream()
-                .map(info -> ResourceHypervisorInfo.fromVmVirtualizerInfo(info, hostUuid))
-                .collect(Collectors.toList());
-        list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(rsp.getHostInfo()));
-        save(list);
-
-        logger.debug(String.format("submit GetVirtualizerInfoRsp of host[uuid:%s] to the serialized save lane",
-                rsp.getHostInfo().getUuid()));
+        saveSerially(toResourceHypervisorInfoList(rsp.getHostInfo().getUuid(), rsp.getHostInfo(), rsp.getVmInfoList()));
     }
 
     @Override
     public void saveHostInfo(VirtualizerInfoTO info) {
-        save(Collections.singletonList(ResourceHypervisorInfo.fromHostVirtualizerInfo(info)));
-        logger.debug(String.format("submit VirtualizerInfoTO of host[uuid:%s] to the serialized save lane", info.getUuid()));
+        saveSerially(toResourceHypervisorInfoList(info.getUuid(), info, null));
     }
 
     @Override
     public void saveVmInfo(VirtualizerInfoTO info) {
-        save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
-        logger.debug(String.format("submit VirtualizerInfoTO of vm[uuid:%s] to the serialized save lane", info.getUuid()));
-    }
+        final String hostUuid = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, info.getUuid())
+                .select(VmInstanceVO_.hostUuid)
+                .findValue();
+        if (hostUuid == null) {
+            logger.debug(String.format("vm[uuid:%s] has no host, skip saving its hypervisor info", info.getUuid()));
+            return;
+        }
 
-    private void save(List<ResourceHypervisorInfo> list) {
-        submitSerializedSave(list);
+        saveHypervisorInfoOnHostOwnerNode(hostUuid, null, Collections.singletonList(info));
     }
 
     /*
-     * The same hypervisor info is reported by several asynchronous paths (the StartVm response and the
-     * libvirtReportStart event when a vm starts, host reconnecting, refresh after vm migration). save() is a
-     * select-then-insert, so concurrent reports of the same uuid would both see the row as absent and the
-     * later transaction would violate the primary key of KvmHypervisorInfoVO. Writing through one serialized
-     * lane (syncLevel = 1) makes those reports run one after another, so the later one takes the update path;
-     * saveNewHypervisorInfoList() keeps the insert conflict fallback for the multi-management-node case.
+     * A hypervisor info reported by the vm create flow is written by the management node owning the host,
+     * the same management node that writes the info reported by the libvirt events (GetVirtualizerInfoMsg).
+     * Sending a host message here keeps the write in the host module, instead of writing the row from the
+     * caller, which may live on another management node.
      */
-    void submitSerializedSave(List<ResourceHypervisorInfo> list) {
-        thdf.syncSubmit(new SyncTask<Void>() {
-            @Override
-            public String getSyncSignature() {
-                return SAVE_SYNC_SIGNATURE;
-            }
+    private void saveHypervisorInfoOnHostOwnerNode(String hostUuid, VirtualizerInfoTO hostInfo, List<VirtualizerInfoTO> vmInfoList) {
+        SaveKvmHypervisorInfoMsg msg = new SaveKvmHypervisorInfoMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setHostInfo(hostInfo);
+        msg.setVmInfoList(vmInfoList);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg);
+    }
 
-            @Override
-            public int getSyncLevel() {
-                return 1;
-            }
+    /**
+     * Called by the host module on the management node owning the host, see SaveKvmHypervisorInfoMsg.
+     */
+    @Override
+    public void saveOnHostOwnerNode(String hostUuid, VirtualizerInfoTO hostInfo, List<VirtualizerInfoTO> vmInfoList) {
+        saveSerially(toResourceHypervisorInfoList(hostUuid, hostInfo, vmInfoList));
+    }
 
-            @Override
-            public String getName() {
-                return SAVE_SYNC_SIGNATURE;
-            }
-
-            @Override
-            public Void call() {
-                saveSerially(list);
-                return null;
-            }
-        });
+    private List<ResourceHypervisorInfo> toResourceHypervisorInfoList(String hostUuid, VirtualizerInfoTO hostInfo,
+                                                                     List<VirtualizerInfoTO> vmInfoList) {
+        final List<ResourceHypervisorInfo> list = new ArrayList<>();
+        if (hostInfo != null) {
+            list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(hostInfo));
+        }
+        if (vmInfoList != null) {
+            vmInfoList.forEach(info -> list.add(ResourceHypervisorInfo.fromVmVirtualizerInfo(info, hostUuid)));
+        }
+        return list;
     }
 
     @Transactional
+    @Deferred
     void saveSerially(List<ResourceHypervisorInfo> list) {
+        if (list.isEmpty()) {
+            return;
+        }
+
+        /*
+         * The host message queue allows concurrent tasks, so serialize the row writes by a global lock,
+         * keyed by the resource uuid, no matter which path reports the info.
+         */
+        final List<String> uuids = list.stream()
+                .map(info -> info.uuid)
+                .sorted()
+                .distinct()
+                .collect(Collectors.toList());
+        for (String uuid : uuids) {
+            GLock lock = new GLock(String.format("%s-%s", SAVE_SYNC_SIGNATURE, uuid), TimeUnit.MINUTES.toSeconds(30));
+            lock.lock();
+            Defer.defer(lock::unlock);
+        }
+
         Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
                 .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
 

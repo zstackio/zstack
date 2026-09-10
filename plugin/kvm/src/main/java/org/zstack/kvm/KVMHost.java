@@ -89,6 +89,7 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
+import org.zstack.kvm.hypervisor.SaveKvmHypervisorInfoMsg;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -768,6 +769,8 @@ public class KVMHost extends HostBase implements Host {
             handle((GetVmDeviceAddressMsg) msg);
         } else if (msg instanceof GetVirtualizerInfoMsg) {
             handle((GetVirtualizerInfoMsg) msg);
+        } else if (msg instanceof SaveKvmHypervisorInfoMsg) {
+            handle((SaveKvmHypervisorInfoMsg) msg);
         } else if (msg instanceof CheckHostCapacityMsg) {
             handle((CheckHostCapacityMsg) msg);
         } else if (msg instanceof ConfigPrimaryVmMsg) {
@@ -2242,6 +2245,10 @@ public class KVMHost extends HostBase implements Host {
                         chain.next();
                     }
                 }));
+    }
+
+    private void handle(SaveKvmHypervisorInfoMsg msg) {
+        hypervisorManager.saveOnHostOwnerNode(msg.getHostUuid(), msg.getHostInfo(), msg.getVmInfoList());
     }
 
     /**
