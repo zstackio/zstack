@@ -13,9 +13,11 @@ import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO;
 
 import javax.persistence.PersistenceException;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.anyCollection;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -28,6 +30,7 @@ import static org.mockito.Mockito.verify;
  */
 public class KvmHypervisorInfoManagerConcurrentInsertTest {
     private static final String VM_UUID = "4a6173618107489e8013f294e37a533d";
+    private static final String HOST_UUID = "61150909000040008000000000000011";
 
     @Mock
     private DatabaseFacade db;
@@ -50,13 +53,17 @@ public class KvmHypervisorInfoManagerConcurrentInsertTest {
     }
 
     @Test
-    public void fallsBackToUpdateWhenAnotherTransactionInsertedTheSameRow() {
-        KvmHypervisorInfoVO info = hypervisorInfo();
+    public void fallsBackPerUuidWhenTheBatchHitsAConcurrentInsert() {
+        KvmHypervisorInfoVO concurrent = hypervisorInfo(VM_UUID);
+        KvmHypervisorInfoVO missing = hypervisorInfo(HOST_UUID);
         doThrow(duplicateEntry()).when(db).persistCollection(anyCollection());
+        doReturn(concurrent).when(db).findByUuid(VM_UUID, KvmHypervisorInfoVO.class);
+        doReturn(null).when(db).findByUuid(HOST_UUID, KvmHypervisorInfoVO.class);
 
-        manager.saveNewHypervisorInfoList(Collections.singletonList(info));
+        manager.saveNewHypervisorInfoList(Arrays.asList(concurrent, missing));
 
-        verify(db).updateCollection(Collections.singletonList(info));
+        verify(db).update(concurrent);
+        verify(db).persist(missing);
     }
 
     @Test
@@ -76,8 +83,12 @@ public class KvmHypervisorInfoManagerConcurrentInsertTest {
     }
 
     private KvmHypervisorInfoVO hypervisorInfo() {
+        return hypervisorInfo(VM_UUID);
+    }
+
+    private KvmHypervisorInfoVO hypervisorInfo(String uuid) {
         KvmHypervisorInfoVO info = new KvmHypervisorInfoVO();
-        info.setUuid(VM_UUID);
+        info.setUuid(uuid);
         info.setHypervisor("qemu-kvm");
         info.setVersion("6.2.0-575.g0f7879b080.el8");
         return info;

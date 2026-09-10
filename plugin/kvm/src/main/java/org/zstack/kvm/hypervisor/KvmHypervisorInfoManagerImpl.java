@@ -185,7 +185,18 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
             logger.debug(String.format("hypervisor info[uuid:%s] has been written concurrently, fallback to update",
                     infoList.stream().map(KvmHypervisorInfoVO::getUuid).collect(Collectors.joining(","))));
-            db.updateCollection(infoList);
+            /*
+             * The batch may contain the host row and several vm rows, and only the conflicting uuid was
+             * inserted by the concurrent writer. Re-check every uuid so the other new rows are still
+             * inserted instead of being dropped by a plain batch update.
+             */
+            for (KvmHypervisorInfoVO info : infoList) {
+                if (db.findByUuid(info.getUuid(), KvmHypervisorInfoVO.class) == null) {
+                    db.persist(info);
+                } else {
+                    db.update(info);
+                }
+            }
         }
     }
 
