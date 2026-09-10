@@ -3,10 +3,13 @@ package org.zstack.test.integration.networksecuritypolicyschedule
 import org.springframework.http.HttpEntity
 import org.zstack.header.Constants
 import org.zstack.core.db.Q
+import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO
+import org.zstack.network.securitygroup.ApplySecurityGroupRulesOnHostMsg
 import org.zstack.network.securitygroup.SecurityGroupConstant
 import org.zstack.network.securitygroup.SecurityGroupRuleState
 import org.zstack.network.securitygroup.SecurityGroupRuleVO
@@ -28,6 +31,9 @@ import org.zstack.utils.gson.JSONObjectUtil
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 class SecurityGroupScheduledVmLifecycleCase extends SubCase {
     EnvSpec env
@@ -277,6 +283,82 @@ class SecurityGroupScheduledVmLifecycleCase extends SubCase {
                 .eq(SecurityGroupRuleVO_.dstPortRange, scheduledPort)
                 .count()
         assert enabledRules == 1
+
+        // Delay a refresh already routed to host1 until the VM has migrated to host2.
+        applications.clear()
+        CountDownLatch refreshReceived = new CountDownLatch(1)
+        CountDownLatch releaseRefresh = new CountDownLatch(1)
+        CountDownLatch scanDone = new CountDownLatch(1)
+        AtomicReference<ErrorCode> scanError = new AtomicReference<>()
+        AtomicReference<Throwable> notificationFailure = new AtomicReference<>()
+        Closure removeNotifier = notifyWhenReceivedMessage(ApplySecurityGroupRulesOnHostMsg.class) {
+            ApplySecurityGroupRulesOnHostMsg msg ->
+                if (msg.hostUuid == host1.uuid && msg.securityGroupUuid == securityGroup.uuid) {
+                    refreshReceived.countDown()
+                    if (!releaseRefresh.await(30, TimeUnit.SECONDS)) {
+                        notificationFailure.compareAndSet(null, new AssertionError(
+                                "source host refresh was not released: hostUuid=${host1.uuid}"))
+                    }
+                }
+        }
+        Closure sourceApplicationCount = {
+            synchronized (applications) {
+                applications.count { it.hostUuid == host1.uuid }
+            }
+        }
+        int sourceApplicationsBeforeRelease = 0
+        try {
+            scheduleFacade.setClock(Clock.fixed(
+                    Instant.parse("2026-07-30T10:00:00Z"), ZoneOffset.UTC))
+            scanTask.runOnce(new Completion(null) {
+                @Override
+                void success() {
+                    scanDone.countDown()
+                }
+
+                @Override
+                void fail(ErrorCode errorCode) {
+                    scanError.set(errorCode)
+                    scanDone.countDown()
+                }
+            })
+            assert refreshReceived.await(10, TimeUnit.SECONDS) :
+                    "schedule expiry did not route a refresh to the source host: hostUuid=${host1.uuid}"
+
+            vm = migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = host2.uuid
+            } as VmInstanceInventory
+            assert vm.hostUuid == host2.uuid && vm.state == "Running" :
+                    "VM did not finish migration: expectedHost=${host2.uuid}, " +
+                            "actualHost=${vm.hostUuid}, state=${vm.state}"
+            retryInSecs {
+                def destination = applications.find {
+                    it.hostUuid == host2.uuid && it.command.ruleTOs.containsKey(securityGroup.uuid)
+                }
+                assert destination != null :
+                        "migration did not apply rules on the destination host: applications=${applications}"
+                assert !destination.command.ruleTOs.get(securityGroup.uuid).any {
+                    it.dstPortRange == scheduledPort
+                } : "migration restored expired port ${scheduledPort} on host ${host2.uuid}"
+            }
+            sourceApplicationsBeforeRelease = sourceApplicationCount()
+        } finally {
+            releaseRefresh.countDown()
+            removeNotifier()
+        }
+        assert scanDone.await(10, TimeUnit.SECONDS) :
+                "source host refresh did not finish after migration: hostUuid=${host1.uuid}"
+        assert notificationFailure.get() == null :
+                "source host refresh notification failed: error=${notificationFailure.get()}"
+        assert scanError.get() == null :
+                "schedule refresh failed after migration: error=${scanError.get()}"
+        int actualSourceApplications = sourceApplicationCount()
+        assert actualSourceApplications == sourceApplicationsBeforeRelease :
+                "refresh routed to the old host applied rules after the VM moved: " +
+                        "expectedCommands=${sourceApplicationsBeforeRelease}, " +
+                        "actualCommands=${actualSourceApplications}, " +
+                        "applications=${applications}"
 
         deleteNetworkSecurityPolicySchedule {
             uuid = schedule.uuid
