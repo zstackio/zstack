@@ -7,9 +7,13 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.ArgumentCaptor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoVO;
+import org.zstack.kvm.hypervisor.datatype.ResourceHypervisorInfo;
 
 import javax.persistence.PersistenceException;
 import java.sql.SQLException;
@@ -31,12 +35,26 @@ public class KvmHypervisorInfoManagerConcurrentInsertTest {
 
     @Mock
     private DatabaseFacade db;
+    @Mock
+    private ThreadFacade thdf;
     @InjectMocks
     private KvmHypervisorInfoManagerImpl manager;
 
     @Before
     public void setUp() {
         MockitoAnnotations.openMocks(this);
+    }
+
+    @Test
+    public void writesThroughOneSerializedLane() {
+        ArgumentCaptor<SyncTask> captor = ArgumentCaptor.forClass(SyncTask.class);
+
+        manager.submitSerializedSave(Collections.singletonList(new ResourceHypervisorInfo()));
+
+        verify(thdf).syncSubmit(captor.capture());
+        SyncTask<?> task = captor.getValue();
+        Assert.assertEquals("kvm-hypervisor-info-save", task.getSyncSignature());
+        Assert.assertEquals(1, task.getSyncLevel());
     }
 
     @Test

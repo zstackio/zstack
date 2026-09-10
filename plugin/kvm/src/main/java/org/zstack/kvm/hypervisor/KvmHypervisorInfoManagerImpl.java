@@ -11,6 +11,8 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.thread.SyncTask;
+import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.Component;
 import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
@@ -42,6 +44,7 @@ import static org.zstack.kvm.hypervisor.HypervisorMetadataCollector.HypervisorMe
  */
 public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, Component {
     private static final CLogger logger = Utils.getLogger(KvmHypervisorInfoManagerImpl.class);
+    private static final String SAVE_SYNC_SIGNATURE = "kvm-hypervisor-info-save";
 
     @Autowired
     private DatabaseFacade db;
@@ -53,6 +56,8 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
     private CloudBus bus;
     @Autowired
     private KvmHypervisorMetadataStore metadataStore;
+    @Autowired
+    private ThreadFacade thdf;
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
@@ -63,24 +68,61 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(rsp.getHostInfo()));
         save(list);
 
-        logger.debug(String.format("save GetVirtualizerInfoRsp for host[uuid:%s] successfully",
+        logger.debug(String.format("submit GetVirtualizerInfoRsp of host[uuid:%s] to the serialized save lane",
                 rsp.getHostInfo().getUuid()));
     }
 
     @Override
     public void saveHostInfo(VirtualizerInfoTO info) {
         save(Collections.singletonList(ResourceHypervisorInfo.fromHostVirtualizerInfo(info)));
-        logger.debug(String.format("save VirtualizerInfoTO for host[uuid:%s] successfully", info.getUuid()));
+        logger.debug(String.format("submit VirtualizerInfoTO of host[uuid:%s] to the serialized save lane", info.getUuid()));
     }
 
     @Override
     public void saveVmInfo(VirtualizerInfoTO info) {
         save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
-        logger.debug(String.format("save VirtualizerInfoTO for vm[uuid:%s] successfully", info.getUuid()));
+        logger.debug(String.format("submit VirtualizerInfoTO of vm[uuid:%s] to the serialized save lane", info.getUuid()));
+    }
+
+    private void save(List<ResourceHypervisorInfo> list) {
+        submitSerializedSave(list);
+    }
+
+    /*
+     * The same hypervisor info is reported by several asynchronous paths (the StartVm response and the
+     * libvirtReportStart event when a vm starts, host reconnecting, refresh after vm migration). save() is a
+     * select-then-insert, so concurrent reports of the same uuid would both see the row as absent and the
+     * later transaction would violate the primary key of KvmHypervisorInfoVO. Writing through one serialized
+     * lane (syncLevel = 1) makes those reports run one after another, so the later one takes the update path;
+     * saveNewHypervisorInfoList() keeps the insert conflict fallback for the multi-management-node case.
+     */
+    void submitSerializedSave(List<ResourceHypervisorInfo> list) {
+        thdf.syncSubmit(new SyncTask<Void>() {
+            @Override
+            public String getSyncSignature() {
+                return SAVE_SYNC_SIGNATURE;
+            }
+
+            @Override
+            public int getSyncLevel() {
+                return 1;
+            }
+
+            @Override
+            public String getName() {
+                return SAVE_SYNC_SIGNATURE;
+            }
+
+            @Override
+            public Void call() {
+                saveSerially(list);
+                return null;
+            }
+        });
     }
 
     @Transactional
-    private void save(List<ResourceHypervisorInfo> list) {
+    void saveSerially(List<ResourceHypervisorInfo> list) {
         Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
                 .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
 
@@ -109,6 +151,9 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
                     .map(ResourceHypervisorInfo::generate)
                     .collect(Collectors.toList()));
         }
+
+        logger.debug(String.format("saved hypervisor info of uuid[%s] successfully",
+                uuidInfoMap.keySet().stream().sorted().collect(Collectors.joining(","))));
     }
 
     /*
