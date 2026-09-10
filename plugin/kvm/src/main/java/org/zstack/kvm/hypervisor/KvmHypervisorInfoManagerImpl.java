@@ -61,12 +61,13 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
-        saveSerially(toResourceHypervisorInfoList(rsp.getHostInfo().getUuid(), rsp.getHostInfo(), rsp.getVmInfoList()));
+        saveSerially(rsp.getHostInfo().getUuid(),
+                toResourceHypervisorInfoList(rsp.getHostInfo().getUuid(), rsp.getHostInfo(), rsp.getVmInfoList()));
     }
 
     @Override
     public void saveHostInfo(VirtualizerInfoTO info) {
-        saveSerially(toResourceHypervisorInfoList(info.getUuid(), info, null));
+        saveSerially(info.getUuid(), toResourceHypervisorInfoList(info.getUuid(), info, null));
     }
 
     @Override
@@ -103,7 +104,7 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
      */
     @Override
     public void saveOnHostOwnerNode(String hostUuid, VirtualizerInfoTO hostInfo, List<VirtualizerInfoTO> vmInfoList) {
-        saveSerially(toResourceHypervisorInfoList(hostUuid, hostInfo, vmInfoList));
+        saveSerially(hostUuid, toResourceHypervisorInfoList(hostUuid, hostInfo, vmInfoList));
     }
 
     private List<ResourceHypervisorInfo> toResourceHypervisorInfoList(String hostUuid, VirtualizerInfoTO hostInfo,
@@ -120,25 +121,19 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
     @Transactional
     @Deferred
-    void saveSerially(List<ResourceHypervisorInfo> list) {
+    void saveSerially(String hostUuid, List<ResourceHypervisorInfo> list) {
         if (list.isEmpty()) {
             return;
         }
 
         /*
-         * The host message queue allows concurrent tasks, so serialize the row writes by a global lock,
-         * keyed by the resource uuid, no matter which path reports the info.
+         * The host message queue allows concurrent tasks, so serialize the row writes by a global lock
+         * keyed by the host uuid, no matter which path reports the info. Only a few rows are written here,
+         * so the coarse lock granularity is acceptable.
          */
-        final List<String> uuids = list.stream()
-                .map(info -> info.uuid)
-                .sorted()
-                .distinct()
-                .collect(Collectors.toList());
-        for (String uuid : uuids) {
-            GLock lock = new GLock(String.format("%s-%s", SAVE_SYNC_SIGNATURE, uuid), TimeUnit.MINUTES.toSeconds(30));
-            lock.lock();
-            Defer.defer(lock::unlock);
-        }
+        GLock lock = new GLock(String.format("%s-%s", SAVE_SYNC_SIGNATURE, hostUuid), TimeUnit.MINUTES.toSeconds(30));
+        lock.lock();
+        Defer.defer(lock::unlock);
 
         Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
                 .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
