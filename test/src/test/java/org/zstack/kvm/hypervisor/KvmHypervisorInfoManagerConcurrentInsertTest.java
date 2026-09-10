@@ -21,8 +21,10 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 /**
- * 一个 host/vm uuid 的 hypervisor 信息可能被多条异步路径并发上报（云主机启动时 StartVm 响应与
- * libvirtReportStart 事件），先查后写会同时判定成「行不存在」，后提交的事务会违反主键。
+ * The hypervisor info of the same host/vm uuid is reported by several asynchronous paths
+ * (the StartVm response and the libvirtReportStart event when a vm starts). save() checks
+ * then inserts, so concurrent paths both see the row as absent and the later transaction
+ * violates the primary key of KvmHypervisorInfoVO; the insert must fall back to an update.
  */
 public class KvmHypervisorInfoManagerConcurrentInsertTest {
     private static final String VM_UUID = "4a6173618107489e8013f294e37a533d";
