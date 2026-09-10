@@ -1,6 +1,8 @@
 package org.zstack.kvm.hypervisor;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
@@ -20,9 +22,11 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.hypervisor.datatype.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import java.util.*;
 import java.util.function.Function;
@@ -101,9 +105,30 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         }
 
         if (!toPersistList.isEmpty()) {
-            db.persistCollection(toPersistList.stream()
+            saveNewHypervisorInfoList(toPersistList.stream()
                     .map(ResourceHypervisorInfo::generate)
                     .collect(Collectors.toList()));
+        }
+    }
+
+    /*
+     * The same hypervisor info is reported by several asynchronous paths (the StartVm response and the
+     * libvirtReportStart event when a vm starts, host reconnecting, refresh after vm migration).
+     * save() is a select-then-insert, so concurrent paths both see the row as absent and the later
+     * transaction violates the primary key of KvmHypervisorInfoVO. Fall back to update to keep it idempotent.
+     */
+    void saveNewHypervisorInfoList(List<KvmHypervisorInfoVO> infoList) {
+        try {
+            db.persistCollection(infoList);
+        } catch (DataIntegrityViolationException | PersistenceException e) {
+            if (!ExceptionDSL.isCausedBy(e, ConstraintViolationException.class)
+                    && !ExceptionDSL.isCausedBy(e, DataIntegrityViolationException.class)) {
+                throw e;
+            }
+
+            logger.debug(String.format("hypervisor info[uuid:%s] has been written concurrently, fallback to update",
+                    infoList.stream().map(KvmHypervisorInfoVO::getUuid).collect(Collectors.joining(","))));
+            db.updateCollection(infoList);
         }
     }
 
