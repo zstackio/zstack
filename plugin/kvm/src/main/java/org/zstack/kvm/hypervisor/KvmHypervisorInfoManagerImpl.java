@@ -1,14 +1,19 @@
 package org.zstack.kvm.hypervisor;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.Component;
 import org.zstack.header.host.GetVirtualizerInfoMsg;
 import org.zstack.header.host.HostConstant;
@@ -20,11 +25,14 @@ import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.hypervisor.datatype.*;
 import org.zstack.utils.CollectionDSL;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.ExceptionDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.PersistenceException;
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -38,6 +46,7 @@ import static org.zstack.kvm.hypervisor.HypervisorMetadataCollector.HypervisorMe
  */
 public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, Component {
     private static final CLogger logger = Utils.getLogger(KvmHypervisorInfoManagerImpl.class);
+    private static final String SAVE_SYNC_SIGNATURE = "kvm-hypervisor-info-save";
 
     @Autowired
     private DatabaseFacade db;
@@ -52,31 +61,80 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
 
     @Override
     public void save(GetVirtualizerInfoRsp rsp) {
-        final String hostUuid = rsp.getHostInfo().getUuid();
-        final List<ResourceHypervisorInfo> list = rsp.getVmInfoList().stream()
-                .map(info -> ResourceHypervisorInfo.fromVmVirtualizerInfo(info, hostUuid))
-                .collect(Collectors.toList());
-        list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(rsp.getHostInfo()));
-        save(list);
-
-        logger.debug(String.format("save GetVirtualizerInfoRsp for host[uuid:%s] successfully",
-                rsp.getHostInfo().getUuid()));
+        saveSerially(rsp.getHostInfo().getUuid(),
+                toResourceHypervisorInfoList(rsp.getHostInfo().getUuid(), rsp.getHostInfo(), rsp.getVmInfoList()));
     }
 
     @Override
     public void saveHostInfo(VirtualizerInfoTO info) {
-        save(Collections.singletonList(ResourceHypervisorInfo.fromHostVirtualizerInfo(info)));
-        logger.debug(String.format("save VirtualizerInfoTO for host[uuid:%s] successfully", info.getUuid()));
+        saveSerially(info.getUuid(), toResourceHypervisorInfoList(info.getUuid(), info, null));
     }
 
     @Override
     public void saveVmInfo(VirtualizerInfoTO info) {
-        save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
-        logger.debug(String.format("save VirtualizerInfoTO for vm[uuid:%s] successfully", info.getUuid()));
+        final String hostUuid = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, info.getUuid())
+                .select(VmInstanceVO_.hostUuid)
+                .findValue();
+        if (hostUuid == null) {
+            logger.debug(String.format("vm[uuid:%s] has no host, skip saving its hypervisor info", info.getUuid()));
+            return;
+        }
+
+        saveHypervisorInfoOnHostOwnerNode(hostUuid, null, Collections.singletonList(info));
+    }
+
+    /*
+     * A hypervisor info reported by the vm create flow is written by the management node owning the host,
+     * the same management node that writes the info reported by the libvirt events (GetVirtualizerInfoMsg).
+     * Sending a host message here keeps the write in the host module, instead of writing the row from the
+     * caller, which may live on another management node.
+     */
+    private void saveHypervisorInfoOnHostOwnerNode(String hostUuid, VirtualizerInfoTO hostInfo, List<VirtualizerInfoTO> vmInfoList) {
+        SaveKvmHypervisorInfoMsg msg = new SaveKvmHypervisorInfoMsg();
+        msg.setHostUuid(hostUuid);
+        msg.setHostInfo(hostInfo);
+        msg.setVmInfoList(vmInfoList);
+        bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
+        bus.send(msg);
+    }
+
+    /**
+     * Called by the host module on the management node owning the host, see SaveKvmHypervisorInfoMsg.
+     */
+    @Override
+    public void saveOnHostOwnerNode(String hostUuid, VirtualizerInfoTO hostInfo, List<VirtualizerInfoTO> vmInfoList) {
+        saveSerially(hostUuid, toResourceHypervisorInfoList(hostUuid, hostInfo, vmInfoList));
+    }
+
+    private List<ResourceHypervisorInfo> toResourceHypervisorInfoList(String hostUuid, VirtualizerInfoTO hostInfo,
+                                                                     List<VirtualizerInfoTO> vmInfoList) {
+        final List<ResourceHypervisorInfo> list = new ArrayList<>();
+        if (hostInfo != null) {
+            list.add(ResourceHypervisorInfo.fromHostVirtualizerInfo(hostInfo));
+        }
+        if (vmInfoList != null) {
+            vmInfoList.forEach(info -> list.add(ResourceHypervisorInfo.fromVmVirtualizerInfo(info, hostUuid)));
+        }
+        return list;
     }
 
     @Transactional
-    private void save(List<ResourceHypervisorInfo> list) {
+    @Deferred
+    void saveSerially(String hostUuid, List<ResourceHypervisorInfo> list) {
+        if (list.isEmpty()) {
+            return;
+        }
+
+        /*
+         * The host message queue allows concurrent tasks, so serialize the row writes by a global lock
+         * keyed by the host uuid, no matter which path reports the info. Only a few rows are written here,
+         * so the coarse lock granularity is acceptable.
+         */
+        GLock lock = new GLock(String.format("%s-%s", SAVE_SYNC_SIGNATURE, hostUuid), TimeUnit.MINUTES.toSeconds(30));
+        lock.lock();
+        Defer.defer(lock::unlock);
+
         Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
                 .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
 
@@ -101,9 +159,44 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         }
 
         if (!toPersistList.isEmpty()) {
-            db.persistCollection(toPersistList.stream()
+            saveNewHypervisorInfoList(toPersistList.stream()
                     .map(ResourceHypervisorInfo::generate)
                     .collect(Collectors.toList()));
+        }
+
+        logger.debug(String.format("saved hypervisor info of uuid[%s] successfully",
+                uuidInfoMap.keySet().stream().sorted().collect(Collectors.joining(","))));
+    }
+
+    /*
+     * The same hypervisor info is reported by several asynchronous paths (the StartVm response and the
+     * libvirtReportStart event when a vm starts, host reconnecting, refresh after vm migration).
+     * save() is a select-then-insert, so concurrent paths both see the row as absent and the later
+     * transaction violates the primary key of KvmHypervisorInfoVO. Fall back to update to keep it idempotent.
+     */
+    void saveNewHypervisorInfoList(List<KvmHypervisorInfoVO> infoList) {
+        try {
+            db.persistCollection(infoList);
+        } catch (DataIntegrityViolationException | PersistenceException e) {
+            if (!ExceptionDSL.isCausedBy(e, ConstraintViolationException.class)
+                    && !ExceptionDSL.isCausedBy(e, DataIntegrityViolationException.class)) {
+                throw e;
+            }
+
+            logger.debug(String.format("hypervisor info[uuid:%s] has been written concurrently, fallback to update",
+                    infoList.stream().map(KvmHypervisorInfoVO::getUuid).collect(Collectors.joining(","))));
+            /*
+             * The batch may contain the host row and several vm rows, and only the conflicting uuid was
+             * inserted by the concurrent writer. Re-check every uuid so the other new rows are still
+             * inserted instead of being dropped by a plain batch update.
+             */
+            for (KvmHypervisorInfoVO info : infoList) {
+                if (db.findByUuid(info.getUuid(), KvmHypervisorInfoVO.class) == null) {
+                    db.persist(info);
+                } else {
+                    db.update(info);
+                }
+            }
         }
     }
 
