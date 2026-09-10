@@ -97,6 +97,12 @@
     </bean>
     -->
 
+    <bean id="QuotaReservationReconciler" class="org.zstack.identity.QuotaReservationReconciler">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+
     <bean id="AccountCascadeExtension" class="org.zstack.identity.AccountCascadeExtension">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>

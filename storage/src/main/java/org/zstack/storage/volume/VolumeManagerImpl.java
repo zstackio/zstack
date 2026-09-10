@@ -49,6 +49,7 @@ import org.zstack.header.volume.*;
 import org.zstack.header.volume.APIGetVolumeFormatReply.VolumeFormatReplyStruct;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
 import org.zstack.tag.TagManager;
@@ -1128,6 +1129,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
 
     private void handle(APICreateDataVolumeMsg msg) {
         APICreateDataVolumeEvent evt = new APICreateDataVolumeEvent(msg.getId());
+        if (msg.getResourceUuid() == null) {
+            msg.setResourceUuid(Platform.getUuid());
+        }
+        Map<String, Long> quotaRequests = new HashMap<>();
+        quotaRequests.put("volume.data.num", 1L);
+        quotaRequests.put("volume.capacity", getDataVolumeSize(msg));
+        new QuotaUtil().reserveQuota(msg.getSession().getAccountUuid(), msg.getId(), msg.getResourceUuid(), quotaRequests);
         CreateDataVolumeMsg cmsg = new CreateDataVolumeMsg();
         cmsg.setAccountUuid(msg.getSession().getAccountUuid());
         cmsg.setDiskSize(msg.getDiskSize());
@@ -1144,6 +1152,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             @Override
             public void run(MessageReply reply) {
                 CreateVolumeReply cr = reply.castReply();
+                new QuotaUtil().releaseQuotaReservation(msg.getId());
                 if (!reply.isSuccess()) {
                     evt.setError(reply.getError());
                 } else {
@@ -1152,6 +1161,17 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                 bus.publish(evt);
             }
         });
+    }
+
+    private long getDataVolumeSize(APICreateDataVolumeMsg msg) {
+        if (msg.getDiskOfferingUuid() == null) {
+            return msg.getDiskSize();
+        }
+
+        return Q.New(DiskOfferingVO.class)
+                .select(DiskOfferingVO_.diskSize)
+                .eq(DiskOfferingVO_.uuid, msg.getDiskOfferingUuid())
+                .findValue();
     }
 
     @Override

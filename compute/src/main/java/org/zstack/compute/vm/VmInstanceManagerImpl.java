@@ -1490,21 +1490,104 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     private void handle(final APICreateVmInstanceMsg msg) {
+        if (msg.getResourceUuid() == null) {
+            msg.setResourceUuid(Platform.getUuid());
+        }
+        if (!msg.getStrategy().equals(VmCreationStrategy.JustCreate.toString())) {
+            new QuotaUtil().reserveQuota(msg.getSession().getAccountUuid(), msg.getId(), msg.getResourceUuid(), getVmQuotaRequests(msg));
+        }
         doCreateVmInstance(VmInstanceUtils.fromAPICreateVmInstanceMsg(msg), msg, new ReturnValueCompletion<VmInstanceInventory>(msg) {
             APICreateVmInstanceEvent evt = new APICreateVmInstanceEvent(msg.getId());
 
             @Override
             public void success(VmInstanceInventory inv) {
+                new QuotaUtil().releaseQuotaReservation(msg.getId());
                 evt.setInventory(inv);
                 bus.publish(evt);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                new QuotaUtil().releaseQuotaReservation(msg.getId());
                 evt.setError(errorCode);
                 bus.publish(evt);
             }
         });
+    }
+
+    private Map<String, Long> getVmQuotaRequests(APICreateVmInstanceMsg msg) {
+        Map<String, Long> requests = new HashMap<>();
+        requests.put(VmQuotaConstant.VM_TOTAL_NUM, 1L);
+        requests.put(VmQuotaConstant.VM_RUNNING_NUM, 1L);
+
+        if (msg.getCpuNum() != null) {
+            requests.put(VmQuotaConstant.VM_RUNNING_CPU_NUM, Integer.toUnsignedLong(msg.getCpuNum()));
+        } else {
+            requests.put(VmQuotaConstant.VM_RUNNING_CPU_NUM, Integer.toUnsignedLong(Q.New(InstanceOfferingVO.class)
+                    .select(InstanceOfferingVO_.cpuNum)
+                    .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                    .findValue()));
+        }
+        if (msg.getMemorySize() != null) {
+            requests.put(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, msg.getMemorySize());
+        } else {
+            requests.put(VmQuotaConstant.VM_RUNNING_MEMORY_SIZE, Q.New(InstanceOfferingVO.class)
+                    .select(InstanceOfferingVO_.memorySize)
+                    .eq(InstanceOfferingVO_.uuid, msg.getInstanceOfferingUuid())
+                    .findValue());
+        }
+
+        requests.put(VmQuotaConstant.DATA_VOLUME_NUM, msg.getDataDiskOfferingUuids() == null ? 0L : (long) msg.getDataDiskOfferingUuids().size());
+        requests.put(VmQuotaConstant.VOLUME_SIZE, getVmVolumeSizeRequested(msg));
+        return requests;
+    }
+
+    private long getVmVolumeSizeRequested(APICreateVmInstanceMsg msg) {
+        long volumeSize = 0;
+        ImageMediaType imageMediaType = null;
+        Long imageSize = 0L;
+        if (msg.getImageUuid() != null) {
+            Tuple image = dbf.getEntityManager().createQuery("select img.size, img.mediaType from ImageVO img where img.uuid = :uuid", Tuple.class)
+                    .setParameter("uuid", msg.getImageUuid())
+                    .getSingleResult();
+            imageSize = image.get(0, Long.class);
+            imageMediaType = image.get(1, ImageMediaType.class);
+        }
+
+        List<String> diskOfferingUuids = new ArrayList<>();
+        if (msg.getDataDiskOfferingUuids() != null) {
+            diskOfferingUuids.addAll(msg.getDataDiskOfferingUuids());
+        }
+        if (imageMediaType == ImageMediaType.RootVolumeTemplate) {
+            if (msg.getRootDiskOfferingUuid() == null) {
+                volumeSize += imageSize;
+            } else {
+                diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+            }
+        } else if (imageMediaType == ImageMediaType.ISO) {
+            if (msg.getRootDiskOfferingUuid() != null) {
+                diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+            } else if (msg.getRootDiskSize() != null) {
+                volumeSize += msg.getRootDiskSize();
+            } else {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10261, "rootDiskOfferingUuid cannot be null when image mediaType is ISO"));
+            }
+        } else if (msg.getRootDiskOfferingUuid() != null) {
+            diskOfferingUuids.add(msg.getRootDiskOfferingUuid());
+        } else if (msg.getRootDiskSize() != null) {
+            volumeSize += msg.getRootDiskSize();
+        } else {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10262, "rootDiskOfferingUuid cannot be null when create vm without image"));
+        }
+
+        for (String diskOfferingUuid : diskOfferingUuids) {
+            Long diskSize = Q.New(DiskOfferingVO.class)
+                    .select(DiskOfferingVO_.diskSize)
+                    .eq(DiskOfferingVO_.uuid, diskOfferingUuid)
+                    .findValue();
+            volumeSize += diskSize == null ? 0 : diskSize;
+        }
+        return volumeSize;
     }
 
     private void doDeleteVmNic(VmNicInventory nic, Completion completion) {

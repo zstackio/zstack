@@ -22,6 +22,20 @@
 		<type>java.lang.Integer</type>
 	</config>
 	<config>
+		<name>quota.reservation.timeout</name>
+		<description>The maximum age of a quota reservation without a created resource, in seconds</description>
+		<defaultValue>3600</defaultValue>
+		<category>identity</category>
+		<type>java.lang.Integer</type>
+	</config>
+	<config>
+		<name>quota.reservation.cleanup.interval</name>
+		<description>The interval management server checks stale quota reservations, in seconds</description>
+		<defaultValue>300</defaultValue>
+		<category>identity</category>
+		<type>java.lang.Integer</type>
+	</config>
+	<config>
 		<name>admin.showAllResource</name>
 		<description>A boolean value indicating whether admin account can see resources of user account</description>
 		<defaultValue>true</defaultValue>

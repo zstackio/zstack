@@ -4,9 +4,13 @@ import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -25,10 +29,11 @@ import org.zstack.utils.function.Function;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Query;
 import javax.persistence.Tuple;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
@@ -155,6 +160,110 @@ public class QuotaUtil {
     @Transactional(readOnly = true)
     public void checkQuota(APIMessage msg) {
         checkQuota(msg, msg.getSession().getAccountUuid(), msg.getSession().getAccountUuid());
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void reserveQuota(String accountUuid, String operationUuid, String resourceUuid, Map<String, Long> requests) {
+        if (AccountConstant.isAdminPermission(accountUuid) || isAdminAccount(accountUuid)) {
+            return;
+        }
+        if (requests.isEmpty()) {
+            return;
+        }
+
+        GLock lock = lockQuotaReservation(accountUuid);
+        try {
+        Long existing = dbf.getEntityManager().createQuery(
+                "select count(r) from QuotaReservationVO r where r.operationUuid = :operationUuid", Long.class)
+                .setParameter("operationUuid", operationUuid)
+                .getSingleResult();
+        if (existing != null && existing > 0) {
+            lock.unlock();
+            return;
+        }
+        Map<String, Quota.QuotaPair> pairs = makeQuotaPairs(accountUuid);
+        Map<String, Long> reservations = new HashMap<>();
+        List<Tuple> tuples = dbf.getEntityManager().createQuery(
+                "select r.quotaName, sum(r.amount) from QuotaReservationVO r where r.accountUuid = :accountUuid and r.quotaName in (:quotaNames) group by r.quotaName", Tuple.class)
+                .setParameter("accountUuid", accountUuid)
+                .setParameter("quotaNames", requests.keySet())
+                .getResultList();
+        for (Tuple tuple : tuples) {
+            reservations.put(tuple.get(0, String.class), tuple.get(1, Long.class));
+        }
+        Map<String, Long> limitedRequests = new HashMap<>();
+        for (Map.Entry<String, Long> request : requests.entrySet()) {
+            Quota.QuotaPair pair = pairs.get(request.getKey());
+            if (pair == null || pair.getValue() == Quota.DEFAULT_NO_LIMITATION) {
+                continue;
+            }
+            Long used = acntMgr.getQuotasDefinitions().get(request.getKey()).getQuotaUsage(accountUuid);
+            Long reserved = reservations.get(request.getKey());
+            long total = (used == null ? 0 : used) + (reserved == null ? 0 : reserved);
+            if (total + request.getValue() > pair.getValue()) {
+                throw new ApiMessageInterceptionException(buildQuataExceedError(accountUuid, request.getKey(), pair.getValue(), total, request.getValue()));
+            }
+            limitedRequests.put(request.getKey(), request.getValue());
+        }
+
+        for (Map.Entry<String, Long> request : limitedRequests.entrySet()) {
+            QuotaReservationVO reservation = new QuotaReservationVO();
+            reservation.setAccountUuid(accountUuid);
+            reservation.setQuotaName(request.getKey());
+            reservation.setAmount(request.getValue());
+            reservation.setOperationUuid(operationUuid);
+            reservation.setResourceUuid(resourceUuid);
+            dbf.persist(reservation);
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCompletion(int status) {
+                lock.unlock();
+            }
+        });
+        } catch (Throwable t) {
+            lock.unlock();
+            throw t;
+        }
+    }
+
+    private GLock lockQuotaReservation(String accountUuid) {
+        GLock lock = new GLock(String.format("quota-reservation-%s", accountUuid), 120, dbf);
+        lock.lock();
+        return lock;
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void releaseQuotaReservation(String operationUuid) {
+        Query query = dbf.getEntityManager().createQuery("delete from QuotaReservationVO r where r.operationUuid = :operationUuid");
+        query.setParameter("operationUuid", operationUuid);
+        query.executeUpdate();
+    }
+
+    @Transactional
+    public void releaseExpiredQuotaReservations() {
+        List<Tuple> operations = dbf.getEntityManager().createQuery(
+                "select r.operationUuid, min(r.createDate) from QuotaReservationVO r group by r.operationUuid", Tuple.class)
+                .getResultList();
+        if (operations.isEmpty()) {
+            return;
+        }
+
+        Timestamp expiredDate = new Timestamp(System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(IdentityGlobalConfig.QUOTA_RESERVATION_TIMEOUT.value(Long.class)));
+        Set<String> operationUuids = new HashSet<>();
+        for (Tuple operation : operations) {
+            String operationUuid = operation.get(0, String.class);
+            Timestamp createDate = operation.get(1, Timestamp.class);
+            if (createDate.before(expiredDate)) {
+                operationUuids.add(operationUuid);
+            }
+        }
+
+        if (!operationUuids.isEmpty()) {
+            Query query = dbf.getEntityManager().createQuery("delete from QuotaReservationVO r where r.operationUuid in (:operationUuids)");
+            query.setParameter("operationUuids", operationUuids);
+            query.executeUpdate();
+        }
     }
 
     @Transactional(readOnly = true)
