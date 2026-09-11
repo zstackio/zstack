@@ -275,6 +275,7 @@ public class KvmHypervisorInfoSaveTest {
         error.setCode("test.refresh.failed");
         failed.setError(error);
         callbacks.getAllValues().forEach(callback -> callback.run(failed));
+        verifyNoMoreInteractions(manager);
     }
 
     @Test
