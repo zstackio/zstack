@@ -79,7 +79,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         return areply.getIpInventory();
     }
 
-    private VmNicInventory makeNicInventory(VmInstanceSpec vmSpec, ApplianceVmNicSpec nicSpec, int[] deviceId) {
+    private VmNicInventory makeNicInventory(VmInstanceSpec vmSpec, ApplianceVmNicSpec nicSpec, int[] deviceId, List<UsedIpInventory> allocatedIps) {
         VmNicInventory inv = new VmNicInventory();
         inv.setUuid(Platform.getUuid());
         inv.setL3NetworkUuid(nicSpec.getL3NetworkUuid());
@@ -105,6 +105,7 @@ public class ApplianceVmAllocateNicFlow implements Flow {
             for (Integer version : ipVersions) {
                 String strategy = nicSpec.getAllocatorStrategy();
                 UsedIpInventory ip = acquireIp(nicSpec.getL3NetworkUuid(), inv.getMac(), version, nicSpec.getStaticIp().get(version), strategy, nicSpec.isAllowDuplicatedAddress());
+                allocatedIps.add(ip);
                 /* save first ip to nic */
                 if (inv.getGateway() == null) {
                     inv.setGateway(ip.getGateway());
@@ -136,6 +137,10 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     }
 
     private void removeNicFromDb(List<VmNicInventory> nics) {
+        if (nics.isEmpty()) {
+            return;
+        }
+
         for (VmNicInventory vmNic : nics) {
             VmNicType type = VmNicType.valueOf(vmNic.getType());
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
@@ -147,16 +152,18 @@ public class ApplianceVmAllocateNicFlow implements Flow {
 
     @Override
     public void run(FlowTrigger chain, Map data) {
+        List<UsedIpInventory> allocatedIps = new ArrayList<>();
+        data.put(VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), allocatedIps);
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         ApplianceVmSpec aspec = spec.getExtensionData(ApplianceVmConstant.Params.applianceVmSpec.toString(), ApplianceVmSpec.class);
         int[] deviceId = {0};
 
         List<VmNicInventory> nics = new ArrayList();
-        VmNicInventory mgmtNic = makeNicInventory(spec, aspec.getManagementNic(), deviceId);
+        VmNicInventory mgmtNic = makeNicInventory(spec, aspec.getManagementNic(), deviceId, allocatedIps);
         nics.add(mgmtNic);
 
         for (ApplianceVmNicSpec nicSpec : aspec.getAdditionalNics()) {
-            nics.add(makeNicInventory(spec, nicSpec, deviceId));
+            nics.add(makeNicInventory(spec, nicSpec, deviceId, allocatedIps));
         }
 
         new SQLBatch() {
@@ -190,24 +197,16 @@ public class ApplianceVmAllocateNicFlow implements Flow {
     public void rollback(FlowRollback chain, Map data) {
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
         List<VmNicInventory> nics = spec.getDestNics();
-        if (nics.isEmpty()) {
-            chain.rollback();
-            return;
-        }
+        List<UsedIpInventory> allocatedIps = (List<UsedIpInventory>) data.getOrDefault(
+                VmInstanceConstant.Params.VmAllocateNicFlow_ips.toString(), Collections.emptyList());
 
         List<ReturnIpMsg> rmsgs = new ArrayList<>();
-        for (VmNicInventory nic : nics) {
-            if (nic.getUsedIps() == null || nic.getUsedIps().isEmpty()) {
-                continue;
-            }
-
-            for (UsedIpInventory ip : nic.getUsedIps()) {
-                ReturnIpMsg msg = new ReturnIpMsg();
-                msg.setL3NetworkUuid(nic.getL3NetworkUuid());
-                msg.setUsedIpUuid(ip.getUuid());
-                bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, nic.getL3NetworkUuid());
-                rmsgs.add(msg);
-            }
+        for (UsedIpInventory ip : allocatedIps) {
+            ReturnIpMsg msg = new ReturnIpMsg();
+            msg.setL3NetworkUuid(ip.getL3NetworkUuid());
+            msg.setUsedIpUuid(ip.getUuid());
+            bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, ip.getL3NetworkUuid());
+            rmsgs.add(msg);
         }
 
         if (rmsgs.isEmpty()) {
