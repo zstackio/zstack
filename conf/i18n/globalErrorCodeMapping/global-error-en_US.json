@@ -1816,6 +1816,7 @@
   "ORG_ZSTACK_PORTMIRROR_10012": "The PortMirror service cannot mirror the network interface [%s] to itself",
   "ORG_ZSTACK_ZWATCH_API_10039": "Invalid JSON format for labels. Please ensure that labelsJsonStr is correctly formatted.",
   "ORG_ZSTACK_PORTMIRROR_10013": "The PortMirror service is not compatible with the network interface configured with Quality of Service (QoS).",
+  "ORG_ZSTACK_PORTMIRROR_10020": "The mirror network[%s] and the source or destination NIC network cannot use the same L2 network[%s]",
   "ORG_ZSTACK_ZWATCH_API_10038": "The namespace [%%s] has no metric [%%s]",
   "ORG_ZSTACK_PORTMIRROR_10014": "failed to delete port mirror session[%s] from hypervisor, detail: %s",
   "ORG_ZSTACK_ZWATCH_API_10037": "No namespace defined in the system",

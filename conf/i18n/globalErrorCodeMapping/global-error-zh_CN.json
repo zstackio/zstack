@@ -1816,6 +1816,7 @@
   "ORG_ZSTACK_PORTMIRROR_10012": "端口镜像服务无法将网卡[%s]镜像到自身",
   "ORG_ZSTACK_ZWATCH_API_10039": "非法 JSON 字符串，labelsJsonStr 格式无效",
   "ORG_ZSTACK_PORTMIRROR_10013": "端口镜像服务在配置了QoS的网卡上无法工作",
+  "ORG_ZSTACK_PORTMIRROR_10020": "镜像网络[%s]不能与源或目的网卡网络使用同一个二层网络[%s]",
   "ORG_ZSTACK_ZWATCH_API_10038": "该命名空间[%s]中不存在指标[%s]",
   "ORG_ZSTACK_PORTMIRROR_10014": "失败从hypervisor删除端口镜像会话[%s]，详细信息: %s",
   "ORG_ZSTACK_ZWATCH_API_10037": "在系统中未定义命名空间[%s]",
