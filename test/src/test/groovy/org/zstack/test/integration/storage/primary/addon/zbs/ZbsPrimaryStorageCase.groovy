@@ -445,16 +445,29 @@ class ZbsPrimaryStorageCase extends SubCase {
                 .select(ExternalPrimaryStorageVO_.config)
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
+        Map originalConfig = JSONObjectUtil.toObject(nowConfig, LinkedHashMap.class)
+        Map reorderedConfig = new LinkedHashMap()
+        originalConfig.keySet().toList().reverseEach { key -> reorderedConfig[key] = originalConfig[key] }
+        String reorderedOldConfig = JSONObjectUtil.toJsonString(reorderedConfig)
+        assert reorderedOldConfig != nowConfig : "oldConfig must exercise different JSON key order"
         updateExternalPrimaryStorage {
             uuid = ps.uuid
             config ="{\"mdsUrls\":[\"root:password@127.0.1.4\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
-            oldConfig = nowConfig
+            oldConfig = reorderedOldConfig
         }
         String newConfig= Q.New(ExternalPrimaryStorageVO.class)
                 .select(ExternalPrimaryStorageVO_.config)
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
         assert newConfig.contains("127.0.1.4")
+        Map changedArrayConfig = JSONObjectUtil.toObject(newConfig, LinkedHashMap.class)
+        changedArrayConfig.mdsUrls = changedArrayConfig.mdsUrls.reverse()
+        ["invalid json", JSONObjectUtil.toJsonString(changedArrayConfig)].each { expectedConfig ->
+            def result = new UpdateExternalPrimaryStorageAction(
+                    uuid: ps.uuid, config: nowConfig, oldConfig: expectedConfig, sessionId: adminSession()).call()
+            assert result.error?.details?.contains("config has been modified by another operation") :
+                    "Invalid JSON or changed array order must be rejected as an oldConfig conflict: ${result.error}"
+        }
         expect(AssertionError.class) {
             updateExternalPrimaryStorage {
                 uuid = ps.uuid
