@@ -1,6 +1,8 @@
 package org.zstack.test.integration.storage.primary.local_nfs
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.compute.host.HostMaintenancePolicyManager
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.host.HostStateEvent
@@ -107,6 +109,12 @@ class MaintainHostMultiTypePsCase extends SubCase{
     }
 
     void testMaintainHost(){
+        updateGlobalConfig {
+            category = HostGlobalConfig.CATEGORY
+            name = HostGlobalConfig.HOST_MAINTENANCE_POLICY.name
+            value = HostMaintenancePolicyManager.HostMaintenancePolicy.StopVmOnMigrationFailure.toString()
+        }
+
         env.simulator(KVMConstant.KVM_VM_SYNC_PATH){
             def rsp = new KVMAgentCommands.VmSyncResponse()
             rsp.setError("on purpose")
