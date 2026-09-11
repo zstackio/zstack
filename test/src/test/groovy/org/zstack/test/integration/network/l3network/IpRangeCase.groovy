@@ -4,6 +4,8 @@ import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.header.network.IpAllocatedReason
 import org.zstack.header.network.l3.L3NetworkCategory
+import org.zstack.header.network.l3.ReservedIpRangeVO
+import org.zstack.header.network.l3.ReservedIpRangeVO_
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
@@ -47,6 +49,7 @@ class IpRangeCase extends SubCase {
         env.create {
             testAddIpRangeToDifferentL3ButSameL2()
             testReserveIpAddress()
+            testReservedIpRangeUserTags()
             testReturnIpAddressInReserveIpRange()
         }
     }
@@ -384,6 +387,87 @@ class IpRangeCase extends SubCase {
         }
     }
 
+    void testReservedIpRangeUserTags() {
+        L3NetworkInventory l3 = env.inventoryByName("l3-2")
+        [
+                ["10.0.1.10", "10.0.1.11", "10.0.1.12"],
+                ["2024:05:27::34", "2024:05:27::35", "2024:05:27::36"]
+        ].each { List<String> ips ->
+            List<String> tags = [
+                    "zsedge.io/managed-by::zaku",
+                    "zsedge.io/reserved-ip::${l3.uuid}::${ips[0]}".toString(),
+                    "zsedge.io/install-id::install-88147",
+                    "kube-cluster::cluster-88147",
+                    "zsedge.io/reserved-ip::${l3.uuid}".toString()
+            ]
+            ReservedIpRangeInventory first = addReservedIpRange {
+                l3NetworkUuid = l3.uuid
+                startIp = ips[0]
+                endIp = ips[0]
+                userTags = tags
+            }
+            assertReservedIpRangeUserTags(first.uuid, tags)
+            assert Q.New(UsedIpVO.class).eq(UsedIpVO_.metaData, first.uuid).count() == 1
+
+            ReservedIpRangeInventory second = addReservedIpRange {
+                l3NetworkUuid = l3.uuid
+                startIp = ips[1]
+                endIp = ips[1]
+                userTags = tags
+            }
+            assertReservedIpRangeUserTags(second.uuid, tags)
+
+            deleteReservedIpRange { uuid = first.uuid }
+            assert !Q.New(ReservedIpRangeVO.class).eq(ReservedIpRangeVO_.uuid, first.uuid).isExists()
+            assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.metaData, first.uuid).isExists()
+            assertReservedIpRangeUserTags(first.uuid, [])
+            assertReservedIpRangeUserTags(second.uuid, tags)
+            assert Q.New(UsedIpVO.class).eq(UsedIpVO_.metaData, second.uuid).count() == 1
+            deleteReservedIpRange { uuid = second.uuid }
+            assertReservedIpRangeUserTags(second.uuid, [])
+
+            [null, []].each { List<String> emptyTags ->
+                ReservedIpRangeInventory untagged = addReservedIpRange {
+                    l3NetworkUuid = l3.uuid
+                    startIp = ips[0]
+                    endIp = ips[0]
+                    userTags = emptyTags
+                }
+                assertReservedIpRangeUserTags(untagged.uuid, [])
+                deleteReservedIpRange { uuid = untagged.uuid }
+            }
+
+            long rangeCount = Q.New(ReservedIpRangeVO.class)
+                    .eq(ReservedIpRangeVO_.l3NetworkUuid, l3.uuid).count()
+            long usedIpCount = Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count()
+            String duplicateTag = "zsedge.io/install-id::rollback-88147"
+            AddReservedIpRangeAction action = new AddReservedIpRangeAction()
+            action.sessionId = adminSession()
+            action.l3NetworkUuid = l3.uuid
+            action.startIp = ips[2]
+            action.endIp = ips[2]
+            action.userTags = [duplicateTag, duplicateTag]
+            AddReservedIpRangeAction.Result result = action.call()
+            assert result.error != null
+            assert result.error.globalErrorCode == "ORG_ZSTACK_TAG_10000"
+            assert Q.New(ReservedIpRangeVO.class)
+                    .eq(ReservedIpRangeVO_.l3NetworkUuid, l3.uuid).count() == rangeCount
+            assert Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == usedIpCount
+            assert (queryUserTag { conditions = ["tag=${duplicateTag}".toString()] }).isEmpty()
+
+            logger.info("reserved IP userTags creation, deletion, empty tags and rollback verified for ${ips[0]}")
+        }
+    }
+
+    private void assertReservedIpRangeUserTags(String rangeUuid, List<String> expectedTags) {
+        List<UserTagInventory> tags = queryUserTag {
+            conditions = ["resourceUuid=${rangeUuid}".toString()]
+        }
+        assert tags.size() == expectedTags.size()
+        assert tags.collect { it.tag }.toSet() == expectedTags.toSet()
+        assert tags.every { it.resourceUuid == rangeUuid && it.resourceType == ReservedIpRangeVO.simpleName }
+    }
+
     void testReturnIpAddressInReserveIpRange() {
         /* l3-2 has ip range:
            10.0.1.0, 10.0.1.100,
@@ -539,4 +623,3 @@ class IpRangeCase extends SubCase {
         assert reservedUuids.size() == 14
     }
 }
-
