@@ -140,16 +140,20 @@ public class KvmHypervisorInfoExtensions implements
             return;
         }
 
+        refreshVmInfo(hostUuid, inv.getUuid());
+    }
+
+    private void refreshVmInfo(String hostUuid, String vmUuid) {
         GetVirtualizerInfoMsg msg = new GetVirtualizerInfoMsg();
         msg.setHostUuid(hostUuid);
-        msg.setVmInstanceUuids(Collections.singletonList(inv.getUuid()));
+        msg.setVmInstanceUuids(Collections.singletonList(vmUuid));
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(null) {
             @Override
             public void run(MessageReply reply) {
                 if (!reply.isSuccess()) {
                     logger.warn(String.format("failed to get virtualizer info for VM[uuid:%s]: %s",
-                            inv.getUuid(), reply.getError()));
+                            vmUuid, reply.getError()));
                 }
             }
         });
