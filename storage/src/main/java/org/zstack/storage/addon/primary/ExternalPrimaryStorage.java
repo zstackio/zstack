@@ -2,6 +2,8 @@ package org.zstack.storage.addon.primary;
 
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowire;
@@ -267,13 +269,21 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         }
     }
 
-    private boolean compareAndSetConfig(String expectedConfig, String config) {
+    private boolean compareAndSetConfig(String expectedConfig, String currentConfig, String config) {
+        try {
+            JsonParser parser = new JsonParser();
+            if (!parser.parse(expectedConfig).equals(parser.parse(currentConfig))) {
+                return false;
+            }
+        } catch (JsonParseException e) {
+            return false;
+        }
         synchronized (externalPsUpdateLock.intern(String.format("ExternalPrimaryStorage-update-%s", self.getUuid()))) {
             String updateSql = "update ExternalPrimaryStorageVO set config = :config where uuid = :uuid and config = :expectedConfig";
             int updatedRows = SQL.New(updateSql)
                     .param("config", config)
                     .param("uuid", self.getUuid())
-                    .param("expectedConfig", expectedConfig)
+                    .param("expectedConfig", currentConfig)
                     .execute();
             return updatedRows > 0;
         }
@@ -301,7 +311,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             needReconnect = true;
         }
         if (msg.getOldConfig() != null) {
-            boolean success = compareAndSetConfig(msg.getOldConfig(), externalVO.getConfig());
+            boolean success = compareAndSetConfig(msg.getOldConfig(), oldConfig, externalVO.getConfig());
             if (!success) {
                 evt.setError(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10040,"Failed to update ExternalPrimaryStorage[uuid:%s], config has been modified by another operation", externalVO.getUuid()));
                 bus.publish(evt);
