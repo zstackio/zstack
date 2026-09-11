@@ -1410,6 +1410,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
+                        VmCanonicalEvents.VmCreatedData event =
+                                new VmCanonicalEvents.VmCreatedData();
+                        event.setVmUuid(instantiateVm.getUuid());
+                        evtf.fire(VmCanonicalEvents.VM_CREATED_PATH, event);
                         completion.success(instantiateVm);
                     }
                 });

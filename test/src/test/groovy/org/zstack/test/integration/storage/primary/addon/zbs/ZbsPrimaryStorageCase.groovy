@@ -1,6 +1,7 @@
 package org.zstack.test.integration.storage.primary.addon.zbs
 
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.EventCallback
 import org.zstack.core.cloudbus.EventFacade
@@ -27,6 +28,9 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageAO_
+import org.zstack.header.storage.primary.PrimaryStorageEO
+import org.zstack.storage.zbs.LogicalPoolInfo
 import org.zstack.storage.zbs.MdsStatus
 import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
@@ -186,6 +190,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             kvm = env.inventoryByName("kvm-1") as KVMHostInventory
             evtf = bean(EventFacade.class)
             dbf = bean(DatabaseFacade.class)
+            testDuplicateMdsAddressesAcrossPrimaryStorages()
             testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
@@ -207,6 +212,97 @@ class ZbsPrimaryStorageCase extends SubCase {
             testGetBackingChainNormalizesCbdParentUri()
             testBatchStatsNormalizesCbdInstallPath()
         }
+    }
+
+    void testDuplicateMdsAddressesAcrossPrimaryStorages() {
+        AtomicInteger metadataCalls = new AtomicInteger()
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { rsp ->
+            metadataCalls.incrementAndGet()
+            return rsp
+        }
+        env.simulator(ZbsStorageController.GET_FACTS_PATH) {
+            return new ZbsStorageController.GetFactsRsp(uuid: "123456789", version: "1.6.1-for-test")
+        }
+        env.simulator(ZbsStorageController.GET_CAPACITY_PATH) {
+            def pool = new LogicalPoolInfo(logicalPoolName: "lpool1", physicalPoolName: "pool1", capacity: 1073741824L)
+            return new ZbsStorageController.GetCapacityRsp(logicalPoolInfos: [pool])
+        }
+
+        [["root:password@127.0.1.1", "root:password@127.0.1.5"], ["other:secret@127.0.1.1:2222"],
+         ["root:password@127.0.1.1", "root:password@127.0.1.1:33"]].each { urls ->
+            def action = zbsAddAction(urls)
+            int calls = metadataCalls.get()
+            assertDuplicateMdsAddress(action.call().error, "127.0.1.1")
+            assert metadataCalls.get() == calls : "rejected Add must not reach metadata: ${metadataCalls.get()}"
+            assert !Q.New(PrimaryStorageVO.class).eq(PrimaryStorageAO_.uuid, action.resourceUuid).isExists() :
+                    "rejected Add must not leave active PS ${action.resourceUuid}"
+            assert !Q.New(PrimaryStorageEO.class).eq(PrimaryStorageAO_.uuid, action.resourceUuid).isExists() :
+                    "duplicate IP must be rejected before persisting PS ${action.resourceUuid}"
+        }
+
+        def second = zbsAddAction(["root:password@127.0.1.4"]).call().throwExceptionIfError().value.inventory
+        ExternalPrimaryStorageVO secondVO = Q.New(ExternalPrimaryStorageVO.class)
+                .eq(ExternalPrimaryStorageVO_.uuid, second.uuid).find()
+        new ZbsStorageController(secondVO).validateConfig(mdsConfigFor(["root:password@127.0.1.1"]))
+        String original = storedZbsConfig(second.uuid)
+        int calls = metadataCalls.get()
+        def update = new UpdateExternalPrimaryStorageAction(uuid: second.uuid, sessionId: adminSession(),
+                config: mdsConfigFor(["root:password@127.0.1.1"]))
+        assertDuplicateMdsAddress(update.call().error, "127.0.1.1")
+        assert storedZbsConfig(second.uuid) == original : "rejected Update changed persisted config of ${second.uuid}"
+        assert metadataCalls.get() == calls : "rejected Update must not reconnect: ${metadataCalls.get()}"
+
+        updateExternalPrimaryStorage {
+            uuid = second.uuid
+            name = "renamed-zbs"
+        }
+        assert storedZbsConfig(second.uuid) == original : "name-only Update must preserve config of ${second.uuid}"
+        assert metadataCalls.get() == calls : "name-only Update must not reconnect: ${metadataCalls.get()}"
+
+        env.afterSimulator(ZbsStorageController.GET_FACTS_PATH) { rsp ->
+            rsp.success = false
+            rsp.error = "failed facts on purpose"
+            return rsp
+        }
+        def failedAdd = zbsAddAction(["root:password@127.0.1.5"])
+        def failure = failedAdd.call().error
+        assert failure != null : "simulated connect failure must fail Add, actual=${failure}"
+        PrimaryStorageEO deleted = Q.New(PrimaryStorageEO.class)
+                .eq(PrimaryStorageAO_.uuid, failedAdd.resourceUuid).find()
+        assert deleted != null && deleted.deleted != null : "connect failure must leave a soft-deleted EO"
+        env.cleanAfterSimulatorHandlers()
+        def available = zbsAddAction(["root:password@127.0.1.5"]).call().throwExceptionIfError().value.inventory
+        deletePrimaryStorage { uuid = second.uuid }
+        def reused = zbsAddAction(["root:password@127.0.1.4"]).call().throwExceptionIfError().value.inventory
+        assert reused.uuid != second.uuid : "IP reuse must create a new PS, actual=${reused.uuid}"
+        reconnectPrimaryStorage { uuid = reused.uuid }
+        deletePrimaryStorage { uuid = reused.uuid }
+        deletePrimaryStorage { uuid = available.uuid }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
+    private AddExternalPrimaryStorageAction zbsAddAction(List<String> urls) {
+        String uuid = Platform.uuid
+        return new AddExternalPrimaryStorageAction(resourceUuid: uuid, name: "zbs-${uuid}", identity: "zbs",
+                defaultOutputProtocol: "CBD", url: "zbs", zoneUuid: zone.uuid, config: mdsConfigFor(urls),
+                sessionId: adminSession())
+    }
+
+    private static String mdsConfigFor(List<String> urls) {
+        return JSONObjectUtil.toJsonString([mdsUrls: urls, logicalPoolName: "lpool1"])
+    }
+
+    private String storedZbsConfig(String uuid) {
+        return Q.New(ExternalPrimaryStorageVO.class).eq(ExternalPrimaryStorageVO_.uuid, uuid)
+                .select(ExternalPrimaryStorageVO_.config).findValue()
+    }
+
+    private static void assertDuplicateMdsAddress(org.zstack.sdk.ErrorCode error, String address) {
+        assert error != null : "duplicate storage-node IP ${address} must fail, but API succeeded"
+        String details = JSONObjectUtil.toJsonString(error)
+        assert error.code != null && details.contains("duplicate MDS") && details.contains(address) :
+                "expected duplicate-MDS error identifying ${address}, actual=${details}"
+        assert !details.contains("secret") : "duplicate-MDS error must not expose SSH credentials: ${details}"
     }
 
     void testSyncPrimaryStorageCapacityConcurrently() {
@@ -349,16 +445,29 @@ class ZbsPrimaryStorageCase extends SubCase {
                 .select(ExternalPrimaryStorageVO_.config)
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
+        Map originalConfig = JSONObjectUtil.toObject(nowConfig, LinkedHashMap.class)
+        Map reorderedConfig = new LinkedHashMap()
+        originalConfig.keySet().toList().reverseEach { key -> reorderedConfig[key] = originalConfig[key] }
+        String reorderedOldConfig = JSONObjectUtil.toJsonString(reorderedConfig)
+        assert reorderedOldConfig != nowConfig : "oldConfig must exercise different JSON key order"
         updateExternalPrimaryStorage {
             uuid = ps.uuid
             config ="{\"mdsUrls\":[\"root:password@127.0.1.4\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
-            oldConfig = nowConfig
+            oldConfig = reorderedOldConfig
         }
         String newConfig= Q.New(ExternalPrimaryStorageVO.class)
                 .select(ExternalPrimaryStorageVO_.config)
                 .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid)
                 .findValue()
         assert newConfig.contains("127.0.1.4")
+        Map changedArrayConfig = JSONObjectUtil.toObject(newConfig, LinkedHashMap.class)
+        changedArrayConfig.mdsUrls = changedArrayConfig.mdsUrls.reverse()
+        ["invalid json", JSONObjectUtil.toJsonString(changedArrayConfig)].each { expectedConfig ->
+            def result = new UpdateExternalPrimaryStorageAction(
+                    uuid: ps.uuid, config: nowConfig, oldConfig: expectedConfig, sessionId: adminSession()).call()
+            assert result.error?.details?.contains("config has been modified by another operation") :
+                    "Invalid JSON or changed array order must be rejected as an oldConfig conflict: ${result.error}"
+        }
         expect(AssertionError.class) {
             updateExternalPrimaryStorage {
                 uuid = ps.uuid

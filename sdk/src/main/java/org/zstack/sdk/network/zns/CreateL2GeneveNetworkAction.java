@@ -25,7 +25,7 @@ public class CreateL2GeneveNetworkAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,16777214L}, noTrim = false)
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,16777214L}, noTrim = false)
     public java.lang.Integer geneveId;
 
     @Param(required = true, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

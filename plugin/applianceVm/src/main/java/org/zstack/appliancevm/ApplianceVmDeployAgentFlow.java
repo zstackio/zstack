@@ -130,6 +130,12 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         }).start();
     }
 
+    private int getAgentPort(String apvmUuid) {
+        ApplianceVmVO avo = dbf.findByUuid(apvmUuid, ApplianceVmVO.class);
+        return avo != null && avo.getAgentPort() > 0 && avo.getAgentPort() <= 65535
+                ? avo.getAgentPort() : ApplianceVmGlobalProperty.AGENT_PORT;
+    }
+
     @Override
     public void run(final FlowTrigger trigger, Map data) {
         boolean isReconnect = Boolean.parseBoolean((String) data.get(Params.isReconnect.toString()));
@@ -163,7 +169,8 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         }
 
         final String mgmtIp = mgmtNicIp;
-        final String url = ApplianceVmBase.buildAgentUrl(mgmtIp, ApplianceVmConstant.ECHO_PATH, ApplianceVmGlobalProperty.AGENT_PORT);
+        final int agentPort = getAgentPort(apvmUuid);
+        final String url = ApplianceVmBase.buildAgentUrl(mgmtIp, ApplianceVmConstant.ECHO_PATH, agentPort);
 
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             continueConnect(url, apvmUuid, trigger);
@@ -189,7 +196,7 @@ public class ApplianceVmDeployAgentFlow extends NoRollbackFlow {
         runner.setUsername(username);
         runner.setPlayBookName(ApplianceVmConstant.ANSIBLE_PLAYBOOK_NAME);
         runner.setPrivateKey(privKey);
-        runner.setAgentPort(ApplianceVmGlobalProperty.AGENT_PORT);
+        runner.setAgentPort(agentPort);
         runner.setTargetIp(mgmtIp);
         runner.setDeployArguments(new ApplianceVmDeployArguments());
         runner.run(new ReturnValueCompletion<Boolean>(trigger) {

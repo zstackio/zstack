@@ -1,0 +1,704 @@
+= AsyncForEach：可控并发的异步批处理
+
+`AsyncForEach` 用于对一个有限集合执行异步操作。它把“单个条目的完成”和“整个批次的完成”分成两个明确的 completion，并提供并发上限、失败策略、结果收集和终止原因。
+
+本文同时面向 ZStack 开发者和生成 ZStack 代码的 AI。最重要的规则是：`AsyncForEach` 不会自动推断异步操作何时结束，`each` 中的每个条目仍然必须在所有执行路径上调用一次 item completion。
+
+[IMPORTANT]
+====
+不要把 `AsyncForEachCompletion.completed(result)` 当作传统 completion 的 `success()`。它只说明批处理执行器已经生成 `BatchResult`；条目是否成功必须通过结果状态判断。与此同时，`each` 中的 item completion 仍然必须由业务代码明确完成。
+====
+
+== 0. 一眼看懂：最小示例
+
+下面的例子对三个条目执行异步操作。`itemCompletion` 表示当前条目已经结束，`AsyncForEachCompletion` 表示整个批次已经结束。
+
+[source,java]
+----
+AsyncForEach.<String, Void>of(Arrays.asList("host-1", "host-2", "host-3"))
+        .concurrency(2)
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) -> {
+            doSomethingAsync(iteration.item(), new Completion(itemCompletion) {
+                @Override
+                public void success() {
+                    itemCompletion.success(null);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    itemCompletion.fail(errorCode);
+                }
+            });
+        })
+        .execute(new AsyncForEachCompletion<String, Void>(null) {
+            @Override
+            public void completed(BatchResult<String, Void> result) {
+                if (result.hasFailure()) {
+                    // completed() 表示批处理结束，不表示所有条目都成功。
+                    handleErrors(result.getErrors());
+                }
+            }
+        });
+----
+
+这个例子有四个关键点：
+
+* `concurrency(2)` 限制同时执行的条目数。
+* `failurePolicy` 必须在 `execute()` 前指定。
+* 异步 API 的回调必须继续调用 `itemCompletion.success()` 或 `itemCompletion.fail()`。
+* `completed(result)` 只表示执行器已经生成 `BatchResult`；条目是否成功要查看 `result`。
+
+如果每个条目都是同步完成的，`each` 可以直接调用 `itemCompletion.success(null)`。这只适用于同步逻辑，不能用于已经发起异步请求的场景。
+
+[source,java]
+----
+AsyncForEach.<Integer, Void>of(Arrays.asList(1, 2, 3))
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) -> itemCompletion.success(null))
+        .execute(new AsyncForEachCompletion<Integer, Void>(null) {
+            @Override
+            public void completed(BatchResult<Integer, Void> result) {
+                // 这里仍然是批次 completion，而不是某一个条目的 completion。
+            }
+        });
+----
+
+== 1. While 的问题：completion 作用域和批次结果语义
+
+`While` 仍然是 ZStack 中大量使用的工具，本文不是要求一次性替换所有已有代码。`While` 可以处理异步循环；引入 `AsyncForEach` 的原因，是为“有限集合上的异步批处理”定义一套新的结果和生命周期契约。
+
+=== 1.1 `done()` 和 `allDone()` 的作用域不清晰
+
+`While` 中有多个 completion 方法使用了相似的命名，但它们作用于不同范围：
+
+* `WhileCompletion.done()`：当前条目完成，并继续调度下一个条目；
+* `WhileCompletion.allDone()`：停止继续调度并立即通知外层，未开始的条目不再调度，已经开始的 handler 仍可能继续执行；
+* `WhileDoneCompletion.done(ErrorCodeList)`：整个循环结束后通知外层调用方。
+
+`allDone()` 的立即结束行为本身不一定是错误，已有调用方可能依赖它。真正容易造成误解的是，方法名没有直接表达作用域：`done()` 看起来像“整个循环完成”，`allDone()` 看起来像“所有条目都完成”，而外层也再次使用了 `done()`。
+
+因此，调用者通常需要额外查阅实现或 Javadoc，才能确认某个方法是结束当前条目、停止调度，还是通知外层。这个问题是命名和作用域表达不清，不是 completion 层级数量本身。
+
+此外，`each` 中的 `WhileCompletion` 没有 `fail()`。条目失败时必须手动调用 `addError(errorCode)`，再调用 `done()`；成功和失败共用 `done()`，漏记错误就会导致批次结果不完整。
+
+[source,java]
+----
+new While<>(items).each((item, whileCompletion) -> {
+    doSomethingAsync(item, new Completion(whileCompletion) {
+        @Override
+        public void success() {
+            // 当前条目完成，继续下一个条目
+            whileCompletion.done();
+        }
+
+        @Override
+        public void fail(ErrorCode errorCode) {
+            // 记录错误后，再决定是否继续
+            whileCompletion.addError(errorCode);
+            whileCompletion.done();
+        }
+    });
+}).run(new WhileDoneCompletion(outerCompletion) {
+    @Override
+    public void done(ErrorCodeList errors) {
+        // 整个 While 完成
+        notifyOuter(outerCompletion, errors);
+    }
+});
+----
+
+=== 1.2 AsyncForEach 改善了什么，没改善什么
+
+`AsyncForEach` 用不同的方法名表达条目和批次的作用域：
+
+[source,text]
+----
+调用方 completion
+    └── AsyncForEachCompletion：批次完成/执行器失败
+          └── AsyncItemCompletion：当前条目成功/失败/跳过/中止
+                └── 具体异步 API 的 Completion
+----
+
+它带来的改进包括：
+
+* item completion 和 batch completion 使用不同的类型和方法名；
+* `FailurePolicy` 明确表示失败后继续还是停止调度；
+* `BatchResult` 保存每个条目的状态、返回值、错误和索引；
+* `concurrency` 明确限制并发数量；
+* `STOP_ON_FAILURE` 和 `breakLoop` 会等待已经在执行的条目结束，再生成结果；
+* 同步异常会转换成条目失败，重复完成会被检测并忽略；
+* 可选的 observer 提供批次和条目生命周期通知。
+
+这些改进并不意味着 completion 链会自动完成：
+
+* 如果底层 API 只接受 `Completion`，仍然需要把底层回调转发给 `itemCompletion`；
+* `each` 忘记完成 `itemCompletion` 时，批次仍然可能一直等待；
+* `completed(result)` 正常返回时仍然需要显式决定如何通知上层 completion；
+* 把外层 completion 作为 `AsyncForEachCompletion` 的 backup，可以让
+  `completed(result)` 抛出的异常由 `AsyncBackupAspect` 自动转发；这不替调用方决定
+  正常路径上的业务成功或失败。
+
+因此，`AsyncForEach` 改善的是方法命名、作用域表达和批处理结果模型，不是自动修复遗漏的 completion。
+
+=== 1.3 批次结果模型是主要差异
+
+`WhileDoneCompletion` 最终主要接收 `ErrorCodeList`。它可以表达失败信息，但不能直接表达每个条目的完整状态、返回值和批次终止原因。调用方如果需要这些信息，通常要在循环外自行维护额外的数据结构。
+
+也就是说，`run(new WhileDoneCompletion(completion))` 的回调只能看到错误列表，无法直接获取成功条目、返回值、索引、跳过/未开始状态或终止原因。
+
+`AsyncForEach` 则直接返回 `BatchResult`，其中包含：
+
+* 每个条目的 `SUCCEEDED`、`FAILED`、`SKIPPED` 或 `NOT_STARTED` 状态；
+* 每个条目的返回值、错误码、原因和输入索引；
+* 批次的 `BatchTermination`；
+* 可直接调用的全部成功、部分成功、全部失败和无成功项判断方法。
+
+批次结果必须由调用方解释。例如，部分失败时，批量删除可能仍然希望外层成功并记录失败项，而批量配置可能要求外层失败。执行器不能替业务统一决定这个映射。
+
+因此，新增 `AsyncForEach` 不是因为 `While` 不能执行异步操作，而是为了在不改变 `While` 既有语义的前提下，为新的有限集合批处理场景提供结构化结果、明确的失败策略和可检查的生命周期契约。
+
+== 2. AsyncForEach 的核心概念
+
+=== 2.1 类型参数和生命周期
+
+`AsyncForEach<I, R>` 中：
+
+* `I` 是输入条目类型；
+* `R` 是单个条目的返回值类型；
+* 输入集合在 `of()` 时复制，后续修改原集合不会影响本次执行；
+* 一个 `AsyncForEach` 实例只能执行一次；
+* `concurrency` 默认是 `1`，必须大于 `0`；
+* `failurePolicy` 和 `each` 是执行前必需的配置；
+* `observer` 可选，但其方法可能并发执行，且 observer 异常不会中断批处理。
+
+=== 2.2 `each` 和 item completion
+
+`each` 的签名是：
+
+[source,java]
+----
+void execute(Iteration<I> iteration, AsyncItemCompletion<R> completion);
+----
+
+`Iteration` 提供：
+
+* `iteration.index()`：输入集合中的原始索引；
+* `iteration.item()`：当前条目。
+
+`AsyncItemCompletion` 提供四种结束方式：
+
+[cols="1,2,3",options="header"]
+|===
+| 方法 | 结果状态 | 语义
+
+| `success(result)`
+| `SUCCEEDED`
+| 当前条目成功，并记录返回值 `result`
+
+| `fail(errorCode)`
+| `FAILED`
+| 当前条目失败，并记录错误码
+
+| `skip(reason)`
+| `SKIPPED`
+| 当前条目不执行或不适用，并记录原因
+
+| `breakLoop(result, reason)`
+| `SUCCEEDED`
+| 当前条目成功，同时停止调度尚未开始的条目
+|===
+
+每个条目的 completion 只能调用一次。重复调用不会改变结果，并会输出诊断信息。无论业务逻辑是成功、失败、跳过还是中止，都必须选择一种结束方式。
+
+=== 2.3 `execute` 和 batch completion
+
+`execute` 接收 `AsyncForEachCompletion<I, R>`：
+
+[source,java]
+----
+public abstract class AsyncForEachCompletion<I, R> extends AbstractCompletion {
+    public abstract void completed(BatchResult<I, R> result);
+}
+----
+
+`AsyncForEach` 在执行器无法生成 `BatchResult` 时，会由 `AsyncBackupAspect` 把错误转发到 `AsyncForEachCompletion` 构造器中传入的 backup，因此使用方不需要再实现单独的失败回调。
+如果 `completed(result)` 本身抛出异常，`AsyncBackupAspect` 也会把该异常转发到同一个 backup。
+
+三种情况的语义如下：
+
+* `completed(result)`：调度器已经进入终态并生成了 `BatchResult`。即使所有条目都失败，也会调用它。
+* 执行器失败：执行器在校验、调度或记录结果阶段发生错误，无法生成 `BatchResult`；框架会把错误转发到 completion 的 backup，这不是条目结果判断路径。
+* 完成回调失败：`completed(result)` 抛出的异常会由 `AsyncBackupAspect` 转发到 completion 的 backup。
+
+`completed` 中必须读取结果，而不能只把它当成传统 completion 的 `success`。如果需要向上层 Flow 或 Service 继续传递，应该显式调用上层 completion：
+
+[source,java]
+----
+.execute(new AsyncForEachCompletion<Item, Result>(outerCompletion) {
+    @Override
+    public void completed(BatchResult<Item, Result> result) {
+        if (result.isAllSucceeded()) {
+            outerCompletion.success();
+        } else if (result.hasFailure()) {
+            outerCompletion.fail(result.getErrors().get(0));
+        } else {
+            // 这里包含 skipped/notStarted，按业务策略处理。
+            outerCompletion.success();
+        }
+    }
+});
+----
+
+构造 `AsyncForEachCompletion` 时把上层 completion 作为 backup 传入，可以让 ZStack 的 AsyncBackup、异常安全和 ThreadContext 机制继续工作。item completion 也应作为具体异步 API completion 的 backup。
+
+=== 2.4 失败策略和终止状态
+
+`FailurePolicy` 有两种值：
+
+[cols="1,3,3",options="header"]
+|===
+| 策略 | 条目失败后的行为 | 常见场景
+
+| `CONTINUE_ON_FAILURE`
+| 记录失败，继续调度剩余条目
+| 批量刷新、尽可能处理所有资源
+
+| `STOP_ON_FAILURE`
+| 记录第一个失败，停止调度尚未开始的条目；已经在执行的条目仍会结束
+| 前一个条目失败后，后续操作没有意义或存在风险
+|===
+
+批次终止原因由 `BatchTermination` 表示：
+
+[cols="1,3",options="header"]
+|===
+| 值 | 含义
+
+| `ALL_ITEMS_PROCESSED`
+| 所有条目都被处理，可能包含成功、失败或跳过
+
+| `STOPPED_ON_FAILURE`
+| 发生条目失败，按 `STOP_ON_FAILURE` 停止继续调度
+
+| `STOPPED_BY_ITEM`
+| 某个条目调用了 `breakLoop`
+|===
+
+终止原因和条目结果是两个维度。比如 `STOPPED_ON_FAILURE` 的结果通常同时包含 `FAILED` 和 `NOT_STARTED`，不能仅凭 `getTermination()` 判断所有条目是否失败。
+
+=== 2.5 `BatchResult` 和结果判断
+
+`BatchResult` 提供以下统计信息：
+
+* `totalCount()`
+* `successCount()`
+* `failedCount()`
+* `skippedCount()`
+* `notStartedCount()`
+* `getErrors()`
+* `getItemResults()`
+
+同时提供直接判断方法：
+
+[cols="1,3",options="header"]
+|===
+| 方法 | 判断
+
+| `isEmpty()`
+| 没有任何条目。空批次不会被归类为其他结果
+
+| `isAllSucceeded()`
+| 所有条目都是 `SUCCEEDED`
+
+| `isPartiallySucceeded()`
+| 至少一个条目成功，但不是全部成功；其他条目可能是失败、跳过或未开始
+
+| `isAllFailed()`
+| 所有条目都是 `FAILED`
+
+| `isNoSuccess()`
+| 没有成功条目，但不满足“全部失败”；通常表示存在 `SKIPPED` 或 `NOT_STARTED`
+|===
+
+判断顺序可以写成：
+
+[source,java]
+----
+if (result.isEmpty()) {
+    // 空批次
+} else if (result.isAllSucceeded()) {
+    // 全部成功
+} else if (result.isAllFailed()) {
+    // 全部失败
+} else if (result.isPartiallySucceeded()) {
+    // 部分成功
+} else if (result.isNoSuccess()) {
+    // 无成功项，但不是全部失败
+}
+----
+
+`getErrors().isEmpty()` 只表示没有 `FAILED` 条目，不能严格表示“全部成功”，因为结果可能包含 `SKIPPED` 或 `NOT_STARTED`。
+
+== 3. 详细使用示例
+
+=== 3.1 同步条目处理
+
+同步处理也必须调用 item completion：
+
+[source,java]
+----
+AsyncForEach.<String, Void>of(names)
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) -> {
+            try {
+                updateSynchronously(iteration.item());
+                itemCompletion.success(null);
+            } catch (OperationFailureException e) {
+                itemCompletion.fail(e.getErrorCode());
+            }
+        })
+        .execute(completion);
+----
+
+如果业务方法可能抛出未捕获异常，`AsyncForEach` 会把它转换为该条目的 `FAILED` 结果；显式捕获并传递业务错误码仍然更容易阅读。
+
+=== 3.2 嵌套异步调用：正确连接 completion
+
+这是最常见也最容易遗漏的一类代码：
+
+[source,java]
+----
+AsyncForEach.<HostInventory, Void>of(hosts)
+        .concurrency(4)
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) -> {
+            HostInventory host = iteration.item();
+            agentClient.refresh(host.getUuid(), new Completion(itemCompletion) {
+                @Override
+                public void success() {
+                    itemCompletion.success(null);
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    itemCompletion.fail(errorCode);
+                }
+            });
+        })
+        .execute(new AsyncForEachCompletion<HostInventory, Void>(outerCompletion) {
+            @Override
+            public void completed(BatchResult<HostInventory, Void> result) {
+                if (result.hasFailure()) {
+                    outerCompletion.fail(result.getErrors().get(0));
+                } else {
+                    outerCompletion.success();
+                }
+            }
+        });
+----
+
+这里的 backup 链是：
+
+[source,text]
+----
+outerCompletion
+    └── AsyncForEachCompletion
+          └── AsyncItemCompletion
+                └── Completion(itemCompletion)
+----
+
+`Completion` 的 `success()` 或 `fail()` 只代表底层请求结束；仍然必须把结果转发给 `itemCompletion`，否则调度器不知道当前条目已经结束。
+
+=== 3.3 返回条目结果
+
+`R` 可以用于收集每个条目的返回值：
+
+[source,java]
+----
+AsyncForEach.<String, String>of(imageUuids)
+        .concurrency(3)
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) ->
+                imageService.getChecksum(iteration.item(), new ReturnValueCompletion<String>(itemCompletion) {
+                    @Override
+                    public void success(String checksum) {
+                        itemCompletion.success(checksum);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        itemCompletion.fail(errorCode);
+                    }
+                }))
+        .execute(new AsyncForEachCompletion<String, String>(outerCompletion) {
+            @Override
+            public void completed(BatchResult<String, String> result) {
+                for (ItemResult<String, String> itemResult : result.getItemResults()) {
+                    if (itemResult.getStatus() == ItemStatus.SUCCEEDED) {
+                        saveChecksum(itemResult.getItem(), itemResult.getResult());
+                    }
+                }
+                outerCompletion.success();
+            }
+        });
+----
+
+结果列表按输入索引保存，因此并发执行不会改变结果的输入顺序。
+
+=== 3.4 `CONTINUE_ON_FAILURE`：收集部分失败
+
+[source,java]
+----
+AsyncForEach.<String, Void>of(resourceUuids)
+        .failurePolicy(FailurePolicy.CONTINUE_ON_FAILURE)
+        .each((iteration, itemCompletion) -> {
+            try {
+                deleteOne(iteration.item());
+                itemCompletion.success(null);
+            } catch (OperationFailureException e) {
+                itemCompletion.fail(e.getErrorCode());
+            }
+        })
+        .execute(new AsyncForEachCompletion<String, Void>(outerCompletion) {
+            @Override
+            public void completed(BatchResult<String, Void> result) {
+                if (result.hasFailure()) {
+                    // 这里可能是部分失败，也可能是全部失败。
+                    outerCompletion.fail(result.getErrors().get(0));
+                } else {
+                    // 空批次没有错误，按成功处理。
+                    outerCompletion.success();
+                }
+            }
+        });
+----
+
+如果业务需要“尽可能删除，失败只记录日志”，则 `completed` 可以遍历 `getErrors()` 后仍然调用 `outerCompletion.success()`。批次完成和业务是否成功应当分开决定。
+
+=== 3.5 `STOP_ON_FAILURE`：停止新条目但等待 in-flight
+
+[source,java]
+----
+AsyncForEach.<HostInventory, Void>of(hosts)
+        .concurrency(4)
+        .failurePolicy(FailurePolicy.STOP_ON_FAILURE)
+        .each((iteration, itemCompletion) -> configureHost(iteration.item(), new Completion(itemCompletion) {
+            @Override
+            public void success() {
+                itemCompletion.success(null);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                itemCompletion.fail(errorCode);
+            }
+        }))
+        .execute(new AsyncForEachCompletion<HostInventory, Void>(outerCompletion) {
+            @Override
+            public void completed(BatchResult<HostInventory, Void> result) {
+                if (result.getTermination() == BatchTermination.STOPPED_ON_FAILURE) {
+                    // result 中可能有 FAILED、SUCCEEDED 和 NOT_STARTED。
+                    outerCompletion.fail(result.getErrors().get(0));
+                } else {
+                    outerCompletion.success();
+                }
+            }
+        });
+----
+
+发生失败时，已经取得执行资格的条目不会被强行取消。`completed` 只有在这些 in-flight 条目也结束后才会收到完整结果。
+
+=== 3.6 `skip` 和 `breakLoop`
+
+跳过当前条目：
+
+[source,java]
+----
+.each((iteration, itemCompletion) -> {
+    if (!isApplicable(iteration.item())) {
+        itemCompletion.skip("resource is not applicable");
+        return;
+    }
+    process(iteration.item(), itemCompletion);
+})
+----
+
+找到满足条件的条目后停止继续调度：
+
+[source,java]
+----
+.each((iteration, itemCompletion) -> {
+    Result result = find(iteration.item());
+    if (result.isMatch()) {
+        itemCompletion.breakLoop(result, "matching item found");
+    } else {
+        itemCompletion.success(null);
+    }
+})
+----
+
+`breakLoop` 当前条目仍然是 `SUCCEEDED`，但批次的 `getTermination()` 会是 `STOPPED_BY_ITEM`，后续未开始条目会记录为 `NOT_STARTED`。
+
+=== 3.7 在 Flow 中传递外层 completion
+
+在 Flow、Service 或其他已有异步方法中，推荐把上层 completion 作为 backup 传入：
+
+[source,java]
+----
+new NoRollbackFlow() {
+    @Override
+    public void run(FlowTrigger trigger, Map data) {
+        AsyncForEach.<Item, Void>of(items)
+                .failurePolicy(FailurePolicy.STOP_ON_FAILURE)
+                .each((iteration, itemCompletion) -> runOne(iteration.item(), new Completion(itemCompletion) {
+                    @Override
+                    public void success() {
+                        itemCompletion.success(null);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        itemCompletion.fail(errorCode);
+                    }
+                }))
+                .execute(new AsyncForEachCompletion<Item, Void>(trigger) {
+                    @Override
+                    public void completed(BatchResult<Item, Void> result) {
+                        if (result.hasFailure()) {
+                            trigger.fail(result.getErrors().get(0));
+                        } else {
+                            trigger.next();
+                        }
+                    }
+                });
+    }
+}
+----
+
+如果 `completed` 内部抛出异常，`AsyncBackupAspect` 会把异常转发到构造器中传入的 backup；它不会把已经生成的批次结果重新当作 item 失败处理。因此 `completed` 内部也应保持简单，并保证正常路径上的上层 completion 成功/失败逻辑清晰。
+
+== 4. 现有 batch 工具和选型
+
+=== 4.1 当前使用情况
+
+下面的数量是本文编写时对当前源码的静态搜索快照，仅统计 `src/main` 中的构造或实例化表达式，不包含测试、文档和构建产物。它用于说明采用范围，不是运行时指标。
+
+[cols="1,1,1,3",options="header"]
+|===
+| 工具 | 构造点 | 文件数 | 观察
+
+| `While`
+| 248
+| 116
+| 现有代码中最广泛使用的异步循环工具
+
+| `AsyncForEach`
+| 1
+| 1
+| 当前刚引入，适合从新代码和正在修改的批处理场景开始采用
+
+| `LoopAsyncBatch`
+| 5
+| 4
+| 通过 `AsyncBatch` 组织多个 runner
+
+| `AsyncLatch`
+| 12
+| 8
+| 用于等待固定数量的异步任务完成
+
+| `AsyncLoop`
+| 4
+| 4
+| 继承式的顺序循环，失败策略通过覆写方法控制
+|===
+
+`AsyncBatch` 本身是抽象基类，当前生产代码主要通过 `LoopAsyncBatch` 使用。数据库相关的 `SQLBatch`、`SQLBatchWithReturn` 是另一类工具，不属于这里的异步集合遍历比较。
+
+=== 4.2 对比
+
+[cols="1,2,2,2,2",options="header"]
+|===
+| 工具 | 核心模型 | 适合场景 | 不适合场景 | 新代码建议
+
+| `AsyncForEach`
+| 有限集合 + item completion + `BatchResult`
+| 需要并发上限、失败策略、每项结果或终止状态的异步批处理
+| 无限循环、强依赖前一项状态的复杂重试、只需要一个计数屏障的场景
+| 新的集合型异步批处理优先使用
+
+| `While`
+| `each`/`step`/旧的 `all` + `WhileCompletion`
+| 已有稳定代码、顺序处理、复杂的历史回调语义和局部停止逻辑
+| 希望统一收集 item 状态、返回值和失败策略的批处理
+| 不做机械替换；修改相关代码时再评估迁移
+
+| `LoopAsyncBatch`
+| 先创建多个 `AsyncBatchRunner`，再用 latch 等待全部 runner
+| 固定的一组相互独立 runner，调用方已经有自定义 setup/done 生命周期
+| 需要动态调度、并发上限、每项结果或按失败停止
+| 保持现有场景使用，不作为 AsyncForEach 的同义替代
+
+| `AsyncLatch`
+| 计数器达到目标后调用一次 done
+| 任务已经由调用方启动，只缺一个完成屏障
+| 调度集合、记录 item 错误、控制失败策略
+| 只需要 barrier 时使用
+
+| `AsyncLoop`
+| 继承类实现 collection、单项 run、done/error
+| 需要顺序执行和自定义继续/停止错误策略的旧式流程
+| 希望使用 fluent 配置、并发执行或结构化批次结果
+| 新的有限集合批处理优先评估 AsyncForEach
+|===
+
+=== 4.3 迁移边界
+
+不要因为 `AsyncForEach` 更新而批量改写所有 `While`。以下情况值得在修改代码时迁移：
+
+* 当前代码需要明确的并发上限；
+* 需要知道每个条目是成功、失败、跳过还是未开始；
+* 需要收集每个条目的返回值；
+* 需要把旧式的 `ErrorCodeList` 和循环终止行为转换为结构化的批次结果；
+* 历史问题表现为批处理不返回、失败信息丢失或停止行为不明确。
+
+如果循环是无限重试、下一项必须依赖上一项结果，或者已有 While 语义已经被多个调用方依赖，则应先保留现状，再单独设计迁移方案。
+
+== 5. AI 和开发者检查清单
+
+生成或审查 `AsyncForEach` 代码时，逐项确认：
+
+. 是否调用了 `AsyncForEach.of(items)`，并在执行前设置了 `failurePolicy`？
+. `concurrency` 是否符合业务要求，且大于 `0`？
+. `each` 是否对所有业务路径调用了且只调用一次 item completion？
+. 发起异步请求后，底层 `Completion` 是否把 `success/fail` 转发为 `itemCompletion.success/fail`？
+. 是否错误地在发起异步请求后立即调用了 item completion？
+. 是否把上层 completion 作为 `AsyncForEachCompletion` 的 backup？
+. `completed(result)` 是否真正检查了 `BatchResult`，而不是把它当成“全部成功”？
+. 执行器失败时是否依赖 completion 构造器传入的 backup，而由 `completed(result)` 负责批次结果判断？
+. 是否根据 `FailurePolicy` 正确处理 `FAILED`、`SKIPPED` 和 `NOT_STARTED`？
+. 如果使用 `breakLoop`，是否理解它会停止新调度但等待 in-flight 条目？
+. 是否需要用 `result.isAllSucceeded()`、`isPartiallySucceeded()`、`isAllFailed()` 或 `isNoSuccess()` 做明确判断？
+. 是否避免在 observer 或 completion 回调中放入会改变批处理状态的业务逻辑？
+
+最重要的一条可以压缩成：
+
+[source,text]
+----
+每个 item：完成一次；
+整个 batch：由 AsyncForEachCompletion 完成一次；
+上层调用方：在 batch completion 中继续一次。
+----
+
+== 6. 总结
+
+`AsyncForEach` 适用于“有限集合上的异步操作”这一明确场景。它提供并发控制、失败策略、结构化批次结果和清晰的 item/batch completion 边界。
+
+它不是所有 `While` 的替代品，也不能消除异步回调必须完成的基本要求。采用它的关键收益，是让代码更容易回答三个问题：
+
+* 当前条目什么时候结束？
+* 整个批次什么时候结束？
+* 批次结束时，条目到底是成功、失败、跳过还是未开始？
+
+当这三个问题在代码和文档中都有明确答案时，人和 AI 都更容易生成不会遗漏 completion 的异步批处理代码。

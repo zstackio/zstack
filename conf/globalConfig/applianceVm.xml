@@ -71,4 +71,12 @@
         <category>applianceVm</category>
         <type>java.lang.Long</type>
     </config>
+
+    <config>
+        <name>alinux.virtioSerialPort</name>
+        <description>Virtio-serial port for Appliance VMs on AliLinux aarch64 hosts. Set to 0 to use libvirt automatic port allocation.</description>
+        <defaultValue>8</defaultValue>
+        <category>applianceVm</category>
+        <type>java.lang.Integer</type>
+    </config>
 </globalConfig>

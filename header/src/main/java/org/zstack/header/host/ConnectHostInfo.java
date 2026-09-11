@@ -5,6 +5,7 @@ package org.zstack.header.host;
 public class ConnectHostInfo {
     private boolean isNewAdded;
     private boolean isStartPingTaskOnFailure;
+    private boolean reconnect;
 
     // do not install these packages when connect host
     private String skipPackages;
@@ -25,6 +26,14 @@ public class ConnectHostInfo {
         this.isStartPingTaskOnFailure = isStartPingTaskOnFailure;
     }
 
+    public boolean isReconnect() {
+        return reconnect;
+    }
+
+    public void setReconnect(boolean reconnect) {
+        this.reconnect = reconnect;
+    }
+
     public String getSkipPackages() {
         return skipPackages;
     }
@@ -37,6 +46,7 @@ public class ConnectHostInfo {
         ConnectHostInfo info = new ConnectHostInfo();
         info.setNewAdded(msg.isNewAdd());
         info.setStartPingTaskOnFailure(msg.isStartPingTaskOnFailure());
+        info.setReconnect(msg.isReconnect());
         return info;
     }
 }

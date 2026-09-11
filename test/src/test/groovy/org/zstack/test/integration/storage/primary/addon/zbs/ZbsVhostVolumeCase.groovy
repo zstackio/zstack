@@ -8,6 +8,7 @@ import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountConstant
 import org.zstack.header.message.MessageReply
+import org.zstack.header.storage.addon.primary.BaseVolumeInfo
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO_
 import org.zstack.header.storage.addon.primary.PrimaryStorageOutputProtocolRefVO
@@ -32,6 +33,7 @@ import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
 import org.zstack.storage.zbs.ZbsConstants
+import org.zstack.storage.zbs.ZbsGlobalProperty
 import org.zstack.storage.zbs.ZbsStorageController
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
@@ -161,6 +163,7 @@ class ZbsVhostVolumeCase extends SubCase {
             bus = bean(CloudBus.class)
 
             testDefaultOutputProtocolIsVhost()
+            testVhostBdevNameMapping()
             testVhostDataVolumeCreateDeleteLifecycle()
             testChangeVolumeProtocol()
             testCreateDataVolumeWithExplicitProtocol()
@@ -180,6 +183,29 @@ class ZbsVhostVolumeCase extends SubCase {
                 .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, ps.uuid)
                 .eq(PrimaryStorageOutputProtocolRefVO_.outputProtocol, VolumeProtocol.Vhost.toString())
                 .isExists()
+    }
+
+    void testVhostBdevNameMapping() {
+        String volumeUuid = "0123456789abcdef0123456789abcdef"
+        BaseVolumeInfo volume = new BaseVolumeInfo()
+        volume.setProtocol(VolumeProtocol.Vhost.toString())
+        volume.setInstallPath("zbs://lpool1/volume_${volumeUuid}".toString())
+        ZbsStorageController controller = new ZbsStorageController((String) null)
+        boolean originalMapping = ZbsGlobalProperty.VHOST_BDEV_NAME_USE_VOLUME_UUID
+
+        try {
+            assert originalMapping : "Zbs.vhost.bdevNameUseVolumeUuid should default to true"
+
+            ZbsGlobalProperty.VHOST_BDEV_NAME_USE_VOLUME_UUID = true
+            assert controller.getActivePath(volume, null, false) ==
+                    "${ZbsConstants.VHOST_SOCKET_DIR}/${ZbsConstants.VHOST_BDEV_NAME_PREFIX}${volumeUuid}".toString()
+
+            ZbsGlobalProperty.VHOST_BDEV_NAME_USE_VOLUME_UUID = false
+            assert controller.getActivePath(volume, null, false) ==
+                    "${ZbsConstants.VHOST_SOCKET_DIR}/${ZbsConstants.VHOST_BDEV_NAME_PREFIX}131c79ed065437ecba5d70dfef40cf94".toString()
+        } finally {
+            ZbsGlobalProperty.VHOST_BDEV_NAME_USE_VOLUME_UUID = originalMapping
+        }
     }
 
     void testVhostDataVolumeCreateDeleteLifecycle() {
@@ -533,8 +559,9 @@ class ZbsVhostVolumeCase extends SubCase {
 
         env.simulator(ZbsStorageController.CREATE_VHOST_BDEV_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVhostBdevCmd.class)
-            assert cmd.bdevName != null && cmd.bdevName.startsWith(ZbsConstants.VHOST_BDEV_NAME_PREFIX) : \
-                    "create-bdev cmd bdevName malformed: ${cmd.bdevName}"
+            assert cmd.volume.startsWith("volume_") : "create-bdev cmd volume name malformed: ${cmd.volume}"
+            assert cmd.bdevName == ZbsConstants.VHOST_BDEV_NAME_PREFIX + cmd.volume.substring("volume_".length()) : \
+                    "create-bdev cmd bdevName does not map to volume UUID: ${cmd.bdevName}"
             assert cmd.hostIp != null : "create-bdev cmd missing target host IP for zbsadm SSH"
             assert cmd.sshPassword != null : "create-bdev cmd missing host SSH password"
             assert cmd.logicalPool == "lpool1" : \

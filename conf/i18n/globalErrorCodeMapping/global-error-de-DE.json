@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Ungültige Netzwerkparameter zum Erstellen einer DPU-Baremetal2-Instanz.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Das angegebene L3-Netzwerk[uuid:%s] ist nicht vorhanden.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Netzwerkparameter für die Instanzerstellung werden nur von DPU-Chassis unterstützt.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "Formatierung der API-Antwort zur Klasse [%s] fehlgeschlagen, resultString: %s, Ausnahme: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "Der datacenter-Typ [%s] wird hier nicht unterstützt!",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "Das Argument 'endpoint' muss für den Konfigurationstyp %s gesetzt werden",
@@ -4316,6 +4319,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "Unzulässiger Vorgang, Rolle[%s] kann nicht hinzugefügt werden",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "Backend-Netzwerk [UUID:%s] ist mit VPC-Router [UUID:%s] verbunden, während andere Backend-Netzwerke mit VPC-Router [UUID:%s] verbunden sind.",
   "ORG_ZSTACK_IAM2_API_10031": "Vorgang auf veralteten virtuellen Maschinen-IDs nicht möglich: %s",
+  "ORG_ZSTACK_IAM2_API_10032": "Ressource[Typ:%s, UUID:%s] wird von SCIM verwaltet und kann nicht lokal geändert werden",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "API-Vorgang konnte nicht ausgeführt werden. Das Backend-Netzwerk [uuid:%s] kann kein VPC-Netzwerk sein, da andere Backend-Netzwerke keine VPC-Netzwerke sind.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "SLB-Gruppe konnte nicht erstellt werden, da ungültiger Bereitstellungstyp %s",
   "ORG_ZSTACK_IPSEC_10030": "CIDR [%s] liegt nicht innerhalb der definierten CIDRs von IPsec UUID [%s]",

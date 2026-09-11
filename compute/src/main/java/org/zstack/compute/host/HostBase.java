@@ -366,9 +366,16 @@ public abstract class HostBase extends AbstractHost {
     }
 
     private void handle(APIUpdateHostMsg msg) {
+        boolean topologyChanged =
+                (msg.getName() != null && !Objects.equals(msg.getName(), self.getName())) ||
+                (msg.getManagementIp() != null &&
+                        !Objects.equals(msg.getManagementIp(), self.getManagementIp()));
         HostVO vo = updateHost(msg);
         if (vo != null) {
             self = dbf.updateAndRefresh(vo);
+            if (topologyChanged) {
+                fireHostInfoChangedEvent();
+            }
         }
         APIUpdateHostEvent evt = new APIUpdateHostEvent(msg.getId());
         evt.setInventory(getSelfInventory());
@@ -760,6 +767,13 @@ public abstract class HostBase extends AbstractHost {
         return self.getState();
     }
 
+    private void fireHostInfoChangedEvent() {
+        HostCanonicalEvents.HostInfoChangedData data =
+                new HostCanonicalEvents.HostInfoChangedData();
+        data.setHostUuid(self.getUuid());
+        evtf.fire(HostCanonicalEvents.HOST_INFO_CHANGED_PATH, data);
+    }
+
     private boolean doChangeStateAndCheckHostOutOfMaintenance(HostStateEvent stateEvent) {
         HostState origState = self.getState();
         HostState state = changeState(stateEvent);
@@ -1086,6 +1100,7 @@ public abstract class HostBase extends AbstractHost {
                 ConnectHostMsg connectMsg = new ConnectHostMsg(self.getUuid());
                 connectMsg.setNewAdd(false);
                 connectMsg.setCalledByAPI(msg.isCalledByAPI());
+                connectMsg.setReconnect(true);
                 bus.makeTargetServiceIdByResourceUuid(connectMsg, HostConstant.SERVICE_ID, self.getUuid());
                 bus.send(connectMsg, new CloudBusCallBack(msg, chain, completion) {
                     @Override
@@ -1358,9 +1373,10 @@ public abstract class HostBase extends AbstractHost {
 
                                 self = dbf.reload(self);
                                 HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
 
                                 for (PreHostConnectExtensionPoint p : pluginRgty.getExtensionList(PreHostConnectExtensionPoint.class)) {
-                                    Flow flow = p.createPreHostConnectFlow(inv);
+                                    Flow flow = p.createPreHostConnectFlow(inv, info);
                                     if (flow != null) {
                                         preConnectChain.then(flow);
                                     }
@@ -1431,8 +1447,10 @@ public abstract class HostBase extends AbstractHost {
                                 changeConnectionState(HostStatusEvent.connected);
                                 tracker.trackHost(self.getUuid());
 
+                                HostInventory inv = getSelfInventory();
+                                ConnectHostInfo info = ConnectHostInfo.fromConnectHostMsg(msg);
                                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(HostAfterConnectedExtensionPoint.class),
-                                        ext -> ext.afterHostConnected(getSelfInventory()));
+                                        ext -> ext.afterHostConnected(inv, info));
                                 completion.success();
                             }
                         });

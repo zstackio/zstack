@@ -16,4 +16,8 @@ public interface ConsoleHypervisorBackend {
     HypervisorType getConsoleBackendHypervisorType();
 
     void generateConsoleUrl(VmInstanceInventory vm, ReturnValueCompletion<ConsoleUrl> complete);
+
+    default boolean requireExclusiveConsoleSessionRenewal() {
+        return false;
+    }
 }

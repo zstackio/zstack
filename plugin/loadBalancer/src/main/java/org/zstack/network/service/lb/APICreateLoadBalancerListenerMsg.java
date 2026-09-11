@@ -39,8 +39,12 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private String protocol;
     @APIParam(resourceType = CertificateVO.class, required = false)
     private String certificateUuid;
-    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
+    @APIParam(required = false)
+    private String healthCheckTarget;
+    @APIParam(numberRange = {1, Integer.MAX_VALUE}, required = false)
+    private Integer healthCheckTimeout;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;
     @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
@@ -53,6 +57,10 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
     private List<String> aclUuids;
     @APIParam(validValues = {"white","black"}, required = false)
     private String aclType = LoadBalancerAclType.black.toString();
+    @APIParam(validValues = {LoadBalancerConstants.DATA_PLANE_HAPROXY, LoadBalancerConstants.DATA_PLANE_IPVS}, required = false)
+    private String dataPlane;
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT, LoadBalancerConstants.FORWARD_MODE_NAT, LoadBalancerConstants.FORWARD_MODE_DR}, required = false)
+    private String forwardMode;
     @APIParam(validValues = {LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_DEFAULT, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_0, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_1,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2, LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT,
             LoadBalanceSecurityPolicyConstant.TLS_CIPHER_POLICY_1_2_STRICT_WITH_1_3}, required = false)
@@ -124,6 +132,22 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
         this.healthCheckProtocol = healthCheckProtocol;
     }
 
+    public String getHealthCheckTarget() {
+        return healthCheckTarget;
+    }
+
+    public void setHealthCheckTarget(String healthCheckTarget) {
+        this.healthCheckTarget = healthCheckTarget;
+    }
+
+    public Integer getHealthCheckTimeout() {
+        return healthCheckTimeout;
+    }
+
+    public void setHealthCheckTimeout(Integer healthCheckTimeout) {
+        this.healthCheckTimeout = healthCheckTimeout;
+    }
+
     public String getHealthCheckMethod() {
         return healthCheckMethod;
     }
@@ -178,6 +202,22 @@ public class APICreateLoadBalancerListenerMsg extends APICreateMessage implement
 
     public void setAclType(String aclType) {
         this.aclType = aclType;
+    }
+
+    public String getDataPlane() {
+        return dataPlane;
+    }
+
+    public void setDataPlane(String dataPlane) {
+        this.dataPlane = dataPlane;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public String getSecurityPolicyType() {

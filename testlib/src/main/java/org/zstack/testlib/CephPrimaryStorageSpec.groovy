@@ -39,6 +39,8 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
     String dataVolumePoolName = "pri-v-d-" + Platform.getUuid()
     @SpecParam
     String imageCachePoolName = "pri-c-" + Platform.getUuid()
+    @SpecParam
+    String extraImageCachePoolName
 
     CephPrimaryStorageSpec(EnvSpec envSpec) {
         super(envSpec)
@@ -81,6 +83,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
         String rootVolumePoolName
         String dataVolumePoolName
         String imageCachePoolName
+        String extraImageCachePoolName
     }
 
     static class Simulators implements Simulator {
@@ -381,6 +384,12 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                 return new CephPrimaryStorageBase.UnprotectedSnapshotRsp()
             }
 
+            simulator(CephPrimaryStorageBase.RESIZE_VOLUME_PATH) { HttpEntity<String> e, EnvSpec spec ->
+                def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.ResizeVolumeCmd.class)
+                assert cmd.installPath != null
+                return new CephPrimaryStorageBase.ResizeVolumeRsp(size: cmd.size)
+            }
+
             simulator(CephPrimaryStorageBase.CLONE_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def cmd = JSONObjectUtil.toObject(e.body, CephPrimaryStorageBase.CloneCmd.class)
                 def rsp = new CephPrimaryStorageBase.CloneRsp()
@@ -501,13 +510,14 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
 
                 CephPrimaryStorageSpec cspec = spec.specByUuid(cmd.uuid)
                 CephPrimaryStorageBase.AddPoolRsp rsp = new CephPrimaryStorageBase.AddPoolRsp()
-                rsp.totalCapacity = cspec.totalCapacity
-                rsp.availableCapacity = cspec.availableCapacity
+                def newPoolCapacity = SizeUnit.GIGABYTE.toByte(100)
+                rsp.totalCapacity = newPoolCapacity
+                rsp.availableCapacity = newPoolCapacity
                 long rootSize = cspec.availableCapacity / 3
                 long dataSize = cspec.availableCapacity / 3
                 long cacheSize = cspec.totalCapacity - rootSize - dataSize
-                rsp.setAvailableCapacity(SizeUnit.GIGABYTE.toByte(100))
-                rsp.setTotalCapacity(SizeUnit.GIGABYTE.toByte(100))
+                rsp.setAvailableCapacity(newPoolCapacity)
+                rsp.setTotalCapacity(newPoolCapacity)
                 List<CephPoolCapacity> poolCapacities = [
                         new CephPoolCapacity(
                                 name: cspec.rootVolumePoolName,
@@ -541,13 +551,13 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         ),
                         new CephPoolCapacity(
                                 name: cmd.poolName,
-                                availableCapacity: SizeUnit.GIGABYTE.toByte(100),
+                                availableCapacity: newPoolCapacity,
                                 usedCapacity: 0,
-                                totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                                totalCapacity: newPoolCapacity,
                                 securityPolicy: DataSecurityPolicy.Copy.toString(),
                                 replicatedSize: 3,
                                 diskUtilization: 0.33,
-                                relatedOsds: "osd.4"
+                                relatedOsds: 'osd.4'
                         )
                 ]
                 rsp.setPoolCapacities(poolCapacities)
@@ -568,7 +578,7 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
                         return
                     }
 
-                    if (f.parent?.setVolumeChainInstallPaths() == snapshotPath) {
+                    if (f.parent?.pathString() == snapshotPath) {
                         children.add(f.pathString())
                     }
                 }
@@ -824,6 +834,16 @@ class CephPrimaryStorageSpec extends PrimaryStorageSpec {
             inventory = queryCephPrimaryStorage {
                 conditions=["uuid=${inventory.uuid}".toString()]
             }[0]
+        }
+
+        if (extraImageCachePoolName != null) {
+            addCephPrimaryStoragePool {
+                delegate.primaryStorageUuid = inventory.uuid
+                delegate.poolName = extraImageCachePoolName
+                delegate.type = CephPrimaryStoragePoolType.ImageCache.toString()
+                delegate.isCreate = true
+                delegate.sessionId = sessionId
+            }
         }
 
         return id(name, inventory.uuid)

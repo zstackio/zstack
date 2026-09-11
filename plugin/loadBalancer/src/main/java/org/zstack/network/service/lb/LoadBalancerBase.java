@@ -40,6 +40,8 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.tag.SystemTagInventory;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
@@ -324,6 +326,8 @@ public class LoadBalancerBase {
                 removeNics(msg.getServerGroupUuids(), null, msg.getVmNicUuids(), new ArrayList<>(), new Completion(msg, chain) {
                     @Override
                     public void success() {
+                        deleteBackendStateRefsForVmNics(
+                                msg.getServerGroupUuids(), msg.getVmNicUuids());
                         SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
                                 .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuids())
                                 .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
@@ -617,8 +621,14 @@ public class LoadBalancerBase {
             handle((APIDeleteLoadBalancerServerGroupMsg) msg);
         } else if (msg instanceof APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) {
             handle((APIGetCandidateVmNicsForLoadBalancerServerGroupMsg) msg);
+        } else if (msg instanceof APIGetLoadBalancerServerGroupBackendServerMsg) {
+            handle((APIGetLoadBalancerServerGroupBackendServerMsg) msg);
         } else if(msg instanceof APIChangeLoadBalancerBackendServerMsg){
             handle((APIChangeLoadBalancerBackendServerMsg) msg);
+        } else if (msg instanceof APIChangeLoadBalancerListenerBackendServerStateMsg) {
+            handle((APIChangeLoadBalancerListenerBackendServerStateMsg) msg);
+        } else if (msg instanceof APIGetLoadBalancerListenerBackendServersMsg) {
+            handle((APIGetLoadBalancerListenerBackendServersMsg) msg);
         } else if (msg instanceof APIAttachVipToLoadBalancerMsg) {
             handle((APIAttachVipToLoadBalancerMsg)msg);
         } else {
@@ -647,6 +657,172 @@ public class LoadBalancerBase {
         reply.setInventories(VmNicInventory.valueOf(nicVOS));
         bus.reply(msg, reply);
     }
+
+    private void handle(APIGetLoadBalancerServerGroupBackendServerMsg msg) {
+        APIGetLoadBalancerServerGroupBackendServerReply reply = new APIGetLoadBalancerServerGroupBackendServerReply();
+
+        LoadBalancerListenerVO listener = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        List<LoadBalancerServerGroupBackendServerInventory> invs = new ArrayList<>();
+
+        /* any state ref row means the backend is Disabled, regardless of its state value */
+        Set<String> disabledVmNicUuids = new HashSet<>(Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .select(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, msg.getListenerUuid())
+                .listValues());
+        Set<Long> disabledServerIpIds = new HashSet<>(Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                .select(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId)
+                .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, msg.getListenerUuid())
+                .listValues());
+
+        List<String> attachedGroupUuids = new ArrayList<>(Q.New(LoadBalancerListenerServerGroupRefVO.class)
+                .select(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid)
+                .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid())
+                .listValues());
+        if (msg.getServerGroupUuid() != null) {
+            attachedGroupUuids.retainAll(Collections.singletonList(msg.getServerGroupUuid()));
+        }
+
+        List<LoadBalancerServerGroupVmNicRefVO> nicRefs = new ArrayList<>();
+        List<LoadBalancerServerGroupServerIpVO> serverIpVOs = new ArrayList<>();
+        Map<String, String> serverGroupNames = new HashMap<>();
+        if (!attachedGroupUuids.isEmpty()) {
+            nicRefs.addAll(Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                    .in(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, attachedGroupUuids).list());
+            serverIpVOs.addAll(Q.New(LoadBalancerServerGroupServerIpVO.class)
+                    .in(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, attachedGroupUuids).list());
+            List<LoadBalancerServerGroupVO> attachedGroups = Q.New(LoadBalancerServerGroupVO.class)
+                    .in(LoadBalancerServerGroupVO_.uuid, attachedGroupUuids).list();
+            for (LoadBalancerServerGroupVO group : attachedGroups) {
+                serverGroupNames.put(group.getUuid(), group.getName());
+            }
+        }
+
+        if (!nicRefs.isEmpty()) {
+            List<String> nicUuids = nicRefs.stream().map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid).collect(Collectors.toList());
+            List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, nicUuids).list();
+            Map<String, VmNicVO> nicMap = new HashMap<>();
+            for (VmNicVO nic : nics) {
+                nicMap.put(nic.getUuid(), nic);
+            }
+
+            Map<String, VmInstanceVO> vmMap = new HashMap<>();
+            List<String> vmUuids = new ArrayList<>();
+            for (VmNicVO nic : nicMap.values()) {
+                if (nic.getVmInstanceUuid() != null) {
+                    vmUuids.add(nic.getVmInstanceUuid());
+                }
+            }
+            if (!vmUuids.isEmpty()) {
+                List<VmInstanceVO> vms = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, vmUuids).list();
+                for (VmInstanceVO vm : vms) {
+                    vmMap.put(vm.getUuid(), vm);
+                }
+            }
+
+            for (LoadBalancerServerGroupVmNicRefVO ref : nicRefs) {
+                LoadBalancerServerGroupBackendServerInventory inv = new LoadBalancerServerGroupBackendServerInventory();
+                inv.setUuid(Platform.getUuidFromBytes(
+                        String.format("VmInstance:%s", ref.getId()).getBytes()));
+                inv.setServerGroupUuid(ref.getServerGroupUuid());
+                inv.setServerGroupName(serverGroupNames.get(ref.getServerGroupUuid()));
+                inv.setListenerUuid(listener.getUuid());
+                inv.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+                inv.setServerType("VmInstance");
+                inv.setVmNicUuid(ref.getVmNicUuid());
+                inv.setWeight(ref.getWeight());
+                inv.setIpVersion(ref.getIpVersion());
+                inv.setState(disabledVmNicUuids.contains(ref.getVmNicUuid())
+                        ? LoadBalancerBackendServerState.Disabled.toString()
+                        : LoadBalancerBackendServerState.Enabled.toString());
+                inv.setRuntimeStatus(ref.getStatus() == null ? null : ref.getStatus().toString());
+                inv.setCreateDate(ref.getCreateDate());
+                inv.setLastOpDate(ref.getLastOpDate());
+
+                VmNicVO nic = nicMap.get(ref.getVmNicUuid());
+                if (nic != null) {
+                    inv.setVmInstanceUuid(nic.getVmInstanceUuid());
+                    inv.setIp(nic.getIp());
+                    inv.setL3NetworkUuid(nic.getL3NetworkUuid());
+                    VmInstanceVO vm = vmMap.get(nic.getVmInstanceUuid());
+                    if (vm != null) {
+                        inv.setServerName(vm.getName());
+                    }
+                }
+
+                invs.add(inv);
+            }
+        }
+
+        for (LoadBalancerServerGroupServerIpVO serverIp : serverIpVOs) {
+            LoadBalancerServerGroupBackendServerInventory inv = new LoadBalancerServerGroupBackendServerInventory();
+            inv.setUuid(Platform.getUuidFromBytes(
+                    String.format("ServerIp:%s", serverIp.getId()).getBytes()));
+            inv.setServerGroupUuid(serverIp.getServerGroupUuid());
+            inv.setServerGroupName(serverGroupNames.get(serverIp.getServerGroupUuid()));
+            inv.setListenerUuid(listener.getUuid());
+            inv.setLoadBalancerUuid(listener.getLoadBalancerUuid());
+            inv.setServerType("ServerIp");
+            inv.setServerName(serverIp.getIpAddress());
+            inv.setIp(serverIp.getIpAddress());
+            inv.setWeight(serverIp.getWeight());
+            inv.setState(disabledServerIpIds.contains(serverIp.getId())
+                    ? LoadBalancerBackendServerState.Disabled.toString()
+                    : LoadBalancerBackendServerState.Enabled.toString());
+            inv.setRuntimeStatus(serverIp.getStatus() == null ? null : serverIp.getStatus().toString());
+            inv.setCreateDate(serverIp.getCreateDate());
+            inv.setLastOpDate(serverIp.getLastOpDate());
+            invs.add(inv);
+        }
+
+        if (!StringUtils.isEmpty(msg.getName())) {
+            String keyword = msg.getName().toLowerCase();
+            invs = invs.stream().filter(inv -> inv.getServerName() != null && inv.getServerName().toLowerCase().contains(keyword)).collect(Collectors.toList());
+        }
+
+        if (!StringUtils.isEmpty(msg.getState())) {
+            invs = invs.stream().filter(inv -> msg.getState().equals(inv.getState())).collect(Collectors.toList());
+        }
+
+        invs.sort(makeBackendServerComparator(msg));
+
+        reply.setTotal(invs.size());
+        reply.setInventories(msg.filter(invs));
+        bus.reply(msg, reply);
+    }
+
+    private Comparator<LoadBalancerServerGroupBackendServerInventory> makeBackendServerComparator(APIGetLoadBalancerServerGroupBackendServerMsg msg) {
+        boolean desc = "desc".equalsIgnoreCase(msg.getSortDirection());
+        String sortBy = StringUtils.isEmpty(msg.getSortBy()) ? "createDate" : msg.getSortBy();
+
+        Comparator<LoadBalancerServerGroupBackendServerInventory> cmp;
+        switch (sortBy) {
+            case "serverName":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getServerName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                break;
+            case "ip":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getIp, Comparator.nullsLast(BACKEND_SERVER_IP_COMPARATOR));
+                break;
+            case "weight":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getWeight, Comparator.nullsLast(Comparator.naturalOrder()));
+                break;
+            case "state":
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getState, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+                break;
+            default:
+                cmp = Comparator.comparing(LoadBalancerServerGroupBackendServerInventory::getCreateDate, Comparator.nullsFirst(Comparator.naturalOrder()));
+                break;
+        }
+
+        cmp = cmp.thenComparing(LoadBalancerServerGroupBackendServerInventory::getUuid, Comparator.nullsLast(Comparator.naturalOrder()));
+        return desc ? cmp.reversed() : cmp;
+    }
+
+    private static final Comparator<String> BACKEND_SERVER_IP_COMPARATOR = (ip1, ip2) -> {
+        if (NetworkUtils.isIpv4Address(ip1) && NetworkUtils.isIpv4Address(ip2)) {
+            return Long.compare(NetworkUtils.ipv4StringToLong(ip1), NetworkUtils.ipv4StringToLong(ip2));
+        }
+        return ip1.compareToIgnoreCase(ip2);
+    };
 
     private void handle(APIGetCandidateL3NetworksForLoadBalancerMsg msg) {
         APIGetCandidateL3NetworksForLoadBalancerReply reply = new APIGetCandidateL3NetworksForLoadBalancerReply();
@@ -1522,6 +1698,8 @@ public class LoadBalancerBase {
         removeNics(Arrays.asList(groupVO.getUuid()), null, msg.getVmNicUuids(), new ArrayList<>(), new Completion(msg, completion) {
             @Override
             public void success() {
+                deleteBackendStateRefsForVmNics(
+                        Collections.singletonList(groupVO.getUuid()), msg.getVmNicUuids());
                 SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
                         .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, groupVO.getUuid())
                         .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, msg.getVmNicUuids()).delete();
@@ -1811,9 +1989,33 @@ public class LoadBalancerBase {
                     return;
                 }
 
-                createListener(msg, new NoErrorCompletion(chain) {
+                LoadBalancerBackend backend = getBackend();
+                if (backend == null) {
+                    createListener(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
+                backend.validateBeforeCreateListener(self, msg, new Completion(chain) {
                     @Override
-                    public void done() {
+                    public void success() {
+                        createListener(msg, new NoErrorCompletion(chain) {
+                            @Override
+                            public void done() {
+                                chain.next();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        APICreateLoadBalancerListenerEvent evt = new APICreateLoadBalancerListenerEvent(msg.getId());
+                        evt.setError(errorCode);
+                        bus.publish(evt);
                         chain.next();
                     }
                 });
@@ -1836,6 +2038,8 @@ public class LoadBalancerBase {
         vo.setInstancePort(msg.getInstancePort());
         vo.setLoadBalancerPort(msg.getLoadBalancerPort());
         vo.setProtocol(msg.getProtocol());
+        vo.setDataPlane(msg.getDataPlane());
+        vo.setForwardMode(LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane()) ? msg.getForwardMode() : null);
         vo.setAccountUuid(msg.getSession().getAccountUuid());
         vo.setSecurityPolicyType(msg.getSecurityPolicyType());
         vo = dbf.persistAndRefresh(vo);
@@ -1860,7 +2064,9 @@ public class LoadBalancerBase {
 
         tagMgr.createNonInherentSystemTags(msg.getSystemTags(), vo.getUuid(), LoadBalancerListenerVO.class.getSimpleName());
         vo = dbf.updateAndRefresh(vo);
-        evt.setInventory(LoadBalancerListenerInventory.valueOf(vo));
+        LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(vo);
+        inv.applyTcpIpvsSupportedParameterSystemTags(msg.getSystemTags());
+        evt.setInventory(inv);
         bus.publish(evt);
         completion.done();
     }
@@ -2252,16 +2458,31 @@ public class LoadBalancerBase {
         return ts;
     }
 
+    private boolean isHttpBasedHealthCheck(String protocol) {
+        return LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(protocol) ||
+                LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(protocol);
+    }
+
     private boolean isListenerNeedRefresh(LoadBalancerListenerVO lblVo, List<String> serverGroupUuids) {
         List<String> sgUuids = new ArrayList<>();
         if (serverGroupUuids == null || serverGroupUuids.isEmpty()) {
             sgUuids = lblVo.getServerGroupRefs().stream().map(LoadBalancerListenerServerGroupRefVO::getServerGroupUuid).collect(Collectors.toList());
+            // server groups bound through acl refs (redirect rules) also serve traffic of the listener
+            List<String> aclSgUuids = lblVo.getAclRefs().stream()
+                    .map(LoadBalancerListenerACLRefVO::getServerGroupUuid)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            aclSgUuids.removeAll(sgUuids);
+            sgUuids.addAll(aclSgUuids);
         } else {
             sgUuids = serverGroupUuids;
         }
 
         for (String serverGroupUuid : sgUuids) {
             LoadBalancerServerGroupVO groupVO = dbf.findByUuid(serverGroupUuid, LoadBalancerServerGroupVO.class);
+            if (groupVO == null) {
+                continue;
+            }
             if (groupVO.getLoadBalancerServerGroupVmNicRefs().stream().anyMatch(r -> r.getStatus() == LoadBalancerVmNicStatus.Active)) {
                 return true;
             }
@@ -2301,6 +2522,24 @@ public class LoadBalancerBase {
             public void run(SyncTaskChain chain) {
                 APIChangeLoadBalancerListenerEvent evt = new APIChangeLoadBalancerListenerEvent(msg.getId());
                 LoadBalancerListenerVO lblVo = dbf.findByUuid(msg.getUuid(), LoadBalancerListenerVO.class);
+                LoadBalancerStruct oldStruct = lbMgr.makeStruct(self);
+                Integer oldInstancePort = lblVo.getInstancePort();
+                String oldSecurityPolicyType = lblVo.getSecurityPolicyType();
+                List<SystemTagVO> currentListenerTags = Q.New(SystemTagVO.class)
+                        .eq(SystemTagVO_.resourceUuid, msg.getUuid())
+                        .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .list();
+                List<SystemTagVO> oldListenerTags = currentListenerTags.stream()
+                        .map(SystemTagVO::new).collect(Collectors.toList());
+
+                Map<Long, Long> oldWeights = new HashMap<>();
+                Set<String> changedNics = new LoadBalancerWeightOperator().getWeight(msg.getSystemTags()).keySet();
+                if (lblVo.getServerGroupUuid() != null && !changedNics.isEmpty()) {
+                    List<LoadBalancerServerGroupVmNicRefVO> refs = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, lblVo.getServerGroupUuid())
+                            .in(LoadBalancerServerGroupVmNicRefVO_.vmNicUuid, changedNics).list();
+                    refs.forEach(ref -> oldWeights.put(ref.getId(), ref.getWeight()));
+                }
 
                 if (msg.getBalancerAlgorithm() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.BALANCER_ALGORITHM, msg.getUuid(), LoadBalancerSystemTags.BALANCER_ALGORITHM_TOKEN, msg.getBalancerAlgorithm());
@@ -2336,6 +2575,11 @@ public class LoadBalancerBase {
 
                 if (msg.getHealthCheckInterval() != null) {
                     updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_INTERVAL, msg.getUuid(), LoadBalancerSystemTags.HEALTH_INTERVAL_TOKEN, msg.getHealthCheckInterval());
+                }
+
+                if (msg.getHealthCheckTimeout() != null) {
+                    updateLoadBalancerListenerSystemTag(LoadBalancerSystemTags.HEALTH_TIMEOUT,
+                            msg.getUuid(), LoadBalancerSystemTags.HEALTH_TIMEOUT_TOKEN, msg.getHealthCheckTimeout());
                 }
 
                 if (msg.getNbprocess() != null) {
@@ -2387,7 +2631,7 @@ public class LoadBalancerBase {
                 String[] ts = getHeathCheckTarget(msg.getUuid());
                 if (msg.getHealthCheckProtocol() != null && !msg.getHealthCheckProtocol().equals(ts[0])) {
                     if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(ts[0]) &&
-                            LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(msg.getHealthCheckProtocol())) {
+                            isHttpBasedHealthCheck(msg.getHealthCheckProtocol())) {
                         DebugUtils.Assert(msg.getHealthCheckMethod() != null && msg.getHealthCheckURI() != null,
                                 "the http health check protocol must be specified its healthy checking parameters including healthCheckMethod and healthCheckURI");
                         String code = LoadBalancerConstants.HealthCheckStatusCode.http_2xx.toString();
@@ -2401,7 +2645,7 @@ public class LoadBalancerBase {
                         creator.create();
                     }
 
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0]) &&
+                    if (isHttpBasedHealthCheck(ts[0]) &&
                             LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP.equals(msg.getHealthCheckProtocol())) {
                         LoadBalancerSystemTags.HEALTH_PARAMETER.delete(msg.getUuid());
                     }
@@ -2415,7 +2659,7 @@ public class LoadBalancerBase {
                 }
 
                 if (msg.getHealthCheckHttpCode() != null || msg.getHealthCheckMethod() != null || msg.getHealthCheckURI() != null) {
-                    if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP.equals(ts[0])) {
+                    if (isHttpBasedHealthCheck(ts[0])) {
                         String param = LoadBalancerSystemTags.HEALTH_PARAMETER.getTokenByResourceUuid(msg.getLoadBalancerListenerUuid(),
                                 LoadBalancerSystemTags.HEALTH_PARAMETER_TOKEN);
                         String[] pm = param.split(":");
@@ -2439,8 +2683,6 @@ public class LoadBalancerBase {
                     }
                 }
 
-                final String oldAclStatus = LoadBalancerSystemTags.BALANCER_ACL.getTokenByResourceUuid(
-                        msg.getUuid(), LoadBalancerSystemTags.BALANCER_ACL_TOKEN);
                 if (msg.getAclStatus() != null) {
                     if (LoadBalancerSystemTags.BALANCER_ACL.hasTag(msg.getUuid())) {
                         LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
@@ -2463,42 +2705,116 @@ public class LoadBalancerBase {
 
                 if (msg.getSecurityPolicyType() != null) {
                     lblVo.setSecurityPolicyType(msg.getSecurityPolicyType());
-                    dbf.updateAndRefresh(lblVo);
+                }
+                if (msg.getInstancePort() != null) {
+                    lblVo.setInstancePort(msg.getInstancePort());
+                }
+                if (msg.getSecurityPolicyType() != null || msg.getInstancePort() != null) {
+                    lblVo = dbf.updateAndRefresh(lblVo);
+                }
+                if (!Objects.equals(oldInstancePort, lblVo.getInstancePort())) {
+                    // redirect acl entries snapshot the listener's instancePort; keep them in sync
+                    // or the generated router config keeps forwarding to the old backend port
+                    updateListenerAclRedirectPort(msg.getUuid(), oldInstancePort, lblVo.getInstancePort());
                 }
 
-                boolean refresh = isListenerNeedRefresh(lblVo, null);
+                Set<String> oldListenerTagValues = oldListenerTags.stream()
+                        .map(SystemTagVO::getTag).collect(Collectors.toSet());
+                Set<String> newListenerTagValues = Q.New(SystemTagVO.class)
+                        .select(SystemTagVO_.tag)
+                        .eq(SystemTagVO_.resourceUuid, msg.getUuid())
+                        .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .listValues().stream().map(String::valueOf).collect(Collectors.toSet());
+                boolean weightsChanged = false;
+                if (!oldWeights.isEmpty()) {
+                    List<LoadBalancerServerGroupVmNicRefVO> refs = Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                            .in(LoadBalancerServerGroupVmNicRefVO_.id, oldWeights.keySet()).list();
+                    weightsChanged = refs.stream().anyMatch(ref ->
+                            !Objects.equals(oldWeights.get(ref.getId()), ref.getWeight()));
+                }
+                boolean healthCheckChanged = !getHealthCheckTags(oldListenerTagValues)
+                        .equals(getHealthCheckTags(newListenerTagValues));
+                oldStruct.setSyncAllInstances(healthCheckChanged);
+                boolean configChanged = weightsChanged ||
+                        !Objects.equals(oldInstancePort, lblVo.getInstancePort()) ||
+                                !Objects.equals(oldSecurityPolicyType, lblVo.getSecurityPolicyType()) ||
+                                !Objects.equals(oldListenerTagValues, newListenerTagValues);
+                boolean refresh = configChanged && isListenerNeedRefresh(lblVo, null);
                 if (refresh) {
-                    RefreshLoadBalancerMsg rmsg = new RefreshLoadBalancerMsg();
-                    rmsg.setUuid(lblVo.getLoadBalancerUuid());
-                    bus.makeLocalServiceId(rmsg, LoadBalancerConstants.SERVICE_ID);
-                    bus.send(rmsg, new CloudBusCallBack(chain) {
-                        @Override
-                        public void run(MessageReply reply) {
-                            if (!reply.isSuccess()) {
-                                logger.warn(String.format( "update listener [uuid:%s] failed", lblVo.getUuid()));
-                                evt.setError(reply.getError());
-                                if (msg.getAclStatus() != null) {
-                                    logger.warn(String.format( "rollback acl status for listener [uuid:%s]", msg.getUuid()));
-                                    if (oldAclStatus != null) {
-                                        LoadBalancerSystemTags.BALANCER_ACL.update(msg.getUuid(),
-                                                LoadBalancerSystemTags.BALANCER_ACL.instantiateTag(map(
-                                                        e(LoadBalancerSystemTags.BALANCER_ACL_TOKEN, oldAclStatus)
-                                                )));
-                                    } else {
-                                        LoadBalancerSystemTags.BALANCER_ACL.delete(msg.getUuid());
-                                    }
-                                }
-                            } else {
-                                evt.setInventory(LoadBalancerListenerInventory.valueOf(lblVo));
-                            }
-                            bus.publish(evt);
-                        }
-                    });
+                    LoadBalancerListenerVO finalLblVo = lblVo;
+                    FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                    flowChain.setName(String.format("change-lb-listener-config-%s", msg.getUuid()));
+                    flowChain.then(new Flow() {
+                        String __name__ = "listener-config-rollback-guard";
 
-                    chain.next();
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void rollback(FlowRollback trigger, Map data) {
+                            restoreListenerConfigSnapshot(msg.getUuid(), oldInstancePort,
+                                    finalLblVo.getInstancePort(), oldSecurityPolicyType, oldListenerTags, oldWeights);
+                            oldStruct.setRollback(true);
+                            getBackend().refresh(oldStruct, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.rollback();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    logger.warn(String.format(
+                                            "failed to restore old config of listener[uuid:%s]: %s",
+                                            msg.getUuid(), errorCode));
+                                    trigger.rollback();
+                                }
+                            });
+                        }
+                    }).then(new NoRollbackFlow() {
+                        String __name__ = "refresh-changed-listener-config";
+
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            LoadBalancerStruct struct = lbMgr.makeStruct(self);
+                            struct.setSyncAllInstances(healthCheckChanged);
+                            getBackend().refresh(struct, new Completion(trigger) {
+                                @Override
+                                public void success() {
+                                    trigger.next();
+                                }
+
+                                @Override
+                                public void fail(ErrorCode errorCode) {
+                                    trigger.fail(errorCode);
+                                }
+                            });
+                        }
+                    }).done(new FlowDoneHandler(chain) {
+                        @Override
+                        public void handle(Map data) {
+                            LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(finalLblVo);
+                            inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                            evt.setInventory(inv);
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    }).error(new FlowErrorHandler(chain) {
+                        @Override
+                        public void handle(ErrorCode errorCode, Map data) {
+                            logger.warn(String.format("update listener[uuid:%s] failed",
+                                    msg.getUuid()));
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                            chain.next();
+                        }
+                    }).start();
                     return;
                 }
-                evt.setInventory( LoadBalancerListenerInventory.valueOf(lblVo));
+                LoadBalancerListenerInventory inv = LoadBalancerListenerInventory.valueOf(lblVo);
+                inv.applyTcpIpvsSupportedParameters(msg.getBalancerAlgorithm(), msg.getMaxConnection());
+                evt.setInventory(inv);
                 bus.publish(evt);
                 chain.next();
             }
@@ -2508,6 +2824,69 @@ public class LoadBalancerBase {
                 return "change-lb-listener";
             }
         });
+    }
+
+    private Set<String> getHealthCheckTags(Set<String> tags) {
+        return tags.stream().filter(tag -> LoadBalancerSystemTags.HEALTH_TARGET.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_PARAMETER.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_INTERVAL.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTH_TIMEOUT.isMatch(tag) ||
+                LoadBalancerSystemTags.HEALTHY_THRESHOLD.isMatch(tag) ||
+                LoadBalancerSystemTags.UNHEALTHY_THRESHOLD.isMatch(tag)).collect(Collectors.toSet());
+    }
+
+    private void restoreListenerConfigSnapshot(String listenerUuid, Integer instancePort,
+                                               Integer appliedInstancePort,
+                                               String securityPolicyType,
+                                               List<SystemTagVO> listenerTags, Map<Long, Long> oldWeights) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(SystemTagVO.class)
+                        .eq(SystemTagVO_.resourceUuid, listenerUuid)
+                        .eq(SystemTagVO_.resourceType, LoadBalancerListenerVO.class.getSimpleName())
+                        .delete();
+                listenerTags.forEach(this::persist);
+                oldWeights.forEach((id, weight) -> sql(LoadBalancerServerGroupVmNicRefVO.class)
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.id, id)
+                        .set(LoadBalancerServerGroupVmNicRefVO_.weight, weight).update());
+                sql(LoadBalancerListenerVO.class)
+                        .eq(LoadBalancerListenerVO_.uuid, listenerUuid)
+                        .set(LoadBalancerListenerVO_.instancePort, instancePort)
+                        .set(LoadBalancerListenerVO_.securityPolicyType, securityPolicyType)
+                        .update();
+            }
+        }.execute();
+        updateListenerAclRedirectPort(listenerUuid, appliedInstancePort, instancePort);
+    }
+
+    private void updateListenerAclRedirectPort(String listenerUuid, Integer oldPort, Integer newPort) {
+        if (oldPort == null || oldPort.equals(newPort)) {
+            return;
+        }
+
+        List<String> redirectAclUuids = Q.New(LoadBalancerListenerACLRefVO.class)
+                .eq(LoadBalancerListenerACLRefVO_.listenerUuid, listenerUuid)
+                .eq(LoadBalancerListenerACLRefVO_.type, LoadBalancerAclType.redirect)
+                .select(LoadBalancerListenerACLRefVO_.aclUuid)
+                .listValues();
+        if (redirectAclUuids.isEmpty()) {
+            return;
+        }
+
+        // entries stamped with the old instancePort (or legacy null ones) belong to this listener
+        SQL.New(AccessControlListEntryVO.class)
+                .in(AccessControlListEntryVO_.aclUuid, redirectAclUuids)
+                .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                .eq(AccessControlListEntryVO_.redirectPort, oldPort)
+                .set(AccessControlListEntryVO_.redirectPort, newPort)
+                .update();
+        SQL.New(AccessControlListEntryVO.class)
+                .in(AccessControlListEntryVO_.aclUuid, redirectAclUuids)
+                .eq(AccessControlListEntryVO_.type, AclEntryType.RedirectRule.toString())
+                .isNull(AccessControlListEntryVO_.redirectPort)
+                .set(AccessControlListEntryVO_.redirectPort, newPort)
+                .update();
     }
 
     private <K, V> void updateLoadBalancerListenerSystemTag(PatternedSystemTag systemTag, String resourceUuid, K token, V value) {
@@ -3030,6 +3409,12 @@ public class LoadBalancerBase {
                                 SQL.New(LoadBalancerListenerServerGroupRefVO.class)
                                         .eq(LoadBalancerListenerServerGroupRefVO_.serverGroupUuid, msg.getServerGroupUuid())
                                         .eq(LoadBalancerListenerServerGroupRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                                SQL.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, msg.getListenerUuid()).delete();
+                                SQL.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid, msg.getServerGroupUuid())
+                                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, msg.getListenerUuid()).delete();
                             }
                         }.execute();
                         event.setInventory(LoadBalancerListenerInventory.valueOf(dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class)));
@@ -3067,6 +3452,8 @@ public class LoadBalancerBase {
                 List<String> listerUuids = groupVO.getLoadBalancerListenerServerGroupRefs().stream()
                         .map(LoadBalancerListenerServerGroupRefVO::getListenerUuid).collect(Collectors.toList());
                 if (listerUuids.isEmpty()) {
+                    deleteBackendStateRefsForVmNics(Collections.singletonList(msg.getServerGroupUuid()),
+                            msg.getVmNicUuids());
                     if (!msg.getVmNicUuids().isEmpty()) {
                         SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
                                 .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
@@ -3087,6 +3474,8 @@ public class LoadBalancerBase {
                 removeNics(asList(msg.getServerGroupUuid()), null, msg.getVmNicUuids(), msg.getServerIps(), new Completion(chain) {
                     @Override
                     public void success() {
+                        deleteBackendStateRefsForVmNics(Collections.singletonList(msg.getServerGroupUuid()),
+                                msg.getVmNicUuids());
                         if (msg.getVmNicUuids() != null && !msg.getVmNicUuids().isEmpty()) {
                             SQL.New(LoadBalancerServerGroupVmNicRefVO.class)
                                     .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid, msg.getServerGroupUuid())
@@ -3117,6 +3506,19 @@ public class LoadBalancerBase {
                 return "remove-backendserver-from-servergroup";
             }
         });
+    }
+
+    private void deleteBackendStateRefsForVmNics(List<String> serverGroupUuids,
+                                                 List<String> vmNicUuids) {
+        if (serverGroupUuids == null || serverGroupUuids.isEmpty()
+                || vmNicUuids == null || vmNicUuids.isEmpty()) {
+            return;
+        }
+
+        SQL.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .in(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroupUuids)
+                .in(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid, vmNicUuids)
+                .delete();
     }
 
     private void handle(final APIDeleteLoadBalancerServerGroupMsg msg){
@@ -3251,6 +3653,390 @@ public class LoadBalancerBase {
                 return "change-lb-listener";
             }
         });
+    }
+
+    private void handle(APIChangeLoadBalancerListenerBackendServerStateMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSyncId();
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIChangeLoadBalancerListenerBackendServerStateEvent event =
+                        new APIChangeLoadBalancerListenerBackendServerStateEvent(msg.getId());
+                LoadBalancerBackendServerState targetState =
+                        LoadBalancerBackendServerState.valueOf(msg.getState());
+                List<LoadBalancerListenerServerGroupVmNicRefVO> vmNicSnapshot =
+                        snapshotVmNicStates(msg.getListenerUuid(), msg.getServerGroupUuid());
+                List<LoadBalancerListenerServerGroupServerIpRefVO> serverIpSnapshot =
+                        snapshotServerIpStates(msg.getListenerUuid(), msg.getServerGroupUuid());
+                Map<String, Long> serverIpIds = getServerIpIds(
+                        msg.getServerGroupUuid(), msg.getServerIps());
+                if (serverIpIds.size() != msg.getServerIps().size()) {
+                    event.setError(argerr(ORG_ZSTACK_NETWORK_SERVICE_LB_10194,
+                            "cannot find all requested server IPs in server group[uuid:%s] when applying backend server state",
+                            msg.getServerGroupUuid()));
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+                LoadBalancerStruct oldStruct = lbMgr.makeStruct(self);
+                oldStruct.setSyncAllInstances(true);
+
+                // A state row means disabled, including legacy rows with an invalid state value.
+                Set<String> disabledVmNicUuids = vmNicSnapshot.stream()
+                        .map(LoadBalancerListenerServerGroupVmNicRefVO::getVmNicUuid)
+                        .collect(Collectors.toSet());
+                Set<Long> disabledServerIpIds = serverIpSnapshot.stream()
+                        .map(LoadBalancerListenerServerGroupServerIpRefVO::getServerIpId)
+                        .collect(Collectors.toSet());
+                boolean targetDisabled = targetState == LoadBalancerBackendServerState.Disabled;
+                List<String> effectiveVmNicUuids = msg.getVmNicUuids().stream()
+                        .filter(vmNicUuid -> disabledVmNicUuids.contains(vmNicUuid) != targetDisabled)
+                        .collect(Collectors.toList());
+                List<Long> effectiveServerIpIds = msg.getServerIps().stream()
+                        .map(serverIpIds::get)
+                        .filter(serverIpId -> disabledServerIpIds.contains(serverIpId) != targetDisabled)
+                        .collect(Collectors.toList());
+                if (effectiveVmNicUuids.isEmpty() && effectiveServerIpIds.isEmpty()) {
+                    event.setResults(makeBackendServerStateResults(
+                            msg.getVmNicUuids(), msg.getServerIps(), targetState));
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+
+                FlowChain flowChain = FlowChainBuilder.newSimpleFlowChain();
+                flowChain.setName(String.format("change-lb-listener-backend-server-state-%s",
+                        msg.getListenerUuid()));
+                flowChain.then(new Flow() {
+                    String __name__ = "persist-listener-backend-server-state";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        applyBackendServerStates(msg.getListenerUuid(), msg.getServerGroupUuid(),
+                                effectiveVmNicUuids, effectiveServerIpIds, targetState);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        restoreBackendServerStates(msg.getListenerUuid(), msg.getServerGroupUuid(),
+                                vmNicSnapshot, serverIpSnapshot);
+                        oldStruct.setRollback(true);
+                        LoadBalancerBackend backend = getBackend();
+                        if (backend == null) {
+                            trigger.rollback();
+                            return;
+                        }
+                        backend.refresh(oldStruct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.rollback();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                logger.warn(String.format(
+                                        "failed to restore load balancer[uuid:%s] after backend state change failed: %s",
+                                        self.getUuid(), errorCode));
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "refresh-listener-backend-server-state";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        LoadBalancerBackend backend = getBackend();
+                        if (backend == null) {
+                            trigger.next();
+                            return;
+                        }
+                        LoadBalancerStruct struct = lbMgr.makeStruct(self);
+                        struct.setSyncAllInstances(true);
+                        backend.refresh(struct, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(chain) {
+                    @Override
+                    public void handle(Map data) {
+                        event.setResults(makeBackendServerStateResults(
+                                msg.getVmNicUuids(), msg.getServerIps(), targetState));
+                        bus.publish(event);
+                        chain.next();
+                    }
+                }).error(new FlowErrorHandler(chain) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        event.setError(errorCode);
+                        bus.publish(event);
+                        chain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return "change-lb-listener-backend-server-state";
+            }
+        });
+    }
+
+    private void handle(APIGetLoadBalancerListenerBackendServersMsg msg) {
+        APIGetLoadBalancerListenerBackendServersReply reply =
+                new APIGetLoadBalancerListenerBackendServersReply();
+        LoadBalancerListenerVO listener = dbf.findByUuid(
+                msg.getListenerUuid(), LoadBalancerListenerVO.class);
+
+        List<LoadBalancerServerGroupVmNicRefVO> vmNicRefs =
+                Q.New(LoadBalancerServerGroupVmNicRefVO.class)
+                        .eq(LoadBalancerServerGroupVmNicRefVO_.serverGroupUuid,
+                                msg.getServerGroupUuid())
+                        .list();
+        List<LoadBalancerServerGroupServerIpVO> serverIpVOs =
+                Q.New(LoadBalancerServerGroupServerIpVO.class)
+                        .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid,
+                                msg.getServerGroupUuid())
+                        .list();
+
+        Set<String> disabledVmNicUuids =
+                new HashSet<>(Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                        .select(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid)
+                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid,
+                                msg.getListenerUuid())
+                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid,
+                                msg.getServerGroupUuid())
+                        .listValues());
+        Set<Long> disabledServerIpIds =
+                new HashSet<>(Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                        .select(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId)
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid,
+                                msg.getListenerUuid())
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid,
+                                msg.getServerGroupUuid())
+                        .listValues());
+
+        Map<String, VmNicVO> vmNics = new HashMap<>();
+        if (!vmNicRefs.isEmpty()) {
+            List<String> vmNicUuids = vmNicRefs.stream()
+                    .map(LoadBalancerServerGroupVmNicRefVO::getVmNicUuid)
+                    .collect(Collectors.toList());
+            List<VmNicVO> vmNicVOs = Q.New(VmNicVO.class)
+                    .in(VmNicVO_.uuid, vmNicUuids).list();
+            vmNicVOs.forEach(vmNic -> vmNics.put(vmNic.getUuid(), vmNic));
+        }
+
+        List<LoadBalancerListenerBackendServerInventory> inventories = new ArrayList<>();
+        for (LoadBalancerServerGroupVmNicRefVO ref : vmNicRefs) {
+            boolean disabled = disabledVmNicUuids.contains(ref.getVmNicUuid());
+            VmNicVO vmNic = vmNics.get(ref.getVmNicUuid());
+            LoadBalancerListenerBackendServerInventory inventory =
+                    new LoadBalancerListenerBackendServerInventory();
+            inventory.setListenerUuid(msg.getListenerUuid());
+            inventory.setServerGroupUuid(msg.getServerGroupUuid());
+            inventory.setBackendType("VmNic");
+            inventory.setVmNicUuid(ref.getVmNicUuid());
+            inventory.setIpAddress(vmNic == null ? null : vmNic.getIp());
+            inventory.setWeight(ref.getWeight());
+            inventory.setState(disabled ? LoadBalancerBackendServerState.Disabled.toString()
+                    : LoadBalancerBackendServerState.Enabled.toString());
+            inventory.setRuntimeStatus(ref.getStatus() == null
+                    ? null : ref.getStatus().toString());
+            inventory.setHealthStatus(disabled ? LoadBalancerConstants.BACKEND_HEALTH_STATUS_UNCHECKED
+                    : LoadBalancerConstants.BACKEND_HEALTH_STATUS_UNKNOWN);
+            inventory.setInstancePort(listener.getInstancePort());
+            inventories.add(inventory);
+        }
+
+        for (LoadBalancerServerGroupServerIpVO serverIpVO : serverIpVOs) {
+            boolean disabled = disabledServerIpIds.contains(serverIpVO.getId());
+            LoadBalancerListenerBackendServerInventory inventory =
+                    new LoadBalancerListenerBackendServerInventory();
+            inventory.setListenerUuid(msg.getListenerUuid());
+            inventory.setServerGroupUuid(msg.getServerGroupUuid());
+            inventory.setBackendType("ServerIp");
+            inventory.setServerIp(serverIpVO.getIpAddress());
+            inventory.setIpAddress(serverIpVO.getIpAddress());
+            inventory.setWeight(serverIpVO.getWeight());
+            inventory.setState(disabled ? LoadBalancerBackendServerState.Disabled.toString()
+                    : LoadBalancerBackendServerState.Enabled.toString());
+            inventory.setRuntimeStatus(serverIpVO.getStatus() == null
+                    ? null : serverIpVO.getStatus().toString());
+            inventory.setHealthStatus(disabled ? LoadBalancerConstants.BACKEND_HEALTH_STATUS_UNCHECKED
+                    : LoadBalancerConstants.BACKEND_HEALTH_STATUS_UNKNOWN);
+            inventory.setInstancePort(listener.getInstancePort());
+            inventories.add(inventory);
+        }
+
+        inventories.sort(Comparator
+                .comparing(LoadBalancerListenerBackendServerInventory::getBackendType)
+                .thenComparing(inventory -> "VmNic".equals(inventory.getBackendType())
+                        ? inventory.getVmNicUuid() : inventory.getServerIp(),
+                        Comparator.nullsLast(String::compareTo)));
+        reply.setInventories(inventories);
+        bus.reply(msg, reply);
+    }
+
+    private Map<String, Long> getServerIpIds(String serverGroupUuid, List<String> serverIps) {
+        if (serverIps.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<LoadBalancerServerGroupServerIpVO> serverIpVOs =
+                Q.New(LoadBalancerServerGroupServerIpVO.class)
+                .eq(LoadBalancerServerGroupServerIpVO_.serverGroupUuid, serverGroupUuid)
+                .in(LoadBalancerServerGroupServerIpVO_.ipAddress, serverIps)
+                .list();
+        return serverIpVOs.stream().collect(Collectors.toMap(
+                        LoadBalancerServerGroupServerIpVO::getIpAddress,
+                        LoadBalancerServerGroupServerIpVO::getId));
+    }
+
+    private List<LoadBalancerListenerServerGroupVmNicRefVO> snapshotVmNicStates(
+            String listenerUuid, String serverGroupUuid) {
+        List<LoadBalancerListenerServerGroupVmNicRefVO> refs =
+                Q.New(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid, listenerUuid)
+                .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid, serverGroupUuid)
+                .list();
+        return refs.stream().map(ref -> {
+                    LoadBalancerListenerServerGroupVmNicRefVO copy =
+                            new LoadBalancerListenerServerGroupVmNicRefVO();
+                    copy.setListenerUuid(ref.getListenerUuid());
+                    copy.setServerGroupUuid(ref.getServerGroupUuid());
+                    copy.setVmNicUuid(ref.getVmNicUuid());
+                    copy.setState(ref.getState());
+                    return copy;
+                }).collect(Collectors.toList());
+    }
+
+    private List<LoadBalancerListenerServerGroupServerIpRefVO> snapshotServerIpStates(
+            String listenerUuid, String serverGroupUuid) {
+        List<LoadBalancerListenerServerGroupServerIpRefVO> refs =
+                Q.New(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid, listenerUuid)
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid, serverGroupUuid)
+                        .list();
+        return refs.stream().map(ref -> {
+            LoadBalancerListenerServerGroupServerIpRefVO copy =
+                    new LoadBalancerListenerServerGroupServerIpRefVO();
+            copy.setListenerUuid(ref.getListenerUuid());
+            copy.setServerGroupUuid(ref.getServerGroupUuid());
+            copy.setServerIpId(ref.getServerIpId());
+            copy.setState(ref.getState());
+            return copy;
+        }).collect(Collectors.toList());
+    }
+
+    private void applyBackendServerStates(String listenerUuid, String serverGroupUuid,
+                                          List<String> vmNicUuids,
+                                          List<Long> serverIpIds,
+                                          LoadBalancerBackendServerState targetState) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                for (String vmNicUuid : vmNicUuids) {
+                    sql(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                            .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid,
+                                    listenerUuid)
+                            .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid,
+                                    serverGroupUuid)
+                            .eq(LoadBalancerListenerServerGroupVmNicRefVO_.vmNicUuid,
+                                    vmNicUuid)
+                            .delete();
+                    if (targetState == LoadBalancerBackendServerState.Disabled) {
+                        LoadBalancerListenerServerGroupVmNicRefVO ref =
+                                new LoadBalancerListenerServerGroupVmNicRefVO();
+                        ref.setListenerUuid(listenerUuid);
+                        ref.setServerGroupUuid(serverGroupUuid);
+                        ref.setVmNicUuid(vmNicUuid);
+                        ref.setState(LoadBalancerBackendServerState.Disabled);
+                        persist(ref);
+                    }
+                }
+                for (Long serverIpId : serverIpIds) {
+                    sql(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                            .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid,
+                                    listenerUuid)
+                            .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid,
+                                    serverGroupUuid)
+                            .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverIpId,
+                                    serverIpId)
+                            .delete();
+                    if (targetState == LoadBalancerBackendServerState.Disabled) {
+                        LoadBalancerListenerServerGroupServerIpRefVO ref =
+                                new LoadBalancerListenerServerGroupServerIpRefVO();
+                        ref.setListenerUuid(listenerUuid);
+                        ref.setServerGroupUuid(serverGroupUuid);
+                        ref.setServerIpId(serverIpId);
+                        ref.setState(LoadBalancerBackendServerState.Disabled);
+                        persist(ref);
+                    }
+                }
+            }
+        }.execute();
+    }
+
+    private void restoreBackendServerStates(
+            String listenerUuid, String serverGroupUuid,
+            List<LoadBalancerListenerServerGroupVmNicRefVO> vmNicSnapshot,
+            List<LoadBalancerListenerServerGroupServerIpRefVO> serverIpSnapshot) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                sql(LoadBalancerListenerServerGroupVmNicRefVO.class)
+                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.listenerUuid,
+                                listenerUuid)
+                        .eq(LoadBalancerListenerServerGroupVmNicRefVO_.serverGroupUuid,
+                                serverGroupUuid)
+                        .delete();
+                sql(LoadBalancerListenerServerGroupServerIpRefVO.class)
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.listenerUuid,
+                                listenerUuid)
+                        .eq(LoadBalancerListenerServerGroupServerIpRefVO_.serverGroupUuid,
+                                serverGroupUuid)
+                        .delete();
+                vmNicSnapshot.forEach(this::persist);
+                serverIpSnapshot.forEach(this::persist);
+            }
+        }.execute();
+    }
+
+    private List<LoadBalancerBackendServerStateResultInventory> makeBackendServerStateResults(
+            List<String> vmNicUuids, List<String> serverIps,
+            LoadBalancerBackendServerState targetState) {
+        List<LoadBalancerBackendServerStateResultInventory> results = new ArrayList<>();
+        vmNicUuids.forEach(vmNicUuid -> {
+            LoadBalancerBackendServerStateResultInventory result =
+                    new LoadBalancerBackendServerStateResultInventory();
+            result.setBackendType("VmNic");
+            result.setVmNicUuid(vmNicUuid);
+            result.setTargetState(targetState.toString());
+            result.setEffectiveState(targetState.toString());
+            results.add(result);
+        });
+        serverIps.forEach(serverIp -> {
+            LoadBalancerBackendServerStateResultInventory result =
+                    new LoadBalancerBackendServerStateResultInventory();
+            result.setBackendType("ServerIp");
+            result.setServerIp(serverIp);
+            result.setTargetState(targetState.toString());
+            result.setEffectiveState(targetState.toString());
+            results.add(result);
+        });
+        return results;
     }
 
 

@@ -17,6 +17,8 @@ public class ZbsGlobalProperty {
     public static int PRIMARY_STORAGE_AGENT_PORT;
     @GlobalProperty(name="Zbs.primaryStorageAgent.urlRootPath", defaultValue = "")
     public static String PRIMARY_STORAGE_AGENT_URL_ROOT_PATH;
+    @GlobalProperty(name = "Zbs.vhost.bdevNameUseVolumeUuid", defaultValue = "true")
+    public static boolean VHOST_BDEV_NAME_USE_VOLUME_UUID;
     @GlobalProperty(name="MN.network.", defaultValue = "")
     public static List<String> MN_NETWORKS;
 }

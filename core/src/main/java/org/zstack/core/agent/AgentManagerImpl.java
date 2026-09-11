@@ -3,6 +3,8 @@ package org.zstack.core.agent;
 import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.ManagedComponentEndpoint;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleNeedRun;
 import org.zstack.core.ansible.AnsibleRunner;
 import org.zstack.core.ansible.SshFolderMd5Checker;
@@ -21,6 +23,7 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.Message;
 import org.zstack.header.rest.RESTFacade;
@@ -34,6 +37,7 @@ import org.zstack.utils.ssh.Ssh;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -50,6 +54,10 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
 
     public static String buildAgentUrl(String ip, int port, String path) {
         return String.format(HTTP_URL_FORMAT, IPv6NetworkUtils.formatHostForUrl(ip), port, path);
+    }
+
+    public static String buildCommandUrl(RESTFacade restf, String managementNodeIp) {
+        return managementNodeIp == null ? restf.getSendCommandUrl() : restf.buildSendCommandUrl(managementNodeIp);
     }
 
     @Autowired
@@ -114,12 +122,13 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
         });
     }
 
-    private void connect(final DeployAgentMsg msg, final Completion completion) {
+    private void connect(final DeployAgentMsg msg, final String targetIp,
+                         final String managementNodeIp, final Completion completion) {
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
-        chain.setName(String.format("continue-connect-agent-server-%s:%s", msg.getIp(), msg.getAgentPort()));
+        chain.setName(String.format("continue-connect-agent-server-%s:%s", targetIp, msg.getAgentPort()));
         chain.then(new ShareFlow() {
             private String url(String path) {
-                return buildAgentUrl(msg.getIp(), msg.getAgentPort(), path);
+                return buildAgentUrl(targetIp, msg.getAgentPort(), path);
             }
 
             @Override
@@ -149,7 +158,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
                         Map<String, Object> config = new HashMap<String, Object>();
-                        config.put(AgentConstant.CONFIG_COMMAND_URL, restf.getSendCommandUrl());
+                        config.put(AgentConstant.CONFIG_COMMAND_URL, buildCommandUrl(restf, managementNodeIp));
                         if (msg.getConfig() != null) {
                             config.putAll(msg.getConfig());
                         }
@@ -193,6 +202,18 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             return;
         }
 
+        ErrorableValue<List<ManagedComponentEndpoint>> resolvedEndpoints =
+                Platform.resolveManagedComponentEndpointCandidates(msg.getIp());
+        if (!resolvedEndpoints.isSuccess()) {
+            reply.setError(resolvedEndpoints.error);
+            bus.reply(msg, reply);
+            noErrorCompletion.done();
+            return;
+        }
+        ManagedComponentEndpoint endpoint = resolvedEndpoints.result.get(0);
+        final String targetIp = endpoint.getRemoteAddress();
+        final String managementNodeIp = endpoint.getCurrentManagementNodeAddress();
+
         try {
             String agentYamlPath = PathUtil.join(AgentConstant.ANSIBLE_MODULE_PATH, "server", AgentConstant.ANSIBLE_PLAYBOOK_NAME);
             File agentYaml = PathUtil.findFileOnClassPath(agentYamlPath, true);
@@ -209,7 +230,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                     e("remoteRoot", AgentConstant.DST_ANSIBLE_ROOT),
                     e("srcRoot", srcRootFolder),
                     e("agentYamls", String.format("%s", tmpInclude.getAbsolutePath())),
-                    e("outterServerIp", msg.getIp()),
+                    e("outterServerIp", targetIp),
                     e("outterServerPort", msg.getAgentPort().toString())
             ));
 
@@ -222,7 +243,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             if (msg.getSshPort() != null) {
                 checker.setPort(msg.getSshPort());
             }
-            checker.setHostname(msg.getIp());
+            checker.setHostname(targetIp);
             checker.setSrcFolder(srcRootFolder);
             checker.setDstFolder(AgentConstant.DST_ANSIBLE_ROOT);
             final boolean fileChanged = checker.needDeploy();
@@ -231,7 +252,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                 Ssh ssh = new Ssh();
                 ssh.setPassword(msg.getPassword());
                 ssh.setUsername(msg.getUsername());
-                ssh.setHostname(msg.getIp());
+                ssh.setHostname(targetIp);
                 if (msg.getSshPort() != null) {
                     ssh.setPort(msg.getSshPort());
                 }
@@ -241,7 +262,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             runner.setAnsibleNeedRun(new AnsibleNeedRun() {
                 @Override
                 public boolean isRunNeed() {
-                    return fileChanged || !NetworkUtils.isRemotePortOpen(msg.getIp(), msg.getAgentPort(), (int) TimeUnit.SECONDS.toMillis(5));
+                    return fileChanged || !NetworkUtils.isRemotePortOpen(targetIp, msg.getAgentPort(), (int) TimeUnit.SECONDS.toMillis(5));
                 }
             });
             runner.setPassword(msg.getPassword());
@@ -253,7 +274,8 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
             if (msg.getSshPort() != null) {
                 runner.setSshPort(msg.getSshPort());
             }
-            runner.setTargetIp(msg.getIp());
+            runner.setTargetIp(targetIp);
+            runner.setManagementNodeIp(managementNodeIp);
             runner.setPlayBookPath(tmpAgentYaml.getAbsolutePath());
             runner.run(new ReturnValueCompletion<Boolean>(msg, noErrorCompletion) {
                 @Override
@@ -271,7 +293,7 @@ public class AgentManagerImpl extends AbstractService implements AgentManager {
                         }
                     });
 
-                    connect(msg, new Completion(msg, noErrorCompletion) {
+                    connect(msg, targetIp, managementNodeIp, new Completion(msg, noErrorCompletion) {
                         @Override
                         public void success() {
                             bus.reply(msg, reply);

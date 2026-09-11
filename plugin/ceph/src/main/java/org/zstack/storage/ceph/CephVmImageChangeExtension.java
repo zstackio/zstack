@@ -1,12 +1,15 @@
 package org.zstack.storage.ceph;
 
+import org.zstack.compute.vm.CleanUpAfterVmChangeImageExtensionPoint;
 import org.zstack.core.db.Q;
 import org.zstack.header.core.Completion;
 import org.zstack.header.vm.ChangeVmImageExtensionPoint;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.header.vm.VmInstantiateResourceException;
 import org.zstack.header.volume.*;
+import org.zstack.storage.ceph.primary.CephRequiredUrlParser;
 import org.zstack.tag.SystemTagCreator;
 
 import java.util.List;
@@ -14,7 +17,21 @@ import java.util.List;
 import static org.zstack.utils.CollectionDSL.e;
 import static org.zstack.utils.CollectionDSL.map;
 
-public class CephVmImageChangeExtension implements ChangeVmImageExtensionPoint {
+public class CephVmImageChangeExtension implements ChangeVmImageExtensionPoint, CleanUpAfterVmChangeImageExtensionPoint {
+    @Override
+    public void cleanUpAfterVmChangeImage(VmInstanceInventory inv) {
+        if (!CephSystemTags.USE_CEPH_ROOT_POOL.hasTag(inv.getRootVolumeUuid())) {
+            return;
+        }
+
+        String installPath = Q.New(VolumeVO.class).select(VolumeVO_.installPath)
+                .eq(VolumeVO_.uuid, inv.getRootVolumeUuid()).findValue();
+        if (installPath != null && installPath.startsWith("ceph://")) {
+            CephSystemTags.USE_CEPH_ROOT_POOL.updateTagByToken(inv.getRootVolumeUuid(),
+                    CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN, CephRequiredUrlParser.getInstallPathFromUri(installPath).poolName);
+        }
+    }
+
     @Override
     public void preBeforeInstantiateVmResource(VmInstanceSpec spec) throws VmInstantiateResourceException {
         if (spec.getCurrentVmOperation() != VmInstanceConstant.VmOperation.ChangeImage

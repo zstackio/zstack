@@ -52,6 +52,14 @@ public class VmModelMountInventory  {
         return this.sourcePath;
     }
 
+    public java.lang.String cacheUuid;
+    public void setCacheUuid(java.lang.String cacheUuid) {
+        this.cacheUuid = cacheUuid;
+    }
+    public java.lang.String getCacheUuid() {
+        return this.cacheUuid;
+    }
+
     public VmModelMountStatus status;
     public void setStatus(VmModelMountStatus status) {
         this.status = status;

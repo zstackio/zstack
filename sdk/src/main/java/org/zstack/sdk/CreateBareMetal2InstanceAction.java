@@ -61,6 +61,15 @@ public class CreateBareMetal2InstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List dataDiskOfferingUuids;
 
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List l3NetworkUuids;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String defaultL3NetworkUuid;
+
+    @Param(required = false, maxLength = 4096, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String vmNicParams;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List rootVolumeSystemTags;
 

@@ -14,7 +14,7 @@
         <class>org.zstack.core.job.JobQueueEntryVO</class>
         <class>org.zstack.core.config.GlobalConfigVO</class>
         <class>org.zstack.core.eventlog.EventLogVO</class>
-        <class>org.zstack.core.plugin.PluginDriverVO</class>
+        <class>org.zstack.header.core.external.plugin.PluginDriverVO</class>
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>
@@ -119,6 +119,7 @@
         <class>org.zstack.network.securitygroup.VmNicSecurityGroupRefVO</class>
         <class>org.zstack.network.securitygroup.VmNicSecurityPolicyVO</class>
         <class>org.zstack.network.securitygroup.SecurityGroupSequenceNumberVO</class>
+        <class>org.zstack.networksecuritypolicyschedule.NetworkSecurityPolicyScheduleVO</class>
         <class>org.zstack.network.service.portforwarding.PortForwardingRuleVO</class>
         <class>org.zstack.network.service.virtualrouter.portforwarding.VirtualRouterPortForwardingRuleRefVO</class>
         <class>org.zstack.header.console.ConsoleProxyVO</class>
@@ -162,6 +163,8 @@
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupVmNicRefVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerServerGroupServerIpVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupRefVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO</class>
+        <class>org.zstack.network.service.lb.LoadBalancerListenerServerGroupServerIpRefVO</class>
         <class>org.zstack.network.service.lb.CertificateVO</class>
         <class>org.zstack.network.service.lb.LoadBalancerListenerCertificateRefVO</class>
         <class>org.zstack.header.console.ConsoleProxyAgentVO</class>

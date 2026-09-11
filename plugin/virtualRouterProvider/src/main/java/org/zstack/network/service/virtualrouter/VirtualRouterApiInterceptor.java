@@ -26,7 +26,13 @@ import org.zstack.header.query.QueryOp;
 import org.zstack.header.vm.*;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
+import org.zstack.network.service.lb.APICreateLoadBalancerListenerMsg;
+import org.zstack.network.service.lb.APIChangeLoadBalancerListenerMsg;
+import org.zstack.network.service.lb.LoadBalancerListenerVO;
+import org.zstack.network.service.lb.LoadBalancerConstants;
+import org.zstack.network.service.lb.LoadBalancerSystemTags;
 import org.zstack.network.service.lb.APIAddBackendServerToServerGroupMsg;
+import org.zstack.network.service.lb.APIChangeLoadBalancerListenerBackendServerStateMsg;
 import org.zstack.network.service.lb.LoadBalancerType;
 import org.zstack.network.service.lb.LoadBalancerVO;
 import org.zstack.network.service.lb.LoadBalancerVO_;
@@ -56,6 +62,11 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
     private ErrorFacade errf;
     @Autowired
     private CloudBus bus;
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.END;
+    }
 
     private void setServiceId(APIMessage msg) {
         /* APIReconnectVirtualRouterMsg, APIUpdateVirtualRouterMsg, APIFlushConfigToVirtualRouterMsg
@@ -87,6 +98,30 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIUpdateVirtualRouterMsg) msg);
         } else if (msg instanceof APIAddBackendServerToServerGroupMsg) {
             validate((APIAddBackendServerToServerGroupMsg)msg);
+        } else if (msg instanceof APIChangeLoadBalancerListenerBackendServerStateMsg) {
+            validate((APIChangeLoadBalancerListenerBackendServerStateMsg) msg);
+        }
+
+        if (msg instanceof APICreateLoadBalancerListenerMsg) {
+            APICreateLoadBalancerListenerMsg cmsg = (APICreateLoadBalancerListenerMsg) msg;
+            // The LB interceptor has normalized the protocol, including systemTags.
+            if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(cmsg.getHealthCheckProtocol())) {
+                validateHttpsHealthCheck(cmsg.getLoadBalancerUuid());
+            }
+        } else if (msg instanceof APIChangeLoadBalancerListenerMsg) {
+            APIChangeLoadBalancerListenerMsg cmsg = (APIChangeLoadBalancerListenerMsg) msg;
+            LoadBalancerListenerVO listener = dbf.findByUuid(cmsg.getUuid(), LoadBalancerListenerVO.class);
+            if (listener != null) {
+                String protocol = cmsg.getHealthCheckProtocol();
+                if (protocol == null) {
+                    String target = LoadBalancerSystemTags.HEALTH_TARGET.getTokenByResourceUuid(
+                            listener.getUuid(), LoadBalancerSystemTags.HEALTH_TARGET_TOKEN);
+                    protocol = target == null ? null : target.split(":")[0];
+                }
+                if (LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS.equals(protocol)) {
+                    validateHttpsHealthCheck(listener.getLoadBalancerUuid());
+                }
+            }
         }
 
         setServiceId(msg);
@@ -94,9 +129,29 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
         return msg;
     }
 
+    private void validateHttpsHealthCheck(String lbUuid) {
+        List<String> vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, lbUuid)
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid).listValues();
+        if (vrUuids.isEmpty()) {
+            // Standalone SLB is checked by SlbApiInterceptor.
+            return;
+        }
+        List<VirtualRouterVmVO> vrs = Q.New(VirtualRouterVmVO.class)
+                .in(VirtualRouterVmVO_.uuid, vrUuids).list();
+        for (VirtualRouterVmVO vr : vrs) {
+            if (!VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE.equals(vr.getGuestOsType())) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10041,
+                        "HTTPS health checks are only supported by openEuler VPC virtual routers; " +
+                                "load balancer[uuid:%s], virtual router[uuid:%s, guestOsType:%s]",
+                        lbUuid, vr.getUuid(), vr.getGuestOsType()));
+            }
+        }
+    }
+
     private void validate(APIAddBackendServerToServerGroupMsg msg) {
-        String type = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.type).findValue();
-        if (!(type == LoadBalancerType.Shared.toString())) {
+        LoadBalancerType type = Q.New(LoadBalancerVO.class).eq(LoadBalancerVO_.uuid, msg.getLoadBalancerUuid()).select(LoadBalancerVO_.type).findValue();
+        if (type != LoadBalancerType.Shared) {
             return;
         }
 
@@ -104,6 +159,31 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
             boolean vrExist = Q.New(VirtualRouterLoadBalancerRefVO.class).eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, msg.getLoadBalancerUuid()).isExists();
             if (!vrExist) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10021, "could not add server ip to load balancer server group, because share lb has no service provider, please add vmnic first"));
+            }
+        }
+    }
+
+    private void validate(APIChangeLoadBalancerListenerBackendServerStateMsg msg) {
+        LoadBalancerListenerVO listener = dbf.findByUuid(msg.getListenerUuid(), LoadBalancerListenerVO.class);
+        if (listener == null) {
+            return;
+        }
+
+        List<String> vrUuids = Q.New(VirtualRouterLoadBalancerRefVO.class)
+                .eq(VirtualRouterLoadBalancerRefVO_.loadBalancerUuid, listener.getLoadBalancerUuid())
+                .select(VirtualRouterLoadBalancerRefVO_.virtualRouterVmUuid)
+                .listValues();
+        if (vrUuids.isEmpty()) {
+            /* not provided by a virtual router, e.g. a standalone load balancer */
+            return;
+        }
+
+        List<VirtualRouterVmVO> vrs = Q.New(VirtualRouterVmVO.class).in(VirtualRouterVmVO_.uuid, vrUuids).list();
+        for (VirtualRouterVmVO vr : vrs) {
+            if (!VirtualRouterConstant.X86_VPC_EULER_GUEST_OS_TYPE.equals(vr.getGuestOsType())) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_10040,
+                        "the load balancer[uuid:%s] is provided by the virtual router[uuid:%s, guestOsType:%s], changing backend server state is only supported by the load balancer provided by the openEuler VPC virtual router",
+                        listener.getLoadBalancerUuid(), vr.getUuid(), vr.getGuestOsType()));
             }
         }
     }
@@ -308,6 +388,9 @@ public class VirtualRouterApiInterceptor implements ApiMessageInterceptor, Globa
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return Arrays.asList(APIAddBackendServerToServerGroupMsg.class);
+        return Arrays.asList(APIAddBackendServerToServerGroupMsg.class,
+                APIChangeLoadBalancerListenerBackendServerStateMsg.class,
+
+                APICreateLoadBalancerListenerMsg.class, APIChangeLoadBalancerListenerMsg.class);
     }
 }

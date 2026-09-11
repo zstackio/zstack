@@ -1143,10 +1143,10 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                CreateVolumeReply cr = reply.castReply();
                 if (!reply.isSuccess()) {
                     evt.setError(reply.getError());
                 } else {
+                    CreateVolumeReply cr = reply.castReply();
                     evt.setInventory(cr.getInventory());
                 }
                 bus.publish(evt);

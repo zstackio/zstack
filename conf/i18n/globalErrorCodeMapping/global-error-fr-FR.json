@@ -1,4 +1,7 @@
 {
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10099": "Paramètres réseau non valides pour la création d’une instance Baremetal2 DPU.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10100": "Le réseau L3 spécifié[uuid:%s] n’existe pas.",
+  "ORG_ZSTACK_BAREMETAL2_INSTANCE_10101": "Les paramètres réseau de création d’instance sont pris en charge uniquement par les châssis DPU.",
   "ORG_ZSTACK_XINFINI_SDK_10001": "Échec du formatage de la réponse API vers la classe [%s], resultString: %s, exception: %s",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10001": "Type de datacenter [%s] non pris en charge ici !",
   "ORG_ZSTACK_ALIYUN_CORE_DATACENTER_10000": "L'argument 'endpoint' doit être défini pour le type de configuration %s",
@@ -4406,6 +4409,7 @@
   "ORG_ZSTACK_IAM2_API_10030": "opération illégale, impossible d'ajouter le Rôle[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10021": "Le réseau backend [UUID:%s] est connecté au routeur VPC [UUID:%s], tandis que d'autres réseaux backend sont connectés au routeur VPC [UUID:%s].",
   "ORG_ZSTACK_IAM2_API_10031": "impossible d'opérer sur les ID de machines virtuelles obsolètes : %s",
+  "ORG_ZSTACK_IAM2_API_10032": "La ressource[type : %s, uuid : %s] est gérée par SCIM et ne peut pas être modifiée localement",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10022": "impossible d'exécuter l'opération API. Le réseau backend [uuid:%s] ne peut pas être un réseau VPC car d'autres réseaux backend ne sont pas des réseaux VPC.",
   "ORG_ZSTACK_NETWORK_SERVICE_SLB_10023": "impossible de créer le groupe SLB car le type de déploiement est invalide %s",
   "ORG_ZSTACK_IPSEC_10030": "Le CIDR [%s] n'est pas dans les CIDR définis de l'IPsec UUID [%s]",

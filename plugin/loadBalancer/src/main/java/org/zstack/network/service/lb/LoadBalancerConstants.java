@@ -15,6 +15,9 @@ import static java.util.Arrays.asList;
 public class LoadBalancerConstants {
     public static final String SERVICE_ID = "loadBalancer";
 
+    public static final String BACKEND_HEALTH_STATUS_UNCHECKED = "Unchecked";
+    public static final String BACKEND_HEALTH_STATUS_UNKNOWN = "Unknown";
+
     public static final String LB_NETWORK_SERVICE_TYPE_STRING = "LoadBalancer";
 
     public static final NetworkServiceType LB_NETWORK_SERVICE_TYPE = new NetworkServiceType(LB_NETWORK_SERVICE_TYPE_STRING);
@@ -29,6 +32,7 @@ public class LoadBalancerConstants {
     public static final String HEALTH_CHECK_TARGET_PROTOCL_TCP = "tcp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_UDP = "udp";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTP = "http";
+    public static final String HEALTH_CHECK_TARGET_PROTOCL_HTTPS = "https";
     public static final String HEALTH_CHECK_TARGET_PROTOCL_NONE = "none";
 
     public static final String HTTP_MODE_HTTP_KEEP_ALIVE = "http-keep-alive";
@@ -111,6 +115,13 @@ public class LoadBalancerConstants {
     public static final int PROTOCOL_HTTP_DEFAULT_PORT = 80;
     public static final int PROTOCOL_HTTPS_DEFAULT_PORT = 443;
 
+    public static final String DATA_PLANE_HAPROXY = "haproxy";
+    public static final String DATA_PLANE_IPVS = "ipvs";
+
+    public static final String FORWARD_MODE_FULL_NAT = "full_nat";
+    public static final String FORWARD_MODE_NAT = "nat";
+    public static final String FORWARD_MODE_DR = "dr";
+
     public static final int DNS_PORT = 53;
     public static final int SSH_PORT = 22;
     public static final int ZVR_PORT = 7272;
@@ -132,6 +143,7 @@ public class LoadBalancerConstants {
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_TCP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_UDP);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTP);
+        HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_HTTPS);
         HEALTH_CHECK_TARGET_PROTOCOLS.add(HEALTH_CHECK_TARGET_PROTOCL_NONE);
 
         HTTP_MODES.add(HTTP_MODE_HTTP_KEEP_ALIVE);
@@ -158,6 +170,9 @@ public class LoadBalancerConstants {
 
     public static final int HEALTH_CHECK_INTERVAL_MIN = 1;
     public static final int HEALTH_CHECK_INTERVAL_MAX = Integer.MAX_VALUE;
+
+    public static final int HEALTH_CHECK_TIMEOUT_MIN = 1;
+    public static final int HEALTH_CHECK_TIMEOUT_MAX = Integer.MAX_VALUE;
 
     public static final int NUMBER_OF_PROCESS_MIN = 1;
     public static final int NUMBER_OF_PROCESS_MAX = 64;

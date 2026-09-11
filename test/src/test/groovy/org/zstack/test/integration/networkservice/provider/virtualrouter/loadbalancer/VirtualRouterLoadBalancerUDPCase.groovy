@@ -7,6 +7,7 @@ import org.zstack.core.db.Q
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
+import org.zstack.network.service.lb.LoadBalancerListenerVO
 import org.zstack.network.service.lb.LoadBalancerSystemTags
 import org.zstack.network.service.lb.LoadBalancerVO
 import org.zstack.network.service.portforwarding.PortForwardingConstant
@@ -285,6 +286,25 @@ class VirtualRouterLoadBalancerUDPCase extends SubCase{
         badTcpDisabledHealthCheckAction.systemTags = ["healthCheckTarget::none:default"]
         badTcpDisabledHealthCheckResult = badTcpDisabledHealthCheckAction.call()
         assert badTcpDisabledHealthCheckResult.error != null
+
+        LoadBalancerListenerInventory tcpListener = createLoadBalancerListener {
+            protocol = "tcp"
+            loadBalancerUuid = lb.uuid
+            loadBalancerPort = 10003
+            instancePort = 10003
+            name = "test-tcp-listener-invalid-none-health-check-tag"
+        }
+        CreateSystemTagAction invalidTcpNoneTargetAction = new CreateSystemTagAction()
+        invalidTcpNoneTargetAction.resourceUuid = tcpListener.uuid
+        invalidTcpNoneTargetAction.resourceType = LoadBalancerListenerVO.simpleName
+        invalidTcpNoneTargetAction.tag = "healthCheckTarget::none:default"
+        invalidTcpNoneTargetAction.sessionId = adminSession()
+        CreateSystemTagAction.Result invalidTcpNoneTargetResult = invalidTcpNoneTargetAction.call()
+        assert invalidTcpNoneTargetResult.error != null
+        assert invalidTcpNoneTargetResult.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10193"
+        deleteLoadBalancerListener {
+            uuid = tcpListener.uuid
+        }
 
         CreateLoadBalancerListenerAction badDisabledHealthCheckAction = new CreateLoadBalancerListenerAction()
         badDisabledHealthCheckAction.loadBalancerUuid = lb.uuid

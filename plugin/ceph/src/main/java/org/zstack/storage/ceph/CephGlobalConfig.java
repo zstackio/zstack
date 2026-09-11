@@ -14,6 +14,8 @@ public class CephGlobalConfig {
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig IMAGE_CACHE_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "imageCache.cleanup.interval");
+    @GlobalConfigValidation(validValues = {"DefaultImageCachePool", "PreferVolumePool", "PreferExistingCache"})
+    public static GlobalConfig IMAGE_CACHE_POOL_STRATEGY = new GlobalConfig(CATEGORY, "imageCache.poolStrategy");
     @GlobalConfigValidation
     public static GlobalConfig PRIMARY_STORAGE_DELETE_POOL = new GlobalConfig(CATEGORY, "primaryStorage.deletePool");
     @GlobalConfigValidation(numberGreaterThan = 0)

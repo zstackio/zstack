@@ -10,10 +10,15 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import java.util.Locale;
+
 /**
  */
 public class ApplianceVmKvmBackend implements KVMStartVmAddonExtensionPoint {
     private static final CLogger logger = Utils.getLogger(ApplianceVmKvmBackend.class);
+    private static final String AARCH64 = "aarch64";
+    private static final String ALINUX_DISTRIBUTION_MARKER = "alinux";
+    private static final String ALIBABA_DISTRIBUTION_MARKER = "alibaba";
 
     @Override
     public VmInstanceType getVmTypeForAddonExtension() {
@@ -32,8 +37,12 @@ public class ApplianceVmKvmBackend implements KVMStartVmAddonExtensionPoint {
 
         chan.setSocketPath(makeChannelSocketPath(spec.getVmInventory().getUuid()));
         chan.setTargetName("applianceVm.vport");
+        Integer virtioSerialPort = getAliLinuxVirtioSerialPort(host);
+        if (virtioSerialPort != null) {
+            chan.setVirtioSerialPort(virtioSerialPort);
+        }
         cmd.getAddons().put(KVMAddons.Channel.NAME, chan);
-        logger.debug(String.format("make kvm channel device[path:%s, target:%s]", chan.getSocketPath(), chan.getTargetName()));
+        logger.debug(String.format("make kvm channel device[path:%s, target:%s, virtioSerialPort:%s]", chan.getSocketPath(), chan.getTargetName(), chan.getVirtioSerialPort()));
 
         chan_vr.setSocketPath(makeChannelVRSocketPath(spec.getVmInventory().getUuid()));
         chan_vr.setTargetName("org.qemu.guest_agent.0"); // this channel name must keep org.qemu.guest_agent to use qemu-ga
@@ -46,5 +55,21 @@ public class ApplianceVmKvmBackend implements KVMStartVmAddonExtensionPoint {
     }
     private String makeChannelVRSocketPath(String apvmuuid) {
         return PathUtil.join(ApplianceVmConstant.KVM_CHANNEL_QEMU_GA_PATH, apvmuuid);
+    }
+
+    private Integer getAliLinuxVirtioSerialPort(KVMHostInventory host) {
+        String osDistribution = host.getOsDistribution();
+        if (!AARCH64.equals(host.getArchitecture()) || osDistribution == null) {
+            return null;
+        }
+
+        String normalizedDistribution = osDistribution.toLowerCase(Locale.ROOT);
+        if (!normalizedDistribution.contains(ALINUX_DISTRIBUTION_MARKER) &&
+                !normalizedDistribution.contains(ALIBABA_DISTRIBUTION_MARKER)) {
+            return null;
+        }
+
+        int port = ApplianceVmGlobalConfig.ALINUX_VIRTIO_SERIAL_PORT.value(Integer.class);
+        return port == ApplianceVmGlobalConfig.DISABLED_ALINUX_VIRTIO_SERIAL_PORT ? null : port;
     }
 }

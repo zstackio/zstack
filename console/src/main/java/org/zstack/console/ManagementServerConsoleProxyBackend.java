@@ -34,6 +34,7 @@ import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
+import org.zstack.header.host.HypervisorType;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.utils.*;
 import org.zstack.utils.function.Function;
@@ -199,7 +200,11 @@ public class ManagementServerConsoleProxyBackend extends AbstractConsoleProxyBac
         inv.setProxyHostname(mgmtIp);
         inv.setAgentIp("127.0.0.1");
         inv.setAgentType(getConsoleBackendType());
-        inv.setToken(session.getUuid() + "_" + vm.getUuid());
+        String token = session.getUuid() + "_" + vm.getUuid();
+        if (consoleMgr.getHypervisorConsoleBackend(HypervisorType.valueOf(vm.getHypervisorType())).requireExclusiveConsoleSessionRenewal()) {
+            token = token + "_" + Platform.getUuid();
+        }
+        inv.setToken(token);
         inv.setVmInstanceUuid(vm.getUuid());
         return new ConsoleProxyBase(inv, getAgentPort());
     }

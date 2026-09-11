@@ -540,6 +540,9 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
             public void handle(Map data) {
                 HostInventory inv = factory.getHostInventory(vo.getUuid());
                 logger.debug(String.format("successfully added host[name:%s, hypervisor:%s, uuid:%s]", vo.getName(), vo.getHypervisorType(), vo.getUuid()));
+                HostCanonicalEvents.HostCreatedData event = new HostCanonicalEvents.HostCreatedData();
+                event.setHostUuid(inv.getUuid());
+                evtf.fire(HostCanonicalEvents.HOST_CREATED_PATH, event);
                 completion.success(inv);
             }
         }).error(new FlowErrorHandler(completion) {
@@ -1035,6 +1038,7 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         for (String uuid : hostsToLoadSorted) {
             ConnectHostMsg connectMsg = new ConnectHostMsg(uuid);
             connectMsg.setNewAdd(false);
+            connectMsg.setReconnect(true);
             connectMsg.setServiceId(serviceId);
             connectMsg.setStartPingTaskOnFailure(true);
             msgs.add(connectMsg);

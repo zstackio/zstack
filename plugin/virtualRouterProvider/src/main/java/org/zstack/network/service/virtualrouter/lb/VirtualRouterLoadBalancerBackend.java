@@ -47,6 +47,7 @@ import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.network.service.lb.*;
 import org.zstack.network.service.vip.*;
 import org.zstack.network.service.virtualrouter.*;
+import org.zstack.network.service.virtualrouter.vyos.VyosConstants;
 import org.zstack.network.service.virtualrouter.vyos.VyosGlobalConfig;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentCommand;
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands.AgentResponse;
@@ -250,6 +251,7 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                         vmNicL3NetworkUuids, vr.get().getUuid(), lbUuid));
                 throw new CloudRuntimeException("not support separate vr with multiple networks vpc!");
             }
+            return vrInventory;
         }
 
         DebugUtils.Assert(vrs.size() <= 1, String.format("multiple virtual routers[uuids:%s] found",
@@ -267,6 +269,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         int instancePort;
         int loadBalancerPort;
         String mode;
+        String dataPlane;
+        String forwardMode;
         List<String> parameters;
         String certificateUuid;
         String securityPolicyType;
@@ -320,10 +324,18 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
         public static class BackendServer {
             private String ip;
             private long weight;
+            @GrayVersion(value = "5.5.38")
+            private boolean disabled;
 
             public BackendServer(String ip, long weight) {
                 this.ip = ip;
                 this.weight = weight;
+            }
+
+            public BackendServer(String ip, long weight, boolean disabled) {
+                this.ip = ip;
+                this.weight = weight;
+                this.disabled = disabled;
             }
 
             public String getIp() {
@@ -340,6 +352,14 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
             public void setWeight(long weight) {
                 this.weight = weight;
+            }
+
+            public boolean isDisabled() {
+                return disabled;
+            }
+
+            public void setDisabled(boolean disabled) {
+                this.disabled = disabled;
             }
         }
 
@@ -460,6 +480,22 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
 
         public void setMode(String mode) {
             this.mode = mode;
+        }
+
+        public String getDataPlane() {
+            return dataPlane;
+        }
+
+        public void setDataPlane(String dataPlane) {
+            this.dataPlane = dataPlane;
+        }
+
+        public String getForwardMode() {
+            return forwardMode;
+        }
+
+        public void setForwardMode(String forwardMode) {
+            this.forwardMode = forwardMode;
         }
 
         public String getCertificateUuid() {
@@ -898,6 +934,8 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 to.setLbUuid(l.getLoadBalancerUuid());
                 to.setListenerUuid(l.getUuid());
                 to.setMode(l.getProtocol());
+                to.setDataPlane(l.getDataPlane());
+                to.setForwardMode(l.getForwardMode());
                 if (vip != null) {
                     to.setVip(vip.getIp());
                 }
@@ -938,10 +976,6 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                 }).collect(Collectors.toList());
 
                         for (LoadBalancerServerGroupVmNicRefInventory nicRef : nicRefInventories) {
-                            if (nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString())) {
-                                continue;
-                            }
-
                             VmNicInventory nic = struct.getVmNics().get(nicRef.getVmNicUuid());
                             if (nic == null) {
                                 throw new CloudRuntimeException(String.format("cannot find nic[uuid:%s]", nicRef.getVmNicUuid()));
@@ -977,22 +1011,27 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                                     }
                                     ips.add(usedIpInventory.getIp());
                                     params.add(String.format("balancerWeight::%s::%s", usedIpInventory.getIp(), nicRef.getWeight()));
-                                    backendServers.add(new LbTO.BackendServer(usedIpInventory.getIp(), nicRef.getWeight()));
+                                    boolean disabled = nicRef.getStatus().equals(LoadBalancerVmNicStatus.Inactive.toString()) ||
+                                            struct.isVmNicDisabled(l.getUuid(), groupInv.getUuid(),
+                                                    nicRef.getVmNicUuid());
+                                    backendServers.add(new LbTO.BackendServer(
+                                            usedIpInventory.getIp(), nicRef.getWeight(), disabled));
                                 }
                             }
                         }
 
                         for (LoadBalancerServerGroupServerIpInventory ipRef : ipRefInventories) {
-                            if (ipRef.getStatus().equals(LoadBalancerBackendServerStatus.Inactive.toString())) {
-                                continue;
-                            }
-
                             if (ipRef.getIpAddress() == null || ipRef.getIpAddress().isEmpty()) {
                                 continue;
                             }
                             ips.add(ipRef.getIpAddress());
                             params.add(String.format("balancerWeight::%s::%s", ipRef.getIpAddress(), ipRef.getWeight()));
-                            backendServers.add(new LbTO.BackendServer(ipRef.getIpAddress(), ipRef.getWeight()));
+                            boolean disabled = ipRef.getStatus().equals(
+                                    LoadBalancerBackendServerStatus.Inactive.toString()) ||
+                                    struct.isServerIpDisabled(l.getUuid(), groupInv.getUuid(),
+                                            ipRef.getId());
+                            backendServers.add(new LbTO.BackendServer(
+                                    ipRef.getIpAddress(), ipRef.getWeight(), disabled));
                         }
 
                         if (!backendServers.isEmpty()) {
@@ -1182,6 +1221,47 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
     }
 
     public void refresh(VirtualRouterVmInventory vr, LoadBalancerStruct struct, final Completion completion) {
+        if (struct.isSyncAllInstances()) {
+            List<String> targets = new ArrayList<>();
+            targets.add(vr.getUuid());
+            String peerUuid = haBackend.getVirtualRouterPeerUuid(vr.getUuid());
+            if (peerUuid != null && !targets.contains(peerUuid)) {
+                targets.add(peerUuid);
+            }
+            // Listener changes must observe peer failures, rather than the best-effort HA GC policy.
+            new While<>(targets).each((uuid, next) -> {
+                VirtualRouterVmVO target = dbf.findByUuid(uuid, VirtualRouterVmVO.class);
+                if (target == null) {
+                    next.addError(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_LB_10003, "virtual router[uuid:%s] no longer exists", uuid));
+                    next.done();
+                    return;
+                }
+                VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(target);
+                refreshCertsAndListeners(inv, getListenerCertificates(struct),
+                        makeLbTOs(struct, inv), true, new Completion(next) {
+                            @Override
+                            public void success() {
+                                new VirtualRouterRoleManager().makeLoadBalancerRole(uuid);
+                                next.done();
+                            }
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                next.addError(errorCode);
+                                next.done();
+                            }
+                        });
+            }).run(new WhileDoneCompletion(completion) {
+                @Override
+                public void done(ErrorCodeList errors) {
+                    if (errors.getCauses().isEmpty()) {
+                        completion.success();
+                    } else {
+                        completion.fail(errors.getCauses().get(0));
+                    }
+                }
+            });
+            return;
+        }
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName("refresh-lb-to-virtualRouter");
         chain.then(new ShareFlow() {
@@ -1280,6 +1360,52 @@ public class VirtualRouterLoadBalancerBackend extends AbstractVirtualRouterBacke
                 });
             }
         }).start();
+    }
+
+    @Override
+    public void validateBeforeCreateListener(LoadBalancerVO lbVO, APICreateLoadBalancerListenerMsg msg, Completion completion) {
+        if (!isTcpIpvsListener(msg)) {
+            completion.success();
+            return;
+        }
+
+        VirtualRouterVmInventory vr = findVirtualRouterVm(lbVO.getUuid());
+        if (vr == null) {
+            completion.success();
+            return;
+        }
+
+        ErrorCode errorCode = validateTcpIpvsZvrVersion(vr.getUuid());
+        if (errorCode != null) {
+            completion.fail(errorCode);
+            return;
+        }
+
+        completion.success();
+    }
+
+    private boolean isTcpIpvsListener(APICreateLoadBalancerListenerMsg msg) {
+        return LoadBalancerConstants.LB_PROTOCOL_TCP.equals(msg.getProtocol()) &&
+                LoadBalancerConstants.DATA_PLANE_IPVS.equals(msg.getDataPlane());
+    }
+
+    private ErrorCode validateTcpIpvsZvrVersion(String vmUuid) {
+        VirtualRouterMetadataVO metadataVO = dbf.findByUuid(vmUuid, VirtualRouterMetadataVO.class);
+        String zvrVersion = metadataVO == null ? null : metadataVO.getZvrVersion();
+        if (zvrVersion != null) {
+            zvrVersion = zvrVersion.trim();
+        }
+        if (!VirtualRouterMetadataOperator.zvrVersionCheck(zvrVersion)) {
+            return null;
+        }
+
+        if (new VersionComparator(zvrVersion).compare(VyosConstants.TCP_IPVS_MIN_ZVR_VERSION) < 0) {
+            return operr(ORG_ZSTACK_NETWORK_SERVICE_LB_10190,
+                    "target appliance vm[uuid:%s] zvr version [%s] does not support tcp ipvs listener, required >= %s",
+                    vmUuid, zvrVersion, VyosConstants.TCP_IPVS_MIN_ZVR_VERSION);
+        }
+
+        return null;
     }
 
     public void refreshCertsAndListeners(VirtualRouterVmInventory vr,

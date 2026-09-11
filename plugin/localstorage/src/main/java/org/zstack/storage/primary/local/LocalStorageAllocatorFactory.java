@@ -15,6 +15,7 @@ import org.zstack.header.allocator.HostAllocatorError;
 import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint;
 import org.zstack.header.allocator.HostAllocatorSpec;
 import org.zstack.header.allocator.HostAllocatorStrategyExtensionPoint;
+import org.zstack.header.allocator.RequiredDiskCapacity;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -109,13 +110,13 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
         long reservedCapacity = SizeUtils.sizeStringToBytes(PrimaryStorageGlobalConfig.RESERVED_CAPACITY.value());
 
         if (VmOperation.NewCreate.toString().equals(spec.getVmOperation()) || VmOperation.MigrateVolume.toString().equals(spec.getVmOperation())) {
-            List<String> huuids = getNeedCheckHostLocalStorageList(candidates, spec);
-            if (huuids.isEmpty()) {
+            Map<String, Boolean> needCheckLocalStorageHosts = getNeedCheckLocalStorageHosts(candidates, spec);
+            if (needCheckLocalStorageHosts.isEmpty()) {
                 return candidates;
             }
 
             SimpleQuery<LocalStorageHostRefVO> q = dbf.createQuery(LocalStorageHostRefVO.class);
-            q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, huuids);
+            q.add(LocalStorageHostRefVO_.hostUuid, Op.IN, needCheckLocalStorageHosts.keySet());
             if (!spec.getRequiredPrimaryStorageUuids().isEmpty()) {
                 q.add(LocalStorageHostRefVO_.primaryStorageUuid, Op.IN, spec.getRequiredPrimaryStorageUuids());
             }
@@ -126,10 +127,20 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
             for (LocalStorageHostRefVO ref : refs) {
                 String huuid = ref.getHostUuid();
                 String psUuid = ref.getPrimaryStorageUuid();
+                boolean onlyLocalStorage = needCheckLocalStorageHosts.get(huuid);
+                long requiredSize = spec.getRequiredDiskCapacities().stream()
+                        .filter(it -> psUuid.equals(it.getPrimaryStorageUuid()) ||
+                                (onlyLocalStorage && it.getPrimaryStorageUuid() == null))
+                        .mapToLong(RequiredDiskCapacity::getSize)
+                        .sum();
+                if (requiredSize == 0) {
+                    continue;
+                }
+
                 // check primary storage capacity and host physical capacity
                 boolean capacityChecked = PrimaryStorageCapacityChecker.New(psUuid,
                         ref.getAvailableCapacity(), ref.getTotalPhysicalCapacity(), ref.getAvailablePhysicalCapacity())
-                        .checkRequiredSize(spec.getDiskSize());
+                        .checkRequiredSize(requiredSize);
 
                 if (!capacityChecked) {
                     addHostPrimaryStorageBlacklist(huuid, psUuid, spec);
@@ -212,7 +223,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
     }
 
     /**
-     * @return hostUuid list
+     * @return hostUuid and whether the host is attached to local storage only
      * <p>
      * Just check it :
      * The current cluster is mounted only local storage
@@ -221,7 +232,7 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
      * Negative impact
      * In the case of local + non-local and no ps specified (non-local is Disconnected/Disabled, or non-local capacity not enough), the allocated host may not have enough disks
      */
-    private List<String> getNeedCheckHostLocalStorageList(List<HostVO> candidates, HostAllocatorSpec spec) {
+    private Map<String, Boolean> getNeedCheckLocalStorageHosts(List<HostVO> candidates, HostAllocatorSpec spec) {
         boolean isRequireNonLocalStorage = spec.getRequiredPrimaryStorageUuids()
                 .stream().noneMatch(LocalStorageUtils::isLocalStorage);
         Map<String, List<String>> grouped = candidates.stream().collect(
@@ -231,14 +242,16 @@ public class LocalStorageAllocatorFactory implements PrimaryStorageAllocatorStra
                 )
         );
 
-        List<String> result = new ArrayList<>();
+        Map<String, Boolean> result = new HashMap<>();
         for (Map.Entry<String, List<String>> entry : grouped.entrySet()) {
             boolean isOnlyAttachedLocalStorage = LocalStorageUtils.isOnlyAttachedLocalStorage(entry.getKey());
             if (!isOnlyAttachedLocalStorage && (isRequireNonLocalStorage || spec.isDryRun())) {
                 continue;
             }
 
-            result.addAll(entry.getValue());
+            for (String hostUuid : entry.getValue()) {
+                result.put(hostUuid, isOnlyAttachedLocalStorage);
+            }
         }
 
         return result;

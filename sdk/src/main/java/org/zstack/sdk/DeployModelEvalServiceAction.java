@@ -134,6 +134,12 @@ public class DeployModelEvalServiceAction extends AbstractAction {
     public java.util.List l3NetworkUuids;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String businessNetworkProfileUuid;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean enableDeveloperEndpoint;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Integer serviceBootUptime;
 
     @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)

@@ -14,7 +14,6 @@ public interface L3NetworkManager {
 
     UsedIpInventory reserveIp(IpRangeVO ipRange, String ip);
     UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress);
-
     boolean isIpRangeFull(IpRangeVO vo);
     
     List<BigInteger> getUsedIpInRange(IpRangeVO vo);

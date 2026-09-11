@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2
 
+import java.lang.Boolean
+import java.lang.Integer
 import java.sql.Timestamp
 import java.sql.Timestamp
 
@@ -42,6 +44,30 @@ doc {
 		desc "二层网络类型"
 		type "String"
 		since "0.6"
+	}
+	field {
+		name "vSwitchType"
+		desc "二层网络虚拟交换机类型"
+		type "String"
+		since "5.3.0"
+	}
+	field {
+		name "virtualNetworkId"
+		desc "VLAN/VNI 的虚拟网络 ID"
+		type "Integer"
+		since "5.3.0"
+	}
+	field {
+		name "isolated"
+		desc "二层网络是否开启隔离"
+		type "Boolean"
+		since "5.3.0"
+	}
+	field {
+		name "pvlan"
+		desc "二层网络私有 VLAN ID"
+		type "String"
+		since "5.3.0"
 	}
 	field {
 		name "createDate"

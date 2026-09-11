@@ -32,6 +32,10 @@
     </message>
 
     <message>
+        <name>org.zstack.network.service.lb.APIGetLoadBalancerServerGroupBackendServerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.service.lb.APIRefreshLoadBalancerMsg</name>
     </message>
 
@@ -145,6 +149,14 @@
 
     <message>
         <name>org.zstack.network.service.lb.APIChangeLoadBalancerBackendServerMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIChangeLoadBalancerListenerBackendServerStateMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.service.lb.APIGetLoadBalancerListenerBackendServersMsg</name>
     </message>
 
     <message>

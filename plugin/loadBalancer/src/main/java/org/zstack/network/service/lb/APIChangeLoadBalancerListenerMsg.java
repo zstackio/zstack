@@ -2,8 +2,10 @@ package org.zstack.network.service.lb;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.other.APIAuditor;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
@@ -19,12 +21,16 @@ import java.util.List;
         responseClass = APIChangeLoadBalancerListenerEvent.class,
         isAction = true
 )
-public class APIChangeLoadBalancerListenerMsg extends APIMessage implements LoadBalancerListenerMsg , LoadBalancerMessage {
+public class APIChangeLoadBalancerListenerMsg extends APIMessage implements LoadBalancerListenerMsg,
+        LoadBalancerMessage, APIAuditor {
     @APIParam(resourceType = LoadBalancerListenerVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
 
     @APIParam(numberRange = {LoadBalancerConstants.CONNECTION_IDLE_TIMEOUT_MIN, LoadBalancerConstants.CONNECTION_IDLE_TIMEOUT_MAX}, required = false)
     private Integer connectionIdleTimeout;
+
+    @APIParam(numberRange = {1, 65535}, required = false)
+    private Integer instancePort;
 
     @APIParam(numberRange = {LoadBalancerConstants.MAXIMUM_CONNECTION_MIN, LoadBalancerConstants.MAXIMUM_CONNECTION_MAX}, required = false)
     private Integer maxConnection;
@@ -44,8 +50,10 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(numberRange = {LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MIN, LoadBalancerConstants.HEALTH_CHECK_INTERVAL_MAX}, required = false)
     private Integer healthCheckInterval;
 
-    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
+    @APIParam(validValues = {LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_TCP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_UDP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTP, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_HTTPS, LoadBalancerConstants.HEALTH_CHECK_TARGET_PROTOCL_NONE}, required = false)
     private String healthCheckProtocol;
+    @APIParam(numberRange = {1, Integer.MAX_VALUE}, required = false)
+    private Integer healthCheckTimeout;
     @APIParam(validValues = {"GET", "HEAD"}, required = false)
     private String healthCheckMethod;
     @APIParam(validRegexValues = LoadBalancerConstants.HEALTH_CHECK_URI_REGEX, maxLength = 80, required = false)
@@ -92,6 +100,9 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
     @APIParam(required = false)
     private List<String> httpCompressAlgos;
 
+    @APIParam(validValues = {LoadBalancerConstants.FORWARD_MODE_FULL_NAT, LoadBalancerConstants.FORWARD_MODE_NAT, LoadBalancerConstants.FORWARD_MODE_DR}, required = false)
+    private String forwardMode;
+
     @APINoSee
     private String loadBalancerUuid;
 
@@ -117,6 +128,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setConnectionIdleTimeout(Integer connectionIdleTimeout) {
         this.connectionIdleTimeout = connectionIdleTimeout;
+    }
+
+    public Integer getInstancePort() {
+        return instancePort;
+    }
+
+    public void setInstancePort(Integer instancePort) {
+        this.instancePort = instancePort;
     }
 
     public Integer getMaxConnection() {
@@ -175,12 +194,25 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
         this.loadBalancerUuid = loadBalancerUuid;
     }
 
+    @Override
+    public Result audit(APIMessage msg, APIEvent rsp) {
+        return new Result(loadBalancerUuid, LoadBalancerVO.class);
+    }
+
     public String getHealthCheckProtocol() {
         return healthCheckProtocol;
     }
 
     public void setHealthCheckProtocol(String healthCheckProtocol) {
         this.healthCheckProtocol = healthCheckProtocol;
+    }
+
+    public Integer getHealthCheckTimeout() {
+        return healthCheckTimeout;
+    }
+
+    public void setHealthCheckTimeout(Integer healthCheckTimeout) {
+        this.healthCheckTimeout = healthCheckTimeout;
     }
 
     public String getHealthCheckMethod() {
@@ -305,6 +337,14 @@ public class APIChangeLoadBalancerListenerMsg extends APIMessage implements Load
 
     public void setHttpCompressAlgos(List<String> httpCompressAlgos) {
         this.httpCompressAlgos = httpCompressAlgos;
+    }
+
+    public String getForwardMode() {
+        return forwardMode;
+    }
+
+    public void setForwardMode(String forwardMode) {
+        this.forwardMode = forwardMode;
     }
 
     public static APIChangeLoadBalancerListenerMsg __example__() {

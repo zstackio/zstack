@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.zstack.appliancevm.*;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.configuration.InstanceOfferingInventory;
 import org.zstack.header.core.ReturnValueCompletion;
@@ -13,8 +14,11 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.network.l3.L3NetworkInventory;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceSpec;
 import org.zstack.kvm.KVMAddons;
 import org.zstack.kvm.KVMAgentCommands;
+import org.zstack.kvm.KVMHostInventory;
 import org.zstack.simulator.appliancevm.ApplianceVmSimulatorConfig;
 import org.zstack.simulator.kvm.KVMSimulatorConfig;
 import org.zstack.test.Api;
@@ -104,6 +108,7 @@ public class TestCreateApplianceVmKvm2 {
                     String socketPath = aext.makeChannelSocketPath(vm.getUuid());
                     Assert.assertEquals(socketPath, chan.getSocketPath());
                     Assert.assertEquals("applianceVm.vport", chan.getTargetName());
+                    Assert.assertNull(chan.getVirtioSerialPort());
                     success = true;
                 } finally {
                     latch.countDown();
@@ -119,5 +124,46 @@ public class TestCreateApplianceVmKvm2 {
 
         latch.await(30, TimeUnit.SECONDS);
         Assert.assertTrue(success);
+
+        Assert.assertEquals(Integer.valueOf(8), makeChannel("AliLinux", "aarch64").getVirtioSerialPort());
+        Assert.assertEquals(Integer.valueOf(8), makeChannel("Alibaba Cloud Linux", "aarch64").getVirtioSerialPort());
+        Assert.assertNull(makeChannel("CentOS", "aarch64").getVirtioSerialPort());
+        Assert.assertNull(makeChannel("AliLinux", "x86_64").getVirtioSerialPort());
+
+        updateAliLinuxVirtioSerialPort(0);
+        Assert.assertNull(makeChannel("AliLinux", "aarch64").getVirtioSerialPort());
+
+        updateAliLinuxVirtioSerialPort(9);
+        Assert.assertEquals(Integer.valueOf(9), makeChannel("AliLinux", "aarch64").getVirtioSerialPort());
+
+        try {
+            updateAliLinuxVirtioSerialPort(7);
+            Assert.fail("must reject a virtio-serial port below 8");
+        } catch (ApiSenderException ignored) {
+        }
+    }
+
+    private KVMAddons.Channel makeChannel(String osDistribution, String architecture) {
+        VmInstanceInventory vm = new VmInstanceInventory();
+        vm.setUuid("test-appliance-vm");
+        vm.setType(ApplianceVmConstant.APPLIANCE_VM_TYPE);
+        VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setVmInventory(vm);
+
+        KVMHostInventory host = new KVMHostInventory();
+        host.setOsDistribution(osDistribution);
+        host.setArchitecture(architecture);
+
+        KVMAgentCommands.StartVmCmd cmd = new KVMAgentCommands.StartVmCmd();
+        aext.addAddon(host, spec, cmd);
+        return (KVMAddons.Channel) cmd.getAddons().get(KVMAddons.Channel.NAME);
+    }
+
+    private void updateAliLinuxVirtioSerialPort(int port) throws ApiSenderException {
+        GlobalConfigInventory config = new GlobalConfigInventory();
+        config.setCategory(ApplianceVmGlobalConfig.CATEGORY);
+        config.setName(ApplianceVmGlobalConfig.ALINUX_VIRTIO_SERIAL_PORT.getName());
+        config.setValue(String.valueOf(port));
+        api.updateGlobalConfig(config);
     }
 }

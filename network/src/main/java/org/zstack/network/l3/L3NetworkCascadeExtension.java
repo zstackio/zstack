@@ -16,11 +16,13 @@ import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.header.network.l3.*;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.network.l2.NetworkDeletionContexts;
 
 import javax.persistence.TypedQuery;
 import java.util.ArrayList;
@@ -87,6 +89,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             L3NetworkDeletionMsg msg = new L3NetworkDeletionMsg();
             msg.setL3NetworkUuid(l3inv.getUuid());
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
+            msg.setNetworkDeletionContext(NetworkDeletionContexts.get(action, l3inv.getL2NetworkUuid()));
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3inv.getUuid());
             msgs.add(msg);
         }
@@ -125,7 +128,8 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
 
         try {
             for (L3NetworkInventory prinv : l3invs) {
-                extpEmitter.preDelete(prinv);
+                extpEmitter.preDelete(prinv,
+                        NetworkDeletionContexts.get(action, prinv.getL2NetworkUuid()));
             }
 
             completion.success();

@@ -1,8 +1,18 @@
 package org.zstack.test.integration.kvm.vm.migrate
 
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.PluginRegistry
+import org.zstack.core.db.DatabaseFacade
+import org.zstack.header.allocator.AllocateHostDryRunReply
+import org.zstack.header.allocator.DesignatedAllocateHostMsg
+import org.zstack.header.allocator.HostAllocatorConstant
+import org.zstack.header.allocator.HostAllocatorFilterExtensionPoint
+import org.zstack.header.allocator.HostAllocatorSpec
+import org.zstack.header.host.HostVO
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.kvm.KVMSystemTags
 import org.zstack.sdk.ClusterInventory
 import org.zstack.sdk.HostInventory
 import org.zstack.sdk.MigrateVmAction
@@ -11,6 +21,9 @@ import org.zstack.test.integration.kvm.KvmTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import static org.zstack.utils.CollectionDSL.e
+import static org.zstack.utils.CollectionDSL.map
 
 /**
  * Test ResourceBindingAllocatorFlow truth table (8 combinations)
@@ -23,12 +36,14 @@ import org.zstack.utils.data.SizeUnit
  * | 4 | true                 | Soft                    | false                | Migrate Freely    |
  * | 5 | false                | Hard                    | true                 | Migrate in Current Cluster |
  * | 6 | false                | Hard                    | false                | Fail              |
- * | 7 | false                | Soft                    | true                 | Migrate in Current Cluster |
+ * | 7 | false                | Soft                    | true                 | Prefer Current Cluster, Keep Cross-Cluster Fallback |
  * | 8 | false                | Soft                    | false                | Try Other Clusters |
  *
  * ZSTAC-75428
  */
 class ResourceBindingAllocatorFlowCase extends SubCase {
+    private static final String QEMU_IMG_VERSION = "2.9.0"
+
     EnvSpec env
 
     @Override
@@ -76,6 +91,8 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
                         managementIp = "127.0.0.1"
                         username = "root"
                         password = "password"
+                        systemTags = [KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(
+                                map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, QEMU_IMG_VERSION)))]
                     }
 
                     kvm {
@@ -83,6 +100,8 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
                         managementIp = "127.0.0.2"
                         username = "root"
                         password = "password"
+                        systemTags = [KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(
+                                map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, QEMU_IMG_VERSION)))]
                     }
 
                     attachPrimaryStorage("nfs")
@@ -98,6 +117,8 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
                         managementIp = "127.0.0.3"
                         username = "root"
                         password = "password"
+                        systemTags = [KVMSystemTags.QEMU_IMG_VERSION.instantiateTag(
+                                map(e(KVMSystemTags.QEMU_IMG_VERSION_TOKEN, QEMU_IMG_VERSION)))]
                     }
 
                     attachPrimaryStorage("nfs")
@@ -153,6 +174,14 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
             testCase6_AcrossFalse_Hard_ResourceFalse()
             testCase7_AcrossFalse_Soft_ResourceTrue()
             testCase8_AcrossFalse_Soft_ResourceFalse()
+
+            testSoftBindingKeepsCrossClusterFallbackAndPrefersCurrentCluster()
+            testSoftBindingFallsBackWhenLaterFilterRejectsCurrentCluster()
+            testHardBindingDoesNotFallbackWhenLaterFilterRejectsCurrentCluster()
+            testAcrossClustersStillFallsBackWhenLaterFilterRejectsCurrentCluster()
+            testSoftBindingMergesExistingSoftAvoidHostsForDryRunListAll()
+            testDesignatedHostStrategyPreservesSemantics()
+            testLastHostPreferredStrategyPreservesSemantics()
         }
     }
 
@@ -381,7 +410,7 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
         }
     }
 
-    // #7: across=false, strategy=Soft, resource=true -> Migrate in Current Cluster
+    // #7: across=false, strategy=Soft, resource=true -> prefer current cluster and keep cross-cluster fallback
     void testCase7_AcrossFalse_Soft_ResourceTrue() {
         VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
         HostInventory host2 = env.inventoryByName("host2") as HostInventory
@@ -452,6 +481,187 @@ class ResourceBindingAllocatorFlowCase extends SubCase {
 
         // Reset VM to host1
         resetVmToHost1(vm)
+    }
+
+    void testSoftBindingKeepsCrossClusterFallbackAndPrefersCurrentCluster() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+        updateResourceBindingConfig(false, "Soft")
+
+        List<HostInventory> candidates = getVmMigrationCandidateHosts {
+            vmInstanceUuid = vm.uuid
+        } as List<HostInventory>
+
+        assert candidates*.uuid == [host2.uuid, host3.uuid]:
+                "Soft binding must retain the cross-cluster fallback and prefer the current cluster"
+    }
+
+    void testSoftBindingFallsBackWhenLaterFilterRejectsCurrentCluster() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+        updateResourceBindingConfig(false, "Soft")
+
+        withMismatchedQemuImageVersion(host2.uuid) {
+            List<HostInventory> candidates = getVmMigrationCandidateHosts {
+                vmInstanceUuid = vm.uuid
+            } as List<HostInventory>
+            assert candidates*.uuid == [host3.uuid]:
+                    "Soft binding must fall back after a later FilterFlow rejects all current-cluster hosts"
+        }
+    }
+
+    void testHardBindingDoesNotFallbackWhenLaterFilterRejectsCurrentCluster() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        updateResourceBindingConfig(false, "Hard")
+
+        withMismatchedQemuImageVersion(host2.uuid) {
+            List<HostInventory> candidates = getVmMigrationCandidateHosts {
+                vmInstanceUuid = vm.uuid
+            } as List<HostInventory>
+            assert candidates.isEmpty():
+                    "Hard binding must not fall back to another cluster"
+        }
+    }
+
+    void testAcrossClustersStillFallsBackWhenLaterFilterRejectsCurrentCluster() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+        updateResourceBindingConfig(true, "Hard")
+
+        withMismatchedQemuImageVersion(host2.uuid) {
+            List<HostInventory> candidates = getVmMigrationCandidateHosts {
+                vmInstanceUuid = vm.uuid
+            } as List<HostInventory>
+            assert candidates*.uuid == [host3.uuid]
+        }
+    }
+
+    void testSoftBindingMergesExistingSoftAvoidHostsForDryRunListAll() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host1 = env.inventoryByName("host1") as HostInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+        updateResourceBindingConfig(false, "Soft")
+
+        List<String> capturedSoftAvoidHosts = null
+        HostAllocatorFilterExtensionPoint observer = [
+                filterHostCandidates: { List<HostVO> candidates, HostAllocatorSpec spec ->
+                    capturedSoftAvoidHosts = spec.softAvoidHostUuids == null ? null :
+                            new ArrayList<>(spec.softAvoidHostUuids)
+                    return candidates
+                },
+                filterErrorReason   : { -> "test observer never filters hosts" }
+        ] as HostAllocatorFilterExtensionPoint
+        List<HostAllocatorFilterExtensionPoint> extensions = bean(PluginRegistry.class)
+                .getExtensionList(HostAllocatorFilterExtensionPoint.class)
+        extensions.add(observer)
+        try {
+            AllocateHostDryRunReply reply = dryRunAllocate(
+                    HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE,
+                    null, true, [host1.uuid], [host1.uuid])
+            assert reply.hosts*.uuid == [host2.uuid, host3.uuid]:
+                    "dryRun/listAll must consume the cross-cluster soft avoid written by ResourceBinding"
+            assert capturedSoftAvoidHosts == [host1.uuid, host3.uuid]:
+                    "ResourceBinding must preserve existing soft avoids and append cross-cluster hosts in stable order"
+        } finally {
+            extensions.remove(observer)
+        }
+    }
+
+    void testDesignatedHostStrategyPreservesSemantics() {
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+
+        updateResourceBindingConfig(true, "Soft")
+        AllocateHostDryRunReply designated = dryRunAllocate(
+                HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE,
+                host3.uuid, true, [], [host3.uuid])
+        assert designated.hosts*.uuid == [host3.uuid]:
+                "SoftAvoidHostSortFlow must not weaken a designated host"
+    }
+
+    void testLastHostPreferredStrategyPreservesSemantics() {
+        VmInstanceInventory vm = env.inventoryByName("vm") as VmInstanceInventory
+        HostInventory host1 = env.inventoryByName("host1") as HostInventory
+        HostInventory host2 = env.inventoryByName("host2") as HostInventory
+        HostInventory host3 = env.inventoryByName("host3") as HostInventory
+
+        updateResourceBindingConfig(true, "Soft")
+        VmInstanceVO vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+        String originalLastHostUuid = vmvo.lastHostUuid
+        vmvo.lastHostUuid = host1.uuid
+        bean(DatabaseFacade.class).updateAndRefresh(vmvo)
+        try {
+            AllocateHostDryRunReply lastHost = dryRunAllocate(
+                    HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE,
+                    null, false, [], [host1.uuid])
+            assert lastHost.hosts*.uuid == [host1.uuid]:
+                    "an available last host must remain preferred even when it is soft avoided"
+
+            AllocateHostDryRunReply fallback = dryRunAllocate(
+                    HostAllocatorConstant.LAST_HOST_PREFERRED_ALLOCATOR_STRATEGY_TYPE,
+                    null, false, [host1.uuid], [host2.uuid])
+            assert fallback.hosts*.uuid[0] == host3.uuid:
+                    "when the last host is unavailable, LastHostPreferred must honor soft avoid ordering"
+            assert (fallback.hosts*.uuid as Set) == ([host2.uuid, host3.uuid] as Set)
+        } finally {
+            vmvo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
+            vmvo.lastHostUuid = originalLastHostUuid
+            bean(DatabaseFacade.class).updateAndRefresh(vmvo)
+        }
+    }
+
+    private void withMismatchedQemuImageVersion(String hostUuid, Closure body) {
+        try {
+            KVMSystemTags.QEMU_IMG_VERSION.updateTagByToken(hostUuid,
+                    KVMSystemTags.QEMU_IMG_VERSION_TOKEN, "${QEMU_IMG_VERSION}-mismatch")
+            body()
+        } finally {
+            KVMSystemTags.QEMU_IMG_VERSION.updateTagByToken(hostUuid,
+                    KVMSystemTags.QEMU_IMG_VERSION_TOKEN, QEMU_IMG_VERSION)
+        }
+    }
+
+    private AllocateHostDryRunReply dryRunAllocate(String allocatorStrategy, String hostUuid,
+                                                    boolean listAllHosts, List<String> avoidHostUuids,
+                                                    List<String> softAvoidHostUuids) {
+        VmInstanceVO vmvo = dbFindByUuid((env.inventoryByName("vm") as VmInstanceInventory).uuid,
+                VmInstanceVO.class)
+        DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg()
+        msg.vmInstance = org.zstack.header.vm.VmInstanceInventory.valueOf(vmvo)
+        msg.cpuCapacity = vmvo.cpuNum
+        msg.memoryCapacity = vmvo.memorySize
+        msg.allocatorStrategy = allocatorStrategy
+        msg.vmOperation = org.zstack.header.vm.VmInstanceConstant.VmOperation.Start.toString()
+        msg.l3NetworkUuids = vmvo.vmNics*.l3NetworkUuid
+        msg.hostUuid = hostUuid
+        msg.dryRun = true
+        msg.listAllHosts = listAllHosts
+        msg.allowNoL3Networks = true
+        msg.avoidHostUuids = new ArrayList<>(avoidHostUuids)
+        msg.softAvoidHostUuids = new ArrayList<>(softAvoidHostUuids)
+
+        CloudBus bus = bean(CloudBus.class)
+        msg.serviceId = bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID)
+        AllocateHostDryRunReply reply = bus.call(msg) as AllocateHostDryRunReply
+        assert reply.success: reply.error
+        return reply
+    }
+
+    private void updateResourceBindingConfig(boolean acrossClusters, String strategy) {
+        updateGlobalConfig {
+            category = VmGlobalConfig.CATEGORY
+            name = "vm.ha.across.clusters"
+            value = acrossClusters.toString()
+        }
+        updateGlobalConfig {
+            category = VmGlobalConfig.CATEGORY
+            name = "resourceBinding.strategy"
+            value = strategy
+        }
     }
 
     private void resetVmToHost1(VmInstanceInventory vm) {

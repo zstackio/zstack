@@ -144,6 +144,10 @@ public class ApiTimeoutManagerImpl implements ApiTimeoutManager, Component,
     }
 
     private MessageTimeoutDsc getMessageTimeoutDscFromMessage(Message msg) {
+        if (!(msg instanceof ConfigurableTimeoutMessage) && !(msg instanceof NeedReplyMessage)) {
+            return null;
+        }
+
         MessageTimeoutDsc mtd = new MessageTimeoutDsc();
 
         if (msg instanceof ConfigurableTimeoutMessage) {

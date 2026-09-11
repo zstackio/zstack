@@ -3,9 +3,19 @@ package org.zstack.test.integration.identity.account
 import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.core.cascade.CascadeAction
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.PluginRegistry
+import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.identity.AccountConstant
+import org.zstack.header.identity.AccountInventory as HeaderAccountInventory
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
+import org.zstack.header.identity.AccountVO
+import org.zstack.header.identity.AccountVO_
+import org.zstack.header.identity.DeleteAccountMsg
+import org.zstack.identity.BeforeAccountCascadeDeleteExtensionPoint
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceDeletionPolicyManager
 import org.zstack.network.securitygroup.SecurityGroupConstant
@@ -175,8 +185,59 @@ class DeleteNormalAccountCase extends SubCase {
 
             VmGlobalConfig.VM_DELETION_POLICY.updateValue(VmInstanceDeletionPolicyManager.VmInstanceDeletionPolicy.Delay.toString())
 
+            testAccountCascadeDeleteExtensionCoversApiAndInternalMessage()
             testAdminAdoptOrphanedResourceAfterDeletedNormalAccount()
         }
+    }
+
+    void testAccountCascadeDeleteExtensionCoversApiAndInternalMessage() {
+        AccountInventory blocked = createAccount {
+            name = "blocked-account"
+            password = "password"
+        } as AccountInventory
+        AccountInventory allowed = createAccount {
+            name = "allowed-account"
+            password = "password"
+        } as AccountInventory
+        AccountInventory internal = createAccount {
+            name = "internal-account"
+            password = "password"
+        } as AccountInventory
+        def first = new RecordingAccountDeleteExtension()
+        def second = new RecordingAccountDeleteExtension(blockedAccountUuid: blocked.uuid)
+        PluginRegistry registry = bean(PluginRegistry.class)
+        registry.defineDynamicExtension(BeforeAccountCascadeDeleteExtensionPoint.class, first)
+        registry.defineDynamicExtension(BeforeAccountCascadeDeleteExtensionPoint.class, second)
+        List<BeforeAccountCascadeDeleteExtensionPoint> extensions = registry
+                .getExtensionList(BeforeAccountCascadeDeleteExtensionPoint.class)
+
+        try {
+            expectError {
+                deleteAccount {
+                    uuid = blocked.uuid
+                }
+            }
+            assert Q.New(AccountVO.class).eq(AccountVO_.uuid, blocked.uuid).isExists()
+            assert first.cancelled == [blocked.uuid]
+            assert second.cancelled.isEmpty()
+
+            deleteAccount {
+                uuid = allowed.uuid
+            }
+            assert !Q.New(AccountVO.class).eq(AccountVO_.uuid, allowed.uuid).isExists()
+
+            def msg = new DeleteAccountMsg(uuid: internal.uuid)
+            CloudBus bus = bean(CloudBus.class)
+            bus.makeTargetServiceIdByResourceUuid(msg, AccountConstant.SERVICE_ID, internal.uuid)
+            assert bus.call(msg).success
+            assert !Q.New(AccountVO.class).eq(AccountVO_.uuid, internal.uuid).isExists()
+        } finally {
+            extensions.remove(second)
+            extensions.remove(first)
+        }
+
+        assert first.prepared.containsAll([blocked.uuid, allowed.uuid, internal.uuid])
+        assert second.prepared.containsAll([allowed.uuid, internal.uuid])
     }
 
     void testAdminAdoptOrphanedResourceAfterDeletedNormalAccount() {
@@ -232,5 +293,29 @@ class DeleteNormalAccountCase extends SubCase {
                     .count()
             assert size == resourceUuids.size() as Long
         }
+    }
+}
+
+class RecordingAccountDeleteExtension implements BeforeAccountCascadeDeleteExtensionPoint {
+    String blockedAccountUuid
+    List<String> prepared = []
+    List<String> cancelled = []
+
+    @Override
+    void beforeDelete(HeaderAccountInventory account, CascadeAction action,
+                      Completion completion) {
+        if (account.uuid == blockedAccountUuid) {
+            completion.fail(new ErrorCode("SYS.1000", "blocked account delete"))
+            return
+        }
+        prepared.add(account.uuid)
+        completion.success()
+    }
+
+    @Override
+    void cancel(HeaderAccountInventory account, CascadeAction action,
+                Completion completion) {
+        cancelled.add(account.uuid)
+        completion.success()
     }
 }

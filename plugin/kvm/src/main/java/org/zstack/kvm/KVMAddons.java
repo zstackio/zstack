@@ -9,6 +9,7 @@ public interface KVMAddons {
 
         private String socketPath;
         private String targetName;
+        private Integer virtioSerialPort;
 
         public String getSocketPath() {
             return socketPath;
@@ -24,6 +25,14 @@ public interface KVMAddons {
 
         public void setTargetName(String targetName) {
             this.targetName = targetName;
+        }
+
+        public Integer getVirtioSerialPort() {
+            return virtioSerialPort;
+        }
+
+        public void setVirtioSerialPort(Integer virtioSerialPort) {
+            this.virtioSerialPort = virtioSerialPort;
         }
     }
 }

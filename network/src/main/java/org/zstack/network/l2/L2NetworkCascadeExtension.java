@@ -11,8 +11,10 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -50,6 +52,8 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private ErrorFacade errf;
     @Autowired
     private PluginRegistry pluginRgty;
+    @Autowired
+    private L2NetworkConfirmedDeleteCoordinator confirmedDeleteCoordinator;
 
     private static final String NAME = L2NetworkVO.class.getSimpleName();
 
@@ -102,7 +106,9 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         try {
             final List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
             if (l2invs != null) {
-                l2invs.forEach(l -> dbf.eoCleanup(L2NetworkVO.class, l.getUuid()));
+                l2invs.forEach(l -> {
+                    dbf.eoCleanup(L2NetworkVO.class, l.getUuid());
+                });
             } else {
                 dbf.eoCleanup(L2NetworkVO.class);
             }
@@ -121,22 +127,26 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        if (!l2invs.isEmpty()) {
-            for (L2NetworkCascadeFilterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkCascadeFilterExtensionPoint.class)) {
-                l2invs = ext.filterL2NetworkCascade(l2invs, action);
-            }
-        }
+        l2invs = filterInventories(l2invs, action);
+        List<L2NetworkInventory> confirmedInventories = confirmedInventories(l2invs);
 
         List<L2NetworkDeletionMsg> msgs = new ArrayList<L2NetworkDeletionMsg>();
         for (L2NetworkInventory l2inv : l2invs) {
             L2NetworkDeletionMsg msg = new L2NetworkDeletionMsg();
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL2NetworkUuid(l2inv.getUuid());
+            if (confirmedInventories.contains(l2inv)) {
+                NetworkDeletionContext context = NetworkDeletionContexts.get(action, l2inv.getUuid());
+                msg.setNetworkDeletionContext(context);
+                msg.setOperationUuid(context == null
+                        ? org.zstack.core.Platform.getUuid() : context.getOperationUuid());
+            }
             bus.makeTargetServiceIdByResourceUuid(msg, L2NetworkConstant.SERVICE_ID, l2inv.getUuid());
             msgs.add(msg);
         }
 
         List<L2NetworkInventory> finalL2invs = l2invs;
+        List<L2NetworkInventory> finalConfirmedInventories = confirmedInventories;
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override
             public void run(List<MessageReply> replies) {
@@ -152,12 +162,51 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 List<String> uuids = new ArrayList<String>();
                 for (MessageReply r : replies) {
                     L2NetworkInventory inv = finalL2invs.get(replies.indexOf(r));
+                    if (!r.isSuccess()) {
+                        if (finalConfirmedInventories.contains(inv)) {
+                            completion.fail(r.getError());
+                            return;
+                        }
+                    }
                     uuids.add(inv.getUuid());
                     logger.debug(String.format("delete l2 network[uuid:%s, name:%s]", inv.getUuid(), inv.getName()));
                 }
 
-                dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
-                completion.success();
+                if (finalConfirmedInventories.isEmpty()) {
+                    dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
+                    completion.success();
+                    return;
+                }
+
+                confirmedDeleteCoordinator.complete(action, finalConfirmedInventories, new Completion(completion) {
+                    @Override
+                    public void success() {
+                        try {
+                            dbf.removeByPrimaryKeys(uuids, L2NetworkVO.class);
+                            new SQLBatch() {
+                                @Override
+                                protected void scripts() {
+                                    for (L2NetworkInventory inv : finalConfirmedInventories) {
+                                        for (L2DeleteConfirmExtensionPoint ext :
+                                                confirmedDeleteCoordinator.confirmedExtensions(inv)) {
+                                            ext.deleteLocalMetadata(inv,
+                                                    NetworkDeletionContexts.get(action, inv.getUuid()));
+                                        }
+                                    }
+                                }
+                            }.execute();
+                            completion.success();
+                        } catch (RuntimeException e) {
+                            completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10022,
+                                    "failed to commit confirmed l2 network deletion: %s", e.getMessage()));
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
             }
         });
     }
@@ -173,11 +222,58 @@ public class L2NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
             for (L2NetworkInventory prinv : l2invs) {
                 extpEmitter.preDelete(prinv);
             }
-
-            completion.success();
         } catch (L2NetworkException e) {
-            completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10000, e.getMessage()));
+            completion.fail(inerr(ORG_ZSTACK_NETWORK_L2_10031, e.getMessage()));
+            return;
         }
+        List<L2NetworkInventory> confirmedInventories = confirmedInventories(l2invs);
+        if (confirmedInventories.isEmpty()
+                || confirmedDeleteCoordinator.isPrepared(action, confirmedInventories)) {
+            completion.success();
+        } else {
+            confirmedDeleteCoordinator.prepare(action, confirmedInventories, completion);
+        }
+    }
+
+    public void prepareConfirmedDelete(CascadeAction action, Completion completion) {
+        List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
+        if (l2invs == null) {
+            completion.success();
+            return;
+        }
+        confirmedDeleteCoordinator.prepare(action, confirmedInventories(l2invs), completion);
+    }
+
+    public void cancelConfirmedDelete(CascadeAction action, Completion completion) {
+        List<L2NetworkInventory> l2invs = l2NetworkFromAction(action);
+        if (l2invs == null) {
+            completion.success();
+            return;
+        }
+        confirmedDeleteCoordinator.cancel(action, confirmedInventories(l2invs), completion);
+    }
+
+    private List<L2NetworkInventory> filterInventories(List<L2NetworkInventory> inventories,
+                                                        CascadeAction action) {
+        if (inventories.isEmpty()) {
+            return inventories;
+        }
+        List<L2NetworkInventory> result = inventories;
+        for (L2NetworkCascadeFilterExtensionPoint ext :
+                pluginRgty.getExtensionList(L2NetworkCascadeFilterExtensionPoint.class)) {
+            result = ext.filterL2NetworkCascade(result, action);
+        }
+        return result;
+    }
+
+    private List<L2NetworkInventory> confirmedInventories(List<L2NetworkInventory> inventories) {
+        List<L2NetworkInventory> result = new ArrayList<>();
+        for (L2NetworkInventory inventory : inventories) {
+            if (!confirmedDeleteCoordinator.confirmedExtensions(inventory).isEmpty()) {
+                result.add(inventory);
+            }
+        }
+        return result;
     }
 
     @Override

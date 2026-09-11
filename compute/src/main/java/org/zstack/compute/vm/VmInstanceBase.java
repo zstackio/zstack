@@ -852,6 +852,14 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void handle(final APIGetVmStartingCandidateClustersHostsMsg msg) {
         APIGetVmStartingCandidateClustersHostsReply reply = new APIGetVmStartingCandidateClustersHostsReply();
+        refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        if (err != null) {
+            reply.setError(err);
+            bus.reply(msg, reply);
+            return;
+        }
+
         final GetVmStartingCandidateClustersHostsMsg gmsg = new GetVmStartingCandidateClustersHostsMsg();
         gmsg.setUuid(msg.getUuid());
         bus.makeLocalServiceId(gmsg, VmInstanceConstant.SERVICE_ID);
@@ -939,7 +947,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
         amsg.setCpuCapacity(self.getCpuNum());
         amsg.setMemoryCapacity(self.getMemorySize());
-        amsg.setVmInstance(VmInstanceInventory.valueOf(self));
+        VmInstanceInventory vmInventory = VmInstanceInventory.valueOf(self);
+        amsg.setVmInstance(vmInventory);
+        amsg.setRequiredPrimaryStorageUuids(vmInventory.getAllDiskVolumes().stream()
+                .map(VolumeInventory::getPrimaryStorageUuid)
+                .collect(Collectors.toSet()));
         amsg.setServiceId(bus.makeLocalServiceId(HostAllocatorConstant.SERVICE_ID));
         amsg.setAllocatorStrategy(self.getAllocatorStrategy());
         amsg.setVmOperation(VmOperation.Start.toString());
@@ -1342,6 +1354,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         ext.vmIpChanged(vm, nic, oldIpMap, newIpMap);
                     }
                 });
+        VmNicCanonicalEvents.VmNicInfoChangedData data = new VmNicCanonicalEvents.VmNicInfoChangedData();
+        data.setVmInstanceUuid(vm.getUuid());
+        data.setVmNicUuid(nic.getUuid());
+        data.setChangeType(VmNicCanonicalEvents.VmNicInfoChangeType.IP);
+        evtf.fire(VmNicCanonicalEvents.VM_NIC_INFO_CHANGED_PATH, data);
     }
 
     private void notifyVmNameChanged(String oldName, String newName) {
@@ -1367,6 +1384,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                         ext.vmNameChanged(vm, oldName, currentName);
                     }
                 });
+        VmCanonicalEvents.VmInfoChangedData data =
+                new VmCanonicalEvents.VmInfoChangedData();
+        data.setVmUuid(latestVm.getUuid());
+        evtf.fire(VmCanonicalEvents.VM_INFO_CHANGED_PATH, data);
     }
 
     private UsedIpInventory toUsedIpInventory(UsedIpVO ipvo) {
@@ -8064,6 +8085,29 @@ public class VmInstanceBase extends AbstractVmInstance {
                     casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
+                            trigger.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            trigger.fail(errorCode);
+                        }
+                    });
+                }
+            }).then(new NoRollbackFlow() {
+                @Override
+                public void run(final FlowTrigger trigger, Map data) {
+                    refreshVO();
+                    if (self.getState() != VmInstanceState.Running ||
+                            !extEmitter.needStopBeforeDestroy(getSelfInventory())) {
+                        trigger.next();
+                        return;
+                    }
+
+                    stopVm(msg, new Completion(trigger) {
+                        @Override
+                        public void success() {
+                            s.setInventory(getSelfInventory());
                             trigger.next();
                         }
 

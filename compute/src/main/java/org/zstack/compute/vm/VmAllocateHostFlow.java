@@ -52,33 +52,23 @@ public class VmAllocateHostFlow implements Flow {
     @Autowired
     protected VmInstanceExtensionPointEmitter extEmitter;
 
-    private long getTotalDataDiskSize(VmInstanceSpec spec) {
-        long size = 0;
-        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
-            size += dinv.getDiskSize();
-        }
-        return size;
-    }
-
     protected AllocateHostMsg prepareMsg(VmInstanceSpec spec) {
         DesignatedAllocateHostMsg msg = new DesignatedAllocateHostMsg();
 
         List<DiskOfferingInventory> diskOfferings = new ArrayList<>();
         ImageInventory image = spec.getImageSpec().getInventory();
-        long diskSize;
+        long rootDiskSize;
         if (image == null || (image.getMediaType() != null && image.getMediaType().equals(ImageMediaType.ISO.toString()))) {
             DiskOfferingVO dvo = dbf.findByUuid(spec.getRootDiskOffering().getUuid(), DiskOfferingVO.class);
-            diskSize = dvo.getDiskSize();
+            rootDiskSize = dvo.getDiskSize();
             diskOfferings.add(DiskOfferingInventory.valueOf(dvo));
         } else {
-            diskSize = image.getSize();
+            rootDiskSize = image.getSize();
         }
-        diskSize += getTotalDataDiskSize(spec);
         diskOfferings.addAll(spec.getDataDiskOfferings());
         msg.setSoftAvoidHostUuids(spec.getSoftAvoidHostUuids());
         msg.setAvoidHostUuids(spec.getAvoidHostUuids());
         msg.setDiskOfferings(diskOfferings);
-        msg.setDiskSize(diskSize);
         msg.setCpuCapacity(spec.getVmInventory().getCpuNum());
         msg.setMemoryCapacity(spec.getVmInventory().getMemorySize());
         msg.setClusterUuids(spec.getRequiredClusterUuids());
@@ -135,6 +125,15 @@ public class VmAllocateHostFlow implements Flow {
         if (!CollectionUtils.isEmpty(spec.getDiskAOs())) {
             msg.getRequiredPrimaryStorageUuids().addAll(spec.getDiskAOs().stream()
                     .map(APICreateVmInstanceMsg.DiskAO::getPrimaryStorageUuid).filter(Objects::nonNull).collect(Collectors.toList()));
+        }
+        String rootPsUuid = spec.getCandidatePrimaryStorageUuidsForRootVolume().size() == 1 ?
+                spec.getCandidatePrimaryStorageUuidsForRootVolume().get(0) : null;
+        msg.addRequiredDiskCapacity(rootPsUuid, rootDiskSize);
+
+        String dataPsUuid = spec.getCandidatePrimaryStorageUuidsForDataVolume().size() == 1 ?
+                spec.getCandidatePrimaryStorageUuidsForDataVolume().get(0) : null;
+        for (DiskOfferingInventory dinv : spec.getDataDiskOfferings()) {
+            msg.addRequiredDiskCapacity(dataPsUuid, dinv.getDiskSize());
         }
         return msg;
     }

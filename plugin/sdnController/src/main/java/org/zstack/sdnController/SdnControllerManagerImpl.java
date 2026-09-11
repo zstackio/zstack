@@ -47,12 +47,14 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class SdnControllerManagerImpl extends AbstractService implements SdnControllerManager,
-        L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint,
+        L2NetworkCreateExtensionPoint, L2NetworkDeleteExtensionPoint, L2DeleteConfirmExtensionPoint,
+        L2NetworkPrepareClusterExtensionPoint,
         SecurityGroupGetSdnBackendExtensionPoint,
         AfterAddIpRangeExtensionPoint, IpRangeDeletionExtensionPoint, GetSdnControllerExtensionPoint,
         AfterAllocateSdnNicExtensionPoint {
     private static final CLogger logger = Utils.getLogger(SdnControllerManagerImpl.class);
     private static final Logger log = LoggerFactory.getLogger(SdnControllerManagerImpl.class);
+    private static final String PRESERVED_START_NICS = SdnControllerManagerImpl.class.getName() + ".preservedStartNics";
 
     @Autowired
     private CloudBus bus;
@@ -66,7 +68,6 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     private SecurityGroupManager sgMgr;
     @Autowired
     private SdnControllerPingTracker pingTracker;
-
     private Map<String, SdnControllerFactory> sdnControllerFactories = Collections.synchronizedMap(new HashMap<String, SdnControllerFactory>());
 
     @Override
@@ -292,6 +293,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg, Completion completion) {
+        postCreateL2Network(l2Network, msg, NetworkCreateContext.api(), completion);
+    }
+
+    @Override
+    public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
+                                    NetworkCreateContext context, Completion completion) {
         VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
         if (vSwitchType.getSdnControllerType() == null) {
             completion.success();
@@ -326,7 +333,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
         SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
         SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
-        controller.createL2Network(l2Network, msg, completion);
+        controller.createL2Network(l2Network, msg, context, completion);
     }
 
     @Override
@@ -346,16 +353,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void deleteL2Network(L2NetworkInventory inv, NoErrorCompletion completion) {
-        VSwitchType vSwitchType = VSwitchType.valueOf(inv.getvSwitchType());
-        if (vSwitchType.getSdnControllerType() == null) {
-            //hardware vxlan will go this path
-            completion.done();
-            return;
-        }
-
-        /* vswitch type: OvnDpdk will go here */
-        SdnControllerFactory factory = getSdnControllerFactory(vSwitchType.getSdnControllerType());
-        SdnControllerL2 controllerL2 = factory.getSdnControllerL2(inv.getUuid());
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
         if (controllerL2 == null) {
             logger.warn(String.format("can not found sdn controller for l2 network[uuid:%s, vswitchType:%s]",
                     inv.getUuid(), inv.getvSwitchType()));
@@ -379,25 +377,154 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     @Override
+    public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
+        if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
+            completion.success();
+            return;
+        }
+        SdnControllerL2 controller = findSdnControllerL2(network);
+        if (controller == null) {
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10043,
+                    "cannot prepare L2Network[uuid:%s, vswitchType:%s] for Cluster[uuid:%s] because its SDN controller is missing",
+                    network.getUuid(), network.getvSwitchType(), clusterUuid));
+            return;
+        }
+        controller.prepareL2NetworkForCluster(network, clusterUuid, completion);
+    }
+
+    @Override
+    public boolean requiresConfirmedDelete(L2NetworkInventory inv) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
+        return controllerL2 != null && controllerL2.requiresConfirmedDelete(inv);
+    }
+
+    @Override
+    public void deleteL2Network(L2NetworkInventory inv, String operationUuid, Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inv));
+            return;
+        }
+        controllerL2.deleteL2Network(inv, operationUuid, completion);
+    }
+
+    @Override
+    public void deleteL2Network(L2NetworkInventory inv, NetworkDeletionContext context,
+                                Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inv);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inv));
+            return;
+        }
+        controllerL2.deleteL2Network(inv, context, completion);
+    }
+
+    @Override
+    public boolean supports(L2NetworkInventory inventory) {
+        return requiresConfirmedDelete(inventory);
+    }
+
+    @Override
+    public void begin(L2NetworkInventory inventory, NetworkDeletionContext context,
+                      Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inventory));
+            return;
+        }
+        controllerL2.beginConfirmedDelete(inventory, context, completion);
+    }
+
+    @Override
+    public void check(L2NetworkInventory inventory, NetworkDeletionContext context,
+                      Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inventory));
+            return;
+        }
+        controllerL2.checkConfirmedDelete(inventory, context, completion);
+    }
+
+    @Override
+    public void delete(L2NetworkInventory inventory, NetworkDeletionContext context,
+                       Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inventory));
+            return;
+        }
+        controllerL2.completeConfirmedDelete(inventory, context, completion);
+    }
+
+    @Override
+    public void cancel(L2NetworkInventory inventory, NetworkDeletionContext context,
+                       Completion completion) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            completion.fail(confirmedDeleteControllerMissing(inventory));
+            return;
+        }
+        controllerL2.cancelConfirmedDelete(inventory, context, completion);
+    }
+
+    private ErrorCode confirmedDeleteControllerMissing(L2NetworkInventory inventory) {
+        return operr(ORG_ZSTACK_SDNCONTROLLER_10034,
+                "cannot find sdn controller for confirmed L2Network deletion[uuid:%s, vswitchType:%s]",
+                inventory.getUuid(), inventory.getvSwitchType());
+    }
+
+    @Override
+    public void deleteLocalMetadata(L2NetworkInventory inventory) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            throw new CloudRuntimeException(String.format(
+                    "cannot find sdn controller for confirmed l2 network deletion[uuid:%s]", inventory.getUuid()));
+        }
+        controllerL2.deleteConfirmedLocalMetadata(inventory);
+    }
+
+    @Override
+    public void deleteLocalMetadata(L2NetworkInventory inventory, NetworkDeletionContext context) {
+        SdnControllerL2 controllerL2 = findSdnControllerL2(inventory);
+        if (controllerL2 == null) {
+            throw new CloudRuntimeException(String.format(
+                    "cannot find sdn controller for confirmed l2 network deletion[uuid:%s]", inventory.getUuid()));
+        }
+        controllerL2.deleteConfirmedLocalMetadata(inventory, context);
+    }
+
+    private SdnControllerL2 findSdnControllerL2(L2NetworkInventory inv) {
+        VSwitchType vSwitchType = VSwitchType.valueOf(inv.getvSwitchType());
+        if (vSwitchType.getSdnControllerType() == null) {
+            return null;
+        }
+        SdnControllerFactory factory = sdnControllerFactories.get(vSwitchType.getSdnControllerType());
+        return factory == null ? null : factory.getSdnControllerL2(inv.getUuid());
+    }
+
+    @Override
     public void afterDeleteL2Network(L2NetworkInventory inventory) {
 
     }
 
-    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics, Completion completion) {
+    private void sdnAddVmNic(String sdnControllerUuid, List<VmNicInventory> nics,
+                             VmInstanceSpec spec, Completion completion) {
         SdnControllerVO vo = dbf.findByUuid(sdnControllerUuid, SdnControllerVO.class);
         SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
         if (factory == null) {
-            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10003, "there is no sdn controller factory for sdn controller type:%s", vo.getVendorType()));
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10040, "there is no sdn controller factory for sdn controller type:%s", vo.getVendorType()));
             return;
         }
 
         SdnControllerL2 controller = factory.getSdnControllerL2(vo);
-        controller.addVmNics(nics, completion);
+        controller.addVmNics(nics, spec, completion);
     }
 
-    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps, Completion completion) {
+    private void sdnAddVmNics(Map<String, List<VmNicInventory>> nicMaps,
+                              VmInstanceSpec spec, Completion completion) {
         new While<>(nicMaps.entrySet()).each((e, wcomp) -> {
-            sdnAddVmNic(e.getKey(), e.getValue(), new Completion(wcomp) {
+            sdnAddVmNic(e.getKey(), e.getValue(), spec, new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -705,7 +832,19 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
-        sdnAddVmNics(nicMaps, completion);
+        if (spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Start) {
+            Set<String> preservedNics = new HashSet<>();
+            for (Map.Entry<String, List<VmNicInventory>> entry : nicMaps.entrySet()) {
+                SdnControllerVO vo = dbf.findByUuid(entry.getKey(), SdnControllerVO.class);
+                SdnControllerFactory factory = getSdnControllerFactory(vo.getVendorType());
+                if (factory != null) {
+                    preservedNics.addAll(factory.getSdnControllerL2(vo)
+                            .getVmNicUuidsToPreserveOnStartRollback(entry.getValue()));
+                }
+            }
+            spec.putExtensionData(PRESERVED_START_NICS, preservedNics);
+        }
+        sdnAddVmNics(nicMaps, spec, completion);
     }
 
     @Override
@@ -715,8 +854,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             return;
         }
 
+        Set<String> preservedNics = spec.getCurrentVmOperation() == VmInstanceConstant.VmOperation.Start
+                ? spec.getExtensionData(PRESERVED_START_NICS, Set.class) : null;
         Map<String, List<VmNicInventory>> nicMaps = new HashMap<>();
         for (VmNicInventory nic : nics) {
+            if (preservedNics != null && preservedNics.contains(nic.getUuid())) {
+                continue;
+            }
             L3NetworkVO l3Vo = dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class);
             if (l3Vo == null) {
                 continue;

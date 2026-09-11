@@ -46,6 +46,10 @@
     </message>
 
     <message>
+        <name>org.zstack.sdnController.header.APIPullSdnControllerMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.network.hostNetworkInterface.APIQueryPhysicalSwitchMsg</name>
         <serviceId>query</serviceId>
     </message>

@@ -3,7 +3,18 @@ package org.zstack.test.integration.networkservice.provider.flat.eip
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.workflow.FlowChainBuilder
+import org.zstack.header.core.workflow.FlowErrorHandler
+import org.zstack.header.core.workflow.FlowTrigger
+import org.zstack.header.core.workflow.NoRollbackFlow
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg
+import org.zstack.header.host.CheckVmStateOnHypervisorReply
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -127,6 +138,10 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                     name = "eip-1"
                     useVip("pubL3")
                 }
+                eip {
+                    name = "eip-2"
+                    useVip("pubL3")
+                }
             }
 
             vm {
@@ -142,6 +157,13 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useHost("kvm")
             }
+            vm {
+                name = "vm-2"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useHost("kvm")
+            }
         }
     }
 
@@ -152,6 +174,8 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             testRecoverVmWithEip()
             testRecoverVmWithEipWithError()
             testMigrateVmWithEipZSTAC86874()
+            testFailedMigrationEipUsesActualVmLocationZSTAC86874()
+            testAbnormalLifecycleMovesAndRollsBackEipsZSTAC86874()
         }
     }
 
@@ -284,6 +308,179 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
 
         retryInSecs {
             assert operations == ["prepare", "enable", "delete"]
+        }
+    }
+
+    void testFailedMigrationEipUsesActualVmLocationZSTAC86874() {
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+        def unresolvedVm = env.inventoryByName("vm-2") as VmInstanceInventory
+        def unresolvedEip = env.inventoryByName("eip-2") as EipInventory
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        attachEip {
+            eipUuid = unresolvedEip.uuid
+            vmNicUuid = unresolvedVm.vmNics[0].uuid
+        }
+
+        List<String> operations = Collections.synchronizedList([])
+        env.afterSimulator(FlatEipBackend.BATCH_PREPARE_EIP_PATH) { rsp ->
+            operations.add("prepare")
+            return rsp
+        }
+        env.afterSimulator(FlatEipBackend.BATCH_ENABLE_EIP_PATH) { rsp ->
+            operations.add("enable")
+            return rsp
+        }
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            return rsp
+        }
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+            def rsp = new KVMAgentCommands.MigrateVmResponse()
+            rsp.setError("migrate failed on purpose")
+            return rsp
+        }
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(vm.uuid): msg.hostUuid == host1.uuid ?
+                    VmInstanceState.Running.toString() : VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare", "delete", "enable"]
+        }
+
+        operations.clear()
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(vm.uuid): msg.hostUuid == host2.uuid ?
+                    VmInstanceState.Running.toString() : VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare", "enable", "delete"]
+        }
+
+        operations.clear()
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(unresolvedVm.uuid): VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = unresolvedVm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare"]
+        }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
+    void testAbnormalLifecycleMovesAndRollsBackEipsZSTAC86874() {
+        def backend = bean(FlatEipBackend.class)
+        def sdkVm = queryVmInstance { conditions = ["name=vm-1"] }[0]
+        def vm = org.zstack.header.vm.VmInstanceInventory.valueOf(
+                dbFindByUuid(sdkVm.uuid, org.zstack.header.vm.VmInstanceVO.class))
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        [
+                VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation.VmMigrateToAnotherHost,
+                VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation.VmRunningFromUnknownStateHostChanged,
+        ].each { operation ->
+            List<String> operations = Collections.synchronizedList([])
+            env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp ->
+                operations.add("apply")
+                return rsp
+            }
+            env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+                operations.add("delete")
+                return rsp
+            }
+
+            def struct = new VmAbnormalLifeCycleStruct()
+            struct.vmInstance = vm
+            struct.originalHostUuid = host1.uuid
+            struct.currentHostUuid = host2.uuid
+            struct.operation = operation
+
+            def chain = FlowChainBuilder.newSimpleFlowChain()
+            chain.then(backend.createVmAbnormalLifeCycleHandlingFlow(struct))
+            chain.then(new NoRollbackFlow() {
+                @Override
+                void run(FlowTrigger trigger, Map data) {
+                    trigger.fail(operr(
+                            ORG_ZSTACK_TEST_INTEGRATION_NETWORKSERVICE_PROVIDER_FLAT_EIP_10000,
+                            "rollback on purpose"))
+                }
+            }).error(new FlowErrorHandler(null) {
+                @Override
+                void handle(ErrorCode errorCode, Map data) {
+                }
+            }).start()
+
+            retryInSecs {
+                assert operations == ["apply", "delete", "apply", "delete"]
+            }
+
+            operations.clear()
+            boolean failOriginalDelete = true
+            env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+                operations.add("delete")
+                if (failOriginalDelete) {
+                    failOriginalDelete = false
+                    rsp.success = false
+                    rsp.error = "delete original EIP on purpose"
+                } else {
+                    rsp.success = true
+                    rsp.error = null
+                }
+                return rsp
+            }
+
+            chain = FlowChainBuilder.newSimpleFlowChain()
+            chain.then(backend.createVmAbnormalLifeCycleHandlingFlow(struct))
+            chain.then(new NoRollbackFlow() {
+                @Override
+                void run(FlowTrigger trigger, Map data) {
+                    trigger.fail(operr(
+                            ORG_ZSTACK_TEST_INTEGRATION_NETWORKSERVICE_PROVIDER_FLAT_EIP_10000,
+                            "rollback on purpose"))
+                }
+            }).error(new FlowErrorHandler(null) {
+                @Override
+                void handle(ErrorCode errorCode, Map data) {
+                }
+            }).start()
+
+            retryInSecs {
+                assert operations == ["apply", "delete", "delete"]
+            }
         }
     }
 
