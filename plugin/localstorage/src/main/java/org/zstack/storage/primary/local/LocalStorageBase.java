@@ -3632,12 +3632,10 @@ public class LocalStorageBase extends PrimaryStorageBase {
             }
         });
     }
-
     private void enrichLocalVmMetadataRegistrationHints(List<VmMetadataScanEntry> metadata) {
         if (metadata == null || metadata.isEmpty()) {
             return;
         }
-
         Set<String> vmUuids = metadata.stream()
                 .map(VmMetadataScanEntry::getVmUuid)
                 .filter(Objects::nonNull)
@@ -3645,7 +3643,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         if (vmUuids.isEmpty()) {
             return;
         }
-
         Map<String, String> vmRootVolumeUuids = new HashMap<>();
         List<Tuple> volumeTuples = Q.New(VolumeVO.class)
                 .select(VolumeVO_.vmInstanceUuid, VolumeVO_.uuid)
@@ -3659,7 +3656,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         if (vmRootVolumeUuids.isEmpty()) {
             return;
         }
-
         Map<String, String> rootVolumeHostUuids = new HashMap<>();
         List<Tuple> refTuples = Q.New(LocalStorageResourceRefVO.class)
                 .select(LocalStorageResourceRefVO_.resourceUuid, LocalStorageResourceRefVO_.hostUuid)
@@ -3669,13 +3665,12 @@ public class LocalStorageBase extends PrimaryStorageBase {
         for (Tuple tuple : refTuples) {
             rootVolumeHostUuids.put(tuple.get(0, String.class), tuple.get(1, String.class));
         }
-
         for (VmMetadataScanEntry entry : metadata) {
             String rootVolumeUuid = vmRootVolumeUuids.get(entry.getVmUuid());
             String existingHostUuid = rootVolumeHostUuids.get(rootVolumeUuid);
             if (existingHostUuid != null && entry.getHostUuid() != null
                     && !Objects.equals(existingHostUuid, entry.getHostUuid())) {
-                entry.setRegenerateUuidRequired(true);
+                entry.setRegistrationStatus(VmMetadataRegistrationStatus.UUID_CONFLICT.name());
             }
         }
     }

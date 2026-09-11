@@ -3,12 +3,14 @@ package org.zstack.storage.primary.local;
 import org.zstack.header.core.Completion;
 import org.zstack.header.storage.snapshot.VolumeSnapshotDeletionProtector;
 import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
+import org.zstack.storage.primary.StoragePathOwnershipHelper;
 import org.zstack.storage.volume.VolumeSystemTags;
 
 import static org.zstack.core.Platform.inerr;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,10 +24,21 @@ public class LocalStorageSnapshotDeletionProtector implements VolumeSnapshotDele
     public void protect(VolumeSnapshotInventory snapshot, Completion completion) {
         List<String> volumeUuids = getUsedVolumeUuids(snapshot);
         volumeUuids.add(snapshot.getVolumeUuid());
-
         if (!isSnapshotPathOwnedByVolume(snapshot.getPrimaryStorageInstallPath(), volumeUuids)) {
             completion.fail(inerr("the snapshot[name:%s, uuid:%s, path: %s] seems not belong to the volume[uuid:%s]",
                     snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), snapshot.getVolumeUuid()));
+            return;
+        }
+        String hostUuid = LocalStoragePathOwnershipHelper.getResourceHostUuid(
+                snapshot.getPrimaryStorageUuid(), snapshot.getUuid());
+        List<StoragePathOwnershipHelper.Owner> otherOwners =
+                LocalStoragePathOwnershipHelper.findOtherOwnersAtHost(
+                        snapshot.getPrimaryStorageUuid(), hostUuid,
+                        snapshot.getPrimaryStorageInstallPath(), Collections.singleton(snapshot.getUuid()));
+        if (!otherOwners.isEmpty()) {
+            completion.fail(inerr("refuse to delete snapshot[name:%s, uuid:%s, path:%s] because the physical " +
+                            "path is still owned by %s",
+                    snapshot.getName(), snapshot.getUuid(), snapshot.getPrimaryStorageInstallPath(), otherOwners));
             return;
         }
         completion.success();
