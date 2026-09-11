@@ -760,56 +760,46 @@ public class LocalStorageBase extends PrimaryStorageBase {
                 done(new FlowDoneHandler(msg, completion) {
                     @Override
                     public void handle(Map data) {
-                        try {
-                            new SQLBatch() {
-                                //migrate the rooVolume and need to update the ClusterUuid of vm
-                                @Override
-                                protected void scripts() {
-                                    Boolean isRootVolume = (Q.New(VolumeVO.class).select(VolumeVO_.type)
-                                            .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
-                                            .findValue() == VolumeType.Root);
-                                    if (isRootVolume) {
-                                        Tuple tuple = Q.New(VmInstanceVO.class)
-                                                .select(VmInstanceVO_.clusterUuid, VmInstanceVO_.uuid)
-                                                .eq(VmInstanceVO_.rootVolumeUuid, volumeRefVO.getResourceUuid()).findTuple();
-                                        String originClusterUuid = tuple.get(0, String.class);
-                                        String vmUuid = tuple.get(1, String.class);
-                                        String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
-                                                .eq(HostVO_.uuid, msg.getDestHostUuid()).findValue();
-                                        if (!originClusterUuid.equals(clusterUuid)) {
-                                            sql("update  VmInstanceEO" +
-                                                    " set clusterUuid = :clusterUuid" +
-                                                    " where uuid = :vmUuid")
-                                                    .param("clusterUuid", clusterUuid)
-                                                    .param("vmUuid", vmUuid).execute();
-                                        }
-                                        sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
-                                                .set(VmInstanceVO_.lastHostUuid, msg.getDestHostUuid())
-                                                .set(VmInstanceVO_.hostUuid, null).update();
+                        new SQLBatch() {
+                            //migrate the rooVolume and need to update the ClusterUuid of vm
+                            @Override
+                            protected void scripts() {
+                                Boolean isRootVolume = (Q.New(VolumeVO.class).select(VolumeVO_.type)
+                                        .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
+                                        .findValue() == VolumeType.Root);
+                                if (isRootVolume) {
+                                    Tuple tuple = Q.New(VmInstanceVO.class)
+                                            .select(VmInstanceVO_.clusterUuid, VmInstanceVO_.uuid)
+                                            .eq(VmInstanceVO_.rootVolumeUuid, volumeRefVO.getResourceUuid()).findTuple();
+                                    String originClusterUuid = tuple.get(0, String.class);
+                                    String vmUuid = tuple.get(1, String.class);
+                                    String clusterUuid = Q.New(HostVO.class).select(HostVO_.clusterUuid)
+                                            .eq(HostVO_.uuid, msg.getDestHostUuid()).findValue();
+                                    if (!originClusterUuid.equals(clusterUuid)) {
+                                        sql("update  VmInstanceEO" +
+                                                " set clusterUuid = :clusterUuid" +
+                                                " where uuid = :vmUuid")
+                                                .param("clusterUuid", clusterUuid)
+                                                .param("vmUuid", vmUuid).execute();
                                     }
-
-                                    sql(VolumeVO.class)
-                                            .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
-                                            .set(VolumeVO_.status, originVolumeStatus)
-                                            .update();
-
-                                    LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
-                                            .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
-                                            .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
-                                            .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
-                                            .find();
-                                    reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
+                                    sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
+                                            .set(VmInstanceVO_.lastHostUuid, msg.getDestHostUuid())
+                                            .set(VmInstanceVO_.hostUuid, null).update();
                                 }
-                            }.execute();
-                        } catch (RuntimeException error) {
-                            logger.warn("failed to commit local volume migration metadata", error);
-                            reply.setError(inerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10097,
-                                    "volume[uuid:%s] bits moved to host[uuid:%s], but metadata commit failed: %s",
-                                    volume.getUuid(), msg.getDestHostUuid(), error.getMessage()));
-                            bus.reply(msg, reply);
-                            completion.done();
-                            return;
-                        }
+
+                                sql(VolumeVO.class)
+                                        .eq(VolumeVO_.uuid, volumeRefVO.getResourceUuid())
+                                        .set(VolumeVO_.status, originVolumeStatus)
+                                        .update();
+
+                                LocalStorageResourceRefVO vo = Q.New(LocalStorageResourceRefVO.class)
+                                        .eq(LocalStorageResourceRefVO_.resourceUuid, volumeRefVO.getResourceUuid())
+                                        .eq(LocalStorageResourceRefVO_.primaryStorageUuid, volumeRefVO.getPrimaryStorageUuid())
+                                        .eq(LocalStorageResourceRefVO_.hostUuid, msg.getDestHostUuid())
+                                        .find();
+                                reply.setInventory(LocalStorageResourceRefInventory.valueOf(vo));
+                            }
+                        }.execute();
 
                         Completion networkCompletion = new Completion(msg, completion) {
                             @Override
