@@ -13,6 +13,7 @@ import org.zstack.test.unittest.network.sdncontroller.ZnsProxyKvmReconnectExtens
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
+import org.zstack.test.unittest.utils.SystemTagUtilsCase
 import org.zstack.test.unittest.vm.VmInstanceStateCase
 
 import java.util.stream.Collectors
@@ -30,6 +31,7 @@ import java.util.stream.Collectors
         ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
+        SystemTagUtilsCase.class,
         VmInstanceStateCase.class
     ])
 class JUnitTestSuite {
