@@ -3,6 +3,7 @@ package org.zstack.test.integration.storage.primary.ceph
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmInstanceExtensionPointEmitter
 import org.zstack.compute.vm.VmSystemTags
+import org.zstack.configuration.DiskOfferingSystemTags
 import org.zstack.core.Platform
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
@@ -29,6 +30,7 @@ import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.*
 import org.zstack.testlib.vfs.VFS
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import static java.util.Arrays.asList
 
@@ -259,6 +261,70 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
         assert cmd != null
         assert cmd.installPath == vol.installPath
         assert cmd.installPath.contains(dataVolumePoolName)
+    }
+
+    void testCreateDataVolumeWithDiskOfferingPool() {
+        String offeringConfig = JSONObjectUtil.toJsonString([
+                allocate: [primaryStorage: [type: "ceph", uuid: primaryStorage.uuid, poolNames: [HIGH_POOL_NAME]]]
+        ])
+        String offeringTag = DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG.instantiateTag(
+                [(DiskOfferingSystemTags.DISK_OFFERING_USER_CONFIG_TOKEN): offeringConfig])
+        DiskOfferingInventory poolOffering = createDiskOffering {
+            name = "ceph-pool-offering"
+            diskSize = SizeUnit.GIGABYTE.toByte(1)
+            systemTags = [offeringTag]
+        }
+
+        CephPrimaryStorageBase.CreateEmptyVolumeCmd cmd = null
+        env.preSimulator(CephPrimaryStorageBase.CREATE_VOLUME_PATH) { HttpEntity<String> e ->
+            cmd = json(e.body, CephPrimaryStorageBase.CreateEmptyVolumeCmd.class)
+        }
+
+        def results = [null, []].collect { tags ->
+            cmd = null
+            CreateDataVolumeAction action = new CreateDataVolumeAction()
+            action.name = tags == null ? "null-tags-volume" : "empty-tags-volume"
+            action.diskOfferingUuid = poolOffering.uuid
+            action.systemTags = tags
+            action.sessionId = adminSession()
+            action.timeout = 30000L
+            def result = action.call()
+            return [name: action.name, result: result, command: cmd]
+        }
+
+        CreateDataVolumeAction conflictAction = new CreateDataVolumeAction()
+        conflictAction.name = "conflicting-pool-volume"
+        conflictAction.diskOfferingUuid = poolOffering.uuid
+        conflictAction.systemTags = [CephSystemTags.USE_CEPH_ROOT_POOL.instantiateTag(
+                [(CephSystemTags.USE_CEPH_ROOT_POOL_TOKEN): NEW_ROOT_POOL_NAME])]
+        conflictAction.sessionId = adminSession()
+        conflictAction.timeout = 30000L
+        cmd = null
+        def conflictResult = conflictAction.call()
+        String conflictDetails = conflictResult.error?.details
+        def errors = results.collect { [name: it.name, error: it.result.error] }
+        boolean poolConflict = conflictResult.error?.globalErrorCode == "ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10041"
+        assert results.every { it.result.error == null } && poolConflict :
+                "Expected null/empty tags to succeed and pool conflict to retain its original error; " +
+                "actual=${JSONObjectUtil.toJsonString(errors)}, " +
+                "conflict=${JSONObjectUtil.toJsonString(conflictResult.error)}"
+        assert conflictDetails.contains(HIGH_POOL_NAME) && conflictDetails.contains(NEW_ROOT_POOL_NAME) :
+                "Pool conflict must identify expected=${HIGH_POOL_NAME} and requested=${NEW_ROOT_POOL_NAME}: " +
+                "actual=${conflictDetails}"
+        assert cmd == null : "A rejected pool conflict must not create backend bits: actual command=${cmd}"
+
+        results.each { entry ->
+            VolumeInventory volume = entry.result.value.inventory
+            String expectedPrefix = "ceph://${HIGH_POOL_NAME}/"
+            assert volume.primaryStorageUuid == primaryStorage.uuid :
+                    "${entry.name} must use offering primaryStorageUuid=${primaryStorage.uuid}: " +
+                    "actual=${volume.primaryStorageUuid}"
+            assert volume.installPath.startsWith(expectedPrefix) :
+                    "${entry.name} must use offering pool=${expectedPrefix}: actual installPath=${volume.installPath}"
+            assert entry.command?.installPath == volume.installPath :
+                    "${entry.name} backend installPath must equal volume=${volume.installPath}: " +
+                    "actual=${entry.command?.installPath}"
+        }
     }
 
     void testVmRootAndDataVolumeUseDesignatedPool() {
@@ -1210,6 +1276,7 @@ class CephPrimaryStorageVolumePoolsCase extends SubCase {
             instanceOffering2 = env.inventoryByName("instanceOffering2") as InstanceOfferingInventory
             image = env.inventoryByName("image") as ImageInventory
 
+            testCreateDataVolumeWithDiskOfferingPool()
             createRootPoolVm()
             testVmRootVolumeUseDefaultPool()
             testVmRootAndDataVolumeUseDesignatedPool()
