@@ -17,11 +17,15 @@ import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
+import org.zstack.identity.Account;
+import org.zstack.identity.rbac.AccessibleResourceChecker;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.errorcode.SysErrors.RESOURCE_NOT_ACCESSIBLE;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
 import javax.persistence.Tuple;
@@ -69,11 +73,25 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIBatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIRevertVmFromSnapshotGroupMsg) {
             validate((APIRevertVmFromSnapshotGroupMsg) msg);
+        } else if (msg instanceof APIGetVolumeSnapshotGroupTreeMsg) {
+            validate((APIGetVolumeSnapshotGroupTreeMsg) msg);
         }
 
         setServiceId(msg);
 
         return msg;
+    }
+
+    private void validate(APIGetVolumeSnapshotGroupTreeMsg msg) {
+        if (Account.isAllResourcesReadable(msg.getSession())) {
+            return;
+        }
+
+        if (!AccessibleResourceChecker.forAccount(msg.getSession().getAccountUuid())
+                .isAccessible(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(err(RESOURCE_NOT_ACCESSIBLE,
+                    "account has no access to the VM[uuid:%s]", msg.getVmInstanceUuid()));
+        }
     }
 
     private boolean isWithMemoryForSnapshotGroup(VolumeSnapshotGroupVO groupVO) {
