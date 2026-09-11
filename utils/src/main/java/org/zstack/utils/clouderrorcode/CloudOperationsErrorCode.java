@@ -15706,6 +15706,11 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10172 = "ORG_ZSTACK_AI_10172";
     public static final String ORG_ZSTACK_AI_10173 = "ORG_ZSTACK_AI_10173";
     public static final String ORG_ZSTACK_AI_10174 = "ORG_ZSTACK_AI_10174";
+    public static final String ORG_ZSTACK_AI_10175 = "ORG_ZSTACK_AI_10175";
+    public static final String ORG_ZSTACK_AI_10176 = "ORG_ZSTACK_AI_10176";
+    public static final String ORG_ZSTACK_AI_10177 = "ORG_ZSTACK_AI_10177";
+    public static final String ORG_ZSTACK_AI_10178 = "ORG_ZSTACK_AI_10178";
+    public static final String ORG_ZSTACK_AI_10179 = "ORG_ZSTACK_AI_10179";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
