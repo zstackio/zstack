@@ -4,6 +4,8 @@ import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.vm.VmInstanceInventory as HeaderVmInventory
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -12,11 +14,13 @@ import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
 import org.zstack.header.message.Message
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeInventory
 import org.zstack.sdk.LocalStorageMigrateVolumeAction
 import org.zstack.sdk.StartVmInstanceAction
 import org.zstack.kvm.KVMConstant
 import org.zstack.storage.primary.local.APILocalStorageMigrateVolumeMsg
 import org.zstack.storage.primary.local.LocalStorageKvmMigrateVmFlow
+import org.zstack.storage.primary.local.LocalStorageBase
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO
 import org.zstack.storage.primary.local.LocalStorageResourceRefVO_
 import org.zstack.storage.primary.local.LocalStorageRootVolumeMigrationExtensionPoint
@@ -26,6 +30,8 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
 import static org.zstack.core.Platform.operr
+import static org.mockito.Mockito.mock
+import static org.mockito.Mockito.when
 
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -59,6 +65,7 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
             source = env.inventoryByName('kvm')
             target = env.inventoryByName('kvm1')
             stopVmInstance { uuid = vm.uuid }
+            verifyRootExtensionFirstCompletion()
             extension = new LocalStorageRootVolumeMigrationExtensionPoint() {
                 @Override
                 void preMigrateRootVolume(HeaderVmInventory inventory, String from, String to, Completion completion) {
@@ -177,6 +184,66 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
         assert results.size() == 3
         assert dbFindByUuid(vm.uuid, VmInstanceVO).state != VmInstanceState.VolumeMigrating
         assert dbFindByUuid(vm.rootVolumeUuid, VolumeVO).status == VolumeStatus.Ready
+    }
+
+    private void verifyRootExtensionFirstCompletion() {
+        [false, true].each { boolean finalizing ->
+            [false, true].each { boolean failFirst ->
+                ErrorCode original = operr('ZCF6115.TEST.FIRST_COMPLETION', 'first completion')
+                ErrorCode late = operr('ZCF6115.TEST.LATE_COMPLETION', 'late completion')
+                Completion pending
+                List<ErrorCode> results = []
+                int nextCalls = 0
+                Closure firstCall = { Completion completion ->
+                    if (failFirst) {
+                        completion.fail(original)
+                        completion.success()
+                    } else {
+                        completion.success()
+                        throw new OperationFailureException(late)
+                    }
+                }
+                def first = new LocalStorageRootVolumeMigrationExtensionPoint() {
+                    void preMigrateRootVolume(HeaderVmInventory inventory, String from, String to, Completion completion) {
+                        firstCall(completion)
+                    }
+                    void finalizeMigrateRootVolume(HeaderVmInventory inventory, String from, String to, Completion completion) {
+                        firstCall(completion)
+                    }
+                }
+                def second = new LocalStorageRootVolumeMigrationExtensionPoint() {
+                    void preMigrateRootVolume(HeaderVmInventory inventory, String from, String to, Completion completion) {
+                        nextCalls++
+                        pending = completion
+                    }
+                    void finalizeMigrateRootVolume(HeaderVmInventory inventory, String from, String to, Completion completion) {
+                        nextCalls++
+                        pending = completion
+                    }
+                }
+                def registry = mock(PluginRegistry)
+                when(registry.getExtensionList(LocalStorageRootVolumeMigrationExtensionPoint)).thenReturn([first, second])
+                def storage = new LocalStorageBase()
+                storage.pluginRgty = registry
+                storage.callRootVolumeMigrationExtensions(
+                        VolumeInventory.valueOf(dbFindByUuid(vm.rootVolumeUuid, VolumeVO)),
+                        source.uuid, target.uuid, finalizing, new Completion(null) {
+                    void success() { results.add(null) }
+                    void fail(ErrorCode error) { results.add(error) }
+                })
+                if (failFirst && !finalizing) {
+                    assert nextCalls == 0
+                    assert pending == null
+                } else {
+                    assert nextCalls == 1
+                    assert pending != null
+                    assert results.empty
+                    pending.success()
+                }
+                assert results.size() == 1
+                assert results[0].is(failFirst ? original : null)
+            }
+        }
     }
 
     private def migrate(String targetUuid) {

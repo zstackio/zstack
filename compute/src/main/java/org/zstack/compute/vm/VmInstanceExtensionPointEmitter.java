@@ -26,6 +26,7 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.core.Platform.inerr;
@@ -410,16 +411,21 @@ public class VmInstanceExtensionPointEmitter implements Component {
 
     public void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid, Completion completion) {
         new While<>(migrateVmExtensions).each((ext, next) -> {
+                AtomicBoolean completed = new AtomicBoolean();
                 Completion callback = new Completion(next) {
                     @Override
                     public void success() {
-                        next.done();
+                        if (completed.compareAndSet(false, true)) {
+                            next.done();
+                        }
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        next.addError(errorCode);
-                        next.done();
+                        if (completed.compareAndSet(false, true)) {
+                            next.addError(errorCode);
+                            next.done();
+                        }
                     }
                 };
                 try {

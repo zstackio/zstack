@@ -61,6 +61,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -866,14 +867,20 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }
         VmInstanceInventory inventory = VmInstanceInventory.valueOf(vm);
         new While<>(extensions).each((extension, next) -> {
+            AtomicBoolean completed = new AtomicBoolean();
             Completion callback = new Completion(next) {
                 @Override
                 public void success() {
-                    next.done();
+                    if (completed.compareAndSet(false, true)) {
+                        next.done();
+                    }
                 }
 
                 @Override
                 public void fail(ErrorCode errorCode) {
+                    if (!completed.compareAndSet(false, true)) {
+                        return;
+                    }
                     next.addError(errorCode);
                     if (finalized) {
                         next.done();
