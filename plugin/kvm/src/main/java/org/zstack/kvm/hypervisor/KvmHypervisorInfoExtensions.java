@@ -49,8 +49,7 @@ public class KvmHypervisorInfoExtensions implements
 
     @Override
     public void afterReceiveVmDeviceInfoResponse(VmInstanceInventory vm, VmDevicesInfoResponse rsp, VmInstanceSpec spec) {
-        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(info ->
-                refreshVmInfo(spec == null ? vm.getHostUuid() : spec.getDestHost().getUuid(), info.getUuid()));
+        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::saveVmInfo);
     }
 
     @Override
@@ -60,7 +59,7 @@ public class KvmHypervisorInfoExtensions implements
 
     @Override
     public void rebootVmOnKvmSuccess(KVMHostInventory host, VmInstanceInventory vm, RebootVmResponse rsp) {
-        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(info -> refreshVmInfo(host.getUuid(), info.getUuid()));
+        Optional.ofNullable(rsp.getVirtualizerInfo()).ifPresent(manager::saveVmInfo);
     }
 
     @Override

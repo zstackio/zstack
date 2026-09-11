@@ -239,8 +239,9 @@ public class KvmHypervisorInfoSaveTest {
     }
 
     @Test
-    public void refreshesOnTheOperationHostForStartSyncRebootAndMigration() {
-        KvmHypervisorInfoExtensions extensions = extensions();
+    public void refreshesOnMigrationUsingOperationHost() {
+        KvmHypervisorInfoManager manager = mock(KvmHypervisorInfoManager.class);
+        KvmHypervisorInfoExtensions extensions = extensions(manager);
         KVMHostInventory host = new KVMHostInventory();
         host.setUuid(HOST_UUID);
         VmInstanceSpec spec = new VmInstanceSpec();
@@ -259,16 +260,16 @@ public class KvmHypervisorInfoSaveTest {
         extensions.afterReceiveVmDeviceInfoResponse(vm, deviceRsp, null);
         extensions.afterMigrateVm(vm, "previous-host");
 
+        verify(manager, times(3)).saveVmInfo(any(VirtualizerInfoTO.class));
         ArgumentCaptor<GetVirtualizerInfoMsg> messages = ArgumentCaptor.forClass(GetVirtualizerInfoMsg.class);
-        verify(bus, times(4)).send(messages.capture(), any(CloudBusCallBack.class));
-        for (GetVirtualizerInfoMsg msg : messages.getAllValues()) {
-            assertEquals(HOST_UUID, msg.getHostUuid());
-            assertEquals(Collections.singletonList(VM_UUID), msg.getVmInstanceUuids());
-            verify(bus).makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, HOST_UUID);
-        }
+        verify(bus, times(1)).send(messages.capture(), any(CloudBusCallBack.class));
+        GetVirtualizerInfoMsg msg = messages.getValue();
+        assertEquals(HOST_UUID, msg.getHostUuid());
+        assertEquals(Collections.singletonList(VM_UUID), msg.getVmInstanceUuids());
+        verify(bus).makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, HOST_UUID);
         verify(bus, never()).call(any(GetVirtualizerInfoMsg.class));
         ArgumentCaptor<CloudBusCallBack> callbacks = ArgumentCaptor.forClass(CloudBusCallBack.class);
-        verify(bus, times(4)).send(any(GetVirtualizerInfoMsg.class), callbacks.capture());
+        verify(bus, times(1)).send(any(GetVirtualizerInfoMsg.class), callbacks.capture());
         MessageReply failed = new MessageReply();
         ErrorCode error = new ErrorCode();
         error.setCode("test.refresh.failed");
@@ -278,16 +279,21 @@ public class KvmHypervisorInfoSaveTest {
 
     @Test
     public void skipsRefreshWhenTheResponseHasNoVirtualizerInfo() {
-        KvmHypervisorInfoExtensions extensions = extensions();
+        KvmHypervisorInfoManager manager = mock(KvmHypervisorInfoManager.class);
+        KvmHypervisorInfoExtensions extensions = extensions(manager);
         extensions.afterReceiveVmDeviceInfoResponse(null, new KVMAgentCommands.VmDevicesInfoResponse(), null);
         extensions.rebootVmOnKvmSuccess(null, null, new KVMAgentCommands.RebootVmResponse());
-        verifyNoInteractions(bus);
+        verifyNoInteractions(bus, manager);
     }
 
     private KvmHypervisorInfoExtensions extensions() {
+        return extensions(mock(KvmHypervisorInfoManager.class));
+    }
+
+    private KvmHypervisorInfoExtensions extensions(KvmHypervisorInfoManager manager) {
         KvmHypervisorInfoExtensions extensions = new KvmHypervisorInfoExtensions();
         setField(extensions, "bus", bus);
-        setField(extensions, "manager", mock(KvmHypervisorInfoManager.class));
+        setField(extensions, "manager", manager);
         return extensions;
     }
 

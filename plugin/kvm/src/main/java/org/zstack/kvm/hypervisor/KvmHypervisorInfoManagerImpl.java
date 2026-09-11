@@ -77,6 +77,12 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         logger.debug(String.format("save VirtualizerInfoTO for host[uuid:%s] successfully", info.getUuid()));
     }
 
+    @Override
+    public void saveVmInfo(VirtualizerInfoTO info) {
+        save(Collections.singletonList(ResourceHypervisorInfo.fromVmVirtualizerInfo(info)));
+        logger.debug(String.format("save VirtualizerInfoTO for vm[uuid:%s] successfully", info.getUuid()));
+    }
+
     @Deferred
     private void save(List<ResourceHypervisorInfo> list) {
         GLock lock = new GLock(HYPERVISOR_INFO_LOCK, HYPERVISOR_INFO_LOCK_TIMEOUT);
