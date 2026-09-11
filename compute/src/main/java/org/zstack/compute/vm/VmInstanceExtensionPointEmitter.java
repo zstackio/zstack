@@ -14,7 +14,6 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
@@ -428,17 +427,12 @@ public class VmInstanceExtensionPointEmitter implements Component {
                         }
                     }
                 };
-                try {
-                    ext.finalizeMigrateVm(inv, srcHostUuid, callback);
-                } catch (RuntimeException error) {
-                    logger.warn(String.format("failed to finalize migration of VM[uuid:%s] in %s",
-                            inv.getUuid(), ext.getClass().getName()), error);
-                    callback.fail(error instanceof OperationFailureException
-                            ? ((OperationFailureException) error).getErrorCode()
-                            : inerr(ORG_ZSTACK_COMPUTE_VM_10342,
-                                    "VM[uuid:%s] is on target host[uuid:%s], but migration finalization failed: %s",
-                                    inv.getUuid(), inv.getHostUuid(), error.getMessage()));
-                }
+                new NoErrorCompletion(callback) {
+                    @Override
+                    public void done() {
+                        ext.finalizeMigrateVm(inv, srcHostUuid, callback);
+                    }
+                }.done();
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errors) {

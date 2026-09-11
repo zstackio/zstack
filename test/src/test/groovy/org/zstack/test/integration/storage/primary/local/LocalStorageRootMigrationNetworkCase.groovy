@@ -135,7 +135,9 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
             stopVmInstance { uuid = vm.uuid }
             rejectFinalize = false
             throwFinalize = true
-            assert migrate(source.uuid).error?.globalErrorCode == 'ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10099'
+            def exceptionError = migrate(source.uuid).error
+            assert exceptionError?.code == 'SYS.1000'
+            assert exceptionError.details.contains('synchronous network extension exception')
             assert rootHost() == source.uuid
             assertStoppedAndReady()
             throwFinalize = false

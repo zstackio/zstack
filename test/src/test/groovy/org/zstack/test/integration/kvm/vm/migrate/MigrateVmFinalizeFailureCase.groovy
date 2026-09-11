@@ -97,7 +97,9 @@ class MigrateVmFinalizeFailureCase extends SubCase {
             rejectPrepare = false
             rejectFinalize = false
             throwFinalize = true
-            assert migrate(target.uuid).error?.globalErrorCode == 'ORG_ZSTACK_COMPUTE_VM_10342'
+            def exceptionError = migrate(target.uuid).error
+            assert exceptionError?.code == 'SYS.1000'
+            assert exceptionError.details.contains('synchronous finalization exception')
             assert dbFindByUuid(vm.uuid, VmInstanceVO.class).hostUuid == target.uuid
             assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Running
             assert rolledBack == 1

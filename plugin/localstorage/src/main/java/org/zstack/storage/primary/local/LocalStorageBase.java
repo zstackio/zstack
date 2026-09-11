@@ -815,17 +815,8 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                 completion.done();
                             }
                         };
-                        try {
-                            callRootVolumeMigrationExtensions(VolumeInventory.valueOf(volume), ref.getHostUuid(),
-                                    msg.getDestHostUuid(), true, networkCompletion);
-                        } catch (RuntimeException error) {
-                            logger.warn("failed to finalize local root volume network migration", error);
-                            networkCompletion.fail(error instanceof OperationFailureException
-                                    ? ((OperationFailureException) error).getErrorCode()
-                                    : inerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10098,
-                                            "volume[uuid:%s] is on target host[uuid:%s], but network finalization failed: %s",
-                                            volume.getUuid(), msg.getDestHostUuid(), error.getMessage()));
-                        }
+                        callRootVolumeMigrationExtensions(VolumeInventory.valueOf(volume), ref.getHostUuid(),
+                                msg.getDestHostUuid(), true, networkCompletion);
                     }
                 });
 
@@ -879,19 +870,16 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     }
                 }
             };
-            try {
-                if (finalized) {
-                    extension.finalizeMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
-                } else {
-                    extension.preMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
+            new NoErrorCompletion(callback) {
+                @Override
+                public void done() {
+                    if (finalized) {
+                        extension.finalizeMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
+                    } else {
+                        extension.preMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
+                    }
                 }
-            } catch (RuntimeException error) {
-                logger.warn(String.format("root volume network migration extension[%s] failed", extension.getClass().getName()), error);
-                callback.fail(error instanceof OperationFailureException
-                        ? ((OperationFailureException) error).getErrorCode()
-                        : inerr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10099,
-                                "root volume[uuid:%s] network migration extension failed: %s", volume.getUuid(), error.getMessage()));
-            }
+            }.done();
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errors) {
