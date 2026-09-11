@@ -24,6 +24,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="ZbsApiInterceptor" class="org.zstack.storage.zbs.ZbsApiInterceptor">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="ZbsStorageAgentDeployer" class="org.zstack.storage.zbs.ZbsStorageAgentDeployer">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
