@@ -907,3 +907,70 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentProjectionDeleteVO` (
     KEY `idx_zns_projection_delete_l2` (`l2NetworkUuid`,`state`),
     KEY `idx_zns_projection_delete_active` (`sdnControllerUuid`,`segmentUuid`,`state`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ZSTAC-87593: align VPC CPU alarms with external per-CPU monitoring.
+UPDATE `zstack`.`ActiveAlarmTemplateVO`
+SET `metricName` = 'CPUUsedUtilization'
+WHERE `uuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+  AND `namespace` = 'ZStack/VRouter'
+  AND `metricName` = 'VRouterCPUAverageUsedUtilization';
+
+UPDATE `zstack`.`ActiveAlarmTemplateVO`
+SET `alarmName` = 'VRouter-CPUUsedUtilization'
+WHERE `uuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+  AND `namespace` = 'ZStack/VRouter'
+  AND `metricName` = 'CPUUsedUtilization'
+  AND `alarmName` = 'VRouter-CPUAverageUsedUtilization';
+
+UPDATE `zstack`.`AlarmVO`
+SET `metricName` = 'CPUUsedUtilization'
+WHERE `namespace` = 'ZStack/VRouter'
+  AND `metricName` = 'VRouterCPUAverageUsedUtilization'
+  AND (`uuid` = '369eef54655548eab2a4d2d7ef061c79' OR `uuid` IN (
+      SELECT `alarmUuid` FROM `zstack`.`ActiveAlarmVO`
+      WHERE `templateUuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+  ));
+
+-- Names must also migrate when ZSTAC-81171 already changed metricName.
+UPDATE `zstack`.`AlarmVO`
+SET `name` = CASE `name`
+    WHEN 'VPC vRouter CPU Utilization Average' THEN 'VPC vRouter CPU Utilization'
+    WHEN 'VPC路由器平均CPU使用率' THEN 'VPC路由器CPU使用率'
+    WHEN 'Active-VRouter-VRouterCPUAverageUsedUtilization' THEN 'Active-VRouter-CPUUsedUtilization'
+END
+WHERE `namespace` = 'ZStack/VRouter'
+  AND `metricName` = 'CPUUsedUtilization'
+  AND `name` IN ('VPC vRouter CPU Utilization Average', 'VPC路由器平均CPU使用率',
+                 'Active-VRouter-VRouterCPUAverageUsedUtilization')
+  AND (`uuid` = '369eef54655548eab2a4d2d7ef061c79' OR `uuid` IN (
+      SELECT `alarmUuid` FROM `zstack`.`ActiveAlarmVO`
+      WHERE `templateUuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+  ));
+
+UPDATE `zstack`.`SystemTagVO`
+SET `tag` = 'name::cn::VPC路由器CPU使用率'
+WHERE `resourceType` = 'AlarmVO'
+  AND `tag` = 'name::cn::VPC路由器平均CPU使用率'
+  AND `resourceUuid` IN (
+      SELECT `uuid` FROM `zstack`.`AlarmVO`
+      WHERE `namespace` = 'ZStack/VRouter'
+        AND `metricName` = 'CPUUsedUtilization'
+        AND (`uuid` = '369eef54655548eab2a4d2d7ef061c79' OR `uuid` IN (
+            SELECT `alarmUuid` FROM `zstack`.`ActiveAlarmVO`
+            WHERE `templateUuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+        ))
+  );
+-- Native SQL bypasses the entity callback that keeps ResourceVO names in sync.
+UPDATE `zstack`.`ResourceVO` resource
+JOIN `zstack`.`AlarmVO` alarm ON resource.`uuid` = alarm.`uuid`
+SET resource.`resourceName` = alarm.`name`
+WHERE resource.`resourceType` = 'AlarmVO'
+  AND resource.`resourceName` IN ('VPC vRouter CPU Utilization Average', 'VPC路由器平均CPU使用率',
+                                 'Active-VRouter-VRouterCPUAverageUsedUtilization')
+  AND alarm.`namespace` = 'ZStack/VRouter'
+  AND alarm.`metricName` = 'CPUUsedUtilization'
+  AND (alarm.`uuid` = '369eef54655548eab2a4d2d7ef061c79' OR alarm.`uuid` IN (
+      SELECT `alarmUuid` FROM `zstack`.`ActiveAlarmVO`
+      WHERE `templateUuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
+  ));
+-- End ZSTAC-87593.
