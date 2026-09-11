@@ -17,12 +17,12 @@ import static org.zstack.utils.CollectionDSL.map;
 public class SystemTagUtils {
 
     public static String findTagValue(List<String> systemTags, PatternedSystemTag tag, String tagToken){
-        if(systemTags == null || tag == null || tagToken == null ){
-            throw new IllegalArgumentException("illegal argument");
+        if(systemTags == null || systemTags.isEmpty()){
+            return null;
         }
 
-        if(systemTags.isEmpty()){
-            return null;
+        if(tag == null || tagToken == null){
+            throw new IllegalArgumentException("illegal argument");
         }
 
         Optional<String> opt = systemTags.stream().filter(s -> tag.isMatch(s)).findAny();
@@ -31,12 +31,12 @@ public class SystemTagUtils {
     }
 
     public static String findTagValue(List<String> systemTags, PatternedSystemTag tag){
-        if(systemTags == null || tag == null){
-            throw new IllegalArgumentException("illegal argument");
+        if(systemTags == null || systemTags.isEmpty()){
+            return null;
         }
 
-        if(systemTags.isEmpty()){
-            return null;
+        if(tag == null){
+            throw new IllegalArgumentException("illegal argument");
         }
 
         Optional<String> opt = systemTags.stream().filter(s -> tag.isMatch(s)).findAny();
@@ -45,24 +45,24 @@ public class SystemTagUtils {
     }
 
     public static List<String> findTagValues(List<String> systemTags, PatternedSystemTag tag, String tagToken) {
-        if(systemTags == null || tag == null || tagToken == null ){
-            throw new IllegalArgumentException("illegal argument");
+        if(systemTags == null || systemTags.isEmpty()){
+            return null;
         }
 
-        if(systemTags.isEmpty()){
-            return null;
+        if(tag == null || tagToken == null){
+            throw new IllegalArgumentException("illegal argument");
         }
 
         return systemTags.stream().filter(tag::isMatch).map(t -> tag.getTokenByTag(t, tagToken)).collect(Collectors.toList());
     }
 
     public static List<String> findTagValues(List<String> systemTags, PatternedSystemTag tag) {
-        if(systemTags == null || tag == null){
-            throw new IllegalArgumentException("illegal argument");
+        if(systemTags == null || systemTags.isEmpty()){
+            return null;
         }
 
-        if(systemTags.isEmpty()){
-            return null;
+        if(tag == null){
+            throw new IllegalArgumentException("illegal argument");
         }
 
         return systemTags.stream().filter(tag::isMatch).collect(Collectors.toList());
