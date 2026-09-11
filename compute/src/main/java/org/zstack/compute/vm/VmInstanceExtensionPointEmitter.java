@@ -14,6 +14,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.vm.*;
 import org.zstack.header.volume.VolumeInventory;
@@ -27,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceExtensionPointEmitter implements Component {
@@ -402,6 +404,43 @@ public class VmInstanceExtensionPointEmitter implements Component {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 completion.done();
+            }
+        });
+    }
+
+    public void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid, Completion completion) {
+        new While<>(migrateVmExtensions).each((ext, next) -> {
+                Completion callback = new Completion(next) {
+                    @Override
+                    public void success() {
+                        next.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        next.addError(errorCode);
+                        next.done();
+                    }
+                };
+                try {
+                    ext.finalizeMigrateVm(inv, srcHostUuid, callback);
+                } catch (RuntimeException error) {
+                    logger.warn(String.format("failed to finalize migration of VM[uuid:%s] in %s",
+                            inv.getUuid(), ext.getClass().getName()), error);
+                    callback.fail(error instanceof OperationFailureException
+                            ? ((OperationFailureException) error).getErrorCode()
+                            : inerr(ORG_ZSTACK_COMPUTE_VM_10342,
+                                    "VM[uuid:%s] is on target host[uuid:%s], but migration finalization failed: %s",
+                                    inv.getUuid(), inv.getHostUuid(), error.getMessage()));
+                }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
             }
         });
     }

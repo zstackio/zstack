@@ -7466,7 +7466,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                 extEmitter.afterMigrateVm(vm, vm.getLastHostUuid(), new NoErrorCompletion(completion) {
                     @Override
                     public void done() {
-                        completion.success();
+                        extEmitter.finalizeMigrateVm(vm, lastHostUuid, completion);
                     }
                 });
             }
