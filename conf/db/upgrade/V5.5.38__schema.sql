@@ -974,3 +974,45 @@ WHERE resource.`resourceType` = 'AlarmVO'
       WHERE `templateUuid` = 'c9e6cdca107140bea62b4ca919ff9e88'
   ));
 -- End ZSTAC-87593.
+
+-- Begin ZSTAC-88163: zsdataset 三个实体的建表。
+-- 这三张表此前只登记进了 premium 的 conf/persistence.xml 而没有 DDL，于是管理节点一查
+-- ZsDatasetSpaceRefVO 就抛 "Table 'zstack.ZsDatasetSpaceRefVO' doesn't exist"，
+-- 几乎所有集成用例随之失败（UnitTest 2515 个用例里 1792 个根本没跑起来）。
+-- 建表方式对齐同模块的 DatasetVO：它同样 extends ResourceVO，同样不建到 ResourceVO 的外键。
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
+    `uuid`            varchar(32)  NOT NULL UNIQUE,
+    `spaceId`         varchar(255) NOT NULL,
+    `appInstanceUuid` varchar(32)  NOT NULL,
+    `lastOpDate`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      timestamp    NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
+    `uuid`            varchar(32)  NOT NULL UNIQUE,
+    `appInstanceUuid` varchar(32)  NOT NULL,
+    `keyId`           varchar(255) NOT NULL,
+    `secret`          varchar(255) NOT NULL,
+    `lastOpDate`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      timestamp    NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- downloadToken 与 errorSummary 放宽到 2048：前者是 VM 只发一次的下载令牌，长度不由本仓决定；
+-- 后者是失败摘要。JPA 默认 255，列宽于声明长度不影响映射，窄了才会在运行时截断或插入失败。
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetPublicationVO` (
+    `uuid`             varchar(32)   NOT NULL UNIQUE,
+    `appInstanceUuid`  varchar(32)   NOT NULL,
+    `spaceId`          varchar(255)  NOT NULL,
+    `publishRequestId` varchar(255)  NOT NULL,
+    `modelCenterUuid`  varchar(32)   DEFAULT NULL,
+    `downloadToken`    varchar(2048) DEFAULT NULL,
+    `datasetUuid`      varchar(32)   DEFAULT NULL,
+    `errorSummary`     varchar(2048) DEFAULT NULL,
+    `state`            varchar(32)   NOT NULL,
+    `lastOpDate`       timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`       timestamp     NOT NULL DEFAULT '0000-00-00 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- End ZSTAC-88163.
