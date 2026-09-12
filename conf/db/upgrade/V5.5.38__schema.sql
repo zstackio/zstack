@@ -975,6 +975,29 @@ WHERE resource.`resourceType` = 'AlarmVO'
   ));
 -- End ZSTAC-87593.
 
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsNetworkNotificationVO` (
+    `uuid` varchar(32) NOT NULL,
+    `controllerUuid` varchar(32) NOT NULL,
+    `resourceType` varchar(32) NOT NULL,
+    `resourceUuid` varchar(36) NOT NULL,
+    `payload` text NOT NULL,
+    `requestedGeneration` bigint NOT NULL DEFAULT 0,
+    `completedGeneration` bigint NOT NULL DEFAULT 0,
+    `attempt` int NOT NULL DEFAULT 0,
+    `leaseToken` varchar(32) DEFAULT NULL,
+    `ownerUuid` varchar(128) DEFAULT NULL,
+    `leaseUntil` timestamp NULL DEFAULT NULL,
+    `nextAttemptDate` timestamp NOT NULL,
+    `lastErrorCode` varchar(128) DEFAULT NULL,
+    `lastErrorDetails` text,
+    `lastOpDate` timestamp NOT NULL,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `ukZnsNetworkNotificationResource` (`controllerUuid`, `resourceType`, `resourceUuid`),
+    KEY `idxZnsNetworkNotificationDue` (`nextAttemptDate`, `leaseUntil`),
+    CONSTRAINT `fkZnsNetworkNotificationController` FOREIGN KEY (`controllerUuid`)
+        REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- Begin ZSTAC-88163: zsdataset 三个实体的建表。
 -- 这三张表此前只登记进了 premium 的 conf/persistence.xml 而没有 DDL，于是管理节点一查
 -- ZsDatasetSpaceRefVO 就抛 "Table 'zstack.ZsDatasetSpaceRefVO' doesn't exist"，
