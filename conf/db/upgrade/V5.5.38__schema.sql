@@ -998,17 +998,19 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsNetworkNotificationVO` (
         REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Begin ZSTAC-88163: zsdataset 三个实体的建表。
--- 这三张表此前只登记进了 premium 的 conf/persistence.xml 而没有 DDL，于是管理节点一查
--- ZsDatasetSpaceRefVO 就抛 "Table 'zstack.ZsDatasetSpaceRefVO' doesn't exist"，
--- 几乎所有集成用例随之失败（UnitTest 2515 个用例里 1792 个根本没跑起来）。
--- 建表方式对齐同模块的 DatasetVO：它同样 extends ResourceVO，同样不建到 ResourceVO 的外键。
+-- Begin ZSTAC-88163: create the three zsdataset tables.
+-- They were registered in premium's conf/persistence.xml without any DDL here, so the
+-- management node threw "Table 'zstack.ZsDatasetSpaceRefVO' doesn't exist" on the first
+-- query and almost every integration case collapsed with it.
+-- Shaped after DatasetVO in the same module: it also extends ResourceVO and likewise
+-- declares no foreign key to ResourceVO. Timestamp defaults follow the AI tables added
+-- earlier in this file rather than a zero date, which strict SQL mode rejects.
 CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
     `uuid`            varchar(32)  NOT NULL UNIQUE,
     `spaceId`         varchar(255) NOT NULL,
     `appInstanceUuid` varchar(32)  NOT NULL,
-    `lastOpDate`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `createDate`      timestamp    NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      TIMESTAMP    NOT NULL DEFAULT '2000-01-01 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
@@ -1017,13 +1019,15 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
     `appInstanceUuid` varchar(32)  NOT NULL,
     `keyId`           varchar(255) NOT NULL,
     `secret`          varchar(255) NOT NULL,
-    `lastOpDate`      timestamp    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `createDate`      timestamp    NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      TIMESTAMP    NOT NULL DEFAULT '2000-01-01 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- downloadToken 与 errorSummary 放宽到 2048：前者是 VM 只发一次的下载令牌，长度不由本仓决定；
--- 后者是失败摘要。JPA 默认 255，列宽于声明长度不影响映射，窄了才会在运行时截断或插入失败。
+-- downloadToken holds the VM's publication download token, an HMAC-SHA256 digest encoded as
+-- base64url, so it is always 43 characters; varchar(2048) leaves ample room for a future
+-- scheme without reserving an off-page text column. errorSummary is a failure summary widened
+-- past the JPA default of 255 so a long message is stored rather than truncated.
 CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetPublicationVO` (
     `uuid`             varchar(32)   NOT NULL UNIQUE,
     `appInstanceUuid`  varchar(32)   NOT NULL,
@@ -1034,8 +1038,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetPublicationVO` (
     `datasetUuid`      varchar(32)   DEFAULT NULL,
     `errorSummary`     varchar(2048) DEFAULT NULL,
     `state`            varchar(32)   NOT NULL,
-    `lastOpDate`       timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    `createDate`       timestamp     NOT NULL DEFAULT '0000-00-00 00:00:00',
+    `lastOpDate`       TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`       TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 -- End ZSTAC-88163.
