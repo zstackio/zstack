@@ -296,10 +296,13 @@ public class L3BasicNetwork implements L3Network {
                     .list();
             List<NetworkConfigChange.IpRange> ranges = existingRanges.stream()
                     .map(existing -> new NetworkConfigChange.IpRange(
-                            existing.getUuid(), existing.getStartIp(), existing.getEndIp()))
+                            existing.getUuid(), existing.getStartIp(), existing.getEndIp(), existing.getAddressMode()))
                     .collect(Collectors.toList());
-            iprs.forEach(ipr -> ranges.add(new NetworkConfigChange.IpRange(
-                    ipr.getUuid(), ipr.getStartIp(), ipr.getEndIp())));
+            List<NetworkConfigChange.IpRange> addedRanges = iprs.stream()
+                    .map(ipr -> new NetworkConfigChange.IpRange(
+                            ipr.getUuid(), ipr.getStartIp(), ipr.getEndIp(), ipr.getAddressMode()))
+                    .collect(Collectors.toList());
+            ranges.addAll(addedRanges);
             int prefix = first.getIpVersion() == IPv6Constants.IPv6
                     ? first.getPrefixLen()
                     : NetworkUtils.getPrefixLengthFromNetmask(first.getNetmask());
@@ -307,7 +310,8 @@ public class L3BasicNetwork implements L3Network {
                     self.getL2NetworkUuid(), context.getOrigin(), msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     first.getL3NetworkUuid(),
-                    first.getIpVersion(), first.getGateway() + "/" + prefix, ranges);
+                    first.getIpVersion(), first.getGateway() + "/" + prefix, ranges,
+                    NetworkConfigChange.CollectionChangeOperation.ADD, addedRanges, null);
             java.util.concurrent.atomic.AtomicReference<List<IpRangeInventory>> created =
                     new java.util.concurrent.atomic.AtomicReference<>();
             if (coordinateNetworkConfigChange(change,
@@ -1917,7 +1921,8 @@ public class L3BasicNetwork implements L3Network {
                 self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                 msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                 msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
-                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns);
+                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns,
+                NetworkConfigChange.CollectionChangeOperation.REMOVE, msg.getDns());
         java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                 new java.util.concurrent.atomic.AtomicReference<>();
         if (coordinateNetworkConfigChange(change,
@@ -2076,7 +2081,8 @@ public class L3BasicNetwork implements L3Network {
                 self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                 msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                 msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
-                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns);
+                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns,
+                NetworkConfigChange.CollectionChangeOperation.ADD, msg.getDns());
         java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                 new java.util.concurrent.atomic.AtomicReference<>();
         if (coordinateNetworkConfigChange(change,
@@ -2315,65 +2321,47 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(UpdateProjectedDnsMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        if (msg.getContext() == null || !msg.getContext().isProjection()) {
+            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10102,
+                    "DNS projection requires a ZNS projection context"));
+            return;
+        }
+
+        LinkedHashSet<String> desired = new LinkedHashSet<>(
+                msg.getDns() == null ? Collections.emptyList() : msg.getDns());
+        String invalid = desired.stream().filter(dns -> !NetworkUtils.isIpAddress(dns)).findFirst().orElse(null);
+        if (invalid != null) {
+            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10103,
+                    "DNS[%s] is not an IP address", invalid));
+            return;
+        }
+
+        new SQLBatch() {
             @Override
-            public void run(SyncTaskChain chain) {
-                if (msg.getContext() == null || !msg.getContext().isProjection()) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10085,
-                            "DNS projection requires a ZNS projection context"));
-                    chain.next();
-                    return;
+            protected void scripts() {
+                List<L3NetworkDnsVO> existing = Q.New(L3NetworkDnsVO.class)
+                        .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                Set<String> current = existing.stream().map(L3NetworkDnsVO::getDns)
+                        .collect(Collectors.toSet());
+                List<L3NetworkDnsVO> obsolete = existing.stream()
+                        .filter(vo -> !desired.contains(vo.getDns())).collect(Collectors.toList());
+                if (!obsolete.isEmpty()) {
+                    dbf.removeCollection(obsolete, L3NetworkDnsVO.class);
                 }
-
-                LinkedHashSet<String> desired = new LinkedHashSet<>(
-                        msg.getDns() == null ? Collections.emptyList() : msg.getDns());
-                String invalid = desired.stream().filter(dns -> !NetworkUtils.isIpAddress(dns)).findFirst().orElse(null);
-                if (invalid != null) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10086,
-                            "DNS[%s] is not an IP address", invalid));
-                    chain.next();
-                    return;
+                List<L3NetworkDnsVO> additions = desired.stream()
+                        .filter(dns -> !current.contains(dns))
+                        .map(dns -> {
+                            L3NetworkDnsVO vo = new L3NetworkDnsVO();
+                            vo.setL3NetworkUuid(msg.getL3NetworkUuid());
+                            vo.setDns(dns);
+                            return vo;
+                        }).collect(Collectors.toList());
+                if (!additions.isEmpty()) {
+                    dbf.persistCollection(additions);
                 }
-
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        List<L3NetworkDnsVO> existing = Q.New(L3NetworkDnsVO.class)
-                                .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
-                        Set<String> current = existing.stream().map(L3NetworkDnsVO::getDns)
-                                .collect(Collectors.toSet());
-                        List<L3NetworkDnsVO> obsolete = existing.stream()
-                                .filter(vo -> !desired.contains(vo.getDns())).collect(Collectors.toList());
-                        if (!obsolete.isEmpty()) {
-                            dbf.removeCollection(obsolete, L3NetworkDnsVO.class);
-                        }
-                        List<L3NetworkDnsVO> additions = desired.stream()
-                                .filter(dns -> !current.contains(dns))
-                                .map(dns -> {
-                                    L3NetworkDnsVO vo = new L3NetworkDnsVO();
-                                    vo.setL3NetworkUuid(msg.getL3NetworkUuid());
-                                    vo.setDns(dns);
-                                    return vo;
-                                }).collect(Collectors.toList());
-                        if (!additions.isEmpty()) {
-                            dbf.persistCollection(additions);
-                        }
-                    }
-                }.execute();
-                bus.reply(msg, new MessageReply());
-                chain.next();
             }
-
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return "update-projected-dns";
-            }
-        });
+        }.execute();
+        bus.reply(msg, new MessageReply());
     }
 
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
@@ -2551,11 +2539,11 @@ public class L3BasicNetwork implements L3Network {
             change = NetworkConfigChange.removeIpRangeConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                    deleting.getL3NetworkUuid(), deleting.getIpVersion());
+                    deleting.getL3NetworkUuid(), deleting.getIpVersion(), deleting.getUuid());
         } else {
             List<NetworkConfigChange.IpRange> targets = remaining.stream()
                     .map(range -> new NetworkConfigChange.IpRange(
-                            range.getUuid(), range.getStartIp(), range.getEndIp()))
+                            range.getUuid(), range.getStartIp(), range.getEndIp(), range.getAddressMode()))
                     .collect(Collectors.toList());
             NormalIpRangeVO first = remaining.get(0);
             int prefix = first.getIpVersion() == IPv6Constants.IPv6
@@ -2565,7 +2553,8 @@ public class L3BasicNetwork implements L3Network {
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
                     msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
                     deleting.getL3NetworkUuid(), deleting.getIpVersion(),
-                    first.getGateway() + "/" + prefix, targets);
+                    first.getGateway() + "/" + prefix, targets,
+                    NetworkConfigChange.CollectionChangeOperation.REMOVE, null, deleting.getUuid());
         }
         java.util.concurrent.atomic.AtomicReference<Boolean> deleted =
                 new java.util.concurrent.atomic.AtomicReference<>(false);
