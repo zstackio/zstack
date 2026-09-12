@@ -49,6 +49,7 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
     int finalized
     int copies
     boolean holdFinalize
+    String lastStoppedHostUuid
     Completion heldCompletion
     CountDownLatch networkEntered = new CountDownLatch(1)
 
@@ -65,6 +66,7 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
             source = env.inventoryByName('kvm')
             target = env.inventoryByName('kvm1')
             stopVmInstance { uuid = vm.uuid }
+            lastStoppedHostUuid = dbFindByUuid(vm.uuid, VmInstanceVO).lastHostUuid
             verifyRootExtensionFirstCompletion()
             extension = new LocalStorageRootVolumeMigrationExtensionPoint() {
                 @Override
@@ -82,7 +84,7 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
                     finalized++
                     assert copies > 0
                     assert rootHost() == to
-                    assert dbFindByUuid(vm.uuid, VmInstanceVO).lastHostUuid == to
+                    assert dbFindByUuid(vm.uuid, VmInstanceVO).lastHostUuid == lastStoppedHostUuid
                     assert inventory.state == VmInstanceState.VolumeMigrating.toString()
                     if (holdFinalize) {
                         heldCompletion = completion
@@ -128,11 +130,12 @@ class LocalStorageRootMigrationNetworkCase extends SubCase {
             assert networkFailure.error?.globalErrorCode == 'ZCF6115.TEST.COLD_FINALIZE'
             assert finalized == 1
             assert rootHost() == target.uuid
-            assert dbFindByUuid(vm.uuid, VmInstanceVO).lastHostUuid == target.uuid
+            assert dbFindByUuid(vm.uuid, VmInstanceVO).lastHostUuid == lastStoppedHostUuid
             assertStoppedAndReady()
             def started = startVmInstance { uuid = vm.uuid }
             assert started.hostUuid == target.uuid
             stopVmInstance { uuid = vm.uuid }
+            lastStoppedHostUuid = target.uuid
             rejectFinalize = false
             throwFinalize = true
             def exceptionError = migrate(source.uuid).error

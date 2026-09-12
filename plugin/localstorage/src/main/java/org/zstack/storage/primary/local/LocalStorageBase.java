@@ -782,9 +782,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
                                                 .param("clusterUuid", clusterUuid)
                                                 .param("vmUuid", vmUuid).execute();
                                     }
-                                    sql(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid)
-                                            .set(VmInstanceVO_.lastHostUuid, msg.getDestHostUuid())
-                                            .set(VmInstanceVO_.hostUuid, null).update();
                                 }
 
                                 sql(VolumeVO.class)
