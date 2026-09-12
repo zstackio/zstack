@@ -533,7 +533,7 @@ CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'selectedFields', 'TEXT', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'pendingSelectedFields', 'TEXT', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'ownerUuid', 'VARCHAR(128)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'claimUuid', 'VARCHAR(32)', 1, NULL);
-CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'leaseUntil', 'TIMESTAMP', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'leaseUntil', 'TIMESTAMP NULL', 1, NULL);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerTransitionVO` (
     `operationUuid` varchar(36) NOT NULL,
