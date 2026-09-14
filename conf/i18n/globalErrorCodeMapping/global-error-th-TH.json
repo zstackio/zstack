@@ -3737,6 +3737,7 @@
   "ORG_ZSTACK_COMPUTE_VM_10068": "ไม่มีประเภท network interface ที่พร้อมใช้งานบน L3 network [%s]",
   "ORG_ZSTACK_COMPUTE_VM_10343": "ไม่สามารถเปลี่ยนประเภทเครื่องของ VM[uuid:%s] ในสถานะ[%s] ได้ รองรับเฉพาะสถานะ Stopped เท่านั้น",
   "ORG_ZSTACK_COMPUTE_VM_10344": "ไม่สามารถเปลี่ยนประเภทเครื่องของ VM[uuid:%s] จาก[%s] เป็น[%s] ได้",
+  "ORG_ZSTACK_COMPUTE_VM_10345": "ไม่สามารถเปลี่ยนประเภทเครื่องของ VM[uuid:%s] ได้ เนื่องจากมีสแนปช็อตหน่วยความจำ",
   "ORG_ZSTACK_FAULTTOLERANCE_10015": "ไม่สามารถสร้าง secondary virtual machine ได้เนื่องจาก primary virtual machine อยู่ในสถานะหยุดทำงาน โปรดเริ่มต้น primary virtual machine ก่อนสร้าง secondary virtual machine",
   "ORG_ZSTACK_COMPUTE_SRIOV_10014": "SR-IOV และ VFHA ไม่สามารถเปิดใช้งานพร้อมกันได้สำหรับการแนบ L3 network ไปยัง VM โปรดตรวจสอบให้แน่ใจว่าตั้งค่าตัวเลือกใดตัวเลือกหนึ่งเท่านั้น",
   "ORG_ZSTACK_COMPUTE_SRIOV_10015": "ไม่สามารถเปลี่ยน virtual function network interface เป็น standard type ได้",
