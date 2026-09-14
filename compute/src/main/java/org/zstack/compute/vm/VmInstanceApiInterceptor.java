@@ -186,6 +186,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             validate((APISetVmBootOrderMsg) msg);
         } else if (msg instanceof APISetVmBootVolumeMsg) {
             validate((APISetVmBootVolumeMsg) msg);
+        } else if (msg instanceof APISetVmMachineTypeMsg) {
+            validate((APISetVmMachineTypeMsg) msg);
         } else if (msg instanceof APIDeleteVmStaticIpMsg) {
             validate((APIDeleteVmStaticIpMsg) msg);
         } else if (msg instanceof APISetVmStaticIpMsg) {
@@ -776,6 +778,14 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
 
         if (isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10147, "the vm %s with memory snapshots do not support setting boot volume", msg.getVmInstanceUuid()));
+        }
+    }
+
+    private void validate(APISetVmMachineTypeMsg msg) {
+        String machineType = VmSystemTags.MACHINE_TYPE.getTokenByResourceUuid(msg.getVmInstanceUuid(), VmSystemTags.MACHINE_TYPE_TOKEN);
+        if (!VmMachineType.q35.toString().equals(machineType) && isVmHasMemorySnapshotGroup(msg.getVmInstanceUuid())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10337,
+                    "the vm[uuid:%s] with memory snapshots does not support setting machine type", msg.getVmInstanceUuid()));
         }
     }
 
