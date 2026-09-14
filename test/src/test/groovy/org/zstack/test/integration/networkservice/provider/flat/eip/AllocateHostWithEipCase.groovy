@@ -1,6 +1,8 @@
 package org.zstack.test.integration.networkservice.provider.flat.eip
 
 
+import org.zstack.compute.host.HostGlobalConfig
+import org.zstack.compute.host.HostMaintenancePolicyManager
 import org.zstack.core.db.SQL
 import org.zstack.header.network.l3.UsedIpVO
 import org.zstack.header.network.l3.UsedIpVO_
@@ -172,6 +174,12 @@ class AllocateHostWithEipCase extends SubCase {
 
         /* change host1 to maintain mode, l2-pub is not attached to host2
         * stop vm, then start vm will failed */
+        updateGlobalConfig {
+            category = HostGlobalConfig.CATEGORY
+            name = HostGlobalConfig.HOST_MAINTENANCE_POLICY.name
+            value = HostMaintenancePolicyManager.HostMaintenancePolicy.StopVmOnMigrationFailure.toString()
+        }
+
         changeHostState {
             uuid = host1.uuid
             stateEvent = "maintain"
