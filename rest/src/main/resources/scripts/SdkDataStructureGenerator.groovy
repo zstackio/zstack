@@ -261,7 +261,7 @@ ${output.join("\n")}
                         dst = src = ss[0]
                     }
 
-                    Field f = responseClass.getDeclaredField(src)
+                    Field f = getFieldRecursively(responseClass, src)
                     addToFields(dst, f)
                 }
             }

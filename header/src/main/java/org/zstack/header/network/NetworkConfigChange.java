@@ -15,6 +15,11 @@ public final class NetworkConfigChange {
         DHCP_DNS_CONFIGURATION
     }
 
+    public enum CollectionChangeOperation {
+        ADD,
+        REMOVE
+    }
+
     public static final class L2MetadataChange {
         private final String name;
         private final String description;
@@ -80,11 +85,21 @@ public final class NetworkConfigChange {
         private final String rangeUuid;
         private final String startIp;
         private final String endIp;
+        private final String addressMode;
 
         public IpRange(String rangeUuid, String startIp, String endIp) {
+            this(rangeUuid, startIp, endIp, null);
+        }
+
+        public IpRange(String rangeUuid, String startIp, String endIp, String addressMode) {
+            this.addressMode = addressMode;
             this.rangeUuid = rangeUuid;
             this.startIp = startIp;
             this.endIp = endIp;
+        }
+
+        public String getAddressMode() {
+            return addressMode;
         }
 
         public String getRangeUuid() {
@@ -106,14 +121,23 @@ public final class NetworkConfigChange {
         private final String gatewayAddress;
         private final List<IpRange> ranges;
         private final boolean delete;
+        private final CollectionChangeOperation operation;
+        private final List<IpRange> changedRanges;
+        private final String removedRangeUuid;
 
         private IpRangeConfiguration(String l3Uuid, int ipVersion, String gatewayAddress,
-                                     List<IpRange> ranges, boolean delete) {
+                                     List<IpRange> ranges, boolean delete,
+                                     CollectionChangeOperation operation, List<IpRange> changedRanges,
+                                     String removedRangeUuid) {
             this.l3Uuid = l3Uuid;
             this.ipVersion = ipVersion;
             this.gatewayAddress = gatewayAddress;
             this.ranges = Collections.unmodifiableList(new ArrayList<>(ranges));
             this.delete = delete;
+            this.operation = operation;
+            this.changedRanges = Collections.unmodifiableList(new ArrayList<>(
+                    changedRanges == null ? Collections.emptyList() : changedRanges));
+            this.removedRangeUuid = removedRangeUuid;
         }
 
         public String getL3Uuid() {
@@ -135,6 +159,19 @@ public final class NetworkConfigChange {
         public boolean isDelete() {
             return delete;
         }
+
+        public CollectionChangeOperation getOperation() {
+            return operation;
+        }
+
+        public List<IpRange> getChangedRanges() {
+            return changedRanges == null ? Collections.emptyList()
+                    : Collections.unmodifiableList(changedRanges);
+        }
+
+        public String getRemovedRangeUuid() {
+            return removedRangeUuid;
+        }
     }
 
     public static final class DhcpDnsConfiguration {
@@ -143,9 +180,12 @@ public final class NetworkConfigChange {
         private final List<String> systemTags;
         private final Integer ipVersion;
         private final List<String> dnsServers;
+        private final CollectionChangeOperation operation;
+        private final String changedDns;
 
         private DhcpDnsConfiguration(String l3Uuid, boolean enabled, List<String> systemTags,
-                                     Integer ipVersion, List<String> dnsServers) {
+                                     Integer ipVersion, List<String> dnsServers,
+                                     CollectionChangeOperation operation, String changedDns) {
             this.l3Uuid = l3Uuid;
             this.enabled = enabled;
             this.systemTags = Collections.unmodifiableList(new ArrayList<>(
@@ -153,6 +193,8 @@ public final class NetworkConfigChange {
             this.ipVersion = ipVersion;
             this.dnsServers = dnsServers == null ? null
                     : Collections.unmodifiableList(new ArrayList<>(dnsServers));
+            this.operation = operation;
+            this.changedDns = changedDns;
         }
 
         public String getL3Uuid() {
@@ -173,6 +215,14 @@ public final class NetworkConfigChange {
 
         public List<String> getDnsServers() {
             return dnsServers;
+        }
+
+        public CollectionChangeOperation getOperation() {
+            return operation;
+        }
+
+        public String getChangedDns() {
+            return changedDns;
         }
     }
 
@@ -248,9 +298,25 @@ public final class NetworkConfigChange {
                                                                     int ipVersion,
                                                                     String gatewayAddress,
                                                                     List<IpRange> ranges) {
+        return replaceIpRangeConfiguration(l2Uuid, origin, operationUuid, accountUuid, l3Uuid,
+                ipVersion, gatewayAddress, ranges, null, null, null);
+    }
+
+    public static NetworkConfigChange replaceIpRangeConfiguration(String l2Uuid,
+                                                                    NetworkOperationOrigin origin,
+                                                                    String operationUuid,
+                                                                    String accountUuid,
+                                                                    String l3Uuid,
+                                                                    int ipVersion,
+                                                                    String gatewayAddress,
+                                                                    List<IpRange> ranges,
+                                                                    CollectionChangeOperation operation,
+                                                                    List<IpRange> changedRanges,
+                                                                    String removedRangeUuid) {
         return new NetworkConfigChange(Kind.IP_RANGE_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null,
-                new IpRangeConfiguration(l3Uuid, ipVersion, gatewayAddress, ranges, false), null);
+                new IpRangeConfiguration(l3Uuid, ipVersion, gatewayAddress, ranges, false,
+                        operation, changedRanges, removedRangeUuid), null);
     }
 
     public static NetworkConfigChange removeIpRangeConfiguration(String l2Uuid,
@@ -259,9 +325,22 @@ public final class NetworkConfigChange {
                                                                    String accountUuid,
                                                                    String l3Uuid,
                                                                    int ipVersion) {
+        return removeIpRangeConfiguration(l2Uuid, origin, operationUuid, accountUuid, l3Uuid,
+                ipVersion, null);
+    }
+
+    public static NetworkConfigChange removeIpRangeConfiguration(String l2Uuid,
+                                                                   NetworkOperationOrigin origin,
+                                                                   String operationUuid,
+                                                                   String accountUuid,
+                                                                   String l3Uuid,
+                                                                   int ipVersion,
+                                                                   String removedRangeUuid) {
         return new NetworkConfigChange(Kind.IP_RANGE_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null,
-                new IpRangeConfiguration(l3Uuid, ipVersion, null, Collections.emptyList(), true), null);
+                new IpRangeConfiguration(l3Uuid, ipVersion, null, Collections.emptyList(), true,
+                        removedRangeUuid == null ? null : CollectionChangeOperation.REMOVE,
+                        null, removedRangeUuid), null);
     }
 
     public static NetworkConfigChange updateDhcpConfiguration(String l2Uuid,
@@ -273,7 +352,7 @@ public final class NetworkConfigChange {
                                                                 List<String> systemTags) {
         return new NetworkConfigChange(Kind.DHCP_DNS_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null, null,
-                new DhcpDnsConfiguration(l3Uuid, enabled, systemTags, null, null));
+                new DhcpDnsConfiguration(l3Uuid, enabled, systemTags, null, null, null, null));
     }
 
     public static NetworkConfigChange updateDnsConfiguration(String l2Uuid,
@@ -283,9 +362,23 @@ public final class NetworkConfigChange {
                                                                String l3Uuid,
                                                                int ipVersion,
                                                                List<String> dnsServers) {
+        return updateDnsConfiguration(l2Uuid, origin, operationUuid, accountUuid, l3Uuid,
+                ipVersion, dnsServers, null, null);
+    }
+
+    public static NetworkConfigChange updateDnsConfiguration(String l2Uuid,
+                                                               NetworkOperationOrigin origin,
+                                                               String operationUuid,
+                                                               String accountUuid,
+                                                               String l3Uuid,
+                                                               int ipVersion,
+                                                               List<String> dnsServers,
+                                                               CollectionChangeOperation operation,
+                                                               String changedDns) {
         return new NetworkConfigChange(Kind.DHCP_DNS_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null, null,
-                new DhcpDnsConfiguration(l3Uuid, true, Collections.emptyList(), ipVersion, dnsServers));
+                new DhcpDnsConfiguration(l3Uuid, true, Collections.emptyList(), ipVersion, dnsServers,
+                        operation, changedDns));
     }
 
     public Kind getKind() {

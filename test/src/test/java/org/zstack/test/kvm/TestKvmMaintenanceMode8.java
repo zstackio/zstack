@@ -3,8 +3,10 @@ package org.zstack.test.kvm;
 import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.compute.host.HostGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.config.GlobalConfigInventory;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostState;
@@ -54,6 +56,9 @@ public class TestKvmMaintenanceMode8 {
         dbf = loader.getComponent(DatabaseFacade.class);
         config = loader.getComponent(KVMSimulatorConfig.class);
         session = api.loginAsAdmin();
+        GlobalConfigInventory policy = GlobalConfigInventory.valueOf(HostGlobalConfig.HOST_MAINTENANCE_POLICY);
+        policy.setValue("StopVmOnMigrationFailure");
+        api.updateGlobalConfig(policy);
     }
 
     @Test

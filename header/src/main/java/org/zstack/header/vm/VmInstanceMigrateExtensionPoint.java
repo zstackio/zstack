@@ -28,6 +28,10 @@ public interface VmInstanceMigrateExtensionPoint {
         completion.done();
     }
 
+    default void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid, Completion completion) {
+        completion.success();
+    }
+
     default void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {};
 
     default void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason, NoErrorCompletion completion) {

@@ -61,6 +61,7 @@ import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.*;
@@ -317,7 +318,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
         MigrateStruct struct = new MigrateStruct();
         VolumeStatus originStatus = Q.New(VolumeVO.class).select(VolumeVO_.status).eq(VolumeVO_.uuid, msg.getVolumeUuid()).findValue();
-        String lastHostUuid = Q.New(VmInstanceVO.class).select(VmInstanceVO_.lastHostUuid).eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid()).findValue();
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("local-storage-%s-migrate-volume-%s-to-host-%s", msg.getPrimaryStorageUuid(), msg.getVolumeUuid(), msg.getDestHostUuid()));
         chain.then(new Flow() {
@@ -448,6 +448,9 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
                         MigrateVolumeOnLocalStorageReply mr = reply.castReply();
                         evt.setInventory(mr.getInventory());
+                        if (mr.getNetworkError() != null) {
+                            evt.setError(mr.getNetworkError());
+                        }
                         trigger.next();
                     }
                 });
@@ -499,12 +502,6 @@ public class LocalStorageBase extends PrimaryStorageBase {
         }).done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
-                /* update vm last host uuid */
-                SQL.New(VmInstanceVO.class)
-                        .eq(VmInstanceVO_.uuid, struct.getVmUuid())
-                        .set(VmInstanceVO_.lastHostUuid, lastHostUuid)
-                        .update();
-
                 bus.publish(evt);
             }
         }).error(new FlowErrorHandler(msg) {
@@ -641,6 +638,26 @@ public class LocalStorageBase extends PrimaryStorageBase {
 
             @Override
             public void setup() {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "pre-migrate-local-root-volume-network";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        callRootVolumeMigrationExtensions(VolumeInventory.valueOf(volume), ref.getHostUuid(),
+                                msg.getDestHostUuid(), false, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                });
+
                 flow(new Flow() {
                     String __name__ = "reserve-capacity-on-dest-host";
                     boolean success = false;
@@ -781,7 +798,22 @@ public class LocalStorageBase extends PrimaryStorageBase {
                             }
                         }.execute();
 
-                        bus.reply(msg, reply);
+                        Completion networkCompletion = new Completion(msg, completion) {
+                            @Override
+                            public void success() {
+                                bus.reply(msg, reply);
+                                completion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                reply.setNetworkError(errorCode);
+                                bus.reply(msg, reply);
+                                completion.done();
+                            }
+                        };
+                        callRootVolumeMigrationExtensions(VolumeInventory.valueOf(volume), ref.getHostUuid(),
+                                msg.getDestHostUuid(), true, networkCompletion);
                     }
                 });
 
@@ -790,17 +822,71 @@ public class LocalStorageBase extends PrimaryStorageBase {
                     public void handle(ErrorCode errCode, Map data) {
                         reply.setError(errCode);
                         bus.reply(msg, reply);
-                    }
-                });
-
-                Finally(new FlowFinallyHandler(msg, completion) {
-                    @Override
-                    public void Finally() {
                         completion.done();
                     }
                 });
             }
         }).start();
+    }
+
+    private void callRootVolumeMigrationExtensions(VolumeInventory volume, String sourceHostUuid,
+                                                   String targetHostUuid, boolean finalized, Completion completion) {
+        List<LocalStorageRootVolumeMigrationExtensionPoint> extensions =
+                pluginRgty.getExtensionList(LocalStorageRootVolumeMigrationExtensionPoint.class);
+        if (!VolumeType.Root.toString().equals(volume.getType()) || extensions.isEmpty()) {
+            completion.success();
+            return;
+        }
+        VmInstanceVO vm = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.rootVolumeUuid, volume.getUuid()).find();
+        if (vm == null) {
+            completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_10096,
+                    "cannot find VM for migrating root volume[uuid:%s]", volume.getUuid()));
+            return;
+        }
+        VmInstanceInventory inventory = VmInstanceInventory.valueOf(vm);
+        new While<>(extensions).each((extension, next) -> {
+            AtomicBoolean completed = new AtomicBoolean();
+            Completion callback = new Completion(next) {
+                @Override
+                public void success() {
+                    if (completed.compareAndSet(false, true)) {
+                        next.done();
+                    }
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    if (!completed.compareAndSet(false, true)) {
+                        return;
+                    }
+                    next.addError(errorCode);
+                    if (finalized) {
+                        next.done();
+                    } else {
+                        next.allDone();
+                    }
+                }
+            };
+            new NoErrorCompletion(callback) {
+                @Override
+                public void done() {
+                    if (finalized) {
+                        extension.finalizeMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
+                    } else {
+                        extension.preMigrateRootVolume(inventory, sourceHostUuid, targetHostUuid, callback);
+                    }
+                }
+            }.done();
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
+            }
+        });
     }
 
     @Override

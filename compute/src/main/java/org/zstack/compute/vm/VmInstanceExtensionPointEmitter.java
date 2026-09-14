@@ -25,8 +25,10 @@ import org.zstack.utils.logging.CLogger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmInstanceExtensionPointEmitter implements Component {
@@ -402,6 +404,43 @@ public class VmInstanceExtensionPointEmitter implements Component {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 completion.done();
+            }
+        });
+    }
+
+    public void finalizeMigrateVm(VmInstanceInventory inv, String srcHostUuid, Completion completion) {
+        new While<>(migrateVmExtensions).each((ext, next) -> {
+                AtomicBoolean completed = new AtomicBoolean();
+                Completion callback = new Completion(next) {
+                    @Override
+                    public void success() {
+                        if (completed.compareAndSet(false, true)) {
+                            next.done();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        if (completed.compareAndSet(false, true)) {
+                            next.addError(errorCode);
+                            next.done();
+                        }
+                    }
+                };
+                new NoErrorCompletion(callback) {
+                    @Override
+                    public void done() {
+                        ext.finalizeMigrateVm(inv, srcHostUuid, callback);
+                    }
+                }.done();
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
             }
         });
     }

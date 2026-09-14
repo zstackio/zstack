@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyInstallerGroovyTest
@@ -25,6 +26,7 @@ import java.util.stream.Collectors
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
         MessageTimeoutContextCase.class,
+        MigrateVmFinalizeCompletionCase.class,
         NetworkUtilsCase.class,
         ZnsProxyAnsibleDeployerTest.class,
         ZnsProxyInstallerGroovyTest.class,
