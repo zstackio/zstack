@@ -240,6 +240,7 @@ public class KVMHost extends HostBase implements Host {
     private String fileDownloadPath;
     private String fileUploadPath;
     private String fileDownloadProgressPath;
+    private String uploadFileToVmPath;
     private String readVmHostFilePath;
     private String writeVmHostFilePath;
 
@@ -492,6 +493,10 @@ public class KVMHost extends HostBase implements Host {
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.KVM_HOST_FILE_DOWNLOAD_PROGRESS_PATH);
         fileDownloadProgressPath = ub.build().toString();
+
+        ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
+        ub.path(KVMConstant.KVM_UPLOAD_FILE_TO_VM_PATH);
+        uploadFileToVmPath = ub.build().toString();
 
         ub = UriComponentsBuilder.fromHttpUrl(baseUrl);
         ub.path(KVMConstant.READ_VM_HOST_FILE_PATH);
@@ -754,6 +759,8 @@ public class KVMHost extends HostBase implements Host {
             handle((UpdateHostnameMsg) msg);
         } else if (msg instanceof UploadFileToHostMsg) {
             handle((UploadFileToHostMsg) msg);
+        } else if (msg instanceof UploadFileToVmMsg) {
+            handle((UploadFileToVmMsg) msg);
         } else if (msg instanceof GetFileDownloadProgressMsg) {
             handle((GetFileDownloadProgressMsg) msg);
         } else if (msg instanceof RestartKvmAgentMsg) {
@@ -7703,7 +7710,7 @@ public class KVMHost extends HostBase implements Host {
     private void uploadFileToHost(UploadFileToHostMsg msg, NoErrorCompletion completion) {
         UploadFileToHostReply reply = new UploadFileToHostReply();
 
-        if (msg.getUrl().startsWith("upload://")) {
+        if (msg.isDirectUpload()) {
             UploadFileCmd cmd = new UploadFileCmd();
             cmd.url = msg.getUrl();
             cmd.installPath = msg.getInstallPath();
@@ -7745,7 +7752,7 @@ public class KVMHost extends HostBase implements Host {
         String scheme;
         try {
             URI uri = new URI(msg.getUrl());
-            scheme = uri.getScheme();
+            scheme = uri.getScheme() == null ? null : uri.getScheme().toLowerCase(Locale.ROOT);
         } catch (URISyntaxException e) {
             reply.setError(operr("failed to parse upload URL [%s]: %s", msg.getUrl(), e.getMessage()));
             bus.reply(msg, reply);
@@ -7816,4 +7823,35 @@ public class KVMHost extends HostBase implements Host {
             }
         });
     }
+
+    private void handle(UploadFileToVmMsg msg) {
+        UploadFileToVmReply reply = new UploadFileToVmReply();
+        UploadFileToVmCmd cmd = new UploadFileToVmCmd();
+        cmd.taskUuid = msg.getTaskUuid();
+        cmd.sourcePath = msg.getSourcePath();
+        cmd.targetIp = msg.getTargetIp();
+        cmd.targetPath = msg.getTargetPath();
+        cmd.username = msg.getUsername();
+        cmd.sshPort = msg.getSshPort();
+        cmd.timeout = timeoutManager.getTimeoutSeconds();
+        cmd.password = msg.getPassword();
+
+        new Http<>(uploadFileToVmPath, cmd, UploadFileToVmResponse.class).call(
+                new ReturnValueCompletion<UploadFileToVmResponse>(msg) {
+                    @Override
+                    public void success(UploadFileToVmResponse rsp) {
+                        if (!rsp.isSuccess()) {
+                            reply.setError(operr("failed to upload file to VM, because: %s", rsp.getError()));
+                        }
+                        bus.reply(msg, reply);
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                    }
+                });
+    }
+
 }

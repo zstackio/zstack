@@ -5044,6 +5044,21 @@ public class KVMAgentCommands {
         public boolean supportSuspend;
     }
 
+    public static class UploadFileToVmCmd extends AgentCommand implements HasThreadContext, Serializable {
+        public String taskUuid;
+        public String sourcePath;
+        public String targetIp;
+        public String targetPath;
+        public String username;
+        public int sshPort;
+        public long timeout;
+        @NoLogging
+        public String password;
+    }
+
+    public static class UploadFileToVmResponse extends AgentResponse {
+    }
+
     public static class TakeVmConsoleScreenshotCmd extends AgentCommand {
         private String vmUuid;
 
