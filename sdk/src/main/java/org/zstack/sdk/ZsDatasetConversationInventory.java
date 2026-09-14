@@ -108,6 +108,14 @@ public class ZsDatasetConversationInventory  {
         return this.model;
     }
 
+    public java.lang.String taskId;
+    public void setTaskId(java.lang.String taskId) {
+        this.taskId = taskId;
+    }
+    public java.lang.String getTaskId() {
+        return this.taskId;
+    }
+
     public java.lang.String questionLabel;
     public void setQuestionLabel(java.lang.String questionLabel) {
         this.questionLabel = questionLabel;

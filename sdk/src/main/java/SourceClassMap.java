@@ -61,6 +61,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ZsDatasetModelSelectionInventory", "org.zstack.sdk.ZsDatasetModelSelectionInventory");
 			put("org.zstack.ai.entity.ZsDatasetPromptInventory", "org.zstack.sdk.ZsDatasetPromptInventory");
 			put("org.zstack.ai.entity.ZsDatasetPublicationInventory", "org.zstack.sdk.ZsDatasetPublicationInventory");
+			put("org.zstack.ai.entity.ZsDatasetPublicationPreviewInventory", "org.zstack.sdk.ZsDatasetPublicationPreviewInventory");
 			put("org.zstack.ai.entity.ZsDatasetQuestionInventory", "org.zstack.sdk.ZsDatasetQuestionInventory");
 			put("org.zstack.ai.entity.ZsDatasetSegmentationConfigSpec", "org.zstack.sdk.ZsDatasetSegmentationConfigSpec");
 			put("org.zstack.ai.entity.ZsDatasetSegmentationSettingsInventory", "org.zstack.sdk.ZsDatasetSegmentationSettingsInventory");
@@ -1827,6 +1828,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZsDatasetModelSelectionInventory", "org.zstack.ai.entity.ZsDatasetModelSelectionInventory");
 			put("org.zstack.sdk.ZsDatasetPromptInventory", "org.zstack.ai.entity.ZsDatasetPromptInventory");
 			put("org.zstack.sdk.ZsDatasetPublicationInventory", "org.zstack.ai.entity.ZsDatasetPublicationInventory");
+			put("org.zstack.sdk.ZsDatasetPublicationPreviewInventory", "org.zstack.ai.entity.ZsDatasetPublicationPreviewInventory");
 			put("org.zstack.sdk.ZsDatasetQuestionInventory", "org.zstack.ai.entity.ZsDatasetQuestionInventory");
 			put("org.zstack.sdk.ZsDatasetSegmentationConfigSpec", "org.zstack.ai.entity.ZsDatasetSegmentationConfigSpec");
 			put("org.zstack.sdk.ZsDatasetSegmentationSettingsInventory", "org.zstack.ai.entity.ZsDatasetSegmentationSettingsInventory");

@@ -84,6 +84,14 @@ public class ZsDatasetImageDatasetInventory  {
         return this.model;
     }
 
+    public java.lang.String taskId;
+    public void setTaskId(java.lang.String taskId) {
+        this.taskId = taskId;
+    }
+    public java.lang.String getTaskId() {
+        return this.taskId;
+    }
+
     public boolean confirmed;
     public void setConfirmed(boolean confirmed) {
         this.confirmed = confirmed;
