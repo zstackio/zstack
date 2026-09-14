@@ -18,6 +18,59 @@ public class VmCanonicalEvents {
     public static final String VM_NIC_INFO_CHANGED_PATH = "/vm/nicinfo/change";
     public static final String VM_NIC_INFO_DUPLICATE_PATH = "/vm/nicinfo/duplicate";
 
+    public static final String VM_MIGRATION_HOST_CAPACITY_PATH = "/vm/migration/host/capacity";
+
+    public static final String VM_MIGRATION_HOST_CAPACITY_RELEASED_PATH = "/vm/migration/host/capacity/released";
+
+    @NeedJsonSchema
+    public static class MigrationHostCapacityData {
+        private String vmUuid;
+        private String hostUuid;
+        private long memorySize;
+        private int cpuNum;
+        private String taskId;
+
+        public String getVmUuid() {
+            return vmUuid;
+        }
+
+        public void setVmUuid(String vmUuid) {
+            this.vmUuid = vmUuid;
+        }
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public long getMemorySize() {
+            return memorySize;
+        }
+
+        public void setMemorySize(long memorySize) {
+            this.memorySize = memorySize;
+        }
+
+        public int getCpuNum() {
+            return cpuNum;
+        }
+
+        public void setCpuNum(int cpuNum) {
+            this.cpuNum = cpuNum;
+        }
+
+        public String getTaskId() {
+            return taskId;
+        }
+
+        public void setTaskId(String taskId) {
+            this.taskId = taskId;
+        }
+    }
+
     @NeedJsonSchema
     public static class VmCrashReportData {
         private String vmUuid;
