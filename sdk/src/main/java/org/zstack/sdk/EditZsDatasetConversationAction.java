@@ -34,6 +34,12 @@ public class EditZsDatasetConversationAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String scenario;
 
+    @Param(required = false, maxLength = 200, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String roleA;
+
+    @Param(required = false, maxLength = 200, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String roleB;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.Boolean confirmed;
 

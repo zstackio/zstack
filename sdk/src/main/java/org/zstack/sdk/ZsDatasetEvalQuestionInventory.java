@@ -116,4 +116,12 @@ public class ZsDatasetEvalQuestionInventory  {
         return this.tenantTags;
     }
 
+    public java.lang.String sourceFileName;
+    public void setSourceFileName(java.lang.String sourceFileName) {
+        this.sourceFileName = sourceFileName;
+    }
+    public java.lang.String getSourceFileName() {
+        return this.sourceFileName;
+    }
+
 }

@@ -44,6 +44,14 @@ public class ZsDatasetTaskInventory  {
         return this.status;
     }
 
+    public java.lang.String modelName;
+    public void setModelName(java.lang.String modelName) {
+        this.modelName = modelName;
+    }
+    public java.lang.String getModelName() {
+        return this.modelName;
+    }
+
     public java.lang.Long completedCount;
     public void setCompletedCount(java.lang.Long completedCount) {
         this.completedCount = completedCount;

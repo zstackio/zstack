@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ListZsDatasetPublicationsAction extends AbstractAction {
+public class PreviewZsDatasetPublicationAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ListZsDatasetPublicationsResult value;
+        public org.zstack.sdk.PreviewZsDatasetPublicationResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,32 +25,11 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
-    public java.lang.Integer limit;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer offset;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String keyword;
-
-    @Param(required = false, validValues = {"READY","COMPLETED","FAILED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
-
-    @Param(required = false, validValues = {"SINGLE_TURN","MULTI_TURN","EVAL_QUESTION","IMAGE_VQA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"SINGLE_TURN","EVAL_QUESTION","MULTI_TURN","IMAGE_VQA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String contentType;
 
-    @Param(required = false, validValues = {"FineTune","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String scenario;
-
-    @Param(required = false, validValues = {"PRIVATE","SYSTEM"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String shareMode;
-
-    @Param(required = false, validValues = {"createAt","name"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sortBy;
-
-    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sortDirection;
+    @Param(required = false, nonempty = true, nullElements = false, emptyString = false, noTrim = false)
+    public java.util.List selectedIds;
 
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
@@ -76,6 +55,12 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -84,8 +69,8 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ListZsDatasetPublicationsResult value = res.getResult(org.zstack.sdk.ListZsDatasetPublicationsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ListZsDatasetPublicationsResult() : value; 
+        org.zstack.sdk.PreviewZsDatasetPublicationResult value = res.getResult(org.zstack.sdk.PreviewZsDatasetPublicationResult.class);
+        ret.value = value == null ? new org.zstack.sdk.PreviewZsDatasetPublicationResult() : value; 
 
         return ret;
     }
@@ -114,11 +99,11 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/ai/zsdataset/spaces/{spaceUuid}/publications";
+        info.httpMethod = "POST";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/publication-preview";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 
