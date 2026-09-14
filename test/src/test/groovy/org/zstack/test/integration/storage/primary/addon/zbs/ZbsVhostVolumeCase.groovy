@@ -174,7 +174,7 @@ class ZbsVhostVolumeCase extends SubCase {
             testVhostVmStartActivationChain()
             testAddProtocolPreparesHostsAndRecordsProtocolRefs()
             testProtocolRecoveryBackoff()
-            testReconnectSkipsConnectedProtocolDeploy()
+            testReconnectSkipsConnectedProtocolCheck()
         }
     }
 
@@ -541,10 +541,7 @@ class ZbsVhostVolumeCase extends SubCase {
             return rsp
         }
 
-        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            return new ZbsStorageController.AgentResponse()
-        }
-        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+        env.simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
             return new ZbsStorageController.AgentResponse()
         }
 
@@ -634,22 +631,19 @@ class ZbsVhostVolumeCase extends SubCase {
 
         AtomicBoolean ensureCalled = new AtomicBoolean(false)
         AtomicBoolean vhostTargetHealthy = new AtomicBoolean(true)
-        AtomicBoolean redeployedWhileDown = new AtomicBoolean(false)
+        AtomicBoolean checkedWhileDown = new AtomicBoolean(false)
 
-        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployVhostCmd.class)
-            assert cmd.hostIp != null : "deploy cmd missing target host IP for zbsadm SSH"
-            assert cmd.hugepageSize == ZbsConstants.VHOST_TARGET_HUGEPAGE_SIZE_MB : \
-                    "deploy cmd should pin zbsadm vhost memory size"
-            assert cmd.hugepageDir == null : \
-                    "deploy should choose the 2MB hugepage mount on the target host"
+        env.simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckVhostCmd.class)
+            assert cmd.hostIp != null : "check cmd missing target host IP for SSH"
             ensureCalled.set(true)
             if (!vhostTargetHealthy.get()) {
-                redeployedWhileDown.set(true)
+                checkedWhileDown.set(true)
+                def rsp = new ZbsStorageController.AgentResponse()
+                rsp.success = false
+                rsp.error = "vhost target is not ready in ZStone"
+                return rsp
             }
-            return new ZbsStorageController.AgentResponse()
-        }
-        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
             return new ZbsStorageController.AgentResponse()
         }
         env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -683,7 +677,7 @@ class ZbsVhostVolumeCase extends SubCase {
         }
 
         assert ensureCalled.get() : \
-                "addStorageProtocol(Vhost) did not reach DEPLOY_VHOST_PATH on the zbs PS agent"
+                "addStorageProtocol(Vhost) did not reach CHECK_VHOST_PATH on the zbs PS agent"
 
         retryInSecs {
             assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
@@ -715,7 +709,7 @@ class ZbsVhostVolumeCase extends SubCase {
                     .isExists()
         }
 
-        redeployedWhileDown.set(false)
+        checkedWhileDown.set(false)
         vhostTargetHealthy.set(false)
         retryInSecs(30) {
             assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
@@ -727,8 +721,8 @@ class ZbsVhostVolumeCase extends SubCase {
         }
 
         retryInSecs(30) {
-            assert redeployedWhileDown.get() : \
-                    "periodic ping did not self-heal: DEPLOY_VHOST_PATH not re-issued while vhost target was down"
+            assert checkedWhileDown.get() : \
+                    "periodic ping did not retry CHECK_VHOST_PATH while vhost target was down"
         }
         assert Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
                 .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
@@ -769,16 +763,13 @@ class ZbsVhostVolumeCase extends SubCase {
         HostInventory host = env.inventoryByName("kvm-1") as HostInventory
 
         AtomicBoolean vhostDown = new AtomicBoolean(false)
-        Set<Long> redeploySeconds = Collections.synchronizedSet(new HashSet<Long>())
+        Set<Long> checkSeconds = Collections.synchronizedSet(new HashSet<Long>())
 
-        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+        env.simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
             if (vhostDown.get()) {
-                redeploySeconds.add((System.currentTimeMillis() / 1000) as Long)
+                checkSeconds.add((System.currentTimeMillis() / 1000) as Long)
             }
-            throw new RuntimeException("vhost target redeploy fails on purpose")
-        }
-        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            return new ZbsStorageController.AgentResponse()
+            throw new RuntimeException("vhost target check fails on purpose")
         }
         env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
             def rsp = new ZbsStorageController.VhostTargetHealthRsp()
@@ -825,17 +816,17 @@ class ZbsVhostVolumeCase extends SubCase {
         vhostDown.set(true)
 
         retryInSecs(30) {
-            assert !redeploySeconds.isEmpty() : "framework never re-drove recovery for the down vhost target"
+            assert !checkSeconds.isEmpty() : "framework never re-drove recovery for the down vhost target"
         }
 
         Thread.sleep(24000)
         long downSecs = (System.currentTimeMillis() - downStartMs) / 1000
         assert downSecs >= 20 : "down window too short to judge backoff: ${downSecs}s"
-        assert redeploySeconds.size() >= 2 : \
-                "framework did not retry the still-down target: seconds=${redeploySeconds}"
-        assert redeploySeconds.size() <= 12 : \
-                "framework recovery backoff did not throttle: redeployed in ${redeploySeconds.size()} " +
-                "distinct seconds over ${downSecs}s down (doubling window should keep it sparse): ${redeploySeconds}"
+        assert checkSeconds.size() >= 2 : \
+                "framework did not retry the still-down target: seconds=${checkSeconds}"
+        assert checkSeconds.size() <= 12 : \
+                "framework recovery backoff did not throttle: checked in ${checkSeconds.size()} " +
+                "distinct seconds over ${downSecs}s down (doubling window should keep it sparse): ${checkSeconds}"
 
         vhostDown.set(false)
         retryInSecs(30) {
@@ -847,11 +838,11 @@ class ZbsVhostVolumeCase extends SubCase {
                     .isExists()
         }
 
-        redeploySeconds.clear()
+        checkSeconds.clear()
         vhostDown.set(true)
         retryInSecs(15) {
-            assert !redeploySeconds.isEmpty() : \
-                    "recovery did not reset the backoff: a fresh outage did not redeploy within 15s"
+            assert !checkSeconds.isEmpty() : \
+                    "recovery did not reset the backoff: a fresh outage did not trigger a check within 15s"
         }
         vhostDown.set(false)
         retryInSecs(30) {
@@ -869,15 +860,12 @@ class ZbsVhostVolumeCase extends SubCase {
         }
     }
 
-    void testReconnectSkipsConnectedProtocolDeploy() {
+    void testReconnectSkipsConnectedProtocolCheck() {
         HostInventory host = env.inventoryByName("kvm-1") as HostInventory
-        AtomicInteger deployCount = new AtomicInteger(0)
+        AtomicInteger checkCount = new AtomicInteger(0)
 
-        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            deployCount.incrementAndGet()
-            return new ZbsStorageController.AgentResponse()
-        }
-        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
+        env.simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            checkCount.incrementAndGet()
             return new ZbsStorageController.AgentResponse()
         }
         env.simulator(ZbsStorageController.VHOST_TARGET_HEALTH_PATH) { HttpEntity<String> e, EnvSpec spec ->
@@ -909,11 +897,11 @@ class ZbsVhostVolumeCase extends SubCase {
                     .isExists()
         }
 
-        deployCount.set(0)
+        checkCount.set(0)
         reconnectHost { uuid = host.uuid }
         Thread.sleep(2000)
-        assert deployCount.get() == 0 : \
-                "reconnect redeployed an already-Connected vhost target ${deployCount.get()} time(s); " +
+        assert checkCount.get() == 0 : \
+                "reconnect rechecked an already-Connected vhost target ${checkCount.get()} time(s); " +
                 "host-connect must skip protocols already Connected"
 
         detachPrimaryStorageFromCluster {

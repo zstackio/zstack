@@ -91,14 +91,8 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
                 return rsp
             }
 
-            simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
-                def rsp = new ZbsStorageController.AgentResponse()
-                rsp.success = true
 
-                return rsp
-            }
-
-            simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
                 def rsp = new ZbsStorageController.AgentResponse()
                 rsp.success = true
 

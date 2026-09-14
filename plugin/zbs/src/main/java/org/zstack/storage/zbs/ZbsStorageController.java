@@ -120,10 +120,8 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
     public static final String GET_VOLUME_CLIENTS_PATH = "/zbs/primarystorage/volume/clients";
     public static final String UPDATE_HOST_DEPENDENCY_PATH = "/zbs/primarystorage/host/updatedependency";
     public static final String VHOST_TARGET_HEALTH_PATH = "/zbs/primarystorage/vhost/target/health";
-    public static final String PREPARE_VHOST_TARGET_ENV_PATH = "/zbs/primarystorage/vhost/target/prepareenv";
     public static final String VHOST_RESIZE_PATH = "/zbs/primarystorage/vhost/resize";
-    public static final String DEPLOY_VHOST_PATH = "/zbs/primarystorage/vhost/deploy";
-    public static final String DESTROY_VHOST_PATH = "/zbs/primarystorage/vhost/destroy";
+    public static final String CHECK_VHOST_PATH = "/zbs/primarystorage/vhost/check";
     public static final String CREATE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/create";
     public static final String DELETE_VHOST_BDEV_PATH = "/zbs/primarystorage/vhost/bdev/delete";
 
@@ -393,7 +391,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public void deployClient(HostInventory h, List<String> protocols, Completion comp) {
-        boolean deployVhostTarget = protocols != null && protocols.contains(VolumeProtocol.Vhost.toString());
+        boolean checkVhostTarget = protocols != null && protocols.contains(VolumeProtocol.Vhost.toString());
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("deploy-zbs-client-on-host-%s", h.getUuid()));
         chain.then(new ShareFlow() {
@@ -465,67 +463,34 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
                     }
                 });
 
-                if (deployVhostTarget) {
+                if (checkVhostTarget) {
                     flow(new NoRollbackFlow() {
-                        String __name__ = "prepare-vhost-target-env";
-
-                        @Override
-                        public void run(FlowTrigger trigger, Map data) {
-                            PrepareVhostTargetEnvCmd cmd = new PrepareVhostTargetEnvCmd();
-
-                            KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
-                            msg.setCommand(cmd);
-                            msg.setHostUuid(h.getUuid());
-                            msg.setPath(PREPARE_VHOST_TARGET_ENV_PATH);
-                            msg.setNoStatusCheck(true);
-                            bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, msg.getHostUuid());
-                            bus.send(msg, new CloudBusCallBack(trigger) {
-                                @Override
-                                public void run(MessageReply reply) {
-                                    if (!reply.isSuccess()) {
-                                        trigger.fail(reply.getError());
-                                        return;
-                                    }
-
-                                    AgentResponse rsp = reply.<KVMHostAsyncHttpCallReply>castReply().toResponse(AgentResponse.class);
-                                    if (!rsp.isSuccess()) {
-                                        trigger.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10042, rsp.getError()));
-                                        return;
-                                    }
-
-                                    trigger.next();
-                                }
-                            });
-                        }
-                    });
-
-                    flow(new NoRollbackFlow() {
-                        String __name__ = "deploy-vhost-target";
+                        String __name__ = "check-vhost-target";
 
                         @Override
                         public void run(FlowTrigger trigger, Map data) {
                             KVMHostVO host = getKvmHost(h);
                             if (host == null) {
-                                logger.warn(String.format("cannot find kvm host[uuid:%s], skip vhost target deploy", h.getUuid()));
-                                trigger.next();
+                                trigger.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10010,
+                                        "cannot find kvm host[uuid:%s], unable to check vhost target", h.getUuid()));
                                 return;
                             }
 
-                            DeployVhostCmd cmd = new DeployVhostCmd();
+                            CheckVhostCmd cmd = new CheckVhostCmd();
                             fillVhostHostParams(cmd, h, host);
-                            cmd.hugepageSize = ZbsConstants.VHOST_TARGET_HUGEPAGE_SIZE_MB;
 
-                            httpCall(DEPLOY_VHOST_PATH, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(trigger) {
-                                @Override
-                                public void success(AgentResponse rsp) {
-                                    trigger.next();
-                                }
+                            httpCall(CHECK_VHOST_PATH, cmd, AgentResponse.class,
+                                new ReturnValueCompletion<AgentResponse>(trigger) {
+                                    @Override
+                                    public void success(AgentResponse rsp) {
+                                        trigger.next();
+                                    }
 
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    trigger.fail(errorCode);
-                                }
-                            });
+                                    @Override
+                                    public void fail(ErrorCode errorCode) {
+                                        trigger.fail(errorCode);
+                                    }
+                                });
                         }
                     });
                 }
@@ -2364,15 +2329,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
         public String sshPassword;
     }
 
-    public static class DeployVhostCmd extends VhostHostCmd {
-        public Integer hugepageSize;
-        public String hugepageDir;
-    }
-
-    public static class DestroyVhostCmd extends VhostHostCmd {
-    }
-
-    public static class PrepareVhostTargetEnvCmd extends AgentCommand {
+    public static class CheckVhostCmd extends VhostHostCmd {
     }
 
     public static class CreateVhostBdevCmd extends VhostHostCmd {
