@@ -28,6 +28,9 @@ public class GetZsDatasetImageContentAction extends AbstractAction {
     @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String imageId;
 
+    @Param(required = false, validValues = {"ORIGINAL","THUMBNAIL"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String variant;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 

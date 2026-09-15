@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ListZsDatasetModelProfilesAction extends AbstractAction {
+public class GetZsDatasetSourceContentAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ListZsDatasetModelProfilesResult value;
+        public org.zstack.sdk.GetZsDatasetSourceContentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,14 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
-    public java.lang.Integer limit;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer offset;
-
-    @Param(required = false, validValues = {"ENABLED","DISABLED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
+    @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sourceId;
 
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
+
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String spaceUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -63,8 +60,8 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ListZsDatasetModelProfilesResult value = res.getResult(org.zstack.sdk.ListZsDatasetModelProfilesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ListZsDatasetModelProfilesResult() : value; 
+        org.zstack.sdk.GetZsDatasetSourceContentResult value = res.getResult(org.zstack.sdk.GetZsDatasetSourceContentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetZsDatasetSourceContentResult() : value; 
 
         return ret;
     }
@@ -94,7 +91,7 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/ai/zsdataset/model-profiles";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/sources/{sourceId}/content";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";
