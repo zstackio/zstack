@@ -45,7 +45,9 @@ class NearestSubCaseCollectionStrategy implements SubCaseCollectionStrategy{
 
         // collect testsuite
         def testSuites = Platform.reflections.getSubTypesOf(Test.class)
-        testSuites = testSuites.findAll{ it.package != null && it.package.name.startsWith(test.class.package.name) && it.name.endsWith("Test") }
+        testSuites = testSuites.findAll{ it.package != null &&
+                (it.package.name == test.class.package.name || it.package.name.startsWith(test.class.package.name + ".")) &&
+                it.name.endsWith("Test") }
         testSuites = testSuites.sort{ a, b ->
             return a.name.compareTo(b.name)
         }
@@ -53,7 +55,8 @@ class NearestSubCaseCollectionStrategy implements SubCaseCollectionStrategy{
 
         // collect case
         def cases = Platform.reflections.getSubTypesOf(Case.class).findAll { !Modifier.isAbstract(it.modifiers) }
-        cases = cases.findAll { it.package.name.startsWith(test.class.package.name) }
+        cases = cases.findAll { it.package.name == test.class.package.name ||
+                it.package.name.startsWith(test.class.package.name + ".") }
         cases = cases.sort{ a, b ->
             return a.name.compareTo(b.name)
         }
