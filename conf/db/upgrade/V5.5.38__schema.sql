@@ -510,15 +510,20 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerCapabilityVO` (
     `eventCursor` bigint NOT NULL DEFAULT 0,
     `activationBoundary` varchar(36) DEFAULT NULL,
     `supportedContracts` text DEFAULT NULL,
+    `selectedFields` text DEFAULT NULL,
     `servingClusterSupported` tinyint(1) DEFAULT NULL,
     `servingClusterDigest` varchar(128) DEFAULT NULL,
     `cloudClusterSupported` tinyint(1) DEFAULT NULL,
     `cloudClusterDigest` varchar(128) DEFAULT NULL,
+    `ownerUuid` varchar(128) DEFAULT NULL,
+    `claimUuid` varchar(32) DEFAULT NULL,
+    `leaseUntil` timestamp NULL DEFAULT NULL,
     `pendingTransitionUuid` varchar(255) DEFAULT NULL,
     `pendingExpectedEpoch` bigint DEFAULT NULL,
     `pendingSelectedContract` varchar(32) DEFAULT NULL,
     `pendingPhase` varchar(32) DEFAULT NULL,
     `pendingRequestDigest` varchar(64) DEFAULT NULL,
+    `pendingSelectedFields` text DEFAULT NULL,
     `lastErrorCode` varchar(128) DEFAULT NULL,
     `lastErrorDetails` text DEFAULT NULL,
     `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
@@ -540,6 +545,10 @@ CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'cloudOfferGeneration', 'BIGINT', 0
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'znsOfferGeneration', 'BIGINT', 0, 0);
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'cloudOfferDigest', 'VARCHAR(128)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'znsOfferDigest', 'VARCHAR(128)', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'snapshotRevision', 'BIGINT', 0, 0);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'eventCursor', 'BIGINT', 0, 0);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'activationBoundary', 'VARCHAR(36)', 1, NULL);
+CALL ADD_COLUMN('ZnsControllerCapabilityVO', 'pendingPhase', 'VARCHAR(32)', 1, NULL);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerTransitionVO` (
     `operationUuid` varchar(36) NOT NULL,
@@ -567,6 +576,9 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerTransitionVO` (
     CONSTRAINT `fkZnsControllerTransitionVOSdnControllerVO`
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CALL ADD_COLUMN('ZnsControllerTransitionVO', 'cloudOfferGeneration', 'BIGINT', 0, 0);
+CALL ADD_COLUMN('ZnsControllerTransitionVO', 'znsOfferGeneration', 'BIGINT', 0, 0);
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZnsCloudProtocolIdentityVO` (
     `identityKey` varchar(32) NOT NULL,
