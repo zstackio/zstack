@@ -76,6 +76,30 @@ public class ZsDatasetImageInventory  {
         return this.contentSha256;
     }
 
+    public java.lang.String origin;
+    public void setOrigin(java.lang.String origin) {
+        this.origin = origin;
+    }
+    public java.lang.String getOrigin() {
+        return this.origin;
+    }
+
+    public java.lang.String originName;
+    public void setOriginName(java.lang.String originName) {
+        this.originName = originName;
+    }
+    public java.lang.String getOriginName() {
+        return this.originName;
+    }
+
+    public java.lang.Integer questionCount;
+    public void setQuestionCount(java.lang.Integer questionCount) {
+        this.questionCount = questionCount;
+    }
+    public java.lang.Integer getQuestionCount() {
+        return this.questionCount;
+    }
+
     public java.util.List adminTags;
     public void setAdminTags(java.util.List adminTags) {
         this.adminTags = adminTags;
