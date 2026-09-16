@@ -54,6 +54,7 @@ import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import javax.persistence.Tuple;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -757,22 +758,32 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public String allocateSpace(AllocateSpaceSpec aspec) {
-        if (config == null || addonInfo == null) {
-            reloadDbInfo();
-        }
+        Tuple snapshot = Q.New(ExternalPrimaryStorageVO.class)
+                .select(ExternalPrimaryStorageVO_.config, ExternalPrimaryStorageVO_.addonInfo)
+                .eq(ExternalPrimaryStorageVO_.uuid, self.getUuid()).findTuple();
+        String configJson = snapshot.get(0, String.class);
+        String addonInfoJson = snapshot.get(1, String.class);
+        Config allocationConfig = StringUtils.isEmpty(configJson) ? new Config() :
+                JSONObjectUtil.toObject(configJson, Config.class);
+        AddonInfo allocationInfo = StringUtils.isEmpty(addonInfoJson) ? new AddonInfo() :
+                JSONObjectUtil.toObject(addonInfoJson, AddonInfo.class);
 
-        // TODO allocate pool
-        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize());
+        LogicalPoolInfo logicalPoolInfo = allocateFreePool(aspec.getSize(), allocationConfig.getLogicalPoolName(),
+                allocationInfo.getLogicalPoolInfos());
         if (logicalPoolInfo == null) {
             throw new OperationFailureException(operr("no available logical pool with enough space[%d]", aspec.getSize()));
         }
 
-        return buildVolumePath("", config.getLogicalPoolName(), "");
+        return buildVolumePath("", allocationConfig.getLogicalPoolName(), "");
     }
 
-    private LogicalPoolInfo allocateFreePool(long size) {
-        List<LogicalPoolInfo> logicalPoolInfos = getSelfPools();
-        return logicalPoolInfos.stream().filter(it -> it.getCapacity() - it.getUsedSize() > size)
+    private LogicalPoolInfo allocateFreePool(long size, String poolName, List<LogicalPoolInfo> logicalPoolInfos) {
+        if (logicalPoolInfos == null) {
+            return null;
+        }
+
+        return logicalPoolInfos.stream().filter(it -> Objects.equals(poolName, it.getLogicalPoolName()))
+                .filter(it -> it.getCapacity() - it.getUsedSize() > size)
                 .max(Comparator.comparingLong(it -> it.getCapacity() - it.getUsedSize()))
                 .orElse(null);
     }
