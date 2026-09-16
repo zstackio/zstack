@@ -1001,3 +1001,49 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsNetworkNotificationVO` (
     CONSTRAINT `fkZnsNetworkNotificationController` FOREIGN KEY (`controllerUuid`)
         REFERENCES `SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- Begin ZSTAC-88163: create the three zsdataset tables.
+-- They were registered in premium's conf/persistence.xml without any DDL here, so the
+-- management node threw "Table 'zstack.ZsDatasetSpaceRefVO' doesn't exist" on the first
+-- query and almost every integration case collapsed with it.
+-- Shaped after DatasetVO in the same module: it also extends ResourceVO and likewise
+-- declares no foreign key to ResourceVO. Timestamp defaults follow the AI tables added
+-- earlier in this file rather than a zero date, which strict SQL mode rejects.
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
+    `uuid`            varchar(32)  NOT NULL UNIQUE,
+    `spaceId`         varchar(255) NOT NULL,
+    `appInstanceUuid` varchar(32)  NOT NULL,
+    `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      TIMESTAMP    NOT NULL DEFAULT '2000-01-01 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
+    `uuid`            varchar(32)  NOT NULL UNIQUE,
+    `appInstanceUuid` varchar(32)  NOT NULL,
+    `keyId`           varchar(255) NOT NULL,
+    `secret`          varchar(255) NOT NULL,
+    `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`      TIMESTAMP    NOT NULL DEFAULT '2000-01-01 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- downloadToken holds the VM's publication download token, an HMAC-SHA256 digest encoded as
+-- base64url, so it is always 43 characters; varchar(2048) leaves ample room for a future
+-- scheme without reserving an off-page text column. errorSummary is a failure summary widened
+-- past the JPA default of 255 so a long message is stored rather than truncated.
+CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetPublicationVO` (
+    `uuid`             varchar(32)   NOT NULL UNIQUE,
+    `appInstanceUuid`  varchar(32)   NOT NULL,
+    `spaceId`          varchar(255)  NOT NULL,
+    `publishRequestId` varchar(255)  NOT NULL,
+    `modelCenterUuid`  varchar(32)   DEFAULT NULL,
+    `downloadToken`    varchar(2048) DEFAULT NULL,
+    `datasetUuid`      varchar(32)   DEFAULT NULL,
+    `errorSummary`     varchar(2048) DEFAULT NULL,
+    `state`            varchar(32)   NOT NULL,
+    `lastOpDate`       TIMESTAMP     NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `createDate`       TIMESTAMP     NOT NULL DEFAULT '2000-01-01 00:00:00',
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+-- End ZSTAC-88163.
