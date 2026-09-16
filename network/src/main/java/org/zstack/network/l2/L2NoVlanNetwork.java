@@ -229,6 +229,9 @@ public class L2NoVlanNetwork implements L2Network {
         final List<L2NetworkInventory> ctx = L2NetworkInventory.valueOf(Arrays.asList(self));
         final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
                 .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
+        if (msg.getContext() != null) {
+            NetworkDeletionContexts.put(cascadeAction, msg.getContext());
+        }
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
         addConfirmedDeletePreflight(chain, cascadeAction, msg.isForceDelete());
