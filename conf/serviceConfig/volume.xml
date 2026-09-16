@@ -95,6 +95,10 @@
     </message>
 
     <message>
+        <name>org.zstack.header.volume.APIShrinkVolumeMsg</name>
+    </message>
+
+    <message>
         <name>org.zstack.header.volume.APIUndoSnapshotCreationMsg</name>
     </message>
 </service>
