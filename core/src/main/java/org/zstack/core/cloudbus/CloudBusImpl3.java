@@ -90,8 +90,8 @@ import java.util.function.Consumer;
 
 import static org.zstack.core.Platform.*;
 import static org.zstack.core.cloudbus.CloudBusGlobalProperty.SYNC_CALL_TIMEOUT;
-import static org.zstack.utils.BeanUtils.getProperty;
-import static org.zstack.utils.BeanUtils.setProperty;
+import static org.zstack.utils.BeanUtils.getPropertyOrField;
+import static org.zstack.utils.BeanUtils.setPropertyOrField;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class CloudBusImpl3 implements CloudBus, CloudBusIN {
@@ -1487,18 +1487,21 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
         }
 
         raw = (Map) raw.values().iterator().next();
-        List<String> paths = new ArrayList<>(schema.keySet());
 
-        for (String p : paths) {
-            Object dst = getProperty(msg, p);
+        for (String p : new ArrayList<>(schema.keySet())) {
             String type = schema.get(p);
-
-            if (dst.getClass().getName().equals(type)) {
+            Object dst = getPropertyOrField(msg, p);
+            if (dst != null && dst.getClass().getName().equals(type)) {
                 continue;
             }
 
             Class clz = Class.forName(type);
-            setProperty(msg, p, rehashObject(getProperty(raw, p), clz));
+            Object restored = rehashObject(getPropertyOrField(raw, p), clz);
+            if (restored == null || !setPropertyOrField(msg, p, restored)) {
+                logger.warn(String.format(
+                        "cannot restore the message schema path[%s] of message[%s], the local handler receives the raw deserialized value",
+                        p, dumpMessage(msg)));
+            }
         }
     }
 
@@ -1518,9 +1521,26 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             }
 
             new MessageSender(msg).localSend();
-            rsp.setStatus(HttpStatus.OK.value());
+            setHttpResponseStatus(rsp, HttpStatus.OK.value());
         } catch (Throwable t) {
             logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
+            setHttpResponseStatus(rsp, HttpStatus.INTERNAL_SERVER_ERROR.value());
+        }
+    }
+
+    /**
+     * A dropped message must not be reported as a successful delivery, otherwise
+     * the sender waits for the whole message timeout and the caller cannot tell a
+     * lost message from a slow one. The response may already be recycled when the
+     * delivery outlived the HTTP request, which is not an error by itself.
+     */
+    private void setHttpResponseStatus(HttpServletResponse rsp, int status) {
+        try {
+            rsp.setStatus(status);
+        } catch (Throwable t) {
+            logger.warn(String.format(
+                    "cannot write the HTTP response status[%s], the response is no longer associated with the request",
+                    status));
         }
     }
 

@@ -8,6 +8,7 @@ import org.reflections.util.ConfigurationBuilder;
 import org.reflections.util.FilterBuilder;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Field;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +21,8 @@ import static java.util.Arrays.asList;
  */
 public class BeanUtils {
     public static Reflections reflections;
+
+    private static final Pattern INDEXED_PATH = Pattern.compile("(.*)\\[(\\d+)]");
 
     static {
         ConfigurationBuilder builder = ConfigurationBuilder.build()
@@ -57,6 +60,109 @@ public class BeanUtils {
             return getProperty(bean, paths.iterator());
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private static Object getPropertyOrField(Object bean, Iterator<String> it)
+            throws IllegalAccessException, InvocationTargetException {
+        String segment = it.next();
+        Matcher m = INDEXED_PATH.matcher(segment);
+        String index = null;
+        if (m.matches()) {
+            segment = m.group(1);
+            index = m.group(2);
+        }
+
+        Object val = bean instanceof Map ? ((Map) bean).get(segment) : readPropertyOrField(bean, segment);
+        if (index != null) {
+            int position = Integer.parseInt(index);
+            val = val instanceof List && position < ((List) val).size() ? ((List) val).get(position) : null;
+        }
+
+        if (val == null || !it.hasNext()) {
+            return val;
+        }
+        return getPropertyOrField(val, it);
+    }
+
+    private static Object readPropertyOrField(Object bean, String name)
+            throws IllegalAccessException, InvocationTargetException {
+        try {
+            return PropertyUtils.getProperty(bean, name);
+        } catch (NoSuchMethodException e) {
+            Field f = FieldUtils.getField(name, bean.getClass());
+            if (f == null) {
+                return null;
+            }
+
+            f.setAccessible(true);
+            return f.get(bean);
+        }
+    }
+
+    /**
+     * Reads a nested path like {@link #getProperty(Object, String)} but also accepts
+     * plain public fields, because cross-MN message schema restoration must not
+     * require transport DTOs to be JavaBeans. Returns null when the path cannot be
+     * resolved, so callers can decide whether that is fatal.
+     */
+    public static Object getPropertyOrField(Object bean, String path) {
+        try {
+            return getPropertyOrField(bean, asList(path.split("\\.")).iterator());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Writes a nested path, preferring the JavaBean setter and falling back to the
+     * public field. Returns false when the path cannot be written.
+     */
+    public static boolean setPropertyOrField(Object bean, String path, Object val) {
+        List<String> paths = asList(path.split("\\."));
+        String name = paths.get(paths.size() - 1);
+
+        try {
+            Object target = bean;
+            for (String segment : paths.subList(0, paths.size() - 1)) {
+                target = getPropertyOrField(target, segment);
+                if (target == null) {
+                    return false;
+                }
+            }
+
+            Matcher m = INDEXED_PATH.matcher(name);
+            if (m.matches()) {
+                Object container = target instanceof Map
+                        ? ((Map) target).get(m.group(1)) : readPropertyOrField(target, m.group(1));
+                if (!(container instanceof List)) {
+                    return false;
+                }
+
+                ((List) container).set(Integer.parseInt(m.group(2)), val);
+                return true;
+            }
+
+            if (target instanceof Map) {
+                ((Map) target).put(name, val);
+                return true;
+            }
+
+            try {
+                PropertyUtils.setProperty(target, name, val);
+                return true;
+            } catch (NoSuchMethodException e) {
+                Field f = FieldUtils.getField(name, target.getClass());
+                if (f == null) {
+                    return false;
+                }
+
+                f.setAccessible(true);
+                f.set(target, val);
+                return true;
+            }
+        } catch (Exception e) {
+            return false;
         }
     }
 

@@ -10,8 +10,8 @@ import org.zstack.utils.DebugUtils;
 import java.io.Serializable;
 import java.util.*;
 
-import static org.zstack.utils.BeanUtils.getProperty;
-import static org.zstack.utils.BeanUtils.setProperty;
+import static org.zstack.utils.BeanUtils.getPropertyOrField;
+import static org.zstack.utils.BeanUtils.setPropertyOrField;
 import static org.zstack.utils.gson.JSONObjectUtil.rehashObject;
 
 
@@ -164,15 +164,14 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
         List<String> paths = new ArrayList<>(schema.keySet());
 
         for (String p : paths) {
-            Object dst = getProperty(this, p);
             String type = schema.get(p);
-
-            if (dst.getClass().getName().equals(type)) {
+            Object dst = getPropertyOrField(this, p);
+            if (dst != null && dst.getClass().getName().equals(type)) {
                 continue;
             }
 
             Class clz = Class.forName(type);
-            setProperty(this, p, rehashObject(getProperty(raw, p), clz));
+            setPropertyOrField(this, p, rehashObject(getPropertyOrField(raw, p), clz));
         }
     }
 }
