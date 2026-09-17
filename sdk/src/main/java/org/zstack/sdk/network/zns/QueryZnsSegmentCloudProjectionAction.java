@@ -65,7 +65,7 @@ public class QueryZnsSegmentCloudProjectionAction extends QueryAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/zns-segment-cloud-projections";
+        info.path = "/sdn-controller/zns/segment-cloud-projections";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

@@ -54,6 +54,14 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.vpcRouterUuids;
     }
 
+    public java.util.List tenantRouters;
+    public void setTenantRouters(java.util.List tenantRouters) {
+        this.tenantRouters = tenantRouters;
+    }
+    public java.util.List getTenantRouters() {
+        return this.tenantRouters;
+    }
+
     public java.lang.String zoneUuid;
     public void setZoneUuid(java.lang.String zoneUuid) {
         this.zoneUuid = zoneUuid;
