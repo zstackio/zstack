@@ -3,7 +3,6 @@ package org.zstack.test.core.thread;
 import org.junit.Before;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
-import org.zstack.core.cloudbus.CloudBusImpl2;
 import org.zstack.core.cloudbus.EventFacadeImpl;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.core.db.DatabaseFacade;
