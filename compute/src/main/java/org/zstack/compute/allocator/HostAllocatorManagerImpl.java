@@ -1,8 +1,13 @@
 package org.zstack.compute.allocator;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.EventCallback;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.MessageSafe;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -38,6 +43,10 @@ import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct;
 import org.zstack.header.vm.VmAbnormalLifeCycleStruct.VmAbnormalLifeCycleOperation;
 import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmCanonicalEvents;
+import org.zstack.header.vm.VmCanonicalEvents.MigrationHostCapacityData;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.zone.ZoneVO;
 import org.zstack.utils.CollectionUtils;
@@ -50,21 +59,30 @@ import javax.persistence.TypedQuery;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.header.Constants.THREAD_CONTEXT_API;
+import static org.zstack.header.Constants.THREAD_CONTEXT_TASK;
 import static org.zstack.utils.CollectionDSL.list;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
-public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager, VmAbnormalLifeCycleExtensionPoint {
+public class HostAllocatorManagerImpl extends AbstractService implements HostAllocatorManager,
+        VmAbnormalLifeCycleExtensionPoint, VmInstanceMigrateExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostAllocatorManagerImpl.class);
 
     private Map<String, HostAllocatorStrategyFactory> factories = Collections.synchronizedMap(new HashMap<String, HostAllocatorStrategyFactory>());
     private Set<String> unsupportedVmTypeForCapacityCalculation = new HashSet<>();
+    private final Cache<String, MigrationHostCapacityData> migrationHostCapacities =
+            CacheBuilder.newBuilder().expireAfterWrite(3, TimeUnit.DAYS).build();
+
     private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
     private Map<String, List<String>> primaryStorageBackupStorageMetrics = new HashMap<>();
 
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private EventFacade evtf;
     @Autowired
     private DatabaseFacade dbf;
     @Autowired
@@ -149,6 +167,45 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         APIGetCandidateBackupStorageForCreatingImageReply reply = new APIGetCandidateBackupStorageForCreatingImageReply();
         reply.setInventories(candidates);
         bus.reply(msg, reply);
+    }
+
+    private synchronized void updateMigrationHostCapacity(String path, MigrationHostCapacityData data) {
+        String key = data.getVmUuid() + ":" + data.getTaskId();
+        if (VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_PATH.equals(path)) {
+            migrationHostCapacities.asMap().putIfAbsent(key, data);
+        } else {
+            migrationHostCapacities.invalidate(key);
+        }
+    }
+
+    private void fireMigrationHostCapacity(VmInstanceInventory inv, String hostUuid, String path) {
+        if (hostUuid == null) {
+            return;
+        }
+        MigrationHostCapacityData data = new MigrationHostCapacityData();
+        data.setVmUuid(inv.getUuid());
+        data.setHostUuid(hostUuid);
+        data.setMemorySize(inv.getMemorySize());
+        data.setCpuNum(inv.getCpuNum());
+        String taskId = ThreadContext.get(THREAD_CONTEXT_TASK);
+        data.setTaskId(taskId == null ? ThreadContext.get(THREAD_CONTEXT_API) : taskId);
+        updateMigrationHostCapacity(path, data);
+        evtf.fire(path, data);
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+        fireMigrationHostCapacity(inv, destHostUuid, VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_PATH);
+    }
+
+    @Override
+    public void afterMigrateVm(VmInstanceInventory inv, String srcHostUuid) {
+        fireMigrationHostCapacity(inv, inv.getHostUuid(), VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_RELEASED_PATH);
+    }
+
+    @Override
+    public void failedToMigrateVm(VmInstanceInventory inv, String destHostUuid, ErrorCode reason) {
+        fireMigrationHostCapacity(inv, destHostUuid, VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_RELEASED_PATH);
     }
 
     private void handle(RecalculateHostCapacityMsg msg) {
@@ -251,8 +308,17 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
             new HostCapacityUpdater(s.hostUuid).run(new HostCapacityUpdaterRunnable() {
                 @Override
                 public HostCapacityVO call(HostCapacityVO cap) {
+                    long reservedMemory = 0;
+                    long reservedCpu = 0;
+                    for (MigrationHostCapacityData reservation : migrationHostCapacities.asMap().values()) {
+                        if (s.hostUuid.equals(reservation.getHostUuid())) {
+                            reservedMemory += ratioMgr.calculateMemoryByRatio(s.hostUuid, reservation.getMemorySize());
+                            reservedCpu += reservation.getCpuNum();
+                        }
+                    }
                     long before = cap.getAvailableMemory();
                     long avail = s.usedMemory == null ? cap.getTotalMemory() : cap.getTotalMemory() - s.usedMemory;
+                    avail -= reservedMemory;
                     cap.setAvailableMemory(avail);
 
                     long totalCpu = cpuRatioMgr.calculateHostCpuByRatio(s.hostUuid, cap.getCpuNum());
@@ -261,6 +327,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
 
                     long beforeCpu = cap.getAvailableCpu();
                     long availCpu = s.usedCpu == null ? cap.getTotalCpu() : cap.getTotalCpu() - s.usedCpu;
+                    availCpu -= reservedCpu;
                     cap.setAvailableCpu(availCpu);
 
                     logger.debug(String.format("re-calculated available capacity on the host[uuid:%s]:" +
@@ -781,6 +848,17 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
         populatePrimaryStorageBackupStorageMetrics();
         installPrimaryStorageTypeDefaultField();
         populateVmTypeNeedSkipCapacityCalculate();
+        for (String path : list(VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_PATH,
+                VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_RELEASED_PATH)) {
+            evtf.on(path, new EventCallback<MigrationHostCapacityData>() {
+                @Override
+                protected void run(Map<String, String> tokens, MigrationHostCapacityData data) {
+                    if (!evtf.isFromThisManagementNode(tokens)) {
+                        updateMigrationHostCapacity(path, data);
+                    }
+                }
+            });
+        }
         return true;
     }
 

@@ -20,6 +20,7 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 class ZbsVhostAttachDeployFailureCase extends SubCase {
@@ -28,6 +29,7 @@ class ZbsVhostAttachDeployFailureCase extends SubCase {
     PrimaryStorageInventory ps
     ClusterInventory cluster
     HostInventory kvm1, kvm2
+    AtomicInteger deploymentCalls = new AtomicInteger(0)
 
     @Override
     void clean() {
@@ -124,12 +126,22 @@ class ZbsVhostAttachDeployFailureCase extends SubCase {
             kvm2 = env.inventoryByName("kvm2") as HostInventory
             bus = bean(CloudBus.class)
 
+            ["/zbs/primarystorage/vhost/deploy", "/zbs/primarystorage/vhost/destroy",
+             "/zbs/primarystorage/vhost/target/prepareenv"].each { path ->
+                env.simulator(path) { HttpEntity<String> e, EnvSpec spec ->
+                    deploymentCalls.incrementAndGet()
+                    return new ZbsStorageController.AgentResponse()
+                }
+            }
+
             testAttachFailsWhenDeployFailureRatioReachesThreshold()
             testAttachSucceedsBelowThresholdThenSelfHeals()
+            assert deploymentCalls.get() == 0 : \
+                    "ZStone owns vhost deployment: expected no deployment calls, actual=${deploymentCalls.get()}"
         }
     }
 
-    // one of two hosts fails vhost deploy -> 50% > default 0.3 threshold -> attach fails
+    // one of two hosts fails vhost check -> 50% > default 0.3 threshold -> attach fails
     void testAttachFailsWhenDeployFailureRatioReachesThreshold() {
         AtomicReference<String> failHostIp = new AtomicReference<>("127.0.0.2")
         registerBaseStubs(failHostIp)
@@ -199,14 +211,13 @@ class ZbsVhostAttachDeployFailureCase extends SubCase {
             b.reply(msg, new UploadImageToRemoteTargetReply())
         }
 
-        env.simulator(ZbsStorageController.PREPARE_VHOST_TARGET_ENV_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.PrepareVhostTargetEnvCmd.class)
-            return new ZbsStorageController.AgentResponse()
-        }
-        env.simulator(ZbsStorageController.DEPLOY_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.DeployVhostCmd.class)
+        env.simulator(ZbsStorageController.CHECK_VHOST_PATH) { HttpEntity<String> e, EnvSpec spec ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckVhostCmd.class)
             if (cmd.hostIp == failHostIp.get()) {
-                throw new RuntimeException("vhost deploy fails on purpose for host ${cmd.hostIp}")
+                def rsp = new ZbsStorageController.AgentResponse()
+                rsp.success = false
+                rsp.error = "vhost target is not ready in ZStone for host ${cmd.hostIp}"
+                return rsp
             }
             return new ZbsStorageController.AgentResponse()
         }

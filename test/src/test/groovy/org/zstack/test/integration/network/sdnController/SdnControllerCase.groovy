@@ -45,6 +45,7 @@ class SdnControllerCase extends SubCase {
         env.create {
             dbf = bean(DatabaseFacade.class)
             testSdnControllerApi()
+            testChangeSdnControllerUsernameRollback()
             testH3cV2ControllerApi()
             testSdnControllerPing()
             testSdnControllerReconnect()
@@ -54,6 +55,61 @@ class SdnControllerCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testChangeSdnControllerUsernameRollback() {
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "rollback-token-init"
+            rsp.record.userName = "old-user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        SdnControllerInventory sdn = addSdnController {
+            vendorType = SdnControllerConstant.H3C_VCFC_CONTROLLER
+            name = "sdn-username-rollback-test"
+            ip = "192.168.1.30"
+            userName = "old-user"
+            password = "old-password"
+            vendorVersion = SdnControllerConstant.H3C_VCFC_VENDOR_VERSION_V2
+        }
+
+        assert sdn.name == "sdn-username-rollback-test"
+        assert sdn.username == "old-user"
+
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = null
+            return rsp
+        }
+
+        expectError {
+            changeSdnController {
+                uuid = sdn.uuid
+                userName = "new-user"
+                password = "new-password"
+            }
+        }
+
+        SdnControllerVO vo = dbf.findByUuid(sdn.uuid, SdnControllerVO.class)
+        assert vo.name == "sdn-username-rollback-test"
+        assert vo.username == "old-user"
+        assert vo.password == "old-password"
+
+        env.simulator(H3cVcfcV2Commands.H3C_VCFC_GET_TOKEN) { HttpEntity<String> e, EnvSpec spec ->
+            def rsp = new H3cVcfcV2Commands.LoginRsp()
+            rsp.record = new H3cVcfcV2Commands.LoginReply()
+            rsp.record.token = "rollback-token-cleanup"
+            rsp.record.userName = "old-user"
+            rsp.record.domainName = "default"
+            return rsp
+        }
+
+        removeSdnController {
+            uuid = sdn.uuid
+        }
     }
 
     void testH3cV2ControllerApi() {
