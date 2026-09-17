@@ -23,4 +23,11 @@
         <defaultValue>false</defaultValue>
         <type>java.lang.Boolean</type>
     </config>
+    <config>
+        <category>rest</category>
+        <name>checkHttpMethod</name>
+        <description>Check that the HTTP request method matches the API declaration. Disable only for compatibility with clients using incorrect methods.</description>
+        <defaultValue>true</defaultValue>
+        <type>java.lang.Boolean</type>
+    </config>
 </globalConfig>
