@@ -76,6 +76,14 @@ public class ZsDatasetDatasetInventory  {
         return this.taskId;
     }
 
+    public java.lang.String taskType;
+    public void setTaskType(java.lang.String taskType) {
+        this.taskType = taskType;
+    }
+    public java.lang.String getTaskType() {
+        return this.taskType;
+    }
+
     public java.lang.String chunkName;
     public void setChunkName(java.lang.String chunkName) {
         this.chunkName = chunkName;

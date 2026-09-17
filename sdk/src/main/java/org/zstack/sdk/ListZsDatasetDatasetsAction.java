@@ -37,6 +37,12 @@ public class ListZsDatasetDatasetsAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer offset;
 
+    @Param(required = false, validValues = {"createAt","aiScore"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortBy;
+
+    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortDirection;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
