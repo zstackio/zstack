@@ -673,6 +673,25 @@ CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProviderIdentity', 'VARCHAR(128)', 
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationProfileIdentity', 'VARCHAR(128)', 1, NULL);
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'operationAdapterIdentity', 'VARCHAR(128)', 1, NULL);
 
+-- ZCF-6439: expose the tenant router(s) of a projected VPC L3, including the
+-- member site of a stretched segment.
+CALL ADD_COLUMN('ZnsTransportZoneVO', 'siteUuid', 'VARCHAR(36)', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSiteVO` (
+    `uuid` varchar(32) NOT NULL,
+    `sdnControllerUuid` varchar(32) NOT NULL,
+    `znsResourceUuid` varchar(36) NOT NULL,
+    `name` varchar(255) NOT NULL,
+    `description` varchar(1024) DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`uuid`),
+    UNIQUE KEY `uk_zns_site_controller_uuid` (`sdnControllerUuid`, `znsResourceUuid`),
+    KEY `idx_zns_site_controller` (`sdnControllerUuid`),
+    CONSTRAINT `fkZnsSiteVOSdnControllerVO`
+        FOREIGN KEY (`sdnControllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 -- ZSTAC-86635: Persist ZNS controller connection candidates outside SystemTag.
 CALL ADD_COLUMN('ZnsControllerVO', 'ipOwnership', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('ZnsControllerVO', 'vipEndpoint', 'varchar(255)', 1, NULL);
