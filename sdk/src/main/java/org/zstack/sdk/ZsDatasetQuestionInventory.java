@@ -108,4 +108,20 @@ public class ZsDatasetQuestionInventory  {
         return this.tenantTags;
     }
 
+    public java.lang.String chunkName;
+    public void setChunkName(java.lang.String chunkName) {
+        this.chunkName = chunkName;
+    }
+    public java.lang.String getChunkName() {
+        return this.chunkName;
+    }
+
+    public java.lang.Long datasetCount;
+    public void setDatasetCount(java.lang.Long datasetCount) {
+        this.datasetCount = datasetCount;
+    }
+    public java.lang.Long getDatasetCount() {
+        return this.datasetCount;
+    }
+
 }
