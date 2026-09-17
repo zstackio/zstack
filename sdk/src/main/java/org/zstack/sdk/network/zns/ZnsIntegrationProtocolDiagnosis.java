@@ -4,20 +4,12 @@ package org.zstack.sdk.network.zns;
 
 public class ZnsIntegrationProtocolDiagnosis  {
 
-    public java.lang.String compatibilityMode;
-    public void setCompatibilityMode(java.lang.String compatibilityMode) {
-        this.compatibilityMode = compatibilityMode;
+    public java.lang.Boolean peerManifestSupported;
+    public void setPeerManifestSupported(java.lang.Boolean peerManifestSupported) {
+        this.peerManifestSupported = peerManifestSupported;
     }
-    public java.lang.String getCompatibilityMode() {
-        return this.compatibilityMode;
-    }
-
-    public java.lang.String compatibilityProfile;
-    public void setCompatibilityProfile(java.lang.String compatibilityProfile) {
-        this.compatibilityProfile = compatibilityProfile;
-    }
-    public java.lang.String getCompatibilityProfile() {
-        return this.compatibilityProfile;
+    public java.lang.Boolean getPeerManifestSupported() {
+        return this.peerManifestSupported;
     }
 
     public java.lang.String peerVersion;
