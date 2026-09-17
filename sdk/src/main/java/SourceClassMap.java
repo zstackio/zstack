@@ -79,6 +79,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec$Ratios", "org.zstack.sdk.Ratios");
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsInventory", "org.zstack.sdk.ZsDatasetTaskSettingsInventory");
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsSourcesSpec", "org.zstack.sdk.ZsDatasetTaskSettingsSourcesSpec");
+			put("org.zstack.ai.entity.ZsDatasetTransferCommitInventory", "org.zstack.sdk.ZsDatasetTransferCommitInventory");
+			put("org.zstack.ai.entity.ZsDatasetTransferInventory", "org.zstack.sdk.ZsDatasetTransferInventory");
 			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
 			put("org.zstack.ai.message.MatchEvidence", "org.zstack.sdk.MatchEvidence");
@@ -1839,6 +1841,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZsDatasetTaskSettingsConfigSpec", "org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec");
 			put("org.zstack.sdk.ZsDatasetTaskSettingsInventory", "org.zstack.ai.entity.ZsDatasetTaskSettingsInventory");
 			put("org.zstack.sdk.ZsDatasetTaskSettingsSourcesSpec", "org.zstack.ai.entity.ZsDatasetTaskSettingsSourcesSpec");
+			put("org.zstack.sdk.ZsDatasetTransferCommitInventory", "org.zstack.ai.entity.ZsDatasetTransferCommitInventory");
+			put("org.zstack.sdk.ZsDatasetTransferInventory", "org.zstack.ai.entity.ZsDatasetTransferInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");

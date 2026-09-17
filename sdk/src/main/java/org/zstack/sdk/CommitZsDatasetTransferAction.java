@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UploadZsDatasetImageAction extends AbstractAction {
+public class CommitZsDatasetTransferAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UploadZsDatasetImageAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UploadZsDatasetImageResult value;
+        public org.zstack.sdk.CommitZsDatasetTransferResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,20 +25,23 @@ public class UploadZsDatasetImageAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageId;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String contentBase64;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String imageName;
-
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
     @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String spaceUuid;
+
+    @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String transferId;
+
+    @Param(required = false, validRegexValues = "^[0-9a-f]{64}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String contentSha256;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List adminTags;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tenantTags;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +75,8 @@ public class UploadZsDatasetImageAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UploadZsDatasetImageResult value = res.getResult(org.zstack.sdk.UploadZsDatasetImageResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UploadZsDatasetImageResult() : value; 
+        org.zstack.sdk.CommitZsDatasetTransferResult value = res.getResult(org.zstack.sdk.CommitZsDatasetTransferResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CommitZsDatasetTransferResult() : value; 
 
         return ret;
     }
@@ -103,7 +106,7 @@ public class UploadZsDatasetImageAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/ai/zsdataset/spaces/{spaceUuid}/images/{imageId}/upload";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/transfers/{transferId}/commit";
         info.needSession = true;
         info.needPoll = true;
         info.parameterName = "params";

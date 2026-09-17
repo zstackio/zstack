@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class UploadZsDatasetSourceAction extends AbstractAction {
+public class CancelZsDatasetTransferAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class UploadZsDatasetSourceAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.UploadZsDatasetSourceResult value;
+        public org.zstack.sdk.CancelZsDatasetTransferResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -32,13 +32,7 @@ public class UploadZsDatasetSourceAction extends AbstractAction {
     public java.lang.String spaceUuid;
 
     @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String sourceId;
-
-    @Param(required = true, maxLength = 255, minLength = 4, nonempty = false, nullElements = false, emptyString = true, noTrim = true)
-    public java.lang.String filename;
-
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String content;
+    public java.lang.String transferId;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -72,8 +66,8 @@ public class UploadZsDatasetSourceAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.UploadZsDatasetSourceResult value = res.getResult(org.zstack.sdk.UploadZsDatasetSourceResult.class);
-        ret.value = value == null ? new org.zstack.sdk.UploadZsDatasetSourceResult() : value; 
+        org.zstack.sdk.CancelZsDatasetTransferResult value = res.getResult(org.zstack.sdk.CancelZsDatasetTransferResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CancelZsDatasetTransferResult() : value; 
 
         return ret;
     }
@@ -102,11 +96,11 @@ public class UploadZsDatasetSourceAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/zsdataset/spaces/{spaceUuid}/sources";
+        info.httpMethod = "DELETE";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/transfers/{transferId}";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "params";
+        info.parameterName = "";
         return info;
     }
 
