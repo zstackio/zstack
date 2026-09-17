@@ -1171,3 +1171,12 @@ DELIMITER ;
 
 CALL `ENSURE_ZNS_RESOURCE_RECEIPT_CONSTRAINTS`();
 DROP PROCEDURE IF EXISTS `ENSURE_ZNS_RESOURCE_RECEIPT_CONSTRAINTS`;
+
+-- ZCF-6345: site scoping of ZNS tenant routers and segment projections.
+-- Both columns hold a ZNS relation (the site of the router's edge cluster, the
+-- site of the L2 network's clusters). They are structural only: the values stay
+-- null on existing rows until the next inventory sync, controller reconnect or
+-- projection carries them, and Cloud skips its site judgement while a value is
+-- missing, leaving consistency to ZNS.
+CALL ADD_COLUMN('ZnsTenantRouterVO', 'siteUuid', 'VARCHAR(36)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'siteUuid', 'VARCHAR(36)', 1, NULL);
