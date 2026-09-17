@@ -40,4 +40,20 @@ class CloudBusSchemaRestoreCase {
         assert BeanUtils.getPropertyOrField(dto, 'missing') == null
         assert !BeanUtils.setPropertyOrField(dto, 'missing', 'value')
     }
+
+    // A path whose declared type is unknown to this node (for example a module
+    // that is not enabled here) must not abort the restore of the other paths.
+    @Test
+    void unconvertiblePathDoesNotAbortTheOtherPaths() {
+        def msg = new SchemaRestoreProbe.HolderMsg()
+        msg.payload = [name: 'segment', phase: 'PREPARE']
+        msg.putHeaderEntry('schema', [
+                'payload'      : 'org.zstack.test.unittest.core.NotDeployedDto',
+                'payload.phase': SchemaRestoreProbe.Phase.class.name])
+
+        msg.restoreFromSchema([payload: [name: 'segment', phase: 'PREPARE']])
+
+        assert msg.payload instanceof Map
+        assert msg.payload.phase == SchemaRestoreProbe.Phase.PREPARE
+    }
 }

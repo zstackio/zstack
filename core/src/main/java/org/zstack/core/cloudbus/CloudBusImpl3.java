@@ -1495,12 +1495,20 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 continue;
             }
 
-            Class clz = Class.forName(type);
-            Object restored = rehashObject(getPropertyOrField(raw, p), clz);
-            if (restored == null || !setPropertyOrField(msg, p, restored)) {
+            try {
+                Class clz = Class.forName(type);
+                Object restored = rehashObject(getPropertyOrField(raw, p), clz);
+                if (restored == null || !setPropertyOrField(msg, p, restored)) {
+                    logger.warn(String.format(
+                            "cannot restore the message schema path[%s] of message[%s], the local handler receives the raw deserialized value",
+                            p, dumpMessage(msg)));
+                }
+            } catch (Throwable t) {
+                // One path that cannot be converted must not abort the delivery of
+                // the whole message.
                 logger.warn(String.format(
-                        "cannot restore the message schema path[%s] of message[%s], the local handler receives the raw deserialized value",
-                        p, dumpMessage(msg)));
+                        "cannot convert the message schema path[%s] of message[%s]: %s",
+                        p, dumpMessage(msg), t.getMessage()));
             }
         }
     }
@@ -1511,8 +1519,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
 
     @AsyncThread
     public void handleHttpRequest(HttpEntity<String> e, HttpServletResponse rsp) {
+        Message msg = null;
         try {
-            Message msg = CloudBusGson.fromJson(e.getBody());
+            msg = CloudBusGson.fromJson(e.getBody());
             Map raw = JSONObjectUtil.toObject(e.getBody(), LinkedHashMap.class);
             try {
                 restoreFromSchema(msg, raw);
@@ -1524,16 +1533,36 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
             setHttpResponseStatus(rsp, HttpStatus.OK.value());
         } catch (Throwable t) {
             logger.warn(String.format("unable to deliver a message received from HTTP. HTTP body: %s", e.getBody()), t);
+            replyDeliveryFailure(msg, t);
             setHttpResponseStatus(rsp, HttpStatus.INTERNAL_SERVER_ERROR.value());
         }
     }
 
     /**
-     * A dropped message must not be reported as a successful delivery, otherwise
-     * the sender waits for the whole message timeout and the caller cannot tell a
-     * lost message from a slow one. The response may already be recycled when the
-     * delivery outlived the HTTP request, which is not an error by itself.
+     * This entry point runs on an async thread: the servlet response is committed
+     * as soon as the controller returns, so a status code cannot be relied on to
+     * report a delivery failure. Answering over the reply channel does reach the
+     * sender, which is waiting for it and would otherwise wait for the whole
+     * message timeout before failing.
      */
+    private void replyDeliveryFailure(Message msg, Throwable t) {
+        if (!(msg instanceof NeedReplyMessage)) {
+            return;
+        }
+
+        try {
+            MessageReply reply = new MessageReply();
+            reply.setError(inerr(ORG_ZSTACK_CORE_CLOUDBUS_10030,
+                    "cannot deliver message[%s] to the local service: %s", msg.getClass().getName(), t.getMessage()));
+            reply.setSuccess(false);
+            reply(msg, reply);
+        } catch (Throwable e) {
+            logger.warn(String.format(
+                    "cannot report the delivery failure of message[%s]: %s",
+                    msg.getClass().getName(), e.getMessage()));
+        }
+    }
+
     private void setHttpResponseStatus(HttpServletResponse rsp, int status) {
         try {
             rsp.setStatus(status);

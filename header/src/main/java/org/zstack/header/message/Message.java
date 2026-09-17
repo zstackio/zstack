@@ -6,6 +6,8 @@ import org.zstack.header.core.AsyncBackup;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.rest.APINoSee;
 import org.zstack.utils.DebugUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import java.io.Serializable;
 import java.util.*;
@@ -16,6 +18,8 @@ import static org.zstack.utils.gson.JSONObjectUtil.rehashObject;
 
 
 public abstract class Message implements Serializable, AsyncBackup, Cloneable {
+    private static final CLogger logger = Utils.getLogger(Message.class);
+
     /**
      * @ignore
      */
@@ -170,8 +174,16 @@ public abstract class Message implements Serializable, AsyncBackup, Cloneable {
                 continue;
             }
 
-            Class clz = Class.forName(type);
-            setPropertyOrField(this, p, rehashObject(getPropertyOrField(raw, p), clz));
+            try {
+                Class clz = Class.forName(type);
+                setPropertyOrField(this, p, rehashObject(getPropertyOrField(raw, p), clz));
+            } catch (Throwable t) {
+                // One path that cannot be converted must not abort the restore of
+                // the whole message.
+                logger.warn(String.format(
+                        "cannot restore the message schema path[%s] of message[%s]: %s",
+                        p, getClass().getName(), t.getMessage()));
+            }
         }
     }
 }
