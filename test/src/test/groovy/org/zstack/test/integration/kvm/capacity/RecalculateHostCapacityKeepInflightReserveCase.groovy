@@ -6,6 +6,7 @@ import org.zstack.header.Constants
 import org.zstack.compute.allocator.HostAllocatorManagerImpl
 import org.zstack.compute.allocator.HostCapacityUpdater
 import org.zstack.compute.allocator.HostCapacityUpdaterRunnable
+import org.zstack.compute.vm.VmInstanceExtensionPointEmitter
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CanonicalEvent
 import org.zstack.core.cloudbus.EventFacadeImpl
@@ -14,9 +15,11 @@ import org.zstack.core.db.Q
 import org.zstack.header.allocator.HostCapacityOverProvisioningManager
 import org.zstack.header.allocator.HostCapacityVO
 import org.zstack.header.allocator.HostCpuOverProvisioningManager
+import org.zstack.header.core.Completion
 import org.zstack.header.host.RecalculateHostCapacityMsg
 import org.zstack.header.vm.VmCanonicalEvents
 import org.zstack.header.vm.VmCanonicalEvents.MigrationHostCapacityData
+import org.zstack.header.vm.VmInstanceInventory as HeaderVmInventory
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -38,7 +41,9 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 import static org.zstack.kvm.KVMConstant.KVM_MIGRATE_VM_PATH
 
@@ -153,6 +158,8 @@ class RecalculateHostCapacityKeepInflightReserveCase extends SubCase {
             def extensions = bean(PluginRegistry.class).getExtensionList(VmInstanceMigrateExtensionPoint.class)
             assert extensions.contains(allocator) : "Migration cache must be registered: actual=${extensions}"
             KVMGlobalConfig.MIGRATE_AUTO_CONVERGE.updateValue(false)
+            testPreMigrationCapacity(false)
+            testPreMigrationCapacity(true)
             testMigrationCapacity(true)
             testMigrationCapacity(false)
             testOverprovisionedMigrationCapacity()
@@ -160,6 +167,79 @@ class RecalculateHostCapacityKeepInflightReserveCase extends SubCase {
             testRemoteEventsAndMemoryRatio()
             testInternalTaskContext()
             testExpiredMigrationCapacity()
+        }
+    }
+
+    void testPreMigrationCapacity(boolean succeed) {
+        VmInstanceExtensionPointEmitter emitter = bean(VmInstanceExtensionPointEmitter.class)
+        def originalExtensions = emitter.migrateVmExtensions
+        HostCapacityVO sourceBefore = dbFindByUuid(source.uuid, HostCapacityVO.class)
+        HostCapacityVO targetBefore = dbFindByUuid(target.uuid, HostCapacityVO.class)
+        long memory = targetBefore.availableMemory - vm.memorySize
+        long cpu = targetBefore.availableCpu - vm.cpuNum
+        AtomicBoolean reachedPre = new AtomicBoolean()
+        AtomicBoolean reachedAgent = new AtomicBoolean()
+        AtomicReference<Throwable> checkFailure = new AtomicReference<>()
+        def observer = new VmInstanceMigrateExtensionPoint() {
+            @Override
+            void preMigrateVm(HeaderVmInventory inventory, String destination, Completion completion) {
+                reachedPre.set(true)
+                try {
+                    recalculate("hostUuid", destination)
+                    assertCapacity(destination, memory, cpu, "pending pre must retain 8 GiB and 4 vCPU reservation")
+                    assert originalExtensions[0].is(allocator) :
+                            "First migration extension: expected=allocator actual=${originalExtensions[0].class.name}"
+                    assertCapacity(source.uuid, sourceBefore.availableMemory, sourceBefore.availableCpu,
+                            "pending pre must preserve source allocation")
+                } catch (Throwable failure) {
+                    checkFailure.set(failure)
+                    completion.fail(Platform.operr("TEST.MIGRATION.PRE", "pre migration capacity check failed"))
+                    return
+                }
+                if (succeed) {
+                    completion.success()
+                } else {
+                    completion.fail(Platform.operr("TEST.MIGRATION.PRE", "pre migration rejected by test"))
+                }
+            }
+
+            @Override
+            void beforeMigrateVm(HeaderVmInventory inventory, String destination) {
+            }
+        }
+        env.afterSimulator(KVM_MIGRATE_VM_PATH) { rsp ->
+            reachedAgent.set(true)
+            return rsp
+        }
+        try {
+            emitter.migrateVmExtensions = new ArrayList<>(originalExtensions)
+            emitter.migrateVmExtensions.add(1, observer)
+            def result = migrate(vm.uuid, target.uuid)
+            if (checkFailure.get() != null) {
+                throw checkFailure.get()
+            }
+            assert reachedPre.get() : "SDK migration must enter pre: expected=true actual=${reachedPre.get()}"
+            assert (result.error == null) == succeed :
+                    "Pre migration result: expectedSuccess=${succeed} actual=${result.error}"
+            assert reachedAgent.get() == succeed :
+                    "Rejected pre must prevent agent migration: expected=${succeed} actual=${reachedAgent.get()}"
+            assert !hasReservation(vm.uuid) :
+                    "Pre outcome must release reservation: expected=false actual=${hasReservation(vm.uuid)}"
+            String actualHost = dbFindByUuid(vm.uuid, VmInstanceVO.class).hostUuid
+            String expectedHost = succeed ? target.uuid : source.uuid
+            assert actualHost == expectedHost : "Settled VM host: expected=${expectedHost} actual=${actualHost}"
+            recalculate("clusterUuid", target.clusterUuid)
+            assertCapacity(target.uuid, succeed ? memory : targetBefore.availableMemory,
+                    succeed ? cpu : targetBefore.availableCpu, "pre outcome must leave no pending allocation")
+            assertCapacity(source.uuid, sourceBefore.availableMemory + (succeed ? vm.memorySize : 0),
+                    sourceBefore.availableCpu + (succeed ? vm.cpuNum : 0), "pre outcome must settle source allocation")
+        } finally {
+            emitter.migrateVmExtensions = originalExtensions
+            env.afterSimulator(KVM_MIGRATE_VM_PATH) { rsp -> rsp }
+        }
+        if (succeed) {
+            def reset = migrate(vm.uuid, source.uuid)
+            assert reset.error == null : "Reset after successful pre: expected=success actual=${reset.error}"
         }
     }
 
@@ -395,7 +475,7 @@ class RecalculateHostCapacityKeepInflightReserveCase extends SubCase {
         try {
             ThreadContext.clearMap()
             ThreadContext.put(Constants.THREAD_CONTEXT_TASK, taskId)
-            allocator.beforeMigrateVm(inventory, source.uuid)
+            allocator.preMigrateVm(inventory, source.uuid)
             assert cache().containsKey(vm.uuid + ":" + taskId) : "Internal migration must reuse its task ID"
             allocator.failedToMigrateVm(inventory, source.uuid, null)
             assert !cache().containsKey(vm.uuid + ":" + taskId) : "Failure must remove the internal task reservation"

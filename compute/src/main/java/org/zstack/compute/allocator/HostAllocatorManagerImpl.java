@@ -194,8 +194,12 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
     }
 
     @Override
-    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
+    public void preMigrateVm(VmInstanceInventory inv, String destHostUuid) {
         fireMigrationHostCapacity(inv, destHostUuid, VmCanonicalEvents.VM_MIGRATION_HOST_CAPACITY_PATH);
+    }
+
+    @Override
+    public void beforeMigrateVm(VmInstanceInventory inv, String destHostUuid) {
     }
 
     @Override
