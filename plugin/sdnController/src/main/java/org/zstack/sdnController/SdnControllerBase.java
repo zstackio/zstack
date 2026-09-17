@@ -207,9 +207,9 @@ public class SdnControllerBase {
             public void run(FlowTrigger trigger, Map data) {
                 boolean changed = false;
 
-                // Handle name change
-                if (msg.getUserName() != null && !msg.getUserName().equals(self.getName())) {
-                    chain.getData().put(SDN_CONTROLLER_USERNAME, self.getName());
+                // Handle username change
+                if (msg.getUserName() != null && !msg.getUserName().equals(self.getUsername())) {
+                    chain.getData().put(SDN_CONTROLLER_USERNAME, self.getUsername());
                     self.setUsername(msg.getUserName());
                     changed = true;
                 }
