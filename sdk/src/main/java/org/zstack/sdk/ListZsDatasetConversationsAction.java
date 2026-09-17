@@ -31,6 +31,9 @@ public class ListZsDatasetConversationsAction extends AbstractAction {
     @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String chunkId;
 
+    @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String questionId;
+
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String keyword;
 
@@ -39,6 +42,12 @@ public class ListZsDatasetConversationsAction extends AbstractAction {
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer offset;
+
+    @Param(required = false, validValues = {"createAt","score"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortBy;
+
+    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortDirection;
 
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
