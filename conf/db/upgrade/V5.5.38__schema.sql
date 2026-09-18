@@ -1009,12 +1009,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsNetworkNotificationVO` (
 -- Shaped after DatasetVO in the same module: it also extends ResourceVO and likewise
 -- declares no foreign key to ResourceVO. Timestamp defaults follow the AI tables added
 -- earlier in this file rather than a zero date, which strict SQL mode rejects.
--- appInstanceUuid is the marketplace application instance uuid in its canonical hyphenated
--- form, 36 characters; varchar(32) rejects every real instance.
 CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
     `uuid`            varchar(32)  NOT NULL UNIQUE,
     `spaceId`         varchar(255) NOT NULL,
-    `appInstanceUuid` varchar(36)  NOT NULL,
+    `appInstanceUuid` varchar(32)  NOT NULL,
     `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     `createDate`      TIMESTAMP    NOT NULL DEFAULT '2000-01-01 00:00:00',
     PRIMARY KEY (`uuid`)
@@ -1022,7 +1020,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetSpaceRefVO` (
 
 CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
     `uuid`            varchar(32)  NOT NULL UNIQUE,
-    `appInstanceUuid` varchar(36)  NOT NULL,
+    `appInstanceUuid` varchar(32)  NOT NULL,
     `keyId`           varchar(255) NOT NULL,
     `secret`          varchar(255) NOT NULL,
     `lastOpDate`      TIMESTAMP    NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1036,7 +1034,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetServiceKeyVO` (
 -- past the JPA default of 255 so a long message is stored rather than truncated.
 CREATE TABLE IF NOT EXISTS `zstack`.`ZsDatasetPublicationVO` (
     `uuid`             varchar(32)   NOT NULL UNIQUE,
-    `appInstanceUuid`  varchar(36)   NOT NULL,
+    `appInstanceUuid`  varchar(32)   NOT NULL,
     `spaceId`          varchar(255)  NOT NULL,
     `publishRequestId` varchar(255)  NOT NULL,
     `modelCenterUuid`  varchar(32)   DEFAULT NULL,
