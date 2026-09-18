@@ -271,10 +271,6 @@ public class SourceClassMap {
 			put("org.zstack.header.configuration.InstanceOfferingInventory", "org.zstack.sdk.InstanceOfferingInventory");
 			put("org.zstack.header.console.ConsoleInventory", "org.zstack.sdk.ConsoleInventory");
 			put("org.zstack.header.console.ConsoleProxyAgentInventory", "org.zstack.sdk.ConsoleProxyAgentInventory");
-			put("org.zstack.header.core.execution.ExecutionEventInventory", "org.zstack.sdk.ExecutionEventInventory");
-			put("org.zstack.header.core.execution.ExecutionInventory", "org.zstack.sdk.ExecutionInventory");
-			put("org.zstack.header.core.execution.ExecutionStageInventory", "org.zstack.sdk.ExecutionStageInventory");
-			put("org.zstack.header.core.execution.ExecutionTriggerInventory", "org.zstack.sdk.ExecutionTriggerInventory");
 			put("org.zstack.header.core.external.plugin.PluginDriverInventory", "org.zstack.sdk.PluginDriverInventory");
 			put("org.zstack.header.core.external.service.ExternalServiceCapabilities", "org.zstack.sdk.ExternalServiceCapabilities");
 			put("org.zstack.header.core.external.service.ExternalServiceConfigurationInventory", "org.zstack.sdk.ExternalServiceConfigurationInventory");
@@ -1164,10 +1160,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EthernetVfPciDeviceInventory", "org.zstack.header.sriov.EthernetVfPciDeviceInventory");
 			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
-			put("org.zstack.sdk.ExecutionEventInventory", "org.zstack.header.core.execution.ExecutionEventInventory");
-			put("org.zstack.sdk.ExecutionInventory", "org.zstack.header.core.execution.ExecutionInventory");
-			put("org.zstack.sdk.ExecutionStageInventory", "org.zstack.header.core.execution.ExecutionStageInventory");
-			put("org.zstack.sdk.ExecutionTriggerInventory", "org.zstack.header.core.execution.ExecutionTriggerInventory");
 			put("org.zstack.sdk.ExponBlockVolumeInventory", "org.zstack.header.volume.block.ExponBlockVolumeInventory");
 			put("org.zstack.sdk.ExtendedAttribute", "org.zstack.sso.header.ExtendedAttribute");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
