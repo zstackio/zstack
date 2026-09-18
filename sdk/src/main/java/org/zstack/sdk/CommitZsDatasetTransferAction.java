@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ListZsDatasetModelProfilesAction extends AbstractAction {
+public class CommitZsDatasetTransferAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ListZsDatasetModelProfilesResult value;
+        public org.zstack.sdk.CommitZsDatasetTransferResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,23 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
         }
     }
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
-    public java.lang.Integer limit;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer offset;
-
-    @Param(required = false, validValues = {"ENABLED","DISABLED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String status;
-
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
+
+    @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String spaceUuid;
+
+    @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String transferId;
+
+    @Param(required = false, validRegexValues = "^[0-9a-f]{64}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String contentSha256;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List adminTags;
+
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List tenantTags;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,6 +61,12 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -63,8 +75,8 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ListZsDatasetModelProfilesResult value = res.getResult(org.zstack.sdk.ListZsDatasetModelProfilesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ListZsDatasetModelProfilesResult() : value; 
+        org.zstack.sdk.CommitZsDatasetTransferResult value = res.getResult(org.zstack.sdk.CommitZsDatasetTransferResult.class);
+        ret.value = value == null ? new org.zstack.sdk.CommitZsDatasetTransferResult() : value; 
 
         return ret;
     }
@@ -93,11 +105,11 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/ai/zsdataset/model-profiles";
+        info.httpMethod = "POST";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/transfers/{transferId}/commit";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "params";
         return info;
     }
 

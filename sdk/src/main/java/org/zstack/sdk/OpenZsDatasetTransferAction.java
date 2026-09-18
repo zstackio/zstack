@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ImportZsDatasetPdfImagesAction extends AbstractAction {
+public class OpenZsDatasetTransferAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ImportZsDatasetPdfImagesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ImportZsDatasetPdfImagesResult value;
+        public org.zstack.sdk.OpenZsDatasetTransferResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,23 +25,26 @@ public class ImportZsDatasetPdfImagesAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String contentBase64;
-
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String filename;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List adminTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tenantTags;
-
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
     @Param(required = true, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String spaceUuid;
+
+    @Param(required = true, validValues = {"SOURCE","IMAGE","IMAGE_ARCHIVE","IMAGE_PDF"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String purpose;
+
+    @Param(required = true, maxLength = 255, minLength = 1, nonempty = false, nullElements = false, emptyString = true, noTrim = true)
+    public java.lang.String filename;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long size;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {1048576L,67108864L}, noTrim = false)
+    public java.lang.Long chunkSize;
+
+    @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String targetId;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -61,12 +64,6 @@ public class ImportZsDatasetPdfImagesAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -75,8 +72,8 @@ public class ImportZsDatasetPdfImagesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ImportZsDatasetPdfImagesResult value = res.getResult(org.zstack.sdk.ImportZsDatasetPdfImagesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ImportZsDatasetPdfImagesResult() : value; 
+        org.zstack.sdk.OpenZsDatasetTransferResult value = res.getResult(org.zstack.sdk.OpenZsDatasetTransferResult.class);
+        ret.value = value == null ? new org.zstack.sdk.OpenZsDatasetTransferResult() : value; 
 
         return ret;
     }
@@ -106,9 +103,9 @@ public class ImportZsDatasetPdfImagesAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "POST";
-        info.path = "/ai/zsdataset/spaces/{spaceUuid}/images/import-pdf/actions";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/transfers";
         info.needSession = true;
-        info.needPoll = true;
+        info.needPoll = false;
         info.parameterName = "params";
         return info;
     }

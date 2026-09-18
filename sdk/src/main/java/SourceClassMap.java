@@ -79,6 +79,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec$Ratios", "org.zstack.sdk.Ratios");
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsInventory", "org.zstack.sdk.ZsDatasetTaskSettingsInventory");
 			put("org.zstack.ai.entity.ZsDatasetTaskSettingsSourcesSpec", "org.zstack.sdk.ZsDatasetTaskSettingsSourcesSpec");
+			put("org.zstack.ai.entity.ZsDatasetTransferCommitInventory", "org.zstack.sdk.ZsDatasetTransferCommitInventory");
+			put("org.zstack.ai.entity.ZsDatasetTransferInventory", "org.zstack.sdk.ZsDatasetTransferInventory");
 			put("org.zstack.ai.message.ArchitectureImageMapping", "org.zstack.sdk.ArchitectureImageMapping");
 			put("org.zstack.ai.message.MaaSUsage", "org.zstack.sdk.MaaSUsage");
 			put("org.zstack.ai.message.MatchEvidence", "org.zstack.sdk.MatchEvidence");
@@ -1208,11 +1210,11 @@ public class SourceClassMap {
 			put("org.zstack.sdk.EthernetVfStatus", "org.zstack.header.sriov.EthernetVfStatus");
 			put("org.zstack.sdk.EvalQuestionGeneration", "org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec$EvalQuestionGeneration");
 			put("org.zstack.sdk.EventLogInventory", "org.zstack.core.eventlog.EventLogInventory");
+			put("org.zstack.sdk.Execution", "org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec$Execution");
 			put("org.zstack.sdk.ExecutionEventInventory", "org.zstack.header.core.execution.ExecutionEventInventory");
 			put("org.zstack.sdk.ExecutionInventory", "org.zstack.header.core.execution.ExecutionInventory");
 			put("org.zstack.sdk.ExecutionStageInventory", "org.zstack.header.core.execution.ExecutionStageInventory");
 			put("org.zstack.sdk.ExecutionTriggerInventory", "org.zstack.header.core.execution.ExecutionTriggerInventory");
-			put("org.zstack.sdk.Execution", "org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec$Execution");
 			put("org.zstack.sdk.ExponBlockVolumeInventory", "org.zstack.header.volume.block.ExponBlockVolumeInventory");
 			put("org.zstack.sdk.ExtendedAttribute", "org.zstack.sso.header.ExtendedAttribute");
 			put("org.zstack.sdk.ExternalBackupInventory", "org.zstack.externalbackup.ExternalBackupInventory");
@@ -1839,6 +1841,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ZsDatasetTaskSettingsConfigSpec", "org.zstack.ai.entity.ZsDatasetTaskSettingsConfigSpec");
 			put("org.zstack.sdk.ZsDatasetTaskSettingsInventory", "org.zstack.ai.entity.ZsDatasetTaskSettingsInventory");
 			put("org.zstack.sdk.ZsDatasetTaskSettingsSourcesSpec", "org.zstack.ai.entity.ZsDatasetTaskSettingsSourcesSpec");
+			put("org.zstack.sdk.ZsDatasetTransferCommitInventory", "org.zstack.ai.entity.ZsDatasetTransferCommitInventory");
+			put("org.zstack.sdk.ZsDatasetTransferInventory", "org.zstack.ai.entity.ZsDatasetTransferInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupInventory", "org.zstack.header.storage.database.backup.DatabaseBackupInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStorageRefInventory", "org.zstack.header.storage.database.backup.DatabaseBackupStorageRefInventory");
 			put("org.zstack.sdk.databasebackup.DatabaseBackupStruct", "org.zstack.header.storage.database.backup.DatabaseBackupStruct");

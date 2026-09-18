@@ -68,6 +68,14 @@ public class ZsDatasetTaskInventory  {
         return this.totalCount;
     }
 
+    public java.lang.String errorCode;
+    public void setErrorCode(java.lang.String errorCode) {
+        this.errorCode = errorCode;
+    }
+    public java.lang.String getErrorCode() {
+        return this.errorCode;
+    }
+
     public java.lang.String errorSummary;
     public void setErrorSummary(java.lang.String errorSummary) {
         this.errorSummary = errorSummary;

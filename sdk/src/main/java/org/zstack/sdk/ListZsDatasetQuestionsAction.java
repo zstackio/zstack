@@ -35,7 +35,13 @@ public class ListZsDatasetQuestionsAction extends AbstractAction {
     public java.lang.Boolean answered;
 
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String chunkName;
+
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String keyword;
+
+    @Param(required = false, validValues = {"contains","notContains"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String keywordMode;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
     public java.lang.Integer limit;

@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class ImportZsDatasetImagesAction extends AbstractAction {
+public class GetZsDatasetSourceContentAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class ImportZsDatasetImagesAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.ImportZsDatasetImagesResult value;
+        public org.zstack.sdk.GetZsDatasetSourceContentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,14 +25,8 @@ public class ImportZsDatasetImagesAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String contentBase64;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List adminTags;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List tenantTags;
+    @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sourceId;
 
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
@@ -58,12 +52,6 @@ public class ImportZsDatasetImagesAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
-    @NonAPIParam
-    public long timeout = -1;
-
-    @NonAPIParam
-    public long pollingInterval = -1;
-
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -72,8 +60,8 @@ public class ImportZsDatasetImagesAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.ImportZsDatasetImagesResult value = res.getResult(org.zstack.sdk.ImportZsDatasetImagesResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ImportZsDatasetImagesResult() : value; 
+        org.zstack.sdk.GetZsDatasetSourceContentResult value = res.getResult(org.zstack.sdk.GetZsDatasetSourceContentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.GetZsDatasetSourceContentResult() : value; 
 
         return ret;
     }
@@ -102,11 +90,11 @@ public class ImportZsDatasetImagesAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "POST";
-        info.path = "/ai/zsdataset/spaces/{spaceUuid}/images/import/actions";
+        info.httpMethod = "GET";
+        info.path = "/ai/zsdataset/spaces/{spaceUuid}/sources/{sourceId}/content";
         info.needSession = true;
-        info.needPoll = true;
-        info.parameterName = "params";
+        info.needPoll = false;
+        info.parameterName = "";
         return info;
     }
 

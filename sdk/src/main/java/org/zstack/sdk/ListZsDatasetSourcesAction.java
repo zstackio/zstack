@@ -37,6 +37,21 @@ public class ListZsDatasetSourcesAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
     public java.lang.Integer offset;
 
+    @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String keyword;
+
+    @Param(required = false, validValues = {"text/markdown","text/plain","application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/epub+zip"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String mediaType;
+
+    @Param(required = false, validValues = {"PENDING","PROCESSING","COMPLETED","FAILED","INTERRUPTED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String parseState;
+
+    @Param(required = false, validValues = {"createAt","filename","size"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortBy;
+
+    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortDirection;
+
     @Param(required = false)
     public java.util.List systemTags;
 
