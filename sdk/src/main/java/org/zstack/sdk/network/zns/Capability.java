@@ -36,6 +36,62 @@ public class Capability  {
         return this.epoch;
     }
 
+    public long cloudOfferGeneration;
+    public void setCloudOfferGeneration(long cloudOfferGeneration) {
+        this.cloudOfferGeneration = cloudOfferGeneration;
+    }
+    public long getCloudOfferGeneration() {
+        return this.cloudOfferGeneration;
+    }
+
+    public long znsOfferGeneration;
+    public void setZnsOfferGeneration(long znsOfferGeneration) {
+        this.znsOfferGeneration = znsOfferGeneration;
+    }
+    public long getZnsOfferGeneration() {
+        return this.znsOfferGeneration;
+    }
+
+    public java.lang.String cloudOfferDigest;
+    public void setCloudOfferDigest(java.lang.String cloudOfferDigest) {
+        this.cloudOfferDigest = cloudOfferDigest;
+    }
+    public java.lang.String getCloudOfferDigest() {
+        return this.cloudOfferDigest;
+    }
+
+    public java.lang.String znsOfferDigest;
+    public void setZnsOfferDigest(java.lang.String znsOfferDigest) {
+        this.znsOfferDigest = znsOfferDigest;
+    }
+    public java.lang.String getZnsOfferDigest() {
+        return this.znsOfferDigest;
+    }
+
+    public long snapshotRevision;
+    public void setSnapshotRevision(long snapshotRevision) {
+        this.snapshotRevision = snapshotRevision;
+    }
+    public long getSnapshotRevision() {
+        return this.snapshotRevision;
+    }
+
+    public long eventCursor;
+    public void setEventCursor(long eventCursor) {
+        this.eventCursor = eventCursor;
+    }
+    public long getEventCursor() {
+        return this.eventCursor;
+    }
+
+    public java.lang.String activationBoundary;
+    public void setActivationBoundary(java.lang.String activationBoundary) {
+        this.activationBoundary = activationBoundary;
+    }
+    public java.lang.String getActivationBoundary() {
+        return this.activationBoundary;
+    }
+
     public java.lang.String selectedFields;
     public void setSelectedFields(java.lang.String selectedFields) {
         this.selectedFields = selectedFields;
