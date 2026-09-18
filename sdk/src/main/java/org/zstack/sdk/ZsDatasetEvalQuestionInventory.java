@@ -60,6 +60,14 @@ public class ZsDatasetEvalQuestionInventory  {
         return this.chunkId;
     }
 
+    public java.lang.String chunkName;
+    public void setChunkName(java.lang.String chunkName) {
+        this.chunkName = chunkName;
+    }
+    public java.lang.String getChunkName() {
+        return this.chunkName;
+    }
+
     public java.util.List tags;
     public void setTags(java.util.List tags) {
         this.tags = tags;
