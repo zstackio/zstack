@@ -16,7 +16,6 @@ import org.apache.http.impl.nio.reactor.IOReactorConfig;
 import org.apache.http.nio.reactor.IOReactorException;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.http.*;
 import org.springframework.http.client.HttpComponentsAsyncClientHttpRequestFactory;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -42,7 +41,6 @@ import org.zstack.core.validation.ValidationFacade;
 import org.zstack.header.Constants;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
-import org.zstack.header.core.execution.ExecutionHttpObserver;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -82,9 +80,6 @@ public class RESTFacadeImpl implements RESTFacade {
     private ApiTimeoutManager timeoutMgr;
     @Autowired
     private ValidationFacade vf;
-    @Autowired(required = false)
-    @Lazy
-    private ExecutionHttpObserver executionObservability;
 
     private TelemetryFacade telemetryFacade;
 
@@ -107,14 +102,7 @@ public class RESTFacadeImpl implements RESTFacade {
     private interface AsyncHttpWrapper {
         void fail(ErrorCode err);
 
-        /**
-         * Completes the asynchronous request with the callback payload. The status code is
-         * supplied by the outbound HTTP exchange. The callback endpoint status must not be
-         * used because it only describes the local callback response.
-         */
         void success(HttpEntity<String> responseEntity);
-
-        void setResponseStatusCode(int statusCode);
 
         String getResourceUuid();
 
@@ -190,31 +178,6 @@ public class RESTFacadeImpl implements RESTFacade {
             } catch (Exception e) {
                 logger.trace("Failed to close HTTP scope", e);
             }
-        }
-    }
-
-    private String recordExecutionHttpRequestStarted(HttpMethod method, String url, HttpEntity<?> request) {
-        if (executionObservability == null) {
-            return null;
-        }
-        try {
-            return executionObservability.recordHttpRequestStarted(method, url, request);
-        } catch (Throwable t) {
-            logger.trace("Failed to record started HTTP execution observation", t);
-            return null;
-        }
-    }
-
-    @AsyncThread
-    private void recordExecutionHttpRequestCompleted(String requestUuid, String state, Integer statusCode, String error) {
-        ExecutionHttpObserver observer = executionObservability;
-        if (requestUuid == null || observer == null) {
-            return;
-        }
-        try {
-            observer.recordHttpRequestCompleted(requestUuid, state, statusCode, error);
-        } catch (Throwable t) {
-            logger.trace("Failed to record completed HTTP execution observation", t);
         }
     }
 
@@ -443,8 +406,6 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             rsp.setStatus(HttpStatus.SC_OK);
-            // The callback endpoint's HTTP status is not the status of the
-            // outbound request. The latter is supplied by the exchange future.
             wrapper.success(entity);
         } catch (IOException e) {
             logger.warn(e.getMessage(), e);
@@ -683,13 +644,9 @@ public class RESTFacadeImpl implements RESTFacade {
 
         final long sentAtMillis = System.currentTimeMillis();
         final String resourceUuid = (headers == null) ? null : headers.get(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID);
-        final String httpRequestUuid = recordExecutionHttpRequestStarted(method, url, req);
 
         AsyncHttpWrapper wrapper = new AsyncHttpWrapper() {
             final AtomicBoolean called = new AtomicBoolean(false);
-            final AtomicBoolean successSubmitted = new AtomicBoolean(false);
-            volatile Integer responseStatusCode;
-            volatile HttpEntity<String> callbackResponseEntity;
 
             final AsyncHttpWrapper self = this;
             final TimeoutTaskReceipt timeoutTaskReceipt = thdf.submitTimeoutTask(new Runnable() {
@@ -706,15 +663,6 @@ public class RESTFacadeImpl implements RESTFacade {
                 timeoutTaskReceipt.cancel();
             }
 
-            private void completeSuccessWhenExchangeCompleted() {
-                HttpEntity<String> responseEntity = callbackResponseEntity;
-                if (responseEntity == null || responseStatusCode == null
-                        || !successSubmitted.compareAndSet(false, true)) {
-                    return;
-                }
-                completion.success(responseEntity);
-            }
-
             final ReturnValueCompletion<HttpEntity<String>> completion = new ReturnValueCompletion<HttpEntity<String>>(callback) {
                 @Override
                 @AsyncThread
@@ -725,7 +673,6 @@ public class RESTFacadeImpl implements RESTFacade {
                     }
 
                     try {
-                        recordExecutionHttpRequestCompleted(httpRequestUuid, "SUCCEEDED", responseStatusCode, null);
                         if (CoreGlobalProperty.PROFILER_HTTP_CALL) {
                             HttpCallStatistic stat = statistics.get(url);
                             stat.addStatistic(System.currentTimeMillis() - finalStime);
@@ -791,10 +738,6 @@ public class RESTFacadeImpl implements RESTFacade {
                     }
 
                     try {
-                        String state = err != null && SysErrors.TIMEOUT.toString().equals(err.getCode())
-                                ? "TIMEOUT" : "FAILED";
-                        recordExecutionHttpRequestCompleted(httpRequestUuid, state, null,
-                                err == null ? null : err.getDetails());
                         wrappers.remove(taskUuid);
                         if (!SysErrors.TIMEOUT.toString().equals(err.getCode())) {
                             cancelTimeout();
@@ -819,14 +762,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
             @Override
             public void success(HttpEntity<String> responseEntity) {
-                callbackResponseEntity = responseEntity;
-                completeSuccessWhenExchangeCompleted();
-            }
-
-            @Override
-            public void setResponseStatusCode(int statusCode) {
-                responseStatusCode = statusCode;
-                completeSuccessWhenExchangeCompleted();
+                completion.success(responseEntity);
             }
 
             @Override
@@ -848,8 +784,7 @@ public class RESTFacadeImpl implements RESTFacade {
             }
 
             ListenableFuture<ResponseEntity<String>> f = asyncRestTemplate.exchange(actualTargetUrl, method, req, String.class);
-            f.addCallback(rsp -> wrapper.setResponseStatusCode(rsp.getStatusCodeValue()),
-                    e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
+            f.addCallback(rsp -> {}, e -> wrapper.fail(err(ORG_ZSTACK_CORE_REST_10003, SysErrors.HTTP_ERROR, e.getLocalizedMessage())));
         } catch (RestClientException e) {
             logger.warn(String.format("Unable to %s to %s: %s", method.toString(), url, e.getMessage()));
             wrapper.fail(ExceptionDSL.isCausedBy(e, ResourceAccessException.class) ? err(ORG_ZSTACK_CORE_REST_10004, SysErrors.IO_ERROR, e.getMessage()) : inerr(ORG_ZSTACK_CORE_REST_10005, e.getMessage()));
@@ -998,7 +933,6 @@ public class RESTFacadeImpl implements RESTFacade {
         ResponseEntity<String> rsp;
         final String url = http.getPath();
         final HttpMethod method = http.getMethod();
-        final String httpRequestUuid = recordExecutionHttpRequestStarted(method, url, req);
 
         try {
             if (http.isRetry()) {
@@ -1026,9 +960,6 @@ public class RESTFacadeImpl implements RESTFacade {
                         template.exchange(url, method, req, String.class);
             }
         } catch (Exception e) {
-            Integer statusCode = e instanceof HttpStatusCodeException
-                    ? ((HttpStatusCodeException) e).getRawStatusCode() : null;
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", statusCode, e.getMessage());
             if (http.getErrorCodeBuilder() != null) {
                 ErrorCode errorCode = http.getErrorCodeBuilder().apply(e, http);
                 if (errorCode != null) {
@@ -1048,12 +979,8 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         if (!valid) {
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", rsp.getStatusCodeValue(),
-                    String.format("unexpected HTTP status: %s", rsp.getStatusCode()));
             throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10008, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
-
-        recordExecutionHttpRequestCompleted(httpRequestUuid, "SUCCEEDED", rsp.getStatusCodeValue(), null);
 
         return rsp;
     }
@@ -1103,19 +1030,7 @@ public class RESTFacadeImpl implements RESTFacade {
 
     @Override
     public HttpHeaders syncHead(String url) {
-        HttpEntity<String> request = new HttpEntity<>(new HttpHeaders());
-        String requestUuid = recordExecutionHttpRequestStarted(HttpMethod.HEAD, url, request);
-        try {
-            HttpHeaders response = template.headForHeaders(URI.create(url));
-            recordExecutionHttpRequestCompleted(requestUuid, "SUCCEEDED", HttpStatus.SC_OK, null);
-            return response;
-        } catch (HttpStatusCodeException e) {
-            recordExecutionHttpRequestCompleted(requestUuid, "FAILED", e.getRawStatusCode(), e.getMessage());
-            throw e;
-        } catch (RuntimeException e) {
-            recordExecutionHttpRequestCompleted(requestUuid, "FAILED", null, e.getMessage());
-            throw e;
-        }
+        return template.headForHeaders(URI.create(url));
     }
 
     protected  <T> T syncJson(String url, String body, Map<String, String> headers, HttpMethod method, Class<T> returnClass, TimeUnit unit, long timeout) {
@@ -1150,7 +1065,6 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         ResponseEntity<String> rsp;
-        final String httpRequestUuid = recordExecutionHttpRequestStarted(method, url, req);
 
         try {
             if (CoreGlobalProperty.UNIT_TEST_ON) {
@@ -1175,14 +1089,9 @@ public class RESTFacadeImpl implements RESTFacade {
                 }.run();
             }
         } catch (HttpStatusCodeException e) {
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", e.getRawStatusCode(), e.getMessage());
             throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10009, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, e.getStatusCode(), e.getResponseBodyAsString()));
         } catch (ResourceAccessException e) {
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", null, e.getMessage());
             throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10010, "failed to %s to %s, IO Error: %s", method.toString().toLowerCase(), url, e.getMessage()));
-        } catch (RuntimeException e) {
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", null, e.getMessage());
-            throw e;
         }
 
         boolean valid = false;
@@ -1197,12 +1106,8 @@ public class RESTFacadeImpl implements RESTFacade {
         }
 
         if (!valid) {
-            recordExecutionHttpRequestCompleted(httpRequestUuid, "FAILED", rsp.getStatusCodeValue(),
-                    String.format("unexpected HTTP status: %s", rsp.getStatusCode()));
             throw new OperationFailureException(operr(ORG_ZSTACK_CORE_REST_10011, "failed to %s to %s, status code: %s, response body: %s", method.toString().toLowerCase(), url, rsp.getStatusCode(), rsp.getBody()));
         }
-
-        recordExecutionHttpRequestCompleted(httpRequestUuid, "SUCCEEDED", rsp.getStatusCodeValue(), null);
 
         return rsp;
     }

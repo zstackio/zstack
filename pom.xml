@@ -28,7 +28,6 @@
     <name>zstack</name>
     <modules>
         <module>core</module>
-        <module>observability</module>
         <module>compute</module>
         <module>utils</module>
         <module>header</module>
