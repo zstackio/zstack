@@ -31,6 +31,9 @@ public class ListZsDatasetDatasetsAction extends AbstractAction {
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String keyword;
 
+    @Param(required = false, validValues = {"unscored","0","0.5","1","1.5","2","2.5","3","3.5","4","4.5","5"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String aiScore;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
     public java.lang.Integer limit;
 
