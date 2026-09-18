@@ -6,6 +6,7 @@ package org.zstack.header.storage.snapshot.group;
 
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
+import org.zstack.header.message.APIBatchRequest;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
@@ -28,7 +29,7 @@ import java.util.concurrent.TimeUnit;
 )
 
 @DefaultTimeout(timeunit = TimeUnit.HOURS, value = 24)
-public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage, APIAuditor {
+public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements VolumeSnapshotGroupMessage, APIAuditor, APIBatchRequest {
     @APIParam(resourceType = VolumeSnapshotGroupVO.class)
     private String uuid;
 
@@ -68,7 +69,7 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
     }
 
     @Override
-    public Result audit(APIMessage msg, APIEvent rsp) {
+    public APIAuditor.Result audit(APIMessage msg, APIEvent rsp) {
         if (!rsp.isSuccess()) {
             return null;
         }
@@ -82,6 +83,13 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
             return null;
         }
 
-        return new Result(((APIRevertVmFromSnapshotGroupMsg) msg).getVmInstanceUuid(), VmInstanceVO.class);
+        return new APIAuditor.Result(((APIRevertVmFromSnapshotGroupMsg) msg).getVmInstanceUuid(), VmInstanceVO.class);
+    }
+
+    @Override
+    public APIBatchRequest.Result collectResult(APIMessage message, APIEvent rsp) {
+        APIRevertVmFromSnapshotGroupEvent evt = (APIRevertVmFromSnapshotGroupEvent) rsp;
+        return new APIBatchRequest.Result(evt.getResults().size(),
+                (int) evt.getResults().stream().filter(RevertSnapshotGroupResult::isSuccess).count());
     }
 }
