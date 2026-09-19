@@ -94,7 +94,7 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/zns-integration/effective-offer";
+        info.path = "/sdn-controller/zns/integration/effective-offer";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

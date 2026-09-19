@@ -26,7 +26,13 @@ public class CheckVniAvailabilityAction extends AbstractAction {
     }
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String transportZoneUuid;
+    public java.lang.String sdnControllerUuid;
+
+    @Param(required = true, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List clusterUuids;
+
+    @Param(required = true, validValues = {"overlay","vlan"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String transportType;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,16777214L}, noTrim = false)
     public int vni = 0;
