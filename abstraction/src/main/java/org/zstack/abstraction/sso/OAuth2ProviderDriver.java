@@ -16,6 +16,18 @@ public interface OAuth2ProviderDriver extends PluginDriver {
         return "sso";
     }
 
+    default String buildAuthorizationUrl(String url, MultiValueMap<String, String> params) {
+        return UriComponentsBuilder.fromHttpUrl(url).queryParams(params).toUriString();
+    }
+
+    default Class<?> getResponseType() {
+        return Map.class;
+    }
+
+    default Map<String, Object> parseResponse(String requestUrl, Object response) {
+        return (Map<String, Object>) response;
+    }
+
     default String prepareUrl(String requestUrl, MultiValueMap<String, String> map, HttpHeaders headers) {
         return UriComponentsBuilder.fromHttpUrl(requestUrl).toUriString();
     }
