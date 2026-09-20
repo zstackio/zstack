@@ -36,6 +36,14 @@ public class ZnsTenantRouterInventory  {
         return this.znsResourceUuid;
     }
 
+    public java.lang.String siteUuid;
+    public void setSiteUuid(java.lang.String siteUuid) {
+        this.siteUuid = siteUuid;
+    }
+    public java.lang.String getSiteUuid() {
+        return this.siteUuid;
+    }
+
     public java.lang.String name;
     public void setName(java.lang.String name) {
         this.name = name;
