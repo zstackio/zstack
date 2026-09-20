@@ -32,6 +32,8 @@ import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO;
 import org.zstack.header.storage.primary.PrimaryStorageClusterRefVO_;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO_;
+import org.zstack.header.tag.SystemTagVO;
+import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vm.cdrom.*;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
@@ -1324,6 +1326,21 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         validate((NewVmInstanceMessage2) msg);
     }
 
+    private boolean isMarketplaceZnsVm(NewVmInstanceMessage2 msg) {
+        if (!(msg instanceof APICreateVmInstanceMsg)
+                || CollectionUtils.isEmpty(msg.getSystemTags())
+                || !msg.getSystemTags().contains(VmSystemTags.MARKET_PLACE_TOKEN)) {
+            return false;
+        }
+
+        String imageUuid = ((APICreateVmInstanceMsg) msg).getImageUuid();
+        return imageUuid != null && Q.New(SystemTagVO.class)
+                .eq(SystemTagVO_.resourceUuid, imageUuid)
+                .eq(SystemTagVO_.resourceType, ImageVO.class.getSimpleName())
+                .eq(SystemTagVO_.tag, ImageConstant.MARKETPLACE_ZNS_IMAGE_TAG)
+                .isExists();
+    }
+
     private void validate(NewVmInstanceMessage2 msg) {
         VmInstanceUtils.validateInstanceSettings(msg);
 
@@ -1380,7 +1397,8 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
                 if (state != L3NetworkState.Enabled) {
                     throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_COMPUTE_VM_10206, "l3Network[uuid:%s] is Disabled, can not create vm on it", l3Uuid));
                 }
-                if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))) {
+                if (system && (msg.getType() == null || VmInstanceConstant.USER_VM_TYPE.equals(msg.getType()))
+                        && !isMarketplaceZnsVm(msg)) {
                     throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10207, "l3Network[uuid:%s] is system network, can not create user vm on it", l3Uuid));
                 }
             }
