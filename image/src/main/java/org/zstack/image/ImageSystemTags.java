@@ -1,8 +1,10 @@
 package org.zstack.image;
 
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.image.ImageConstant;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.tag.TagDefinition;
+import org.zstack.header.tag.AdminOnlyTag;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.tag.SystemTag;
 
@@ -55,6 +57,11 @@ public class ImageSystemTags {
     public static PatternedSystemTag UPLOAD_IMAGE_INFO = new PatternedSystemTag(String.format("uploadImage::{%s}", IMAGE_ID), LongJobVO.class);
 
     public static final String MARKET_PLACE_TOKEN = "marketplace::true";
+
+    @AdminOnlyTag
+    public static SystemTag MARKETPLACE_ZNS_IMAGE = new SystemTag(
+            ImageConstant.MARKETPLACE_ZNS_IMAGE_TAG, ImageVO.class
+    );
 
     public static PatternedSystemTag CREATED_BY_MARKETPLACE = new PatternedSystemTag(
             MARKET_PLACE_TOKEN, ImageVO.class

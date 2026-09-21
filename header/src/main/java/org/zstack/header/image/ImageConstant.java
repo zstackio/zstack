@@ -14,6 +14,7 @@ public interface ImageConstant {
     String ACTION_CATEGORY = "image";
 
     String SERVICE_ID = "image";
+    String MARKETPLACE_ZNS_IMAGE_TAG = "marketplaceApp::zstack_io_zns";
     @PythonClass
     String ZSTACK_IMAGE_TYPE = "zstack";
 
