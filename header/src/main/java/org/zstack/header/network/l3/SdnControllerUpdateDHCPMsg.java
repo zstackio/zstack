@@ -5,9 +5,16 @@ import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 import org.zstack.utils.network.IPv6Constants;
 
 public class SdnControllerUpdateDHCPMsg extends NeedReplyMessage implements SdnControllerMessage {
+    private String dhcpServerIp;
+    private String dhcpv6ServerIp;
     private String l3NetworkUuid;
     private String sdnControllerUuid;
     private Integer ipVersion = IPv6Constants.DUAL_STACK;
+
+    public String getDhcpServerIp() { return dhcpServerIp; }
+    public void setDhcpServerIp(String value) { dhcpServerIp = value; }
+    public String getDhcpv6ServerIp() { return dhcpv6ServerIp; }
+    public void setDhcpv6ServerIp(String value) { dhcpv6ServerIp = value; }
 
     @Override
     public String getSdnControllerUuid() {

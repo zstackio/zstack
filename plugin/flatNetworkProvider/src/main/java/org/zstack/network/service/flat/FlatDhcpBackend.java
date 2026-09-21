@@ -418,6 +418,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
                 SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
                 dmsg.setL3NetworkUuid(l3VO.getUuid());
+                dmsg.setDhcpServerIp(msg.getDhcpServerIp());
+                dmsg.setDhcpv6ServerIp(msg.getDhcpv6ServerIp());
                 dmsg.setSdnControllerUuid(sdnControllerUuid);
                 bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
                 bus.send(dmsg, new CloudBusCallBack(trigger) {
@@ -1006,6 +1008,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             return dhcpServerMap.keySet().iterator().next();
         }
 
+        if (requiredIp == null && isDhcpServerIpManagedByController(l3Uuid)) {
+            return null;
+        }
+
         // TODO: static allocate the IP to avoid the lock
         GLock lock = new GLock(String.format("l3-%s-allocate-dhcp-ip", l3Uuid), TimeUnit.MINUTES.toSeconds(30));
         lock.lock();
@@ -1285,7 +1291,14 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
         NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
         return type.isAllocateDhcpServerIp()
-                && (ipVersion != IPv6Constants.IPv6 || type.isAllocateDhcpv6ServerIp());
+                && (ipVersion != IPv6Constants.IPv6 || type.isAllocateDhcpv6ServerIp()
+                || type.isDhcpServerIpManagedByController());
+    }
+
+    private boolean isDhcpServerIpManagedByController(String l3Uuid) {
+        String provider = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(
+                l3Uuid, NetworkServiceType.DHCP.toString());
+        return provider != null && NetworkServiceProviderType.valueOf(provider).isDhcpServerIpManagedByController();
     }
 
     private boolean isCreateDhcpNameSpace(String l3Uuid) {
@@ -2453,6 +2466,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         List<IpRangeVO> ipv4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
         List<IpRangeVO> ipv6Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
 
+        boolean controllerManaged = msg.getNetworkServices().entrySet().stream()
+                .filter(entry -> entry.getValue().contains(NetworkServiceType.DHCP.toString()))
+                .map(entry -> dbf.findByUuid(entry.getKey(), NetworkServiceProviderVO.class))
+                .filter(provider -> provider != null)
+                .anyMatch(provider -> NetworkServiceProviderType.valueOf(provider.getType()).isDhcpServerIpManagedByController());
+
         String dhcpIp = null;
         String dhcp6Ip = null;
         if (msg.getSystemTags() != null) {
@@ -2472,22 +2491,24 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             }
         }
 
-        if (dhcpIp != null && ipv4Ranges.isEmpty()) {
+        if (dhcpIp != null && ipv4Ranges.isEmpty()
+                && (!controllerManaged || l3VO.getIpVersion() == IPv6Constants.IPv6)) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10039, "could set dhcp v4 server ip, because there is no ipv4 range"));
         }
 
-        if (dhcpIp != null) {
+        if (dhcpIp != null && !ipv4Ranges.isEmpty()) {
             if (!NetworkUtils.isIpv4InCidr(dhcpIp, ipv4Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10040, "could set dhcp v4 server ip, because ip[%s] is not the cidr of l3 [%s]",
                 dhcpIp, ipv4Ranges.get(0).getNetworkCidr()));
             }
         }
 
-        if (dhcp6Ip != null && ipv6Ranges.isEmpty()) {
+        if (dhcp6Ip != null && ipv6Ranges.isEmpty()
+                && (!controllerManaged || l3VO.getIpVersion() == IPv6Constants.IPv4)) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10041, "could set dhcp v6 server ip, because there is no ipv6 range"));
         }
 
-        if (dhcp6Ip != null) {
+        if (dhcp6Ip != null && !controllerManaged) {
             if (!IPv6NetworkUtils.isIpv6InCidrRange(dhcp6Ip, ipv6Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10042, "could set dhcp v6 server ip, because ip[%s] is not the cidr of l3 [%s]",
                         dhcpIp, ipv6Ranges.get(0).getNetworkCidr()));
@@ -2517,26 +2538,29 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     msg.getSession().getAccountUuid(), msg.getL3NetworkUuid()));
         }
 
+        boolean controllerManaged = isDhcpServerIpManagedByController(msg.getL3NetworkUuid());
         L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         List<IpRangeVO> ipv4Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv4).collect(Collectors.toList());
         List<IpRangeVO> ipv6Ranges = l3VO.getIpRanges().stream().filter(ipr -> ipr.getIpVersion() == IPv6Constants.IPv6).collect(Collectors.toList());
 
-        if (msg.getDhcpServerIp() != null && ipv4Ranges.isEmpty()) {
+        if (msg.getDhcpServerIp() != null && ipv4Ranges.isEmpty()
+                && (!controllerManaged || l3VO.getIpVersion() == IPv6Constants.IPv6)) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10046, "could change dhcp v4 server ip, because there is no ipv4 range"));
         }
 
-        if (msg.getDhcpServerIp() != null) {
+        if (msg.getDhcpServerIp() != null && !ipv4Ranges.isEmpty()) {
             if (!NetworkUtils.isIpv4InCidr(msg.getDhcpServerIp(), ipv4Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10047, "could set dhcp v4 server ip, because ip[%s] is not the cidr of l3 [%s]",
                         msg.getDhcpServerIp(), ipv4Ranges.get(0).getNetworkCidr()));
             }
         }
 
-        if (msg.getDhcpv6ServerIp() != null && ipv6Ranges.isEmpty()) {
+        if (msg.getDhcpv6ServerIp() != null && ipv6Ranges.isEmpty()
+                && (!controllerManaged || l3VO.getIpVersion() == IPv6Constants.IPv4)) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10048, "could change dhcp v6 server ip, because there is no ipv6 range"));
         }
 
-        if (msg.getDhcpv6ServerIp() != null) {
+        if (msg.getDhcpv6ServerIp() != null && !controllerManaged) {
             if (!IPv6NetworkUtils.isIpv6InCidrRange(msg.getDhcpv6ServerIp(), ipv6Ranges.get(0).getNetworkCidr())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SERVICE_FLAT_10049, "could set dhcp v6 server ip, because ip[%s] is not the cidr of l3 [%s]",
                         msg.getDhcpv6ServerIp(), ipv6Ranges.get(0).getNetworkCidr()));

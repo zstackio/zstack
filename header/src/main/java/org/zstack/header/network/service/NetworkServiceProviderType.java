@@ -11,6 +11,7 @@ public class NetworkServiceProviderType {
     private boolean createDhcpNameSpace = true;
     private boolean allocateDhcpServerIp = true;
     private boolean allocateDhcpv6ServerIp = true;
+    private boolean dhcpServerIpManagedByController;
 
     public NetworkServiceProviderType(String typeName) {
         this.typeName = typeName;
@@ -62,6 +63,14 @@ public class NetworkServiceProviderType {
 
     public void setAllocateDhcpv6ServerIp(boolean allocateDhcpv6ServerIp) {
         this.allocateDhcpv6ServerIp = allocateDhcpv6ServerIp;
+    }
+
+    public boolean isDhcpServerIpManagedByController() {
+        return dhcpServerIpManagedByController;
+    }
+
+    public void setDhcpServerIpManagedByController(boolean managed) {
+        dhcpServerIpManagedByController = managed;
     }
 
     @Override
