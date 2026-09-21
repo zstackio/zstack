@@ -504,31 +504,6 @@ public class L3BasicNetwork implements L3Network {
                                         msg.getExpectedSourceCategory(), current.getType(), current.getCategory());
                             }
 
-                            Long usedIpCount = databaseFacade.getEntityManager()
-                                    .createQuery("select count(ip) from UsedIpVO ip where ip.l3NetworkUuid = :l3Uuid",
-                                            Long.class)
-                                    .setParameter("l3Uuid", current.getUuid())
-                                    .getSingleResult();
-                            Long vmNicCount = databaseFacade.getEntityManager()
-                                    .createQuery("select count(nic) from VmNicVO nic where nic.l3NetworkUuid = :l3Uuid",
-                                            Long.class)
-                                    .setParameter("l3Uuid", current.getUuid())
-                                    .getSingleResult();
-                            boolean preserveIpReservations = false;
-                            if (vmNicCount == 0 && usedIpCount > 0) {
-                                for (L3NetworkTypeConversionExtensionPoint extension :
-                                        pluginRgty.getExtensionList(L3NetworkTypeConversionExtensionPoint.class)) {
-                                    if (extension.canPreserveIpReservations(msg, L3NetworkInventory.valueOf(current))) {
-                                        preserveIpReservations = true;
-                                        break;
-                                    }
-                                }
-                            }
-                            if (vmNicCount > 0 || (usedIpCount > 0 && !preserveIpReservations)) {
-                                return String.format("L3 network[uuid:%s] has active dependencies[usedIp:%d, vmNic:%d]",
-                                        current.getUuid(), usedIpCount, vmNicCount);
-                            }
-
                             current.setType(msg.getTargetType());
                             current.setCategory(targetCategory);
                             managedTags.forEach(tag -> tagMgr.deleteSystemTag(tag.getUuid()));
