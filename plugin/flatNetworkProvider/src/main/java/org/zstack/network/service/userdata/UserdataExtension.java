@@ -1,7 +1,9 @@
 package org.zstack.network.service.userdata;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.compute.vm.UserdataBuilder;
+import org.zstack.compute.vm.UserdataMetadataManager;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -13,6 +15,7 @@ import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -41,7 +44,7 @@ import java.util.concurrent.TimeUnit;
  * Created by frank on 10/13/2015.
  */
 public class UserdataExtension extends AbstractNetworkServiceExtension implements Component,
-        SecurityGroupGetDefaultRuleExtensionPoint, VmAfterAttachNicExtensionPoint {
+        SecurityGroupGetDefaultRuleExtensionPoint, VmAfterAttachNicExtensionPoint, UserdataMetadataManager {
     private static final int APPLY_USERDATA_AFTER_ATTACH_NIC_RETRY_TIMES = 3;
     private static final long APPLY_USERDATA_AFTER_ATTACH_NIC_INITIAL_DELAY_SECONDS = 0;
     private static final long APPLY_USERDATA_AFTER_ATTACH_NIC_RETRY_DELAY_SECONDS = 5;
@@ -255,33 +258,7 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
                 return;
             }
 
-            L3NetworkVO defaultL3VO = Q.New(L3NetworkVO.class)
-                    .eq(L3NetworkVO_.uuid, vm.getDefaultL3NetworkUuid())
-                    .find();
-            if (defaultL3VO == null) {
-                completion.done();
-                return;
-            }
-
-            L3NetworkInventory defaultL3 = L3NetworkInventory.valueOf(defaultL3VO);
-            if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
-                completion.done();
-                return;
-            }
-
-            NetworkServiceProviderInventory provider = findProvider(defaultL3);
-            if (provider == null) {
-                completion.done();
-                return;
-            }
-
-            UserdataStruct struct = new UserdataStruct();
-            struct.setL3NetworkUuid(vm.getDefaultL3NetworkUuid());
-            struct.setParametersFromVmInventory(vm);
-            struct.setUserdataList(new UserdataBuilder().buildByVmUuid(vm.getUuid()));
-
-            UserdataBackend bkd = getUserdataBackend(provider.getType());
-            bkd.applyUserdata(struct, new Completion(null) {
+            applyUserdata(vm, new Completion(null) {
                 @Override
                 public void success() {
                     completion.done();
@@ -304,6 +281,55 @@ public class UserdataExtension extends AbstractNetworkServiceExtension implement
             retryApplyUserdataAfterAttachNic(vmUuid, nicUuid, currentAttempt, null, t);
             completion.done();
         }
+    }
+
+    @Override
+    public void refreshUserdataMetadata(String vmUuid, Completion completion) {
+        VmInstanceVO vmVO = dbf.findByUuid(vmUuid, VmInstanceVO.class);
+        if (vmVO == null) {
+            completion.fail(errf.instantiateErrorCode(SysErrors.RESOURCE_NOT_FOUND,
+                    String.format("cannot find vm[uuid:%s], it may have been deleted", vmUuid)));
+            return;
+        }
+        if (vmVO.getState() != VmInstanceState.Running || StringUtils.isBlank(vmVO.getHostUuid())) {
+            completion.fail(errf.instantiateErrorCode(SysErrors.OPERATION_ERROR,
+                    String.format("cannot refresh userdata metadata for vm[uuid:%s, state:%s, hostUuid:%s], " +
+                                    "only a running vm with an assigned host is supported",
+                            vmUuid, vmVO.getState(), vmVO.getHostUuid())));
+            return;
+        }
+
+        applyUserdata(VmInstanceInventory.valueOf(vmVO), completion);
+    }
+
+    private void applyUserdata(VmInstanceInventory vm, Completion completion) {
+        L3NetworkVO defaultL3VO = Q.New(L3NetworkVO.class)
+                .eq(L3NetworkVO_.uuid, vm.getDefaultL3NetworkUuid())
+                .find();
+        if (defaultL3VO == null) {
+            completion.success();
+            return;
+        }
+
+        L3NetworkInventory defaultL3 = L3NetworkInventory.valueOf(defaultL3VO);
+        if (!defaultL3.getIpVersions().contains(IPv6Constants.IPv4)) {
+            completion.success();
+            return;
+        }
+
+        NetworkServiceProviderInventory provider = findProvider(defaultL3);
+        if (provider == null) {
+            completion.success();
+            return;
+        }
+
+        UserdataStruct struct = new UserdataStruct();
+        struct.setL3NetworkUuid(vm.getDefaultL3NetworkUuid());
+        struct.setParametersFromVmInventory(vm);
+        struct.setUserdataList(new UserdataBuilder().buildByVmUuid(vm.getUuid()));
+
+        UserdataBackend bkd = getUserdataBackend(provider.getType());
+        bkd.applyUserdata(struct, completion);
     }
 
     private void retryApplyUserdataAfterAttachNic(String vmUuid, String nicUuid, int currentAttempt, ErrorCode errorCode, Throwable t) {
