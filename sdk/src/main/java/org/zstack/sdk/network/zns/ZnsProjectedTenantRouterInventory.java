@@ -68,12 +68,4 @@ public class ZnsProjectedTenantRouterInventory  {
         return this.transportZoneUuid;
     }
 
-    public boolean isSource;
-    public void setIsSource(boolean isSource) {
-        this.isSource = isSource;
-    }
-    public boolean getIsSource() {
-        return this.isSource;
-    }
-
 }
