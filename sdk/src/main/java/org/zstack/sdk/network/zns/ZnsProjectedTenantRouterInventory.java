@@ -12,6 +12,14 @@ public class ZnsProjectedTenantRouterInventory  {
         return this.tenantRouterUuid;
     }
 
+    public java.lang.String znsResourceUuid;
+    public void setZnsResourceUuid(java.lang.String znsResourceUuid) {
+        this.znsResourceUuid = znsResourceUuid;
+    }
+    public java.lang.String getZnsResourceUuid() {
+        return this.znsResourceUuid;
+    }
+
     public java.lang.String tenantRouterName;
     public void setTenantRouterName(java.lang.String tenantRouterName) {
         this.tenantRouterName = tenantRouterName;
