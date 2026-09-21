@@ -70,7 +70,7 @@ public class AddModelCenterBusinessNetworkProfileAction extends AbstractAction {
     @Param(required = false, validValues = {"Enabled","Disabled","Error"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String status;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"http","https"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String gatewayScheme;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
