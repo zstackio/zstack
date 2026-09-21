@@ -41,10 +41,10 @@ public class ListZsDatasetSourcesAction extends AbstractAction {
     public java.lang.String keyword;
 
     @Param(required = false, validValues = {"text/markdown","text/plain","application/pdf","application/vnd.openxmlformats-officedocument.wordprocessingml.document","application/epub+zip"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String mediaType;
+    public java.util.List mediaType;
 
     @Param(required = false, validValues = {"PENDING","PROCESSING","COMPLETED","FAILED","INTERRUPTED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String parseState;
+    public java.util.List parseState;
 
     @Param(required = false, validValues = {"createAt","filename","size"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sortBy;
