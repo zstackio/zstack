@@ -28,6 +28,14 @@ public class ZsDatasetTaskInventory  {
         return this.sourceId;
     }
 
+    public java.lang.String sourceName;
+    public void setSourceName(java.lang.String sourceName) {
+        this.sourceName = sourceName;
+    }
+    public java.lang.String getSourceName() {
+        return this.sourceName;
+    }
+
     public java.lang.String taskType;
     public void setTaskType(java.lang.String taskType) {
         this.taskType = taskType;
