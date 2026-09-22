@@ -100,6 +100,14 @@ public class ZsDatasetChunkInventory  {
         return this.tenantTags;
     }
 
+    public java.lang.String preview;
+    public void setPreview(java.lang.String preview) {
+        this.preview = preview;
+    }
+    public java.lang.String getPreview() {
+        return this.preview;
+    }
+
     public java.lang.Long questionCount;
     public void setQuestionCount(java.lang.Long questionCount) {
         this.questionCount = questionCount;
