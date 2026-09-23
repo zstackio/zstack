@@ -46,6 +46,7 @@ import org.zstack.storage.zbs.ZbsConstants
 import org.zstack.storage.zbs.ZbsGlobalProperty
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
+import org.zstack.storage.zbs.ZbsKvmAgentCommands.CheckHostStorageConnectionCmd
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
@@ -342,7 +343,7 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
 
         env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
-            ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+            CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, CheckHostStorageConnectionCmd)
             if (!heartbeatPools.containsAll(["lpool1", "lpool2"])) {
                 checkStartedBeforeHeartbeatReady.set(true)
             }
@@ -690,7 +691,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             return rsp
         }
         env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp, HttpEntity<String> e ->
-            def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+            def cmd = JSONObjectUtil.toObject(e.body, CheckHostStorageConnectionCmd)
             if (cmd.hostUuid == kvm2.uuid) {
                 reconnectCheckHostStatusCount.incrementAndGet()
             }
