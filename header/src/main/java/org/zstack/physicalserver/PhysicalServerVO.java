@@ -1,16 +1,15 @@
 package org.zstack.physicalserver;
 
-import org.zstack.header.vo.Index;
 import org.zstack.header.vo.ForeignKey;
+import org.zstack.header.vo.Index;
 import org.zstack.header.zone.ZoneEO;
-
+import java.sql.Timestamp;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-import java.sql.Timestamp;
 
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(name = "ukPhysicalServerSerialNumber", columnNames = "serialNumber"))

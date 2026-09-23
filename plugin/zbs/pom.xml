@@ -13,6 +13,11 @@
     <dependencies>
         <dependency>
             <groupId>org.zstack</groupId>
+            <artifactId>physicalServer</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
             <artifactId>cbd</artifactId>
             <version>${project.version}</version>
         </dependency>

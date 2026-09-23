@@ -47,7 +47,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
                 return;
             }
             physicalServerManager.releaseResourceAssignment(
-                    host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), new Completion(each) {
+                    host.getServerUuid(), KvmResourceAssignmentFactory.type.toString(), new Completion(each) {
                         @Override
                         public void success() {
                             forget(host, each);
@@ -71,7 +71,7 @@ public class KvmPhysicalServerResourceCascadeExtension extends AbstractAsyncCasc
 
     private void forget(HostInventory host, NoErrorCompletion completion) {
         physicalServerManager.forgetResourceAssignment(
-                host.getServerUuid(), KvmPhysicalServerAdapter.type.toString(), new Completion(completion) {
+                host.getServerUuid(), KvmResourceAssignmentFactory.type.toString(), new Completion(completion) {
                     @Override
                     public void success() {
                         completion.done();

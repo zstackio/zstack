@@ -6193,8 +6193,9 @@ public class KVMHost extends HostBase implements Host {
                         deployArguments.setResourceAssignmentEnabled(Boolean.toString(resourceAssignmentEnabled));
                         if (resourceAssignmentEnabled) {
                             RoleServiceManifest computeServices = RoleServiceManifest.load(
-                                    KvmPhysicalServerAdapter.ROLE_SERVICE_MANIFEST_PATH,
-                                    KvmPhysicalServerAdapter.type.toString());
+                                    KvmResourceAssignmentFactory.ROLE_SERVICE_MANIFEST_PATH,
+                                    KvmResourceAssignmentFactory.type.toString());
+                            kvmHostConfigChecker.setResourceAssignmentSliceName(computeServices.getSliceName());
                             deployArguments.setResourceAssignmentSliceName(computeServices.getSliceName());
                             deployArguments.setResourceAssignmentSystemdUnits(computeServices.handles().stream()
                                     .filter(handle -> ResourceConsumerHandle.SYSTEMD_UNIT.equals(

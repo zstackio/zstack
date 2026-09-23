@@ -8,6 +8,7 @@ import java.util.List;
 
 public class RestartManagementNodeManagedServicesMsg extends NeedReplyMessage {
     private String serverUuid;
+    private String sliceName;
     private List<ResourceConsumerHandle> consumers = new ArrayList<>();
 
     public String getServerUuid() {
@@ -16,6 +17,14 @@ public class RestartManagementNodeManagedServicesMsg extends NeedReplyMessage {
 
     public void setServerUuid(String serverUuid) {
         this.serverUuid = serverUuid;
+    }
+
+    public String getSliceName() {
+        return sliceName;
+    }
+
+    public void setSliceName(String sliceName) {
+        this.sliceName = sliceName;
     }
 
     public List<ResourceConsumerHandle> getConsumers() {

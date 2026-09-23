@@ -2,7 +2,7 @@ package org.zstack.physicalserver;
 
 import org.zstack.header.message.NeedReplyMessage;
 
-public class ForgetPhysicalServerResourceAssignmentMsg extends NeedReplyMessage implements PhysicalServerMessage {
+public class ForgetPhysicalServerResourceAssignmentMsg extends NeedReplyMessage implements PhysicalServerResourceAssignmentMessage {
     private String serverUuid;
     private String roleType;
 

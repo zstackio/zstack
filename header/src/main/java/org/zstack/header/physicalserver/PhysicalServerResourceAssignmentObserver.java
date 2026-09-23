@@ -1,13 +1,13 @@
 package org.zstack.header.physicalserver;
 
 import org.zstack.header.core.ReturnValueCompletion;
+import java.util.List;
 
 public interface PhysicalServerResourceAssignmentObserver {
     PhysicalServerRoleType getRoleType();
 
-    default PhysicalServerResourceIsolationMode getIsolationMode() {
-        return PhysicalServerResourceIsolationMode.SHARED;
-    }
+    boolean resourceExists();
 
-    void collectResourceAssignment(String serverUuid, ReturnValueCompletion<PhysicalServerResourceBoundary> completion);
+    void collectResourceAssignment(String serverUuid, List<String> serviceNames,
+            ReturnValueCompletion<PhysicalServerResourceBoundary> completion);
 }

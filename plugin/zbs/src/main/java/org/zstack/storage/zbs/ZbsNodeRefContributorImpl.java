@@ -1,26 +1,25 @@
 package org.zstack.storage.zbs;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.header.errorcode.OperationFailureException;
-import org.zstack.header.physicalserver.PhysicalServerManager;
+import org.zstack.physicalserver.PhysicalServerVO;
+import org.zstack.physicalserver.PhysicalServerVO_;
+import javax.persistence.Tuple;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
-import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
-import org.zstack.header.storage.primary.PrimaryStorageVO;
-import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_CORE_10000;
@@ -28,25 +27,53 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 public class ZbsNodeRefContributorImpl implements ZbsNodeRefContributor {
     private static final CLogger logger = Utils.getLogger(ZbsNodeRefContributorImpl.class);
 
-    @Autowired(required = false)
-    private PhysicalServerManager physicalServerManager;
+    @Override
+    public Map<String, ZbsNodeRef> getNodesByServerUuids(Collection<String> serverUuids) {
+        if (serverUuids == null || serverUuids.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<Tuple> servers = Q.New(PhysicalServerVO.class)
+                .select(PhysicalServerVO_.serialNumber, PhysicalServerVO_.uuid)
+                .in(PhysicalServerVO_.uuid, serverUuids).listTuple();
+        if (servers.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        List<String> conditions = new ArrayList<>();
+        for (int i = 0; i < servers.size(); i++) {
+            conditions.add("ps.addonInfo like :serial" + i + " escape '!'");
+        }
+        SQL query = SQL.New("select ps.uuid, ps.addonInfo from ExternalPrimaryStorageVO ps "
+                + "where ps.identity = :identity and (" + String.join(" or ", conditions) + ")")
+                .param("identity", ZbsConstants.IDENTITY);
+        for (int i = 0; i < servers.size(); i++) {
+            String serial = JSONObjectUtil.toJsonString(servers.get(i).get(0, String.class));
+            query.param("serial" + i, "%" + serial.replace("!", "!!").replace("%", "!%")
+                    .replace("_", "!_") + "%");
+        }
+        Map<String, ZbsNodeRef> nodes = getNodesBySerialNumber(primaryStorages(query));
+        Map<String, ZbsNodeRef> result = new LinkedHashMap<>();
+        for (Tuple server : servers) {
+            ZbsNodeRef node = nodes.get(server.get(0, String.class));
+            if (node != null) {
+                result.put(server.get(1, String.class), node);
+            }
+        }
+        return result;
+    }
 
     @Override
-    public Map<String, ZbsNodeRef> bulkList(Collection<String> serverUuids) {
-        Set<String> requestedServerUuids = serverUuids == null ? Collections.emptySet() : new HashSet<>(serverUuids);
-        List<ExternalPrimaryStorageVO> primaryStorages = activeZbsPrimaryStorages();
-        Map<String, AddonInfo> addonInfos = new LinkedHashMap<>();
-        for (ExternalPrimaryStorageVO primaryStorage : primaryStorages) {
-            addonInfos.put(primaryStorage.getUuid(), parseAddonInfo(primaryStorage));
-        }
-        Map<String, String> serversBySerialNumber = serversBySerialNumber(addonInfos.values());
+    public Map<String, ZbsNodeRef> getAllNodesBySerialNumber() {
+        return getNodesBySerialNumber(activeZbsPrimaryStorages());
+    }
+
+    Map<String, ZbsNodeRef> getNodesBySerialNumber(Collection<ExternalPrimaryStorageVO> primaryStorages) {
         Map<String, ZbsNodeRef> result = new LinkedHashMap<>();
-        for (Map.Entry<String, AddonInfo> source : addonInfos.entrySet()) {
-            for (MdsInfo mds : source.getValue().getMdsInfos()) {
+        for (ExternalPrimaryStorageVO primaryStorage : primaryStorages) {
+            for (MdsInfo mds : parseAddonInfo(primaryStorage).getMdsInfos()) {
                 if (mds == null) {
                     logger.warn(String.format(
                             "skip an empty mdsInfo of ZBS primary storage[uuid:%s] when deriving node relations",
-                            source.getKey()));
+                            primaryStorage.getUuid()));
                     continue;
                 }
                 String serialNumber = serialNumber(mds);
@@ -54,38 +81,32 @@ public class ZbsNodeRefContributorImpl implements ZbsNodeRefContributor {
                     logger.warn(String.format(
                             "cannot resolve ZBS MDS physical server because " +
                                     "primary storage[uuid:%s] does not report serialNumber",
-                            source.getKey()));
+                            primaryStorage.getUuid()));
                     continue;
                 }
-                String serverUuid = serversBySerialNumber.get(serialNumber);
-                if (serverUuid == null) {
-                    logger.warn(String.format("cannot resolve ZBS MDS physical server serialNumber[%s]", serialNumber));
-                    continue;
-                }
-                if (requestedServerUuids.isEmpty() || requestedServerUuids.contains(serverUuid)) {
-                    addRef(result, serverUuid, serialNumber, mds.getAddr());
-                }
+                addRef(result, serialNumber, mds.getAddr());
             }
         }
         return result;
     }
 
     private List<ExternalPrimaryStorageVO> activeZbsPrimaryStorages() {
-        List<ExternalPrimaryStorageVO> result = Q.New(ExternalPrimaryStorageVO.class)
-                .eq(ExternalPrimaryStorageVO_.identity, ZbsConstants.IDENTITY).list();
-        if (result.isEmpty()) {
-            return result;
+        return primaryStorages(SQL.New("select ps.uuid, ps.addonInfo from ExternalPrimaryStorageVO ps "
+                + "where ps.identity = :identity").param("identity", ZbsConstants.IDENTITY));
+    }
+
+    private List<ExternalPrimaryStorageVO> primaryStorages(SQL query) {
+        List<ExternalPrimaryStorageVO> result = new ArrayList<>();
+        for (Object[] row : query.<Object[]>list()) {
+            ExternalPrimaryStorageVO source = new ExternalPrimaryStorageVO();
+            source.setUuid((String) row[0]);
+            source.setAddonInfo((String) row[1]);
+            result.add(source);
         }
-        Set<String> activeUuids = new HashSet<>(
-                Q.New(PrimaryStorageVO.class)
-                        .select(PrimaryStorageVO_.uuid)
-                        .in(PrimaryStorageVO_.uuid, result.stream()
-                                .map(ExternalPrimaryStorageVO::getUuid).collect(Collectors.toList())).listValues());
-        result.removeIf(primaryStorage -> !activeUuids.contains(primaryStorage.getUuid()));
         return result;
     }
 
-    private AddonInfo parseAddonInfo(ExternalPrimaryStorageVO primaryStorage) {
+    static AddonInfo parseAddonInfo(ExternalPrimaryStorageVO primaryStorage) {
         if (primaryStorage.getAddonInfo() == null || primaryStorage.getAddonInfo().isEmpty()) {
             throw invalidAddonInfo(primaryStorage.getUuid(), "is empty");
         }
@@ -94,52 +115,43 @@ public class ZbsNodeRefContributorImpl implements ZbsNodeRefContributor {
         return addonInfo;
     }
 
-    private void validateAddonInfo(String primaryStorageUuid, AddonInfo addonInfo) {
+    private static void validateAddonInfo(String primaryStorageUuid, AddonInfo addonInfo) {
         if (addonInfo == null || addonInfo.getMdsInfos() == null || addonInfo.getMdsInfos().isEmpty()) {
             throw invalidAddonInfo(primaryStorageUuid, "does not contain mdsInfos");
         }
     }
 
-    private OperationFailureException invalidAddonInfo(String primaryStorageUuid, String detail) {
+    private static OperationFailureException invalidAddonInfo(String primaryStorageUuid, String detail) {
         return new OperationFailureException(operr(
                 ORG_ZSTACK_CORE_10000,
                 "cannot derive ZBS node relations because primary storage[uuid:%s] addonInfo %s",
                 primaryStorageUuid, detail));
     }
 
-    private Map<String, String> serversBySerialNumber(Collection<AddonInfo> addonInfos) {
+    static Set<String> serialNumbers(AddonInfo addonInfo) {
         Set<String> serialNumbers = new HashSet<>();
-        for (AddonInfo addonInfo : addonInfos) {
+        if (addonInfo != null && addonInfo.getMdsInfos() != null) {
             for (MdsInfo mds : addonInfo.getMdsInfos()) {
                 if (mds != null && serialNumber(mds) != null) {
                     serialNumbers.add(serialNumber(mds));
                 }
             }
         }
-        if (serialNumbers.isEmpty() || physicalServerManager == null) {
-            return Collections.emptyMap();
-        }
-        return physicalServerManager.resolveBySerialNumbers(serialNumbers);
+        return serialNumbers;
     }
 
-    private String serialNumber(MdsInfo mds) {
+    private static String serialNumber(MdsInfo mds) {
         return Platform.normalizeMachineSerialNumber(mds.getPhysicalServerSerialNumber());
     }
 
-    private void addRef(Map<String, ZbsNodeRef> refs, String serverUuid, String serialNumber, String nodeAddress) {
-        ZbsNodeRef ref = refs.computeIfAbsent(serverUuid, ignored -> {
-            ZbsNodeRef created = new ZbsNodeRef();
-            created.setSerialNumber(serialNumber);
-            return created;
-        });
-        if (!serialNumber.equals(ref.getSerialNumber())) {
-            ref.setUnavailableError(operr(
-                    ORG_ZSTACK_CORE_10000,
-                    "ZBS relations for physical server[uuid:%s] report conflicting serial numbers[%s, %s]",
-                    serverUuid, ref.getSerialNumber(), serialNumber));
+    private void addRef(Map<String, ZbsNodeRef> refs, String serialNumber, String nodeAddress) {
+        if (refs.containsKey(serialNumber)) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_10000,
+                    "Multiple ZBS nodes report physical server[serialNumber:%s]", serialNumber));
         }
-        if (nodeAddress != null) {
-            ref.addNodeAddress(nodeAddress);
-        }
+        ZbsNodeRef ref = new ZbsNodeRef();
+        ref.setSerialNumber(serialNumber);
+        ref.setNodeAddress(nodeAddress);
+        refs.put(serialNumber, ref);
     }
 }

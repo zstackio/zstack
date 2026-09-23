@@ -109,15 +109,13 @@
         </zstack:plugin>
     </bean>
 
-    <bean id="KvmPhysicalServerAdapter" class="org.zstack.kvm.KvmPhysicalServerAdapter">
+    <bean id="KvmResourceAssignmentFactory" class="org.zstack.kvm.KvmResourceAssignmentFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component" />
             <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint" />
             <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint" />
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentController" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver" />
-            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerRoleAssociationProvider" />
+            <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory" />
         </zstack:plugin>
     </bean>
 
