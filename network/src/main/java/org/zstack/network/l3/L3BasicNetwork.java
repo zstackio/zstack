@@ -624,7 +624,19 @@ public class L3BasicNetwork implements L3Network {
 
                 List<UsedIpVO> rangeUsedIps = Q.New(UsedIpVO.class)
                         .eq(UsedIpVO_.ipRangeUuid, range.getUuid()).list();
+                UsedIpVO dhcpReservation = msg.getDhcpServerIpUuid() == null ? null
+                        : Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getDhcpServerIpUuid())
+                        .eq(UsedIpVO_.l3NetworkUuid, range.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4)
+                        .isNull(UsedIpVO_.vmNicUuid).isNull(UsedIpVO_.usedFor).find();
+                boolean preserveDhcp = range.getIpVersion() == IPv6Constants.IPv4
+                        && dhcpReservation != null
+                        && (dhcpReservation.getIpRangeUuid() == null
+                        || range.getUuid().equals(dhcpReservation.getIpRangeUuid()))
+                        && new SubnetUtils(msg.getStartIp(), msg.getNetmask()).getInfo()
+                        .isInRange(dhcpReservation.getIp());
                 UsedIpVO outside = rangeUsedIps.stream()
+                        .filter(ip -> !preserveDhcp || !ip.getUuid().equals(dhcpReservation.getUuid()))
                         .filter(ip -> !NetworkUtils.isInRange(ip.getIp(), msg.getStartIp(), msg.getEndIp()))
                         .findFirst().orElse(null);
                 if (outside != null) {
@@ -641,7 +653,17 @@ public class L3BasicNetwork implements L3Network {
                 range.setNetmask(msg.getNetmask());
                 range.setPrefixLen(prefixLen);
                 range.setNetworkCidr(networkCidr);
-                dbf.update(range);
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        dbf.update(range);
+                        if (preserveDhcp) {
+                            dhcpReservation.setIpRangeUuid(NetworkUtils.isInRange(dhcpReservation.getIp(),
+                                    range.getStartIp(), range.getEndIp()) ? range.getUuid() : null);
+                            dbf.update(dhcpReservation);
+                        }
+                    }
+                }.execute();
                 bus.reply(msg, new MessageReply());
                 chain.next();
             }

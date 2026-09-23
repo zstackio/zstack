@@ -11,6 +11,7 @@ public class UpdateProjectedIpRangeMsg extends NeedReplyMessage implements L3Net
     private String gateway;
     private String netmask;
     private String expectedSourceType;
+    private String dhcpServerIpUuid;
     private NetworkCreateContext context;
     @Override
     public String getL3NetworkUuid() { return l3NetworkUuid; }
@@ -27,6 +28,8 @@ public class UpdateProjectedIpRangeMsg extends NeedReplyMessage implements L3Net
     public void setNetmask(String value) { netmask = value; }
     public String getExpectedSourceType() { return expectedSourceType; }
     public void setExpectedSourceType(String value) { expectedSourceType = value; }
+    public String getDhcpServerIpUuid() { return dhcpServerIpUuid; }
+    public void setDhcpServerIpUuid(String value) { dhcpServerIpUuid = value; }
     public NetworkCreateContext getContext() { return context; }
     public void setContext(NetworkCreateContext value) { context = value; }
 }
