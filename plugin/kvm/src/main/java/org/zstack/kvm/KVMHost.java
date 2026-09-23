@@ -4291,7 +4291,7 @@ public class KVMHost extends HostBase implements Host {
                     public void run(MessageReply reply) {
                         if (!reply.isSuccess()) {
                             ErrorCode err = operr(ORG_ZSTACK_KVM_10078, "host[uuid:%s] capacity is not enough to offer cpu[%s], memory[%s bytes]",
-                                    vm.getUuid(), cpuChangeTo - oldCpuNum, alignedMemory.get() - oldMemorySize);
+                                    self.getUuid(), cpuChangeTo - oldCpuNum, alignedMemory.get() - oldMemorySize);
                             err.setCause(reply.getError());
                             chain.fail(err);
                         } else {

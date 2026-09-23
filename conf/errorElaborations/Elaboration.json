@@ -420,7 +420,7 @@
     "code": "1021",
     "method": "regex",
     "regex": "host\\[.*] capacity is not enough to offer cpu\\[[0-9]], memory\\[[0-9] bytes]",
-    "message_cn": "物理机无法提供足够的资源 [CPU：%1$s，内存：%2$s 字节]。",
+    "message_cn": "物理机无法提供足够的资源 [CPU：%2$s，内存：%3$s 字节]。",
     "message_en": "Host could not provide enough resources [CPU: %2$s, memory: %3$s bytes]."
   },
   {
