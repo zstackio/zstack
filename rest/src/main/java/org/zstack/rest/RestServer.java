@@ -1470,6 +1470,13 @@ public class RestServer implements Component, CloudBusEventListener {
     }
 
     private void handleUniqueApi(Api api, HttpEntity<String> entity, HttpServletRequest req, HttpServletResponse rsp) throws RestException, IllegalAccessException, InstantiationException, InvocationTargetException, NoSuchMethodException, IOException {
+        if (RestGlobalConfig.CHECK_HTTP_METHOD.value(Boolean.class)
+                && !api.requestAnnotation.method().name().equals(req.getMethod())) {
+            throw new RestException(HttpStatus.METHOD_NOT_ALLOWED.value(), String.format(
+                    "method[%s] is not allowed for path[%s], expected method[%s]",
+                    req.getMethod(), getDecodedUrl(req), api.requestAnnotation.method().name()));
+        }
+
         handleApi(api, JSONObjectUtil.toObject(entity.getBody(), LinkedHashMap.class),
                api.requestAnnotation.isAction() ? api.actionName : api.requestAnnotation.parameterName(), entity, req, rsp);
     }

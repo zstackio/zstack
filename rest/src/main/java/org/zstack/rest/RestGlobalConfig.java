@@ -17,4 +17,6 @@ public class RestGlobalConfig {
     public static GlobalConfig SCAN_EXPIRED_API_INTERVAL = new GlobalConfig(CATEGORY, "expiredApi.scanInterval");
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig CHECK_TIME_ZONE = new GlobalConfig(CATEGORY, "checkTimeZone");
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig CHECK_HTTP_METHOD = new GlobalConfig(CATEGORY, "checkHttpMethod");
 }
