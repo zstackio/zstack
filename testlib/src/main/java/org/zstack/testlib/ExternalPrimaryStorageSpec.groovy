@@ -9,6 +9,7 @@ import org.zstack.cbd.kvm.KvmCbdCommands
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.storage.zbs.ZbsPrimaryStorageMdsBase
 import org.zstack.storage.zbs.ZbsStorageController
+import org.zstack.storage.zbs.ZbsKvmAgentCommands.CheckHostStorageConnectionCmd
 import org.zstack.utils.Utils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.logging.CLogger
@@ -121,7 +122,7 @@ class ExternalPrimaryStorageSpec extends PrimaryStorageSpec {
             }
 
             simulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { HttpEntity<String> e ->
-                ZbsStorageController.CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CheckHostStorageConnectionCmd)
+                CheckHostStorageConnectionCmd cmd = JSONObjectUtil.toObject(e.body, CheckHostStorageConnectionCmd)
                 assert cmd.hostUuid != null
 
                 def rsp = new ZbsStorageController.CheckHostStorageConnectionRsp()
