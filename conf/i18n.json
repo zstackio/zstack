@@ -9526,16 +9526,6 @@
     "fileName": "src/main/java/org/zstack/core/ansible/SshFolderMd5Checker.java"
   },
   {
-    "raw": "message is not in corrected JSON mediaType, %s",
-    "en_US": "message is not in corrected JSON mediaType, {0}",
-    "zh_CN": "消息是错误的JSON格式，{0}",
-    "arguments": [
-      "errMsg"
-    ],
-    "line": 684,
-    "fileName": "src/main/java/org/zstack/core/cloudbus/CloudBusImpl2.java"
-  },
-  {
     "raw": "for webhooks with type[%s], the field opaque cannot be null",
     "en_US": "for webhooks with type[{0}], the field opaque cannot be null",
     "zh_CN": "对于[{0}]类型的webhooks，opaque字段不能为null",
