@@ -636,7 +636,6 @@ public class L3BasicNetwork implements L3Network {
                         && new SubnetUtils(msg.getStartIp(), msg.getNetmask()).getInfo()
                         .isInRange(dhcpReservation.getIp());
                 UsedIpVO outside = rangeUsedIps.stream()
-                        .filter(ip -> !preserveDhcp || !ip.getUuid().equals(dhcpReservation.getUuid()))
                         .filter(ip -> !NetworkUtils.isInRange(ip.getIp(), msg.getStartIp(), msg.getEndIp()))
                         .findFirst().orElse(null);
                 if (outside != null) {
@@ -720,11 +719,7 @@ public class L3BasicNetwork implements L3Network {
                             .filter(candidate -> NetworkUtils.isInRange(
                                     usedIp.getIp(), candidate.getStartIp(), candidate.getEndIp()))
                             .findFirst().orElse(null);
-                    boolean preserveDhcp = Objects.equals(usedIp.getUuid(), msg.getDhcpServerIpUuid())
-                            && Objects.equals(usedIp.getL3NetworkUuid(), msg.getL3NetworkUuid())
-                            && usedIp.getIpVersion() == IPv6Constants.IPv4
-                            && usedIp.getVmNicUuid() == null && usedIp.getUsedFor() == null;
-                    if (replacement == null && !preserveDhcp) {
+                    if (replacement == null) {
                         bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10100,
                                 "used IP[%s] prevents deleting projected IP range[uuid:%s]",
                                 usedIp.getIp(), range.getUuid()));
@@ -738,10 +733,6 @@ public class L3BasicNetwork implements L3Network {
                     @Override
                     protected void scripts() {
                         replacements.forEach((usedIp, replacement) -> {
-                            if (replacement == null) {
-                                usedIp.setIpRangeUuid(null);
-                                return;
-                            }
                             usedIp.setIpRangeUuid(replacement.getUuid());
                             usedIp.setNetmask(replacement.getNetmask());
                             usedIp.setGateway(replacement.getGateway());
