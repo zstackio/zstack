@@ -346,10 +346,12 @@ class ZbsPrimaryStorageCase extends SubCase {
         }
 
 
-        updateExternalPrimaryStorage {
+        def removed = updateExternalPrimaryStorage {
             uuid = ps.uuid
             config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\"],\"logicalPoolName\":\"lpool1\"}"
         }
+        assert removed.addonInfo.mdsInfos*.addr == ["127.0.1.1", "127.0.1.2"] :
+                "update event must remove MDS .3: expected=2 actual=${removed.addonInfo.mdsInfos*.addr}"
 
         String addonInfo = Q.New(ExternalPrimaryStorageVO.class)
                 .select(ExternalPrimaryStorageVO_.addonInfo)
@@ -368,10 +370,12 @@ class ZbsPrimaryStorageCase extends SubCase {
                 .findValue()
         assert addonInfo.contains("\"port\":33,\"addr\":\"127.0.1.1\"")
 
-        updateExternalPrimaryStorage {
+        def restored = updateExternalPrimaryStorage {
             uuid = ps.uuid
             config = "{\"mdsUrls\":[\"root:password@127.0.1.1\",\"root:password@127.0.1.2\",\"root:password@127.0.1.3\"],\"logicalPoolName\":\"lpool1\"}"
         }
+        assert restored.addonInfo.mdsInfos*.addr == ["127.0.1.1", "127.0.1.2", "127.0.1.3"] :
+                "update event must restore MDS .3: expected=3 actual=${restored.addonInfo.mdsInfos*.addr}"
 
         addonInfo = Q.New(ExternalPrimaryStorageVO.class)
                 .select(ExternalPrimaryStorageVO_.addonInfo)
