@@ -46,7 +46,7 @@ public class PublishZsDatasetSpaceAction extends AbstractAction {
     @Param(required = false, maxLength = 2048, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String description;
 
-    @Param(required = false, validValues = {"PRIVATE","SYSTEM"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"PRIVATE","PUBLIC"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String shareMode;
 
     @Param(required = false, validValues = {"FineTune","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
