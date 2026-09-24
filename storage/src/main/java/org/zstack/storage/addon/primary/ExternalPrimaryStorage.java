@@ -320,7 +320,8 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                     if (!reply.isSuccess()) {
                         evt.setError(reply.getError());
                     } else {
-                        self = dbf.reload(self);
+                        externalVO = dbf.reload(externalVO);
+                        self = externalVO;
                         ExternalPrimaryStorageInventory inv = externalVO.toInventory();
                         evt.setInventory(inv);
 
