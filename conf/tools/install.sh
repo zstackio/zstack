@@ -74,7 +74,8 @@ if [ $tool = 'zstack-cli' ]; then
 
 elif [ $tool = 'zstack-ctl' ]; then
     CTL_VIRENV_PATH=/var/lib/zstack/virtualenv/zstackctl
-    rm -rf $CTL_VIRENV_PATH && virtualenv $CTL_VIRENV_PATH --python=python2.7 || exit 1
+    rm -rf "$CTL_VIRENV_PATH" || rm -rf "$CTL_VIRENV_PATH" || exit 1
+    virtualenv "$CTL_VIRENV_PATH" --python=python2.7 || exit 1
     . $CTL_VIRENV_PATH/bin/activate
     cd $cwd
     TMPDIR=/usr/local/zstack/ pip install -i $pypi_path --trusted-host localhost --ignore-installed zstackctl-*.tar.gz || exit 1
