@@ -1,12 +1,17 @@
 package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
+import org.zstack.core.Platform
+import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.image.APICreateDataVolumeTemplateFromVolumeMsg
+import org.zstack.header.image.APIAddImageMsg
+import org.zstack.header.image.ImageDeletionMsg
 import org.zstack.header.longjob.LongJobState
 import org.zstack.header.longjob.LongJobVO
 import org.zstack.header.longjob.LongJobVO_
+import org.zstack.header.message.MessageReply
 import org.zstack.longjob.LongJobManager
 import org.zstack.sdk.*
 import org.zstack.test.integration.ZStackTest
@@ -45,9 +50,65 @@ class LoadLongJobCase extends SubCase {
             gson = new Gson()
             longJobManager = bean(LongJobManager.class)
             testSubmitLongJobCase()
+            testUserSuspendedJobIsNotResumedOnLoad()
             testLoadCancelingJob()
             testLoadWaitingJob()
         }
+    }
+
+    void testUserSuspendedJobIsNotResumedOnLoad() {
+        LongJobVO original = dbFindByUuid(jobInv.uuid, LongJobVO.class)
+        APIAddImageMsg addImage = new APIAddImageMsg()
+        addImage.setResourceUuid(Platform.getUuid())
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.jobName, APIAddImageMsg.simpleName)
+                .set(LongJobVO_.jobData, gson.toJson(addImage))
+                .set(LongJobVO_.state, LongJobState.Running)
+                .update()
+
+        LongJobInventory suspended = suspendLongJob {
+            uuid = jobInv.uuid
+        } as LongJobInventory
+        assert suspended.state == org.zstack.sdk.LongJobState.Suspended
+        assert dbFindByUuid(jobInv.uuid, LongJobVO.class).state == LongJobState.Suspended
+
+        int resumeCalls = 0
+        env.message(ImageDeletionMsg.class) { ImageDeletionMsg msg, CloudBus bus ->
+            resumeCalls++
+            bus.reply(msg, new MessageReply())
+        }
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.managementNodeUuid, null)
+                .update()
+        longJobManager.loadLongJob()
+
+        assert dbFindByUuid(jobInv.uuid, LongJobVO.class).state == LongJobState.Suspended
+        assert resumeCalls == 0
+
+        resumeLongJob {
+            uuid = jobInv.uuid
+        }
+        retryInSecs() {
+            assert resumeCalls == 1
+            assert dbFindByUuid(jobInv.uuid, LongJobVO.class).state == LongJobState.Failed
+        }
+
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.state, LongJobState.Suspended)
+                .set(LongJobVO_.managementNodeUuid, null)
+                .update()
+        longJobManager.loadLongJob()
+        retryInSecs() {
+            assert resumeCalls == 2
+            assert dbFindByUuid(jobInv.uuid, LongJobVO.class).state == LongJobState.Failed
+        }
+
+        env.cleanSimulatorAndMessageHandlers()
+        SQL.New(LongJobVO.class).eq(LongJobVO_.uuid, jobInv.uuid)
+                .set(LongJobVO_.jobName, original.jobName)
+                .set(LongJobVO_.jobData, original.jobData)
+                .update()
     }
 
     void testSubmitLongJobCase() {
