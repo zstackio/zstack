@@ -38,6 +38,9 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
     private LongJobState state;
 
     @Column
+    private boolean userSuspended;
+
+    @Column
     private String targetResourceUuid;
 
     @Column
@@ -121,6 +124,14 @@ public class LongJobVO extends ResourceVO implements OwnedByAccount {
 
     public LongJobState getState() {
         return state;
+    }
+
+    public boolean isUserSuspended() {
+        return userSuspended;
+    }
+
+    public void setUserSuspended(boolean userSuspended) {
+        this.userSuspended = userSuspended;
     }
 
     public void setState(LongJobState state) {

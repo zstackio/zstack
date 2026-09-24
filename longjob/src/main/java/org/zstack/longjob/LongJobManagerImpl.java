@@ -466,7 +466,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         String jobName = t.get(1, String.class);
 
         if (currentState == LongJobState.Suspended) {
-            LongJobVO vo = dbf.findByUuid(uuid, LongJobVO.class);
+            LongJobVO vo = updateByUuid(uuid, it -> it.setUserSuspended(true));
             completion.success(vo);
             return;
         }
@@ -487,7 +487,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
         job.suspend(vo, new ReturnValueCompletion<Boolean>(completion) {
             @Override
             public void success(Boolean suspended) {
-                LongJobVO updatedVo = changeState(uuid, LongJobStateEvent.suspend);
+                LongJobVO updatedVo = changeState(uuid, LongJobStateEvent.suspend, jobvo -> jobvo.setUserSuspended(true));
                 logger.info(String.format("longjob [uuid:%s, name:%s] has been suspended", vo.getUuid(), vo.getName()));
                 completion.success(updatedVo);
             }
@@ -583,6 +583,7 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
             vo.setState(LongJobState.Waiting);
             vo.setExecuteTime(null);
+            vo.setUserSuspended(false);
             vo.setManagementNodeUuid(Platform.getManagementServerId());
             Timestamp now = Timestamp.valueOf(LocalDateTime.now());
             vo.setCreateDate(now);
@@ -673,7 +674,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
 
     @Deferred
     private LongJobVO doResumeJob(String uuid, AsyncBackup async) {
-        LongJobVO vo = changeState(uuid, LongJobStateEvent.resume, jobvo -> jobvo.setManagementNodeUuid(Platform.getManagementServerId()));
+        LongJobVO vo = changeState(uuid, LongJobStateEvent.resume, jobvo -> {
+            jobvo.setManagementNodeUuid(Platform.getManagementServerId());
+            jobvo.setUserSuspended(false);
+        });
         LongJob job = longJobFactory.getLongJob(vo.getJobName());
 
         Runnable cleanup = ThreadContextUtils.saveThreadContext();
@@ -952,6 +956,10 @@ public class LongJobManagerImpl extends AbstractService implements LongJobManage
     }
 
     private void doLoadLongJob(LongJobVO vo, LongJobOperation operation) {
+        if (vo.getState() == LongJobState.Suspended && vo.isUserSuspended()) {
+            return;
+        }
+
         if (operation == null) {
             operation = getLoadOperation(vo);
         }
