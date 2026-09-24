@@ -164,14 +164,6 @@ public class ZsDatasetPublicationInventory  {
         return this.shareMode;
     }
 
-    public java.lang.Boolean system;
-    public void setSystem(java.lang.Boolean system) {
-        this.system = system;
-    }
-    public java.lang.Boolean getSystem() {
-        return this.system;
-    }
-
     public java.util.List adminTags;
     public void setAdminTags(java.util.List adminTags) {
         this.adminTags = adminTags;

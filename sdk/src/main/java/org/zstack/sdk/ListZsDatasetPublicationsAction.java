@@ -43,7 +43,7 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
     @Param(required = false, validValues = {"FineTune","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String scenario;
 
-    @Param(required = false, validValues = {"PRIVATE","SYSTEM"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = false, validValues = {"PRIVATE","PUBLIC"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String shareMode;
 
     @Param(required = false, validValues = {"createAt","name"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
