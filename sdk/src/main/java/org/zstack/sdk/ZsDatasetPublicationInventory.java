@@ -228,6 +228,14 @@ public class ZsDatasetPublicationInventory  {
         return this.vmErrorSummary;
     }
 
+    public java.lang.Boolean datasetDeleted;
+    public void setDatasetDeleted(java.lang.Boolean datasetDeleted) {
+        this.datasetDeleted = datasetDeleted;
+    }
+    public java.lang.Boolean getDatasetDeleted() {
+        return this.datasetDeleted;
+    }
+
     public java.lang.String expiresAt;
     public void setExpiresAt(java.lang.String expiresAt) {
         this.expiresAt = expiresAt;
