@@ -44,6 +44,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.NetworkCreateContext;
+import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.header.network.LocalNetworkConfigChange;
 import org.zstack.header.network.NetworkConfigChange;
 import org.zstack.header.network.NetworkConfigChangeCoordinator;
@@ -409,6 +410,8 @@ public class L3BasicNetwork implements L3Network {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddIpRangeMsg) {
             handle((AddIpRangeMsg) msg);
+        } else if (msg instanceof ReplaceProjectedIpRangesMsg) {
+            handle((ReplaceProjectedIpRangesMsg) msg);
         } else if (msg instanceof UpdateProjectedIpRangeMsg) {
             handle((UpdateProjectedIpRangeMsg) msg);
         } else if (msg instanceof DeleteProjectedIpRangeMsg) {
@@ -542,6 +545,177 @@ public class L3BasicNetwork implements L3Network {
             public String getName() {
                 return String.format("convert-projected-l3-network-%s", msg.getL3NetworkUuid());
             }
+        });
+    }
+
+    private void handle(ReplaceProjectedIpRangesMsg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                try {
+                    NetworkCreateContext context = msg.getContext();
+                    if (context == null || !context.isProjection() || context.getExpectedConfigVersion() == null
+                            || context.getExternalRef() == null || context.getExternalRef().getAccountUuid() == null
+                            || !NormalIpRangeVO.class.getSimpleName().equals(msg.getExpectedSourceType())
+                            || !Objects.equals(self.getUuid(), msg.getL3NetworkUuid())) {
+                        throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_L3_10104,
+                                "IP range set projection requires L3 ownership and a versioned projection context"));
+                    }
+                    List<NormalIpRangeVO> before = Q.New(NormalIpRangeVO.class)
+                            .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                    List<UsedIpVO> beforeUsed = Q.New(UsedIpVO.class)
+                            .eq(UsedIpVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
+                    ProjectedIpRangeSet preview = ProjectedIpRangeSet.plan(msg.getL3NetworkUuid(), before,
+                            msg.getRanges(), beforeUsed, msg.getDhcpServerIpUuid(), msg.getObsoleteDhcpServerIpUuid());
+                    NetworkDeletionContext deletionContext = new NetworkDeletionContext(
+                            NetworkDeletionContext.Origin.ZNS_SEGMENT_PROJECTION_DELETE,
+                            context.getOperationUuid(), self.getL2NetworkUuid(), NormalIpRangeVO.class.getSimpleName());
+                    deletionContext.setExpectedConfigVersion(context.getExpectedConfigVersion());
+                    deletionContext.setRemoteCommitted(true);
+                    List<IpRangeDeletionExtensionPoint> deletionExtensions = pluginRgty
+                            .getExtensionList(IpRangeDeletionExtensionPoint.class);
+                    List<IpRangeInventory> deleted = before.stream()
+                            .filter(range -> preview.getDeletedRangeUuids().contains(range.getUuid()))
+                            .map(IpRangeInventory::valueOf).collect(Collectors.toList());
+                    for (IpRangeInventory range : deleted) {
+                        for (IpRangeDeletionExtensionPoint extension : deletionExtensions) {
+                            extension.preDeleteIpRange(range, deletionContext);
+                            extension.beforeDeleteIpRange(range, deletionContext);
+                        }
+                    }
+                    List<IpRangeInventory> result = new SQLBatchWithReturn<List<IpRangeInventory>>() {
+                        @Override
+                        protected List<IpRangeInventory> scripts() {
+                            L3NetworkVO l3 = dbf.getEntityManager().find(L3NetworkVO.class,
+                                    msg.getL3NetworkUuid(), LockModeType.PESSIMISTIC_WRITE);
+                            if (l3 == null || !Objects.equals(l3.getL2NetworkUuid(), self.getL2NetworkUuid())) {
+                                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_L3_10111,
+                                        "projected L3 network[uuid:%s] no longer exists with the expected parent",
+                                        msg.getL3NetworkUuid()));
+                            }
+                            String owner = acntMgr.getOwnerAccountUuidOfResource(l3.getUuid());
+                            if (!Objects.equals(owner, context.getExternalRef().getAccountUuid())) {
+                                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_L3_10112,
+                                        "projected IP range account does not own L3 network[uuid:%s]", l3.getUuid()));
+                            }
+                            for (ValidateProjectedIpRangeSetExtensionPoint guard : pluginRgty
+                                    .getExtensionList(ValidateProjectedIpRangeSetExtensionPoint.class)) {
+                                guard.validate(msg, l3);
+                            }
+                            List<NormalIpRangeVO> current = dbf.getEntityManager().createQuery(
+                                            "select r from NormalIpRangeVO r where r.l3NetworkUuid = :l3", NormalIpRangeVO.class)
+                                    .setParameter("l3", l3.getUuid()).setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+                            List<UsedIpVO> used = dbf.getEntityManager().createQuery(
+                                            "select u from UsedIpVO u where u.l3NetworkUuid = :l3", UsedIpVO.class)
+                                    .setParameter("l3", l3.getUuid()).setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
+                            ProjectedIpRangeSet plan = ProjectedIpRangeSet.plan(l3.getUuid(), current,
+                                    msg.getRanges(), used, msg.getDhcpServerIpUuid(), msg.getObsoleteDhcpServerIpUuid());
+                            List<IpRangeVO> protectedRanges = dbf.getEntityManager().createQuery(
+                                            "select r from IpRangeVO r, L3NetworkVO l where r.l3NetworkUuid = l.uuid"
+                                                    + " and l.l2NetworkUuid = :l2", IpRangeVO.class)
+                                    .setParameter("l2", l3.getL2NetworkUuid()).getResultList().stream()
+                                    .filter(range -> !l3.getUuid().equals(range.getL3NetworkUuid())
+                                            || !(range instanceof NormalIpRangeVO))
+                                    .collect(Collectors.toList());
+                            plan.validateUnmanagedRanges(l3.getUuid(), protectedRanges);
+                            if (!new HashSet<>(preview.getDeletedRangeUuids()).equals(new HashSet<>(plan.getDeletedRangeUuids()))) {
+                                throw new OperationFailureException(argerr(ORG_ZSTACK_NETWORK_L3_10113,
+                                        "projected IP range set changed during validation on L3 network[uuid:%s]", l3.getUuid()));
+                            }
+                            Map<String, NormalIpRangeVO> oldByUuid = current.stream()
+                                    .collect(Collectors.toMap(NormalIpRangeVO::getUuid, range -> range));
+                            for (IpRangeInventory range : plan.getRanges()) {
+                                NormalIpRangeVO vo = oldByUuid.get(range.getUuid());
+                                if (vo == null) {
+                                    vo = (NormalIpRangeVO) IpRangeHelper.fromIpRangeInventory(range, owner);
+                                    persist(vo);
+                                    List<SharedResourceVO> sharing = Q.New(SharedResourceVO.class)
+                                            .eq(SharedResourceVO_.resourceUuid, l3.getUuid())
+                                            .eq(SharedResourceVO_.resourceType, L3NetworkVO.class.getSimpleName()).list();
+                                    for (SharedResourceVO source : sharing) {
+                                        SharedResourceVO shared = new SharedResourceVO();
+                                        shared.setOwnerAccountUuid(source.getOwnerAccountUuid());
+                                        shared.setResourceType(IpRangeVO.class.getSimpleName());
+                                        shared.setResourceUuid(vo.getUuid());
+                                        shared.setToPublic(source.isToPublic());
+                                        shared.setReceiverAccountUuid(source.getReceiverAccountUuid());
+                                        persist(shared);
+                                    }
+                                } else {
+                                    vo.setStartIp(range.getStartIp());
+                                    vo.setEndIp(range.getEndIp());
+                                    vo.setGateway(range.getGateway());
+                                    vo.setNetmask(range.getNetmask());
+                                    vo.setPrefixLen(range.getPrefixLen());
+                                    vo.setNetworkCidr(range.getNetworkCidr());
+                                    vo.setAddressMode(range.getAddressMode());
+                                }
+                            }
+                            dbf.getEntityManager().flush();
+                            for (UsedIpVO ip : used) {
+                                if (!plan.getUsedIpTargets().containsKey(ip.getUuid())) {
+                                    continue;
+                                }
+                                IpRangeInventory target = plan.getUsedIpTargets().get(ip.getUuid());
+                                ip.setIpRangeUuid(target == null ? null : target.getUuid());
+                                if (target != null) {
+                                    ip.setGateway(target.getGateway());
+                                    ip.setNetmask(target.getNetmask());
+                                    ip.setPrefixLen(target.getPrefixLen());
+                                }
+                            }
+                            dbf.getEntityManager().flush();
+                            for (UsedIpVO ip : used) {
+                                if (plan.getDeletedUsedIpUuids().contains(ip.getUuid())) {
+                                    dbf.getEntityManager().remove(ip);
+                                }
+                            }
+                            dbf.getEntityManager().flush();
+                            dbf.removeByPrimaryKeysInCurrentTransaction(plan.getDeletedRangeUuids(), IpRangeVO.class);
+                            dbf.getEntityManager().flush();
+                            if (!current.isEmpty() || !plan.getRanges().isEmpty()) {
+                                List<Integer> families = Q.New(IpRangeVO.class).select(IpRangeVO_.ipVersion)
+                                        .eq(IpRangeVO_.l3NetworkUuid, l3.getUuid()).listValues();
+                                l3.setIpVersion(families.contains(IPv6Constants.IPv4)
+                                        ? (families.contains(IPv6Constants.IPv6) ? IPv6Constants.DUAL_STACK : IPv6Constants.IPv4)
+                                        : (families.contains(IPv6Constants.IPv6) ? IPv6Constants.IPv6 : IPv6Constants.NONE));
+                            }
+                            return plan.getRanges();
+                        }
+                    }.execute();
+                    for (IpRangeInventory range : deleted) {
+                        CollectionUtils.safeForEach(deletionExtensions,
+                                extension -> extension.afterDeleteIpRange(range, deletionContext));
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class),
+                                extension -> extension.afterDeleteIpRange(range, deletionContext));
+                    }
+                    Set<String> previousUuids = before.stream().map(NormalIpRangeVO::getUuid).collect(Collectors.toSet());
+                    for (IpRangeInventory range : result) {
+                        if (!previousUuids.contains(range.getUuid())) {
+                            CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class),
+                                    extension -> extension.afterAddIpRange(range, Collections.emptyList(), context));
+                        }
+                    }
+                    ReplaceProjectedIpRangesReply reply = new ReplaceProjectedIpRangesReply();
+                    reply.setRanges(result);
+                    bus.reply(msg, reply);
+                } catch (ProjectedIpRangeSet.Rejected rejection) {
+                    bus.replyErrorByMessageType(msg, argerr(rejection.getGlobalErrorCode(), "%s", rejection.getMessage()));
+                } catch (OperationFailureException failure) {
+                    bus.replyErrorByMessageType(msg, failure.getErrorCode());
+                } catch (Exception failure) {
+                    logger.warn("failed to replace projected IP ranges on L3 network " + msg.getL3NetworkUuid(), failure);
+                    bus.replyErrorByMessageType(msg, failure);
+                } finally {
+                    chain.next();
+                }
+            }
+
+            @Override
+            public String getSyncSignature() { return getSyncId(); }
+
+            @Override
+            public String getName() { return "replace-projected-ip-range-set"; }
         });
     }
 
@@ -777,6 +951,9 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(IpRangeDeletionMsg msg) {
         IpRangeDeletionReply reply = new IpRangeDeletionReply();
+        SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
+        boolean coordinated = controller != null
+                && controller.isCoordinatedIpRangeDeletion(getSelfInventory(), msg.getNetworkDeletionContext());
         doDeleteIpRange(msg, new Completion(msg) {
             @Override
             public void success() {
@@ -786,6 +963,7 @@ public class L3BasicNetwork implements L3Network {
             @Override
             public void fail(ErrorCode errorCode) {
                 reply.setError(errorCode);
+                reply.setCoordinatedNetworkConfigFailure(coordinated);
                 bus.reply(msg, reply);
             }
         });
@@ -2523,7 +2701,7 @@ public class L3BasicNetwork implements L3Network {
         }).start();
     }
 
-    private void deleteIpRangeWithMutation(DeleteIpRangeMsg msg, Completion completion) {
+    private void deleteIpRangeWithMutation(DeleteIpRangeMsg msg, Runnable releaseQueue, Completion completion) {
         String operationUuid = msg.getOperationUuid() == null ? msg.getId() : msg.getOperationUuid();
         IpRangeVO deleting = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
         if (!(deleting instanceof NormalIpRangeVO)) {
@@ -2535,12 +2713,14 @@ public class L3BasicNetwork implements L3Network {
                 .eq(IpRangeVO_.ipVersion, deleting.getIpVersion())
                 .notEq(IpRangeVO_.uuid, deleting.getUuid())
                 .list();
+        NetworkConfigChange.IpRange removedRange = new NetworkConfigChange.IpRange(
+                deleting.getUuid(), deleting.getStartIp(), deleting.getEndIp(), deleting.getAddressMode());
         NetworkConfigChange change;
         if (remaining.isEmpty()) {
             change = NetworkConfigChange.removeIpRangeConfiguration(
                     self.getL2NetworkUuid(), NetworkOperationOrigin.API, operationUuid,
                     msg.getAccountUuid(),
-                    deleting.getL3NetworkUuid(), deleting.getIpVersion(), deleting.getUuid());
+                    deleting.getL3NetworkUuid(), deleting.getIpVersion(), deleting.getUuid(), removedRange);
         } else {
             List<NetworkConfigChange.IpRange> targets = remaining.stream()
                     .map(range -> new NetworkConfigChange.IpRange(
@@ -2555,22 +2735,49 @@ public class L3BasicNetwork implements L3Network {
                     msg.getAccountUuid(),
                     deleting.getL3NetworkUuid(), deleting.getIpVersion(),
                     first.getGateway() + "/" + prefix, targets,
-                    NetworkConfigChange.CollectionChangeOperation.REMOVE, null, deleting.getUuid());
+                    NetworkConfigChange.CollectionChangeOperation.REMOVE, null, deleting.getUuid(), removedRange);
         }
         java.util.concurrent.atomic.AtomicReference<Boolean> deleted =
                 new java.util.concurrent.atomic.AtomicReference<>(false);
         if (coordinateNetworkConfigChange(change,
-                localCompletion -> doDeleteIpRange(msg, new Completion(localCompletion) {
+                localCompletion -> thdf.chainSubmit(new ChainTask(localCompletion) {
                     @Override
-                    public void success() {
-                        deleted.set(true);
-                        localCompletion.success();
+                    public void run(SyncTaskChain localChain) {
+                        IpRangeVO current = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
+                        boolean sameRange = current != null && Objects.equals(current.getL3NetworkUuid(), change.getIpRangeConfiguration().getL3Uuid())
+                                && current.getIpVersion() == change.getIpRangeConfiguration().getIpVersion()
+                                && (current.getIpVersion() == IPv6Constants.IPv4
+                                ? NetworkUtils.ipv4StringToLong(current.getStartIp()) == NetworkUtils.ipv4StringToLong(removedRange.getStartIp())
+                                    && NetworkUtils.ipv4StringToLong(current.getEndIp()) == NetworkUtils.ipv4StringToLong(removedRange.getEndIp())
+                                : IPv6Address.fromString(current.getStartIp()).equals(IPv6Address.fromString(removedRange.getStartIp()))
+                                    && IPv6Address.fromString(current.getEndIp()).equals(IPv6Address.fromString(removedRange.getEndIp())));
+                        if (!sameRange) {
+                            deleted.set(true);
+                            localChain.next();
+                            localCompletion.success();
+                            return;
+                        }
+                        doDeleteIpRange(msg, new Completion(localCompletion) {
+                            @Override
+                            public void success() {
+                                deleted.set(true);
+                                localChain.next();
+                                localCompletion.success();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                localChain.next();
+                                localCompletion.fail(errorCode);
+                            }
+                        });
                     }
 
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        localCompletion.fail(errorCode);
-                    }
+                    public String getSyncSignature() { return getSyncId(); }
+
+                    @Override
+                    public String getName() { return "apply-coordinated-ip-range-delete"; }
                 }), deleted, new ReturnValueCompletion<Boolean>(completion) {
                     @Override
                     public void success(Boolean ignored) {
@@ -2582,6 +2789,7 @@ public class L3BasicNetwork implements L3Network {
                         completion.fail(errorCode);
                     }
                 })) {
+            releaseQueue.run();
             return;
         }
         doDeleteIpRange(msg, completion);
@@ -2655,17 +2863,23 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public void run(SyncTaskChain chain) {
-                        deleteIpRangeWithMutation(dmsg, new Completion(chain) {
+                        java.util.concurrent.atomic.AtomicBoolean released = new java.util.concurrent.atomic.AtomicBoolean();
+                        Runnable releaseQueue = () -> {
+                            if (released.compareAndSet(false, true)) {
+                                chain.next();
+                            }
+                        };
+                        deleteIpRangeWithMutation(dmsg, releaseQueue, new Completion(chain) {
                             @Override
                             public void success() {
                                 bus.reply(dmsg, new MessageReply());
-                                chain.next();
+                                releaseQueue.run();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 bus.replyErrorByMessageType(dmsg, errorCode);
-                                chain.next();
+                                releaseQueue.run();
                             }
                         });
                     }
