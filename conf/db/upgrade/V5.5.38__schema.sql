@@ -1175,3 +1175,7 @@ DROP PROCEDURE IF EXISTS `ENSURE_ZNS_RESOURCE_RECEIPT_CONSTRAINTS`;
 -- ZCF-6345: project the tenant router's edge-cluster site into Cloud inventory.
 -- Existing rows are populated by the next successful router inventory sync.
 CALL ADD_COLUMN('ZnsTenantRouterVO', 'siteUuid', 'VARCHAR(36)', 1, NULL);
+
+-- ZCF-6343: freeze the L3 intent generation when the user deletes the projected L3
+-- so later refreshes do not resurrect it without a newer intent.
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'suppressedL3IntentVersion', 'BIGINT', 1, NULL);

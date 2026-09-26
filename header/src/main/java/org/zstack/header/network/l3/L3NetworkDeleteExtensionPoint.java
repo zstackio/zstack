@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.core.Completion;
 import org.zstack.header.network.l2.NetworkDeletionContext;
 
 public interface L3NetworkDeleteExtensionPoint {
@@ -8,6 +9,17 @@ public interface L3NetworkDeleteExtensionPoint {
     default String preDeleteL3Network(L3NetworkInventory inventory, NetworkDeletionContext context)
             throws L3NetworkException {
         return preDeleteL3Network(inventory);
+    }
+
+    /**
+     * Asynchronous, failable preparation that runs before the destructive
+     * cascade starts. Backends use it to confirm remote state (for example
+     * freezing a deletion intent); a failure here aborts the deletion before
+     * anything is destroyed.
+     */
+    default void prepareDeleteL3Network(L3NetworkInventory inventory, NetworkDeletionContext context,
+                                        Completion completion) {
+        completion.success();
     }
 
     void beforeDeleteL3Network(L3NetworkInventory inventory);

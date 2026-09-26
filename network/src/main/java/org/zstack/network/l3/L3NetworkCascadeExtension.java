@@ -11,6 +11,10 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.AccountInventory;
 import org.zstack.header.identity.AccountVO;
 import org.zstack.header.message.MessageReply;
@@ -131,11 +135,36 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 extpEmitter.preDelete(prinv,
                         NetworkDeletionContexts.get(action, prinv.getL2NetworkUuid()));
             }
-
-            completion.success();
         } catch (L3NetworkException e) {
             completion.fail(inerr(ORG_ZSTACK_NETWORK_L3_10077, e.getMessage()));
+            return;
         }
+
+        // Give backends a failable, asynchronous preparation step before anything
+        // is destroyed; a failure must abort the whole deletion cascade.
+        new While<>(l3invs).each((inv, wcompl) -> extpEmitter.prepareDelete(inv,
+                NetworkDeletionContexts.get(action, inv.getL2NetworkUuid()),
+                new Completion(wcompl) {
+                    @Override
+                    public void success() {
+                        wcompl.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        wcompl.addError(errorCode);
+                        wcompl.allDone();
+                    }
+                })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
     }
 
     @Override

@@ -11,6 +11,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -56,7 +57,7 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, NoErrorCompletion completion) {
+    private void deleteIpRanges(final CascadeAction action, List<IpRangeInventory> iprs, Completion completion) {
         List<IpRangeDeletionMsg> msgs = new ArrayList<IpRangeDeletionMsg>();
         for (IpRangeInventory iprinv : iprs) {
             IpRangeDeletionMsg msg = new IpRangeDeletionMsg();
@@ -71,17 +72,27 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             msgs.add(msg);
         }
 
+        final boolean forceDelete = action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE);
         new While<>(msgs).each((msg, compl) -> {
             bus.send(msg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {
+                    if (!reply.isSuccess() && !forceDelete) {
+                        compl.addError(reply.getError());
+                        compl.allDone();
+                        return;
+                    }
                     compl.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                completion.done();
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
             }
         });
     }
@@ -105,32 +116,45 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
 
         /* delete address pool first */
         if (!addressPools.isEmpty()) {
-            deleteIpRanges(action, addressPools, new NoErrorCompletion(completion) {
+            deleteIpRanges(action, addressPools, new Completion(completion) {
                 @Override
-                public void done() {
+                public void success() {
                     if (normalIpRanges.isEmpty()) {
                         completion.success();
-                    } else {
-                        deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
-                            @Override
-                            public void done() {
-                                completion.success();
-                            }
-                        });
+                        return;
                     }
+                    deleteIpRanges(action, normalIpRanges, new Completion(completion) {
+                        @Override
+                        public void success() {
+                            completion.success();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            completion.fail(errorCode);
+                        }
+                    });
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
                 }
             });
+        } else if (normalIpRanges.isEmpty()) {
+            completion.success();
         } else {
-            if (normalIpRanges.isEmpty()) {
-                completion.success();
-            } else {
-                deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        completion.success();
-                    }
-                });
-            }
+            deleteIpRanges(action, normalIpRanges, new Completion(completion) {
+                @Override
+                public void success() {
+                    completion.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    completion.fail(errorCode);
+                }
+            });
         }
     }
 

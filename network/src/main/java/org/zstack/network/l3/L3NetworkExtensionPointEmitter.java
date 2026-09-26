@@ -2,7 +2,12 @@ package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.asyncbatch.While;
 import org.zstack.header.Component;
+import org.zstack.header.core.Completion;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.network.l3.L3NetworkCreateExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint;
 import org.zstack.header.network.l3.L3NetworkException;
@@ -65,6 +70,38 @@ public class L3NetworkExtensionPointEmitter implements Component {
 
     public void afterDelete(final L3NetworkInventory inv) {
         afterDelete(inv, null);
+    }
+
+    public void prepareDelete(final L3NetworkInventory inv, NetworkDeletionContext context,
+                              Completion completion) {
+        List<L3NetworkDeleteExtensionPoint> exts = deleteExtensions;
+        if (exts == null || exts.isEmpty()) {
+            completion.success();
+            return;
+        }
+
+        new While<>(exts).each((ext, wcompl) -> ext.prepareDeleteL3Network(inv, context,
+                new Completion(wcompl) {
+                    @Override
+                    public void success() {
+                        wcompl.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        wcompl.addError(errorCode);
+                        wcompl.allDone();
+                    }
+                })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                }
+            }
+        });
     }
 
     public void afterDelete(final L3NetworkInventory inv, NetworkDeletionContext context) {
