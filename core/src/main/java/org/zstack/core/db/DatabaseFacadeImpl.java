@@ -542,6 +542,20 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
     }
 
     @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void removeByPrimaryKeysInCurrentTransaction(Collection ids, Class entityClass) {
+        if (ids.isEmpty()) {
+            return;
+        }
+        EntityInfo info = getEntityInfo(entityClass);
+        if (info.hasEO()) {
+            info.softDelete(ids);
+        } else {
+            info.hardDelete(ids);
+        }
+    }
+
+    @Override
     @DeadlockAutoRestart
     public void removeCollection(Collection entities, Class entityClass) {
         if (entities.isEmpty()) {

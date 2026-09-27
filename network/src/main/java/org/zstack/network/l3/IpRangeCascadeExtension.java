@@ -11,7 +11,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
-import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
@@ -56,7 +55,7 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, NoErrorCompletion completion) {
+    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, Completion completion) {
         List<IpRangeDeletionMsg> msgs = new ArrayList<IpRangeDeletionMsg>();
         for (IpRangeInventory iprinv : iprs) {
             IpRangeDeletionMsg msg = new IpRangeDeletionMsg();
@@ -75,13 +74,23 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             bus.send(msg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {
+                    if (!reply.isSuccess() && reply instanceof IpRangeDeletionReply
+                            && ((IpRangeDeletionReply) reply).isCoordinatedNetworkConfigFailure()) {
+                        compl.addError(reply.getError());
+                        compl.allDone();
+                        return;
+                    }
                     compl.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                completion.done();
+                if (errorCodeList.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errorCodeList);
+                }
             }
         });
     }
@@ -103,35 +112,8 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         }
 
-        /* delete address pool first */
-        if (!addressPools.isEmpty()) {
-            deleteIpRanges(action, addressPools, new NoErrorCompletion(completion) {
-                @Override
-                public void done() {
-                    if (normalIpRanges.isEmpty()) {
-                        completion.success();
-                    } else {
-                        deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
-                            @Override
-                            public void done() {
-                                completion.success();
-                            }
-                        });
-                    }
-                }
-            });
-        } else {
-            if (normalIpRanges.isEmpty()) {
-                completion.success();
-            } else {
-                deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
-                    @Override
-                    public void done() {
-                        completion.success();
-                    }
-                });
-            }
-        }
+        addressPools.addAll(normalIpRanges);
+        deleteIpRanges(action, addressPools, completion);
     }
 
     private void handleDeletionCheck(CascadeAction action, Completion completion) {
