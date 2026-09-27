@@ -7,6 +7,14 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
 import java.util.List;
 
 public interface SdnControllerL3 {
+    default boolean isCoordinatedL3Deletion(L3NetworkInventory inventory) {
+        return false;
+    }
+
+    default String l3MessageRoutingResourceUuid(String l2NetworkUuid) {
+        return null;
+    }
+
     default String l3DeletionSyncSignature(L3NetworkInventory inventory) {
         return "delete-l3-network-" + inventory.getUuid();
     }

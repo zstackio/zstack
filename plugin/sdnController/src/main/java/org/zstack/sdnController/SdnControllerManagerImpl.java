@@ -378,6 +378,51 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
+        prepareAttach(network, clusterUuid, NetworkOperationOrigin.CLOUD_COMMIT, completion);
+    }
+
+    @Override
+    public void prepareDetach(L2NetworkInventory network, String clusterUuid,
+                              NetworkOperationOrigin origin, Completion completion) {
+        DetachL2NetworkFromClusterMsg message = new DetachL2NetworkFromClusterMsg();
+        message.setL2NetworkUuid(network.getUuid());
+        message.setClusterUuid(clusterUuid);
+        message.setOrigin(origin);
+        prepareDetach(network, message, completion);
+    }
+
+    @Override
+    public void prepareDetach(L2NetworkInventory network, DetachL2NetworkFromClusterMsg message,
+                              Completion completion) {
+        String clusterUuid = message.getClusterUuid();
+        if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
+            completion.success();
+            return;
+        }
+        SdnControllerL2 controller = findSdnControllerL2(network);
+        if (controller == null) {
+            completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10044,
+                    "cannot detach L2Network[uuid:%s] from Cluster[uuid:%s] because its SDN controller is missing",
+                    network.getUuid(), clusterUuid));
+            return;
+        }
+        controller.prepareDetachL2NetworkFromCluster(network, message, completion);
+    }
+
+    @Override
+    public void prepareAttach(L2NetworkInventory network, String clusterUuid,
+                              NetworkOperationOrigin origin, Completion completion) {
+        AttachL2NetworkToClusterMsg message = new AttachL2NetworkToClusterMsg();
+        message.setL2NetworkUuid(network.getUuid());
+        message.setClusterUuid(clusterUuid);
+        message.setOrigin(origin);
+        prepareAttach(network, message, completion);
+    }
+
+    @Override
+    public void prepareAttach(L2NetworkInventory network, AttachL2NetworkToClusterMsg message,
+                              Completion completion) {
+        String clusterUuid = message.getClusterUuid();
         if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
             completion.success();
             return;
@@ -389,7 +434,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     network.getUuid(), network.getvSwitchType(), clusterUuid));
             return;
         }
-        controller.prepareL2NetworkForCluster(network, clusterUuid, completion);
+        controller.prepareL2NetworkForCluster(network, message, completion);
     }
 
     @Override

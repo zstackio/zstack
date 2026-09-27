@@ -3,6 +3,15 @@ package org.zstack.header.network.l2;
 /**
  */
 public class L2NetworkDetachStruct {
+    private NetworkOperationOrigin origin = NetworkOperationOrigin.CLOUD_COMMIT;
+
+    public NetworkOperationOrigin getOrigin() { return origin; }
+    public void setOrigin(NetworkOperationOrigin origin) { this.origin = origin; }
+
+    private String operationUuid;
+    public String getOperationUuid() { return operationUuid; }
+    public void setOperationUuid(String value) { operationUuid = value; }
+
     private String l2NetworkUuid;
     private String clusterUuid;
 

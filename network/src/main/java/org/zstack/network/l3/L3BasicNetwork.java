@@ -36,6 +36,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
+import org.zstack.header.identity.AccountVO;
 import org.zstack.header.identity.SharedResourceVO;
 import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.message.*;
@@ -617,16 +618,43 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
+        L3NetworkInventory inventory = getSelfInventory();
+        SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(inventory.getL2NetworkUuid());
+        boolean prepareSource = msg.isAccountCascade() && msg.getNetworkDeletionContext() == null
+                && controller != null && controller.isCoordinatedL3Deletion(inventory);
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public void run(SyncTaskChain chain) {
                 L3NetworkDeletionReply reply = new L3NetworkDeletionReply();
+                reply.setCoordinatedSourceDeletion(prepareSource);
+                if (prepareSource) {
+                    NetworkDeletionContext context = new NetworkDeletionContext(
+                            NetworkDeletionContext.Origin.INDEPENDENT_L3_DELETE, msg.getId(),
+                            inventory.getL2NetworkUuid(), AccountVO.class.getSimpleName());
+                    context.setL3NetworkUuid(inventory.getUuid());
+                    context.setForceDelete(msg.isForceDelete());
+                    msg.setNetworkDeletionContext(context);
+                    reply.setNetworkDeletionContext(context);
+                }
                 L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
                 L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
 
                 FlowChain fchain = new SimpleFlowChain();
                 fchain.setName(String.format("del-l3-network-%s", msg.getL3NetworkUuid()));
                 fchain.then(new NoRollbackFlow() {
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!prepareSource) {
+                            trigger.next();
+                            return;
+                        }
+                        controller.prepareDeleteL3Network(inventory, msg.getNetworkDeletionContext(),
+                                new Completion(trigger) {
+                            @Override public void success() { trigger.next(); }
+                            @Override public void fail(ErrorCode error) { trigger.fail(error); }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
                     String __name__ = "remove-from-sdn-controller";
 
                     @Override
@@ -712,7 +740,7 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public String getSyncSignature() {
-                return getSyncId();
+                return prepareSource ? controller.l3DeletionSyncSignature(inventory) : getSyncId();
             }
 
             @Override

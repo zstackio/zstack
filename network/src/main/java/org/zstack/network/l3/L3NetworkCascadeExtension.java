@@ -2,6 +2,10 @@ package org.zstack.network.l3;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.core.cascade.AbstractAsyncCascadeExtension;
 import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
@@ -45,6 +49,8 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
     private CloudBus bus;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private L3NetworkManager l3NwMgr;
 
     private static final String NAME = L3NetworkVO.class.getSimpleName();
 
@@ -88,6 +94,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         for (L3NetworkInventory l3inv : l3invs) {
             L3NetworkDeletionMsg msg = new L3NetworkDeletionMsg();
             msg.setL3NetworkUuid(l3inv.getUuid());
+            msg.setAccountCascade(AccountVO.class.getSimpleName().equals(action.getParentIssuer()));
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setNetworkDeletionContext(NetworkDeletionContexts.get(action, l3inv.getL2NetworkUuid()));
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3inv.getUuid());
@@ -102,7 +109,8 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                     NetworkDeletionContext context = NetworkDeletionContexts.get(action, l3invs.get(i).getL2NetworkUuid());
                     boolean confirmedL3Delete = context != null && context.isIndependentL3Delete()
                             && context.isRemoteCommitted();
-                    if (!r.isSuccess() && (confirmedL3Delete
+                    if (!r.isSuccess() && (r instanceof L3NetworkDeletionReply
+                            && ((L3NetworkDeletionReply) r).isCoordinatedSourceDeletion() || confirmedL3Delete
                             || !action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE))) {
                         completion.fail(r.getError());
                         return;
@@ -117,7 +125,28 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
                 }
 
                 dbf.removeByPrimaryKeys(uuids, L3NetworkVO.class);
-                completion.success();
+                new While<>(l3invs).each((inventory, next) -> {
+                    MessageReply response = replies.get(l3invs.indexOf(inventory));
+                    if (!(response instanceof L3NetworkDeletionReply)
+                            || !((L3NetworkDeletionReply) response).isCoordinatedSourceDeletion()) {
+                        next.done();
+                        return;
+                    }
+                    SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(inventory.getL2NetworkUuid());
+                    controller.completeDeleteL3Network(inventory,
+                            ((L3NetworkDeletionReply) response).getNetworkDeletionContext(), new Completion(next) {
+                        @Override public void success() { next.done(); }
+                        @Override public void fail(ErrorCode error) {
+                            next.addError(error);
+                            next.done();
+                        }
+                    });
+                }).run(new WhileDoneCompletion(completion) {
+                    @Override public void done(ErrorCodeList errors) {
+                        if (errors.getCauses().isEmpty()) completion.success();
+                        else completion.fail(errors);
+                    }
+                });
             }
         });
     }

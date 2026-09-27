@@ -923,6 +923,8 @@ ALTER TABLE `RolePolicyStatementVO` MODIFY COLUMN `statement` MEDIUMTEXT NOT NUL
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkType', 'VARCHAR(32)', 0, 'Segment');
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkSnapshot', 'LONGTEXT', 1, NULL);
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'pendingL3Deletion', 'LONGTEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'cloudClusterSelection', 'LONGTEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'pendingClusterChange', 'LONGTEXT', 1, NULL);
 
 DROP PROCEDURE IF EXISTS UpgradeZnsSegmentRefZoneIdentity;
 DELIMITER $$

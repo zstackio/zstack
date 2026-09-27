@@ -204,6 +204,8 @@ public class L2NoVlanNetwork implements L2Network {
         String issuer = L2NetworkVO.class.getSimpleName();
         List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
         L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
+        struct.setOrigin(msg.getOrigin());
+        struct.setOperationUuid(msg.getOperationUuid());
         struct.setClusterUuid(msg.getClusterUuid());
         struct.setL2NetworkUuid(msg.getL2NetworkUuid());
         ctx.add(struct);
@@ -320,12 +322,36 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(DetachL2NetworkFromClusterMsg msg) {
+        new While<>(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class))
+                .each((extension, next) -> extension.prepareDetach(getSelfInventory(), msg, new Completion(next) {
+                            @Override
+                            public void success() { next.done(); }
+                            @Override
+                            public void fail(ErrorCode error) { next.addError(error); next.allDone(); }
+                        })).run(new WhileDoneCompletion(msg) {
+                    @Override
+                    public void done(ErrorCodeList errors) {
+                        if (errors.getCauses().isEmpty()) {
+                            detachL2NetworkFromCluster(msg);
+                        } else {
+                            DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
+                            reply.setError(errors.getCauses().get(0));
+                            bus.reply(msg, reply);
+                        }
+                    }
+                });
+    }
+
+    private void detachL2NetworkFromCluster(DetachL2NetworkFromClusterMsg msg) {
         if (!L2NetworkGlobalConfig.DeleteL2BridgePhysically.value(Boolean.class) ||
                 !getVSwitchType().isAttachToCluster()) {
-            SQL.New(L2NetworkClusterRefVO.class)
-                    .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
-                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
-                    .delete();
+            ErrorCode error = commitClusterDetach(msg);
+            if (error != null) {
+                DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
+                reply.setError(error);
+                bus.reply(msg, reply);
+                return;
+            }
 
             DetachL2NetworkFromClusterReply reply = new DetachL2NetworkFromClusterReply();
             bus.reply(msg, reply);
@@ -348,10 +374,10 @@ public class L2NoVlanNetwork implements L2Network {
                                 }
                             }
 
-                            SQL.New(L2NetworkClusterRefVO.class)
-                                    .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
-                                    .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
-                                    .delete();
+                            ErrorCode error = commitClusterDetach(msg);
+                            if (error != null) {
+                                reply.setError(error);
+                            }
 
                             bus.reply(msg, reply);
                         }
@@ -364,6 +390,28 @@ public class L2NoVlanNetwork implements L2Network {
             );
         }
      }
+
+    private ErrorCode commitClusterDetach(DetachL2NetworkFromClusterMsg msg) {
+        try {
+            new SQLBatch() {
+                @Override
+                protected void scripts() {
+                    for (L2NetworkClusterCommitExtensionPoint extension : pluginRgty.getExtensionList(L2NetworkClusterCommitExtensionPoint.class)) {
+                        extension.beforeDetachClusterCommit(msg);
+                    }
+                    SQL.New(L2NetworkClusterRefVO.class)
+                            .eq(L2NetworkClusterRefVO_.clusterUuid, msg.getClusterUuid())
+                            .eq(L2NetworkClusterRefVO_.l2NetworkUuid, msg.getL2NetworkUuid())
+                            .delete();
+                }
+            }.execute();
+            return null;
+        } catch (OperationFailureException e) {
+            return e.getErrorCode();
+        } catch (Exception e) {
+            return errf.throwableToInternalError(e);
+        }
+    }
 
     private void handle(final PrepareL2NetworkOnHostMsg msg) {
         final PrepareL2NetworkOnHostReply reply = new PrepareL2NetworkOnHostReply();
@@ -532,7 +580,7 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
+                return getL2ApiConfigurationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
@@ -611,6 +659,13 @@ public class L2NoVlanNetwork implements L2Network {
         coordinators.get(0).coordinate(change, localChange, completion);
     }
 
+    private String getL2ApiConfigurationSyncSignature(String l2NetworkUuid) {
+        return pluginRgty.getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .map(coordinator -> coordinator.l2ApiConfigurationSyncSignature(l2NetworkUuid))
+                .filter(Objects::nonNull).findFirst()
+                .orElseGet(() -> getL2NetworkOperationSyncSignature(l2NetworkUuid));
+    }
+
     protected String getL2NetworkOperationSyncSignature(String l2NetworkUuid) {
         return String.format("l2-network-%s", l2NetworkUuid);
     }
@@ -626,7 +681,7 @@ public class L2NoVlanNetwork implements L2Network {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return getL2NetworkOperationSyncSignature(msg.getL2NetworkUuid());
+                return getL2ApiConfigurationSyncSignature(msg.getL2NetworkUuid());
             }
 
             @Override
@@ -677,11 +732,34 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(final APIDetachL2NetworkFromClusterMsg msg) {
+        String signature = pluginRgty.getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .map(coordinator -> coordinator.l2ApiConfigurationSyncSignature(msg.getL2NetworkUuid()))
+                .filter(Objects::nonNull).findFirst().orElse(null);
+        if (signature == null) {
+            executeDetachCluster(msg, () -> {});
+            return;
+        }
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() { return signature; }
+            @Override
+            public String getName() {
+                return "detach-L2Network-" + msg.getL2NetworkUuid() + "-Cluster-" + msg.getClusterUuid()
+                        + "-message-" + msg.getId();
+            }
+            @Override
+            public void run(SyncTaskChain queue) { executeDetachCluster(msg, queue); }
+        });
+    }
+
+    private void executeDetachCluster(final APIDetachL2NetworkFromClusterMsg msg, SyncTaskChain queue) {
         final APIDetachL2NetworkFromClusterEvent evt = new APIDetachL2NetworkFromClusterEvent(msg.getId());
 
         String issuer = L2NetworkVO.class.getSimpleName();
         List<L2NetworkDetachStruct> ctx = new ArrayList<L2NetworkDetachStruct>();
         L2NetworkDetachStruct struct = new L2NetworkDetachStruct();
+        struct.setOrigin(NetworkOperationOrigin.API);
+        struct.setOperationUuid(msg.getId());
         struct.setClusterUuid(msg.getClusterUuid());
         struct.setL2NetworkUuid(msg.getL2NetworkUuid());
         ctx.add(struct);
@@ -690,14 +768,22 @@ public class L2NoVlanNetwork implements L2Network {
             public void success() {
                 logger.debug(String.format("successfully detached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                 self = dbf.reload(self);
-                evt.setInventory(self.toInventory());
-                bus.publish(evt);
+                completeClusterChange(msg.getL2NetworkUuid(), msg.getId(), new Completion(msg) {
+                    @Override public void success() {
+                        evt.setInventory(self.toInventory());
+                        try { bus.publish(evt); } finally { queue.next(); }
+                    }
+                    @Override public void fail(ErrorCode error) {
+                        evt.setError(error);
+                        try { bus.publish(evt); } finally { queue.next(); }
+                    }
+                });
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
                 evt.setError(errorCode);
-                bus.publish(evt);
+                try { bus.publish(evt); } finally { queue.next(); }
             }
         });
     }
@@ -982,9 +1068,44 @@ public class L2NoVlanNetwork implements L2Network {
     }
 
     private void handle(final APIAttachL2NetworkToClusterMsg msg) {
+        String signature = pluginRgty.getExtensionList(NetworkConfigChangeCoordinator.class).stream()
+                .map(coordinator -> coordinator.l2ApiConfigurationSyncSignature(msg.getL2NetworkUuid()))
+                .filter(Objects::nonNull).findFirst().orElse(null);
+        if (signature == null) {
+            executeAttachCluster(msg, () -> {});
+            return;
+        }
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() { return signature; }
+            @Override
+            public String getName() {
+                return "attach-L2Network-" + msg.getL2NetworkUuid() + "-Cluster-" + msg.getClusterUuid()
+                        + "-message-" + msg.getId();
+            }
+            @Override
+            public void run(SyncTaskChain queue) { executeAttachCluster(msg, queue); }
+        });
+    }
+
+    private void completeClusterChange(String l2Uuid, String operationUuid, Completion completion) {
+        new While<>(pluginRgty.getExtensionList(L2NetworkClusterCommitExtensionPoint.class))
+                .each((extension, next) -> extension.afterClusterChange(l2Uuid, operationUuid, new Completion(next) {
+                    @Override public void success() { next.done(); }
+                    @Override public void fail(ErrorCode error) { next.addError(error); next.allDone(); }
+                })).run(new WhileDoneCompletion(completion) {
+                    @Override public void done(ErrorCodeList errors) {
+                        if (errors.getCauses().isEmpty()) completion.success(); else completion.fail(errors.getCauses().get(0));
+                    }
+                });
+    }
+
+    private void executeAttachCluster(final APIAttachL2NetworkToClusterMsg msg, SyncTaskChain queue) {
         AttachL2NetworkToClusterMsg amsg = new AttachL2NetworkToClusterMsg();
         final APIAttachL2NetworkToClusterEvent evt = new APIAttachL2NetworkToClusterEvent(msg.getId());
 
+        amsg.setOrigin(NetworkOperationOrigin.API);
+        amsg.setOperationUuid(msg.getId());
         amsg.setL2NetworkUuid(msg.getL2NetworkUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
         amsg.setL2ProviderType(msg.getL2ProviderType());
@@ -994,11 +1115,19 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void run(MessageReply reply) {
                 if (reply.isSuccess()) {
-                    evt.setInventory(getSelfInventory());
-                    bus.publish(evt);
+                    completeClusterChange(msg.getL2NetworkUuid(), msg.getId(), new Completion(msg) {
+                        @Override public void success() {
+                            evt.setInventory(getSelfInventory());
+                            try { bus.publish(evt); } finally { queue.next(); }
+                        }
+                        @Override public void fail(ErrorCode error) {
+                            evt.setError(error);
+                            try { bus.publish(evt); } finally { queue.next(); }
+                        }
+                    });
                 } else {
                     evt.setError(err(ORG_ZSTACK_NETWORK_L2_10004, L2Errors.ATTACH_ERROR, reply.getError(),"attach l2 network failed:%s", reply.getError()));
-                    bus.publish(evt);
+                    try { bus.publish(evt); } finally { queue.next(); }
                 }
             }
         });
@@ -1273,6 +1402,9 @@ public class L2NoVlanNetwork implements L2Network {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
+                            for (L2NetworkClusterCommitExtensionPoint extension : pluginRgty.getExtensionList(L2NetworkClusterCommitExtensionPoint.class)) {
+                                extension.beforeAttachClusterCommit(msg);
+                            }
                             L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
                             rvo.setClusterUuid(msg.getClusterUuid());
                             rvo.setL2NetworkUuid(self.getUuid());
@@ -1305,7 +1437,7 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class))
-                        .each((extension, next) -> extension.prepareAttach(getSelfInventory(), msg.getClusterUuid(),
+                        .each((extension, next) -> extension.prepareAttach(getSelfInventory(), msg,
                                 new Completion(next) {
                                     @Override
                                     public void success() { next.done(); }

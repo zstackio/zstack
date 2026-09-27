@@ -3,6 +3,8 @@ package org.zstack.sdnController;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
+import org.zstack.header.network.l2.AttachL2NetworkToClusterMsg;
+import org.zstack.header.network.l2.DetachL2NetworkFromClusterMsg;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l2.NetworkDeletionContext;
@@ -55,8 +57,28 @@ public interface SdnControllerL2 {
         return requiresConfirmedDelete();
     }
 
+    default void prepareL2NetworkForCluster(L2NetworkInventory network, AttachL2NetworkToClusterMsg message,
+                                           Completion completion) {
+        prepareL2NetworkForCluster(network, message.getClusterUuid(), message.getOrigin(), completion);
+    }
+
+    default void prepareDetachL2NetworkFromCluster(L2NetworkInventory network,
+            DetachL2NetworkFromClusterMsg message, Completion completion) {
+        prepareDetachL2NetworkFromCluster(network, message.getClusterUuid(), message.getOrigin(), completion);
+    }
+
     default void prepareL2NetworkForCluster(L2NetworkInventory network, String clusterUuid,
                                            Completion completion) {
+        completion.success();
+    }
+
+    default void prepareL2NetworkForCluster(L2NetworkInventory network, String clusterUuid,
+            org.zstack.header.network.l2.NetworkOperationOrigin origin, Completion completion) {
+        prepareL2NetworkForCluster(network, clusterUuid, completion);
+    }
+
+    default void prepareDetachL2NetworkFromCluster(L2NetworkInventory network, String clusterUuid,
+            org.zstack.header.network.l2.NetworkOperationOrigin origin, Completion completion) {
         completion.success();
     }
 

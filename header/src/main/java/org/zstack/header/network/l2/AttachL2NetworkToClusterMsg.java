@@ -5,11 +5,22 @@ import org.zstack.header.message.NeedReplyMessage;
 /**
  */
 public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2NetworkMessage {
+    private NetworkOperationOrigin origin = NetworkOperationOrigin.CLOUD_COMMIT;
+
+    public NetworkOperationOrigin getOrigin() { return origin; }
+    public void setOrigin(NetworkOperationOrigin origin) { this.origin = origin; }
+
     private String l2NetworkUuid;
     private String clusterUuid;
     private String l2ProviderType;
     private String operationUuid;
     private String operationStep;
+    private Long expectedConfigVersion;
+
+    public Long getExpectedConfigVersion() { return expectedConfigVersion; }
+    public void setExpectedConfigVersion(Long expectedConfigVersion) {
+        this.expectedConfigVersion = expectedConfigVersion;
+    }
 
     public String getL2NetworkUuid() {
         return l2NetworkUuid;

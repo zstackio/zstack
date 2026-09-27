@@ -116,6 +116,25 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Override
     @MessageSafe
     public void handleMessage(Message msg) {
+        String l2Uuid = null;
+        if (msg instanceof APICreateL3NetworkMsg) {
+            l2Uuid = ((APICreateL3NetworkMsg) msg).getL2NetworkUuid();
+        } else if (msg instanceof CreateL3NetworkMsg) {
+            l2Uuid = ((CreateL3NetworkMsg) msg).getL2NetworkUuid();
+        } else if (msg instanceof L3NetworkMessage) {
+            l2Uuid = Q.New(L3NetworkVO.class).select(L3NetworkVO_.l2NetworkUuid)
+                    .eq(L3NetworkVO_.uuid, ((L3NetworkMessage) msg).getL3NetworkUuid()).findValue();
+        }
+        SdnControllerL3 controller = l2Uuid == null ? null : getSdnControllerL3(l2Uuid);
+        String owner = controller == null ? null : controller.l3MessageRoutingResourceUuid(l2Uuid);
+        if (owner != null) {
+            String target = bus.makeTargetServiceIdByResourceUuid(L3NetworkConstant.SERVICE_ID, owner);
+            if (!target.equals(bus.makeLocalServiceId(L3NetworkConstant.SERVICE_ID))) {
+                msg.setServiceId(target);
+                bus.route(msg);
+                return;
+            }
+        }
         if (msg instanceof APIMessage) {
             handleApiMessage((APIMessage) msg);
         } else {

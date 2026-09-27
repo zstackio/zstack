@@ -7,6 +7,10 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
  */
 public class L3NetworkDeletionMsg extends DeletionMessage implements L3NetworkMessage {
     private String l3NetworkUuid;
+    private boolean accountCascade;
+
+    public boolean isAccountCascade() { return accountCascade; }
+    public void setAccountCascade(boolean accountCascade) { this.accountCascade = accountCascade; }
     private NetworkDeletionContext networkDeletionContext;
 
     public String getL3NetworkUuid() {
