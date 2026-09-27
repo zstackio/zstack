@@ -31,6 +31,7 @@ import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.PrepareDbInitialValueExtensionPoint;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
+import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.NetworkDeleteGuardExtensionPoint;
@@ -98,6 +99,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     private ResourceConfigFacade rcf;
     @Autowired
     protected L3NetworkExtensionPointEmitter extpEmitter;
+
+    private Map<String, L3NetworkVendorFactory> l3NetworkVendorFactories = Collections.emptyMap();
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -765,7 +768,26 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         return factory.applyNetworkServiceWhenVmStateChange();
     }
 
+    @Override
+    public L3NetworkVendorFactory getL3NetworkVendorFactory(String vSwitchType) {
+        return l3NetworkVendorFactories.get(vSwitchType);
+    }
+
     private void populateExtensions() {
+        Map<String, L3NetworkVendorFactory> factories = new HashMap<>();
+        for (L3NetworkVendorFactory factory : pluginRgty.getExtensionList(L3NetworkVendorFactory.class)) {
+            String vSwitchType = factory.getVSwitchType();
+            if (vSwitchType == null || vSwitchType.isEmpty() || !vSwitchType.equals(vSwitchType.trim())) {
+                throw new CloudRuntimeException("invalid L3 vendor vSwitch type registered by " + factory.getClass().getName());
+            }
+            L3NetworkVendorFactory old = factories.put(vSwitchType, factory);
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate L3 vendor factories[%s, %s] for vSwitch type[%s]",
+                        old.getClass().getName(), factory.getClass().getName(), vSwitchType));
+            }
+        }
+        l3NetworkVendorFactories = Collections.unmodifiableMap(factories);
+
         for (L3NetworkFactory f : pluginRgty.getExtensionList(L3NetworkFactory.class)) {
             L3NetworkFactory old = l3NetworkFactories.get(f.getType().toString());
             if (old != null) {
