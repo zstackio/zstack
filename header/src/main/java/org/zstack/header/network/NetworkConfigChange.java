@@ -124,11 +124,12 @@ public final class NetworkConfigChange {
         private final CollectionChangeOperation operation;
         private final List<IpRange> changedRanges;
         private final String removedRangeUuid;
+        private final IpRange removedRange;
 
         private IpRangeConfiguration(String l3Uuid, int ipVersion, String gatewayAddress,
                                      List<IpRange> ranges, boolean delete,
                                      CollectionChangeOperation operation, List<IpRange> changedRanges,
-                                     String removedRangeUuid) {
+                                     String removedRangeUuid, IpRange removedRange) {
             this.l3Uuid = l3Uuid;
             this.ipVersion = ipVersion;
             this.gatewayAddress = gatewayAddress;
@@ -138,6 +139,7 @@ public final class NetworkConfigChange {
             this.changedRanges = Collections.unmodifiableList(new ArrayList<>(
                     changedRanges == null ? Collections.emptyList() : changedRanges));
             this.removedRangeUuid = removedRangeUuid;
+            this.removedRange = removedRange;
         }
 
         public String getL3Uuid() {
@@ -167,6 +169,10 @@ public final class NetworkConfigChange {
         public List<IpRange> getChangedRanges() {
             return changedRanges == null ? Collections.emptyList()
                     : Collections.unmodifiableList(changedRanges);
+        }
+
+        public IpRange getRemovedRange() {
+            return removedRange;
         }
 
         public String getRemovedRangeUuid() {
@@ -313,10 +319,19 @@ public final class NetworkConfigChange {
                                                                     CollectionChangeOperation operation,
                                                                     List<IpRange> changedRanges,
                                                                     String removedRangeUuid) {
+        return replaceIpRangeConfiguration(l2Uuid, origin, operationUuid, accountUuid, l3Uuid,
+                ipVersion, gatewayAddress, ranges, operation, changedRanges, removedRangeUuid, null);
+    }
+
+    public static NetworkConfigChange replaceIpRangeConfiguration(String l2Uuid,
+            NetworkOperationOrigin origin, String operationUuid, String accountUuid, String l3Uuid,
+            int ipVersion, String gatewayAddress, List<IpRange> ranges,
+            CollectionChangeOperation operation, List<IpRange> changedRanges,
+            String removedRangeUuid, IpRange removedRange) {
         return new NetworkConfigChange(Kind.IP_RANGE_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null,
                 new IpRangeConfiguration(l3Uuid, ipVersion, gatewayAddress, ranges, false,
-                        operation, changedRanges, removedRangeUuid), null);
+                        operation, changedRanges, removedRangeUuid, removedRange), null);
     }
 
     public static NetworkConfigChange removeIpRangeConfiguration(String l2Uuid,
@@ -336,11 +351,18 @@ public final class NetworkConfigChange {
                                                                    String l3Uuid,
                                                                    int ipVersion,
                                                                    String removedRangeUuid) {
+        return removeIpRangeConfiguration(l2Uuid, origin, operationUuid, accountUuid, l3Uuid,
+                ipVersion, removedRangeUuid, null);
+    }
+
+    public static NetworkConfigChange removeIpRangeConfiguration(String l2Uuid,
+            NetworkOperationOrigin origin, String operationUuid, String accountUuid, String l3Uuid,
+            int ipVersion, String removedRangeUuid, IpRange removedRange) {
         return new NetworkConfigChange(Kind.IP_RANGE_CONFIGURATION, l2Uuid, origin, operationUuid,
                 accountUuid, null, null, null,
                 new IpRangeConfiguration(l3Uuid, ipVersion, null, Collections.emptyList(), true,
                         removedRangeUuid == null ? null : CollectionChangeOperation.REMOVE,
-                        null, removedRangeUuid), null);
+                        null, removedRangeUuid, removedRange), null);
     }
 
     public static NetworkConfigChange updateDhcpConfiguration(String l2Uuid,

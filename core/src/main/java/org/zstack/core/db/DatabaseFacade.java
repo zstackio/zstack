@@ -36,6 +36,8 @@ public interface DatabaseFacade {
 
     void remove(Object entity);
 
+    void removeByPrimaryKeysInCurrentTransaction(Collection ids, Class entityClass);
+
     void removeCollection(Collection entities, Class entityClazz);
 
     void removeByPrimaryKeys(Collection priKeys, Class entityClazz);

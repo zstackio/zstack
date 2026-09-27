@@ -7,6 +7,11 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
 import java.util.List;
 
 public interface SdnControllerL3 {
+    default boolean isCoordinatedIpRangeDeletion(L3NetworkInventory inventory,
+                                                NetworkDeletionContext context) {
+        return false;
+    }
+
     void createL3Network(L3NetworkInventory inv, List<String> systemTags, Completion completion);
     default void createL3Network(L3NetworkInventory inv, List<String> systemTags, NetworkCreateContext context, Completion completion) {
         createL3Network(inv, systemTags, completion);
