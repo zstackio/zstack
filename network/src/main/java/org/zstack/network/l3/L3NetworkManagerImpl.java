@@ -100,7 +100,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Autowired
     protected L3NetworkExtensionPointEmitter extpEmitter;
 
-    private Map<Class<? extends Message>, L3NetworkLocalMessageHandlerExtensionPoint> localMessageHandlers = Collections.emptyMap();
+    private Map<Class<? extends Message>, L3NetworkBaseExtensionFactory> l3NetworkBaseExtensionFactories = Collections.emptyMap();
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -769,25 +769,29 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     @Override
-    public L3NetworkLocalMessageHandlerExtensionPoint getLocalMessageHandler(Class<? extends Message> messageClass) {
-        return localMessageHandlers.get(messageClass);
+    public L3NetworkBaseExtensionFactory getL3NetworkBaseExtensionFactory(Class<? extends Message> messageClass) {
+        return l3NetworkBaseExtensionFactories.get(messageClass);
     }
 
     private void populateExtensions() {
-        Map<Class<? extends Message>, L3NetworkLocalMessageHandlerExtensionPoint> handlers = new HashMap<>();
-        for (L3NetworkLocalMessageHandlerExtensionPoint handler : pluginRgty
-                .getExtensionList(L3NetworkLocalMessageHandlerExtensionPoint.class)) {
-            Class<? extends NeedReplyMessage> messageClass = handler.getMessageClass();
-            if (messageClass == null || !NeedReplyMessage.class.isAssignableFrom(messageClass)
-                    || APIMessage.class.isAssignableFrom(messageClass)
-                    || !L3NetworkMessage.class.isAssignableFrom(messageClass)) {
-                throw new CloudRuntimeException("invalid L3 local message class registered by " + handler.getClass().getName());
+        Map<Class<? extends Message>, L3NetworkBaseExtensionFactory> factories = new HashMap<>();
+        for (L3NetworkBaseExtensionFactory factory : pluginRgty.getExtensionList(L3NetworkBaseExtensionFactory.class)) {
+            List<Class<? extends Message>> messageClasses = factory.getMessageClasses();
+            if (messageClasses == null || messageClasses.isEmpty()) {
+                throw new CloudRuntimeException("no L3 message classes registered by " + factory.getClass().getName());
             }
-            if (handlers.put(messageClass, handler) != null) {
-                throw new CloudRuntimeException("duplicate L3 local message handler for " + messageClass.getName());
+            for (Class<? extends Message> messageClass : messageClasses) {
+                if (messageClass == null || !NeedReplyMessage.class.isAssignableFrom(messageClass)
+                        || APIMessage.class.isAssignableFrom(messageClass)
+                        || !L3NetworkMessage.class.isAssignableFrom(messageClass)) {
+                    throw new CloudRuntimeException("invalid L3 local message class registered by " + factory.getClass().getName());
+                }
+                if (factories.put(messageClass, factory) != null) {
+                    throw new CloudRuntimeException("duplicate L3 base extension factory for " + messageClass.getName());
+                }
             }
         }
-        localMessageHandlers = Collections.unmodifiableMap(handlers);
+        l3NetworkBaseExtensionFactories = Collections.unmodifiableMap(factories);
 
         for (L3NetworkFactory f : pluginRgty.getExtensionList(L3NetworkFactory.class)) {
             L3NetworkFactory old = l3NetworkFactories.get(f.getType().toString());

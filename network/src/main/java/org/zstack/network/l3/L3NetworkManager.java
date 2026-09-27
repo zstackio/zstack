@@ -11,7 +11,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 public interface L3NetworkManager {
-    L3NetworkLocalMessageHandlerExtensionPoint getLocalMessageHandler(Class<? extends Message> messageClass);
+    L3NetworkBaseExtensionFactory getL3NetworkBaseExtensionFactory(Class<? extends Message> messageClass);
 
     IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type);
 

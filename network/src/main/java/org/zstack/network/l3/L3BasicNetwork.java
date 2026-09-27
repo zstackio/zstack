@@ -105,7 +105,7 @@ public class L3BasicNetwork implements L3Network {
     @Autowired
     protected PluginRegistry pluginRgty;
     @Autowired
-    private ThreadFacade thdf;
+    protected ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
     @Autowired
@@ -128,7 +128,7 @@ public class L3BasicNetwork implements L3Network {
         return L3NetworkInventory.valueOf(getSelf());
     }
 
-    private String getSyncId() {
+    protected String getSyncId() {
         return String.format("operate-l3-%s", self.getUuid());
     }
 
@@ -436,33 +436,12 @@ public class L3BasicNetwork implements L3Network {
         } else if (msg instanceof AttachNetworkServiceToL3Msg) {
             handle((AttachNetworkServiceToL3Msg) msg);
         } else {
-            L3NetworkLocalMessageHandlerExtensionPoint handler = l3NwMgr.getLocalMessageHandler(msg.getClass());
-            if (handler == null) {
+            L3NetworkBaseExtensionFactory factory = l3NwMgr.getL3NetworkBaseExtensionFactory(msg.getClass());
+            if (factory != null) {
+                factory.getL3Network(self).handleMessage(msg);
+            } else {
                 bus.dealWithUnknownMessage(msg);
-                return;
             }
-            thdf.chainSubmit(new ChainTask(msg) {
-                @Override
-                public void run(SyncTaskChain chain) {
-                    try {
-                        MessageReply reply = handler.handle((NeedReplyMessage) msg, getSelfInventory());
-                        bus.reply(msg, Objects.requireNonNull(reply));
-                    } catch (OperationFailureException failure) {
-                        bus.replyErrorByMessageType(msg, failure.getErrorCode());
-                    } catch (Exception failure) {
-                        bus.logExceptionWithMessageDump(msg, failure);
-                        bus.replyErrorByMessageType(msg, failure);
-                    } finally {
-                        chain.next();
-                    }
-                }
-
-                @Override
-                public String getSyncSignature() { return getSyncId(); }
-
-                @Override
-                public String getName() { return msg.getClass().getSimpleName(); }
-            });
         }
     }
 
