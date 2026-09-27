@@ -2,7 +2,6 @@ package org.zstack.network.l3;
 
 import com.googlecode.ipv6.IPv6Address;
 import org.apache.commons.net.util.SubnetUtils;
-import org.apache.commons.net.util.SubnetUtils.SubnetInfo;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
@@ -53,7 +52,6 @@ import org.zstack.header.network.l2.NetworkOperationOrigin;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
-import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
@@ -71,7 +69,6 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.stopwatch.StopWatch;
 
-import javax.persistence.LockModeType;
 import javax.persistence.Tuple;
 import java.math.BigInteger;
 import java.util.*;
@@ -412,19 +409,10 @@ public class L3BasicNetwork implements L3Network {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddIpRangeMsg) {
             handle((AddIpRangeMsg) msg);
-
-        } else if (msg instanceof UpdateProjectedIpRangeMsg) {
-            handle((UpdateProjectedIpRangeMsg) msg);
-        } else if (msg instanceof DeleteProjectedIpRangeMsg) {
-            handle((DeleteProjectedIpRangeMsg) msg);
         } else if (msg instanceof DeleteL3NetworkMsg) {
             handle((DeleteL3NetworkMsg) msg);
         } else if (msg instanceof DeleteIpRangeMsg) {
             handle((DeleteIpRangeMsg) msg);
-        } else if (msg instanceof UpdateProjectedDnsMsg) {
-            handle((UpdateProjectedDnsMsg) msg);
-        } else if (msg instanceof ConvertL3NetworkTypeMsg) {
-            handle((ConvertL3NetworkTypeMsg) msg);
         } else if (msg instanceof AllocateIpMsg) {
             handle((AllocateIpMsg)msg);
         } else if (msg instanceof ReturnIpMsg) {
@@ -446,335 +434,12 @@ public class L3BasicNetwork implements L3Network {
                     bus.dealWithUnknownMessage(msg);
                     return;
                 }
-                backend = Objects.requireNonNull(factory.create(new L3NetworkBackendContext(
-                        self.getUuid(), self.getL2NetworkUuid(), getSyncId())));
+                L3NetworkBackendContext context = new L3NetworkBackendContext(
+                        self.getUuid(), self.getL2NetworkUuid(), getSyncId(), syncThreadName);
+                backend = factory.create(context);
             }
             backend.handleMessage(msg);
         }
-    }
-
-    private void handle(ConvertL3NetworkTypeMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public void run(SyncTaskChain chain) {
-                L3NetworkCategory targetCategory;
-                try {
-                    targetCategory = L3NetworkCategory.valueOf(msg.getTargetCategory());
-                } catch (RuntimeException e) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10094,
-                            "invalid target category for projected L3 network conversion"));
-                    chain.next();
-                    return;
-                }
-                if (msg.getContext() == null || !msg.getContext().isProjection()
-                        || msg.getExpectedSourceType() == null
-                        || msg.getExpectedSourceCategory() == null
-                        || msg.getTargetType() == null
-                        || !L3NetworkType.hasType(msg.getTargetType())
-                        || targetCategory == L3NetworkCategory.System
-                        || msg.getManagedSystemTagPrefix() == null
-                        || msg.getManagedSystemTagPrefix().isEmpty()
-                        || (msg.getTargetSystemTag() != null
-                        && (!msg.getTargetSystemTag().startsWith(msg.getManagedSystemTagPrefix())
-                        || msg.getTargetSystemTag().length() > 128))) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10095,
-                            "projected L3 network conversion has an invalid typed contract"));
-                    chain.next();
-                    return;
-                }
-
-                String failure;
-                try {
-                    failure = new SQLBatchWithReturn<String>() {
-                        @Override
-                        protected String scripts() {
-                            L3NetworkVO current = databaseFacade.getEntityManager().find(
-                                    L3NetworkVO.class, msg.getL3NetworkUuid(), LockModeType.PESSIMISTIC_WRITE);
-                            if (current == null) {
-                                return String.format("L3 network[uuid:%s] no longer exists",
-                                        msg.getL3NetworkUuid());
-                            }
-
-                            List<SystemTagVO> managedTags = databaseFacade.getEntityManager()
-                                    .createQuery("select tag from SystemTagVO tag where tag.resourceUuid = :resourceUuid" +
-                                                    " and tag.resourceType = :resourceType", SystemTagVO.class)
-                                    .setParameter("resourceUuid", current.getUuid())
-                                    .setParameter("resourceType", L3NetworkVO.class.getSimpleName())
-                                    .getResultList().stream()
-                                    .filter(tag -> tag.getTag().startsWith(msg.getManagedSystemTagPrefix()))
-                                    .collect(Collectors.toList());
-                            boolean targetTagMatches = msg.getTargetSystemTag() == null
-                                    ? managedTags.isEmpty()
-                                    : managedTags.size() == 1
-                                    && msg.getTargetSystemTag().equals(managedTags.get(0).getTag());
-                            if (msg.getTargetType().equals(current.getType())
-                                    && targetCategory == current.getCategory()
-                                    && targetTagMatches) {
-                                return null;
-                            }
-                            if (!msg.getExpectedSourceType().equals(current.getType())
-                                    || !msg.getExpectedSourceCategory().equals(current.getCategory().toString())) {
-                                return String.format("L3 network[uuid:%s] changed from expected source[%s/%s] to[%s/%s]",
-                                        current.getUuid(), msg.getExpectedSourceType(),
-                                        msg.getExpectedSourceCategory(), current.getType(), current.getCategory());
-                            }
-
-                            current.setType(msg.getTargetType());
-                            current.setCategory(targetCategory);
-                            managedTags.forEach(tag -> tagMgr.deleteSystemTag(tag.getUuid()));
-                            if (msg.getTargetSystemTag() != null) {
-                                tagMgr.createNonInherentSystemTag(current.getUuid(),
-                                        msg.getTargetSystemTag(), L3NetworkVO.class.getSimpleName());
-                            }
-                            databaseFacade.getEntityManager().flush();
-                            return null;
-                        }
-                    }.execute();
-                } catch (RuntimeException e) {
-                    bus.replyErrorByMessageType(msg, Platform.inerr(ORG_ZSTACK_NETWORK_L3_10096,
-                            "failed to atomically convert projected L3 network[uuid:%s]: %s",
-                            msg.getL3NetworkUuid(), e.getMessage()));
-                    chain.next();
-                    return;
-                }
-                if (failure != null) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10097, failure));
-                    chain.next();
-                    return;
-                }
-
-                self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-                bus.reply(msg, new MessageReply());
-                chain.next();
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return String.format("convert-projected-l3-network-%s", msg.getL3NetworkUuid());
-            }
-        });
-    }
-
-
-    private void handle(UpdateProjectedIpRangeMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public void run(SyncTaskChain chain) {
-                IpRangeVO range = dbf.findByUuid(msg.getRangeUuid(), IpRangeVO.class);
-                if (msg.getContext() == null || !msg.getContext().isProjection()
-                        || !IpRangeVO.class.getSimpleName().equals(msg.getExpectedSourceType())
-                        || !Objects.equals(self.getUuid(), msg.getL3NetworkUuid())
-                        || range == null || !Objects.equals(range.getL3NetworkUuid(), msg.getL3NetworkUuid())) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10087,
-                            "IP range projection update requires the expected range on L3 network[uuid:%s]",
-                            msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                boolean valid;
-                int prefixLen = 0;
-                String networkCidr = null;
-                try {
-                    if (range.getIpVersion() == IPv6Constants.IPv6) {
-                        prefixLen = IPv6NetworkUtils.getPrefixLengthFromNetmask(msg.getNetmask());
-                        valid = IPv6NetworkUtils.isIpv6UnicastAddress(msg.getStartIp())
-                                && IPv6NetworkUtils.isIpv6UnicastAddress(msg.getEndIp())
-                                && IPv6NetworkUtils.isIpv6UnicastAddress(msg.getGateway())
-                                && IPv6NetworkUtils.isIpv6Address(msg.getNetmask())
-                                && prefixLen >= IPv6Constants.IPV6_PREFIX_LEN_MIN
-                                && prefixLen <= IPv6Constants.IPV6_PREFIX_LEN_MAX
-                                && IPv6NetworkUtils.isValidUnicastIpv6Range(msg.getStartIp(),
-                                msg.getEndIp(), msg.getGateway(), prefixLen);
-                        networkCidr = IPv6NetworkUtils.getNetworkCidrOfIpRange(
-                                msg.getStartIp(), prefixLen);
-                    } else {
-                        prefixLen = NetworkUtils.getPrefixLengthFromNetmask(msg.getNetmask());
-                        valid = NetworkUtils.isIpv4Address(msg.getStartIp())
-                                && NetworkUtils.isIpv4Address(msg.getEndIp())
-                                && NetworkUtils.isIpv4Address(msg.getGateway())
-                                && NetworkUtils.isNetmaskExcept(msg.getNetmask(), "0.0.0.0");
-                        SubnetInfo subnet = new SubnetUtils(msg.getStartIp(), msg.getNetmask()).getInfo();
-                        valid = valid && subnet.isInRange(msg.getEndIp())
-                                && subnet.isInRange(msg.getGateway())
-                                && !msg.getStartIp().equals(subnet.getNetworkAddress())
-                                && !msg.getEndIp().equals(subnet.getBroadcastAddress());
-                        networkCidr = subnet.getCidrSignature();
-                    }
-                    valid = valid && NetworkUtils.isInRange(
-                            msg.getStartIp(), msg.getStartIp(), msg.getEndIp());
-                } catch (RuntimeException e) {
-                    valid = false;
-                }
-                if (!valid) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10088,
-                            "projected IP range[start:%s, end:%s, gateway:%s, netmask:%s] is invalid",
-                            msg.getStartIp(), msg.getEndIp(), msg.getGateway(), msg.getNetmask()));
-                    chain.next();
-                    return;
-                }
-
-                List<IpRangeVO> candidates = Q.New(IpRangeVO.class)
-                        .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .eq(IpRangeVO_.ipVersion, range.getIpVersion())
-                        .notEq(IpRangeVO_.uuid, range.getUuid()).list();
-                IpRangeVO overlap = candidates.stream()
-                        .filter(candidate -> range.getIpVersion() == IPv6Constants.IPv6
-                                ? IPv6NetworkUtils.isIpv6RangeOverlap(msg.getStartIp(), msg.getEndIp(),
-                                candidate.getStartIp(), candidate.getEndIp())
-                                : NetworkUtils.isIpv4RangeOverlap(msg.getStartIp(), msg.getEndIp(),
-                                candidate.getStartIp(), candidate.getEndIp()))
-                        .findFirst().orElse(null);
-                if (overlap != null) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10090,
-                            "projected IP range overlaps IP range[uuid:%s] on L3 network[uuid:%s]",
-                            overlap.getUuid(), msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                List<UsedIpVO> rangeUsedIps = Q.New(UsedIpVO.class)
-                        .eq(UsedIpVO_.ipRangeUuid, range.getUuid()).list();
-                UsedIpVO dhcpReservation = msg.getDhcpServerIpUuid() == null ? null
-                        : Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, msg.getDhcpServerIpUuid())
-                        .eq(UsedIpVO_.l3NetworkUuid, range.getL3NetworkUuid())
-                        .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4)
-                        .isNull(UsedIpVO_.vmNicUuid).isNull(UsedIpVO_.usedFor).find();
-                boolean preserveDhcp = range.getIpVersion() == IPv6Constants.IPv4
-                        && dhcpReservation != null
-                        && (dhcpReservation.getIpRangeUuid() == null
-                        || range.getUuid().equals(dhcpReservation.getIpRangeUuid()))
-                        && new SubnetUtils(msg.getStartIp(), msg.getNetmask()).getInfo()
-                        .isInRange(dhcpReservation.getIp());
-                UsedIpVO outside = rangeUsedIps.stream()
-                        .filter(ip -> !NetworkUtils.isInRange(ip.getIp(), msg.getStartIp(), msg.getEndIp()))
-                        .findFirst().orElse(null);
-                if (outside != null) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10089,
-                            "used IP[%s] is outside projected IP range[uuid:%s]",
-                            outside.getIp(), range.getUuid()));
-                    chain.next();
-                    return;
-                }
-
-                range.setStartIp(msg.getStartIp());
-                range.setEndIp(msg.getEndIp());
-                range.setGateway(msg.getGateway());
-                range.setNetmask(msg.getNetmask());
-                range.setPrefixLen(prefixLen);
-                range.setNetworkCidr(networkCidr);
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        dbf.update(range);
-                        if (preserveDhcp) {
-                            dhcpReservation.setIpRangeUuid(NetworkUtils.isInRange(dhcpReservation.getIp(),
-                                    range.getStartIp(), range.getEndIp()) ? range.getUuid() : null);
-                            dbf.update(dhcpReservation);
-                        }
-                    }
-                }.execute();
-                bus.reply(msg, new MessageReply());
-                chain.next();
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return "update-projected-ip-range";
-            }
-        });
-    }
-
-    private void handle(DeleteProjectedIpRangeMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public void run(SyncTaskChain chain) {
-                if (msg.getContext() == null || !msg.getContext().isProjection()
-                        || !IpRangeVO.class.getSimpleName().equals(msg.getExpectedSourceType())
-                        || !Objects.equals(self.getUuid(), msg.getL3NetworkUuid())) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10098,
-                            "IP range projection delete requires L3 network[uuid:%s] ownership",
-                            msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                IpRangeVO range = dbf.findByUuid(msg.getRangeUuid(), IpRangeVO.class);
-                if (range == null) {
-                    bus.reply(msg, new MessageReply());
-                    chain.next();
-                    return;
-                }
-                if (!Objects.equals(range.getL3NetworkUuid(), msg.getL3NetworkUuid())) {
-                    bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10099,
-                            "IP range[uuid:%s] does not belong to L3 network[uuid:%s]",
-                            range.getUuid(), msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                List<IpRangeVO> alternatives = Q.New(IpRangeVO.class)
-                        .eq(IpRangeVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                        .notEq(IpRangeVO_.uuid, range.getUuid()).list();
-                List<UsedIpVO> usedIps = Q.New(UsedIpVO.class)
-                        .eq(UsedIpVO_.ipRangeUuid, range.getUuid()).list();
-                Map<UsedIpVO, IpRangeVO> replacements = new LinkedHashMap<>();
-                for (UsedIpVO usedIp : usedIps) {
-                    IpRangeVO replacement = alternatives.stream()
-                            .filter(candidate -> Objects.equals(candidate.getIpVersion(), usedIp.getIpVersion()))
-                            .filter(candidate -> NetworkUtils.isInRange(
-                                    usedIp.getIp(), candidate.getStartIp(), candidate.getEndIp()))
-                            .findFirst().orElse(null);
-                    if (replacement == null) {
-                        bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10100,
-                                "used IP[%s] prevents deleting projected IP range[uuid:%s]",
-                                usedIp.getIp(), range.getUuid()));
-                        chain.next();
-                        return;
-                    }
-                    replacements.put(usedIp, replacement);
-                }
-
-                new SQLBatch() {
-                    @Override
-                    protected void scripts() {
-                        replacements.forEach((usedIp, replacement) -> {
-                            usedIp.setIpRangeUuid(replacement.getUuid());
-                            usedIp.setNetmask(replacement.getNetmask());
-                            usedIp.setGateway(replacement.getGateway());
-                            usedIp.setPrefixLen(replacement.getPrefixLen());
-                        });
-                        if (!usedIps.isEmpty()) {
-                            dbf.updateCollection(usedIps);
-                        }
-                        dbf.remove(range);
-                        IpRangeHelper.updateL3NetworkIpversion(range);
-                    }
-                }.execute();
-                bus.reply(msg, new MessageReply());
-                chain.next();
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return "delete-projected-ip-range";
-            }
-        });
     }
 
     private void handle(CheckIpAvailabilityMsg msg) {
@@ -1816,7 +1481,6 @@ public class L3BasicNetwork implements L3Network {
         bus.publish(evt);
     }
 
-
     private void handle(APIAddIpRangeByNetworkCidrMsg msg) {
         List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
         assignStableIpRangeUuids(iprs, msg.getResourceUuid());
@@ -1901,7 +1565,6 @@ public class L3BasicNetwork implements L3Network {
         }
     }
 
-
     private void handle(APIChangeL3NetworkStateMsg msg) {
         if (L3NetworkStateEvent.enable.toString().equals(msg.getStateEvent())) {
             self.setState(L3NetworkState.Enabled);
@@ -1915,8 +1578,6 @@ public class L3BasicNetwork implements L3Network {
         evt.setInventory(L3NetworkInventory.valueOf(self));
         bus.publish(evt);
     }
-
-
 
     private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
         final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
@@ -2340,50 +2001,6 @@ public class L3BasicNetwork implements L3Network {
         });
     }
 
-    private void handle(UpdateProjectedDnsMsg msg) {
-        if (msg.getContext() == null || !msg.getContext().isProjection()) {
-            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10102,
-                    "DNS projection requires a ZNS projection context"));
-            return;
-        }
-
-        LinkedHashSet<String> desired = new LinkedHashSet<>(
-                msg.getDns() == null ? Collections.emptyList() : msg.getDns());
-        String invalid = desired.stream().filter(dns -> !NetworkUtils.isIpAddress(dns)).findFirst().orElse(null);
-        if (invalid != null) {
-            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10103,
-                    "DNS[%s] is not an IP address", invalid));
-            return;
-        }
-
-        new SQLBatch() {
-            @Override
-            protected void scripts() {
-                List<L3NetworkDnsVO> existing = Q.New(L3NetworkDnsVO.class)
-                        .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
-                Set<String> current = existing.stream().map(L3NetworkDnsVO::getDns)
-                        .collect(Collectors.toSet());
-                List<L3NetworkDnsVO> obsolete = existing.stream()
-                        .filter(vo -> !desired.contains(vo.getDns())).collect(Collectors.toList());
-                if (!obsolete.isEmpty()) {
-                    dbf.removeCollection(obsolete, L3NetworkDnsVO.class);
-                }
-                List<L3NetworkDnsVO> additions = desired.stream()
-                        .filter(dns -> !current.contains(dns))
-                        .map(dns -> {
-                            L3NetworkDnsVO vo = new L3NetworkDnsVO();
-                            vo.setL3NetworkUuid(msg.getL3NetworkUuid());
-                            vo.setDns(dns);
-                            return vo;
-                        }).collect(Collectors.toList());
-                if (!additions.isEmpty()) {
-                    dbf.persistCollection(additions);
-                }
-            }
-        }.execute();
-        bus.reply(msg, new MessageReply());
-    }
-
 	private void handle(APIAttachNetworkServiceToL3NetworkMsg msg) {
         APIAttachNetworkServiceToL3NetworkEvent evt = new APIAttachNetworkServiceToL3NetworkEvent(msg.getId());
         if (msg.isSkipAttach()) {
@@ -2470,7 +2087,6 @@ public class L3BasicNetwork implements L3Network {
             }
         });
     }
-
 
     private void doDeleteIpRange(DeleteIpRangeMsg msg, Completion completion) {
         IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
