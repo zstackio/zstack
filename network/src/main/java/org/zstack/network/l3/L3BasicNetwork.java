@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
+import org.zstack.core.cascade.CascadeAction;
+import org.zstack.network.l2.NetworkDeletionContexts;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -646,7 +648,9 @@ public class L3BasicNetwork implements L3Network {
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 if (msg.getNetworkDeletionContext() != null &&
-                                        msg.getNetworkDeletionContext().isWholeL2SegmentDelete()) {
+                                    (msg.getNetworkDeletionContext().isWholeL2SegmentDelete()
+                                                || msg.getNetworkDeletionContext().isIndependentL3Delete()
+                                                && msg.getNetworkDeletionContext().isRemoteCommitted())) {
                                     trigger.fail(errorCode);
                                 } else {
                                     trigger.next();
@@ -2352,56 +2356,65 @@ public class L3BasicNetwork implements L3Network {
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
         chain.setName(String.format("delete-l3-network-%s", msg.getUuid()));
-        if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
+        L3NetworkInventory inventory = L3NetworkInventory.valueOf(l3NetworkVO);
+        SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(l3NetworkVO.getL2NetworkUuid());
+        NetworkDeletionContext deletion = new NetworkDeletionContext(
+                NetworkDeletionContext.Origin.INDEPENDENT_L3_DELETE,
+                msg.getOperationUuid() == null ? msg.getId() : msg.getOperationUuid(),
+                l3NetworkVO.getL2NetworkUuid(), issuer);
+        deletion.setL3NetworkUuid(l3NetworkVO.getUuid());
+        deletion.setForceDelete(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing);
+        CascadeAction action = new CascadeAction().setRootIssuer(issuer).setRootIssuerContext(ctx)
+                .setParentIssuer(issuer).setParentIssuerContext(ctx);
+        NetworkDeletionContexts.put(action, deletion);
+        chain.then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (msg.getDeletionMode() != APIDeleteMessage.DeletionMode.Permissive) {
+                    trigger.next();
+                    return;
                 }
-            }).then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
+                casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_CHECK_CODE),
+                        new Completion(trigger) {
+                    @Override public void success() { trigger.next(); }
+                    @Override public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (controller == null) {
+                    trigger.next();
+                    return;
                 }
-            });
-        } else {
-            chain.then(new NoRollbackFlow() {
-                @Override
-                public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
-                        @Override
-                        public void success() {
-                            trigger.next();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            trigger.fail(errorCode);
-                        }
-                    });
+                controller.prepareDeleteL3Network(inventory, deletion, new Completion(trigger) {
+                    @Override public void success() { trigger.next(); }
+                    @Override public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                String code = msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive
+                        ? CascadeConstant.DELETION_DELETE_CODE : CascadeConstant.DELETION_FORCE_DELETE_CODE;
+                casf.asyncCascade(action.copy().setActionCode(code), new Completion(trigger) {
+                    @Override public void success() { trigger.next(); }
+                    @Override public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
+                });
+            }
+        }).then(new NoRollbackFlow() {
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (controller == null) {
+                    trigger.next();
+                    return;
                 }
-            });
-        }
+                controller.completeDeleteL3Network(inventory, deletion, new Completion(trigger) {
+                    @Override public void success() { trigger.next(); }
+                    @Override public void fail(ErrorCode errorCode) { trigger.fail(errorCode); }
+                });
+            }
+        });
 
         chain.done(new FlowDoneHandler(msg) {
             @Override
@@ -2465,15 +2478,41 @@ public class L3BasicNetwork implements L3Network {
             return;
         }
 
-        doDeleteL3Network(msg, new Completion(msg) {
+        L3NetworkInventory inventory = getSelfInventory();
+        SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(inventory.getL2NetworkUuid());
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success() {
-                bus.reply(msg, new MessageReply());
+            public String getSyncSignature() {
+                return controller == null ? "delete-l3-network-" + inventory.getUuid()
+                        : controller.l3DeletionSyncSignature(inventory);
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                bus.replyErrorByMessageType(msg, errorCode);
+            public String getName() {
+                return "delete-L3Network-" + inventory.getUuid() + "-operation-" + msg.getOperationUuid();
+            }
+
+            @Override
+            public void run(SyncTaskChain queue) {
+                self = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+                if (self == null) {
+                    bus.reply(msg, new MessageReply());
+                    queue.next();
+                    return;
+                }
+                doDeleteL3Network(msg, new Completion(queue) {
+                    @Override
+                    public void success() {
+                        bus.reply(msg, new MessageReply());
+                        queue.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        bus.replyErrorByMessageType(msg, errorCode);
+                        queue.next();
+                    }
+                });
             }
         });
     }

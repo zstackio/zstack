@@ -6,6 +6,7 @@ import java.util.List;
 
 public class NetworkDeletionContext {
     public enum Origin {
+        INDEPENDENT_L3_DELETE,
         WHOLE_L2_SEGMENT_DELETE,
         ZNS_SEGMENT_PROJECTION_DELETE
     }
@@ -13,6 +14,7 @@ public class NetworkDeletionContext {
     private Origin origin;
     private String operationUuid;
     private String l2NetworkUuid;
+    private String l3NetworkUuid;
     private String rootIssuer;
     private boolean forceDelete;
     private boolean sourceUnavailableCleanup;
@@ -60,6 +62,18 @@ public class NetworkDeletionContext {
 
     public String getRootIssuer() {
         return rootIssuer;
+    }
+
+    public String getL3NetworkUuid() {
+        return l3NetworkUuid;
+    }
+
+    public void setL3NetworkUuid(String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
+
+    public boolean isIndependentL3Delete() {
+        return origin == Origin.INDEPENDENT_L3_DELETE;
     }
 
     public void setRootIssuer(String rootIssuer) {

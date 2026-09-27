@@ -7,6 +7,20 @@ import org.zstack.header.network.l2.NetworkDeletionContext;
 import java.util.List;
 
 public interface SdnControllerL3 {
+    default String l3DeletionSyncSignature(L3NetworkInventory inventory) {
+        return "delete-l3-network-" + inventory.getUuid();
+    }
+
+    default void prepareDeleteL3Network(L3NetworkInventory inventory,
+                                        NetworkDeletionContext context, Completion completion) {
+        completion.success();
+    }
+
+    default void completeDeleteL3Network(L3NetworkInventory inventory,
+                                         NetworkDeletionContext context, Completion completion) {
+        completion.success();
+    }
+
     default boolean isCoordinatedIpRangeDeletion(L3NetworkInventory inventory,
                                                 NetworkDeletionContext context) {
         return false;

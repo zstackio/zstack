@@ -97,12 +97,15 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         bus.send(msgs, new CloudBusListCallBack(completion) {
             @Override
             public void run(List<MessageReply> replies) {
-                if (!action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
-                    for (MessageReply r : replies) {
-                        if (!r.isSuccess()) {
-                            completion.fail(r.getError());
-                            return;
-                        }
+                for (int i = 0; i < replies.size(); i++) {
+                    MessageReply r = replies.get(i);
+                    NetworkDeletionContext context = NetworkDeletionContexts.get(action, l3invs.get(i).getL2NetworkUuid());
+                    boolean confirmedL3Delete = context != null && context.isIndependentL3Delete()
+                            && context.isRemoteCommitted();
+                    if (!r.isSuccess() && (confirmedL3Delete
+                            || !action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE))) {
+                        completion.fail(r.getError());
+                        return;
                     }
                 }
 

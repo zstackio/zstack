@@ -922,6 +922,7 @@ ALTER TABLE `RolePolicyStatementVO` MODIFY COLUMN `statement` MEDIUMTEXT NOT NUL
 -- ZCF-5438: preserve Cloud network identities across Stretch L2 promotion.
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkType', 'VARCHAR(32)', 0, 'Segment');
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'logicalNetworkSnapshot', 'LONGTEXT', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'pendingL3Deletion', 'LONGTEXT', 1, NULL);
 
 DROP PROCEDURE IF EXISTS UpgradeZnsSegmentRefZoneIdentity;
 DELIMITER $$
