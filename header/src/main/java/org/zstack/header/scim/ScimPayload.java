@@ -14,6 +14,7 @@ import java.util.Map;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScimPayload {
     public String uuid;
+    public String encryptedPassword;
     public String userName;
     public String name;
     public String displayName;
