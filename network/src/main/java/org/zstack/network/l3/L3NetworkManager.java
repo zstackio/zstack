@@ -2,7 +2,6 @@ package org.zstack.network.l3;
 
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.message.Message;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.header.vm.VmNicInventory;
 import org.zstack.header.vm.VmNicVO;
@@ -11,7 +10,7 @@ import java.math.BigInteger;
 import java.util.List;
 
 public interface L3NetworkManager {
-    L3NetworkBaseExtensionFactory getL3NetworkBaseExtensionFactory(Class<? extends Message> messageClass);
+    L3NetworkVendorFactory getL3NetworkVendorFactory(String vSwitchType);
 
     IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type);
 

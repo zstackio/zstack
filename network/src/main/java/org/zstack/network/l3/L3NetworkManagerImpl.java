@@ -100,7 +100,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Autowired
     protected L3NetworkExtensionPointEmitter extpEmitter;
 
-    private Map<Class<? extends Message>, L3NetworkBaseExtensionFactory> l3NetworkBaseExtensionFactories = Collections.emptyMap();
+    private Map<String, L3NetworkVendorFactory> l3NetworkVendorFactories = Collections.emptyMap();
 
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
@@ -769,29 +769,24 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     @Override
-    public L3NetworkBaseExtensionFactory getL3NetworkBaseExtensionFactory(Class<? extends Message> messageClass) {
-        return l3NetworkBaseExtensionFactories.get(messageClass);
+    public L3NetworkVendorFactory getL3NetworkVendorFactory(String vSwitchType) {
+        return l3NetworkVendorFactories.get(vSwitchType);
     }
 
     private void populateExtensions() {
-        Map<Class<? extends Message>, L3NetworkBaseExtensionFactory> factories = new HashMap<>();
-        for (L3NetworkBaseExtensionFactory factory : pluginRgty.getExtensionList(L3NetworkBaseExtensionFactory.class)) {
-            List<Class<? extends Message>> messageClasses = factory.getMessageClasses();
-            if (messageClasses == null || messageClasses.isEmpty()) {
-                throw new CloudRuntimeException("no L3 message classes registered by " + factory.getClass().getName());
+        Map<String, L3NetworkVendorFactory> factories = new HashMap<>();
+        for (L3NetworkVendorFactory factory : pluginRgty.getExtensionList(L3NetworkVendorFactory.class)) {
+            String vSwitchType = factory.getVSwitchType();
+            if (vSwitchType == null || vSwitchType.isEmpty() || !vSwitchType.equals(vSwitchType.trim())) {
+                throw new CloudRuntimeException("invalid L3 vendor vSwitch type registered by " + factory.getClass().getName());
             }
-            for (Class<? extends Message> messageClass : messageClasses) {
-                if (messageClass == null || !NeedReplyMessage.class.isAssignableFrom(messageClass)
-                        || APIMessage.class.isAssignableFrom(messageClass)
-                        || !L3NetworkMessage.class.isAssignableFrom(messageClass)) {
-                    throw new CloudRuntimeException("invalid L3 local message class registered by " + factory.getClass().getName());
-                }
-                if (factories.put(messageClass, factory) != null) {
-                    throw new CloudRuntimeException("duplicate L3 base extension factory for " + messageClass.getName());
-                }
+            L3NetworkVendorFactory old = factories.put(vSwitchType, factory);
+            if (old != null) {
+                throw new CloudRuntimeException(String.format("duplicate L3 vendor factories[%s, %s] for vSwitch type[%s]",
+                        old.getClass().getName(), factory.getClass().getName(), vSwitchType));
             }
         }
-        l3NetworkBaseExtensionFactories = Collections.unmodifiableMap(factories);
+        l3NetworkVendorFactories = Collections.unmodifiableMap(factories);
 
         for (L3NetworkFactory f : pluginRgty.getExtensionList(L3NetworkFactory.class)) {
             L3NetworkFactory old = l3NetworkFactories.get(f.getType().toString());

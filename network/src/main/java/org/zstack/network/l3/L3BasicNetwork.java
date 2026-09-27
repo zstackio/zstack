@@ -43,6 +43,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l2.NetworkDeletionContext;
 import org.zstack.header.network.LocalNetworkConfigChange;
@@ -105,13 +106,14 @@ public class L3BasicNetwork implements L3Network {
     @Autowired
     protected PluginRegistry pluginRgty;
     @Autowired
-    protected ThreadFacade thdf;
+    private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
     @Autowired
     private NetworkServiceManager nsMgr;
 
     private L3NetworkVO self;
+    private L3NetworkBackend backend;
 
     protected String syncThreadName;
 
@@ -128,7 +130,7 @@ public class L3BasicNetwork implements L3Network {
         return L3NetworkInventory.valueOf(getSelf());
     }
 
-    protected String getSyncId() {
+    private String getSyncId() {
         return String.format("operate-l3-%s", self.getUuid());
     }
 
@@ -436,12 +438,18 @@ public class L3BasicNetwork implements L3Network {
         } else if (msg instanceof AttachNetworkServiceToL3Msg) {
             handle((AttachNetworkServiceToL3Msg) msg);
         } else {
-            L3NetworkBaseExtensionFactory factory = l3NwMgr.getL3NetworkBaseExtensionFactory(msg.getClass());
-            if (factory != null) {
-                factory.getL3Network(self).handleMessage(msg);
-            } else {
-                bus.dealWithUnknownMessage(msg);
+            if (backend == null) {
+                String vSwitchType = Q.New(L2NetworkVO.class).select(L2NetworkVO_.vSwitchType)
+                        .eq(L2NetworkVO_.uuid, self.getL2NetworkUuid()).findValue();
+                L3NetworkVendorFactory factory = l3NwMgr.getL3NetworkVendorFactory(vSwitchType);
+                if (factory == null) {
+                    bus.dealWithUnknownMessage(msg);
+                    return;
+                }
+                backend = Objects.requireNonNull(factory.create(new L3NetworkBackendContext(
+                        self.getUuid(), self.getL2NetworkUuid(), getSyncId())));
             }
+            backend.handleMessage(msg);
         }
     }
 
