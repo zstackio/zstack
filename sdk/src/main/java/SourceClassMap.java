@@ -38,6 +38,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ModelServiceInventory", "org.zstack.sdk.ModelServiceInventory");
 			put("org.zstack.ai.entity.ModelServiceRefInventory", "org.zstack.sdk.ModelServiceRefInventory");
 			put("org.zstack.ai.entity.ModelServiceTemplateInventory", "org.zstack.sdk.ModelServiceTemplateInventory");
+			put("org.zstack.ai.entity.ModelServiceVmImageCandidateInventory", "org.zstack.sdk.ModelServiceVmImageCandidateInventory");
 			put("org.zstack.ai.entity.TrainedModelRecordInventory", "org.zstack.sdk.TrainedModelRecordInventory");
 			put("org.zstack.ai.entity.VmModelMountInventory", "org.zstack.sdk.VmModelMountInventory");
 			put("org.zstack.ai.entity.VmModelMountStatus", "org.zstack.sdk.VmModelMountStatus");
@@ -1428,6 +1429,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.ModelServiceMatchStatus", "org.zstack.ai.message.ModelServiceMatchStatus");
 			put("org.zstack.sdk.ModelServiceRefInventory", "org.zstack.ai.entity.ModelServiceRefInventory");
 			put("org.zstack.sdk.ModelServiceTemplateInventory", "org.zstack.ai.entity.ModelServiceTemplateInventory");
+			put("org.zstack.sdk.ModelServiceVmImageCandidateInventory", "org.zstack.ai.entity.ModelServiceVmImageCandidateInventory");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KVMCephVolumeTO$MonInfo");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KvmCephCdRomTO$MonInfo");
 			put("org.zstack.sdk.MonInfo", "org.zstack.storage.ceph.primary.KvmCephIsoTO$MonInfo");

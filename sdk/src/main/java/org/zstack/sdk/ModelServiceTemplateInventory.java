@@ -76,6 +76,22 @@ public class ModelServiceTemplateInventory  {
         return this.imageNamePattern;
     }
 
+    public java.lang.String runtimeName;
+    public void setRuntimeName(java.lang.String runtimeName) {
+        this.runtimeName = runtimeName;
+    }
+    public java.lang.String getRuntimeName() {
+        return this.runtimeName;
+    }
+
+    public java.lang.String runtimeVersionPattern;
+    public void setRuntimeVersionPattern(java.lang.String runtimeVersionPattern) {
+        this.runtimeVersionPattern = runtimeVersionPattern;
+    }
+    public java.lang.String getRuntimeVersionPattern() {
+        return this.runtimeVersionPattern;
+    }
+
     public java.sql.Timestamp createDate;
     public void setCreateDate(java.sql.Timestamp createDate) {
         this.createDate = createDate;
