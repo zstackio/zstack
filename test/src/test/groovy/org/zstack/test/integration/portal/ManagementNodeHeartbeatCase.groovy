@@ -35,8 +35,18 @@ class ManagementNodeHeartbeatCase extends SubCase {
     void test() {
         dbf = bean(DatabaseFacade.class)
 
+        testGetVersion()
         testUnexpectedManagementNodeRecord()
         testRecreateManagementNodeRecordWithManagedExistingRecord()
+    }
+
+    void testGetVersion() {
+        String schemaVersion = dbf.getDbVersion()
+        String expectedVersion = schemaVersion.split("\\.").take(3).join(".")
+        String actualVersion = getVersion {}.version
+
+        assert actualVersion == expectedVersion :
+                "GetVersion returned the schema version: expected=${expectedVersion}, actual=${actualVersion}, schemaVersion=${schemaVersion}"
     }
 
     void prepareInvalidRecords() {

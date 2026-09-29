@@ -46,6 +46,7 @@ import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RestAPIExtensionPoint;
+import org.zstack.utils.ProductVersion;
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
@@ -354,7 +355,7 @@ public class ApiMediatorImpl extends AbstractService implements
 
     private void handle(APIGetVersionMsg msg) {
         APIGetVersionReply reply = new APIGetVersionReply();
-        reply.setVersion(dbf.getDbVersion());
+        reply.setVersion(ProductVersion.fromSchemaVersion(dbf.getDbVersion()));
         bus.reply(msg, reply);
     }
 
