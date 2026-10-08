@@ -14,6 +14,7 @@ import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.log.LogSafeGson;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMediatorConstant;
@@ -59,6 +60,9 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
 
     @Autowired
     private ThreadFacade thdf;
+
+    @Autowired
+    private ApiTimeoutManager timeoutManager;
 
     @Override
     @MessageSafe
@@ -164,6 +168,7 @@ public class RESTApiFacadeImpl extends AbstractService implements RESTApiFacade,
         assert !(msg instanceof APIListMessage) && !(msg instanceof APISearchMessage) : "You must invoke call(APIMessage) for APIListMessage or APISearchMsg, the message you pass is "
                 + msg.getMessageName();
         RestAPIResponse rsp = new RestAPIResponse();
+        rsp.setApiTimeout(timeoutManager.getMessageTimeout(msg));
         RestAPIVO vo = persist(msg);
         processingRequests.add(vo.getUuid());
         rsp.setCreatedDate(vo.getCreateDate());

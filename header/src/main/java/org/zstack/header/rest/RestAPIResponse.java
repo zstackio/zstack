@@ -8,6 +8,15 @@ public class RestAPIResponse {
     Date createdDate;
     Date finishedDate;
     String result;
+    Long apiTimeout;
+
+    public Long getApiTimeout() {
+        return apiTimeout;
+    }
+
+    public void setApiTimeout(Long apiTimeout) {
+        this.apiTimeout = apiTimeout;
+    }
 
     public String getUuid() {
         return uuid;
