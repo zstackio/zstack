@@ -92,6 +92,14 @@ public class ModelInventory  {
         return this.introduction;
     }
 
+    public java.lang.String introductionFilePath;
+    public void setIntroductionFilePath(java.lang.String introductionFilePath) {
+        this.introductionFilePath = introductionFilePath;
+    }
+    public java.lang.String getIntroductionFilePath() {
+        return this.introductionFilePath;
+    }
+
     public java.lang.Long size;
     public void setSize(java.lang.Long size) {
         this.size = size;
