@@ -24,6 +24,8 @@ import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.RoleServiceManifest
 import org.zstack.header.rest.RestRequest
 import org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg
+import org.zstack.physicalserver.APIRestartPhysicalServerManagedServicesMsg
+import org.zstack.physicalserver.APIUpdatePhysicalServerResourceAssignmentMsg
 import org.zstack.kvm.KvmResourceAssignmentFactory
 import org.zstack.kvm.KvmResourceAssignmentController
 import org.zstack.kvm.KvmHostConfigChecker
@@ -138,6 +140,21 @@ class PhysicalServerResourceModelCase {
                     "firmware placeholder must not create a PhysicalServer: " +
                             "serial=${it} actual=${Platform.normalizeMachineSerialNumber(it)}"
         }
+    }
+
+    @Test
+    void testNamedLimitsPreserveProfileAndApiBoundaries() {
+        assert ("a" * 64).matches(RoleServiceManifest.SERVICE_NAME_PATTERN)
+        assert !("a" * 65).matches(RoleServiceManifest.SERVICE_NAME_PATTERN)
+        assert ("a" * 249 + ".slice").matches(RoleServiceManifest.SLICE_NAME_PATTERN)
+        assert !("a" * 250 + ".slice").matches(RoleServiceManifest.SLICE_NAME_PATTERN)
+        assert RoleServiceManifest.MEMORY_GRANULARITY == 1048576L
+        assert APIUpdatePhysicalServerResourceAssignmentMsg.getDeclaredField("cpuSet")
+                .getAnnotation(APIParam.class).maxLength() == 4096
+        assert APIUpdatePhysicalServerResourceAssignmentMsg.getDeclaredField("roleType")
+                .getAnnotation(APIParam.class).maxLength() == 64
+        assert APIRestartPhysicalServerManagedServicesMsg.getDeclaredField("serviceNames")
+                .getAnnotation(APIParam.class).maxLength() == 64
     }
 
     @Test

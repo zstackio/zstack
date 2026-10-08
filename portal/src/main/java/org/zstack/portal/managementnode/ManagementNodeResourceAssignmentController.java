@@ -24,6 +24,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class ManagementNodeResourceAssignmentController implements PhysicalServerResourceAssignmentController,
         PhysicalServerResourceUsageObserver {
+    private static final long RESOURCE_CONTROL_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
     @Autowired
     private CloudBus bus;
 
@@ -52,7 +54,7 @@ public class ManagementNodeResourceAssignmentController implements PhysicalServe
         }
         CollectManagementNodeCpuTopologyMsg msg = new CollectManagementNodeCpuTopologyMsg();
         msg.setServerUuid(serverUuid);
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -95,7 +97,7 @@ public class ManagementNodeResourceAssignmentController implements PhysicalServe
         msg.setServerUuid(serverUuid);
         msg.setSliceName(requested.getSliceName());
         msg.setHandles(requested.getHandles());
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -125,7 +127,7 @@ public class ManagementNodeResourceAssignmentController implements PhysicalServe
         msg.setServerUuid(serverUuid);
         msg.setSliceName(requested.getSliceName());
         msg.setConsumers(requested.getHandles());
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -146,7 +148,7 @@ public class ManagementNodeResourceAssignmentController implements PhysicalServe
             completion.fail(notOwner(serverUuid));
             return;
         }
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeServiceIdByManagementNodeId(msg, SERVICE_ID, nodeUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override

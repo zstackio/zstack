@@ -1,6 +1,10 @@
 package org.zstack.header.physicalserver;
 
 public class ManagedServiceResourceUsage {
+    public enum State {
+        RUNNING, INACTIVE, NOT_FOUND
+    }
+
     private String roleType;
     private String serviceName;
     private boolean restartable;

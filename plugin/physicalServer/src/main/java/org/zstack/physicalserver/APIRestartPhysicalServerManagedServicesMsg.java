@@ -15,10 +15,10 @@ public class APIRestartPhysicalServerManagedServicesMsg extends APIMessage imple
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 
-    @APIParam(maxLength = 64)
+    @APIParam(maxLength = PhysicalServerConstant.MAX_ROLE_TYPE_LENGTH)
     private String roleType;
 
-    @APIParam(nonempty = true, maxLength = 64)
+    @APIParam(nonempty = true, maxLength = PhysicalServerConstant.MAX_SERVICES_PER_REQUEST)
     private List<String> serviceNames;
 
     @Override

@@ -29,6 +29,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
 public class KvmResourceAssignmentController implements PhysicalServerResourceAssignmentController,
         PhysicalServerResourceUsageObserver {
+    private static final long RESOURCE_CONTROL_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
     @Autowired
     private CloudBus bus;
 
@@ -59,7 +61,7 @@ public class KvmResourceAssignmentController implements PhysicalServerResourceAs
 
         GetHostNumaTopologyMsg msg = new GetHostNumaTopologyMsg();
         msg.setHostUuid(hostUuid);
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
@@ -111,7 +113,7 @@ public class KvmResourceAssignmentController implements PhysicalServerResourceAs
         msg.setPath(path);
         msg.setHostUuid(hostUuid);
         msg.setCommand(agentCommand);
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeTargetServiceIdByResourceUuid(msg, HostConstant.SERVICE_ID, hostUuid);
         return msg;
     }
