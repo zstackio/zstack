@@ -129,7 +129,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private String normalizeIpOrPort(String value) {
-        return value == null ? null : StringUtils.deleteWhitespace(value);
+        if (value == null) {
+            return null;
+        }
+        value = StringUtils.deleteWhitespace(value);
+        return Stream.of(value.split(SecurityGroupConstant.IP_SPLIT, -1))
+                .map(ip -> ip.endsWith("/0") && NetworkUtils.isCidr(ip) ? NetworkUtils.fmtCidr(ip) : ip)
+                .collect(Collectors.joining(SecurityGroupConstant.IP_SPLIT));
     }
 
     private void validate(APIChangeResourceOwnerMsg msg) {
@@ -758,6 +764,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             ipArray = new String[]{ips};
         }
 
+        int ipCount = ipArray.length;
         for (String ip : ipArray) {
             if (ip.isEmpty()) {
                 throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10077, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid ips[%s]", ips));
@@ -766,10 +773,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
                 if (!NetworkUtils.isCidr(ip, ipVersion)) {
                     throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10078, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "invalid cidr[%s], ipVersion[%d]", ip, ipVersion));
                 }
-                if (ipVersion == IPv6Constants.IPv4 && NetworkUtils.isFullCidr(ip)) {
-                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10079, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv4 cidr can not be 0.0.0.0/0"));
-                } if (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isFullCidr(ip)) {
-                    throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10080, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "ipv6 cidr can not be ::/0"));
+                boolean fullCidr = ipVersion == IPv6Constants.IPv4 ? NetworkUtils.isFullCidr(ip) : IPv6NetworkUtils.isFullCidr(ip);
+                if (ipCount > 1 && fullCidr) {
+                    String errorCode = ipVersion == IPv6Constants.IPv4 ? ORG_ZSTACK_NETWORK_SECURITYGROUP_10079 : ORG_ZSTACK_NETWORK_SECURITYGROUP_10080;
+                    throw new ApiMessageInterceptionException(err(errorCode, SecurityGroupErrors.RULE_IP_FIELD_ERROR, "cidr[%s] with /0 cannot be used with other ip addresses", ip));
                 }
                 continue;
             }
@@ -1048,6 +1055,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
             if (StringUtils.isEmpty(ao.getAllowedCidr())) {
                 ao.setAllowedCidr(ao.getIpVersion() == IPv6Constants.IPv4 ? SecurityGroupConstant.WORLD_OPEN_CIDR : SecurityGroupConstant.WORLD_OPEN_CIDR_IPV6);
+            } else {
+                ao.setAllowedCidr(normalizeIpOrPort(ao.getAllowedCidr()));
             }
 
             if (SecurityGroupRuleType.Egress.toString().equals(ao.getType())) {

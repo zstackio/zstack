@@ -118,6 +118,13 @@ class ChangeSecurityGroupRuleCase extends SubCase {
         }
 
         assert Q.New(SecurityGroupRuleVO).eq(SecurityGroupRuleVO_.uuid, rule.uuid).find().dstIpRange == "1.1.1.1-1.1.1.10,2.2.2.2,3.3.3.0/24"
+
+        rule = changeSecurityGroupRule {
+            uuid = rule.uuid
+            dstIpRange = "203.0.113.7/0"
+        }
+
+        assert rule.dstIpRange == "0.0.0.0/0" : "changed IPv4 destination must normalize to 0.0.0.0/0: actual=${rule.dstIpRange}"
     }
 
     void testChangeRuleRemoteGroup() {
