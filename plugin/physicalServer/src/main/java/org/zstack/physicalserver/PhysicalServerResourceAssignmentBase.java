@@ -801,8 +801,9 @@ public class PhysicalServerResourceAssignmentBase {
         }
         String cpuSet = boundary.getCpuSet();
         cpuSet = cpuSet == null || cpuSet.trim().isEmpty() ? "" : PhysicalServerCpuSet.normalize(cpuSet);
-        if (cpuSet.length() > 4096) {
-            throw new IllegalArgumentException("Observed CPU set exceeds 4096 characters");
+        if (cpuSet.length() > PhysicalServerCpuSet.MAX_EXPRESSION_LENGTH) {
+            throw new IllegalArgumentException(String.format(
+                    "Observed CPU set exceeds %s characters", PhysicalServerCpuSet.MAX_EXPRESSION_LENGTH));
         }
         if (boundary.getMemory() != null && boundary.getMemory() < 0) {
             throw new IllegalArgumentException("Observed memory limit must not be negative");

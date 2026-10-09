@@ -12,6 +12,9 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 public final class PhysicalServerCpuSet {
+    public static final int MAX_EXPRESSION_LENGTH = 4096;
+    private static final int MAX_RANGE_SIZE = 1048576;
+
     private PhysicalServerCpuSet() {
     }
 
@@ -44,7 +47,7 @@ public final class PhysicalServerCpuSet {
         SortedSet<Integer> cpus = new TreeSet<>();
         for (Range range : ranges) {
             long width = (long) range.end - range.start + 1;
-            if (width > 1048576) {
+            if (width > MAX_RANGE_SIZE) {
                 throw new IllegalArgumentException(String.format(
                         "CPU set range[%s-%s] is too large", range.start, range.end));
             }

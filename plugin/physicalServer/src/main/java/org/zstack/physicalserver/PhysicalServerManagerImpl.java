@@ -29,6 +29,8 @@ import org.zstack.header.physicalserver.RoleServiceManifest;
 import static org.zstack.core.Platform.operr;
 
 public class PhysicalServerManagerImpl extends AbstractService implements PhysicalServerManager, Component {
+    private static final long RESOURCE_CONTROL_TIMEOUT_MILLIS = TimeUnit.MINUTES.toMillis(5);
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -152,7 +154,7 @@ public class PhysicalServerManagerImpl extends AbstractService implements Physic
     }
 
     private void sendResourceAssignmentMessage(NeedReplyMessage msg, Completion completion) {
-        msg.setTimeout(TimeUnit.MINUTES.toMillis(5));
+        msg.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
         bus.makeTargetServiceIdByResourceUuid(
                 msg, PhysicalServerConstant.SERVICE_ID, PhysicalServerConstant.CONTROL_OWNER_KEY);
         bus.send(msg, new CloudBusCallBack(completion) {

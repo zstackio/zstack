@@ -2,6 +2,7 @@ package org.zstack.header.physicalserver;
 
 import org.zstack.utils.StringDSL;
 import org.zstack.utils.YamlUtils;
+import org.zstack.utils.data.SizeUnit;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.InputStream;
@@ -20,6 +21,13 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class RoleServiceManifest {
+    private static final int MAX_SLICE_NAME_PREFIX_LENGTH = 249;
+    private static final int MAX_SERVICE_NAME_LENGTH = 64;
+    public static final long MEMORY_GRANULARITY = SizeUnit.MEGABYTE.toByte(1);
+    public static final String SLICE_NAME_PATTERN =
+            "[A-Za-z0-9][A-Za-z0-9_.@:-]{0," + (MAX_SLICE_NAME_PREFIX_LENGTH - 1) + "}\\.slice";
+    public static final String SERVICE_NAME_PATTERN =
+            "[A-Za-z0-9][A-Za-z0-9_.-]{0," + (MAX_SERVICE_NAME_LENGTH - 1) + "}";
     private static final AtomicReference<Map<ManifestKey, RoleServiceManifest>>
             MANIFESTS = new AtomicReference<>(Collections.emptyMap());
 
@@ -129,13 +137,13 @@ public class RoleServiceManifest {
 
     private void validateControl(String resourcePath, String expectedRoleType) {
         validateRoleAndServices(resourcePath, expectedRoleType);
-        if (empty(sliceName) || !sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")) {
+        if (empty(sliceName) || !sliceName.matches(SLICE_NAME_PATTERN)) {
             throw invalid(resourcePath, String.format("sliceName[%s] is invalid", sliceName));
         }
         if (defaultCpuCount != null && defaultCpuCount < 1) {
             throw invalid(resourcePath, "defaultCpuCount must be greater than zero");
         }
-        if (defaultMemory != null && (defaultMemory < 0 || defaultMemory % (1024 * 1024) != 0)) {
+        if (defaultMemory != null && (defaultMemory < 0 || defaultMemory % MEMORY_GRANULARITY != 0)) {
             throw invalid(resourcePath, String.format(
                     "defaultMemory[%s] must be non-negative and aligned to 1 MiB", defaultMemory));
         }
@@ -168,7 +176,7 @@ public class RoleServiceManifest {
         Set<String> names = new HashSet<>();
         for (Service service : services) {
             if (service == null || empty(service.getName())
-                    || !service.getName().matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}")) {
+                    || !service.getName().matches(SERVICE_NAME_PATTERN)) {
                 throw invalid(resourcePath, "service name must not be empty");
             }
             if (!names.add(service.getName())) {

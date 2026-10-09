@@ -6,7 +6,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.physicalserver.PhysicalServerCpuSet;
-import org.zstack.utils.data.SizeUnit;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,14 +40,15 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
                     "RoleType[%s] does not support resource assignment", msg.getRoleType()));
         }
-        if (serviceNames.size() > 64) {
+        if (serviceNames.size() > PhysicalServerConstant.MAX_SERVICES_PER_REQUEST) {
             throw new ApiMessageInterceptionException(argerr(
-                    PhysicalServerConstant.ERROR_CODE, "At most 64 services can be restarted in one request"));
+                    PhysicalServerConstant.ERROR_CODE, "At most %s services can be restarted in one request",
+                    PhysicalServerConstant.MAX_SERVICES_PER_REQUEST));
         }
         Set<String> unique = new HashSet<>();
         for (String serviceName : serviceNames) {
             if (serviceName == null
-                    || !serviceName.matches("[A-Za-z0-9][A-Za-z0-9_.-]{0,63}") || !unique.add(serviceName)) {
+                    || !serviceName.matches(RoleServiceManifest.SERVICE_NAME_PATTERN) || !unique.add(serviceName)) {
                 throw new ApiMessageInterceptionException(argerr(
                         PhysicalServerConstant.ERROR_CODE, "Service names must be non-empty and unique"));
             }
@@ -67,8 +68,7 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         }
 
         if (msg.getMemory() != null) {
-            long mebibyte = SizeUnit.MEGABYTE.toByte(1);
-            if (msg.getMemory() < 0 || msg.getMemory() % mebibyte != 0) {
+            if (msg.getMemory() < 0 || msg.getMemory() % RoleServiceManifest.MEMORY_GRANULARITY != 0) {
                 throw new ApiMessageInterceptionException(argerr(PhysicalServerConstant.ERROR_CODE,
                         "Memory[%s] must be zero or a positive multiple of 1 MiB", msg.getMemory()));
             }

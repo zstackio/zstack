@@ -4,6 +4,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.ansible.AnsibleChecker;
+import org.zstack.header.physicalserver.RoleServiceManifest;
 import org.zstack.utils.RangeSet;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -19,6 +20,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
             "50-zstack-resource-assignment.conf";
     private static final String RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP__";
     private static final String RESOURCE_ASSIGNMENT_CGROUP_V2 = "__ZSTACK_RESOURCE_ASSIGNMENT_CGROUP_V2__";
+    private static final int RESOURCE_ASSIGNMENT_QUERY_TIMEOUT_SECONDS = 60;
 
     private String username;
     private String password;
@@ -139,7 +141,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 RESOURCE_ASSIGNMENT_DROP_IN,
                 RESOURCE_ASSIGNMENT_DROP_IN,
                 RESOURCE_ASSIGNMENT_OUTPUT_SEPARATOR));
-        SshResult result = ssh.setTimeout(60).runAndClose();
+        SshResult result = ssh.setTimeout(RESOURCE_ASSIGNMENT_QUERY_TIMEOUT_SECONDS).runAndClose();
         if (result.getReturnCode() != 0) {
             logger.warn(String.format(
                     "failed to inspect KVM Agent resource assignment, " +
@@ -208,7 +210,7 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 }
             }
         }
-        return sliceName != null && sliceName.matches("[A-Za-z0-9][A-Za-z0-9_.@:-]{0,248}\\.slice")
+        return sliceName != null && sliceName.matches(RoleServiceManifest.SLICE_NAME_PATTERN)
                 ? sliceName : null;
     }
 

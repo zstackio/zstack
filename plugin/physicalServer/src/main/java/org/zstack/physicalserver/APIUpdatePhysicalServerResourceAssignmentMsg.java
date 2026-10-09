@@ -4,6 +4,7 @@ import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.physicalserver.PhysicalServerCpuSet;
 import org.zstack.header.rest.RestRequest;
 
 @Action(category = PhysicalServerConstant.ACTION_CATEGORY)
@@ -14,10 +15,10 @@ public class APIUpdatePhysicalServerResourceAssignmentMsg extends APIMessage imp
     @APIParam(resourceType = PhysicalServerVO.class, operationTarget = true)
     private String serverUuid;
 
-    @APIParam(maxLength = 64)
+    @APIParam(maxLength = PhysicalServerConstant.MAX_ROLE_TYPE_LENGTH)
     private String roleType;
 
-    @APIParam(required = false, maxLength = 4096)
+    @APIParam(required = false, maxLength = PhysicalServerCpuSet.MAX_EXPRESSION_LENGTH)
     private String cpuSet;
 
     @APIParam(required = false)

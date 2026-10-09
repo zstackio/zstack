@@ -90,13 +90,13 @@ public class ZbsResourceAssignmentObserver implements PhysicalServerResourceAssi
             ManagedServiceResourceUsage service = new ManagedServiceResourceUsage();
             service.setRoleType(type.toString());
             service.setServiceName(serviceName);
-            service.setState("NOT_FOUND");
+            service.setState(ManagedServiceResourceUsage.State.NOT_FOUND.name());
             result.add(service);
             ZbsCgroupResourceUsage usage = byCgroup.get(service.getServiceName());
             if (usage == null) {
                 continue;
             }
-            service.setState("RUNNING");
+            service.setState(ManagedServiceResourceUsage.State.RUNNING.name());
             service.setCpuSet(normalizeCpuSet(usage.getCpuSet()));
             service.setCpuTime(usage.getCpuTime());
             service.setMemory(usage.getMemory());
