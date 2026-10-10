@@ -7,9 +7,11 @@ import org.zstack.compute.vm.VmSystemTags
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMSecurityGroupBackend
 import org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO
+import org.zstack.network.securitygroup.SecurityGroupErrors
 import org.zstack.network.securitygroup.SecurityGroupRuleVO
 import org.zstack.network.securitygroup.SecurityGroupRuleVO_
 import org.zstack.network.securitygroup.SecurityGroupRuleType
+import org.zstack.sdk.AddSecurityGroupRuleAction
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SecurityGroupRuleInventory
@@ -365,6 +367,76 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         assert ruleInv.priority == 3 // egress 3 rule
     }
 
+    void testWorldOpenCidrRules() {
+        SecurityGroupRuleAO ipv4Rule = new SecurityGroupRuleAO()
+        ipv4Rule.type = "Ingress"
+        ipv4Rule.description = "single-ipv4-world-open-cidr"
+        ipv4Rule.ipVersion = 4
+        ipv4Rule.srcIpRange = "203.0.113.7/0"
+        ipv4Rule.protocol = "ALL"
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [ipv4Rule]
+        }
+
+        SecurityGroupRuleInventory ipv4RuleInventory = sg4.rules.find { it.description == ipv4Rule.description }
+        assert ipv4RuleInventory != null : "add single IPv4 /0 rule failed"
+        assert ipv4RuleInventory.srcIpRange == "0.0.0.0/0" : "added IPv4 source must normalize to /0: actual=${ipv4RuleInventory.srcIpRange}"
+
+        SecurityGroupRuleAO ipv6Rule = new SecurityGroupRuleAO()
+        ipv6Rule.type = "Egress"
+        ipv6Rule.description = "single-ipv6-world-open-cidr"
+        ipv6Rule.ipVersion = 6
+        ipv6Rule.dstIpRange = "0::0/0"
+        ipv6Rule.protocol = "ALL"
+
+        sg4 = addSecurityGroupRule {
+            securityGroupUuid = sg4.uuid
+            rules = [ipv6Rule]
+        }
+
+        SecurityGroupRuleInventory ipv6RuleInventory = sg4.rules.find { it.description == ipv6Rule.description }
+        assert ipv6RuleInventory != null : "add single IPv6 /0 rule failed"
+        assert ipv6RuleInventory.dstIpRange == "::/0" : "added IPv6 destination must normalize to ::/0: actual=${ipv6RuleInventory.dstIpRange}"
+
+        SecurityGroupRuleAO multipleIpv4Rule = new SecurityGroupRuleAO()
+        multipleIpv4Rule.type = "Ingress"
+        multipleIpv4Rule.ipVersion = 4
+        multipleIpv4Rule.srcIpRange = "203.0.113.7/0,192.168.1.0/24"
+        multipleIpv4Rule.protocol = "ALL"
+
+        AddSecurityGroupRuleAction ipv4Action = new AddSecurityGroupRuleAction()
+        ipv4Action.securityGroupUuid = sg4.uuid
+        ipv4Action.rules = [multipleIpv4Rule]
+        ipv4Action.sessionId = adminSession()
+        AddSecurityGroupRuleAction.Result ipv4Result = ipv4Action.call()
+        assert ipv4Result.error != null : "add multiple IPv4 CIDRs containing /0 succeeded"
+        assert ipv4Result.error.code == SecurityGroupErrors.RULE_IP_FIELD_ERROR.toString() : "IPv4 /0 error mismatch: expected=${SecurityGroupErrors.RULE_IP_FIELD_ERROR}, actual=${ipv4Result.error.code}"
+
+        multipleIpv4Rule.srcIpRange = "203.0.113.7/0,0.0.0.0/0"
+        ipv4Result = ipv4Action.call()
+        assert ipv4Result.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10075" : "equivalent /0 entries must be duplicates: actual=${ipv4Result.error}"
+
+        multipleIpv4Rule.srcIpRange = "0.0.0.0/0"
+        ipv4Result = ipv4Action.call()
+        assert ipv4Result.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10115" : "equivalent /0 rule must be a duplicate: actual=${ipv4Result.error}"
+
+        SecurityGroupRuleAO multipleIpv6Rule = new SecurityGroupRuleAO()
+        multipleIpv6Rule.type = "Egress"
+        multipleIpv6Rule.ipVersion = 6
+        multipleIpv6Rule.dstIpRange = "0::0/0,2001:db8::/64"
+        multipleIpv6Rule.protocol = "ALL"
+
+        AddSecurityGroupRuleAction ipv6Action = new AddSecurityGroupRuleAction()
+        ipv6Action.securityGroupUuid = sg4.uuid
+        ipv6Action.rules = [multipleIpv6Rule]
+        ipv6Action.sessionId = adminSession()
+        AddSecurityGroupRuleAction.Result ipv6Result = ipv6Action.call()
+        assert ipv6Result.error != null : "add multiple IPv6 CIDRs containing /0 succeeded"
+        assert ipv6Result.error.code == SecurityGroupErrors.RULE_IP_FIELD_ERROR.toString() : "IPv6 /0 error mismatch: expected=${SecurityGroupErrors.RULE_IP_FIELD_ERROR}, actual=${ipv6Result.error.code}"
+    }
+
     void testAddRuleAssignPriority() {
         List<SecurityGroupRuleAO> ingressRules = new ArrayList<>()
         for (int i = 1; i <= 5; i++) {
@@ -661,6 +733,7 @@ class AddSecurityGroupRuleOptimizedCase extends SubCase {
         }
 
         testAddSecurityGroupRule()
+        testWorldOpenCidrRules()
         testDeleteRules()
         testAddRuleExceedLimit()
         testAddRuleDiscontinuously()
