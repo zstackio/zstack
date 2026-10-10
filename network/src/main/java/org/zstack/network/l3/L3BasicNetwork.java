@@ -1439,7 +1439,7 @@ public class L3BasicNetwork implements L3Network {
             if (freeIpInventorys.size() >= msg.getLimit()) {
                 break;
             }
-            limit -= freeIpInventorys.size();
+            limit -= tempFreeIpInventorys.size();
         }
 
         Set<ReservedIpRangeVO> reservedIpRanges = self.getReservedIpRanges();
