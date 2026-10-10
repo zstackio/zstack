@@ -135,7 +135,7 @@ public class KVMGlobalConfig {
 
     @GlobalConfigValidation(validValues = {"true", "false", "none"})
     @GlobalConfigDef(defaultValue = "none", description = "enable host ksm")
-    @BindResourceConfig({HostVO.class})
+    @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig HOST_KSM = new GlobalConfig(CATEGORY, "host.ksm");
 
     @GlobalConfigValidation(validValues = {"true", "false"})

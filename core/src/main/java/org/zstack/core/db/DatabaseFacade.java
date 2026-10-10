@@ -42,6 +42,9 @@ public interface DatabaseFacade {
 
     void removeByPrimaryKeys(Collection priKeys, Class entityClazz);
 
+    /** Delete plain-VO rows in the caller's transaction and notify existing hard-delete extensions after commit. */
+    void hardDeleteByPrimaryKeysInTransaction(Collection priKeys, Class<?> entityClazz);
+
     void removeByPrimaryKey(Object primaryKey, Class<?> entityClass);
 
     void hardDeleteCollectionSelectedBySQL(String sql, Class entityClass);

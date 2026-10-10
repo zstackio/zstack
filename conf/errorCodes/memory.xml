@@ -1,0 +1,50 @@
+<error>
+    <prefix>MEMORY_ERROR</prefix>
+    <code><id>11000</id><description>Request Too Large in memory optimization</description></code>
+    <code><id>11001</id><description>Backend Preparation Invalid in memory optimization</description></code>
+    <code><id>11002</id><description>Controller Conflict in memory optimization</description></code>
+    <code><id>11003</id><description>Drain Required in memory optimization</description></code>
+    <code><id>11004</id><description>Migration Hold Pending in memory optimization</description></code>
+    <code><id>11005</id><description>Participation Unconfirmed in memory optimization</description></code>
+    <code><id>11006</id><description>Result Unknown in memory optimization</description></code>
+    <code><id>11007</id><description>Invalid Page Size in memory optimization</description></code>
+    <code><id>11008</id><description>Invalid Runtime Setting in memory optimization</description></code>
+    <code><id>11009</id><description>Backend Query Unavailable in memory optimization</description></code>
+    <code><id>11010</id><description>Host Not Connected in memory optimization</description></code>
+    <code><id>11011</id><description>Instance Changed in memory optimization</description></code>
+    <code><id>11012</id><description>Invalid Request in memory optimization</description></code>
+    <code><id>11013</id><description>License Unavailable in memory optimization</description></code>
+    <code><id>11014</id><description>Observation Unavailable in memory optimization</description></code>
+    <code><id>11015</id><description>Operation Query Unavailable in memory optimization</description></code>
+    <code><id>11016</id><description>Permission Denied in memory optimization</description></code>
+    <code><id>11017</id><description>Capability Precheck in memory optimization</description></code>
+    <code><id>11018</id><description>Control Operation Fenced in memory optimization</description></code>
+    <code><id>11019</id><description>Control Operation Required in memory optimization</description></code>
+    <code><id>11020</id><description>Control Paused Resume Required in memory optimization</description></code>
+    <code><id>11021</id><description>Host Busy in memory optimization</description></code>
+    <code><id>11022</id><description>Idempotency Conflict in memory optimization</description></code>
+    <code><id>11023</id><description>Instance Required in memory optimization</description></code>
+    <code><id>11024</id><description>Invalid Action in memory optimization</description></code>
+    <code><id>11025</id><description>Invalid Page in memory optimization</description></code>
+    <code><id>11026</id><description>Invalid Policy in memory optimization</description></code>
+    <code><id>11027</id><description>Invalid Scope in memory optimization</description></code>
+    <code><id>11028</id><description>Not Cancellable in memory optimization</description></code>
+    <code><id>11029</id><description>Not Ready in memory optimization</description></code>
+    <code><id>11030</id><description>Policy Present in memory optimization</description></code>
+    <code><id>11031</id><description>Query Snapshot Changed in memory optimization</description></code>
+    <code><id>11032</id><description>Resume Not Paused in memory optimization</description></code>
+    <code><id>11033</id><description>Resume State Unknown in memory optimization</description></code>
+    <code><id>11034</id><description>Revision Conflict in memory optimization</description></code>
+    <code><id>11035</id><description>Target Snapshot Conflict in memory optimization</description></code>
+    <code><id>11036</id><description>Target Snapshot Incomplete in memory optimization</description></code>
+    <code><id>11037</id><description>Uncertain Recovery Fenced in memory optimization</description></code>
+    <code><id>11038</id><description>Invalid Targets in memory optimization</description></code>
+    <code><id>11039</id><description>Target Snapshot Digest Mismatch in memory optimization</description></code>
+    <code><id>11040</id><description>Uncertain Recovery Invalid in memory optimization</description></code>
+    <code><id>11041</id><description>Zram Pool Preparation Invalid in memory optimization</description></code>
+    <code><id>11042</id><description>Memory Task Delete Requires Root Task</description></code>
+    <code><id>11043</id><description>Memory Task Is Still Referenced</description></code>
+    <code><id>11044</id><description>Memory Task Result Has Been Purged</description></code>
+    <code><id>11045</id><description>Memory Optimization Service Has Not Stopped</description></code>
+    <code><id>11999</id><description>Unknown memory optimization error</description></code>
+</error>

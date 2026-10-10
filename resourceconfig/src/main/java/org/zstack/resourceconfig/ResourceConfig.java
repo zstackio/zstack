@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.cloudbus.EventFacade;
@@ -41,6 +42,9 @@ public class ResourceConfig {
     @Autowired
     private EventFacade evtf;
 
+    @Autowired
+    private PlatformTransactionManager transactionManager;
+
     protected GlobalConfig globalConfig;
     private List<Class> resourceClasses;
     private Map<String, ResourceConfigGetter> configGetter = new HashMap<>();
@@ -48,7 +52,10 @@ public class ResourceConfig {
     private List<ResourceConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> localDeleteExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteExtensionPoint> deleteExtensions = new ArrayList<>();
+    private List<ResourceConfigDeleteValidatorExtensionPoint> deleteValidatorExtensions = new ArrayList<>();
     private List<ResourceConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
+    private List<ResourceConfigTransactionalMutationExtensionPoint> transactionalMutationExtensions = new ArrayList<>();
+    private List<ConfigTransactionalMutationExtensionPoint> configMutationExtensions = new ArrayList<>();
 
     public static ResourceConfig valueOf(GlobalConfig globalConfig, BindResourceConfig bindInfo) {
         ResourceConfig result = new ResourceConfig();
@@ -78,9 +85,28 @@ public class ResourceConfig {
         deleteExtensions.add(ext);
     }
 
+    public void installDeleteValidatorExtension(ResourceConfigDeleteValidatorExtensionPoint ext) {
+        deleteValidatorExtensions.add(ext);
+    }
+
     public void installValidatorExtension(ResourceConfigValidatorExtensionPoint ext) {
         validatorExtensions.add(ext);
     }
+
+    public void installTransactionalMutationExtension(ResourceConfigTransactionalMutationExtensionPoint ext) {
+        transactionalMutationExtensions.add(ext);
+    }
+
+    public boolean requiresAtomicBulkTransaction() {
+        return hasConfigMutationExtensions() || transactionalMutationExtensions.stream()
+                .anyMatch(ResourceConfigTransactionalMutationExtensionPoint::requiresAtomicBulkTransaction);
+    }
+
+    public void installConfigMutationExtension(ConfigTransactionalMutationExtensionPoint extension) {
+        if (!configMutationExtensions.contains(extension)) { configMutationExtensions.add(extension); }
+    }
+
+    public boolean hasConfigMutationExtensions() { return !configMutationExtensions.isEmpty(); }
 
     public void validateOnly(String newValue) {
         String oldValue = globalConfig.value();
@@ -97,14 +123,81 @@ public class ResourceConfig {
         validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
     }
 
+    @Transactional
     public void updateValue(String resourceUuid, String newValue) {
-        String resourceType = getResourceType(resourceUuid);
-        updateValue(resourceUuid, resourceType, newValue, true);
+        updateValue(resourceUuid, newValue, ConfigMutationContext.internal());
     }
 
+    @Transactional
+    public void updateValue(String resourceUuid, String newValue, ConfigMutationContext context) {
+        if (!hasConfigMutationExtensions()) {
+            updateValue(resourceUuid, getResourceType(resourceUuid), newValue, true, requiresAtomicBulkTransaction());
+            return;
+        }
+        applyMutations(Collections.singletonList(this), Collections.singletonList(
+                mutation(resourceUuid, newValue, false)), context);
+    }
+
+    @Transactional
     public void deleteValue(String resourceUuid) {
-        String resourceType = getResourceType(resourceUuid);
-        deleteValue(resourceUuid, resourceType, true);
+        deleteValue(resourceUuid, ConfigMutationContext.internal());
+    }
+
+    @Transactional
+    public void deleteValue(String resourceUuid, ConfigMutationContext context) {
+        if (!hasConfigMutationExtensions()) {
+            deleteValue(resourceUuid, getResourceType(resourceUuid), true, requiresAtomicBulkTransaction());
+            return;
+        }
+        applyMutations(Collections.singletonList(this), Collections.singletonList(
+                mutation(resourceUuid, null, true)), context);
+    }
+
+    ConfigMutation mutation(String resourceUuid, String newValue, boolean delete) {
+        return new ConfigMutation(globalConfig.getCategory(), globalConfig.getName(), resourceUuid,
+                getResourceType(resourceUuid), newValue, delete);
+    }
+
+    /** Caller owns the actual transaction. Shared participants see the complete batch once. */
+    static void applyMutations(List<ResourceConfig> configs, List<ConfigMutation> changes,
+            ConfigMutationContext context) {
+        if (configs.isEmpty() || configs.size() != changes.size()) {
+            throw new GlobalConfigException("Configuration mutation batch is empty or inconsistent");
+        }
+        Set<String> identities = new HashSet<>();
+        Set<ConfigTransactionalMutationExtensionPoint> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        List<ConfigTransactionalMutationExtensionPoint> participants = new ArrayList<>();
+        List<ConfigMutation> immutableChanges = Collections.unmodifiableList(new ArrayList<>(changes));
+        for (int i = 0; i < configs.size(); i++) {
+            ResourceConfig config = configs.get(i);
+            ConfigMutation change = changes.get(i);
+            String identity = change.getResourceUuid() + ":" + GlobalConfig.produceIdentity(change.getCategory(), change.getName());
+            if (!identities.add(identity)) { throw new GlobalConfigException("Duplicate configuration in batch: " + identity); }
+            if (!change.isDelete()) { config.validateNewValue(change.getResourceUuid(), change.getNewValue()); }
+            else {
+                String oldValue = config.loadConfigValue(change.getResourceUuid());
+                String effectiveOld = oldValue == null ? config.globalConfig.value() : oldValue;
+                config.deleteValidatorExtensions.forEach(it -> it.validateDelete(change.getResourceUuid(), effectiveOld));
+            }
+            for (ConfigTransactionalMutationExtensionPoint extension : config.configMutationExtensions) {
+                if (seen.add(extension)) { participants.add(extension); }
+            }
+        }
+        javax.persistence.EntityManager em = configs.get(0).dbf.getEntityManager();
+        for (ConfigTransactionalMutationExtensionPoint extension : participants) {
+            extension.beforeMutations(em, immutableChanges, context);
+        }
+        for (int i = 0; i < configs.size(); i++) {
+            ConfigMutation change = changes.get(i);
+            if (change.isDelete()) {
+                configs.get(i).deleteValue(change.getResourceUuid(), change.getResourceType(), true, true);
+            } else {
+                configs.get(i).updateValue(change.getResourceUuid(), change.getResourceType(), change.getNewValue(), true, true);
+            }
+        }
+        for (ConfigTransactionalMutationExtensionPoint extension : participants) {
+            extension.afterMutations(em, immutableChanges, context);
+        }
     }
 
     public <T> T defaultValue(Class<T> clz) {
@@ -146,7 +239,7 @@ public class ResourceConfig {
                         .eq(ResourceConfigVO_.name, globalConfig.getName())
                         .findValue();
 
-                updateValue(evt.getResourceUuid(), evt.getResourceType(), newValue, false);
+                updateValue(evt.getResourceUuid(), evt.getResourceType(), newValue, false, false);
                 logger.info(String.format("ResourceConfig [resourceUuid:%s, category:%s, name:%s] was updated in other" +
                                 " management node[uuid:%s], in line with that change, updated ours. %s --> %s",
                         evt.getResourceUuid(), globalConfig.getCategory(), globalConfig.getName(), nodeUuid, evt.getOldValue(), newValue));
@@ -165,7 +258,7 @@ public class ResourceConfig {
                 }
 
                 DeleteEvent evt = (DeleteEvent) data;
-                deleteValue(evt.getResourceUuid(), evt.getResourceType(), false);
+                deleteValue(evt.getResourceUuid(), evt.getResourceType(), false, false);
                 logger.info(String.format("ResourceConfig[resourceUuid: %s category: %s, name: %s] was deleted from" +
                                 " other management node[uuid:%s], in line with that change, deleted ours.",
                         evt.getResourceUuid(), globalConfig.getCategory(), globalConfig.getName(), nodeUuid));
@@ -182,7 +275,8 @@ public class ResourceConfig {
         }
     }
 
-    private void updateValue(String resourceUuid, String resourceType, String newValue, boolean localUpdate) {
+    private void updateValue(String resourceUuid, String resourceType, String newValue,
+            boolean localUpdate, boolean deferCallbacks) {
         String originValue = loadConfigValue(resourceUuid);
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
@@ -190,40 +284,87 @@ public class ResourceConfig {
             globalConfig.getValidators().forEach(it ->
                     it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
             validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
+            transactionalMutationExtensions.forEach(it ->
+                    it.beforeUpdate(dbf.getEntityManager(), this, resourceUuid, resourceType, oldValue, newValue));
             updateValueInDb(resourceUuid, resourceType, newValue);
-            localUpdateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
         }
-
-        updateExtensions.forEach(it -> it.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
-
-        if (localUpdate) {
-            UpdateEvent evt = new UpdateEvent();
-            evt.setResourceUuid(resourceUuid);
-            evt.setOldValue(oldValue);
-            evtf.fire(makeUpdateEventPath(), evt);
+        if (deferCallbacks) {
+            afterCommitOrNow(() -> {
+                if (localUpdate) {
+                    for (ResourceConfigUpdateExtensionPoint ext : localUpdateExtensions) {
+                        runPostCommitExtensionSafely(() -> ext.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
+                    }
+                }
+                for (ResourceConfigUpdateExtensionPoint ext : updateExtensions) {
+                    runPostCommitExtensionSafely(() -> ext.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue));
+                }
+                if (localUpdate) {
+                    UpdateEvent evt = new UpdateEvent();
+                    evt.setResourceUuid(resourceUuid); evt.setResourceType(resourceType); evt.setOldValue(oldValue);
+                    runCallbackSafely(() -> evtf.fire(makeUpdateEventPath(), evt));
+                }
+            });
+        } else {
+            if (localUpdate) {
+                for (ResourceConfigUpdateExtensionPoint ext : localUpdateExtensions) {
+                    ext.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue);
+                }
+            }
+            for (ResourceConfigUpdateExtensionPoint ext : updateExtensions) {
+                ext.updateResourceConfig(this, resourceUuid, resourceType, oldValue, newValue);
+            }
+            if (localUpdate) {
+                UpdateEvent evt = new UpdateEvent();
+                evt.setResourceUuid(resourceUuid); evt.setResourceType(resourceType); evt.setOldValue(oldValue);
+                afterCommitOrNow(() -> evtf.fire(makeUpdateEventPath(), evt));
+            }
         }
 
         logger.debug(String.format("updated resource config[resourceUuid:%s, resourceType:%s, category:%s, name:%s]: %s to %s",
                 resourceUuid, resourceType, globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
     }
 
-    private void deleteValue(String resourceUuid, String resourceType, boolean localDelete) {
+    private void deleteValue(String resourceUuid, String resourceType,
+            boolean localDelete, boolean deferCallbacks) {
         String originValue = loadConfigValue(resourceUuid);
         String oldValue = originValue == null ? globalConfig.value() : originValue;
 
         if (localDelete) {
+            deleteValidatorExtensions.forEach(it -> it.validateDelete(resourceUuid, oldValue));
+            transactionalMutationExtensions.forEach(it ->
+                    it.beforeDelete(dbf.getEntityManager(), this, resourceUuid, resourceType, oldValue));
             deleteInDb(resourceUuid);
-            localDeleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
         }
-
-        deleteExtensions.forEach(it -> it.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
-
-        if (localDelete) {
-            DeleteEvent evt = new DeleteEvent();
-            evt.setResourceUuid(resourceUuid);
-            evt.setResourceType(resourceType);
-            evt.setOldValue(oldValue);
-            evtf.fire(makeDeleteEventPath(), evt);
+        if (deferCallbacks) {
+            afterCommitOrNow(() -> {
+                if (localDelete) {
+                    for (ResourceConfigDeleteExtensionPoint ext : localDeleteExtensions) {
+                        runPostCommitExtensionSafely(() -> ext.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
+                    }
+                }
+                for (ResourceConfigDeleteExtensionPoint ext : deleteExtensions) {
+                    runPostCommitExtensionSafely(() -> ext.deleteResourceConfig(this, resourceUuid, resourceType, originValue));
+                }
+                if (localDelete) {
+                    DeleteEvent evt = new DeleteEvent();
+                    evt.setResourceUuid(resourceUuid); evt.setResourceType(resourceType); evt.setOldValue(oldValue);
+                    runCallbackSafely(() -> evtf.fire(makeDeleteEventPath(), evt));
+                }
+            });
+        } else {
+            if (localDelete) {
+                for (ResourceConfigDeleteExtensionPoint ext : localDeleteExtensions) {
+                    ext.deleteResourceConfig(this, resourceUuid, resourceType, originValue);
+                }
+            }
+            for (ResourceConfigDeleteExtensionPoint ext : deleteExtensions) {
+                ext.deleteResourceConfig(this, resourceUuid, resourceType, originValue);
+            }
+            if (localDelete) {
+                DeleteEvent evt = new DeleteEvent();
+                evt.setResourceUuid(resourceUuid); evt.setResourceType(resourceType); evt.setOldValue(oldValue);
+                afterCommitOrNow(() -> evtf.fire(makeDeleteEventPath(), evt));
+            }
         }
 
         logger.debug(String.format("deleted resource config[resourceUuid:%s, resourceType:%s, category:%s, name:%s]",
@@ -425,10 +566,12 @@ public class ResourceConfig {
     }
 
     protected void deleteInDb(String resourceUuid) {
-        SQL.New(ResourceConfigVO.class).eq(ResourceConfigVO_.resourceUuid, resourceUuid)
+        List<String> rowUuids = Q.New(ResourceConfigVO.class).select(ResourceConfigVO_.uuid)
+                .eq(ResourceConfigVO_.resourceUuid, resourceUuid)
                 .eq(ResourceConfigVO_.name, globalConfig.getName())
                 .eq(ResourceConfigVO_.category, globalConfig.getCategory())
-                .delete();
+                .listValues();
+        dbf.hardDeleteByPrimaryKeysInTransaction(rowUuids, ResourceConfigVO.class);
     }
 
     private String getResourceType(String resourceUuid) {
@@ -453,11 +596,34 @@ public class ResourceConfig {
     }
 
     private String makeDeleteEventPath() {
-        return s(ResourceConfigCanonicalEvents.UPDATE_EVENT_PATH).formatByMap(map(
+        return s(ResourceConfigCanonicalEvents.DELETE_EVENT_PATH).formatByMap(map(
                 e("nodeUuid", Platform.getManagementServerId()),
                 e("category", globalConfig.getCategory()),
                 e("name", globalConfig.getName())
         ));
+    }
+
+    private void afterCommitOrNow(Runnable callback) {
+        if (!org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive()) {
+            runCallbackSafely(callback);
+            return;
+        }
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
+                    @Override public void afterCommit() { runCallbackSafely(callback); }
+                });
+    }
+
+    private void runCallbackSafely(Runnable callback) {
+        try { callback.run(); }
+        catch (Throwable t) {
+            logger.warn(String.format("post-commit callback failed for ResourceConfig[category:%s, name:%s]",
+                    globalConfig.getCategory(), globalConfig.getName()), t);
+        }
+    }
+
+    private void runPostCommitExtensionSafely(Runnable callback) {
+        runCallbackSafely(() -> org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager, callback));
     }
 
     ResourceConfigVO loadConfig(String resourceUuid) {

@@ -226,6 +226,17 @@
         <class>org.zstack.header.volumeCache.HostCacheStoreCapacityVO</class>
         <class>org.zstack.header.volumeCache.VolumeCacheVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVO</class>
+        <class>org.zstack.kvm.memory.MemoryPolicyVO</class>
+        <class>org.zstack.kvm.memory.MemoryQueryVersionVO</class>
+        <class>org.zstack.kvm.memory.MemoryTaskVO</class>
+        <class>org.zstack.kvm.memory.MemoryTaskIdempotencyReceiptVO</class>
+        <class>org.zstack.kvm.memory.MemoryTaskFailureOutboxVO</class>
+        <class>org.zstack.kvm.memory.MemoryCloudBootstrapVO</class>
+        <class>org.zstack.kvm.memory.MemoryStateVO</class>
+        <class>org.zstack.kvm.memory.MemoryMigrationVO</class>
+        <class>org.zstack.kvm.memory.MemoryVmExclusionVO</class>
+        <class>org.zstack.kvm.memory.MemoryTargetShardVO</class>
+        <class>org.zstack.kvm.memory.MemoryStandardConfigMigrationVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
         <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>

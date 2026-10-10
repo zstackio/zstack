@@ -1,5 +1,8 @@
 package org.zstack.sdk;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import org.apache.commons.beanutils.PropertyUtils;
 
 import java.lang.reflect.InvocationTargetException;
@@ -92,17 +95,48 @@ public class ApiResult {
         }
     }
 
+    // This companion tree is only used as the source of schema remapping.
+    // Gson's raw Map decoder converts numbers to Double, which loses long
+    // precision before a nested inventory is decoded into its concrete type.
+    private static Object schemaSourceTree(JsonElement json) {
+        if (json.isJsonNull()) {
+            return null;
+        }
+        if (json.isJsonObject()) {
+            Map<String, Object> result = new LinkedHashMap<>();
+            for (Map.Entry<String, JsonElement> entry : json.getAsJsonObject().entrySet()) {
+                result.put(entry.getKey(), schemaSourceTree(entry.getValue()));
+            }
+            return result;
+        }
+        if (json.isJsonArray()) {
+            List<Object> result = new ArrayList<>();
+            for (JsonElement element : json.getAsJsonArray()) {
+                result.add(schemaSourceTree(element));
+            }
+            return result;
+        }
+        JsonPrimitive value = json.getAsJsonPrimitive();
+        if (value.isNumber()) {
+            // BigDecimal has an explicit Gson numeric adapter; using the
+            // parser's lazy Number here makes older Gson serialize an object.
+            return value.getAsBigDecimal();
+        }
+        return value.isBoolean() ? value.getAsBoolean() : value.getAsString();
+    }
+
     public  <T> T getResult(Class<T> clz) {
         if (resultString == null || resultString.isEmpty()) {
             return null;
         }
 
-        Map m = ZSClient.gson.fromJson(resultString, LinkedHashMap.class);
+        JsonElement sourceJson = new JsonParser().parse(resultString);
         T ret = ZSClient.gson.fromJson(resultString, clz);
-        if (!m.containsKey("schema")) {
+        if (!sourceJson.getAsJsonObject().has("schema")) {
             return ret;
         }
 
+        Map m = (Map) schemaSourceTree(sourceJson);
         Map<String, String> schema = (Map) m.get("schema");
         try {
             for (String path : schema.keySet()) {

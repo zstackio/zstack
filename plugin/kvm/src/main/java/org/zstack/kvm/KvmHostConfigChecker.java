@@ -39,7 +39,9 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            ssh.sudoCommand("cat /sys/kernel/mm/ksm/run");
+            // The managed ksmtuned writer owns the policy while this marker exists.
+            // Reconnect must not race it by redeploying legacy KSM configuration.
+            ssh.sudoCommand("if test -f /etc/zstack/memory-optimization/ksm-controller; then echo managed; else cat /sys/kernel/mm/ksm/run; fi");
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
                 logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",
@@ -47,7 +49,10 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 return true;
             }
 
-            boolean ksmEnabledOnHost = "1".equals(ret.getStdout());
+            if ("managed".equals(ret.getStdout().trim())) {
+                return false;
+            }
+            boolean ksmEnabledOnHost = "1".equals(ret.getStdout().trim());
             if (ksmEnabledOnHost && "true".equals(requireKsmCheck)) {
                 return false;
             }

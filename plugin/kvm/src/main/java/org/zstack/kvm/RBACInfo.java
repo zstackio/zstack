@@ -8,7 +8,9 @@ public class RBACInfo implements RBACDescription {
     @Override
     public void permissions() {
         permissionBuilder()
-                .normalAPIs(APIQueryHostOsCategoryMsg.class, APIQueryKvmHypervisorInfoMsg.class)
+                .normalAPIs(APIQueryHostOsCategoryMsg.class, APIQueryKvmHypervisorInfoMsg.class,
+                        org.zstack.kvm.memory.APIGetVmMemoryOptimizationMsg.class,
+                        org.zstack.kvm.memory.APIGetVmMemoryOptimizationsMsg.class)
                 .adminOnlyAPIs("org.zstack.kvm.**")
                 .build();
     }
