@@ -2,12 +2,13 @@
 set -e
 #If some arguments are "", the script will be called failed, since shell can't 
 #recognize "", when sending it through arguments. 
-echo "$0 $*"
 user="$1"
 password="$2"
 host="$3"
 port="$4"
 zstack_user_password="$5"
+bootstrap_mode="$6"
+bootstrap_request_uuid="$7"
 mysql_host="$host"
 
 case "$mysql_host" in
@@ -42,6 +43,25 @@ fi
 mysql_run() {
     $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port "$@"
 }
+
+if [[ -n "$bootstrap_mode" && "$bootstrap_mode" != "fresh-cloud-bootstrap" ]]; then
+  echo "Invalid internal database bootstrap mode" >&2
+  exit 2
+fi
+if [[ "$bootstrap_mode" == "fresh-cloud-bootstrap" ]]; then
+  if [[ ! "$bootstrap_request_uuid" =~ ^[0-9a-f]{32}$ ]]; then
+    echo "Invalid fresh-cloud bootstrap request identifier" >&2
+    exit 2
+  fi
+  existing_schema=$(mysql_run --batch --skip-column-names -e "SELECT SCHEMA_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME='zstack'") || {
+    echo "Cannot verify target database absence; refusing fresh-cloud bootstrap" >&2
+    exit 2
+  }
+  if [[ -n "$existing_schema" ]]; then
+    echo "Target zstack database already exists; refusing fresh-cloud bootstrap" >&2
+    exit 2
+  fi
+fi
 
 if command -v greatdb &> /dev/null; then
   mysql_run << EOF
@@ -146,4 +166,8 @@ EOF
   flush privileges;
 EOF
   fi
+fi
+
+if [[ "$bootstrap_mode" == "fresh-cloud-bootstrap" ]]; then
+  mysql_run zstack -e "INSERT INTO MemoryCloudBootstrapVO (uuid, status, requestUuid, reason) VALUES ('Global:global', 'Pending', '$bootstrap_request_uuid', 'Awaiting KSM and zero-pages capability/license checks')"
 fi

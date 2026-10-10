@@ -1,0 +1,127 @@
+{
+  "method": "GET",
+  "path": "/memory-states",
+  "payload": null,
+  "initial_http": 200,
+  "http": 200,
+  "job": null,
+  "body": {
+    "total": 3,
+    "snapshotId": "3c9ca9687eb9251feb489fb15d48686e0037bbbd373db81042219dc348bd367b",
+    "inventories": [
+      {
+        "schemaVersion": "memory-state-v1",
+        "bootId": "174bb48c-bcfb-4b7a-b3f9-6412eb0e9e81",
+        "featureState": "Unknown",
+        "dataAgeSeconds": 4,
+        "quality": "Partial",
+        "metrics": {
+          "ksmOrdinaryBytes": 0.0,
+          "zramBytes": 0.0,
+          "formulaVersion": "mechanism-estimate-v1",
+          "sampleTime": 1791456127127.0,
+          "quality": "Partial",
+          "zramSplitQuality": "Missing",
+          "metricQuality": {
+            "ksm_ordinary": "observed",
+            "ksm_zero": "missing",
+            "ksm_total": "partial",
+            "zram": "disabled",
+            "zram_ordinary": "missing",
+            "zram_writeback": "missing",
+            "total": "partial"
+          },
+          "monitoringSource": "node_exporter",
+          "displayTtlMillis": 90000,
+          "presentationTime": 1791456131767
+        },
+        "allowedActions": [
+          "query"
+        ],
+        "hostUuid": "0e3e93bf6f384701b6ffb7173553e5ba",
+        "desiredRevision": 0,
+        "status": "Unknown",
+        "capabilities": "{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096.0,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}}",
+        "state": "{\"managed\":false,\"bootId\":\"174bb48c-bcfb-4b7a-b3f9-6412eb0e9e81\",\"safeToRemove\":false,\"vms\":{},\"inventoryComplete\":true,\"actual\":{\"ksm\":{\"enabled\":false,\"pagesToScan\":100.0,\"sleepMillis\":20.0,\"zeroPagesEnabled\":false},\"zram\":{\"errors\":[{\"operation\":\"tuning-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"capacity-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"host-cpu-state\",\"reason\":\"[Errno 2] No such file or directory\"}]},\"writeback\":{\"errors\":[{\"operation\":\"backend-state\",\"reason\":\"[Errno 2] No such file or directory\"}]}},\"capabilities\":{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096.0,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}},\"savings\":{\"ksmOrdinaryBytes\":0,\"zramBytes\":0,\"formulaVersion\":\"mechanism-estimate-v1\",\"sampleTime\":1791456127127,\"quality\":\"Partial\",\"zramSplitQuality\":\"Missing\",\"metricQuality\":{\"ksm_ordinary\":\"observed\",\"ksm_zero\":\"missing\",\"ksm_total\":\"partial\",\"zram\":\"disabled\",\"zram_ordinary\":\"missing\",\"zram_writeback\":\"missing\",\"total\":\"partial\"},\"monitoringSource\":\"node_exporter\"}}",
+        "lastSampleTime": 1791456114579
+      },
+      {
+        "schemaVersion": "memory-state-v1",
+        "bootId": "d9396f63-e527-42b9-8864-61825ada3e74",
+        "featureState": "Unknown",
+        "dataAgeSeconds": 5,
+        "quality": "Partial",
+        "metrics": {
+          "ksmOrdinaryBytes": 0.0,
+          "zramBytes": 0.0,
+          "formulaVersion": "mechanism-estimate-v1",
+          "sampleTime": 1791456126135.0,
+          "quality": "Partial",
+          "zramSplitQuality": "Missing",
+          "metricQuality": {
+            "ksm_ordinary": "observed",
+            "ksm_zero": "missing",
+            "ksm_total": "partial",
+            "zram": "disabled",
+            "zram_ordinary": "missing",
+            "zram_writeback": "missing",
+            "total": "partial"
+          },
+          "monitoringSource": "node_exporter",
+          "displayTtlMillis": 90000,
+          "presentationTime": 1791456131768
+        },
+        "allowedActions": [
+          "query"
+        ],
+        "hostUuid": "a0c218d7928b45c9b45b04b6ca5786a8",
+        "desiredRevision": 0,
+        "status": "Unknown",
+        "capabilities": "{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}}",
+        "state": "{\"managed\":false,\"bootId\":\"d9396f63-e527-42b9-8864-61825ada3e74\",\"safeToRemove\":false,\"vms\":{},\"inventoryComplete\":true,\"actual\":{\"ksm\":{\"enabled\":false,\"pagesToScan\":100,\"sleepMillis\":20,\"zeroPagesEnabled\":false},\"zram\":{\"errors\":[{\"operation\":\"tuning-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"capacity-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"host-cpu-state\",\"reason\":\"[Errno 2] No such file or directory\"}]},\"writeback\":{\"errors\":[{\"operation\":\"backend-state\",\"reason\":\"[Errno 2] No such file or directory\"}]}},\"capabilities\":{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}},\"savings\":{\"ksmOrdinaryBytes\":0,\"zramBytes\":0,\"formulaVersion\":\"mechanism-estimate-v1\",\"sampleTime\":1791456126135,\"quality\":\"Partial\",\"zramSplitQuality\":\"Missing\",\"metricQuality\":{\"ksm_ordinary\":\"observed\",\"ksm_zero\":\"missing\",\"ksm_total\":\"partial\",\"zram\":\"disabled\",\"zram_ordinary\":\"missing\",\"zram_writeback\":\"missing\",\"total\":\"partial\"},\"monitoringSource\":\"node_exporter\"}}",
+        "lastSampleTime": 1791456114557
+      },
+      {
+        "schemaVersion": "memory-state-v1",
+        "bootId": "f04bd5d7-2532-4906-ac00-33596536ecad",
+        "featureState": "Unknown",
+        "drift": false,
+        "dataAgeSeconds": 4,
+        "quality": "Partial",
+        "metrics": {
+          "ksmOrdinaryBytes": 163635200.0,
+          "zramBytes": 0.0,
+          "formulaVersion": "mechanism-estimate-v1",
+          "sampleTime": 1791456127358.0,
+          "quality": "Partial",
+          "zramSplitQuality": "Missing",
+          "metricQuality": {
+            "ksm_ordinary": "observed",
+            "ksm_zero": "missing",
+            "ksm_total": "partial",
+            "zram": "disabled",
+            "zram_ordinary": "missing",
+            "zram_writeback": "missing",
+            "total": "partial"
+          },
+          "monitoringSource": "node_exporter",
+          "displayTtlMillis": 90000,
+          "presentationTime": 1791456131768
+        },
+        "allowedActions": [
+          "query"
+        ],
+        "controlOperationUuid": "36ffdbad42584cc9acb36037965fcc6d",
+        "hostUuid": "ae99e7222906497281fb3d4141f78833",
+        "desiredRevision": 10,
+        "appliedRevision": 10,
+        "status": "Succeeded",
+        "reason": "Agent returned no reason",
+        "capabilities": "{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}}",
+        "state": "{\"ksmOnly\":true,\"managed\":true,\"bootId\":\"f04bd5d7-2532-4906-ac00-33596536ecad\",\"safeToRemove\":false,\"vms\":{\"1f291611895b4d8fa365ac2c234bb31a\":{\"identityReason\":\"VM_IDENTITY_UNAVAILABLE\"},\"2f291611895b4d8fa365ac2c234bb32b\":{\"identityReason\":\"VM_IDENTITY_UNAVAILABLE\"}},\"inventoryComplete\":true,\"actual\":{\"ksm\":{\"enabled\":false,\"pagesToScan\":100,\"sleepMillis\":20,\"zeroPagesEnabled\":false},\"zram\":{\"errors\":[{\"operation\":\"tuning-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"capacity-state\",\"reason\":\"[Errno 2] No such file or directory\"},{\"operation\":\"host-cpu-state\",\"reason\":\"[Errno 2] No such file or directory\"}]},\"writeback\":{\"errors\":[{\"operation\":\"backend-state\",\"reason\":\"[Errno 2] No such file or directory\"}]}},\"capabilities\":{\"supported\":true,\"reasonCode\":\"SUPPORTED\",\"arch\":\"x86_64\",\"release\":\"kylinV10\",\"pageSize\":4096,\"kernel\":\"4.19.90-89.46.v2401.ky10.x86_64\",\"ksm\":true,\"ksmZeroPages\":true,\"ksmZeroPagesCounter\":false,\"zram\":false,\"zramReasonCode\":\"ABI_INCOMPLETE\",\"rebootRequired\":false,\"reclaimQualification\":{},\"writeback\":false,\"service\":false,\"interfaces\":{\"ksm_run\":true,\"ksm_pages_to_scan\":true,\"ksm_sleep_millisecs\":true,\"ksm_zero_pages\":true,\"ksm_zero_pages_counter\":false,\"zram_mm_stat\":false,\"zram_writeback\":false,\"cgroupv2\":false,\"memory_reclaim\":false}},\"savings\":{\"ksmOrdinaryBytes\":163635200,\"zramBytes\":0,\"formulaVersion\":\"mechanism-estimate-v1\",\"sampleTime\":1791456127358,\"quality\":\"Partial\",\"zramSplitQuality\":\"Missing\",\"metricQuality\":{\"ksm_ordinary\":\"observed\",\"ksm_zero\":\"missing\",\"ksm_total\":\"partial\",\"zram\":\"disabled\",\"zram_ordinary\":\"missing\",\"zram_writeback\":\"missing\",\"total\":\"partial\"},\"monitoringSource\":\"node_exporter\"}}",
+        "lastSampleTime": 1791456114576
+      }
+    ]
+  },
+  "elapsed": 0.061
+}

@@ -22,6 +22,13 @@ if [ -z $tool ]; then
   usage
 fi
 
+# Declared offline bundles carry a complete, SHA-pinned wheel closure. Keep
+# the legacy installer unchanged for other WARs; never fall back after a
+# declared offline contract fails validation.
+if [ -f "$cwd/offline-upgrade-manifest.json" ] && { [ "$tool" = 'zstack-cli' ] || [ "$tool" = 'zstack-ctl' ]; }; then
+    exec python3.11 "$cwd/offline_upgrade.py" --root "$cwd/../../.." --install "$tool"
+fi
+
 install_pip() {
     pip3.11 --version | grep 22.3.1 >/dev/null || yum install -y python3.11-pip
 }

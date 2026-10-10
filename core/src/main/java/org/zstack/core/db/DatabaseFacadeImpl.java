@@ -349,18 +349,26 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
         }
 
         private void fireHardDeleteExtension(Collection ids) {
-            List<HardDeleteEntityExtensionPoint> exts = hardDeleteExtensions.get(voClass);
-            if (exts != null) {
-                for (HardDeleteEntityExtensionPoint ext : exts) {
-                    ext.postHardDelete(ids, voClass);
-                }
-            }
-            for (HardDeleteEntityExtensionPoint ext : hardDeleteForAllExtensions) {
+            for (HardDeleteEntityExtensionPoint ext : getHardDeleteExtensionsFor(voClass)) {
                 ext.postHardDelete(ids, voClass);
             }
         }
 
+        private List<HardDeleteEntityExtensionPoint> getHardDeleteExtensionsFor(Class<?> entityClass) {
+            List<HardDeleteEntityExtensionPoint> extensions = new ArrayList<>();
+            List<HardDeleteEntityExtensionPoint> typed = hardDeleteExtensions.get(entityClass);
+            if (typed != null) {
+                extensions.addAll(typed);
+            }
+            extensions.addAll(hardDeleteForAllExtensions);
+            return extensions;
+        }
+
         private void hardDelete(Collection ids) {
+            hardDelete(ids, true);
+        }
+
+        private void hardDelete(Collection ids, boolean notifyExtensions) {
             String tblName = hasEO() ? eoClass.getSimpleName() : voClass.getSimpleName();
             String sql = String.format("delete from %s eo where eo.%s in (:ids)", tblName, voPrimaryKeyField.getName());
             Query q = getEntityManager().createQuery(sql);
@@ -368,7 +376,21 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             q.executeUpdate();
             logger.debug(String.format("hard delete %s records from %s", ids.size(), tblName));
 
-            fireHardDeleteExtension(ids);
+            if (notifyExtensions) {
+                fireHardDeleteExtension(ids);
+            }
+        }
+
+        private void fireHardDeleteExtensionsAfterCommit(Collection ids) {
+            for (HardDeleteEntityExtensionPoint extension : getHardDeleteExtensionsFor(voClass)) {
+                try {
+                    extension.postHardDelete(ids, voClass);
+                } catch (Throwable t) {
+                    // The database transaction has committed; a callback failure cannot imply rollback.
+                    logger.warn(String.format("post-commit hard-delete extension %s failed for entity %s",
+                            extension.getClass().getName(), voClass.getName()), t);
+                }
+            }
         }
 
         @Transactional
@@ -572,6 +594,27 @@ public class DatabaseFacadeImpl implements DatabaseFacade, Component {
             return;
         }
         getEntityInfo(entityClazz).removeByPrimaryKeys(priKeys);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void hardDeleteByPrimaryKeysInTransaction(Collection priKeys, Class<?> entityClazz) {
+        if (priKeys == null || priKeys.isEmpty()) {
+            return;
+        }
+
+        EntityInfo info = getEntityInfo(entityClazz);
+        DebugUtils.Assert(!info.hasEO(), "transactional hard delete only supports entities without EO");
+        DebugUtils.Assert(!info.hasCompositePrimaryKey(), "transactional hard delete only supports a single primary key");
+
+        List<Object> ids = Collections.unmodifiableList(new ArrayList<>(priKeys));
+        info.hardDelete(ids, false);
+        TransactionSynchronizationManager.registerSynchronization(new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
+            @Override
+            public void afterCommit() {
+                info.fireHardDeleteExtensionsAfterCommit(ids);
+            }
+        });
     }
 
     @Override

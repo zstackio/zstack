@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service xmlns="http://zstack.org/schema/zstack">
+    <id>memoryOptimization</id>
+    <message><name>org.zstack.kvm.memory.APIQueryMemoryStateMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetMemoryStatesMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetVmMemoryOptimizationMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetVmMemoryOptimizationsMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIQueryHostMemoryOperationsMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetHostMemoryOperationsMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetHostMemoryWritebackBackendsMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetMemoryPolicyMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIUpdateMemoryPolicyMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIPreviewMemoryPolicyMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIQueryMemoryTaskMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetMemoryTasksMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIGetMemorySummaryMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APICancelMemoryTaskMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIDeleteMemoryTaskMsg</name></message>
+</service>
