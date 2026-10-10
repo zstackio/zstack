@@ -137,6 +137,11 @@ public abstract class HostBase extends AbstractHost {
 
     protected abstract void connectHook(ConnectHostInfo info, Completion complete);
 
+    // Runs after pre-connect extensions (including HA recovery), before the host is Connected.
+    protected Flow createPostConnectFlow(ConnectHostInfo info) {
+        return null;
+    }
+
     protected abstract void updateOsHook(UpdateHostOSMsg msg, Completion completion);
 
     protected HostBase(HostVO self) {
@@ -1393,6 +1398,32 @@ public abstract class HostBase extends AbstractHost {
                                         trigger.fail(errCode);
                                     }
                                 }).start();
+                            }
+                        });
+
+                        flow(new NoRollbackFlow() {
+                            String __name__ = "run-host-post-connect-flow";
+
+                            @Override
+                            public void run(FlowTrigger trigger, Map data) {
+                                Flow hostFlow = createPostConnectFlow(ConnectHostInfo.fromConnectHostMsg(msg));
+                                if (hostFlow == null) {
+                                    trigger.next();
+                                    return;
+                                }
+
+                                FlowChainBuilder.newSimpleFlowChain().then(hostFlow)
+                                        .done(new FlowDoneHandler(trigger) {
+                                            @Override
+                                            public void handle(Map data) {
+                                                trigger.next();
+                                            }
+                                        }).error(new FlowErrorHandler(trigger) {
+                                            @Override
+                                            public void handle(ErrorCode errCode, Map data) {
+                                                trigger.fail(errCode);
+                                            }
+                                        }).start();
                             }
                         });
 

@@ -6509,57 +6509,10 @@ public class KVMHost extends HostBase implements Host {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
-                    String __name__ = "update-kvmagent-dependencies";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return CoreGlobalProperty.UNIT_TEST_ON;
-                    }
-
-                    @Override
-                    public void run(FlowTrigger trigger, Map data) {
-                        if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
-                            trigger.next();
-                            return;
-                        }
-
-                        // new added need to update dependency if experimental repo enabled
-                        if (info.isNewAdded() && !rcf.getResourceConfigValue(
-                                ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class)) {
-                            trigger.next();
-                            return;
-                        }
-
-                        UpdateDependencyCmd cmd = new UpdateDependencyCmd();
-                        cmd.hostUuid = self.getUuid();
-                        cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
-
-                        if (info.isNewAdded()) {
-                            cmd.enableExpRepo = true;
-                            cmd.updatePackages = rcf.getResourceConfigValue(
-                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY, self.getClusterUuid(), String.class);
-                            cmd.excludePackages = rcf.getResourceConfigValue(
-                                    ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY, self.getClusterUuid(), String.class);
-                        }
-                        new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
-                                .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
-                                    @Override
-                                    public void success(UpdateDependencyRsp ret) {
-                                        if (ret.isSuccess()) {
-                                            trigger.next();
-                                        } else {
-                                            trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10114, "%s", ret.getError()));
-                                        }
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        trigger.fail(errorCode);
-                                    }
-                                });
-                    }
-                });
+                // Existing hosts recover HA in the pre-connect stage before updating packages.
+                if (info.isNewAdded()) {
+                    flow(createUpdateKvmAgentDependenciesFlow(info));
+                }
 
                 flow(createCollectHostFactsFlow(info));
 
@@ -6632,6 +6585,85 @@ public class KVMHost extends HostBase implements Host {
                 });
             }
         }).start();
+    }
+
+    private Flow createUpdateKvmAgentDependenciesFlow(final ConnectHostInfo info) {
+        return new NoRollbackFlow() {
+            String __name__ = "update-kvmagent-dependencies";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if (!CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+                    trigger.next();
+                    return;
+                }
+
+                // new added need to update dependency if experimental repo enabled
+                if (info.isNewAdded() && !rcf.getResourceConfigValue(
+                        ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_REPO, self.getClusterUuid(), Boolean.class)) {
+                    trigger.next();
+                    return;
+                }
+
+                UpdateDependencyCmd cmd = new UpdateDependencyCmd();
+                cmd.hostUuid = self.getUuid();
+                cmd.zstackRepo = AnsibleGlobalProperty.ZSTACK_REPO;
+
+                if (info.isNewAdded()) {
+                    cmd.enableExpRepo = true;
+                    cmd.updatePackages = rcf.getResourceConfigValue(
+                            ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_UPDATE_DEPENDENCY, self.getClusterUuid(), String.class);
+                    cmd.excludePackages = rcf.getResourceConfigValue(
+                            ClusterGlobalConfig.ZSTACK_EXPERIMENTAL_EXCLUDE_DEPENDENCY, self.getClusterUuid(), String.class);
+                }
+                new Http<>(updateDependencyPath, cmd, UpdateDependencyRsp.class)
+                        .call(new ReturnValueCompletion<UpdateDependencyRsp>(trigger) {
+                            @Override
+                            public void success(UpdateDependencyRsp ret) {
+                                if (ret.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(Platform.operr(ORG_ZSTACK_KVM_10114, "%s", ret.getError()));
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+            }
+        };
+    }
+
+    @Override
+    protected Flow createPostConnectFlow(final ConnectHostInfo info) {
+        if (info.isNewAdded() || !CoreGlobalProperty.UPDATE_PKG_WHEN_CONNECT) {
+            return null;
+        }
+
+        return new NoRollbackFlow() {
+            String __name__ = "update-kvmagent-dependencies-after-ha-setup";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                FlowChainBuilder.newSimpleFlowChain()
+                        .setName(String.format("update-dependencies-after-connect-%s", self.getUuid()))
+                        .then(createUpdateKvmAgentDependenciesFlow(info))
+                        .then(createCollectHostFactsFlow(info))
+                        .done(new FlowDoneHandler(trigger) {
+                            @Override
+                            public void handle(Map data) {
+                                trigger.next();
+                            }
+                        }).error(new FlowErrorHandler(trigger) {
+                            @Override
+                            public void handle(ErrorCode errCode, Map data) {
+                                trigger.fail(errCode);
+                            }
+                        }).start();
+            }
+        };
     }
 
     private NoRollbackFlow createCollectHostFactsFlow(final ConnectHostInfo info) {
