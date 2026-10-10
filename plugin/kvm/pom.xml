@@ -10,6 +10,24 @@
     <artifactId>kvm</artifactId>
     <dependencies>
         <dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.zstack</groupId>
+            <artifactId>rest</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <version>2.2.224</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.zstack</groupId>
             <artifactId>compute</artifactId>
             <version>${project.version}</version>
@@ -79,6 +97,10 @@
                     <target>${project.java.version}</target>
                     <complianceLevel>${project.java.version}</complianceLevel>
                     <XnoInline>true</XnoInline>
+                    <!-- Groovy compilation may replace woven class files even
+                         when Java sources are unchanged. Always reapply the
+                         production aspects before testing/packaging. -->
+                    <forceAjcCompile>true</forceAjcCompile>
                     <aspectLibraries>
                         <aspectLibrary>
                             <groupId>org.springframework</groupId>

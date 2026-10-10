@@ -1,0 +1,117 @@
+{
+  "format": "memory-update-policy-action-examples-v1",
+  "endpoint": "PUT /v1/memory-policies/{resourceUuid}/actions",
+  "notes": [
+    "These are request-body examples; authentication/session metadata is supplied by the ZStack transport, not by JSON body fields.",
+    "UUIDs/revisions/opaque generations are illustrative. Obtain current values from preview/state/task APIs; never copy a stale fence into a live request.",
+    "The URI resourceUuid must equal the body resourceUuid. Host maintenance actions target one Host scope at a time.",
+    "Target-shard commit/cancel must reuse the same actor, clientRequestUuid, scope, and resourceUuid as the staged shard."
+  ],
+  "actions": [
+    {
+      "action": "apply",
+      "preconditions": "Use the previewed desired revision and complete sourceRevisions chain. For Host: Global, Cluster, and Host entries must match current preview.",
+      "request": {
+        "scope": "Host",
+        "resourceUuid": "1234567890abcdef1234567890abcdef",
+        "action": "apply",
+        "expectedRevision": 0,
+        "expectedSourceRevisions": {"Global:global": 0, "Cluster:234567890abcdef1234567890abcdef1": 0, "Host:1234567890abcdef1234567890abcdef": 0},
+        "clientRequestUuid": "00000000000000000000000000000001",
+        "policy": "{\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true}}"
+      }
+    },
+    {
+      "action": "clearOverride",
+      "preconditions": "Clear only fields explicitly owned at this scope. Refresh expectedRevision/sourceRevisions from preview.",
+      "request": {
+        "scope": "Host",
+        "resourceUuid": "1234567890abcdef1234567890abcdef",
+        "action": "clearOverride",
+        "expectedRevision": 0,
+        "expectedSourceRevisions": {"Global:global": 0, "Cluster:234567890abcdef1234567890abcdef1": 0, "Host:1234567890abcdef1234567890abcdef": 0},
+        "clearOverrideFields": ["ksm.enabled", "ksm.zeroPagesEnabled"],
+        "clientRequestUuid": "00000000000000000000000000000002",
+        "policy": "{}"
+      }
+    },
+    {
+      "action": "pause",
+      "preconditions": "Host must be Connected and not owned by an unresolved operation. Safety actions carry no policy changes.",
+      "request": {"scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"pause","expectedRevision":0,"clientRequestUuid":"00000000000000000000000000000003","policy":"{}"}
+    },
+    {
+      "action": "drain",
+      "preconditions": "Use only for explicit maintenance after reviewing the Host state. This requests service-controlled drain; it does not authorize destructive pool reset.",
+      "request": {"scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"drain","expectedRevision":0,"clientRequestUuid":"00000000000000000000000000000004","policy":"{}"}
+    },
+    {
+      "action": "resume",
+      "preconditions": "Requires a successful, confirmed pause and the exact current controlOperationUuid returned by Host state.",
+      "request": {"scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"resume","expectedRevision":0,"expectedControlOperationUuid":"11111111111111111111111111111111","clientRequestUuid":"00000000000000000000000000000005","policy":"{}"}
+    },
+    {
+      "action": "reconcile",
+      "preconditions": "Use only for an Unknown/Blocked unresolved operation. Reconcile queries the existing operation journal; it does not replay destructive work.",
+      "request": {"scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"reconcile","expectedRevision":0,"clientRequestUuid":"00000000000000000000000000000006","policy":"{}"}
+    },
+    {
+      "action": "recoverUncertain",
+      "preconditions": "Host-only retirement of an unresolved apply/clearOverride after verifying same boot, exact Unknown operation, successful drain, and current pool generation. It does not assert the old request succeeded or failed.",
+      "request": {
+        "scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"recoverUncertain","expectedRevision":0,
+        "expectedControlOperationUuid":"22222222222222222222222222222222",
+        "clientRequestUuid":"00000000000000000000000000000007","policy":"{}",
+        "recovery":{"expectedHostBootId":"1e73a145-2662-4911-9c4f-b75a7d91a88e","expectedPoolGeneration":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","drainControlOperationUuid":"33333333333333333333333333333333","confirmed":true}
+      }
+    },
+    {
+      "action": "prepareWritebackBackend",
+      "preconditions": "Host-only. candidateId must be returned by current backend discovery; boot/pool fence and exact byte capacity must be current. No raw device path is accepted.",
+      "request": {
+        "scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"prepareWritebackBackend","expectedRevision":0,
+        "expectedSourceRevisions":{"Global:global":0,"Cluster:234567890abcdef1234567890abcdef1":0,"Host:1234567890abcdef1234567890abcdef":0},
+        "clientRequestUuid":"00000000000000000000000000000008","policy":"{}",
+        "backendPreparation":{"candidateId":"candidate:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","expectedHostBootId":"1e73a145-2662-4911-9c4f-b75a7d91a88e","expectedPoolGeneration":"none","backendCapacityBytes":21474836480,"resetConfirmed":true}
+      }
+    },
+    {
+      "action": "prepareZramPool",
+      "preconditions": "Host-only, after a successful drain; control UUID and pool generation must match fresh Host state. Explicit confirmation is required.",
+      "request": {
+        "scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"prepareZramPool","expectedRevision":0,
+        "expectedSourceRevisions":{"Global:global":0,"Cluster:234567890abcdef1234567890abcdef1":0,"Host:1234567890abcdef1234567890abcdef":0},
+        "expectedControlOperationUuid":"33333333333333333333333333333333",
+        "clientRequestUuid":"00000000000000000000000000000009","policy":"{}",
+        "poolPreparation":{"expectedHostBootId":"1e73a145-2662-4911-9c4f-b75a7d91a88e","expectedPoolGeneration":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","resetConfirmed":true}
+      }
+    },
+    {
+      "action": "stageTargetShard",
+      "preconditions": "Stage immutable target UUID chunks using a unique generation, full shard count, total count, and SHA-256 digest of the sorted compact JSON UUID array.",
+      "request": {
+        "scope":"Global","resourceUuid":"global","action":"stageTargetShard","expectedRevision":0,
+        "clientRequestUuid":"00000000000000000000000000000010","policy":"{}",
+        "targetSnapshotGeneration":"snapshot-generation-1","targetShardIndex":0,"targetShardCount":1,"targetTotalCount":1,
+        "targetDigest":"f192c1aa30cc75d85e2a27fe76909d549b2fa63757b4ac91b06b709e3040ca22",
+        "targetVmUuids":["aabbccddeeff00112233445566778899"]
+      }
+    },
+    {
+      "action": "commitTargetShards",
+      "preconditions": "Commit only after every shard is staged. Reuse the same request key and exact generation/count/digest/revision; targetVmUuids are assembled from staged shards.",
+      "request": {
+        "scope":"Global","resourceUuid":"global","action":"commitTargetShards","expectedRevision":0,
+        "expectedSourceRevisions":{"Global:global":0},"clientRequestUuid":"00000000000000000000000000000010","policy":"{\"zram\":{\"selectionMode\":\"list\"}}",
+        "targetHostUuids":["1234567890abcdef1234567890abcdef"],
+        "targetSnapshotGeneration":"snapshot-generation-1","targetShardCount":1,"targetTotalCount":1,
+        "targetDigest":"f192c1aa30cc75d85e2a27fe76909d549b2fa63757b4ac91b06b709e3040ca22"
+      }
+    },
+    {
+      "action": "cancelTargetShards",
+      "preconditions": "Cancel staging by the original actor/request key; no staged targets are applied.",
+      "request": {"scope":"Global","resourceUuid":"global","action":"cancelTargetShards","expectedRevision":0,"clientRequestUuid":"00000000000000000000000000000010","policy":"{}"}
+    }
+  ]
+}

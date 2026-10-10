@@ -73,6 +73,16 @@
                     <execution>
                         <goals>
                             <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Reapply production transaction advice after
+                                 incremental Groovy compilation. -->
+                            <forceAjcCompile>true</forceAjcCompile>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>weave-tests</id>
+                        <goals>
                             <goal>test-compile</goal>
                         </goals>
                     </execution>

@@ -10,7 +10,19 @@
     <artifactId>build</artifactId>
     <packaging>war</packaging>
 
+    <properties>
+        <!-- Official SQL is the normal product contract. Only an explicit
+             compatibility build may target the historical experimental DB. -->
+        <memory.migration.sourceDirectory>../conf/db/upgrade</memory.migration.sourceDirectory>
+    </properties>
+
     <profiles>
+        <profile>
+            <id>memory-legacy-compat</id>
+            <properties>
+                <memory.migration.sourceDirectory>../conf/db/memory-migration-compat/legacy</memory.migration.sourceDirectory>
+            </properties>
+        </profile>
         <profile>
             <id>premium</id>
 
@@ -46,6 +58,10 @@
                                         <include>**/*</include>
                                     </includes>
                                     <excludes>
+                                        <exclude>db/memory-migration-compat/**</exclude>
+                                        <exclude>db/upgrade/V5.5.38.*memory*.sql</exclude>
+                                        <exclude>db/upgrade/V5.5.38.1__schema.sql</exclude>
+                                        <exclude>db/upgrade/memory-migration-cohort.json</exclude>
                                         <exclude>zstack.xml</exclude>
                                         <exclude>persistence.xml</exclude>
                                         <exclude>springConfigXml/localStorage.xml</exclude>
@@ -58,6 +74,15 @@
                                         <exclude>searchConfig/indexConfig.xml</exclude>
                                         <exclude>springConfigXml/resourceConfig.xml</exclude>
                                     </excludes>
+                                </resource>
+                                <resource>
+                                    <directory>${memory.migration.sourceDirectory}</directory>
+                                    <targetPath>WEB-INF/classes/db/upgrade</targetPath>
+                                    <includes>
+                                        <include>V5.5.38.*memory*.sql</include>
+                                        <include>V5.5.38.1__schema.sql</include>
+                                        <include>memory-migration-cohort.json</include>
+                                    </includes>
                                 </resource>
                                 <resource>
                                     <directory>../conf</directory>
@@ -706,6 +731,21 @@
                             <targetPath>WEB-INF/classes</targetPath>
                             <includes>
                                 <include>**/*</include>
+                            </includes>
+                            <excludes>
+                                <exclude>db/memory-migration-compat/**</exclude>
+                                <exclude>db/upgrade/V5.5.38.*memory*.sql</exclude>
+                                <exclude>db/upgrade/V5.5.38.1__schema.sql</exclude>
+                                <exclude>db/upgrade/memory-migration-cohort.json</exclude>
+                            </excludes>
+                        </resource>
+                        <resource>
+                            <directory>${memory.migration.sourceDirectory}</directory>
+                            <targetPath>WEB-INF/classes/db/upgrade</targetPath>
+                            <includes>
+                                <include>V5.5.38.*memory*.sql</include>
+                                <include>V5.5.38.1__schema.sql</include>
+                                <include>memory-migration-cohort.json</include>
                             </includes>
                         </resource>
                         <resource>

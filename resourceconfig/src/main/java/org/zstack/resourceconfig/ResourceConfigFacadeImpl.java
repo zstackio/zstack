@@ -71,7 +71,8 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
 
     private void handle(APIDeleteResourceConfigMsg msg) {
         ResourceConfig rc = getResourceConfig(msg.getIdentity());
-        rc.deleteValue(msg.getResourceUuid());
+        rc.deleteValue(msg.getResourceUuid(), rc.hasConfigMutationExtensions()
+                ? org.zstack.core.config.ConfigMutationContext.fromApiMessage(msg) : null);
         bus.publish(new APIDeleteResourceConfigEvent(msg.getId()));
     }
 
@@ -80,7 +81,8 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
         APIUpdateResourceConfigEvent evt = new APIUpdateResourceConfigEvent(msg.getId());
 
         try {
-            rc.updateValue(msg.getResourceUuid(), msg.getValue());
+            rc.updateValue(msg.getResourceUuid(), msg.getValue(), rc.hasConfigMutationExtensions()
+                    ? org.zstack.core.config.ConfigMutationContext.fromApiMessage(msg) : null);
             evt.setInventory(ResourceConfigInventory.valueOf(rc.loadConfig(msg.getResourceUuid())));
         } catch (GlobalConfigException e) {
             evt.setError(operr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
@@ -90,6 +92,50 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
     }
 
     private void handle(APIUpdateResourceConfigsMsg msg) {
+        boolean atomic = msg.getResourceConfigs().stream().anyMatch(item -> {
+            ResourceConfig config = getResourceConfig(GlobalConfig.produceIdentity(item.getCategory(), item.getName()));
+            return config != null && config.requiresAtomicBulkTransaction();
+        });
+        APIUpdateResourceConfigsEvent evt = atomic ? handleAtomicBulk(msg) : handleBestEffortBulk(msg);
+        bus.publish(evt);
+    }
+
+    /** Atomicity is declared by the affected ResourceConfig, not by a business-specific identity. */
+    private APIUpdateResourceConfigsEvent handleAtomicBulk(APIUpdateResourceConfigsMsg msg) {
+        try {
+            return new SQLBatchWithReturn<APIUpdateResourceConfigsEvent>() {
+                @Override protected APIUpdateResourceConfigsEvent scripts() {
+                    List<ResourceConfig> configs = new ArrayList<>();
+                    List<org.zstack.core.config.ConfigMutation> changes = new ArrayList<>();
+                    // Complete read-only validation before the first write.
+                    for (APIUpdateResourceConfigsMsg.ResourceConfigAO item : msg.getResourceConfigs()) {
+                        ResourceConfig config = getResourceConfig(GlobalConfig.produceIdentity(item.getCategory(), item.getName()));
+                        if (config == null) { throw new GlobalConfigException("ResourceConfig is not bound"); }
+                        config.validateNewValue(msg.getResourceUuid(), item.getValue());
+                        configs.add(config);
+                        changes.add(config.mutation(msg.getResourceUuid(), item.getValue(), false));
+                    }
+                    org.zstack.core.config.ConfigMutationContext context = configs.stream()
+                            .anyMatch(ResourceConfig::hasConfigMutationExtensions)
+                            ? org.zstack.core.config.ConfigMutationContext.fromApiMessage(msg) : null;
+                    if (context != null) { ResourceConfig.applyMutations(configs, changes, context); }
+                    else {
+                        // Preserve legacy participants and non-opt-in bulk behavior.
+                        for (int i = 0; i < configs.size(); i++) {
+                            configs.get(i).updateValue(msg.getResourceUuid(), msg.getResourceConfigs().get(i).getValue());
+                        }
+                    }
+                    return bulkSuccessEvent(msg);
+                }
+            }.execute();
+        } catch (GlobalConfigException e) {
+            APIUpdateResourceConfigsEvent rejected = new APIUpdateResourceConfigsEvent(msg.getId());
+            rejected.setError(operr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
+            return rejected;
+        }
+    }
+
+    private APIUpdateResourceConfigsEvent handleBestEffortBulk(APIUpdateResourceConfigsMsg msg) {
         List<String> identities = new ArrayList<>();
         for (APIUpdateResourceConfigsMsg.ResourceConfigAO resourceConfigAO : msg.getResourceConfigs()) {
             String identity = GlobalConfig.produceIdentity(resourceConfigAO.getCategory(), resourceConfigAO.getName());
@@ -100,11 +146,19 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             } catch (Exception e) {
                 logger.debug(String.format("updated resource config[resourceUuid:%s, category:%s, name:%s] to %s failed",
                         msg.getResourceUuid(),  resourceConfigAO.getCategory(), resourceConfigAO.getName(), resourceConfigAO.getValue()));
-            } finally {
-                continue;
             }
         }
 
+        return bulkSuccessEvent(msg, identities);
+    }
+
+    private APIUpdateResourceConfigsEvent bulkSuccessEvent(APIUpdateResourceConfigsMsg msg) {
+        List<String> identities = msg.getResourceConfigs().stream()
+                .map(it -> GlobalConfig.produceIdentity(it.getCategory(), it.getName())).collect(Collectors.toList());
+        return bulkSuccessEvent(msg, identities);
+    }
+
+    private APIUpdateResourceConfigsEvent bulkSuccessEvent(APIUpdateResourceConfigsMsg msg, List<String> identities) {
         APIUpdateResourceConfigsEvent evt = new APIUpdateResourceConfigsEvent(msg.getId());
         evt.setInventories(new ArrayList<>());
         for (String identity : identities) {
@@ -118,7 +172,7 @@ public class ResourceConfigFacadeImpl extends AbstractService implements Resourc
             evt.getInventories().add(struct);
         }
 
-        bus.publish(evt);
+        return evt;
     }
 
     private void handle(APIGetResourceBindableConfigMsg msg) {

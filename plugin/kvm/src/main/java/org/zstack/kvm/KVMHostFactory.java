@@ -23,6 +23,7 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
+import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.config.GuestOsExtensionPoint;
@@ -81,6 +82,10 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.resourceconfig.ResourceConfigTransactionalMutationExtensionPoint;
+import org.zstack.kvm.memory.MemoryRepository;
+import org.zstack.kvm.memory.MemoryStandardField;
+import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
 import org.zstack.utils.ShellUtils;
@@ -176,6 +181,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private ThreadFacade thdf;
     @Autowired
     private ResourceConfigFacade rcf;
+    @Autowired
+    private MemoryRepository memoryRepository;
     @Autowired
     private VmInstanceDeviceManager vidm;
     @Autowired
@@ -622,6 +629,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
             }
         });
+        installStandardMemoryConfiguration();
 
         resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
@@ -970,6 +978,41 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         return true;
+    }
+
+    /** One participant owns the complete standard configuration batch, including legacy host.ksm. */
+    void installStandardMemoryConfiguration() {
+        MemoryStandardConfigurationCoordinator coordinator =
+                new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty);
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            GlobalConfig global = field.config();
+            global.installValidateExtension((category, name, oldValue, newValue) ->
+                    MemoryStandardConfigurationCoordinator.validateScalar(field, newValue));
+            global.installConfigMutationExtension(coordinator);
+            rcf.getResourceConfig(global.getIdentity()).installConfigMutationExtension(coordinator);
+        }
+    }
+
+    /** Historical coordination helper retained for legacy regression tests, not registered at startup. */
+    void installLegacyHostKsmCoordination() {
+        ResourceConfig hostKsm = rcf.getResourceConfig(KVMGlobalConfig.HOST_KSM.getIdentity());
+        KVMGlobalConfig.HOST_KSM.enableTransactionalUpdate();
+        KVMGlobalConfig.HOST_KSM.installBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
+            @Override public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
+                memoryRepository.recordLegacyKsmGlobalMutation(oldConfig.value(), newValue);
+            }
+        });
+        hostKsm.installTransactionalMutationExtension(new ResourceConfigTransactionalMutationExtensionPoint() {
+            @Override public boolean requiresAtomicBulkTransaction() { return true; }
+            @Override public void beforeUpdate(javax.persistence.EntityManager em, ResourceConfig config,
+                    String resourceUuid, String resourceType, String oldValue, String newValue) {
+                memoryRepository.recordLegacyKsmResourceMutation(em, resourceUuid);
+            }
+            @Override public void beforeDelete(javax.persistence.EntityManager em, ResourceConfig config,
+                    String resourceUuid, String resourceType, String oldValue) {
+                memoryRepository.recordLegacyKsmResourceMutation(em, resourceUuid);
+            }
+        });
     }
 
     private void cleanDeviceAddress(SystemTagInventory tag) {

@@ -3,6 +3,7 @@ package org.zstack.core.config;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventCallback;
@@ -10,6 +11,7 @@ import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfigCanonicalEvents.UpdateEvent;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.errorcode.OperationFailureException;
@@ -27,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionDSL.e;
@@ -48,6 +51,8 @@ public class GlobalConfig {
     private String defaultValue;
     private volatile String value;
     private boolean linked;
+    private boolean transactionalUpdateEnabled;
+    private transient List<ConfigTransactionalMutationExtensionPoint> mutationExtensions = new ArrayList<>();
     private transient List<GlobalConfigUpdateExtensionPoint> updateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeUpdateExtensionPoint> beforeUpdateExtensions = new ArrayList<>();
     private transient List<GlobalConfigBeforeResetExtensionPoint> beforeResetExtensions = new ArrayList<>();
@@ -73,6 +78,8 @@ public class GlobalConfig {
     private DatabaseFacade dbf;
     @Autowired
     private EventFacade evtf;
+    @Autowired
+    private PlatformTransactionManager transactionManager;
 
     public EventFacade getEvtf() {
         return evtf;
@@ -131,6 +138,7 @@ public class GlobalConfig {
         setDefaultValue(g.getDefaultValue());
         setValue(g.value());
         setLinked(g.isLinked());
+        transactionalUpdateEnabled = g.transactionalUpdateEnabled;
 
         validators = new ArrayList<>();
         queryExtensions = new ArrayList<>();
@@ -161,6 +169,37 @@ public class GlobalConfig {
         q.add(GlobalConfigVO_.category, Op.EQ, category);
         q.add(GlobalConfigVO_.name, Op.EQ, name);
         return q.find();
+    }
+
+    /**
+     * Opt in to an atomic local update envelope. Used only by configuration
+     * identities whose before-update coordinator must commit with the config row.
+     */
+    public void enableTransactionalUpdate() {
+        transactionalUpdateEnabled = true;
+    }
+
+    /**
+     * Reload the durable value and publish the canonical update after an external
+     * transaction has committed a GlobalConfigVO change. This method does not
+     * write the database; the event lets other management nodes reload the same row.
+     */
+    public void reloadAndPublishCanonicalUpdateAfterCommit() {
+        reloadAndPublishCanonicalUpdateAfterCommit(value);
+    }
+
+    private void reloadAndPublishCanonicalUpdateAfterCommit(String oldValue) {
+        GlobalConfigVO persisted = reload();
+        if (persisted == null) {
+            throw new CloudRuntimeException(String.format("GlobalConfig row disappeared: category[%s], name[%s]", category, name));
+        }
+        String newValue = persisted.getValue();
+        value = newValue;
+        if (Objects.equals(oldValue, newValue)) { return; }
+        UpdateEvent evt = new UpdateEvent();
+        evt.setOldValue(oldValue);
+        evt.setNewValue(newValue);
+        evtf.fire(makeUpdateEventPath(), evt);
     }
 
     public void installLocalUpdateExtension(GlobalConfigUpdateExtensionPoint ext) {
@@ -341,12 +380,66 @@ public class GlobalConfig {
     }
 
     private void update(String newValue, boolean localUpdate) {
+        update(newValue, localUpdate, ConfigMutationContext.internal());
+    }
+
+    private void update(String newValue, boolean localUpdate, ConfigMutationContext context) {
         // substitute system properties in newValue
-        newValue = StringTemplate.substitute(newValue, propertiesMap);
+        final String updateValue = StringTemplate.substitute(newValue, propertiesMap);
 
-        validate(newValue);
+        validate(updateValue);
 
-        executeUpdate(newValue, localUpdate);
+        if (localUpdate && transactionalUpdateEnabled) {
+            String previous = value;
+            GlobalConfig origin = new GlobalConfig().copy(this);
+            try {
+                new SQLBatchWithReturn<Void>() {
+                    @Override protected Void scripts() {
+                        List<ConfigMutation> changes = java.util.Collections.singletonList(
+                                new ConfigMutation(category, name, null, null, updateValue, false));
+                        for (ConfigTransactionalMutationExtensionPoint ext : mutationExtensions) {
+                            ext.beforeMutations(dbf.getEntityManager(), changes, context);
+                        }
+                        executeUpdate(updateValue, true);
+                        for (ConfigTransactionalMutationExtensionPoint ext : mutationExtensions) {
+                            ext.afterMutations(dbf.getEntityManager(), changes, context);
+                        }
+                        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+                                new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
+                                    @Override public void afterCommit() {
+                                        try {
+                                            org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager, () -> {
+                                                try { reloadAndPublishCanonicalUpdateAfterCommit(previous); }
+                                                catch (Throwable failure) {
+                                                    logger.warn(String.format("committed global config %s.%s could not reload or publish its canonical update",
+                                                            category, name), failure);
+                                                }
+                                            });
+                                        } catch (Throwable failure) {
+                                            logger.warn(String.format("committed global config %s.%s post-commit refresh failed",
+                                                    category, name), failure);
+                                        }
+                                        notifyCommittedTransactionalUpdate(origin);
+                                    }
+
+                                    @Override public void afterCompletion(int status) {
+                                        if (status != STATUS_COMMITTED) {
+                                            GlobalConfigVO persisted = GlobalConfig.this.reload();
+                                            if (persisted != null) { value = persisted.getValue(); }
+                                        }
+                                    }
+                                });
+                        return null;
+                    }
+                }.execute();
+            } catch (RuntimeException e) {
+                GlobalConfigVO persisted = reload();
+                value = persisted == null ? previous : persisted.getValue();
+                throw e;
+            }
+        } else {
+            executeUpdate(updateValue, localUpdate);
+        }
     }
 
     private void executeUpdate(String newValue, boolean localUpdate) {
@@ -376,37 +469,67 @@ public class GlobalConfig {
             }
         }
 
-        value = newValue;
+        boolean deferCallbacks = localUpdate && transactionalUpdateEnabled;
+        if (!deferCallbacks) { value = newValue; }
 
         if (localUpdate) {
             vo.setValue(newValue);
-            dbf.update(vo);
+            if (deferCallbacks) {
+                // DatabaseFacade.update uses REQUIRES_NEW. Opted-in mutations
+                // must keep the config row in the coordinator's transaction;
+                // otherwise a later hook veto rolls back its ledger but leaves
+                // the independently committed desired value behind.
+                dbf.getEntityManager().merge(vo);
+            } else {
+                dbf.update(vo);
+            }
 
-            final GlobalConfig self = this;
-            CollectionUtils.safeForEach(localUpdateExtensions, new ForEachFunction<GlobalConfigUpdateExtensionPoint>() {
-                @Override
-                public void run(GlobalConfigUpdateExtensionPoint ext) {
-                    ext.updateGlobalConfig(origin, self);
-                }
-            });
-        }
-
-        for (GlobalConfigUpdateExtensionPoint ext : updateExtensions) {
-            try {
-                ext.updateGlobalConfig(origin, this);
-            } catch (Throwable t) {
-                logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+            if (!deferCallbacks) {
+                final GlobalConfig self = this;
+                CollectionUtils.safeForEach(localUpdateExtensions, new ForEachFunction<GlobalConfigUpdateExtensionPoint>() {
+                    @Override
+                    public void run(GlobalConfigUpdateExtensionPoint ext) {
+                        ext.updateGlobalConfig(origin, self);
+                    }
+                });
             }
         }
 
-        if (localUpdate) {
+        if (!deferCallbacks) {
+            for (GlobalConfigUpdateExtensionPoint ext : updateExtensions) {
+                try {
+                    ext.updateGlobalConfig(origin, this);
+                } catch (Throwable t) {
+                    logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t);
+                }
+            }
+        }
+
+        if (localUpdate && !transactionalUpdateEnabled) {
             UpdateEvent evt = new UpdateEvent();
             evt.setOldValue(origin.value());
             evt.setNewValue(newValue);
             evtf.fire(makeUpdateEventPath(), evt);
         }
 
-        logger.debug(String.format("updated global config[category:%s, name:%s]: %s to %s", category, name, origin.value(), value));
+        logger.debug(String.format("updated global config[category:%s, name:%s]: %s to %s", category, name, origin.value(), newValue));
+    }
+
+    private void notifyCommittedTransactionalUpdate(GlobalConfig origin) {
+        final GlobalConfig self = this;
+        for (GlobalConfigUpdateExtensionPoint ext : localUpdateExtensions) {
+            try {
+                org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager,
+                        () -> ext.updateGlobalConfig(origin, self));
+            } catch (Throwable t) { logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t); }
+        }
+        for (GlobalConfigUpdateExtensionPoint ext : updateExtensions) {
+            try {
+                org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager,
+                        () -> ext.updateGlobalConfig(origin, self));
+            }
+            catch (Throwable t) { logger.warn(String.format("unhandled exception when calling %s", ext.getClass()), t); }
+        }
     }
 
     public void resetValue() {
@@ -414,12 +537,23 @@ public class GlobalConfig {
     }
 
     public void updateValue(Object val) {
-        if (TypeUtils.nullSafeEquals(value, val)) {
+        updateValue(val, ConfigMutationContext.internal());
+    }
+
+    public void installConfigMutationExtension(ConfigTransactionalMutationExtensionPoint extension) {
+        if (!mutationExtensions.contains(extension)) { mutationExtensions.add(extension); }
+        enableTransactionalUpdate();
+    }
+
+    public boolean hasConfigMutationExtensions() { return !mutationExtensions.isEmpty(); }
+
+    public void updateValue(Object val, ConfigMutationContext context) {
+        if (!hasConfigMutationExtensions() && TypeUtils.nullSafeEquals(value, val)) {
             return;
         }
 
         String newValue = val == null ? null : val.toString();
-        update(newValue, true);
+        update(newValue, true, context);
     }
 
     public GlobalConfigOptions getOptions() {

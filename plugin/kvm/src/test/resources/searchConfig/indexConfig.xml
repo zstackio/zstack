@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- REST annotation tests do not start Hibernate or exercise search indexes. -->
+<indexes xmlns="http://zstack.org/schema/zstack"/>

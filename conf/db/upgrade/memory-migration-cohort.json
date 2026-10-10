@@ -1,0 +1,63 @@
+{
+  "format": "memory-migration-cohort-v4",
+  "cohort": "official-schema-1-memory-1001-to-1005",
+  "buildProfile": "official",
+  "officialPristineSupported": true,
+  "entries": [
+    {
+      "file": "V5.5.38.1001__memory_optimization.sql",
+      "sha256": "6b04c6f15e8bfd8310b280a8b7a205a2641aecb2b264930f11ef1a4faff545e7",
+      "bytes": 3223
+    },
+    {
+      "file": "V5.5.38.1002__memory_policy_revision.sql",
+      "sha256": "86793806e0bc34b88c4baf58821a6edd5bf925e61892e97bf1e6822e009e1a00",
+      "bytes": 852
+    },
+    {
+      "file": "V5.5.38.1003__memory_target_shards.sql",
+      "sha256": "d74d24e93b7e75bd866c94480cfe049b95f8a0985b42fff8560f39e5687e8d64",
+      "bytes": 823
+    },
+    {
+      "file": "V5.5.38.1004__memory_commit_receipt.sql",
+      "sha256": "145660284872414a75f7f98ed8e6486272db8862910882c393ff9e0026b50da1",
+      "bytes": 560
+    },
+    {
+      "file": "V5.5.38.1005__memory_resume_fence.sql",
+      "sha256": "e5d447ffe28f11074119a8d4b1f58f4e63dc53915baf841ad2c78fca9ac4cb61",
+      "bytes": 171
+    },
+    {
+      "file": "V5.5.38.1006__memory_task_failure_outbox.sql",
+      "sha256": "af433421b13865dc812a56b0d2559fa759fdc066035f557eb27caf3bd51a688c",
+      "bytes": 1159
+    },
+    {
+      "file": "V5.5.38.1007__memory_cloud_bootstrap.sql",
+      "sha256": "36cb0760f5fd6c4d89db1a7953fa4a1b81043c50dfc13d4a3aa825bdf815ce75",
+      "bytes": 1281
+    },
+    {
+      "file": "V5.5.38.1008__memory_query_version.sql",
+      "sha256": "789a548e35c4102cc3078f4a150414b797e7599e8054cb7dee1dcee8d89788e8",
+      "bytes": 512
+    },
+    {
+      "file": "V5.5.38.1009__memory_standard_config_owner.sql",
+      "sha256": "c066907aac875890dc329bb6bc98790e935033dc737ef06ea796b74b4dcbe7c7",
+      "bytes": 433
+    },
+    {
+      "file": "V5.5.38.1010__memory_task_idempotency_receipt.sql",
+      "sha256": "a185011e5bc93dbd1d3a69f9beb4bfd58a52868c75d6501d7495ea94d4d6e2b9",
+      "bytes": 539
+    },
+    {
+      "file": "V5.5.38.1__schema.sql",
+      "sha256": "898eb686837059b4775c4bd33e0fff98a36b04aba2b64a12381618eb4014f0d6",
+      "bytes": 67
+    }
+  ]
+}

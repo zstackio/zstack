@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:zstack="http://zstack.org/schema/zstack"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd http://zstack.org/schema/zstack http://zstack.org/schema/zstack/plugin.xsd">
+    <bean id="MemoryRepository" class="org.zstack.kvm.memory.MemoryRepository"/>
+    <bean id="MemoryResourceCascadeExtension" class="org.zstack.kvm.memory.MemoryResourceCascadeExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.cascade.CascadeExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+    <bean id="MemoryLifecycleHooks" class="org.zstack.kvm.memory.MemoryLifecycleHooks">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceMigrateExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStartExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceStopExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceDestroyExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.vm.VmJustAfterDeleteFromDbExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.host.HostDeleteExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+    <bean id="MemoryOptimizationManager" class="org.zstack.kvm.memory.MemoryOptimizationManager">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component"/>
+            <zstack:extension interface="org.zstack.header.Service"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>
+            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeChangeListener"/>
+            <zstack:extension interface="org.zstack.header.host.HostAfterConnectedExtensionPoint"/>
+        </zstack:plugin>
+    </bean>
+</beans>

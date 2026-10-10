@@ -93,6 +93,7 @@ class SpringSpec {
 
     void kvm() {
         include("Kvm.xml")
+        include("MemoryOptimization.xml")
     }
 
     void ceph() {
