@@ -1,0 +1,2544 @@
+diff --git a/imagestorebackupstorage/ansible/imagestorebackupstorage.py b/imagestorebackupstorage/ansible/imagestorebackupstorage.py
+index cfd8205de..2b135bc22 100644
+--- a/imagestorebackupstorage/ansible/imagestorebackupstorage.py
++++ b/imagestorebackupstorage/ansible/imagestorebackupstorage.py
+@@ -105,16 +105,20 @@ else :
+ zstacklib = ZstackLib(zstacklib_args)
+ 
+ if host_info.distro in RPM_BASED_OS:
+-    qemu_pkg = "fuse-sshfs nmap collectd tar net-tools blktrace sg3_utils nvme-cli"
++    if releasever in ('ky11swan25', 'ky10sp3.2403'):
++        qemu_pkg = "nmap tar net-tools blktrace sg3_utils nvme-cli nettle open-iscsi python3-pyparted"
++    else:
++        qemu_pkg = "fuse-sshfs nmap collectd tar net-tools blktrace sg3_utils nvme-cli"
+ 
+-    releasever_mapping = {
+-        'h84r': ' collectd-disk pyparted iscsi-initiator-utils',
+-        'h2203sp1o': ' collectd-disk iscsi-initiator-utils python2-pyparted',
+-    }
++    if releasever not in ('ky11swan25', 'ky10sp3.2403'):
++        releasever_mapping = {
++            'h84r': ' collectd-disk pyparted iscsi-initiator-utils',
++            'h2203sp1o': ' collectd-disk iscsi-initiator-utils python2-pyparted',
++        }
+ 
+-    for k in kylin:
+-        releasever_mapping[k] = ' python2-pyparted nettle open-iscsi'
+-    qemu_pkg += releasever_mapping.get(releasever, ' pyparted iscsi-initiator-utils')
++        for k in kylin:
++            releasever_mapping[k] = ' python2-pyparted nettle open-iscsi'
++        qemu_pkg += releasever_mapping.get(releasever, ' pyparted iscsi-initiator-utils')
+ 
+     if not remote_bin_installed(host_post_info, "qemu-img", return_status=True):
+         qemu_pkg += ' qemu-img'
+diff --git a/kvmagent/ansible/kvm.py b/kvmagent/ansible/kvm.py
+index c5c5e4a71..970441ae5 100755
+--- a/kvmagent/ansible/kvm.py
++++ b/kvmagent/ansible/kvm.py
+@@ -41,18 +41,18 @@ extra_packages = ""
+ update_packages = 'false'
+ zstack_lib_dir = "/var/lib/zstack"
+ zstack_libvirt_nwfilter_dir = "%s/nwfilter" % zstack_lib_dir
+-disableIp6Tables = 'false'
++skipIpv6 = 'false'
+ bridgeDisableIptables = 'false'
+ isBareMetal2Gateway='false'
+ releasever = ''
+ unsupported_iproute_list = ["nfs4"]
+ unittest_flag = 'false'
++mn_ip = None
++isInstallHostShutdownHook = 'false'
+ isEnableKsm = 'none'
+ restart_libvirtd = 'false'
+ enable_spice_tls = None
+ enable_cgroup_device_acl = None
+-isRemoteCube = False
+-
+ 
+ # get parameter from shell
+ parser = argparse.ArgumentParser(description='Deploy kvm to host')
+@@ -70,8 +70,6 @@ workplace = "%s/kvm" % zstack_root
+ kvm_root = "%s/package" % workplace
+ iproute_pkg = "%s/iproute-2.6.32-130.el6ost.netns.2.x86_64.rpm" % file_root
+ iproute_local_pkg = "%s/iproute-2.6.32-130.el6ost.netns.2.x86_64.rpm" % kvm_root
+-iproute_el7_pkg = "%s/iproute-4.20.0-1.x86_64.rpm" % file_root
+-iproute_el7_local_pkg = "%s/iproute-4.20.0-1.x86_64.rpm" % kvm_root
+ 
+ host_post_info = HostPostInfo()
+ host_post_info.host_inventory = args.i
+@@ -100,6 +98,8 @@ repo_dir = "/opt/zstack-dvd/{}".format(host_info.host_arch)
+ if not os.path.isdir(repo_dir):
+     error("Missing directory '{}', please try 'zstack-upgrade -a {}_iso'".format(repo_dir, host_info.host_arch))
+ 
++# check is cube env
++isCube = True if os.path.exists("/usr/local/hyperconverged") else False
+ 
+ 
+ def update_libvirtd_config(host_post_info):
+@@ -197,12 +197,30 @@ run_remote_command("rm -rf {}/*; mkdir -p /usr/local/zstack/ || true".format(kvm
+ def install_kvm_pkg():
+     def rpm_based_install():
+         os_base_dep = "bridge-utils chrony conntrack-tools cyrus-sasl-md5 device-mapper-multipath expect ipmitool iproute ipset \
+-                        usbredir-server iputils libvirt libvirt-client lighttpd lsof net-tools nfs-utils nmap openssh-clients \
++                        usbredir-server iputils libvirt libvirt-client libvirt-python lighttpd lsof net-tools nfs-utils nmap openssh-clients \
+                         smartmontools sshpass usbutils wget audit collectd-virt storcli nvme-cli pv rsync sed pciutils tar"
+ 
++        if releasever == 'ky11swan25':
++            v11_base_packages = [
++                'openssh-clients', 'bridge-utils', 'wget', 'chrony', 'sed',
++                'python3-libvirt', 'python3-libselinux', 'libvirt',
++                'nfs-utils', 'vconfig', 'libvirt-client', 'net-tools',
++                'open-iscsi', 'lighttpd', 'iproute', 'sshpass', 'pv',
++                'rsync', 'nmap', 'ipset', 'usbutils', 'pciutils', 'expect',
++                'lvm2', 'lvm2-lockd', 'sanlock', 'sysfsutils',
++                'smartmontools', 'multipath-tools', 'hwdata', 'sg3_utils',
++                'OpenIPMI', 'freeipmi', 'python3-pyudev', 'tuned',
++                'libselinux-devel',
++            ]
++            for package_name in v11_base_packages:
++                yum_install_package(package_name, host_post_info)
++            for package_name in ['qemu', 'qemu-img']:
++                yum_install_package(package_name, host_post_info)
++            return
++
+         distro_mapping = {
+             'centos': 'vconfig iscsi-initiator-utils OpenIPMI-modalias OVMF mcelog MegaCli Arcconf python-pyudev kernel-devel libicu edac-utils',
+-            'kylin': 'vconfig open-iscsi python2-pyudev collectd-disk OpenIPMI libselinux-devel nettle tuned qemu-kvm libicu edac-utils lldpd freeipmi tcpdump',
++            'kylin': 'vconfig open-iscsi python2-pyudev collectd-disk OpenIPMI libselinux-devel nettle tuned qemu-kvm libicu edac-utils lldpd freeipmi',
+             'uniontech': 'vconfig iscsi-initiator-utils OpenIPMI nettle qemu-kvm python-pyudev collectd-disk',
+             'rocky': 'iscsi-initiator-utils OpenIPMI-modalias mcelog MegaCli Arcconf python-pyudev kernel-devel collectd-disk edac-utils',
+         }
+@@ -211,9 +229,8 @@ def install_kvm_pkg():
+                            'MegaCli Arcconf python-pyudev kernel-devel '
+                            'edac-utils')
+ 
+-        py3_rpms = 'python3.11 python3.11-devel python3.11-pip libvirt-devel libffi-devel openssl-devel'
+-
+         releasever_mapping = {
++            'ky11swan25': 'vconfig open-iscsi python3-pyudev collectd-disk OpenIPMI libselinux-devel nettle tuned qemu-kvm libicu edac-utils lldpd freeipmi',
+             'c74': 'qemu-kvm',
+             'c76': 'qemu-kvm libvirt-admin seabios-bin nping elfutils-libelf-devel freeipmi',
+             'c79': 'qemu-kvm libvirt-admin seabios-bin nping elfutils-libelf-devel freeipmi',
+@@ -222,36 +239,50 @@ def install_kvm_pkg():
+             'h79c': ('%s qemu-kvm libvirt-admin seabios-bin nping freeipmi '
+                      'elfutils-libelf-devel vconfig OVMF libicu') % helix_rhel_rpms,
+             'h84r': ('%s qemu-kvm libvirt-daemon libvirt-daemon-kvm freeipmi '
+-                     'seabios-bin elfutils-libelf-devel collectd-disk lldpd tcpdump %s') % (helix_rhel_rpms, py3_rpms),
++                     'seabios-bin elfutils-libelf-devel collectd-disk lldpd') % helix_rhel_rpms,
+             'rl84': 'qemu-kvm libvirt-daemon libvirt-daemon-kvm seabios-bin elfutils-libelf-devel lldpd',
+             'euler20': 'vconfig open-iscsi OpenIPMI-modalias qemu python2-pyudev collectd-disk',
+-            'oe2203sp1': 'vconfig open-iscsi OpenIPMI-modalias qemu python2-pyudev collectd-disk edac-utils lldpd tcpdump',
+-            'h2203sp1o': 'vconfig open-iscsi OpenIPMI-modalias qemu python2-pyudev collectd-disk edac-utils freeipmi lldpd tcpdump',
++            'oe2203sp1': 'vconfig open-iscsi OpenIPMI-modalias qemu python2-pyudev collectd-disk',
++            'h2203sp1o': 'vconfig open-iscsi OpenIPMI-modalias qemu python2-pyudev collectd-disk lldpd',
+             'nfs4': 'vconfig iscsi-initiator-utils OpenIPMI nettle libselinux-devel iptables iptables-services qemu-kvm python2-pyudev collectd-disk'
+         }
+ 
++        addition_rpms = {
++            'kylin': {
++                'x86_64': 'Arcconf'
++            }
++        }
++
+         edk2_mapping = {
+             'x86_64': 'edk2-ovmf edk2.git-ovmf-x64',
+             'aarch64': 'edk2-aarch64'
+         }
+ 
+-        cube_distro_mapping = {
+-            'x86_64_centos': "lm_sensors",
+-            'aarch64_kylin': "lm_sensors edac-utils",
+-            'x86_64_kylin': "lm_sensors edac-utils Arcconf",
+-        }
+-
+-        cube_releasever_mapping = {
+-            'h84r': "lm_sensors"
++        tpm_stack_update_rpms = 'swtpm swtpm-libs swtpm-tools libtpms tpm2-tss'
++        releasever_arch_rpms = {
++            'ky10sp3': {
++                'x86_64': 'key-manager edk2-ovmf-x64 %s' % tpm_stack_update_rpms,
++                'aarch64': 'key-manager',
++            },
++            'ky10sp3.2403': {
++                'x86_64': 'key-manager edk2-ovmf-x64 %s' % tpm_stack_update_rpms,
++                'aarch64': 'key-manager',
++            },
++            'h84r': {
++                'x86_64': 'key-manager %s' % tpm_stack_update_rpms,
++                'aarch64': 'key-manager',
++            },
+         }
+ 
+         # handle zstack_repo
+         if zstack_repo != 'false':
+             distro_head = host_info.distro.split("_")[0] if releasever in kylin or releasever in uos else host_info.distro
+-            common_dep_list = "%s %s %s %s" % (
++            common_dep_list = "%s %s %s %s %s %s" % (
+                 os_base_dep,
+                 distro_mapping.get(distro_head, ''),
+                 releasever_mapping.get(releasever, ''),
++                releasever_arch_rpms.get(releasever, {}).get(host_info.host_arch, ''),
++                addition_rpms.get(releasever, {}).get(host_info.host_arch, ''),
+                 edk2_mapping.get(host_info.host_arch, ''))
+             # common kvmagent deps of x86 and arm that need to update
+             common_update_list = ("sanlock sysfsutils hwdata sg3_utils lvm2"
+@@ -261,32 +292,36 @@ def install_kvm_pkg():
+             # common kvmagent deps of x86 and arm that no need to update
+             common_dep_list = "%s %s" % (common_dep_list, common_update_list)
+ 
+-            if isRemoteCube:
+-                cube_distro_info = host_info.host_arch + "_" + distro_head
+-                common_dep_list = "%s %s %s" % (common_dep_list, cube_distro_mapping.get(cube_distro_info, ''), cube_releasever_mapping.get(releasever, ''))
++            if isCube:
++                cube_dep_list = " lm_sensors"
++                if releasever not in kylin:
++                    cube_dep_list += " lm_sensors-libs"
++                common_dep_list += cube_dep_list
+ 
+             dep_list = common_dep_list
+             update_list = common_update_list
+             no_update_list = common_no_update_list
+ 
++            arch_update_rpm_list = releasever_arch_rpms.get(releasever, {}).get(
++                host_info.host_arch, '')
++            if arch_update_rpm_list:
++                update_list = "%s %s" % (update_list, arch_update_rpm_list)
++
+             # libvirt does not need to be updated
+             command = "which virsh"
+             host_post_info.post_label = "ansible.shell.install.pkg"
+             host_post_info.post_label_param = "libvirt"
+             (status, output) = run_remote_command(command, host_post_info, True, True)
+             if output:
+-                # python3-libvirt installation does not affect the libvirt installation
+-                command = (
+-                    "yum --disablerepo=* --enablerepo={0} --assumeno install python3-libvirt |awk '{{print $1}}' | grep -Ew '^\s*libvirt\s*$'").format(
+-                    zstack_repo)
++                # libvirt-python installation does not affect the libvirt installation
++                command = ("yum --disablerepo=* --enablerepo={0} --assumeno install libvirt-python |awk '{{print $1}}' | grep -Ew '^\s*libvirt\s*$'").format(zstack_repo)
+                 host_post_info.post_label = "ansible.shell.install.pkg"
+-                host_post_info.post_label_param = "python3-libvirt"
++                host_post_info.post_label_param = "libvirt-python"
+                 (status, output) = run_remote_command(command, host_post_info, True, True)
+-                is_libvirt = lambda x: x.startswith("libvirt") and not x.startswith("libvirt-devel")
+                 if status is True:
+-                    dep_list = ' '.join([pkg for pkg in dep_list.split() if not is_libvirt(pkg)])
++                    dep_list = ' '.join([pkg for pkg in dep_list.split() if not pkg.startswith("libvirt")])
+                 else:
+-                    dep_list = ' '.join([pkg for pkg in dep_list.split() if pkg == 'python3-libvirt' or not is_libvirt(pkg)])
++                    dep_list = ' '.join([pkg for pkg in dep_list.split() if pkg == 'libvirt-python' or not pkg.startswith("libvirt")])
+ 
+             # add extra package
+             if extra_packages != '':
+@@ -314,7 +349,7 @@ def install_kvm_pkg():
+                 run_remote_command(command, host_post_info)
+         else:
+             # name: install kvm related packages on RedHat based OS from online
+-            for pkg in ['zstack-release', 'openssh-clients', 'bridge-utils', 'wget', 'chrony', 'sed', 'libvirt', 'libvirt-devel', 'nfs-utils', 'vconfig',
++            for pkg in ['zstack-release', 'openssh-clients', 'bridge-utils', 'wget', 'chrony', 'sed', 'libvirt-python', 'libvirt', 'nfs-utils', 'vconfig',
+                         'libvirt-client', 'net-tools', 'iscsi-initiator-utils', 'lighttpd', 'iproute', 'sshpass',
+                         'libguestfs-winsupport', 'libguestfs-tools', 'pv', 'rsync', 'nmap', 'ipset', 'usbutils', 'pciutils', 'expect',
+                         'lvm2', 'lvm2-lockd', 'sanlock', 'sysfsutils', 'smartmontools', 'device-mapper-multipath', 'hwdata', 'sg3_utils']:
+@@ -344,17 +379,6 @@ def install_kvm_pkg():
+             if network_manager_installed is True:
+                 service_status("NetworkManager", "state=stopped enabled=no", host_post_info)
+         else:
+-            if releasever not in unsupported_iproute_list and host_info.major_version == 7:
+-                # name: copy name space supported iproute for RHEL7
+-                copy_arg = CopyArg()
+-                copy_arg.src = iproute_el7_pkg
+-                copy_arg.dest = iproute_el7_local_pkg
+-                copy(copy_arg, host_post_info)
+-                # name: Update iproute for RHEL7
+-                command = "rpm -q iproute-4.20.0-1.x86_64 || yum install --nogpgcheck -y %s" % iproute_el7_local_pkg
+-                host_post_info.post_label = "ansible.shell.install.pkg"
+-                host_post_info.post_label_param = "iproute-4.20.0-1.x86_64"
+-                run_remote_command(command, host_post_info)
+             # name: disable firewalld in RHEL7 and Centos7
+             command = "(which firewalld && service firewalld stop && chkconfig firewalld off) || true"
+             host_post_info.post_label = "ansible.shell.disable.service"
+@@ -426,7 +450,7 @@ def install_kvm_pkg():
+ 
+     def deb_based_install():
+         # name: install kvm related packages on Debian based OS
+-        install_pkg_list = ['curl', 'qemu', 'qemu-system', 'bridge-utils', 'wget', 'qemu-utils', 'python3-libvirt',
++        install_pkg_list = ['curl', 'qemu', 'qemu-system', 'bridge-utils', 'wget', 'qemu-utils', 'python-libvirt',
+                             'libvirt-daemon-system', 'libfdt-dev', 'libvirt-dev', 'libvirt-clients', 'chrony','vlan',
+                             'libguestfs-tools', 'sed', 'nfs-common', 'open-iscsi','ebtables', 'pv', 'usbutils',
+                             'pciutils', 'expect', 'lighttpd', 'sshpass', 'rsync', 'iputils-arping', 'nmap', 'collectd',
+@@ -446,7 +470,7 @@ def install_kvm_pkg():
+         host_post_info.post_label = "ansible.shell.enable.module"
+         host_post_info.post_label_param = "br_netfilter"
+         run_remote_command(command, host_post_info)
+-        update_pkg_list = ['ebtables', 'python3-libvirt', 'qemu-system-arm']
++        update_pkg_list = ['ebtables', 'python-libvirt', 'qemu-system-arm']
+         apt_update_packages(update_pkg_list, host_post_info)
+         libvirtd_conf_status = update_libvirtd_config(host_post_info)
+         if chroot_env == 'false':
+@@ -481,6 +505,18 @@ def install_kvm_pkg():
+     else:
+         error("unsupported OS!")
+ 
++def initialize_keymanager():
++
++    # For MN-as-compute scenarios, the keymanager user is usually
++    # created during key-manager installation by Anaconda, but may
++    # still be missing from the libvirt supplementary group after
++    # the key-manager package transaction, because libvirt hasn't
++    # been installed yet. Now add again after libvirt installation.
++    command = "if getent group libvirt >/dev/null 2>&1 && id -u keymanager >/dev/null 2>&1; then usermod -a -G libvirt keymanager; fi"
++    host_post_info.post_label = "ansible.shell.user.mod"
++    host_post_info.post_label_param = "keymanager->libvirt"
++    run_remote_command(command, host_post_info)
++
+ def copy_tools():
+     """copy binary tools"""
+     tool_list = ['collectd_exporter', 'node_exporter', 'ipmi_exporter', 'dnsmasq', 'zwatch-vm-agent', 'zwatch-vm-agent_freebsd_amd64', 'pushgateway', 'sas3ircu', 'zs-raid-heartbeat']
+@@ -506,7 +542,7 @@ def copy_kvm_files():
+     global qemu_conf_status, copy_zstacklib_status, copy_kvmagent_status, copy_smart_nics_status
+ 
+     # copy agent files
+-    file_list = ["vm-tools.sh", "agent_version", "kvmagent-iptables", "shutdown_vm"]
++    file_list = ["vm-tools.sh", "agent_version", "kvmagent-iptables"]
+     for file in file_list:
+         _src = os.path.join(file_root, file)
+         _dst = os.path.join(workplace, file)
+@@ -569,6 +605,22 @@ def copy_kvm_files():
+     command = 'sysctl -p /var/lib/zstack/kvm/sysctl/default.conf'
+     run_remote_command(command, host_post_info)
+ 
++def copy_kvmagshutdown():
++    if isInstallHostShutdownHook == 'true':
++        kvmagshutdown_src = "files/kvm/shutdown_vm"
++        kvmagshutdown_dst = "/etc/init.d/"
++        copy_to_remote(kvmagshutdown_src, kvmagshutdown_dst, "mode=755", host_post_info)
++        run_remote_command("sed -i 's/mn_ip/%s/g; s/host_ip/%s/g' /etc/init.d/shutdown_vm" % (mn_ip, host) +
++                           " && ln -s -f /etc/init.d/shutdown_vm /etc/rc1.d/K01shutdown_vm "
++                           "&& ln -s -f /etc/init.d/shutdown_vm /etc/rc6.d/K01shutdown_vm "
++                           "&& ln -s -f /etc/init.d/shutdown_vm /etc/rc0.d/K01shutdown_vm "
++                           "&& chkconfig shutdown_vm on",
++                           host_post_info)
++    else:
++        run_remote_command("rm -rf /etc/init.d/shutdown_vm && rm -rf /etc/rc1.d/K01shutdown_vm && "
++                           "rm -rf /etc/rc6.d/K01shutdown_vm && rm -rf /etc/rc0.d/K01shutdown_vm", host_post_info)
++
++
+ def copy_gpudriver():
+     """copy mxgpu driver"""
+     _src = "{}/mxgpu_driver.tar.gz".format(file_root)
+@@ -585,17 +637,6 @@ def copy_ovmf_tools():
+     _dst = "/usr/share/OVMF/"
+     copy_to_remote(_src, _dst, None, host_post_info)
+ 
+-
+-def copy_exporter_tools():
+-    """copy zs-exporter from mn_node to host_node"""
+-    file_list = ["process_exporter", "zstack_service_exporter"]
+-    for file in file_list:
+-        _src = '/opt/zstack-dvd/{}/{}/tools/{}'.format(host_info.host_arch, releasever, file)
+-        if os.path.exists(_src):
+-            _dst = os.path.join(workplace, file)
+-            copy_to_remote(_src, _dst, "mode=755", host_post_info)
+-
+-
+ def copy_lsusb_scripts():
+     _src = os.path.join(file_root, "lsusb.py")
+     _dst = "/usr/local/bin/"
+@@ -605,8 +646,17 @@ def copy_lsusb_scripts():
+ def copy_zs_scripts():
+     """copy zs-xxx from mn_node to host_node"""
+     _src = '/opt/zstack-dvd/{}/{}/scripts/'.format(host_info.host_arch, releasever)
++    if releasever == 'ky11swan25' and not os.path.isdir(_src):
++        _src = '/opt/zstack-dvd/{}/{}/scripts/'.format(host_info.host_arch, 'h84r')
++    if not os.path.isdir(_src):
++        warn("skip copying zs scripts: {} does not exist".format(_src))
++        return
+     _dst = '/usr/local/bin/'
+     copy_to_remote(_src, _dst, "mode=755", host_post_info)
++    if releasever == 'ky11swan25':
++        run_remote_command(
++            "sed -i '1s|^#!/usr/bin/env python2$|#!/usr/bin/env python3|' "
++            "/usr/local/bin/servefile", host_post_info)
+ 
+ @on_redhat_based(host_info.distro)
+ def copy_grubaa64_efi():
+@@ -634,9 +684,11 @@ def copy_bond_conf():
+ 
+ def copy_cube_tools():
+     """copy cube required tools from mn_node to host_node"""
++    if not isCube:
++        return
+     cube_root_dst = "/usr/local/hyperconverged/"
+     _src = os.path.join(cube_root_dst, "tools/hd_ctl")
+-    if isRemoteCube and os.path.exists(_src):
++    if os.path.exists(_src):
+         _dst = os.path.join(cube_root_dst, "tools")
+         copy_to_remote(_src, _dst, "mode=755", host_post_info)
+         command = "ln -sf /usr/local/hyperconverged/tools/hd_ctl/hd_ctl /bin/"
+@@ -673,7 +725,7 @@ def do_network_config():
+         host_post_info.post_label_param = "bridge forward"
+         run_remote_command(command, host_post_info)
+ 
+-    if disableIp6Tables != 'true':
++    if skipIpv6 != 'true':
+         if host_info.distro in RPM_BASED_OS:
+             # name: copy ip6tables initial rules in RedHat
+             IP6TABLE_SERVICE_FILE = '/usr/lib/systemd/system/ip6tables.service'
+@@ -681,7 +733,6 @@ def do_network_config():
+             copy_arg.src = "%s/ip6tables" % file_root
+             copy_arg.dest = "/etc/sysconfig/ip6tables"
+             copy(copy_arg, host_post_info)
+-            run_remote_command('mkdir -p /var/lock/subsys/', host_post_info)
+             replace_content(IP6TABLE_SERVICE_FILE, "regexp='syslog.target,iptables.service' replace='syslog.target iptables.service'", host_post_info)
+             service_status("ip6tables", "state=restarted enabled=yes", host_post_info)
+         elif host_info.distro in DEB_BASED_OS:
+@@ -744,25 +795,37 @@ def copy_spice_certificates_to_host():
+ def install_virtualenv():
+     """install virtualenv"""
+ 
+-    py_version = get_virtualenv_python_version(virtenv_path, host_post_info)
+-    if py_version and not py_version.startswith("3.11"):
+-        command = "rm -rf %s" % virtenv_path
++    if host_info.distro == 'kylin_swan25':
++        # Kylin V11: no python2/virtualenv; rely on python3 -m venv created in install_virtualenv
++        virtual_env_status = True
++    else:
++        virtual_env_status = check_and_install_virtual_env(virtualenv_version, trusted_host, pip_url, host_post_info)
++    if virtual_env_status is False:
++        command = "rm -rf %s && rm -rf %s" % (virtenv_path, kvm_root)
+         host_post_info.post_label = "ansible.shell.remove.file"
+         host_post_info.post_label_param = "%s, %s" % (virtenv_path, kvm_root)
+         run_remote_command(command, host_post_info)
+-        py_version = None
+-
+-    if not py_version:
+-        # name: make sure virtualenv has been setup
+-        virtenv_flag = "--system-site-packages"
+-        # virtenv_flag = "" if unittest_flag == 'true' else "--system-site-packages"
+-        command = "python3.11 -m venv %s %s " % (virtenv_path, virtenv_flag)
+-        host_post_info.post_label = "ansible.shell.check.virtualenv"
+-        host_post_info.post_label_param = None
+-        run_remote_command(command, host_post_info)
++        sys.exit(1)
++    # name: make sure virtualenv has been setup
++    virtenv_flag = "--system-site-packages"
++    # virtenv_flag = "" if unittest_flag == 'true' else "--system-site-packages"
++    if host_info.distro == 'kylin_swan25':
++        command = "[ -f %s/bin/python ] || python3 -m venv %s %s " % (virtenv_path, virtenv_flag, virtenv_path)
++    else:
++        command = "[ -f %s/bin/python ] || virtualenv %s %s " % (virtenv_path, virtenv_flag, virtenv_path)
++    host_post_info.post_label = "ansible.shell.check.virtualenv"
++    host_post_info.post_label_param = None
++    run_remote_command(command, host_post_info)
+ 
+ def install_python_pkg():
+     extra_args = "\"--trusted-host %s -i %s \"" % (trusted_host, pip_url)
++    if host_info.distro == 'kylin_swan25':
++        for package_name in [
++            'python3-rados', 'python3-rbd', 'python3-ceph-common',
++            'python3-ceph-argparse', 'python3-wheel',
++        ]:
++            yum_install_package(package_name, host_post_info)
++        return
+     pip_install_arg = PipInstallArg()
+     pip_install_arg.extra_args = extra_args
+     pip_install_arg.name = "python-cephlibs"
+@@ -774,6 +837,8 @@ def install_agent_pkg():
+ 
+     if copy_zstacklib_status != "changed:False":
+         agent_install_arg = AgentInstallArg(trusted_host, pip_url, virtenv_path, init_install)
++        agent_install_arg.no_build_isolation = (
++            host_info.distro == 'kylin_swan25')
+         agent_install_arg.agent_name = "zstacklib"
+         agent_install_arg.agent_root = kvm_root
+         agent_install_arg.pkg_name = pkg_zstacklib
+@@ -782,6 +847,8 @@ def install_agent_pkg():
+ 
+     if copy_kvmagent_status != "changed:False":
+         agent_install_arg = AgentInstallArg(trusted_host, pip_url, virtenv_path, init_install)
++        agent_install_arg.no_build_isolation = (
++            host_info.distro == 'kylin_swan25')
+         agent_install_arg.agent_name = "kvm agent"
+         agent_install_arg.agent_root = kvm_root
+         agent_install_arg.pkg_name = pkg_kvmagent
+@@ -797,27 +864,6 @@ def copy_i40e_driver():
+         _dst = "/var/lib/zstack/i40e_driver.tar.gz"
+         copy_to_remote(_src, _dst, None, host_post_info)
+ 
+-
+-def copy_ovs_tools():
+-    """copy ovs tools"""
+-
+-    if host_info.host_arch != 'x86_64':
+-        return
+-
+-    zs_network_path = os.path.join(zstack_lib_dir, "network")
+-    ovs_path = os.path.join(zs_network_path, "ovs-tools")
+-
+-    command = "rm -rf %s; mkdir -p %s" % (ovs_path, zs_network_path)
+-    run_remote_command(command, host_post_info)
+-
+-    _src = os.path.join(file_root, "ovs-tools.tar.gz")
+-    _dst = os.path.join(zs_network_path, "ovs-tools.tar.gz")
+-    copy_to_remote(_src, _dst, None, host_post_info)
+-
+-    command = "tar -xzf %s -C %s/" % (_dst, zs_network_path)
+-    run_remote_command(command, host_post_info)
+-
+-
+ @on_debian_based(host_info.distro, exclude=['Kylin'])
+ def set_legacy_iptables_ebtables():
+     """set legacy mode if needed"""
+@@ -907,11 +953,12 @@ def modprobe_mpci_module():
+         return
+         
+     """copy mpci.ko"""
+-    _src = "{}/mpci_{}".format(file_root, host_info.kernel_version)
+-    if not os.path.exists(_src):
++    kvers_list = ['4.19.90-23.34.', '4.19.90-23.37.', '4.19.90-52.14.', '4.19.90-52.19.']
++    if not host_info.kernel_version.startswith(tuple(kvers_list)):
+         handle_ansible_info("There are no suitable SE drivers for this kernel", host_post_info, "WARNING")
+         return
+-
++        
++    _src = "{}/mpci_{}loongarch64".format(file_root, "".join(filter(host_info.kernel_version.startswith, kvers_list)))
+     _dst = "/lib/modules/{}/mpci.ko".format(host_info.kernel_version)
+     copy_to_remote(_src, _dst, "mode=644", host_post_info)
+ 
+@@ -920,6 +967,12 @@ def modprobe_mpci_module():
+     host_post_info.post_label_param = None
+     run_remote_command(command, host_post_info)
+ 
++def modprobe_nvme_module():
++    cmd = ('echo -e "nvme-rdma\nnvme-fc\nnvme-tcp" > /etc/modules-load.d/zsv_nvme.conf; '
++           'modprobe -a nvme-rdma nvme-fc nvme-tcp || true')
++    host_post_info.post_label = "ansible.shell.modprobe.nvme"
++    host_post_info.post_label_param = None
++    run_remote_command(cmd, host_post_info)
+ 
+ @with_arch(todo_list=['aarch64'], host_arch=host_info.host_arch)
+ def set_gpu_blacklist():
+@@ -933,20 +986,23 @@ def set_gpu_blacklist():
+         || echo \"blacklist ${gpu_name}\" >> /etc/modprobe.d/${gpu_name}-blacklist.conf; done" % gpu_name_list
+     run_remote_command(command, host_post_info)
+ 
++def start_key_agent():
++    if host_info.host_arch not in ('x86_64', 'aarch64'):
++        return
++    if chroot_env != 'false':
++        return
++    command = "if systemctl list-unit-files key-agent.service 2>/dev/null | grep -q '^key-agent\\.service'; then " \
++              "systemctl enable key-agent && systemctl start key-agent; " \
++              "fi"
++    host_post_info.post_label = "ansible.shell.start.key_agent"
++    host_post_info.post_label_param = None
++    run_remote_command(command, host_post_info)
+ 
+-def check_is_remote_cube():
+-    command = "ls /usr/local/hyperconverged"
+-    status = run_remote_command(command, host_post_info, return_status=True)
+-    global isRemoteCube
+-    isRemoteCube = status
+-
+-
+-check_is_remote_cube()
+ check_nested_kvm(host_post_info)
+ install_kvm_pkg()
++initialize_keymanager()
+ copy_tools()
+ copy_kvm_files()
+-copy_exporter_tools()
+ copy_gpudriver()
+ copy_ovmf_tools()
+ copy_lsusb_scripts()
+@@ -955,7 +1011,7 @@ copy_grubaa64_efi()
+ copy_bond_conf()
+ copy_i40e_driver()
+ copy_cube_tools()
+-copy_ovs_tools()
++copy_kvmagshutdown()
+ create_virtio_driver_directory()
+ set_max_performance()
+ do_libvirt_qemu_config()
+@@ -970,7 +1026,9 @@ do_systemd_config()
+ do_ksm_config()
+ modprobe_usb_module()
+ modprobe_mpci_module()
++modprobe_nvme_module()
+ set_gpu_blacklist()
++start_key_agent()
+ start_kvmagent()
+ 
+ host_post_info.start_time = start_time
+diff --git a/kvmagent/kvmagent/kvmagent.py b/kvmagent/kvmagent/kvmagent.py
+index a555c832d..b86181b02 100755
+--- a/kvmagent/kvmagent/kvmagent.py
++++ b/kvmagent/kvmagent/kvmagent.py
+@@ -74,7 +74,7 @@ def get_host_yum_release():
+     return subprocess.getoutput("rpm -q zstack-release 2>/dev/null | awk -F'-' '{print $3}'").strip()
+ 
+ def get_host_os_type():
+-    os_info = platform.freedesktop_os_release()
++    os_info = linux.get_freedesktop_os_release()
+     dist, version = os_info['ID'], re.sub(r'[a-zA-Z]+$', '', os_info['VERSION_ID'])
+     if dist.lower() in linux.DIST_WITH_RPM_DEB:
+         dist = "%s%s" % (dist.lower(), version)
+diff --git a/kvmagent/kvmagent/plugins/host_plugin.py b/kvmagent/kvmagent/plugins/host_plugin.py
+index ed97eaa35..a6970d5aa 100755
+--- a/kvmagent/kvmagent/plugins/host_plugin.py
++++ b/kvmagent/kvmagent/plugins/host_plugin.py
+@@ -38,7 +38,7 @@ from zstacklib.utils import ovn
+ import zstacklib.utils.ip as ip
+ import zstacklib.utils.plugin as plugin
+ 
+-os_info = platform.freedesktop_os_release()
++os_info = linux.get_freedesktop_os_release()
+ DIST_NAME = os_info.get('ID', '').lower()
+ # FIXME(py3): remove it
+ DIST_NAME = 'centos' if DIST_NAME == 'helix' else DIST_NAME
+@@ -264,6 +264,40 @@ class GetHostPhysicalMemoryFactsResponse(kvmagent.AgentResponse):
+         self.physicalMemoryFacts = []
+ 
+ 
++class GetHostKernelInterfaceCmd(kvmagent.AgentCommand):
++    def __init__(self):
++        super(GetHostKernelInterfaceCmd, self).__init__()
++        self.hostUuid = None
++        self.targetIp = None
++
++
++class GetHostKernelInterfaceResponse(kvmagent.AgentResponse):
++    def __init__(self):
++        super(GetHostKernelInterfaceResponse, self).__init__()
++        self.interfaces = []
++
++
++class UsedIpTO(object):
++    ACTION_CODE_ADD = "add"
++    ACTION_CODE_REMOVE = "remove"
++
++    def __init__(self, ipVersion=None, ip=None, netmask=None, gateway=None):
++        self.ipVersion = ipVersion
++        self.version = ipVersion
++        self.ip = ip
++        self.netmask = netmask
++        self.gateway = gateway
++        self.actionCode = None
++
++
++class HostKernelInterfaceTO(object):
++    def __init__(self, interface_name=None, vlan_id=None, bridge_name=None):
++        self.interfaceName = interface_name
++        self.vlanId = vlan_id
++        self.bridgeName = bridge_name
++        self.ips = []
++
++
+ class GetHostNetworkBongdingCmd(kvmagent.AgentCommand):
+     def __init__(self):
+         super(GetHostNetworkBongdingCmd, self).__init__()
+@@ -932,6 +966,7 @@ class HostPlugin(kvmagent.KvmAgent):
+     UPDATE_HOST_OVS_CPU_PINNING = "/host/ovs/cpu-pin/update"
+     CHANGE_PASSWORD = "/host/changepassword"
+     GET_HOST_NETWORK_FACTS = "/host/networkfacts"
++    GET_KERNEL_INTERFACE_PATH = "/host/kernelinterface/get"
+     SET_IP_ON_HOST_NETWORK_INTERFACE = "/host/setip/networkinterface"
+     CHECK_INTERFACE_VLAN = "/host/checkvlan/networkinterface"
+     GET_INTERFACE_VLAN = "/host/getvlan/networkinterface"
+@@ -1137,12 +1172,12 @@ class HostPlugin(kvmagent.KvmAgent):
+     def _cache_units_convert(self, str):
+         if str is None or str == '':
+             return 0
+-        return float(sizeunit.get_size(str) // 1024)
++        return float(sizeunit.get_size(str.split()[0]) // 1024)
+ 
+     @kvmagent.replyerror
+     def fact(self, req):
+         rsp = HostFactResponse()
+-        os_info = platform.freedesktop_os_release()
++        os_info = linux.get_freedesktop_os_release()
+         rsp.osDistribution = os_info['ID']
+         rsp.osVersion = re.sub(r'[a-zA-Z]+$', '', os_info['VERSION_ID'])
+         rsp.osRelease = "Core" # TODO get os release
+@@ -2088,6 +2123,108 @@ done
+ 
+         return jsonobject.dumps(rsp)
+ 
++    def _make_host_kernel_interface(self, interface_name=None, vlan_id=None, bridge_name=None):
++        if not interface_name or vlan_id is None:
++            return None
++        return HostKernelInterfaceTO(interface_name, vlan_id, bridge_name)
++
++    @staticmethod
++    def _is_bond(interface_name):
++        return os.path.exists("/sys/class/net/%s/bonding" % interface_name)
++
++    @staticmethod
++    def _is_vlan(interface_name):
++        return os.path.exists("/proc/net/vlan/%s" % interface_name)
++
++    @staticmethod
++    def _is_physical_nic(interface_name):
++        base = "/sys/class/net/%s" % interface_name
++        return (
++            os.path.exists(base)
++            and not os.path.exists("%s/bridge" % base)
++            and not os.path.exists("%s/brport" % base)
++            and not os.path.exists("%s/bonding" % base)
++            and not os.path.exists("/proc/net/vlan/%s" % interface_name)
++        )
++
++    @classmethod
++    def _get_vlan_parent(cls, interface_name):
++        link_path = "/sys/class/net/%s" % interface_name
++        if not os.path.exists(link_path):
++            return None
++        for entry in os.listdir(link_path):
++            if entry.startswith("lower_"):
++                parent = entry[len("lower_"):]
++                if cls._is_bond(parent) or cls._is_physical_nic(parent):
++                    return parent
++        return None
++
++    @staticmethod
++    def _get_vlan_id(interface_name):
++        vlan_info = linux.read_file("/proc/net/vlan/%s" % interface_name)
++        match = re.search(r"VID:\s+(\d+)", vlan_info)
++        return int(match.group(1)) if match else None
++
++    @kvmagent.replyerror
++    @in_bash
++    def get_kernel_interface(self, req):
++        cmd = jsonobject.loads(req[http.REQUEST_BODY])
++        rsp = GetHostKernelInterfaceResponse()
++
++        link_name = linux.get_nic_name_by_ip(cmd.targetIp)
++        if not link_name:
++            rsp.error = "cannot find interface by ip[%s]" % cmd.targetIp
++            rsp.success = False
++            return jsonobject.dumps(rsp)
++
++        addresses = iproute.query_addresses(ifname=link_name, ip_version=4)
++        ip_list = [
++            UsedIpTO(
++                ipVersion=address.ip_version,
++                ip=address.address,
++                netmask=linux.cidr_to_netmask(address.prefixlen),
++                gateway=None,
++            )
++            for address in addresses
++        ]
++        interface = None
++        if linux.is_bridge(link_name):
++            for slave in linux.get_all_bridge_interface(link_name):
++                if not slave:
++                    continue
++                if self._is_bond(slave) or self._is_physical_nic(slave):
++                    interface = self._make_host_kernel_interface(slave, 0, link_name)
++                    break
++                if self._is_vlan(slave):
++                    vlan_parent = self._get_vlan_parent(slave)
++                    if vlan_parent and (self._is_bond(vlan_parent) or self._is_physical_nic(vlan_parent)):
++                        interface = self._make_host_kernel_interface(
++                            vlan_parent, self._get_vlan_id(slave), link_name)
++                        break
++        elif self._is_bond(link_name) or self._is_physical_nic(link_name):
++            interface = self._make_host_kernel_interface(link_name, 0)
++        elif self._is_vlan(link_name):
++            vlan_parent = self._get_vlan_parent(link_name)
++            if vlan_parent and (self._is_bond(vlan_parent) or self._is_physical_nic(vlan_parent)):
++                interface = self._make_host_kernel_interface(
++                    vlan_parent, self._get_vlan_id(link_name))
++        else:
++            rsp.error = "cannot parse interface[%s] by ip[%s]" % (link_name, cmd.targetIp)
++            rsp.success = False
++            return jsonobject.dumps(rsp)
++
++        if not interface:
++            rsp.error = "cannot find interface by ip[%s]" % cmd.targetIp
++            rsp.success = False
++        else:
++            interface.ips = [
++                UsedIpTO(ip=item.ip, netmask=item.netmask, ipVersion=item.version, gateway=item.gateway)
++                for item in ip_list
++            ]
++            rsp.interfaces.append(interface)
++
++        return jsonobject.dumps(rsp)
++
+     def _has_vlan_or_bridge(self, ifname):
+         if linux.is_bridge_slave(ifname):
+             return True
+@@ -3675,6 +3812,7 @@ done
+         http_server.register_async_uri(self.UPDATE_HOST_OVS_CPU_PINNING, self.update_ovs_cpu_pinning)
+         http_server.register_async_uri(self.CHANGE_PASSWORD, self.change_password, cmd=ChangeHostPasswordCmd())
+         http_server.register_async_uri(self.GET_HOST_NETWORK_FACTS, self.get_host_network_facts)
++        http_server.register_async_uri(self.GET_KERNEL_INTERFACE_PATH, self.get_kernel_interface)
+         http_server.register_async_uri(self.SET_IP_ON_HOST_NETWORK_INTERFACE, self.set_ip_on_host_network_interface)
+ 
+         http_server.register_async_uri(self.CHECK_INTERFACE_VLAN, self.check_interface_vlan)
+diff --git a/kvmagent/kvmagent/plugins/prometheus.py b/kvmagent/kvmagent/plugins/prometheus.py
+index 7e6461e78..bed76c01b 100755
+--- a/kvmagent/kvmagent/plugins/prometheus.py
++++ b/kvmagent/kvmagent/plugins/prometheus.py
+@@ -1,5 +1,6 @@
+ import os.path
+ import re
++import shutil
+ 
+ import pyudev  # installed by ansible
+ import threading
+@@ -2062,6 +2063,9 @@ class PrometheusPlugin(kvmagent.KvmAgent):
+     def start_prometheus_exporter(self, req):
+         @in_bash
+         def start_collectd(cmd):
++            if not shutil.which('collectdmon'):
++                logger.warn('collectd is unavailable, skip collectd startup')
++                return
+             conf_path = os.path.join(os.path.dirname(cmd.binaryPath), 'collectd.conf')
+             ingore_block_device = "/:sd[c-e]/" if kvmagent.host_arch in ["mips64el", "aarch64", "loongarch64"] else "//"
+ 
+diff --git a/kvmagent/kvmagent/plugins/vm_plugin.py b/kvmagent/kvmagent/plugins/vm_plugin.py
+index e20dcee5c..2855dd7cc 100644
+--- a/kvmagent/kvmagent/plugins/vm_plugin.py
++++ b/kvmagent/kvmagent/plugins/vm_plugin.py
+@@ -76,7 +76,7 @@ from zstacklib.utils.libvirt_singleton import LibvirtSingleton
+ logger = log.get_logger(__name__)
+ 
+ HOST_ARCH = platform.machine()
+-os_info = platform.freedesktop_os_release()
++os_info = linux.get_freedesktop_os_release()
+ DIST_NAME = os_info.get('ID', '').lower()
+ # FIXME(py3): remove it
+ DIST_NAME = 'centos' if DIST_NAME == 'helix' else DIST_NAME
+@@ -12371,4 +12371,3 @@ def touchQmpSocketWhenExists(vmUuid):
+     path = "%s/%s.sock" % (QMP_SOCKET_PATH, vmUuid)
+     if os.path.exists(path):
+         bash.bash_roe("touch %s" % path)
+-
+diff --git a/kvmagent/kvmagent/plugins/vmware_v2v_plugin.py b/kvmagent/kvmagent/plugins/vmware_v2v_plugin.py
+index 04de833b5..80f939167 100755
+--- a/kvmagent/kvmagent/plugins/vmware_v2v_plugin.py
++++ b/kvmagent/kvmagent/plugins/vmware_v2v_plugin.py
+@@ -96,7 +96,8 @@ class VMwareV2VPlugin(kvmagent.KvmAgent):
+         cmd = jsonobject.loads(req[http.REQUEST_BODY])
+         rsp = AgentRsp()
+ 
+-        os_info = platform.freedesktop_os_release()
++        from zstacklib.utils import linux
++        os_info = linux.get_freedesktop_os_release()
+         os_dist, os_version = os_info['ID'], re.sub(r'[a-zA-Z]+$', '', os_info['VERSION_ID'])
+ 
+         versions = os_version.split('.')
+diff --git a/kvmagent/setup.py b/kvmagent/setup.py
+index 60cf7e14d..e78a81cd9 100755
+--- a/kvmagent/setup.py
++++ b/kvmagent/setup.py
+@@ -20,7 +20,6 @@ ZStack KVM agent REST service""",
+       install_requires=[
+             # -*- Extra requirements: -*-
+             "prometheus_client==0.17.1",
+-            "libvirt-python==8.0.0"
+       ],
+       entry_points="""
+       # -*- Entry points: -*-
+diff --git a/zstacklib/ansible/zstacklib.py b/zstacklib/ansible/zstacklib.py
+index dfbc478d6..1cdf04fe0 100755
+--- a/zstacklib/ansible/zstacklib.py
++++ b/zstacklib/ansible/zstacklib.py
+@@ -10,7 +10,6 @@ import json
+ import os
+ import sys
+ import threading
+-import traceback
+ 
+ from ansible import constants as ansible_constants
+ from ansible import context as ansible_context
+@@ -23,10 +22,10 @@ from ansible.plugins import cache
+ from ansible.plugins.cache import memory
+ from ansible.plugins import callback as ansible_callback
+ from ansible.vars import manager as ansible_vm
+-from ansible.plugins.loader import init_plugin_loader
+ import jinja2
+ import time
+-import urllib.request, urllib.error, urllib.parse
++import urllib.error
++import urllib.request
+ import yaml
+ 
+ 
+@@ -42,13 +41,13 @@ yum_server = ""
+ apt_server = ""
+ trusted_host = ""
+ uos = ['uos20', 'uos1021a']
+-kylin = ["ky10sp1", "ky10sp2", "ky10sp3", "ky10sp3.2403"]
++kylin = ["ky10sp1", "ky10sp2", "ky10sp3", "ky10sp3.2403", "ky11swan25"]
+ centos = ['c74', 'c76', 'c79', 'h76c', 'h79c', 'rl84', 'h84r']
+ enable_networkmanager_list = kylin + ["euler20", "uos1021a", "nfs4", "oe2203sp1", "h2203sp1o"]
+ supported_arch_list = ["x86_64", "aarch64", "mips64el", "loongarch64"]
+ 
+-KYLIN_DISTRO = ["kylin_zstack", "kylin_tercel", "kylin_sword", "kylin_lance", "kylin_halberd"]
+-RPM_BASED_OS = ["kylin_zstack", "kylin_tercel", "kylin_sword", "kylin_lance", "kylin_halberd",
++KYLIN_DISTRO = ["kylin_zstack", "kylin_tercel", "kylin_sword", "kylin_lance", "kylin_halberd", "kylin_swan25"]
++RPM_BASED_OS = ["kylin_zstack", "kylin_tercel", "kylin_sword", "kylin_lance", "kylin_halberd", "kylin_swan25",
+                 "alibaba", "centos", "openeuler", "uniontech_kongzi", "nfs",
+                 "redhat", "rocky", "helix"]
+ DEB_BASED_OS = ["ubuntu", "uos", "kylin4.0.2", "debian", "uniontech_fou"]
+@@ -59,6 +58,7 @@ qemu_alias = {
+     "ky10sp2": "qemu-kvm qemu-img",
+     "ky10sp3": "qemu-kvm qemu-img",
+     "ky10sp3.2403": "qemu-kvm qemu-img",
++    "ky11swan25": "qemu-kvm qemu-img",
+     "uos20": "qemu-system",
+     "c74": "qemu-kvm",
+     "c76": "qemu-kvm",
+@@ -78,7 +78,6 @@ ansible_constants.set_constant('CACHE_PLUGIN', 'memory')
+ ansible_constants.set_constant('DEFAULT_GATHERING', 'smart')
+ 
+ _ansible_cache = {}
+-init_plugin_loader()
+ 
+ 
+ class MemCache(cache.BaseCacheModule):
+@@ -224,6 +223,7 @@ class AgentInstallArg(object):
+         self.agent_root = None
+         self.pkg_name = None
+         self.virtualenv_site_packages = None
++        self.no_build_isolation = False
+ 
+ 
+ class ZstackLibArgs(object):
+@@ -392,7 +392,7 @@ class ZstackRunner(object):
+             private_key_file=self.private_key,
+             become_method='sudo',
+             ssh_extra_args='-C -o ControlMaster=auto -o ControlPersist=1800s',
+-        )
++            verbosity=0)
+         self.ansible_module = AnsibleModules(runner_args)
+ 
+     def run(self):
+@@ -451,17 +451,17 @@ def retry(times=3, sleep_time=3):
+     def wrap(f):
+         @functools.wraps(f)
+         def inner(*args, **kwargs):
+-            ex = None
++            last_error = None
+             for i in range(0, times):
+                 try:
+                     return f(*args, **kwargs)
+                 except Exception as e:
+-                    ex = traceback.format_exc()
++                    last_error = e
+                     logger.error(e)
+                     time.sleep(sleep_time)
+             error(("The task failed, please make sure the host can be "
+                    "connected and no error happened, then try again. "
+-                   "Below is detail:\n %s") % ex)
++                   "Below is detail:\n %s") % last_error)
+         return inner
+     return wrap
+ 
+@@ -531,7 +531,8 @@ def get_host_releasever(host_info):
+         "kylin_sword sword 10": "ky10sp2",
+         "kylin_zstack zstack 10": "ky10sp2",
+         "kylin_lance lance 10": "ky10sp3",
+-        "kylin_lance halberd 10": "ky10sp3.2403",
++        "kylin_halberd halberd 10": "ky10sp3.2403",
++        "kylin_swan25 swan25 11": "ky11swan25",
+         "uniontech fou 20": "uos20",
+         "redhat maipo 7.4": "ky10", # old kylinV10, oem 7.4 incompletely
+         "centos core 7.9.2009": "c79",
+@@ -569,7 +570,8 @@ def post_msg(msg, post_url):
+         if msg.label is not None:
+             try:
+                 headers = {"content-type": "application/json"}
+-                req = urllib.request.Request(post_url, data.encode(), headers)
++                req = urllib.request.Request(
++                    post_url, data.encode("utf-8"), headers)
+                 response = urllib.request.urlopen(req)
+                 response.close()
+             except urllib.error.URLError as e:
+@@ -671,6 +673,9 @@ def agent_install(install_arg, host_post_info):
+     pip_install_arg.virtualenv = install_arg.virtenv_path
+     pip_install_arg.virtualenv_site_packages = \
+         install_arg.virtualenv_site_packages
++    if install_arg.no_build_isolation:
++        pip_install_arg.extra_args = '"%s --no-build-isolation"' % (
++            pip_install_arg.extra_args.strip('"'))
+     if pip_install_package(pip_install_arg, host_post_info) is False:
+         command = "rm -rf %s && rm -rf %s" % (
+             install_arg.virtenv_path, install_arg.agent_root)
+@@ -678,7 +683,7 @@ def agent_install(install_arg, host_post_info):
+         error("agent %s install failed" % install_arg.agent_name)
+ 
+ 
+-def yum_enable_repo(name, disablerepo, enablerepo, host_post_info):
++def yum_enable_repo(name, enablerepo, host_post_info):
+     '''install package from enablerepo'''
+     start_time = datetime.datetime.now()
+     host_post_info.start_time = start_time
+@@ -691,8 +696,8 @@ def yum_enable_repo(name, disablerepo, enablerepo, host_post_info):
+     runner_args = ZstackRunnerArg()
+     runner_args.host_post_info = host_post_info
+     runner_args.module_name = 'yum'
+-    runner_args.module_args = 'name={} disablerepo={} enablerepo={} state=present'.format(
+-        name, disablerepo, enablerepo)
++    runner_args.module_args = 'name={} enablerepo={} state=present'.format(
++        name, enablerepo)
+     zstack_runner = ZstackRunner(runner_args)
+     result = zstack_runner.run()
+     logger.debug(result)
+@@ -1072,7 +1077,7 @@ def pip_install_package(pip_install_arg, host_post_info):
+     handle_ansible_info("INFO: pip installing package %s ..." %
+                         name, host_post_info, "INFO")
+     if host not in list(IS_REMOTE_PIP_READY.keys()) or not IS_REMOTE_PIP_READY[host]:
+-        command = "which pip || ln -s /usr/bin/pip3.11 /usr/bin/pip"
++        command = "python3 -m pip --version"
+         run_remote_command(command, host_post_info)
+         IS_REMOTE_PIP_READY[host] = True
+     param_dict = {}
+@@ -1102,11 +1107,11 @@ def pip_install_package(pip_install_arg, host_post_info):
+     else:
+         ret = result['contacted'][host]
+         if ret.get('failed', True):
+-            command = "pip3.11 uninstall -y %s" % name
+-            try:
+-                run_remote_command(command, host_post_info)
+-            except Exception as ignore:
+-                pass
++            if "/" in name:
++                command = "true"
++            else:
++                command = "python3 -m pip uninstall -y %s" % name
++            run_remote_command(command, host_post_info)
+             description = "ERROR: pip install package %s failed" % name
+             host_post_info.post_label = "ansible.pip.install.pkg.fail"
+             handle_ansible_failed(description, result, host_post_info)
+@@ -1583,7 +1588,7 @@ def get_remote_host_info_obj(host_post_info):
+     runner_args = ZstackRunnerArg()
+     runner_args.host_post_info = host_post_info
+     runner_args.module_name = 'setup'
+-    runner_args.module_args = ('gather_subset=machine,processor '
++    runner_args.module_args = ('gather_subset=machine '
+                                'filter=ansible_dist*,ansible_machine,'
+                                'ansible_processor,ansible_kernel')
+     zstack_runner = ZstackRunner(runner_args)
+@@ -1599,14 +1604,19 @@ def get_remote_host_info_obj(host_post_info):
+ 
+     ret = result['contacted'][host]
+     if 'ansible_facts' in ret:
++        # trying get cpu info
++        command = 'cat /proc/cpuinfo | grep -i -E "model name|vendor"'
++        (status, cpu_info_output) = run_remote_command(command,
++                                                       host_post_info,
++                                                       return_status=True,
++                                                       return_output=True)
+         facts = ret['ansible_facts']
+         host_info.distro = facts['ansible_distribution'].split()[0].lower()
+         host_info.major_version_str = \
+             facts['ansible_distribution_major_version']
+         host_info.distro_release = facts['ansible_distribution_release']
+         host_info.distro_version = facts['ansible_distribution_version']
+-        host_info.cpu_info = ' '.join(str(p) for p in
+-                                      facts['ansible_processor']).lower()
++        host_info.cpu_info = cpu_info_output.lower()
+         host_info.host_arch = facts['ansible_machine']
+         host_info.kernel_version = facts['ansible_kernel']
+ 
+@@ -1658,40 +1668,6 @@ def set_ini_file(file, section, option, value, host_post_info):
+     return True
+ 
+ 
+-def get_virtualenv_python_version(venv, host_post_info):
+-    start_time = datetime.datetime.now()
+-    host_post_info.start_time = start_time
+-    host = host_post_info.host
+-    post_url = host_post_info.post_url
+-    host_post_info.post_label = "ansible.check.virtualenv.python.version"
+-    host_post_info.post_label_param = venv
+-    handle_ansible_info("INFO: starting check virtualenv python version ... ",
+-                        host_post_info, "INFO")
+-    runner_args = ZstackRunnerArg()
+-    runner_args.host_post_info = host_post_info
+-    runner_args.module_name = 'shell'
+-    runner_args.module_args = '%s/bin/python --version' % venv
+-    zstack_runner = ZstackRunner(runner_args)
+-    result = zstack_runner.run()
+-    logger.debug(result)
+-    if result['contacted'] == {}:
+-        ansible_start = AnsibleStartResult()
+-        ansible_start.host = host
+-        ansible_start.post_url = post_url
+-        ansible_start.result = result
+-        handle_ansible_start(ansible_start)
+-        raise Exception(result)
+-    ret = result['contacted'][host]
+-    if 'rc' not in ret:
+-        logger.warning(("Network problem, try again now, ansible "
+-                        "reply is below:\n %s") % result)
+-        raise Exception(result)
+-
+-    return ret['stdout'].strip().split()[1] if ret['rc'] == 0 else None
+-
+-
+-
+-
+ @retry(times=3, sleep_time=3)
+ def check_and_install_virtual_env(version, trusted_host, pip_url,
+                                   host_post_info):
+@@ -2254,6 +2230,9 @@ def upgrade_to_helix(host_info, host_post_info):
+ 
+ def install_release_on_host(is_rpm, host_info, host_post_info):
+     releasever = get_host_releasever(host_info)
++    # ky11swan25 (Kylin V11): use host's own configured yum repos, no zstack-dvd needed
++    if releasever == 'ky11swan25':
++        return
+     if is_rpm:
+         release_name_mapping = {
+             'rl84': 'el8',
+@@ -2329,7 +2308,12 @@ class ZstackLib(object):
+                 # zstack_repo is empty, will use system repo
+                 # libselinux-python depend by ansible copy/file/template module
+                 # when selinux enabled on host
+-                yum_install_package("libselinux-python", self.host_post_info)
++                if self.distro == 'kylin_swan25':
++                    yum_install_package("python3-libselinux",
++                                        self.host_post_info)
++                else:
++                    yum_install_package("libselinux-python",
++                                        self.host_post_info)
+                 # install epel-release
+                 if self.distro in RPM_BASED_OS and self.zstack_releasever in centos:
+                     self.enable_epel_yum_repo()
+@@ -2371,15 +2355,27 @@ class ZstackLib(object):
+ 
+     def _python_rpm_set(self):
+         python_requirement_set = {
+-            "python3-devel",
+-            "python3-setuptools",
++            "python2-devel",
++            "python2-setuptools",
+         }
+ 
++        if self.distro == 'kylin_swan25':
++            return {
++                "python3-devel",
++                "python3-setuptools",
++                "python3-pip",
++            }
++
+         if self.distro == 'nfs' or self.distro_version >= 7:
+-            python_requirement_set.add("python3-pip")
++            python_requirement_set.add("python2-pip")
+         else:
+             python_requirement_set.add("python-pip")
+ 
++        if self.distro_version >= 7:
++            # to avoid install some pkgs on virtual router which release is
++            # Centos 6.x
++            python_requirement_set.add("python2-backports-ssl_match_hostname")
++
+         return python_requirement_set
+ 
+     def _basic_rpm_set(self):
+@@ -2392,7 +2388,10 @@ class ZstackLib(object):
+         if self.distro in KYLIN_DISTRO:
+             basic.add("chrony")
+             basic.add("iptables")
+-            basic.add("python3-libselinux")
++            if self.distro == 'kylin_swan25':
++                basic.add("python3-libselinux")
++            else:
++                basic.add("python2-libselinux")
+             return basic
+ 
+         basic.add("libselinux-python")
+@@ -2452,7 +2451,7 @@ name=zstack-experimental-mn
+ baseurl=http://{{ yum_server }}/zstack/static/zstack-repo/\$basearch/\$YUM0/Extra/zstack-experimental/
+ gpgcheck=0
+ module_hotfixes=true
+-enabled=0" >  /etc/yum.repos.d/zstack-experimental-mn.repo; sync
++enabled=0" >  /etc/yum.repos.d/zstack-experimental-mn.repo; sync /etc/yum.repos.d/zstack-experimental-mn.repo
+                """
+         generate_exp_repo_template = jinja2.Template(
+             generate_exp_repo_raw_command)
+@@ -2469,7 +2468,7 @@ name=mlnx-ofed-mn
+ baseurl=http://{{ yum_server }}/zstack/static/zstack-repo/\$basearch/\$YUM0/Extra/mlnx-ofed/
+ gpgcheck=0
+ module_hotfixes=true
+-enabled=0" >  /etc/yum.repos.d/mlnx-ofed-mn.repo; sync
++enabled=0" >  /etc/yum.repos.d/mlnx-ofed-mn.repo; sync /etc/yum.repos.d/mlnx-ofed-mn.repo
+                """
+         generate_mlnx_repo_template = jinja2.Template(
+             generate_mlnx_repo_raw_command)
+@@ -2486,7 +2485,7 @@ name=qemu-kvm-ev-mn
+ baseurl=http://{{ yum_server }}/zstack/static/zstack-repo/\$basearch/\$YUM0/Extra/qemu-kvm-ev/
+ gpgcheck=0
+ module_hotfixes=true
+-enabled=0" >  /etc/yum.repos.d/qemu-kvm-ev-mn.repo; sync
++enabled=0" >  /etc/yum.repos.d/qemu-kvm-ev-mn.repo; sync /etc/yum.repos.d/qemu-kvm-ev-mn.repo
+                """
+         generate_kvm_repo_template = jinja2.Template(
+             generate_kvm_repo_raw_command)
+@@ -2505,7 +2504,7 @@ name=zstack-mn
+ baseurl=http://{{ yum_server }}/zstack/static/zstack-repo/\$basearch/\$YUM0/
+ gpgcheck=0
+ module_hotfixes=true
+-enabled=0" >  /etc/yum.repos.d/zstack-mn.repo; sync
++enabled=0" >  /etc/yum.repos.d/zstack-mn.repo; sync /etc/yum.repos.d/zstack-mn.repo
+                """
+         generate_mn_repo_template = jinja2.Template(
+             generate_mn_repo_raw_command)
+@@ -2579,7 +2578,7 @@ EOF
+         repo_epel = "epel-release-source.repo"
+         self.generate_yum_repo_config_from_zstack_lib(repo_epel)
+         # install epel-release
+-        yum_enable_repo("epel-release", "*", "epel-release-source",
++        yum_enable_repo("epel-release", "epel-release-source",
+                         self.host_post_info)
+ 
+     def enable_debian_services(self, host_post_info, require_python_env, distro):
+diff --git a/zstacklib/setup.py b/zstacklib/setup.py
+index 6c6f69b0f..becebf2b8 100755
+--- a/zstacklib/setup.py
++++ b/zstacklib/setup.py
+@@ -34,13 +34,24 @@ Python support library for zstack""",
+           "six>=1.10.0",
+           "certifi==2021.5.30",
+           "xms-client",
+-          "setuptools>=65.5.1", #21.0.0
++          "setuptools>=65.5.1; python_version >= '3.11'", #21.0.0
+           "cachetools==3.1.1",
+           "xxhash==2.0.2",
+           "routes==2.4.1",
+           "pyudev>=0.18.0",
+           "pillow==2.9.0",
+-          "mock==5.0.2"
++          "mock==5.0.2; python_version >= '3.11'",
++          "more-itertools<10; python_version < '3.9'",
++          "portend<3.2; python_version < '3.9'",
++          "jaraco.collections<5.1; python_version < '3.9'",
++          "jaraco.functools<4.1; python_version < '3.9'",
++          "jaraco.context<6; python_version < '3.9'",
++          "jaraco.text<4; python_version < '3.9'",
++          "tempora<5.8; python_version < '3.9'",
++          "importlib-resources; python_version < '3.9'",
++          "importlib-metadata; python_version < '3.9'",
++          "zipp; python_version < '3.9'",
++          "pytz; python_version < '3.9'"
+       ],
+       entry_points="""
+       # -*- Entry points: -*-
+diff --git a/zstacklib/zstacklib/__init__.py b/zstacklib/zstacklib/__init__.py
+index 792d60054..d2305e9cf 100644
+--- a/zstacklib/zstacklib/__init__.py
++++ b/zstacklib/zstacklib/__init__.py
+@@ -1 +1,2 @@
++from __future__ import annotations
+ #
+diff --git a/zstacklib/zstacklib/iptables/__init__.py b/zstacklib/zstacklib/iptables/__init__.py
+index 792d60054..d2305e9cf 100644
+--- a/zstacklib/zstacklib/iptables/__init__.py
++++ b/zstacklib/zstacklib/iptables/__init__.py
+@@ -1 +1,2 @@
++from __future__ import annotations
+ #
+diff --git a/zstacklib/zstacklib/iptables/chain.py b/zstacklib/zstacklib/iptables/chain.py
+index cfefe3ac9..ad1422207 100755
+--- a/zstacklib/zstacklib/iptables/chain.py
++++ b/zstacklib/zstacklib/iptables/chain.py
+@@ -2,3 +2,4 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+diff --git a/zstacklib/zstacklib/iptables/iptables.py b/zstacklib/zstacklib/iptables/iptables.py
+index a54266729..8f59b1104 100755
+--- a/zstacklib/zstacklib/iptables/iptables.py
++++ b/zstacklib/zstacklib/iptables/iptables.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ 
+ from .matches import *
+ from .targets import *
+diff --git a/zstacklib/zstacklib/iptables/matches.py b/zstacklib/zstacklib/iptables/matches.py
+index f3534752a..197b490dc 100755
+--- a/zstacklib/zstacklib/iptables/matches.py
++++ b/zstacklib/zstacklib/iptables/matches.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import sys
+ import inspect
+ 
+diff --git a/zstacklib/zstacklib/iptables/targets.py b/zstacklib/zstacklib/iptables/targets.py
+index 940a63f6f..0720eb406 100755
+--- a/zstacklib/zstacklib/iptables/targets.py
++++ b/zstacklib/zstacklib/iptables/targets.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import sys
+ import inspect
+ 
+diff --git a/zstacklib/zstacklib/test/__init__.py b/zstacklib/zstacklib/test/__init__.py
+index e69de29bb..9d48db4f9 100755
+--- a/zstacklib/zstacklib/test/__init__.py
++++ b/zstacklib/zstacklib/test/__init__.py
+@@ -0,0 +1 @@
++from __future__ import annotations
+diff --git a/zstacklib/zstacklib/test/create_vlan_bridge.py b/zstacklib/zstacklib/test/create_vlan_bridge.py
+index bf3c573d6..12eccb80d 100755
+--- a/zstacklib/zstacklib/test/create_vlan_bridge.py
++++ b/zstacklib/zstacklib/test/create_vlan_bridge.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/lvm/__init__.py b/zstacklib/zstacklib/test/lvm/__init__.py
+index e69de29bb..9d48db4f9 100644
+--- a/zstacklib/zstacklib/test/lvm/__init__.py
++++ b/zstacklib/zstacklib/test/lvm/__init__.py
+@@ -0,0 +1 @@
++from __future__ import annotations
+diff --git a/zstacklib/zstacklib/test/lvm/test_force_release_lv_lock.py b/zstacklib/zstacklib/test/lvm/test_force_release_lv_lock.py
+index 5bf37d988..daf1a0030 100644
+--- a/zstacklib/zstacklib/test/lvm/test_force_release_lv_lock.py
++++ b/zstacklib/zstacklib/test/lvm/test_force_release_lv_lock.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import time
+ import unittest
+ import mock
+diff --git a/zstacklib/zstacklib/test/lvm/test_is_bad_vm_root_volume.py b/zstacklib/zstacklib/test/lvm/test_is_bad_vm_root_volume.py
+index 706a3e3e6..4ec2a1dc1 100644
+--- a/zstacklib/zstacklib/test/lvm/test_is_bad_vm_root_volume.py
++++ b/zstacklib/zstacklib/test/lvm/test_is_bad_vm_root_volume.py
+@@ -2,6 +2,7 @@
+ 
+ @author: zaifeng.wang
+ '''
++from __future__ import annotations
+ 
+ import mock
+ import unittest
+diff --git a/zstacklib/zstacklib/test/lvm/test_load_xml.py b/zstacklib/zstacklib/test/lvm/test_load_xml.py
+index 72199c5c0..de328fc10 100644
+--- a/zstacklib/zstacklib/test/lvm/test_load_xml.py
++++ b/zstacklib/zstacklib/test/lvm/test_load_xml.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import unittest
+ import mock
+ from zstacklib.utils import bash
+diff --git a/zstacklib/zstacklib/test/plugin/__init__.py b/zstacklib/zstacklib/test/plugin/__init__.py
+index e69de29bb..9d48db4f9 100755
+--- a/zstacklib/zstacklib/test/plugin/__init__.py
++++ b/zstacklib/zstacklib/test/plugin/__init__.py
+@@ -0,0 +1 @@
++from __future__ import annotations
+diff --git a/zstacklib/zstacklib/test/plugin/plugin1.py b/zstacklib/zstacklib/test/plugin/plugin1.py
+index e302c90ac..4cd85e1a8 100755
+--- a/zstacklib/zstacklib/test/plugin/plugin1.py
++++ b/zstacklib/zstacklib/test/plugin/plugin1.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ from ...utils import plugin
+ 
+ class Plugin1(plugin.Plugin):
+diff --git a/zstacklib/zstacklib/test/plugin/task_plugin1.py b/zstacklib/zstacklib/test/plugin/task_plugin1.py
+index a8920f428..437574d8d 100644
+--- a/zstacklib/zstacklib/test/plugin/task_plugin1.py
++++ b/zstacklib/zstacklib/test/plugin/task_plugin1.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import plugin, log
+ from zstacklib.utils import jsonobject
+ from zstacklib.utils.thread import AsyncThread
+diff --git a/zstacklib/zstacklib/test/plugin/task_plugin2.py b/zstacklib/zstacklib/test/plugin/task_plugin2.py
+index 3061ebf93..3e560eee9 100644
+--- a/zstacklib/zstacklib/test/plugin/task_plugin2.py
++++ b/zstacklib/zstacklib/test/plugin/task_plugin2.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import plugin
+ 
+ 
+diff --git a/zstacklib/zstacklib/test/test_chain1.py b/zstacklib/zstacklib/test/test_chain1.py
+index 52c66178f..44b710cb6 100755
+--- a/zstacklib/zstacklib/test/test_chain1.py
++++ b/zstacklib/zstacklib/test/test_chain1.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.iptables import iptables
+ 
+diff --git a/zstacklib/zstacklib/test/test_create_bridge.py b/zstacklib/zstacklib/test/test_create_bridge.py
+index 78acb2a1c..474eab2ad 100755
+--- a/zstacklib/zstacklib/test/test_create_bridge.py
++++ b/zstacklib/zstacklib/test/test_create_bridge.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ from zstacklib.utils import shell
+diff --git a/zstacklib/zstacklib/test/test_create_vlan_eth.py b/zstacklib/zstacklib/test/test_create_vlan_eth.py
+index a77c15408..b52ab7f87 100755
+--- a/zstacklib/zstacklib/test/test_create_vlan_eth.py
++++ b/zstacklib/zstacklib/test/test_create_vlan_eth.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/test_form.py b/zstacklib/zstacklib/test/test_form.py
+index 29da31ba6..e96961833 100644
+--- a/zstacklib/zstacklib/test/test_form.py
++++ b/zstacklib/zstacklib/test/test_form.py
+@@ -1,4 +1,5 @@
+ 
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import form
+ 
+diff --git a/zstacklib/zstacklib/test/test_httpserver1.py b/zstacklib/zstacklib/test/test_httpserver1.py
+index 970c09705..507788bc9 100755
+--- a/zstacklib/zstacklib/test/test_httpserver1.py
++++ b/zstacklib/zstacklib/test/test_httpserver1.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ import time
+ import urllib.request, urllib.error, urllib.parse
+diff --git a/zstacklib/zstacklib/test/test_httpserver2.py b/zstacklib/zstacklib/test/test_httpserver2.py
+index 970f155d2..a8309553e 100755
+--- a/zstacklib/zstacklib/test/test_httpserver2.py
++++ b/zstacklib/zstacklib/test/test_httpserver2.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ import time
+ import uuid
+diff --git a/zstacklib/zstacklib/test/test_ip_convert.py b/zstacklib/zstacklib/test/test_ip_convert.py
+index 03980fef7..ed8355dd8 100755
+--- a/zstacklib/zstacklib/test/test_ip_convert.py
++++ b/zstacklib/zstacklib/test/test_ip_convert.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ from zstacklib.utils import linux
+ import unittest
+ 
+diff --git a/zstacklib/zstacklib/test/test_iptables.py b/zstacklib/zstacklib/test/test_iptables.py
+index 0dc266618..be0b994fa 100755
+--- a/zstacklib/zstacklib/test/test_iptables.py
++++ b/zstacklib/zstacklib/test/test_iptables.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.iptables import iptables
+ 
+diff --git a/zstacklib/zstacklib/test/test_iptables_duplicate_rule.py b/zstacklib/zstacklib/test/test_iptables_duplicate_rule.py
+index e95b57097..d8b75310a 100755
+--- a/zstacklib/zstacklib/test/test_iptables_duplicate_rule.py
++++ b/zstacklib/zstacklib/test/test_iptables_duplicate_rule.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.iptables import iptables
+ 
+diff --git a/zstacklib/zstacklib/test/test_iptables_snat.py b/zstacklib/zstacklib/test/test_iptables_snat.py
+index 82da93bba..ebb6f1b1f 100755
+--- a/zstacklib/zstacklib/test/test_iptables_snat.py
++++ b/zstacklib/zstacklib/test/test_iptables_snat.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.iptables import iptables
+ 
+diff --git a/zstacklib/zstacklib/test/test_json.py b/zstacklib/zstacklib/test/test_json.py
+index b47cb227e..6d9728605 100755
+--- a/zstacklib/zstacklib/test/test_json.py
++++ b/zstacklib/zstacklib/test/test_json.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ import types
+ import inspect
+diff --git a/zstacklib/zstacklib/test/test_ovs_bridge_create_destroy.py b/zstacklib/zstacklib/test/test_ovs_bridge_create_destroy.py
+index 30b167b4d..59f4a4e83 100755
+--- a/zstacklib/zstacklib/test/test_ovs_bridge_create_destroy.py
++++ b/zstacklib/zstacklib/test/test_ovs_bridge_create_destroy.py
+@@ -1,4 +1,5 @@
+ 
++from __future__ import annotations
+ import os
+ import unittest
+ from zstacklib.utils import jsonobject
+diff --git a/zstacklib/zstacklib/test/test_ovs_query_physical_nics.py b/zstacklib/zstacklib/test/test_ovs_query_physical_nics.py
+index 132409921..4a04b8e3e 100644
+--- a/zstacklib/zstacklib/test/test_ovs_query_physical_nics.py
++++ b/zstacklib/zstacklib/test/test_ovs_query_physical_nics.py
+@@ -1,4 +1,5 @@
+ 
++from __future__ import annotations
+ import os
+ import time
+ import unittest
+diff --git a/zstacklib/zstacklib/test/test_plugin.py b/zstacklib/zstacklib/test/test_plugin.py
+index 2cee52751..b20d0204d 100755
+--- a/zstacklib/zstacklib/test/test_plugin.py
++++ b/zstacklib/zstacklib/test/test_plugin.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ import os.path
+ from zstacklib.utils import plugin
+diff --git a/zstacklib/zstacklib/test/test_qemu.py b/zstacklib/zstacklib/test/test_qemu.py
+index 6c74e4e74..b910f7649 100644
+--- a/zstacklib/zstacklib/test/test_qemu.py
++++ b/zstacklib/zstacklib/test/test_qemu.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import qemu
+ 
+diff --git a/zstacklib/zstacklib/test/test_sftp_get.py b/zstacklib/zstacklib/test/test_sftp_get.py
+index 6b064930a..5fe02226b 100755
+--- a/zstacklib/zstacklib/test/test_sftp_get.py
++++ b/zstacklib/zstacklib/test/test_sftp_get.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ import os.path
+diff --git a/zstacklib/zstacklib/test/test_shell.py b/zstacklib/zstacklib/test/test_shell.py
+index e18d3e551..3ffdc82a9 100755
+--- a/zstacklib/zstacklib/test/test_shell.py
++++ b/zstacklib/zstacklib/test/test_shell.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import shell
+ import subprocess
+diff --git a/zstacklib/zstacklib/test/test_sizeunit.py b/zstacklib/zstacklib/test/test_sizeunit.py
+index 6be366222..f158d7371 100755
+--- a/zstacklib/zstacklib/test/test_sizeunit.py
++++ b/zstacklib/zstacklib/test/test_sizeunit.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import sizeunit
+ 
+diff --git a/zstacklib/zstacklib/test/test_table.py b/zstacklib/zstacklib/test/test_table.py
+index cc7021896..8780e69f8 100755
+--- a/zstacklib/zstacklib/test/test_table.py
++++ b/zstacklib/zstacklib/test/test_table.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.iptables import iptables
+ 
+diff --git a/zstacklib/zstacklib/test/test_task_manager.py b/zstacklib/zstacklib/test/test_task_manager.py
+index b51405ddb..3b7fca97a 100644
+--- a/zstacklib/zstacklib/test/test_task_manager.py
++++ b/zstacklib/zstacklib/test/test_task_manager.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import time
+ import unittest
+ 
+diff --git a/zstacklib/zstacklib/test/test_thread.py b/zstacklib/zstacklib/test/test_thread.py
+index 2e77f5736..1f6e7ad02 100755
+--- a/zstacklib/zstacklib/test/test_thread.py
++++ b/zstacklib/zstacklib/test/test_thread.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ import time
+ import threading
+diff --git a/zstacklib/zstacklib/test/test_timer.py b/zstacklib/zstacklib/test/test_timer.py
+index d8a1d42e5..b87b00b52 100644
+--- a/zstacklib/zstacklib/test/test_timer.py
++++ b/zstacklib/zstacklib/test/test_timer.py
+@@ -2,6 +2,7 @@
+ 
+ @author: root
+ '''
++from __future__ import annotations
+ from zstacklib.utils import thread
+ import time
+ import threading
+diff --git a/zstacklib/zstacklib/test/test_trace_shell.py b/zstacklib/zstacklib/test/test_trace_shell.py
+index 43859d5d5..912e2723c 100644
+--- a/zstacklib/zstacklib/test/test_trace_shell.py
++++ b/zstacklib/zstacklib/test/test_trace_shell.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import unittest
+ import time
+ import threading
+diff --git a/zstacklib/zstacklib/test/test_uribuilder.py b/zstacklib/zstacklib/test/test_uribuilder.py
+index 1bf6b46be..464ebb820 100755
+--- a/zstacklib/zstacklib/test/test_uribuilder.py
++++ b/zstacklib/zstacklib/test/test_uribuilder.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import http
+ 
+diff --git a/zstacklib/zstacklib/test/test_wget.py b/zstacklib/zstacklib/test/test_wget.py
+index 4f2a305f1..0cc33c6e4 100755
+--- a/zstacklib/zstacklib/test/test_wget.py
++++ b/zstacklib/zstacklib/test/test_wget.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/test_wget_failure.py b/zstacklib/zstacklib/test/test_wget_failure.py
+index ceae81b08..e4fc62f46 100755
+--- a/zstacklib/zstacklib/test/test_wget_failure.py
++++ b/zstacklib/zstacklib/test/test_wget_failure.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/test_wget_rename.py b/zstacklib/zstacklib/test/test_wget_rename.py
+index a7ecc9e70..5700ed933 100755
+--- a/zstacklib/zstacklib/test/test_wget_rename.py
++++ b/zstacklib/zstacklib/test/test_wget_rename.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/test_wget_timeout.py b/zstacklib/zstacklib/test/test_wget_timeout.py
+index e4d991cdd..7b70ebe8a 100755
+--- a/zstacklib/zstacklib/test/test_wget_timeout.py
++++ b/zstacklib/zstacklib/test/test_wget_timeout.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import linux
+ 
+diff --git a/zstacklib/zstacklib/test/test_xmlobject.py b/zstacklib/zstacklib/test/test_xmlobject.py
+index 220b0db42..dbea99dbc 100755
+--- a/zstacklib/zstacklib/test/test_xmlobject.py
++++ b/zstacklib/zstacklib/test/test_xmlobject.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import jsonobject
+ from zstacklib.utils import xmlobject
+diff --git a/zstacklib/zstacklib/test/testapi.py b/zstacklib/zstacklib/test/testapi.py
+index db5e722d2..c7d5e5b8b 100755
+--- a/zstacklib/zstacklib/test/testapi.py
++++ b/zstacklib/zstacklib/test/testapi.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import unittest
+ from zstacklib.utils import jsonobject
+ 
+diff --git a/zstacklib/zstacklib/test/utils/__init__.py b/zstacklib/zstacklib/test/utils/__init__.py
+index 442496238..351f75037 100644
+--- a/zstacklib/zstacklib/test/utils/__init__.py
++++ b/zstacklib/zstacklib/test/utils/__init__.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from unittest import TestCase
+ 
+ from zstacklib.utils import log
+diff --git a/zstacklib/zstacklib/test/utils/dump_debug_test.py b/zstacklib/zstacklib/test/utils/dump_debug_test.py
+index 8856cf8a7..da739b758 100644
+--- a/zstacklib/zstacklib/test/utils/dump_debug_test.py
++++ b/zstacklib/zstacklib/test/utils/dump_debug_test.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import debug
+ debug.track_objects()
+ 
+diff --git a/zstacklib/zstacklib/test/utils/env.py b/zstacklib/zstacklib/test/utils/env.py
+index ecce52078..cc2a60b03 100644
+--- a/zstacklib/zstacklib/test/utils/env.py
++++ b/zstacklib/zstacklib/test/utils/env.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import functools
+ import os
+ import yaml
+diff --git a/zstacklib/zstacklib/test/utils/misc.py b/zstacklib/zstacklib/test/utils/misc.py
+index e40ed4d8d..7418304ad 100644
+--- a/zstacklib/zstacklib/test/utils/misc.py
++++ b/zstacklib/zstacklib/test/utils/misc.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import functools
+ import time
+ import uuid as uid
+diff --git a/zstacklib/zstacklib/test/utils/remote.py b/zstacklib/zstacklib/test/utils/remote.py
+index 46ffc361c..83c3496a4 100644
+--- a/zstacklib/zstacklib/test/utils/remote.py
++++ b/zstacklib/zstacklib/test/utils/remote.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ import tempfile
+ import paramiko
+diff --git a/zstacklib/zstacklib/test/zstacklib_unittest_suite.py b/zstacklib/zstacklib/test/zstacklib_unittest_suite.py
+index e9aa0ff10..34206d18c 100644
+--- a/zstacklib/zstacklib/test/zstacklib_unittest_suite.py
++++ b/zstacklib/zstacklib/test/zstacklib_unittest_suite.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from kvmagent.test.utils import pytest_utils
+ from zstacklib.test.utils import env
+ from zstacklib.utils import bash
+diff --git a/zstacklib/zstacklib/utils/__init__.py b/zstacklib/zstacklib/utils/__init__.py
+index e69de29bb..9d48db4f9 100755
+--- a/zstacklib/zstacklib/utils/__init__.py
++++ b/zstacklib/zstacklib/utils/__init__.py
+@@ -0,0 +1 @@
++from __future__ import annotations
+diff --git a/zstacklib/zstacklib/utils/bash.py b/zstacklib/zstacklib/utils/bash.py
+index 91e2d06d3..80f78c1fc 100755
+--- a/zstacklib/zstacklib/utils/bash.py
++++ b/zstacklib/zstacklib/utils/bash.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import functools
+ import inspect
+ import json
+diff --git a/zstacklib/zstacklib/utils/ceph.py b/zstacklib/zstacklib/utils/ceph.py
+index 0662d4510..cc883be73 100644
+--- a/zstacklib/zstacklib/utils/ceph.py
++++ b/zstacklib/zstacklib/utils/ceph.py
+@@ -2,6 +2,7 @@
+ 
+ @author: lining
+ '''
++from __future__ import annotations
+ import os
+ 
+ import zstacklib.utils.jsonobject as jsonobject
+diff --git a/zstacklib/zstacklib/utils/collection_ops.py b/zstacklib/zstacklib/utils/collection_ops.py
+index 97e1eb58a..5938a8cc7 100644
+--- a/zstacklib/zstacklib/utils/collection_ops.py
++++ b/zstacklib/zstacklib/utils/collection_ops.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ def list_minus(list1, list2):
+     '''
+     @return: a list: the items from list1, except of the items in list2
+diff --git a/zstacklib/zstacklib/utils/component_loader.py b/zstacklib/zstacklib/utils/component_loader.py
+index 7f8af5f20..04a95e8db 100644
+--- a/zstacklib/zstacklib/utils/component_loader.py
++++ b/zstacklib/zstacklib/utils/component_loader.py
+@@ -2,6 +2,7 @@
+ 
+ @author: yyk
+ '''
++from __future__ import annotations
+ 
+ import os
+ import sys
+diff --git a/zstacklib/zstacklib/utils/concurrentlog_handler.py b/zstacklib/zstacklib/utils/concurrentlog_handler.py
+index 86cca0523..9953136a7 100644
+--- a/zstacklib/zstacklib/utils/concurrentlog_handler.py
++++ b/zstacklib/zstacklib/utils/concurrentlog_handler.py
+@@ -44,6 +44,7 @@ See the README file for an example usage of this module.
+ This module supports Python 2.6 and later.
+ 
+ """
++from __future__ import annotations
+ import os
+ import sys
+ from random import randint
+diff --git a/zstacklib/zstacklib/utils/daemon.py b/zstacklib/zstacklib/utils/daemon.py
+index 343f347ea..ee46dcf0b 100755
+--- a/zstacklib/zstacklib/utils/daemon.py
++++ b/zstacklib/zstacklib/utils/daemon.py
+@@ -1,5 +1,6 @@
+ #!/usr/bin/env python
+ 
++from __future__ import annotations
+ import sys, os, time, atexit
+ import traceback
+ import locale
+diff --git a/zstacklib/zstacklib/utils/debug.py b/zstacklib/zstacklib/utils/debug.py
+index 74cfbd3e7..172290394 100755
+--- a/zstacklib/zstacklib/utils/debug.py
++++ b/zstacklib/zstacklib/utils/debug.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ __author__ = 'frank'
+ 
+ import random
+diff --git a/zstacklib/zstacklib/utils/defer.py b/zstacklib/zstacklib/utils/defer.py
+index 4313bd4c5..e2047f829 100644
+--- a/zstacklib/zstacklib/utils/defer.py
++++ b/zstacklib/zstacklib/utils/defer.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import functools
+ import threading
+ import traceback
+diff --git a/zstacklib/zstacklib/utils/device.py b/zstacklib/zstacklib/utils/device.py
+index 277811105..40006e6b9 100644
+--- a/zstacklib/zstacklib/utils/device.py
++++ b/zstacklib/zstacklib/utils/device.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ 
+ from . import linux
+diff --git a/zstacklib/zstacklib/utils/drbd.py b/zstacklib/zstacklib/utils/drbd.py
+index f57440f49..13f07fda4 100644
+--- a/zstacklib/zstacklib/utils/drbd.py
++++ b/zstacklib/zstacklib/utils/drbd.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ import platform
+ 
+diff --git a/zstacklib/zstacklib/utils/ebtables.py b/zstacklib/zstacklib/utils/ebtables.py
+index ccca5fb2c..2f69435b5 100755
+--- a/zstacklib/zstacklib/utils/ebtables.py
++++ b/zstacklib/zstacklib/utils/ebtables.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import shell
+ 
+ _ebtablesUseLock = None
+diff --git a/zstacklib/zstacklib/utils/filedb.py b/zstacklib/zstacklib/utils/filedb.py
+index 9061e425a..78955d438 100755
+--- a/zstacklib/zstacklib/utils/filedb.py
++++ b/zstacklib/zstacklib/utils/filedb.py
+@@ -2,6 +2,7 @@
+ 
+ @author: YYK
+ '''
++from __future__ import annotations
+ import pickledb
+ import os
+ 
+diff --git a/zstacklib/zstacklib/utils/form.py b/zstacklib/zstacklib/utils/form.py
+index a8c89c539..b97f8a44f 100644
+--- a/zstacklib/zstacklib/utils/form.py
++++ b/zstacklib/zstacklib/utils/form.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import log
+ 
+ logger = log.get_logger(__name__)
+diff --git a/zstacklib/zstacklib/utils/ft.py b/zstacklib/zstacklib/utils/ft.py
+index d82f9ffb6..f3cee0701 100644
+--- a/zstacklib/zstacklib/utils/ft.py
++++ b/zstacklib/zstacklib/utils/ft.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import json
+ 
+ from zstacklib.utils import bash
+diff --git a/zstacklib/zstacklib/utils/gpu.py b/zstacklib/zstacklib/utils/gpu.py
+index 25a31d975..273c78d96 100644
+--- a/zstacklib/zstacklib/utils/gpu.py
++++ b/zstacklib/zstacklib/utils/gpu.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ 
+ from zstacklib.utils import log, linux
+diff --git a/zstacklib/zstacklib/utils/http.py b/zstacklib/zstacklib/utils/http.py
+index 9eafd10b3..6345f6427 100755
+--- a/zstacklib/zstacklib/utils/http.py
++++ b/zstacklib/zstacklib/utils/http.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import copy
+ import traceback
+ import types
+diff --git a/zstacklib/zstacklib/utils/image.py b/zstacklib/zstacklib/utils/image.py
+index fb19863aa..d7044ef8a 100644
+--- a/zstacklib/zstacklib/utils/image.py
++++ b/zstacklib/zstacklib/utils/image.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from PIL import Image
+ import os
+ 
+diff --git a/zstacklib/zstacklib/utils/ip.py b/zstacklib/zstacklib/utils/ip.py
+index 65ca1d75c..4a55fed14 100755
+--- a/zstacklib/zstacklib/utils/ip.py
++++ b/zstacklib/zstacklib/utils/ip.py
+@@ -3,6 +3,7 @@
+ 
+ @author: yyk
+ '''
++from __future__ import annotations
+ import re
+ import os.path
+ import socket
+diff --git a/zstacklib/zstacklib/utils/iproute.py b/zstacklib/zstacklib/utils/iproute.py
+index 686fd385c..d136ad2dc 100644
+--- a/zstacklib/zstacklib/utils/iproute.py
++++ b/zstacklib/zstacklib/utils/iproute.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ import errno
+ import socket
+diff --git a/zstacklib/zstacklib/utils/ipset.py b/zstacklib/zstacklib/utils/ipset.py
+index 71275ffed..74c56eca5 100644
+--- a/zstacklib/zstacklib/utils/ipset.py
++++ b/zstacklib/zstacklib/utils/ipset.py
+@@ -2,6 +2,7 @@
+ 
+ @author: MaJin
+ '''
++from __future__ import annotations
+ import os
+ import tempfile
+ 
+diff --git a/zstacklib/zstacklib/utils/iptables.py b/zstacklib/zstacklib/utils/iptables.py
+index afdac3457..38fb45acc 100755
+--- a/zstacklib/zstacklib/utils/iptables.py
++++ b/zstacklib/zstacklib/utils/iptables.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import os
+ from functools import cmp_to_key
+ 
+diff --git a/zstacklib/zstacklib/utils/iptables_v2.py b/zstacklib/zstacklib/utils/iptables_v2.py
+index dbb38e5d9..0d93f9282 100755
+--- a/zstacklib/zstacklib/utils/iptables_v2.py
++++ b/zstacklib/zstacklib/utils/iptables_v2.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ from zstacklib.utils import shell
+ from zstacklib.utils import linux
+diff --git a/zstacklib/zstacklib/utils/iscsi.py b/zstacklib/zstacklib/utils/iscsi.py
+index de34c89d9..eeb336e13 100644
+--- a/zstacklib/zstacklib/utils/iscsi.py
++++ b/zstacklib/zstacklib/utils/iscsi.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import glob
+ import os
+ import re
+diff --git a/zstacklib/zstacklib/utils/iscsi_nl.py b/zstacklib/zstacklib/utils/iscsi_nl.py
+index 7f66f7901..dccad0540 100644
+--- a/zstacklib/zstacklib/utils/iscsi_nl.py
++++ b/zstacklib/zstacklib/utils/iscsi_nl.py
+@@ -1,6 +1,7 @@
+ #!/usr/bin/env python2
+ # generated by o1-mini
+ 
++from __future__ import annotations
+ import struct
+ import logging
+ import os
+diff --git a/zstacklib/zstacklib/utils/jsonobject.py b/zstacklib/zstacklib/utils/jsonobject.py
+index c29960370..0a3811ec5 100755
+--- a/zstacklib/zstacklib/utils/jsonobject.py
++++ b/zstacklib/zstacklib/utils/jsonobject.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import io
+ 
+ import simplejson
+diff --git a/zstacklib/zstacklib/utils/libvirt_singleton.py b/zstacklib/zstacklib/utils/libvirt_singleton.py
+index 45ff294db..49d5b3844 100644
+--- a/zstacklib/zstacklib/utils/libvirt_singleton.py
++++ b/zstacklib/zstacklib/utils/libvirt_singleton.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import traceback
+ 
+ from . import singleton
+diff --git a/zstacklib/zstacklib/utils/linux.py b/zstacklib/zstacklib/utils/linux.py
+index 6c5e9efd0..ecff3ddb2 100755
+--- a/zstacklib/zstacklib/utils/linux.py
++++ b/zstacklib/zstacklib/utils/linux.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import abc
+ import contextlib
+ import os
+@@ -40,6 +41,20 @@ from zstacklib.utils import iproute
+ 
+ logger = log.get_logger(__name__)
+ 
++
++def get_freedesktop_os_release():
++    if hasattr(platform, 'freedesktop_os_release'):
++        return platform.freedesktop_os_release()
++    release = {}
++    with open('/etc/os-release', 'r') as fd:
++        for line in fd:
++            line = line.strip()
++            if not line or line.startswith('#') or '=' not in line:
++                continue
++            key, value = line.split('=', 1)
++            release[key] = value.strip('""')
++    return release
++
+ RPM_BASED_OS = ['redhat', 'centos', 'alibaba', 'kylin10', 'rocky', 'helix']
+ DEB_BASED_OS = ['uos', 'kylin4.0.2', 'debian', 'ubuntu', 'uniontech']
+ ARM_ACPI_SUPPORT_OS = ['kylin10', 'openEuler20.03', 'openEuler22.03']
+diff --git a/zstacklib/zstacklib/utils/linux_v2.py b/zstacklib/zstacklib/utils/linux_v2.py
+index b10402be2..6d8d39e34 100644
+--- a/zstacklib/zstacklib/utils/linux_v2.py
++++ b/zstacklib/zstacklib/utils/linux_v2.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import socket
+ 
+ 
+diff --git a/zstacklib/zstacklib/utils/lock.py b/zstacklib/zstacklib/utils/lock.py
+index 3100ce07d..38f037a0b 100755
+--- a/zstacklib/zstacklib/utils/lock.py
++++ b/zstacklib/zstacklib/utils/lock.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ 
+ import weakref
+ import threading
+diff --git a/zstacklib/zstacklib/utils/log.py b/zstacklib/zstacklib/utils/log.py
+index e5657f1f1..39e5989f8 100755
+--- a/zstacklib/zstacklib/utils/log.py
++++ b/zstacklib/zstacklib/utils/log.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import logging
+ import sys
+ import os.path
+diff --git a/zstacklib/zstacklib/utils/log_tree.py b/zstacklib/zstacklib/utils/log_tree.py
+index f5a7b1186..ddf043c7a 100644
+--- a/zstacklib/zstacklib/utils/log_tree.py
++++ b/zstacklib/zstacklib/utils/log_tree.py
+@@ -1,5 +1,6 @@
+ # encoding: utf-8
+ 
++from __future__ import annotations
+ import copy
+ import simplejson as json
+ 
+diff --git a/zstacklib/zstacklib/utils/lvm.py b/zstacklib/zstacklib/utils/lvm.py
+index 589c5fb48..7392b4bef 100644
+--- a/zstacklib/zstacklib/utils/lvm.py
++++ b/zstacklib/zstacklib/utils/lvm.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import functools
+ import random
+ import os
+diff --git a/zstacklib/zstacklib/utils/misc.py b/zstacklib/zstacklib/utils/misc.py
+index 51469bef3..cc188942a 100755
+--- a/zstacklib/zstacklib/utils/misc.py
++++ b/zstacklib/zstacklib/utils/misc.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import configparser
+ import functools
+ import pprint
+diff --git a/zstacklib/zstacklib/utils/multipath.py b/zstacklib/zstacklib/utils/multipath.py
+index 436e67e0b..40d68d695 100644
+--- a/zstacklib/zstacklib/utils/multipath.py
++++ b/zstacklib/zstacklib/utils/multipath.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import log
+ from zstacklib.utils.collection_ops import union_dict
+ 
+diff --git a/zstacklib/zstacklib/utils/naslinux.py b/zstacklib/zstacklib/utils/naslinux.py
+index 5ed5805b2..43f2611ca 100644
+--- a/zstacklib/zstacklib/utils/naslinux.py
++++ b/zstacklib/zstacklib/utils/naslinux.py
+@@ -2,6 +2,7 @@
+ 
+ @author: mingjian
+ '''
++from __future__ import annotations
+ # coding=utf-8
+ import os
+ import os.path
+diff --git a/zstacklib/zstacklib/utils/nbd_client.py b/zstacklib/zstacklib/utils/nbd_client.py
+index 97bd67f0c..b4566a545 100644
+--- a/zstacklib/zstacklib/utils/nbd_client.py
++++ b/zstacklib/zstacklib/utils/nbd_client.py
+@@ -1,6 +1,7 @@
+ # NOTE: code from Cloudbase Solutions SRL
+ # Licensed under the Apache License, Version 2.0
+ 
++from __future__ import annotations
+ import struct
+ import socket
+ import os
+diff --git a/zstacklib/zstacklib/utils/objgraph.py b/zstacklib/zstacklib/utils/objgraph.py
+index 654cb5ac3..d86ae1cee 100644
+--- a/zstacklib/zstacklib/utils/objgraph.py
++++ b/zstacklib/zstacklib/utils/objgraph.py
+@@ -7,6 +7,7 @@ Copyright (c) 2008-2016 Marius Gedminas <marius@pov.lt> and contributors
+ 
+ Released under the MIT licence.
+ """
++from __future__ import annotations
+ # Permission is hereby granted, free of charge, to any person obtaining a
+ # copy of this software and associated documentation files (the "Software"),
+ # to deal in the Software without restriction, including without limitation
+diff --git a/zstacklib/zstacklib/utils/ordered_set.py b/zstacklib/zstacklib/utils/ordered_set.py
+index 6bb40a20a..35391efc9 100644
+--- a/zstacklib/zstacklib/utils/ordered_set.py
++++ b/zstacklib/zstacklib/utils/ordered_set.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import collections
+ 
+ class OrderedSet(collections.abc.MutableSet):
+diff --git a/zstacklib/zstacklib/utils/ovn.py b/zstacklib/zstacklib/utils/ovn.py
+index 90290dd48..2e1a41d31 100644
+--- a/zstacklib/zstacklib/utils/ovn.py
++++ b/zstacklib/zstacklib/utils/ovn.py
+@@ -2,6 +2,7 @@
+ 
+ @author: haibiao.xiao
+ '''
++from __future__ import annotations
+ 
+ from zstacklib.utils import log
+ from zstacklib.utils import bash
+diff --git a/zstacklib/zstacklib/utils/ovs.py b/zstacklib/zstacklib/utils/ovs.py
+index 765c0beff..3c62c5d64 100644
+--- a/zstacklib/zstacklib/utils/ovs.py
++++ b/zstacklib/zstacklib/utils/ovs.py
+@@ -2,6 +2,7 @@
+ 
+ @author: haibiao.xiao
+ '''
++from __future__ import annotations
+ import os
+ import shutil
+ import time
+diff --git a/zstacklib/zstacklib/utils/pci.py b/zstacklib/zstacklib/utils/pci.py
+index 39151e595..293641999 100644
+--- a/zstacklib/zstacklib/utils/pci.py
++++ b/zstacklib/zstacklib/utils/pci.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import os
+ 
+ from zstacklib.utils import log, linux
+diff --git a/zstacklib/zstacklib/utils/plugin.py b/zstacklib/zstacklib/utils/plugin.py
+index c5ceba71f..a191db349 100755
+--- a/zstacklib/zstacklib/utils/plugin.py
++++ b/zstacklib/zstacklib/utils/plugin.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ 
+ import abc
+ import functools
+diff --git a/zstacklib/zstacklib/utils/portalocker.py b/zstacklib/zstacklib/utils/portalocker.py
+index f8fb375b2..3b7483a61 100644
+--- a/zstacklib/zstacklib/utils/portalocker.py
++++ b/zstacklib/zstacklib/utils/portalocker.py
+@@ -49,6 +49,7 @@ Author: Jonathan Feinberg <jdf@pobox.com>,
+ Version: 0.3
+ URL:  https://github.com/WoLpH/portalocker
+ """
++from __future__ import annotations
+ 
+ __all__ = [
+     "lock",
+diff --git a/zstacklib/zstacklib/utils/progress_report.py b/zstacklib/zstacklib/utils/progress_report.py
+index a216e674d..b1df02662 100644
+--- a/zstacklib/zstacklib/utils/progress_report.py
++++ b/zstacklib/zstacklib/utils/progress_report.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import threading
+ import time
+ 
+diff --git a/zstacklib/zstacklib/utils/puppet.py b/zstacklib/zstacklib/utils/puppet.py
+index 89d1dba80..cfc9ea80d 100755
+--- a/zstacklib/zstacklib/utils/puppet.py
++++ b/zstacklib/zstacklib/utils/puppet.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ 
+ from . import shell
+ from . import ssh
+diff --git a/zstacklib/zstacklib/utils/qcow2.py b/zstacklib/zstacklib/utils/qcow2.py
+index f88ab9082..229404f7e 100644
+--- a/zstacklib/zstacklib/utils/qcow2.py
++++ b/zstacklib/zstacklib/utils/qcow2.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from . import log
+ from . import plugin
+ from . import traceable_shell
+diff --git a/zstacklib/zstacklib/utils/qemu.py b/zstacklib/zstacklib/utils/qemu.py
+index aab5b8567..7edfeab2b 100644
+--- a/zstacklib/zstacklib/utils/qemu.py
++++ b/zstacklib/zstacklib/utils/qemu.py
+@@ -1,4 +1,5 @@
+ 
++from __future__ import annotations
+ from . import bash
+ import os
+ import string
+diff --git a/zstacklib/zstacklib/utils/qemu_img.py b/zstacklib/zstacklib/utils/qemu_img.py
+index 2f74e55ff..74225e2cd 100755
+--- a/zstacklib/zstacklib/utils/qemu_img.py
++++ b/zstacklib/zstacklib/utils/qemu_img.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import shell
+ from distutils.version import LooseVersion
+ import json
+diff --git a/zstacklib/zstacklib/utils/qga.py b/zstacklib/zstacklib/utils/qga.py
+index 473d13d56..ee34e0236 100644
+--- a/zstacklib/zstacklib/utils/qga.py
++++ b/zstacklib/zstacklib/utils/qga.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import base64
+ import json
+ import time
+diff --git a/zstacklib/zstacklib/utils/qmp.py b/zstacklib/zstacklib/utils/qmp.py
+index 896a02b27..b63f0361f 100644
+--- a/zstacklib/zstacklib/utils/qmp.py
++++ b/zstacklib/zstacklib/utils/qmp.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import log, bash, qemu
+ import json
+ import errno
+diff --git a/zstacklib/zstacklib/utils/remoteStorage.py b/zstacklib/zstacklib/utils/remoteStorage.py
+index 8e9b88bed..65d6637e8 100644
+--- a/zstacklib/zstacklib/utils/remoteStorage.py
++++ b/zstacklib/zstacklib/utils/remoteStorage.py
+@@ -1,5 +1,6 @@
+ 
+ 
++from __future__ import annotations
+ class RemoteStorage(object):
+     def __init__(self, mount_path, volume_mounted_device):
+         self.volume_mounted_device = volume_mounted_device
+diff --git a/zstacklib/zstacklib/utils/remotetarget.py b/zstacklib/zstacklib/utils/remotetarget.py
+index f63c6b416..407c3c5a4 100644
+--- a/zstacklib/zstacklib/utils/remotetarget.py
++++ b/zstacklib/zstacklib/utils/remotetarget.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import urllib.parse
+ 
+ from zstacklib.utils import log, linux
+diff --git a/zstacklib/zstacklib/utils/report.py b/zstacklib/zstacklib/utils/report.py
+index b5a4eb308..d8fb7c301 100644
+--- a/zstacklib/zstacklib/utils/report.py
++++ b/zstacklib/zstacklib/utils/report.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import time
+ from zstacklib.utils import http, jsonobject
+ from zstacklib.utils import log
+diff --git a/zstacklib/zstacklib/utils/rollback.py b/zstacklib/zstacklib/utils/rollback.py
+index d25336c2f..6c4996664 100755
+--- a/zstacklib/zstacklib/utils/rollback.py
++++ b/zstacklib/zstacklib/utils/rollback.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ __author__ = 'frank'
+ 
+ import threading
+diff --git a/zstacklib/zstacklib/utils/salt.py b/zstacklib/zstacklib/utils/salt.py
+index f8265e0de..575081613 100755
+--- a/zstacklib/zstacklib/utils/salt.py
++++ b/zstacklib/zstacklib/utils/salt.py
+@@ -2,6 +2,7 @@
+ 
+ @author: YYK
+ '''
++from __future__ import annotations
+ 
+ from . import shell
+ from . import ssh
+diff --git a/zstacklib/zstacklib/utils/sanlock.py b/zstacklib/zstacklib/utils/sanlock.py
+index 34b9a7af4..34cd5ee1c 100644
+--- a/zstacklib/zstacklib/utils/sanlock.py
++++ b/zstacklib/zstacklib/utils/sanlock.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ from zstacklib.utils import log, linux, thread
+ 
+ import re
+diff --git a/zstacklib/zstacklib/utils/secret.py b/zstacklib/zstacklib/utils/secret.py
+index d61ee216d..6cd6b95c6 100644
+--- a/zstacklib/zstacklib/utils/secret.py
++++ b/zstacklib/zstacklib/utils/secret.py
+@@ -1,6 +1,7 @@
+ '''
+ @author: qiuyu
+ '''
++from __future__ import annotations
+ 
+ import subprocess
+ 
+diff --git a/zstacklib/zstacklib/utils/shell.py b/zstacklib/zstacklib/utils/shell.py
+index 7edcef831..8fda4def9 100755
+--- a/zstacklib/zstacklib/utils/shell.py
++++ b/zstacklib/zstacklib/utils/shell.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ import os
+ import subprocess
+ from zstacklib.utils import log
+diff --git a/zstacklib/zstacklib/utils/singleton.py b/zstacklib/zstacklib/utils/singleton.py
+index 1ff7d1d2f..5ac5d7e6e 100644
+--- a/zstacklib/zstacklib/utils/singleton.py
++++ b/zstacklib/zstacklib/utils/singleton.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ def singleton(cls):
+     instances = {}
+     def wrapper(*args, **kwargs):
+diff --git a/zstacklib/zstacklib/utils/sizeunit.py b/zstacklib/zstacklib/utils/sizeunit.py
+index 73307a32f..a2262ddbe 100755
+--- a/zstacklib/zstacklib/utils/sizeunit.py
++++ b/zstacklib/zstacklib/utils/sizeunit.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ 
+ import os
+ import re
+diff --git a/zstacklib/zstacklib/utils/sqlite.py b/zstacklib/zstacklib/utils/sqlite.py
+index ba4124915..310b9d4f6 100644
+--- a/zstacklib/zstacklib/utils/sqlite.py
++++ b/zstacklib/zstacklib/utils/sqlite.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import sqlite3
+ 
+ 
+diff --git a/zstacklib/zstacklib/utils/ssh.py b/zstacklib/zstacklib/utils/ssh.py
+index ed36c0954..3be71ec18 100755
+--- a/zstacklib/zstacklib/utils/ssh.py
++++ b/zstacklib/zstacklib/utils/ssh.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ 
+ import paramiko
+ import os.path
+diff --git a/zstacklib/zstacklib/utils/thirdparty_ceph.py b/zstacklib/zstacklib/utils/thirdparty_ceph.py
+index f75824dd5..0608f829a 100644
+--- a/zstacklib/zstacklib/utils/thirdparty_ceph.py
++++ b/zstacklib/zstacklib/utils/thirdparty_ceph.py
+@@ -1,4 +1,5 @@
+ # coding=utf-8
++from __future__ import annotations
+ import time
+ import uuid
+ 
+diff --git a/zstacklib/zstacklib/utils/thread.py b/zstacklib/zstacklib/utils/thread.py
+index e4a9a1301..04fa6fef8 100755
+--- a/zstacklib/zstacklib/utils/thread.py
++++ b/zstacklib/zstacklib/utils/thread.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ 
+ import threading
+ import inspect
+diff --git a/zstacklib/zstacklib/utils/traceable_shell.py b/zstacklib/zstacklib/utils/traceable_shell.py
+index cb033f2bf..ed2443e8d 100644
+--- a/zstacklib/zstacklib/utils/traceable_shell.py
++++ b/zstacklib/zstacklib/utils/traceable_shell.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import time
+ 
+ from . import bash
+diff --git a/zstacklib/zstacklib/utils/uuidhelper.py b/zstacklib/zstacklib/utils/uuidhelper.py
+index bae35ea53..5715823c9 100755
+--- a/zstacklib/zstacklib/utils/uuidhelper.py
++++ b/zstacklib/zstacklib/utils/uuidhelper.py
+@@ -2,6 +2,7 @@
+ 
+ @author: frank
+ '''
++from __future__ import annotations
+ 
+ from uuid import uuid4
+ 
+diff --git a/zstacklib/zstacklib/utils/vm_operator.py b/zstacklib/zstacklib/utils/vm_operator.py
+index d32c7b87b..c562980d1 100644
+--- a/zstacklib/zstacklib/utils/vm_operator.py
++++ b/zstacklib/zstacklib/utils/vm_operator.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import libvirt
+ 
+ 
+diff --git a/zstacklib/zstacklib/utils/vm_plugin_queue_singleton.py b/zstacklib/zstacklib/utils/vm_plugin_queue_singleton.py
+index 20bfe6956..10805e9f5 100644
+--- a/zstacklib/zstacklib/utils/vm_plugin_queue_singleton.py
++++ b/zstacklib/zstacklib/utils/vm_plugin_queue_singleton.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import queue
+ from zstacklib.utils import singleton
+ 
+diff --git a/zstacklib/zstacklib/utils/xmlhook.py b/zstacklib/zstacklib/utils/xmlhook.py
+index 3570525ed..75eb0dfad 100755
+--- a/zstacklib/zstacklib/utils/xmlhook.py
++++ b/zstacklib/zstacklib/utils/xmlhook.py
+@@ -1,4 +1,5 @@
+ 
++from __future__ import annotations
+ import os
+ from xml.dom import minidom
+ import xml.etree.ElementTree as etree
+diff --git a/zstacklib/zstacklib/utils/xmlobject.py b/zstacklib/zstacklib/utils/xmlobject.py
+index a19df7c24..69cc42622 100755
+--- a/zstacklib/zstacklib/utils/xmlobject.py
++++ b/zstacklib/zstacklib/utils/xmlobject.py
+@@ -2,6 +2,7 @@
+ 
+ @author: Frank
+ '''
++from __future__ import annotations
+ import xml.etree.ElementTree as etree
+ import re
+ import types
+diff --git a/zstacklib/zstacklib/utils/zstone.py b/zstacklib/zstacklib/utils/zstone.py
+index 9c5b1a93e..5eb94be0a 100644
+--- a/zstacklib/zstacklib/utils/zstone.py
++++ b/zstacklib/zstacklib/utils/zstone.py
+@@ -1,3 +1,4 @@
++from __future__ import annotations
+ import zstacklib.utils.jsonobject as jsonobject
+ from zstacklib.utils import shell, bash
+ from distutils.version import LooseVersion
