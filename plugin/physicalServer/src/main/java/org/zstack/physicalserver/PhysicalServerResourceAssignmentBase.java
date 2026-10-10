@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -72,6 +73,8 @@ public class PhysicalServerResourceAssignmentBase {
             handle((APIGetPhysicalServerManagedServicesMsg) msg);
         } else if (msg instanceof RefreshPhysicalServerResourceAssignmentMsg) {
             handle((RefreshPhysicalServerResourceAssignmentMsg) msg);
+        } else if (msg instanceof RefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
+            handle((RefreshPhysicalServerResourceAssignmentsFromProfileMsg) msg);
         } else if (msg instanceof ReleasePhysicalServerResourceAssignmentMsg) {
             handle((ReleasePhysicalServerResourceAssignmentMsg) msg);
         } else if (msg instanceof ForgetPhysicalServerResourceAssignmentMsg) {
@@ -436,8 +439,18 @@ public class PhysicalServerResourceAssignmentBase {
         });
     }
 
-    public void applyAssignmentsFromProfile(Map<String, RoleServiceManifest> snapshot) {
-        profiles.putAll(snapshot);
+    private void handle(RefreshPhysicalServerResourceAssignmentsFromProfileMsg msg) {
+        Map<String, RoleServiceManifest> localProfiles = manager.loadProfiles();
+        String localSha256 = manager.getProfileSha256(localProfiles);
+        MessageReply reply = new MessageReply();
+        if (!localSha256.equals(msg.getProfileSha256())) {
+            reply.setError(operr(PhysicalServerConstant.ERROR_CODE,
+                    "Profile SHA-256 mismatch on management node[%s] for physical server[%s]: requested[%s], local[%s]",
+                    Platform.getManagementServerId(), serverUuid, msg.getProfileSha256(), localSha256));
+            bus.reply(msg, reply);
+            return;
+        }
+        profiles.putAll(localProfiles);
         thdf.chainSubmit(new ChainTask(null) {
             @Override
             public String getSyncSignature() {
@@ -446,6 +459,7 @@ public class PhysicalServerResourceAssignmentBase {
 
             @Override
             public void run(SyncTaskChain chain) {
+                assignments.markUnsyncedByServerUuids(Collections.singleton(serverUuid));
                 Map<String, PhysicalServerResourceAssignmentVO> current = assignments.mapByRole(serverUuid);
                 observeAssignments(current, current.keySet(), new Completion(chain) {
                     @Override
@@ -494,6 +508,7 @@ public class PhysicalServerResourceAssignmentBase {
                 return "refresh-physical-server-resource-assignments-from-profile-" + serverUuid;
             }
         });
+        bus.reply(msg, reply);
     }
 
     private void applyAssignments(Map<String, PhysicalServerResourceAssignmentVO> current,
@@ -680,37 +695,6 @@ public class PhysicalServerResourceAssignmentBase {
             @Override
             public void fail(ErrorCode errorCode) {
                 completion.fail(errorCode);
-            }
-        });
-    }
-
-    public void release(Collection<String> roleTypes) {
-        thdf.chainSubmit(new ChainTask(null) {
-            @Override
-            public String getSyncSignature() {
-                return serverOperationSignature();
-            }
-
-            @Override
-            public void run(SyncTaskChain chain) {
-                releaseAssignments(roleTypes, new Completion(chain) {
-                    @Override
-                    public void success() {
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        logger.warn(String.format("failed to release resource assignments for " +
-                                "physical server[uuid:%s]: %s", serverUuid, errorCode));
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getName() {
-                return "release-physical-server-resource-assignments-" + serverUuid;
             }
         });
     }

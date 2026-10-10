@@ -154,8 +154,18 @@ public class PhysicalServerAssignmentRepository {
                 .eq(PhysicalServerResourceAssignmentVO_.roleType, roleType).find();
     }
 
-    public List<PhysicalServerResourceAssignmentVO> listAssignments() {
-        return Q.New(PhysicalServerResourceAssignmentVO.class).list();
+    public List<String> listServerUuids(String lastUuid, int limit) {
+        return Q.New(PhysicalServerResourceAssignmentVO.class).select(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .gt(PhysicalServerResourceAssignmentVO_.serverUuid, lastUuid)
+                .groupBy(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .orderByAsc(PhysicalServerResourceAssignmentVO_.serverUuid).limit(limit).listValues();
+    }
+
+    public List<String> listServerUuids(String role, String lastUuid, int limit) {
+        return Q.New(PhysicalServerResourceAssignmentVO.class).select(PhysicalServerResourceAssignmentVO_.serverUuid)
+                .eq(PhysicalServerResourceAssignmentVO_.roleType, role)
+                .gt(PhysicalServerResourceAssignmentVO_.serverUuid, lastUuid)
+                .orderByAsc(PhysicalServerResourceAssignmentVO_.serverUuid).limit(limit).listValues();
     }
 
     public List<PhysicalServerResourceAssignmentVO> listAssignments(Collection<String> serverUuids) {

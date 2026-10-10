@@ -10,15 +10,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.HostSystemTags;
 import org.zstack.core.Platform;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.thread.AsyncThread;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -30,13 +31,11 @@ import org.zstack.header.host.HostException;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.physicalserver.*;
 import org.zstack.header.tag.AbstractSystemTagLifeCycleListener;
 import org.zstack.header.tag.SystemTagInventory;
 import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
-import org.zstack.physicalserver.PhysicalServerConstant;
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig;
 import org.zstack.utils.TagUtils;
 import org.zstack.utils.Utils;
@@ -45,7 +44,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10000;
 
 public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssignmentFactory,
-        HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint, ManagementNodeReadyExtensionPoint, Component {
+        HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint, Component {
     public static final PhysicalServerRoleType type = new PhysicalServerRoleType("COMPUTE");
     public static final String APPLY_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/apply";
     public static final String RELEASE_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/release";
@@ -59,8 +58,6 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
     private PhysicalServerManager physicalServerManager;
     @Autowired
     private DatabaseFacade dbf;
-    @Autowired
-    private ResourceDestinationMaker destinationMaker;
     @Override
     public PhysicalServerResourceAssignmentObserver getResourceAssignment(String serverUuid) {
         return new KvmResourceAssignmentController(serverUuid);
@@ -99,28 +96,50 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
     }
 
     @Override
-    public void managementNodeReady() {
-        backfill();
-        refreshHostAssignments();
+    public void initializeAssociations(int batchSize, BiConsumer<Collection<String>, Completion> batch,
+                                       Completion completion) {
+        initializeAssociations("", batchSize, batch, completion);
+    }
+
+    @AsyncThread
+    private void initializeAssociations(String lastUuid, int batchSize,
+                                        BiConsumer<Collection<String>, Completion> batch, Completion completion) {
+        List<String> hosts = Q.New(HostVO.class).select(HostVO_.uuid)
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).gt(HostVO_.uuid, lastUuid)
+                .orderByAsc(HostVO_.uuid).limit(batchSize).listValues();
+        if (hosts.isEmpty()) {
+            completion.success();
+            return;
+        }
+        backfill(hosts);
+        Collection<String> servers = Q.New(HostVO.class).select(HostVO_.serverUuid)
+                .in(HostVO_.uuid, hosts).notNull(HostVO_.serverUuid).listValues();
+        batch.accept(servers, new Completion(completion) {
+            @Override
+            public void success() {
+                initializeAssociations(hosts.get(hosts.size() - 1), batchSize, batch, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     @Override
     public boolean start() {
-        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.installUpdateExtension((oldConfig, newConfig) -> {
-            if (newConfig.value(Boolean.class)) {
-                backfill();
-                refreshHostAssignments();
-            }
-        });
         HostSystemTags.SYSTEM_SERIAL_NUMBER.installLifeCycleListener(new AbstractSystemTagLifeCycleListener() {
                     @Override
                     public void tagCreated(SystemTagInventory tag) {
-                        backfill(Collections.singleton(tag.getResourceUuid()));
+                        backfill(Collections.singleton(tag.getResourceUuid()))
+                                .forEach(KvmResourceAssignmentFactory.this::refreshResourceAssignment);
                     }
 
                     @Override
                     public void tagUpdated(SystemTagInventory old, SystemTagInventory newTag) {
-                        backfill(Collections.singleton(newTag.getResourceUuid()));
+                        backfill(Collections.singleton(newTag.getResourceUuid()))
+                                .forEach(KvmResourceAssignmentFactory.this::refreshResourceAssignment);
                     }
                 });
         return true;
@@ -132,25 +151,17 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
     }
 
     @Transactional
-    private void backfill() {
-        backfill(Collections.emptySet());
-    }
-
-    @Transactional
-    private void backfill(Collection<String> hostUuids) {
+    private Set<String> backfill(Collection<String> hostUuids) {
         if (physicalServerManager == null
                 || !PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value(Boolean.class)) {
-            return;
+            return Collections.emptySet();
         }
-        Q hostQuery = Q.New(HostVO.class)
+        List<String> unresolvedHostUuids = Q.New(HostVO.class)
                 .select(HostVO_.uuid)
-                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).isNull(HostVO_.serverUuid);
-        if (hostUuids != null && !hostUuids.isEmpty()) {
-            hostQuery.in(HostVO_.uuid, hostUuids);
-        }
-        List<String> unresolvedHostUuids = hostQuery.listValues();
+                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).isNull(HostVO_.serverUuid)
+                .in(HostVO_.uuid, hostUuids).listValues();
         if (unresolvedHostUuids.isEmpty()) {
-            return;
+            return Collections.emptySet();
         }
         Map<String, Set<String>> serialsByHost = serialsByHost(unresolvedHostUuids);
         Map<String, List<String>> candidatesBySerial = new LinkedHashMap<>();
@@ -175,9 +186,12 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
             serialNumbers.add(candidate.getKey());
         }
         Map<String, String> resolved = physicalServerManager.resolveBySerialNumbers(serialNumbers);
+        if (resolved.isEmpty()) {
+            return Collections.emptySet();
+        }
         clearDeletedHostLinks(resolved.values());
         Set<String> used = new HashSet<>(Q.New(HostVO.class)
-                .select(HostVO_.serverUuid).notNull(HostVO_.serverUuid).listValues());
+                .select(HostVO_.serverUuid).in(HostVO_.serverUuid, resolved.values()).listValues());
         Map<String, String> links = new LinkedHashMap<>();
         for (Map.Entry<String, String> candidate : candidates.entrySet()) {
             String serverUuid = resolved.get(candidate.getKey());
@@ -187,10 +201,7 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
         }
         updateHostLinks(links);
 
-        Set<String> linkedServers = new LinkedHashSet<>(links.values());
-        for (String serverUuid : linkedServers) {
-            refreshResourceAssignment(serverUuid);
-        }
+        return new LinkedHashSet<>(links.values());
     }
 
     private void refreshResourceAssignment(String serverUuid) {
@@ -206,16 +217,6 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
                         serverUuid, errorCode));
             }
         });
-    }
-
-    private void refreshHostAssignments() {
-        if (physicalServerManager == null || !PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value(Boolean.class)
-                || !destinationMaker.isManagedByUs(PhysicalServerConstant.CONTROL_OWNER_KEY)) {
-            return;
-        }
-        List<String> serverUuids = Q.New(HostVO.class).select(HostVO_.serverUuid)
-                .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE).notNull(HostVO_.serverUuid).listValues();
-        serverUuids.forEach(this::refreshResourceAssignment);
     }
 
     private Map<String, Set<String>> serialsByHost(Collection<String> hostUuids) {

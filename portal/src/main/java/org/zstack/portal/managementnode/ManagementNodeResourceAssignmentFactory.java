@@ -1,7 +1,9 @@
 package org.zstack.portal.managementnode;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
+import java.util.function.BiConsumer;
 import javax.persistence.Query;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,7 +19,6 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
 import org.zstack.header.managementnode.ManagementNodeInventory;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.Message;
@@ -31,7 +32,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 
 public class ManagementNodeResourceAssignmentFactory extends AbstractService implements
         PhysicalServerResourceAssignmentFactory,
-        ManagementNodeChangeListener, ManagementNodeReadyExtensionPoint, Component {
+        ManagementNodeChangeListener, Component {
     public static final PhysicalServerRoleType type = new PhysicalServerRoleType("MANAGEMENT");
     public static final String ROLE_SERVICE_MANIFEST_PATH = "physical-server-roles/management.yaml";
     static final String SERVICE_ID = "managementNodePhysicalServerResourceControl";
@@ -158,8 +159,15 @@ public class ManagementNodeResourceAssignmentFactory extends AbstractService imp
     }
 
     @Override
-    public void managementNodeReady() {
-        associateLocalNode(Platform.getManagementServerId());
+    public void initializeAssociations(int batchSize, BiConsumer<Collection<String>, Completion> batch,
+                                       Completion completion) {
+        String nodeUuid = Platform.getManagementServerId();
+        if (Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.serverUuid)
+                .eq(ManagementNodeVO_.uuid, nodeUuid).findValue() == null) {
+            associateLocalNode(nodeUuid);
+        }
+        batch.accept(Q.New(ManagementNodeVO.class).select(ManagementNodeVO_.serverUuid)
+                .notNull(ManagementNodeVO_.serverUuid).listValues(), completion);
     }
 
     public void associateLocalNode(String nodeUuid) {
@@ -255,11 +263,6 @@ public class ManagementNodeResourceAssignmentFactory extends AbstractService imp
 
     @Override
     public boolean start() {
-        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.installUpdateExtension((oldConfig, newConfig) -> {
-            if (newConfig.value(Boolean.class)) {
-                associateLocalNode(Platform.getManagementServerId());
-            }
-        });
         return true;
     }
 

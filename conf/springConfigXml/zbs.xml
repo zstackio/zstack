@@ -48,7 +48,6 @@
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory" />
             <zstack:extension interface="org.zstack.header.Component" />
-            <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint" />
         </zstack:plugin>
     </bean>
     <bean id="ZbsResourceAssignmentCascadeExtension"

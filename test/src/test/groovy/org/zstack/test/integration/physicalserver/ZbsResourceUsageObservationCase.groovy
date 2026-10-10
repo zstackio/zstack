@@ -2,10 +2,16 @@ package org.zstack.test.integration.physicalserver
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.componentloader.PluginRegistry
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusCallBack
+import org.zstack.core.cloudbus.ResourceDestinationMaker
 import org.zstack.core.db.Q
 import org.zstack.header.core.Completion
+import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
 import org.zstack.header.core.ReturnValueCompletion
+import org.zstack.header.message.MessageReply
+import org.zstack.header.message.NeedReplyMessage
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.HostNUMANode
 import org.zstack.header.host.HostVO
@@ -17,6 +23,9 @@ import org.zstack.header.physicalserver.PhysicalServerResourceUsageObserver
 import org.zstack.header.physicalserver.PhysicalServerResourceAssignmentFactory
 import org.zstack.header.physicalserver.RoleServiceManifest
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentVO
+import org.zstack.physicalserver.PhysicalServerManagerImpl
+import org.zstack.physicalserver.PhysicalServerConstant
+import org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentMsg
 import org.zstack.physicalserver.PhysicalServerVO
 import org.zstack.physicalserver.PhysicalServerVO_
 import org.zstack.header.physicalserver.PhysicalServerRoleType
@@ -121,10 +130,10 @@ class ZbsResourceUsageObservationCase extends SubCase {
             first = addZbs("zbs-observation-1", "127.0.1.11")
             verifyRelationQueriesDoNotRegisterServers()
             PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
-            bean(ZbsResourceAssignmentFactory.class).refreshAssignments()
             verifyObserverCapabilitiesAreRegisteredIndependently()
             serverUuid = physicalServerUuid(SERIAL)
             refreshResourceAssignment(serverUuid, ZbsResourceAssignmentFactory.type.toString())
+            verifyOnlyOwnedServersAreObserved()
 
             verifyAssignmentObservationDoesNotRequireUsageObservation()
             verifyContributorFailurePreservesAssignments()
@@ -138,6 +147,37 @@ class ZbsResourceUsageObservationCase extends SubCase {
             verifySerialIdentityWithoutIpFallback()
             verifyAddonInfoMoveChangesOnlyObservationRelation()
             verifyRelationRemovalDoesNotNeedProviderRelease()
+        }
+    }
+
+    private void verifyOnlyOwnedServersAreObserved() {
+        def manager = bean(PhysicalServerManagerImpl.class)
+        def originalBus = manager.bus
+        def originalDestination = manager.destinationMaker
+        def recorder = mock(CloudBus.class)
+        doAnswer { invocation ->
+            (invocation.arguments[1] as CloudBusCallBack).run(new MessageReply())
+            return null
+        }.when(recorder).send(any(NeedReplyMessage.class) as NeedReplyMessage,
+                any(CloudBusCallBack.class) as CloudBusCallBack)
+        def destinations = mock(ResourceDestinationMaker.class)
+        manager.bus = recorder
+        manager.destinationMaker = destinations
+        try {
+            manager.managementNodeReady()
+            retryInSecs { verify(destinations, atLeastOnce()).isManagedByUs(serverUuid) }
+            verify(recorder, never()).makeTargetServiceIdByResourceUuid(
+                    any(RefreshPhysicalServerResourceAssignmentMsg.class), anyString(), anyString())
+            when(destinations.isManagedByUs(serverUuid)).thenReturn(true)
+            manager.managementNodeReady()
+            retryInSecs {
+                verify(recorder).makeTargetServiceIdByResourceUuid(
+                        any(RefreshPhysicalServerResourceAssignmentMsg.class),
+                        eq(PhysicalServerConstant.SERVICE_ID), eq(serverUuid))
+            }
+        } finally {
+            manager.bus = originalBus
+            manager.destinationMaker = originalDestination
         }
     }
 
@@ -236,8 +276,12 @@ class ZbsResourceUsageObservationCase extends SubCase {
         }] as ZbsNodeRefContributor
         PluginRegistry registry = bean(PluginRegistry.class)
         registry.defineDynamicExtension(ZbsNodeRefContributor.class, contributor)
-        Throwable failure = shouldFail { bean(ZbsResourceAssignmentFactory.class).refreshAssignments() }
-        assert failure.message.contains("simulated contributor failure") : "partial relation queries must fail loudly"
+        FutureCompletion completion = new FutureCompletion(null)
+        bean(ZbsResourceAssignmentFactory.class).initializeAssociations(500,
+                { servers, batch -> batch.success() }, completion)
+        completion.await(TimeUnit.SECONDS.toMillis(10))
+        assert !completion.success && completion.errorCode?.details?.contains("simulated contributor failure") :
+                "A failed relation query must reach the caller: actual=${completion.errorCode}"
         assert assignments(serverUuid, "ZBS")[0].uuid == previousUuid :
                 "a failed business query must not delete the persisted Assignment"
         registry.getExtensionList(ZbsNodeRefContributor.class).remove(contributor)
@@ -628,7 +672,6 @@ class ZbsResourceUsageObservationCase extends SubCase {
         assert providerQueryCalls.get() == queriesBeforeDelete :
                 "disabled Cascade cleanup must not invoke the unavailable Provider"
         failProviderQuery = false
-        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
     }
 
     private List zbsServices(String targetServerUuid) {

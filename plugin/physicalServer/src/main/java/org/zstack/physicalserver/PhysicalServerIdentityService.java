@@ -9,6 +9,7 @@ import org.zstack.core.db.Q;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import java.util.Collection;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -17,17 +18,24 @@ import java.util.Map;
 import java.util.Set;
 
 public class PhysicalServerIdentityService {
+    private static final int IDENTITY_BATCH_SIZE = 500;
     @Autowired
     private DatabaseFacade dbf;
 
-    @Transactional
     public Map<String, String> resolveBySerialNumbers(Collection<String> serialNumbers) {
-        Set<String> normalized = normalize(serialNumbers);
-        if (normalized.isEmpty()) {
-            return Collections.emptyMap();
+        List<String> normalized = new ArrayList<>(normalize(serialNumbers));
+        Map<String, String> result = new LinkedHashMap<>();
+        for (int start = 0; start < normalized.size(); start += IDENTITY_BATCH_SIZE) {
+            result.putAll(resolveBatch(normalized.subList(start,
+                    Math.min(start + IDENTITY_BATCH_SIZE, normalized.size()))));
         }
-        insertServers(normalized);
-        return serversBySerial(normalized);
+        return result;
+    }
+
+    @Transactional
+    private Map<String, String> resolveBatch(Collection<String> serialNumbers) {
+        insertServers(serialNumbers);
+        return serversBySerial(serialNumbers);
     }
 
     private Set<String> normalize(Collection<String> serialNumbers) {

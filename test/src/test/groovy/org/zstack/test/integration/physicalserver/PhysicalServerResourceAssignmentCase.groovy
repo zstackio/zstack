@@ -5,6 +5,8 @@ import org.zstack.compute.host.PostHostConnectExtensionPoint
 import org.zstack.core.Platform
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusCallBack
+import org.zstack.core.cloudbus.ResourceDestinationMaker
 import org.zstack.core.cloudbus.CloudBusEventListener
 import org.zstack.core.cloudbus.EventSubscriberReceipt
 import org.zstack.core.db.SQL
@@ -26,6 +28,20 @@ import org.zstack.header.physicalserver.RoleServiceManifest
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentVO
 import org.zstack.physicalserver.PhysicalServerManagerImpl
 import org.zstack.header.message.APIEvent
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
+import org.zstack.header.message.Message
+import org.zstack.header.message.MessageReply
+import org.zstack.header.message.NeedReplyMessage
+import org.zstack.physicalserver.APIGetPhysicalServerManagedServicesMsg
+import org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg
+import org.zstack.physicalserver.APIRefreshPhysicalServerResourceAssignmentsFromProfileEvent
+import org.zstack.physicalserver.APIUpdatePhysicalServerResourceAssignmentMsg
+import org.zstack.physicalserver.APIRestartPhysicalServerManagedServicesMsg
+import org.zstack.physicalserver.PhysicalServerAssignmentRepository
+import org.zstack.physicalserver.PhysicalServerApiInterceptor
+import org.zstack.physicalserver.PhysicalServerConstant
+import org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentsFromProfileMsg
+import org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentMsg
 import org.zstack.header.physicalserver.PhysicalServerRoleType
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
@@ -53,6 +69,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -64,6 +81,7 @@ import java.nio.file.Paths
 import java.nio.charset.StandardCharsets
 
 import static groovy.test.GroovyAssert.shouldFail
+import static org.mockito.Mockito.*
 
 class PhysicalServerResourceAssignmentCase extends SubCase {
     static SpringSpec springSpec = PhysicalServerTest.springSpec
@@ -134,6 +152,8 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             } as CloudBusEventListener, new APIEvent())
             originalResourceAssignmentEnabled = PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value()
             physicalServerManager = bean(PhysicalServerManager.class)
+            verifyServerRouting()
+            verifyBoundedGlobalRefresh()
             host = env.inventoryByName("kvm1") as HostInventory
             forceDeleteHost = env.inventoryByName("kvm2") as HostInventory
             verifyDisabledStartupDoesNotDiscoverServers()
@@ -151,6 +171,9 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             }
             verifyKvmManifestAndManagedServiceApi()
             verifyScopedBatchAndGlobalRefresh()
+            verifyAssociationPaging()
+            verifyProfileSha256Validation()
+            verifyOwnedServerCallbacks()
             verifyInvalidUpdateDoesNotChangeAssignment()
             verifyUnsyncedAndRecovery()
             verifyConcurrentSparseUpdates()
@@ -161,13 +184,183 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         }
     }
 
+    private void verifyServerRouting() {
+        CloudBus bus = mock(CloudBus.class)
+        def manager = new PhysicalServerManagerImpl()
+        manager.bus = bus
+        def interceptor = new PhysicalServerApiInterceptor()
+        interceptor.bus = bus
+        interceptor.manager = bean(PhysicalServerManagerImpl.class)
+        manager.pluginRgty = bean(PluginRegistry.class)
+        manager.assignments = mock(PhysicalServerAssignmentRepository.class)
+        def targets = [Platform.getUuid(), Platform.getUuid()]
+        manager.handleMessage(new APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg(serverUuids: targets))
+        targets.each { String serverUuid ->
+            manager.refreshResourceAssignment(serverUuid, "COMPUTE", mock(Completion.class))
+            manager.refreshResourceAssignment(serverUuid, "MANAGEMENT", mock(Completion.class))
+            manager.releaseResourceAssignment(serverUuid, "COMPUTE", mock(Completion.class))
+            manager.forgetResourceAssignment(serverUuid, "COMPUTE", mock(Completion.class))
+            interceptor.intercept(new APIGetPhysicalServerManagedServicesMsg(serverUuid: serverUuid))
+            interceptor.intercept(new APIUpdatePhysicalServerResourceAssignmentMsg(
+                    serverUuid: serverUuid, roleType: "COMPUTE", cpuSet: "1"))
+            interceptor.intercept(new APIRestartPhysicalServerManagedServicesMsg(
+                    serverUuid: serverUuid, roleType: "COMPUTE", serviceNames: ["kvmagent"]))
+            verify(bus, times(8)).makeTargetServiceIdByResourceUuid(
+                    any(Message.class), eq(PhysicalServerConstant.SERVICE_ID), eq(serverUuid))
+        }
+    }
+
+    private void verifyProfileSha256Validation() {
+        def manager = bean(PhysicalServerManagerImpl.class)
+        Map<String, RoleServiceManifest> profiles = manager.loadProfiles()
+        String expectedSha256 = manager.getProfileSha256(profiles)
+        assert manager.getProfileSha256(profiles.entrySet().toList().reverse().collectEntries()) == expectedSha256 :
+                "Profile SHA-256 must not depend on factory registration order"
+        Path path = Paths.get(getClass().classLoader.getResource(KvmResourceAssignmentFactory.ROLE_SERVICE_MANIFEST_PATH)
+                .toURI())
+        byte[] original = Files.readAllBytes(path)
+        String yaml = new String(original, StandardCharsets.UTF_8)
+        String changed = yaml.replaceFirst('(?m)^defaultCpuCount:.*$', 'defaultCpuCount: 3')
+        assert changed != yaml : "The receiver's Profile must differ from the sender's Profile"
+        AtomicReference<Closure> beforeReceive = new AtomicReference<>()
+        bean(CloudBus.class).installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+            @Override
+            void beforeDeliveryMessage(Message message) {
+                beforeReceive.getAndSet(null)?.call(message)
+            }
+        }, RefreshPhysicalServerResourceAssignmentsFromProfileMsg.class)
+        def before = assignment(physicalServerUuid, "COMPUTE")
+        int callsBefore = resourceControlCalls.get()
+        try {
+            beforeReceive.set({ RefreshPhysicalServerResourceAssignmentsFromProfileMsg request ->
+                assert request.profileSha256 == expectedSha256 : "The request must carry the sender's Profile SHA-256"
+                assert !JSONObjectUtil.toJsonString(request).contains('"profiles"') :
+                        "The request must not transfer Profile contents"
+                Files.write(path, changed.getBytes(StandardCharsets.UTF_8))
+            })
+            def result = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                    sessionId: adminSession(), serverUuids: [physicalServerUuid]).call()
+            assert result.error?.details?.contains("Profile SHA-256 mismatch") :
+                    "Different receiver YAML must reject Refresh: actual=${result.error}"
+            def after = assignment(physicalServerUuid, "COMPUTE")
+            assert [after.cpuSet, after.memory, after.state, after.lastOpDate] ==
+                    [before.cpuSet, before.memory, before.state, before.lastOpDate] :
+                    "A rejected Refresh must not modify the Assignment"
+            assert resourceControlCalls.get() == callsBefore : "A rejected Refresh must not send Apply"
+            assert bean(KvmResourceAssignmentFactory.class).roleServices().defaultCpuCount == 3 :
+                    "The receiver must read its own Profile, not install the sender's configuration"
+        } finally {
+            beforeReceive.set(null)
+            Files.write(path, original)
+            RoleServiceManifest.reloadAll()
+        }
+        refreshPhysicalServerResourceAssignmentsFromProfile { serverUuids = [physicalServerUuid] }
+        retryInSecs {
+            assert resourceControlCalls.get() > callsBefore && assignment().state == "Synced" :
+                    "Refresh must recover after both nodes have matching Profiles"
+        }
+    }
+
+    private void verifyBoundedGlobalRefresh() {
+        def bus = mock(CloudBus.class)
+        def repository = mock(PhysicalServerAssignmentRepository.class)
+        def manager = new PhysicalServerManagerImpl()
+        manager.bus = bus
+        manager.assignments = repository
+        manager.pluginRgty = bean(PluginRegistry.class)
+        List<String> servers = (1..10001).collect { String.format("%032d", it) }
+        AtomicInteger sent = new AtomicInteger()
+        AtomicInteger completed = new AtomicInteger()
+        AtomicInteger pages = new AtomicInteger()
+        Set<String> visited = ConcurrentHashMap.newKeySet()
+        Set<String> hashes = ConcurrentHashMap.newKeySet()
+        def pending = new LinkedBlockingQueue<CloudBusCallBack>()
+        def failure = new ErrorCode(code: "TEST.TIMEOUT", details: "simulated target timeout")
+        AtomicReference<APIRefreshPhysicalServerResourceAssignmentsFromProfileEvent> result = new AtomicReference<>()
+        doAnswer { invocation ->
+            String cursor = invocation.arguments[0]
+            int limit = invocation.arguments[1]
+            assert limit == 500 : "A global Refresh query must be bounded to 500 servers"
+            assert sent.get() == completed.get() : "The next page must wait for all replies from the previous page"
+            pages.incrementAndGet()
+            return servers.findAll { it > cursor }.take(limit)
+        }.when(repository).listServerUuids(anyString(), anyInt())
+        doAnswer { invocation ->
+            def request = invocation.arguments[0] as RefreshPhysicalServerResourceAssignmentsFromProfileMsg
+            assert visited.add(request.serverUuid) : "A server must not be dispatched twice across pages"
+            hashes.add(request.profileSha256)
+            assert sent.incrementAndGet() - completed.get() <= 15 : "Refresh must have at most 15 in-flight messages"
+            pending.add(invocation.arguments[1] as CloudBusCallBack)
+            return null
+        }.when(bus).send(any(NeedReplyMessage.class) as NeedReplyMessage,
+                any(CloudBusCallBack.class) as CloudBusCallBack)
+        doAnswer { invocation ->
+            assert completed.get() == servers.size() : "Refresh must wait for every target, including after an error"
+            assert result.compareAndSet(null, invocation.arguments[0]) : "Refresh must publish exactly one API event"
+            return null
+        }.when(bus).publish(any(APIEvent.class) as APIEvent)
+        manager.handleMessage(new APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg())
+        assert sent.get() == 15 && pages.get() == 1 :
+                "First window: expected sent=15/pages=1, actual sent=${sent.get()}/pages=${pages.get()}, " +
+                        "calls=${mockingDetails(bus).invocations*.method*.name}"
+        for (int i = 0; i < servers.size(); i++) {
+            def callback = pending.poll(10, TimeUnit.SECONDS)
+            assert callback != null : "Failure or timeout must not stall later servers: completed=${i}"
+            completed.incrementAndGet()
+            callback.run(i == 0 ? new MessageReply(error: failure) : new MessageReply())
+        }
+        assert visited == servers.toSet() && pages.get() == 22 :
+                "Cursor paging must cover all 10001 servers exactly once"
+        assert hashes.size() == 1 : "All pages must carry the same request-scoped Profile SHA"
+        assert result.get()?.error?.code == failure.code : "The final event must retain an earlier page's failure"
+    }
+
+    private void verifyAssociationPaging() {
+        def pages = new LinkedBlockingQueue<Map>()
+        CountDownLatch finished = new CountDownLatch(1)
+        AtomicReference<ErrorCode> failure = new AtomicReference<>()
+        bean(KvmResourceAssignmentFactory.class).initializeAssociations(1, { servers, completion ->
+            pages.add([servers: servers, completion: completion])
+        }, new Completion(null) {
+            @Override
+            void success() { finished.countDown() }
+
+            @Override
+            void fail(ErrorCode error) {
+                failure.set(error)
+                finished.countDown()
+            }
+        })
+        Set<String> visited = [] as Set
+        2.times {
+            def page = pages.poll(10, TimeUnit.SECONDS)
+            assert page != null && page.servers.size() == 1 : "Each Host page must return one associated server"
+            assert visited.addAll(page.servers) : "UUID cursor paging must not repeat a Host"
+            assert pages.isEmpty() && finished.count == 1 : "Enumeration must wait for the page completion callback"
+            page.completion.success()
+        }
+        assert finished.await(10, TimeUnit.SECONDS) && failure.get() == null : "Paged Host initialization must finish"
+        assert visited == [physicalServerUuid, forceDeletePhysicalServerUuid].toSet() : "Paging must not skip Hosts"
+        def repository = bean(PhysicalServerAssignmentRepository.class)
+        List<String> persisted = []
+        String cursor = ""
+        while (true) {
+            List<String> page = repository.listServerUuids(cursor, 1)
+            if (page.isEmpty()) { break }
+            persisted.addAll(page)
+            cursor = page.last()
+        }
+        assert persisted.size() == persisted.toSet().size() && persisted.containsAll(visited) :
+                "Assignment paging must deduplicate servers with multiple roles without losing targets"
+    }
+
     private void verifyDisabledStartupDoesNotDiscoverServers() {
         PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("false")
         setHostSerialTag(host, "disabled-compute-serial")
-        bean(KvmResourceAssignmentFactory.class).managementNodeReady()
+        bean(PhysicalServerManagerImpl.class).managementNodeReady()
         ManagementNodeResourceAssignmentFactory mn = bean(ManagementNodeResourceAssignmentFactory.class)
         mn.setTestSerialNumber("disabled-management-serial")
-        mn.managementNodeReady()
+        bean(PhysicalServerManagerImpl.class).managementNodeReady()
         mn.setTestSerialNumber(null)
         assert (queryPhysicalServer {
             conditions = ["serialNumber?=disabled-compute-serial,disabled-management-serial"]
@@ -219,6 +412,56 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                 "equivalent serial reports must resolve to one PhysicalServer: " +
                         "expected=${physicalServerUuid} actual=${normalized}"
 
+        def registrations = (1..4).collect {
+            CompletableFuture.supplyAsync { physicalServerManager.resolveBySerialNumbers(["concurrent-server"]) }
+        }
+        Set<String> servers = registrations.collect { it.get(30, TimeUnit.SECONDS)["concurrent-server"] } as Set
+        assert servers.size() == 1 && !servers.contains(null) : "Concurrent serial registration must return one UUID"
+        assert queryPhysicalServer { conditions = ["serialNumber=concurrent-server"] }.size() == 1
+    }
+
+    private void verifyOwnedServerCallbacks() {
+        def manager = bean(PhysicalServerManagerImpl.class)
+        def adapter = bean(KvmResourceAssignmentFactory.class)
+        def originalManagerDestination = manager.destinationMaker
+        def originalBus = manager.bus
+        def recorder = mock(CloudBus.class)
+        doAnswer { invocation ->
+            (invocation.arguments[1] as CloudBusCallBack).run(new MessageReply())
+            return null
+        }.when(recorder).send(any(NeedReplyMessage.class) as NeedReplyMessage,
+                any(CloudBusCallBack.class) as CloudBusCallBack)
+        def destinations = mock(ResourceDestinationMaker.class)
+        when(destinations.isManagedByUs(anyString())).thenReturn(true)
+        when(destinations.isManagedByUs(forceDeletePhysicalServerUuid)).thenReturn(false)
+        try {
+            manager.destinationMaker = destinations
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("false")
+            retryInSecs {
+                assert assignment(physicalServerUuid, "COMPUTE").state == "Unsynced" :
+                        "Disabling must release the owned server through the normal message handler"
+            }
+            assert assignment(forceDeletePhysicalServerUuid, "COMPUTE").state == "Synced" :
+                    "Disabling on one MN must not release another MN's server"
+            manager.bus = recorder
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
+            retryInSecs {
+                verify(recorder).makeTargetServiceIdByResourceUuid(
+                        any(RefreshPhysicalServerResourceAssignmentMsg.class),
+                        eq(PhysicalServerConstant.SERVICE_ID), eq(physicalServerUuid))
+            }
+            verify(recorder, never()).makeTargetServiceIdByResourceUuid(any(Message.class),
+                    eq(PhysicalServerConstant.SERVICE_ID), eq(forceDeletePhysicalServerUuid))
+            adapter.afterHostConnected(org.zstack.header.host.HostInventory.valueOf(
+                    dbFindByUuid(forceDeleteHost.uuid, HostVO.class)))
+            verify(recorder).makeTargetServiceIdByResourceUuid(any(RefreshPhysicalServerResourceAssignmentMsg.class),
+                    eq(PhysicalServerConstant.SERVICE_ID), eq(forceDeletePhysicalServerUuid))
+        } finally {
+            manager.destinationMaker = originalManagerDestination
+            manager.bus = originalBus
+        }
+        manager.managementNodeReady()
+        retryInSecs { assert assignment().state == "Synced" }
     }
 
     private void verifyDuplicateHostSerialIsRejected() {
