@@ -650,8 +650,10 @@ public class SourceClassMap {
 			put("org.zstack.network.service.virtualrouter.VirtualRouterOfferingInventory", "org.zstack.sdk.VirtualRouterOfferingInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterSoftwareVersionInventory", "org.zstack.sdk.VirtualRouterSoftwareVersionInventory");
 			put("org.zstack.network.service.virtualrouter.VirtualRouterVmInventory", "org.zstack.sdk.VirtualRouterVmInventory");
+			put("org.zstack.network.zns.ApiCapabilityToken", "org.zstack.sdk.network.zns.ApiCapabilityToken");
 			put("org.zstack.network.zns.L2GeneveNetworkInventory", "org.zstack.sdk.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.network.zns.ZnsCloudEffectiveOffer", "org.zstack.sdk.network.zns.ZnsCloudEffectiveOffer");
+			put("org.zstack.network.zns.ZnsControllerApiCompatibilityInventory", "org.zstack.sdk.network.zns.ZnsControllerApiCompatibilityInventory");
 			put("org.zstack.network.zns.ZnsControllerInventory", "org.zstack.sdk.network.zns.ZnsControllerInventory");
 			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis", "org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis");
 			put("org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Capability", "org.zstack.sdk.network.zns.Capability");
@@ -1798,10 +1800,12 @@ public class SourceClassMap {
 			put("org.zstack.sdk.license.header.server.LicenseUsageDetailView", "org.zstack.license.header.server.LicenseUsageDetailView");
 			put("org.zstack.sdk.license.header.server.LicenseUsageView", "org.zstack.license.header.server.LicenseUsageView");
 			put("org.zstack.sdk.license.header.server.TotalLicenseAuthorizedCapacityView", "org.zstack.license.header.server.TotalLicenseAuthorizedCapacityView");
+			put("org.zstack.sdk.network.zns.ApiCapabilityToken", "org.zstack.network.zns.ApiCapabilityToken");
 			put("org.zstack.sdk.network.zns.Capability", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Capability");
 			put("org.zstack.sdk.network.zns.L2GeneveNetworkInventory", "org.zstack.network.zns.L2GeneveNetworkInventory");
 			put("org.zstack.sdk.network.zns.Transition", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis$Transition");
 			put("org.zstack.sdk.network.zns.ZnsCloudEffectiveOffer", "org.zstack.network.zns.ZnsCloudEffectiveOffer");
+			put("org.zstack.sdk.network.zns.ZnsControllerApiCompatibilityInventory", "org.zstack.network.zns.ZnsControllerApiCompatibilityInventory");
 			put("org.zstack.sdk.network.zns.ZnsControllerInventory", "org.zstack.network.zns.ZnsControllerInventory");
 			put("org.zstack.sdk.network.zns.ZnsIntegrationProtocolDiagnosis", "org.zstack.network.zns.ZnsIntegrationProtocolDiagnosis");
 			put("org.zstack.sdk.network.zns.ZnsProjectedTenantRouterInventory", "org.zstack.network.zns.ZnsProjectedTenantRouterInventory");

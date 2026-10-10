@@ -15,7 +15,9 @@ class ApiHelperGenerator {
 
     ApiHelperGenerator() {
         def reflections = Platform.getReflections()
-        actions = reflections.getSubTypesOf(AbstractAction.class).sort { a1, a2 -> (a1.name <=> a2.name) }
+        actions = reflections.getSubTypesOf(AbstractAction.class).findAll {
+            it.protectionDomain.codeSource.location == AbstractAction.protectionDomain.codeSource.location
+        }.sort { a1, a2 -> (a1.name <=> a2.name) }
     }
 
     String generate(String outputFilePath) {
