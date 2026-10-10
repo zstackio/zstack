@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.unittest.kvm.TestKvmHostReservedCapacityCase
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
@@ -20,7 +21,8 @@ import java.util.stream.Collectors
 @Suite.SuiteClasses([
         NetworkUtilsCase.class,
         OfferingUserConfigUtilsCase.class,
-        SizeUnitUtilsCase.class
+        SizeUnitUtilsCase.class,
+        TestKvmHostReservedCapacityCase.class
     ])
 class JUnitTestSuite {
 
