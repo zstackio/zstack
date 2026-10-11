@@ -19,3 +19,5 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerApiCompatibilityVO` (
     CONSTRAINT `fkZnsControllerApiCompatibilityVOSdnControllerVO`
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'managedBy', 'VARCHAR(32)', 1, NULL);
+UPDATE `zstack`.`ZnsSegmentRefVO` SET `managedBy` = 'ZNS' WHERE `managedBy` IS NULL;
