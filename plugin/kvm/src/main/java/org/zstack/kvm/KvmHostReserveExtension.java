@@ -19,6 +19,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,8 +55,11 @@ public class KvmHostReserveExtension implements HostReservedCapacityExtensionPoi
     public Map<String, ReservedHostCapacity> getReservedHostsCapacity(List<String> hostUuids) {
         Map<String, ReservedHostCapacity> results = new HashMap<>();
 
-        Map<String, String> memoryValues = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, hostUuids, String.class);
-        Map<String, String> cpuValues = rcf.getResourceConfigValues(KVMGlobalConfig.RESERVED_CPU_CAPACITY, hostUuids, String.class);
+        // ResourceConfig batch lookup removes resolved UUIDs from its input list.
+        Map<String, String> memoryValues = rcf.getResourceConfigValues(
+                KVMGlobalConfig.RESERVED_MEMORY_CAPACITY, new ArrayList<>(hostUuids), String.class);
+        Map<String, String> cpuValues = rcf.getResourceConfigValues(
+                KVMGlobalConfig.RESERVED_CPU_CAPACITY, new ArrayList<>(hostUuids), String.class);
 
         if (logger.isTraceEnabled()) {
             logger.trace(String.format("KvmHostReserveExtension get reserved capacity for hosts %s, memory config: %s, cpu config: %s",
