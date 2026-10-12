@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cascade.CascadeAction;
 import org.zstack.core.cascade.CascadeConstant;
 import org.zstack.core.cascade.CascadeFacade;
 import org.zstack.core.cloudbus.CloudBus;
@@ -45,6 +46,7 @@ import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
 import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l2.NetworkDeletionContext;
+import org.zstack.network.l2.NetworkDeletionContexts;
 import org.zstack.header.network.LocalNetworkConfigChange;
 import org.zstack.header.network.NetworkConfigChange;
 import org.zstack.header.network.NetworkConfigChangeCoordinator;
@@ -636,7 +638,11 @@ public class L3BasicNetwork implements L3Network {
                             return;
                         }
 
-                        controllerL3.deleteL3Network(L3NetworkInventory.valueOf(l3NetworkVO),
+                        L3NetworkInventory deletionInventory = msg.getNetworkDeletionContext() == null
+                                ? L3NetworkInventory.valueOf(l3NetworkVO)
+                                : msg.getNetworkDeletionContext().getL3Snapshots().getOrDefault(
+                                        l3NetworkVO.getUuid(), L3NetworkInventory.valueOf(l3NetworkVO));
+                        controllerL3.deleteL3Network(deletionInventory,
                                 msg.getNetworkDeletionContext(), new Completion(trigger) {
                             @Override
                             public void success() {
@@ -1320,7 +1326,7 @@ public class L3BasicNetwork implements L3Network {
             java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
                     new java.util.concurrent.atomic.AtomicReference<>();
             if (coordinateNetworkConfigChange(change,
-                    localCompletion -> detachNetworkServicesLocally(l3VO, refs,
+                    localCompletion -> detachNetworkServicesLocally(l3VO, refs, true,
                             new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
                                 @Override
                                 public void success(L3NetworkInventory inventory) {
@@ -1336,13 +1342,16 @@ public class L3BasicNetwork implements L3Network {
                 return;
             }
         }
-        detachNetworkServicesLocally(l3VO, refs, completion);
+        detachNetworkServicesLocally(l3VO, refs, false, completion);
     }
 
     private void detachNetworkServicesLocally(L3NetworkVO l3VO,
-                                               List<NetworkServiceL3NetworkRefVO> refs,
+                                               List<NetworkServiceL3NetworkRefVO> refs, boolean dhcpApplied,
                                                ReturnValueCompletion<L3NetworkInventory> completion) {
-        detachNetworkServiceFromL3NetworkMsg(l3VO, refs, new Completion(completion) {
+        List<NetworkServiceL3NetworkRefVO> pending = dhcpApplied ? refs.stream()
+                .filter(ref -> !NetworkServiceType.DHCP.toString().equals(ref.getNetworkServiceType()))
+                .collect(Collectors.toList()) : refs;
+        detachNetworkServiceFromL3NetworkMsg(l3VO, pending, new Completion(completion) {
             @Override
             public void success() {
                 dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
@@ -2348,6 +2357,13 @@ public class L3BasicNetwork implements L3Network {
     private void doDeleteL3Network(DeleteL3NetworkMsg msg, Completion completion) {
         final String issuer = L3NetworkVO.class.getSimpleName();
         final List<L3NetworkInventory> ctx = L3NetworkInventory.valueOf(Arrays.asList(self));
+        CascadeAction action = new CascadeAction().setRootIssuer(issuer).setRootIssuerContext(ctx)
+                .setParentIssuer(issuer).setParentIssuerContext(ctx);
+        NetworkDeletionContext deletion = new NetworkDeletionContext();
+        deletion.setOrigin(NetworkDeletionContext.Origin.L3_NETWORK_DELETE);
+        deletion.setL2NetworkUuid(self.getL2NetworkUuid());
+        deletion.getL3Snapshots().put(self.getUuid(), ctx.get(0));
+        action.putContext(NetworkDeletionContexts.key(self.getL2NetworkUuid()), deletion);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
@@ -2356,7 +2372,7 @@ public class L3BasicNetwork implements L3Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -2371,7 +2387,7 @@ public class L3BasicNetwork implements L3Network {
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -2388,7 +2404,7 @@ public class L3BasicNetwork implements L3Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
+                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
