@@ -23,6 +23,10 @@ public class HostCanonicalEvents {
     public static final String HOST_PHYSICAL_DISK_STATUS_ABNORMAL = "/host/physicalDisk/status/abnormal";
     public static final String HOST_PHYSICAL_DISK_INSERT_TRIGGERED = "/host/physicalDisk/insert/triggered";
     public static final String HOST_PHYSICAL_DISK_REMOVE_TRIGGERED = "/host/physicalDisk/remove/triggered";
+    public static final String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ABNORMAL = "/host/process/physicalMemory/usage/abnormal";
+    public static final String HOST_PING_SKIP = "/host/ping/skip";
+    public static final String HOST_PING_CANCEL_SKIP = "/host/ping/cancel/skip";
+
 
     @NeedJsonSchema
     public static class HostPhysicalCpuStatusAbnormalData {
@@ -397,6 +401,68 @@ public class HostCanonicalEvents {
 
         public void setInterfaceStatus(String interfaceStatus) {
             this.interfaceStatus = interfaceStatus;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostProcessPhysicalMemoryUsageAlarmData {
+        private String hostUuid;
+        private String pid;
+        private String processName;
+        private String memoryUsage;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public String getPid() {
+            return pid;
+        }
+
+        public void setPid(String pid) {
+            this.pid = pid;
+        }
+
+        public String getProcessName() {
+            return processName;
+        }
+
+        public void setProcessName(String processName) {
+            this.processName = processName;
+        }
+
+        public String getMemoryUsage() {
+            return memoryUsage;
+        }
+
+        public void setMemoryUsage(String memoryUsage) {
+            this.memoryUsage = memoryUsage;
+        }
+    }
+
+    @NeedJsonSchema
+    public static class HostPingSkipData {
+        private String hostUuid;
+        private int skipTimeInSec;
+
+        public String getHostUuid() {
+            return hostUuid;
+        }
+
+        public void setHostUuid(String hostUuid) {
+            this.hostUuid = hostUuid;
+        }
+
+        public int getSkipTimeInSec() {
+            return skipTimeInSec;
+        }
+
+        public void setSkipTimeInSec(int skipTimeInSec) {
+            this.skipTimeInSec = skipTimeInSec;
         }
     }
 }

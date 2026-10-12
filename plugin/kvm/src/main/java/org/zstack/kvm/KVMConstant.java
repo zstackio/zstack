@@ -109,6 +109,9 @@ public interface KVMConstant {
     String KVM_BLOCK_COMMIT_VOLUME_PATH = "/vm/volume/blockcommit";
     String TAKE_VM_CONSOLE_SCREENSHOT_PATH = "/vm/console/screenshot";
 
+    String HOST_PROCESS_PHYSICAL_MEMORY_USAGE_ALARM_PATH = "/host/process/physicalMemory/usage/alarm";
+    String HOST_KVMAGENT_STATUS_PATH = "/host/kvmagent/status";
+
     String KVM_AGENT_OWNER = "kvm";
 
     String ALI_REPO = "ali";
