@@ -52,6 +52,22 @@ public class ArchitectureImageMapping  {
         return this.imageNamePattern;
     }
 
+    public java.lang.String runtimeName;
+    public void setRuntimeName(java.lang.String runtimeName) {
+        this.runtimeName = runtimeName;
+    }
+    public java.lang.String getRuntimeName() {
+        return this.runtimeName;
+    }
+
+    public java.lang.String runtimeVersionPattern;
+    public void setRuntimeVersionPattern(java.lang.String runtimeVersionPattern) {
+        this.runtimeVersionPattern = runtimeVersionPattern;
+    }
+    public java.lang.String getRuntimeVersionPattern() {
+        return this.runtimeVersionPattern;
+    }
+
     public java.lang.String dockerImage;
     public void setDockerImage(java.lang.String dockerImage) {
         this.dockerImage = dockerImage;
