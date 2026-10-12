@@ -5,6 +5,20 @@ import javax.persistence.*;
 @Entity
 @Table
 public class MemoryTaskVO {
+    // Persist admission evidence with the task; later samples cannot replace it.
+    @Column
+    private Boolean requiresKsmNativePartialFence = false;
+    public Boolean getRequiresKsmNativePartialFence() { return requiresKsmNativePartialFence; }
+    public void setRequiresKsmNativePartialFence(Boolean value) { requiresKsmNativePartialFence = value; }
+    @Column(length = 128)
+    private String ksmNativeObservationBootId;
+    public String getKsmNativeObservationBootId() { return ksmNativeObservationBootId; }
+    public void setKsmNativeObservationBootId(String value) { ksmNativeObservationBootId = value; }
+    @Column
+    private Long ksmNativeObservationSampleTime;
+    public Long getKsmNativeObservationSampleTime() { return ksmNativeObservationSampleTime; }
+    public void setKsmNativeObservationSampleTime(Long value) { ksmNativeObservationSampleTime = value; }
+
     @Column(length = 32)
     private String reconcileOperationUuid;
     public String getReconcileOperationUuid() { return reconcileOperationUuid; }

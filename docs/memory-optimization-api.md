@@ -14,9 +14,10 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 
 | Existing page or interaction | Read/display APIs | Configuration or operation APIs |
 | --- | --- | --- |
-| Global settings → Basic settings → Hardware resources → Host (全局设置 → 基本设置 → 硬件资源 → 物理机) | Existing GlobalConfig reads; GetMemoryPolicy with resourceUuid=global; PreviewMemoryPolicy before confirmation | UpdateGlobalConfig for one setting at a time |
-| Cluster details → Configuration (集群详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Cluster UUID; PreviewMemoryPolicy before confirmation | UpdateResourceConfig, UpdateResourceConfigs, DeleteResourceConfig |
-| Host details → Configuration (物理机详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Host UUID; GetMemoryStates for actual state; PreviewMemoryPolicy before confirmation | UpdateResourceConfig, UpdateResourceConfigs, DeleteResourceConfig |
+| Global settings → Memory optimization settings (全局设置 → 内存优化设置) | Existing GlobalConfig reads; GetMemoryPolicy with resourceUuid=global; optional PreviewMemoryPolicy for the proposed Global change | UpdateGlobalConfig once per setting; no Host selection or per-Host configuration writes |
+| Cluster details → Configuration (集群详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Cluster UUID; optional PreviewMemoryPolicy for the proposed Cluster change | UpdateResourceConfig, UpdateResourceConfigs or DeleteResourceConfig with the Cluster UUID; no per-Host configuration writes |
+| Host details → Configuration (物理机详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Host UUID; GetMemoryStates for actual state; optional PreviewMemoryPolicy | UpdateResourceConfig, UpdateResourceConfigs or DeleteResourceConfig with the Host UUID |
+| Optional batch settings for explicitly selected Hosts (物理机批量设置) | ResourceConfig reads and GetMemoryPolicy for each selected Host; optional per-Host PreviewMemoryPolicy | UpdateResourceConfig(s) separately with each selected Host UUID; DeleteResourceConfig removes an individual Host override |
 | Global/Cluster/Host maintenance menus and confirmation dialogs | GetMemoryStates and current policy/preview evidence for the selected Hosts | UpdateMemoryPolicy with pause, resume or drain; each Host must satisfy that action's current requirements |
 | Host ZRAM pool or writeback-backend preparation dialog | GetHostMemoryWritebackBackends and current Host state/preparation evidence | UpdateMemoryPolicy with prepareWritebackBackend or prepareZramPool; device/pool preparation targets one Host |
 | Operation feedback, task progress and failure-alarm task details | GetMemoryTasks; refresh GetMemoryStates to confirm actual application | CancelMemoryTask only for a queued, undispatched task |
@@ -28,7 +29,11 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 
 Expose only the product settings supported at that resource level: KSM and zero-page switches, ZRAM enablement/capacity, and permitted per-Host writeback settings. Advanced scan/scheduling tuning remains a backend/CLI operation; the UI may display its effective values. Do not render every backend configuration key as an editable control. Writeback device binding/preparation is Host-specific, and Global writeback enablement is rejected.
 
-The UI saves ordinary settings only through UpdateGlobalConfig, UpdateResourceConfig(s), or DeleteResourceConfig. It does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute. Resource identity comes from the current page. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
+The memory optimization UI saves ordinary settings through UpdateGlobalConfig, UpdateResourceConfig(s) or DeleteResourceConfig according to the resource level being edited. A Global KSM or ZRAM switch updates one GlobalConfig value; a Cluster switch updates one ResourceConfig value using the Cluster UUID. Neither workflow requires a Host list or client-side iteration over Hosts. The backend determines the affected Hosts from the resulting effective configuration and handles per-Host application. Global and Cluster changes preserve more specific overrides. Hosts added later inherit the applicable Cluster/Global settings unless they have their own overrides.
+
+A UI may also offer batch editing for explicitly selected Hosts, including selecting all current Hosts. This writes Host overrides and leaves unselected Hosts, Cluster settings and GlobalConfig unchanged; it does not establish a default for future Hosts. No selection means no save, and selecting all does not save until the user confirms. To turn all selected Hosts off, save false for the relevant switch; deselecting them does not disable anything. Submit each Host's related fields atomically with UpdateResourceConfigs, with separate outcomes across Hosts; there is no cross-Host transaction. Preserve mixed values until explicitly edited, invalidate previews after selection or value changes, and do not automatically retry writes whose responses are lost or unknown.
+
+The UI does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute for standard configuration APIs. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
 
 ## Data sources
 
@@ -105,9 +110,9 @@ The 46 ordinary scalar settings use **GlobalConfig / ResourceConfig as the sole 
 
 | Existing SDK Action | Method and path | Use |
 | --- | --- | --- |
-| UpdateGlobalConfig | PUT `/global-configurations/{category}/{name}/actions` | Update one Global setting; wrapper `updateGlobalConfig` |
-| UpdateResourceConfig | PUT `/resource-configurations/{category}/{name}/{resourceUuid}/actions` | Update one Host/Cluster setting; wrapper `updateResourceConfig` |
-| UpdateResourceConfigs | POST `/resource-configurations/{resourceUuid}/resource-configs/actions` | Atomically update multiple settings on the same Host or Cluster; wrapper `params`, list `resourceConfigs` |
+| UpdateGlobalConfig | PUT `/global-configurations/{category}/{name}/actions` | Update one Global setting from UI or CLI; wrapper `updateGlobalConfig`; no resource UUID or Host list |
+| UpdateResourceConfig | PUT `/resource-configurations/{category}/{name}/{resourceUuid}/actions` | Update one setting on the Host or Cluster identified by resourceUuid; wrapper `updateResourceConfig` |
+| UpdateResourceConfigs | POST `/resource-configurations/{resourceUuid}/resource-configs/actions` | Atomically update multiple settings on one Host or Cluster; resourceUuid is that resource's UUID, not a Host list; wrapper `params`, list `resourceConfigs` |
 | DeleteResourceConfig | DELETE `/resource-configurations/{category}/{name}/{resourceUuid}` | Remove this resource's explicit value so the normal parent value applies; no JSON body |
 
 Category is `kvm`. The KSM switch is `host.ksm`. The remaining keys use `memory.` followed by the policy field path: for example `memory.ksm.zeroPagesEnabled`, `memory.ksm.pagesToScan`, `memory.ksm.sleepMillis`, `memory.zram.enabled`, `memory.zram.logicalCapacityBytes` and `memory.zram.ramLimitBytes`. The exact mapping and permitted resource levels are defined by [MemoryStandardField](../plugin/kvm/src/main/java/org/zstack/kvm/memory/MemoryStandardField.java); the backend device UUID is Host-only. A Global writeback enable is rejected; an individual Host backend must be prepared and validated before activation.
@@ -126,6 +131,8 @@ Global configuration supports single-field updates. For dependent capacity chang
 
 Examples (all UUIDs and values are illustrative; use normal platform authentication):
 
+Enable the Global KSM default. Global and Cluster settings apply through inheritance and do not overwrite more specific values:
+
 ```http
 PUT /zstack/v1/global-configurations/kvm/host.ksm/actions
 Content-Type: application/json
@@ -133,12 +140,40 @@ Content-Type: application/json
 {"updateGlobalConfig":{"value":"true"}}
 ```
 
+Enable the Global ZRAM default with a separate standard configuration request. For either switch, use the string value "false" to disable it at the same resource level:
+
+```http
+PUT /zstack/v1/global-configurations/kvm/memory.zram.enabled/actions
+Content-Type: application/json
+
+{"updateGlobalConfig":{"value":"true"}}
+```
+
+Disable KSM for one Cluster, preserving any Host overrides within it. The client sends one request with the Cluster UUID:
+
+```http
+PUT /zstack/v1/resource-configurations/kvm/host.ksm/<clusterUuid>/actions
+Content-Type: application/json
+
+{"updateResourceConfig":{"value":"false"}}
+```
+
+Use memory.zram.enabled in the same Cluster route to configure its ZRAM switch. Deleting that Cluster's override restores inheritance from Global:
+
+```http
+DELETE /zstack/v1/resource-configurations/kvm/host.ksm/<clusterUuid>
+```
+
+Enable zero-page handling for one Host:
+
 ```http
 PUT /zstack/v1/resource-configurations/kvm/memory.ksm.zeroPagesEnabled/<hostUuid>/actions
 Content-Type: application/json
 
 {"updateResourceConfig":{"value":"true"}}
 ```
+
+Update coupled capacity fields atomically for one Host. For Cluster capacity settings, use the Cluster UUID in the same route. Explicit multi-Host editing sends a separate request for each selected Host:
 
 ```http
 POST /zstack/v1/resource-configurations/<hostUuid>/resource-configs/actions
@@ -149,6 +184,8 @@ Content-Type: application/json
   {"category":"kvm","name":"memory.zram.ramLimitBytes","value":"17179869184"}
 ]}}
 ```
+
+Remove one Host's zero-page override so its parent setting applies:
 
 ```http
 DELETE /zstack/v1/resource-configurations/kvm/memory.ksm.zeroPagesEnabled/<hostUuid>
@@ -313,6 +350,7 @@ Implementation references in premium: the ZWatch API message classes, `HostAbstr
 Frontend implementation and environment functional tests use the same public management-node interfaces listed in the page table. A Java SDK or BFF wrapper is suitable when it sends the actual documented REST method, route, body wrapper and parameters through the platform authorization chain.
 
 - Exercise ordinary configuration, inheritance, deletion, atomic batches, validation failures and permission/license checks through GlobalConfig / ResourceConfig. Calling UpdateMemoryPolicy.apply/clearOverride, a Repository/Manager method, SQL or a Host-local control endpoint does not verify this frontend workflow.
+- Verify Global switches with UpdateGlobalConfig and Cluster switches with the Cluster UUID through ResourceConfig, without client-side Host configuration loops. Check inherited Hosts, preserved explicit overrides and inheritance on newly added Hosts. If the UI offers selected-Host batch editing, test it separately and verify that unselected Hosts and Cluster/Global settings remain unchanged.
 - Read effective settings, current Host state and execution tasks through GetMemoryPolicy, GetMemoryStates and GetMemoryTasks. Distinguish configuration saved, execution pending/blocked and Host state actually applied.
 - Exercise the exposed maintenance actions through UpdateMemoryPolicy, backend discovery through GetHostMemoryWritebackBackends, and queued-task cancellation through CancelMemoryTask. Use real replies for the action's identity and control evidence.
 - Read VM statistics through the single/batch public VM APIs with the applicable account or IAM2 project session. Verify access denial and unavailable samples separately.

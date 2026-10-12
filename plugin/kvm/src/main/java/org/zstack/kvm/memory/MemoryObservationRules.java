@@ -18,6 +18,42 @@ public final class MemoryObservationRules {
     private MemoryObservationRules() {
     }
 
+    /**
+     * An explicit read-only native KSM sample may refresh only KSM capability
+     * metadata. It never changes the envelope's Unknown control outcome.
+     */
+    static boolean isKsmNativePartial(MemoryAgentResponse response, long now) {
+        if (response == null || response.isSuccess() || !"Unknown".equals(response.status)
+                || !"KSM_NATIVE_PARTIAL".equals(response.observationKind)
+                || !"LOCAL_SERVICE_UNAVAILABLE".equals(response.reasonCode)
+                || response.sampleTime == null || response.sampleTime > now + 5000
+                || now - response.sampleTime < 0
+                || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                || response.capabilities == null || response.state == null
+                || response.bootId == null || response.bootId.trim().isEmpty()) {
+            return false;
+        }
+        if (!Boolean.TRUE.equals(response.capabilities.get("supported"))
+                || !Boolean.TRUE.equals(response.capabilities.get("ksm"))) { return false; }
+        Object boot = response.state.get("bootId");
+        Map<?, ?> actual = map(response.state.get("actual"));
+        Map<?, ?> ksm = actual == null ? null : map(actual.get("ksm"));
+        if (!response.bootId.equals(boot) || ksm == null || !(ksm.get("enabled") instanceof Boolean)) {
+            return false;
+        }
+        return nonNegativeInteger(ksm.get("pagesToScan")) && nonNegativeInteger(ksm.get("sleepMillis"));
+    }
+
+    private static boolean nonNegativeInteger(Object value) {
+        if (!(value instanceof Number) || value instanceof Float || value instanceof Double) { return false; }
+        try { return new BigDecimal(value.toString()).longValueExact() >= 0; }
+        catch (ArithmeticException | NumberFormatException invalid) { return false; }
+    }
+
+    private static Map<?, ?> map(Object value) {
+        return value instanceof Map ? (Map<?, ?>) value : null;
+    }
+
     public static MemoryVmAccountingInventory vm(String host, String vm, Map<String, Object> report) {
         return vm(host, vm, report, System.currentTimeMillis(), MemoryOptimizationGlobalConfig.displayTtlMillis());
     }
@@ -268,10 +304,6 @@ public final class MemoryObservationRules {
     private static String defaultReason(Object value, String fallback) {
         String reason = stringOrNull(value);
         return reason == null ? fallback : reason;
-    }
-
-    private static Map<?, ?> map(Object value) {
-        return value instanceof Map ? (Map<?, ?>) value : null;
     }
 
     private static MemoryVmAccountingInventory unavailable(MemoryVmAccountingInventory inventory, String reason) {

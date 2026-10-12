@@ -136,6 +136,79 @@ public class MemorySummaryRulesTest {
         assertEquals("Missing", result.getMetricCoverage().get("zramNormalBytes").get("quality"));
     }
 
+    private MemoryStateVO signedZramSample(String host, long normal, long writeback) {
+        MemoryStateVO row = sample(host, now, "");
+        JsonObject state = new JsonParser().parse(row.getState()).getAsJsonObject();
+        JsonObject savings = state.getAsJsonObject("savings");
+        long zram = Math.addExact(normal, writeback);
+        savings.addProperty("zramNormalBytes", normal);
+        savings.addProperty("zramWritebackBytes", writeback);
+        savings.addProperty("zramBytes", zram);
+        savings.addProperty("totalSavedEstimateBytes", Math.addExact(120, zram));
+        JsonObject quality = new JsonObject();
+        for (String metric : Arrays.asList("ksm_ordinary", "ksm_zero", "ksm_total",
+                "zram", "zram_ordinary", "zram_writeback")) quality.addProperty(metric, "observed");
+        savings.add("metricQuality", quality);
+        row.setState(state.toString());
+        return row;
+    }
+
+    @Test public void signedResidentSavingsPreserveNegativeZeroPositiveAndCoverage() {
+        for (long normal : new long[]{-8192, 0, 8192}) {
+            MemorySummaryInventory result = MemorySummaryRules.summarize(Collections.singletonList("a"),
+                    Collections.singletonList(signedZramSample("a", normal, 0)), now);
+            assertEquals(Long.valueOf(normal), result.getZramNormalBytes());
+            assertEquals(Long.valueOf(normal), result.getZramBytes());
+            assertEquals(Long.valueOf(0), result.getZramWritebackBytes());
+            assertEquals(Long.valueOf(120 + normal), result.getTotalSavedEstimateBytes());
+            assertEquals(1, result.getMetricCoverage().get("zramNormalBytes").get("coveredHosts"));
+            assertEquals("Fresh", result.getMetricCoverage().get("zramNormalBytes").get("quality"));
+        }
+    }
+
+    @Test public void signedResidentAndPositiveWritebackAggregateAcrossHostsWithoutDoubleCounting() {
+        MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b"),
+                Arrays.asList(signedZramSample("a", -8192, 16384),
+                        signedZramSample("b", 4096, 2048)), now);
+        assertEquals(Long.valueOf(-4096), result.getZramNormalBytes());
+        assertEquals(Long.valueOf(18432), result.getZramWritebackBytes());
+        assertEquals(Long.valueOf(14336), result.getZramBytes());
+        assertEquals(Long.valueOf(14576), result.getTotalSavedEstimateBytes());
+        assertEquals(2, result.getMetricCoverage().get("zramNormalBytes").get("coveredHosts"));
+        assertEquals("Fresh", result.getMetricCoverage().get("zramNormalBytes").get("quality"));
+    }
+
+    @Test public void signedResidentDoesNotMakeInvalidNegativeKsmCountersUsable() {
+        MemoryStateVO row = signedZramSample("a", -8192, 0);
+        JsonObject state = new JsonParser().parse(row.getState()).getAsJsonObject();
+        JsonObject savings = state.getAsJsonObject("savings");
+        savings.addProperty("ksmOrdinaryBytes", -100);
+        savings.addProperty("ksmZeroBytes", -20);
+        savings.addProperty("ksmTotalBytes", -120);
+        row.setState(state.toString());
+        MemorySummaryInventory result = MemorySummaryRules.summarize(Collections.singletonList("a"),
+                Collections.singletonList(row), now);
+        assertEquals(Long.valueOf(-8192), result.getZramNormalBytes());
+        assertNull(result.getKsmOrdinaryBytes()); assertNull(result.getKsmZeroBytes());
+        assertNull(result.getKsmTotalBytes()); assertNull(result.getTotalSavedEstimateBytes());
+        assertEquals("Missing", result.getMetricCoverage().get("ksmZeroBytes").get("quality"));
+    }
+
+    @Test public void signedResidentUnderflowAndInconsistentSplitStillRejectCoverage() {
+        long normal = Long.MIN_VALUE / 2 - 1024;
+        MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b"),
+                Arrays.asList(signedZramSample("a", normal, 0), signedZramSample("b", normal, 0)), now);
+        assertNull(result.getZramNormalBytes());
+        assertEquals("Unknown", result.getMetricCoverage().get("zramNormalBytes").get("quality"));
+        MemoryStateVO invalid = signedZramSample("a", -8192, 0);
+        invalid.setState(invalid.getState().replace("\"zramNormalBytes\":-8192", "\"zramNormalBytes\":-8193"));
+        result = MemorySummaryRules.summarize(Collections.singletonList("a"),
+                Collections.singletonList(invalid), now);
+        assertNull(result.getZramNormalBytes());
+        assertEquals("Missing", result.getMetricCoverage().get("zramNormalBytes").get("quality"));
+        assertEquals(Long.valueOf(-8192), result.getZramBytes());
+    }
+
     @Test public void splitSeriesCoverageIsIndependentAndDisabledRequiresExplicitZeroEvidence() {
         MemoryStateVO split = sample("a", now, ",\"zramNormalBytes\":90,\"zramWritebackBytes\":-60");
         MemorySummaryInventory result = MemorySummaryRules.summarize(Arrays.asList("a", "b"),

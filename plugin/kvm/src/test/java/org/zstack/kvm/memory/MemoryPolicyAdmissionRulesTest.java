@@ -70,4 +70,26 @@ public class MemoryPolicyAdmissionRulesTest {
         assertEquals("CAPABILITY_UNKNOWN", MemoryPolicyAdmissionRules.blockedFields(
                 explicitlyEnabled, null, 2000).get("zram.enabled"));
     }
+
+    @Test public void partialNativeKsmCanAdmitOnlyKsmCapabilityWithoutChangingUnknownControlFence() {
+        MemoryStateVO state = new MemoryStateVO();
+        state.setStatus("Unknown");
+        state.setLastSampleTime(null);
+        state.setCapabilities("{\"nativeKsmPartial\":{\"capabilities\":{\"supported\":true,"
+                + "\"ksm\":true,\"ksmZeroPages\":false},"
+                + "\"observationKind\":\"KSM_NATIVE_PARTIAL\",\"sampleTime\":1500,"
+                + "\"bootId\":\"boot-a\",\"ksm\":{\"enabled\":true,"
+                + "\"pagesToScan\":1000,\"sleepMillis\":10}}}");
+        Map<String, String> enableKsm = MemoryPolicyAdmissionRules.changedFields(
+                "{}", "{\"ksm\":{\"enabled\":true}}");
+        assertTrue("the independent KSM capability is enough for KSM admission",
+                MemoryPolicyAdmissionRules.blockedFields(enableKsm, state, 2000).isEmpty());
+
+        Map<String, String> enableZram = MemoryPolicyAdmissionRules.changedFields(
+                "{}", "{\"zram\":{\"enabled\":true}}");
+        assertEquals("CAPABILITY_UNAVAILABLE",
+                MemoryPolicyAdmissionRules.blockedFields(enableZram, state, 2000).get("zram.enabled"));
+        assertEquals("Unknown", state.getStatus());
+        assertNull(state.getAppliedRevision());
+    }
 }

@@ -713,12 +713,20 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             }
             repository.result(task.getUuid(), "Failed", "Cloud License expired before dispatch", null); return;
         }
+        if (active && !poll) {
+            String rejection = coldKsmDispatchRejection(task, System.currentTimeMillis());
+            if (rejection != null) {
+                repository.result(task.getUuid(), "Failed", rejection, null);
+                return;
+            }
+        }
         Map<String, Object> command = command(task.getHostUuid(), task.getUuid());
         command.put("scope", task.getScope()); command.put("resourceUuid", task.getResourceUuid());
         command.put("action", "clearOverride".equals(task.getAction()) ? "apply" : task.getAction());
         if (active) {
             String policyPlanHash = task.getPolicyPlanHash();
-            command.put("policyMode", policyPlanHash != null && !policyPlanHash.trim().isEmpty()
+            command.put("policyMode", !"clearOverride".equals(task.getAction())
+                    && policyPlanHash != null && !policyPlanHash.trim().isEmpty()
                     ? "delta" : "effective");
         }
         command.put("desiredRevision", task.getDesiredRevision());
@@ -729,6 +737,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         command.put("expectedInstanceGeneration", task.getExpectedInstanceGeneration());
         command.put("expectedControlOperationUuid", task.getExpectedControlOperationUuid());
         command.put("policy", active ? MemoryPolicyRules.decode(task.getPolicy()) : Collections.emptyMap());
+        if (active && Boolean.TRUE.equals(task.getRequiresKsmNativePartialFence())) {
+            command.put("requiresKsmNativePartialFence", true);
+            command.put("ksmNativeObservationBootId", task.getKsmNativeObservationBootId());
+            command.put("ksmNativeObservationSampleTime", task.getKsmNativeObservationSampleTime());
+        }
         if (MemoryBackendPreparationRules.ACTION.equals(task.getAction())) {
             command.put("backendPreparation", JSONObjectUtil.toObject(task.getPolicy(), Map.class));
         }
@@ -815,6 +828,28 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Preserve the exact trusted maintenance proof on the apply wire. The
      * repository has already fenced admission against this same snapshot;
      * the Agent revalidates it immediately before changing native state. */
+    static String coldKsmDispatchRejection(MemoryTaskVO task, long now) {
+        if (Boolean.TRUE.equals(task.getRequiresKsmNativePartialFence())) {
+            Long sample = task.getKsmNativeObservationSampleTime();
+            String boot = task.getKsmNativeObservationBootId();
+            if (!Arrays.asList("Host", "Cluster", "Global").contains(task.getScope())
+                    || boot == null || boot.trim().isEmpty() || sample == null
+                    || sample < 0 || sample > now
+                    || now - sample >= MemoryOptimizationGlobalConfig.displayTtlMillis()) {
+                return "Cold KSM admission evidence expired or is missing; refresh Host state and reapply configuration";
+            }
+        } else if (task.getRequiresKsmNativePartialFence() == null
+                && !"VM".equals(task.getScope())) {
+            MemoryPolicyConfig policy = MemoryPolicyRules.decode(task.getPolicy());
+            if (policy != null && policy.ksm != null && policy.zram == null && policy.writeback == null) {
+                // Pre-upgrade queued tasks cannot prove which admission path
+                // accepted them. Reject before sending, without inventing proof.
+                return "Queued KSM task has no persisted admission evidence; refresh Host state and reapply configuration";
+            }
+        }
+        return null;
+    }
+
     static Object maintenanceProofForCommand(String raw) {
         if (raw == null || raw.trim().isEmpty()) { return null; }
         try {
@@ -867,7 +902,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         try {
             call(host, "state", command(host, Platform.getUuid()), response -> {
                 try {
-                    if (successfulFreshObservation(response)) {
+                    if (MemoryObservationRules.isKsmNativePartial(response, System.currentTimeMillis())) {
+                        repository.observePartialKsm(host, response);
+                    } else if (successfulFreshObservation(response)) {
                         repository.observe(host, response);
                         applyInheritedPolicyAfterObservation(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);
