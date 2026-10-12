@@ -22,11 +22,16 @@ import static org.junit.Assert.*;
 public class MemoryHostConnectedObservationTest {
     private static class Repository extends MemoryRepository {
         int observations;
+        int partialKsmObservations;
         int policyAdmissions;
         MemoryAgentResponse lastObservation;
 
         @Override public void observe(String hostUuid, MemoryAgentResponse response) {
             observations++; lastObservation = response;
+        }
+
+        @Override public void observePartialKsm(String hostUuid, MemoryAgentResponse response) {
+            partialKsmObservations++; lastObservation = response;
         }
 
         @Override public boolean applyEffectivePolicyAfterConnect(String hostUuid) {
@@ -114,6 +119,39 @@ public class MemoryHostConnectedObservationTest {
         manager.complete(failed);
         assertEquals(0, repository.observations);
         assertEquals(0, repository.policyAdmissions);
+    }
+
+    @Test public void coldNativeKsmObservationIsStoredSeparatelyWithoutControlReconciliation() throws Exception {
+        Manager manager = configuredManager();
+        manager.afterHostConnected(connectedHost());
+        manager.runConnectionTask(0);
+        // Use the platform JSON utility, as CloudBus does. A plain Gson
+        // instance decodes generic Map numbers as Double, while ZStack's
+        // configured LONG_OR_DOUBLE strategy preserves integral KSM values
+        // as Long and matches the actual Agent wire contract.
+        MemoryAgentResponse partial = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"success\":false,\"status\":\"Unknown\",\"observationKind\":\"KSM_NATIVE_PARTIAL\","
+                        + "\"reasonCode\":\"LOCAL_SERVICE_UNAVAILABLE\",\"bootId\":\"boot-a\","
+                        + "\"coldKsmAdmissionReady\":true,\"coldKsmAdmissionReason\":\"LOCAL_CONTROL_FENCE_CLEAR\","
+                        + "\"sampleTime\":" + System.currentTimeMillis()
+                        + ",\"capabilities\":{\"supported\":true,\"ksm\":true},"
+                        + "\"state\":{\"bootId\":\"boot-a\",\"actual\":{\"ksm\":{\"enabled\":true,"
+                        + "\"pagesToScan\":1000,\"sleepMillis\":10}}}}",
+                MemoryAgentResponse.class);
+        assertTrue(partial.state.get("actual") instanceof Map);
+        Map<?, ?> actual = (Map<?, ?>) partial.state.get("actual");
+        Map<?, ?> nativeKsm = (Map<?, ?>) actual.get("ksm");
+        assertTrue("platform decoder must preserve integral Agent metrics", nativeKsm.get("pagesToScan") instanceof Long);
+        assertTrue(MemoryObservationRules.isKsmNativePartial(partial, System.currentTimeMillis()));
+        manager.complete(partial);
+
+        Repository repository = field(manager, "repository", Repository.class);
+        Hooks hooks = field(manager, "lifecycleHooks", Hooks.class);
+        assertEquals("partial native data must not overwrite full observation state", 0, repository.observations);
+        assertEquals(1, repository.partialKsmObservations);
+        assertEquals("partial capability is not proof that desired control applied", 0, repository.policyAdmissions);
+        assertEquals(0, hooks.reconciliations);
+        assertSame(partial, repository.lastObservation);
     }
 
     @Test public void memoryManagerIsRegisteredForHostAfterConnectedExtension() throws Exception {

@@ -26,18 +26,26 @@ final class MemoryStatePresentation {
         out.setBootId(state.get("bootId") instanceof String ? (String) state.get("bootId") : null);
         Object lifecycle = state.get("lifecycle");
         Object active = lifecycle instanceof Map ? ((Map<?, ?>) lifecycle).get("activeState") : null;
-        boolean controlledPool = controlledGoPool(out, state, now);
-        if ("compatibility".equals(active)) {
+        boolean contradicted = newerPartialContradictsState(out, state, now);
+        boolean controlledPool = !contradicted && controlledGoPool(out, state, now);
+        if (contradicted) {
+            out.setFeatureState("Unknown"); out.setFeatureStateSource(null);
+            if (!java.util.Objects.equals(state.get("bootId"), field(state.get("nativeKsmObservation"), "bootId"))) {
+                out.setBootId(null);
+            }
+        } else if ("compatibility".equals(active)) {
             // The Go gate's historical label says only "not paused". It is
             // neither a configured switch nor proof that a pool exists.
             Map<?, ?> actual = state.get("actual") instanceof Map ? (Map<?, ?>) state.get("actual") : Collections.emptyMap();
             Object zramEnabled = field(actual.get("zram"), "efficiencyEnabled");
             Object ksmEnabled = field(actual.get("ksm"), "enabled");
-            String observed = controlledPool && (Boolean.TRUE.equals(zramEnabled) || Boolean.TRUE.equals(ksmEnabled))
+            boolean nativeKsm = nativeKsmProof(out, state, now);
+            String observed = nativeKsm ? (Boolean.TRUE.equals(ksmEnabled) ? "Active" : "Disabled")
+                    : controlledPool && (Boolean.TRUE.equals(zramEnabled) || Boolean.TRUE.equals(ksmEnabled))
                     ? "Active" : controlledPool && Boolean.FALSE.equals(zramEnabled) && Boolean.FALSE.equals(ksmEnabled)
                     ? "Disabled" : "Unknown";
             out.setFeatureState(observed);
-            out.setFeatureStateSource("Unknown".equals(observed) ? null : "GO_LIFECYCLE");
+            out.setFeatureStateSource("Unknown".equals(observed) ? null : nativeKsm ? "KSM_NATIVE" : "GO_LIFECYCLE");
         } else if (active instanceof String) {
             out.setFeatureState((String) active); out.setFeatureStateSource("GO_LIFECYCLE");
         } else if (nativeKsmProof(out, state, now)) {
@@ -55,8 +63,8 @@ final class MemoryStatePresentation {
         // the shared projection fail-closed if a caller supplies stale flags.
         boolean taskIdle = out.getActiveTaskUuid() == null && "Succeeded".equals(out.getStatus());
         boolean hasControl = out.getControlOperationUuid() != null;
-        if (canResume && taskIdle && hasControl) { actions.add("resume"); }
-        if (canReconcile && out.getActiveTaskUuid() == null && hasControl) { actions.add("reconcile"); }
+        if (!contradicted && canResume && taskIdle && hasControl) { actions.add("resume"); }
+        if (!contradicted && canReconcile && out.getActiveTaskUuid() == null && hasControl) { actions.add("reconcile"); }
         out.setAllowedActions(actions);
         Object savings = state.get("savings");
         Map<String, Object> metrics = savings instanceof Map
@@ -77,6 +85,27 @@ final class MemoryStatePresentation {
 
     private static Object field(Object object, String name) {
         return object instanceof Map ? ((Map<?, ?>) object).get(name) : null;
+    }
+
+    /** A later partial read can invalidate a control proof, but cannot renew it. */
+    private static boolean newerPartialContradictsState(MemoryStateInventory out, Map<String, Object> state, long now) {
+        Object partial = state.get("nativeKsmObservation");
+        if (partial == null) return false;
+        Long sampled = exactLong(field(partial, "sampleTime"));
+        if (sampled == null) return true;
+        if (out.getLastSampleTime() != null && sampled <= out.getLastSampleTime()) return false;
+        if (!"KSM_NATIVE_PARTIAL".equals(field(partial, "observationKind")) || sampled > now
+                || !java.util.Objects.equals(state.get("bootId"), field(partial, "bootId"))) return true;
+        Object observed = field(partial, "ksm"), confirmed = field(state.get("actual"), "ksm");
+        Object enabled = field(observed, "enabled");
+        if (!(enabled instanceof Boolean) || !enabled.equals(field(confirmed, "enabled"))) return true;
+        for (String name : new String[]{"pagesToScan", "sleepMillis"}) {
+            Long value = exactLong(field(observed, name));
+            if (value == null || !value.equals(exactLong(field(confirmed, name)))) return true;
+        }
+        Object zeroPages = field(observed, "zeroPagesEnabled");
+        return zeroPages != null && (!(zeroPages instanceof Boolean)
+                || !zeroPages.equals(field(confirmed, "zeroPagesEnabled")));
     }
 
     /** UI eligibility only; every mutation still passes normal API admission. */
@@ -110,10 +139,26 @@ final class MemoryStatePresentation {
 
     private static boolean nativeKsmProof(MemoryStateInventory out, Map<String, Object> state, long now) {
         if (!Boolean.TRUE.equals(state.get("managed")) || !Boolean.TRUE.equals(state.get("ksmOnly"))
-                || !"Succeeded".equals(out.getStatus()) || out.getControlOperationUuid() == null
+                || !"Succeeded".equals(out.getStatus()) || out.getActiveTaskUuid() != null
+                || out.getControlOperationUuid() == null
                 || out.getAppliedRevision() == null || out.getDesiredRevision() != out.getAppliedRevision()
                 || out.getLastSampleTime() == null || out.getLastSampleTime() > now + 5000
                 || now - out.getLastSampleTime() >= MemoryOptimizationGlobalConfig.displayTtlMillis()) return false;
+        Object lifecycle = state.get("lifecycle");
+        if (lifecycle != null) {
+            // A reachable observer is not a pool. Accept only its separately
+            // confirmed native KSM journal; never grant pool control actions.
+            if (!"observe".equals(state.get("mode")) || !Boolean.FALSE.equals(state.get("resource_authorized"))
+                    || !"compatibility".equals(field(lifecycle, "activeState"))
+                    || !Boolean.FALSE.equals(field(lifecycle, "paused"))
+                    || field(lifecycle, "migrationHold") != null
+                    || Boolean.TRUE.equals(state.get("maintenance_blocks_activation"))
+                    || !out.getControlOperationUuid().equals(state.get("lastConfirmedOperationUuid"))
+                    || !out.getAppliedRevision().equals(exactLong(state.get("lastConfirmedAppliedRevision")))
+                    || !"unavailable".equals(field(state.get("host_zram"), "quality"))
+                    || !"".equals(field(state.get("host_zram"), "pool_generation"))
+                    || !"".equals(field(state.get("host_zram"), "device"))) return false;
+        }
         Object boot = state.get("bootId"), actual = state.get("actual");
         if (!(boot instanceof String) || ((String) boot).isEmpty() || !(actual instanceof Map)) return false;
         Object k = ((Map<?, ?>) actual).get("ksm"); if (!(k instanceof Map)) return false;

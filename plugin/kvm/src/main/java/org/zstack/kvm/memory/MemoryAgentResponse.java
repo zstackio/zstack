@@ -11,6 +11,11 @@ public class MemoryAgentResponse extends KVMAgentCommands.AgentResponse {
     public String status;
     public String reason;
     public String reasonCode;
+    /** Separately timestamped read-only evidence; not a control result. */
+    public String observationKind;
+    /** Local Agent fence result for the narrowly scoped first-KSM admission path. */
+    public Boolean coldKsmAdmissionReady;
+    public String coldKsmAdmissionReason;
     public Map<String, Object> capabilities;
     public Map<String, Object> state;
     public Long appliedRevision;

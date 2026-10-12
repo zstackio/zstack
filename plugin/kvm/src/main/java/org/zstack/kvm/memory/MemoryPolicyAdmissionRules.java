@@ -83,17 +83,18 @@ final class MemoryPolicyAdmissionRules {
 
     /** null means supported; an explicit false enable remains admissible even with unknown capabilities. */
     static String capabilityReason(MemoryStateVO state, String capability, long now) {
-        if (state == null || state.getLastSampleTime() == null || state.getCapabilities() == null) {
-            return "CAPABILITY_UNKNOWN";
-        }
-        long age = now - state.getLastSampleTime();
-        if (state.getLastSampleTime() > now + 5000 || age >= MemoryOptimizationGlobalConfig.displayTtlMillis()) {
-            return "CAPABILITY_STALE";
-        }
+        if (state == null || state.getCapabilities() == null) { return "CAPABILITY_UNKNOWN"; }
         Map<String, Object> capabilities;
         try { capabilities = new Gson().fromJson(state.getCapabilities(), MAP_TYPE); }
         catch (RuntimeException e) { return "CAPABILITY_UNKNOWN"; }
         if (capabilities == null) { return "CAPABILITY_UNKNOWN"; }
+        if (MemoryCapabilityRules.hasPartialKsmMarker(state)) {
+            return MemoryCapabilityRules.partialKsmCapabilityReason(state, capability, now);
+        }
+        if (state.getLastSampleTime() == null) { return "CAPABILITY_UNKNOWN"; }
+        long age = now - state.getLastSampleTime();
+        if (state.getLastSampleTime() > now + 5000 || age < 0
+                || age >= MemoryOptimizationGlobalConfig.displayTtlMillis()) { return "CAPABILITY_STALE"; }
         if (!Boolean.TRUE.equals(capabilities.get("supported"))) {
             Object overall = capabilities.get("reasonCode");
             return overall instanceof String && !((String) overall).isEmpty() && !"SUPPORTED".equals(overall)

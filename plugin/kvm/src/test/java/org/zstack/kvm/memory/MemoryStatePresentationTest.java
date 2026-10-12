@@ -7,6 +7,55 @@ import com.google.gson.JsonParser;
 import static org.junit.Assert.*;
 
 public class MemoryStatePresentationTest {
+    private MemoryStateInventory observerKsmState(boolean enabled) {
+        MemoryStateInventory state = new MemoryStateInventory();
+        state.setHostUuid("host-1"); state.setControlOperationUuid("op-1");
+        state.setStatus("Succeeded"); state.setDesiredRevision(31); state.setAppliedRevision(31L);
+        state.setLastSampleTime(100000L);
+        state.setState("{\"managed\":true,\"ksmOnly\":true,\"bootId\":\"boot-1\","
+                + "\"lastConfirmedOperationUuid\":\"op-1\",\"lastConfirmedAppliedRevision\":31,"
+                + "\"mode\":\"observe\",\"resource_authorized\":false,"
+                + "\"lifecycle\":{\"activeState\":\"compatibility\",\"paused\":false},"
+                + "\"host_zram\":{\"pool_generation\":\"\",\"device\":\"\",\"quality\":\"unavailable\"},"
+                + "\"actual\":{\"ksm\":{\"enabled\":" + enabled
+                + ",\"pagesToScan\":2000,\"sleepMillis\":20,\"zeroPagesEnabled\":false}}}");
+        return state;
+    }
+
+    @Test public void reachableObserverUsesConfirmedKsmProofWithoutOfferingPoolActions() {
+        for (boolean enabled : new boolean[]{true, false}) {
+            MemoryStateInventory state = observerKsmState(enabled);
+            MemoryStatePresentation.populate(state, 100100L);
+            assertEquals(enabled ? "Active" : "Disabled", state.getFeatureState());
+            assertEquals("KSM_NATIVE", state.getFeatureStateSource());
+            assertEquals(java.util.Collections.singletonList("query"), state.getAllowedActions());
+        }
+    }
+
+    @Test public void observerKsmProofRejectsMissingFencesAndNativePoolContradictions() {
+        for (String defect : new String[]{"control", "revision", "busy", "unknown", "stale",
+                "boot", "mode", "authorized", "pool", "hold", "paused", "maintenance"}) {
+            MemoryStateInventory state = observerKsmState(true);
+            JsonObject raw = new JsonParser().parse(state.getState()).getAsJsonObject();
+            if ("control".equals(defect)) raw.addProperty("lastConfirmedOperationUuid", "other");
+            if ("revision".equals(defect)) raw.addProperty("lastConfirmedAppliedRevision", 30);
+            if ("busy".equals(defect)) state.setActiveTaskUuid("busy");
+            if ("unknown".equals(defect)) state.setStatus("Unknown");
+            if ("stale".equals(defect)) state.setLastSampleTime(1L);
+            if ("boot".equals(defect)) raw.remove("bootId");
+            if ("mode".equals(defect)) raw.addProperty("mode", "reclaim");
+            if ("authorized".equals(defect)) raw.addProperty("resource_authorized", true);
+            if ("pool".equals(defect)) raw.getAsJsonObject("host_zram").addProperty("pool_generation", "pool");
+            if ("hold".equals(defect)) raw.getAsJsonObject("lifecycle").add("migrationHold", new JsonObject());
+            if ("paused".equals(defect)) raw.getAsJsonObject("lifecycle").addProperty("paused", true);
+            if ("maintenance".equals(defect)) raw.addProperty("maintenance_blocks_activation", true);
+            state.setState(raw.toString());
+            MemoryStatePresentation.populate(state, 100100L);
+            assertEquals(defect, "Unknown", state.getFeatureState());
+            assertEquals(defect, java.util.Collections.singletonList("query"), state.getAllowedActions());
+        }
+    }
+
     private MemoryStateInventory runningGoState() {
         MemoryStateInventory state = new MemoryStateInventory();
         state.setHostUuid("host-1"); state.setControlOperationUuid("op-1");
@@ -238,4 +287,61 @@ public class MemoryStatePresentationTest {
         MemoryStatePresentation.populate(state, 100100L);
         assertEquals("Unknown", state.getFeatureState());
     }
+
+    private static void attachPartial(MemoryStateInventory state, String boot, long sample, Boolean enabled) {
+        JsonObject raw = new JsonParser().parse(state.getState()).getAsJsonObject();
+        JsonObject partial = new JsonObject(); partial.addProperty("observationKind", "KSM_NATIVE_PARTIAL");
+        partial.addProperty("bootId", boot); partial.addProperty("sampleTime", sample);
+        JsonObject ksm = new JsonObject(); ksm.addProperty("enabled", enabled);
+        ksm.addProperty("pagesToScan", 2000); ksm.addProperty("sleepMillis", 20);
+        ksm.addProperty("zeroPagesEnabled", false); partial.add("ksm", ksm);
+        raw.add("nativeKsmObservation", partial); state.setState(raw.toString());
+    }
+
+    @Test public void newerPartialBootOrKsmContradictionInvalidatesConfirmedState() {
+        for (String defect : new String[]{"newBoot", "disabled", "missing", "future", "changedTuning"}) {
+            MemoryStateInventory state = observerKsmState(true);
+            attachPartial(state, "newBoot".equals(defect) ? "boot-2" : "boot-1",
+                    "future".equals(defect) ? 100200L : 100050L,
+                    "missing".equals(defect) ? null : !"disabled".equals(defect));
+            if ("changedTuning".equals(defect)) {
+                JsonObject raw = new JsonParser().parse(state.getState()).getAsJsonObject();
+                raw.getAsJsonObject("nativeKsmObservation").getAsJsonObject("ksm").addProperty("pagesToScan", 3000);
+                state.setState(raw.toString());
+            }
+            MemoryStatePresentation.populate(state, 100100L, true, true);
+            assertEquals(defect, "Unknown", state.getFeatureState());
+            assertNull(defect, state.getFeatureStateSource());
+            assertEquals(defect, java.util.Collections.singletonList("query"), state.getAllowedActions());
+            assertEquals(Long.valueOf(100000), state.getLastSampleTime());
+            assertEquals("Succeeded", state.getStatus());
+            if ("newBoot".equals(defect)) assertNull(state.getBootId());
+        }
+    }
+
+    @Test public void olderPartialAndMatchingPartialDoNotOverwriteOrRenewFullProof() {
+        MemoryStateInventory state = observerKsmState(true);
+        attachPartial(state, "old-boot", 99999L, false);
+        MemoryStatePresentation.populate(state, 100100L);
+        assertEquals("Active", state.getFeatureState());
+        attachPartial(state, "boot-1", 100050L, true);
+        MemoryStatePresentation.populate(state, 100100L);
+        assertEquals("Active", state.getFeatureState());
+        MemoryStatePresentation.populate(state, 100000L + MemoryOptimizationGlobalConfig.displayTtlMillis());
+        assertEquals("Unknown", state.getFeatureState());
+        assertEquals(Long.valueOf(100000), state.getLastSampleTime());
+    }
+
+    @Test public void newerFullObservationRestoresStateAfterPartialContradiction() {
+        MemoryStateInventory state = observerKsmState(true);
+        attachPartial(state, "boot-2", 100050L, false);
+        MemoryStatePresentation.populate(state, 100100L);
+        assertEquals("Unknown", state.getFeatureState());
+        state.setLastSampleTime(100080L);
+        state.setState(state.getState().replace("boot-1", "boot-2"));
+        MemoryStatePresentation.populate(state, 100100L);
+        assertEquals("Active", state.getFeatureState());
+        assertEquals("boot-2", state.getBootId());
+    }
+
 }

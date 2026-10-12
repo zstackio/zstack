@@ -171,6 +171,25 @@ public class MemoryLicenseConfigurationTest {
     }
 
     @Test
+    public void plannedStandardClearPersistsEffectiveWireModeAcrossDispatchAndPoll() throws Exception {
+        RecordingRepository repository = new RecordingRepository();
+        RecordingManager manager = manager(repository, System.currentTimeMillis() + 300_000);
+        MemoryTaskVO task = task("clearOverride");
+        task.setPolicyPlanHash("persisted-clear-plan-hash");
+        task.setPolicy("{\"schemaVersion\":1,\"ksm\":{}}");
+        task.setDesiredRevision(2L);
+        dispatch(manager, task, false);
+        dispatch(manager, task, true);
+        for (Map<String, Object> command : manager.commands) {
+            JsonObject wire = wireCommand(command);
+            assertPolicyMode(wire, "effective");
+            assertEquals("apply", wire.get("action").getAsString());
+            assertDispatchIdentity(wire, task, 2L);
+            assertEquals(new JsonParser().parse(task.getPolicy()), wire.get("policy"));
+        }
+    }
+
+    @Test
     public void bootstrapAndConnectHostPlanTasksUseDeltaRegardlessOfFullPolicyBody() throws Exception {
         for (String actor : Arrays.asList("system:memory-fresh-cloud-bootstrap", "system:memory-host-connect-policy")) {
             RecordingRepository repository = new RecordingRepository();
@@ -588,4 +607,55 @@ public class MemoryLicenseConfigurationTest {
             }
         }
     }
+
+    @Test public void coldKsmDispatchUsesPersistedEvidenceForHostClusterAndGlobal() throws Exception {
+        for (String scope : Arrays.asList("Host", "Cluster", "Global")) {
+            RecordingRepository repository = new RecordingRepository();
+            RecordingManager manager = new RecordingManager();
+            inject(manager, "repository", repository);
+            inject(manager, "pluginRgty", licenseRegistry(System.currentTimeMillis() + 300_000));
+            MemoryTaskVO task = task("apply");
+            task.setScope(scope); task.setResourceUuid("Host".equals(scope) ? HOST : scope.toLowerCase());
+            task.setPolicy("{\"ksm\":{\"enabled\":true}}");
+            task.setPolicyPlanHash("cold-ksm-plan"); task.setRequiresKsmNativePartialFence(true);
+            task.setKsmNativeObservationBootId("boot-at-admission");
+            long sample = System.currentTimeMillis(); task.setKsmNativeObservationSampleTime(sample);
+            dispatch(manager, task, false);
+            assertTrue(scope, manager.applyCalled);
+            assertEquals(scope, manager.command.get("scope"));
+            assertEquals(Boolean.TRUE, manager.command.get("requiresKsmNativePartialFence"));
+            assertEquals("boot-at-admission", manager.command.get("ksmNativeObservationBootId"));
+            assertEquals(Long.valueOf(sample), manager.command.get("ksmNativeObservationSampleTime"));
+            org.zstack.kvm.KVMHostHttpCallMsg msg = new org.zstack.kvm.KVMHostHttpCallMsg() { };
+            msg.setCommand(manager.command);
+            assertTrue(msg.getCommand().contains("\"ksmNativeObservationSampleTime\":" + sample));
+            assertEquals(Long.class, org.zstack.utils.gson.JSONObjectUtil.toObject(msg.getCommand(), Map.class)
+                    .get("ksmNativeObservationSampleTime").getClass());
+        }
+    }
+
+    @Test public void expiredMissingAndLegacyColdEvidenceNeverFallsBackToOrdinaryApply() throws Exception {
+        for (String defect : Arrays.asList("expired", "future", "missingTime", "missingBoot", "legacy")) {
+            RecordingRepository repository = new RecordingRepository();
+            RecordingManager manager = new RecordingManager();
+            inject(manager, "repository", repository);
+            inject(manager, "pluginRgty", licenseRegistry(System.currentTimeMillis() + 300_000));
+            MemoryTaskVO task = task("apply");
+            task.setPolicy("{\"ksm\":{\"enabled\":true}}"); task.setPolicyPlanHash("persisted-plan");
+            task.setRequiresKsmNativePartialFence(true); task.setKsmNativeObservationBootId("boot-a");
+            task.setKsmNativeObservationSampleTime(System.currentTimeMillis());
+            if ("expired".equals(defect)) task.setKsmNativeObservationSampleTime(1L);
+            if ("future".equals(defect)) task.setKsmNativeObservationSampleTime(System.currentTimeMillis() + 60000);
+            if ("missingTime".equals(defect)) task.setKsmNativeObservationSampleTime(null);
+            if ("missingBoot".equals(defect)) task.setKsmNativeObservationBootId(null);
+            if ("legacy".equals(defect)) task.setRequiresKsmNativePartialFence(null);
+            dispatch(manager, task, false);
+            assertFalse(defect, manager.applyCalled);
+            assertEquals(defect, "Failed", repository.resultStatus);
+        }
+        MemoryTaskVO ordinary = task("apply"); ordinary.setPolicy("{\"ksm\":{\"enabled\":true}}");
+        assertEquals(Boolean.FALSE, ordinary.getRequiresKsmNativePartialFence());
+        assertNull(MemoryOptimizationManager.coldKsmDispatchRejection(ordinary, System.currentTimeMillis()));
+    }
+
 }
