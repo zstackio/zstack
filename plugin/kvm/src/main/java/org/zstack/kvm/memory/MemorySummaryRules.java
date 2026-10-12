@@ -118,7 +118,9 @@ public final class MemorySummaryRules {
                     : metric == 4 ? sample.zramNormal : sample.zramWriteback;
             boolean observed = metric == 0 ? sample.ordinaryObserved : metric == 1 ? sample.zeroObserved
                     : metric == 2 ? sample.totalObserved : metric == 3 ? sample.zramObserved : sample.zramSplitObserved;
-            if (value == null || !observed || ((metric < 3 || metric == 4) && value < 0)) continue;
+            // KSM counters cannot be negative. ZRAM estimates (including
+            // resident savings) can be negative when allocation exceeds data.
+            if (value == null || !observed || (metric < 3 && value < 0)) continue;
             if (!result.overflow) {
                 try { result.value = Math.addExact(result.value, value); result.count++; }
                 catch (ArithmeticException overflow) { result.value = 0; result.count = 0; result.overflow = true; }

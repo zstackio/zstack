@@ -7,6 +7,55 @@ import com.google.gson.JsonParser;
 import static org.junit.Assert.*;
 
 public class MemoryStatePresentationTest {
+    private MemoryStateInventory observerKsmState(boolean enabled) {
+        MemoryStateInventory state = new MemoryStateInventory();
+        state.setHostUuid("host-1"); state.setControlOperationUuid("op-1");
+        state.setStatus("Succeeded"); state.setDesiredRevision(31); state.setAppliedRevision(31L);
+        state.setLastSampleTime(100000L);
+        state.setState("{\"managed\":true,\"ksmOnly\":true,\"bootId\":\"boot-1\","
+                + "\"lastConfirmedOperationUuid\":\"op-1\",\"lastConfirmedAppliedRevision\":31,"
+                + "\"mode\":\"observe\",\"resource_authorized\":false,"
+                + "\"lifecycle\":{\"activeState\":\"compatibility\",\"paused\":false},"
+                + "\"host_zram\":{\"pool_generation\":\"\",\"device\":\"\",\"quality\":\"unavailable\"},"
+                + "\"actual\":{\"ksm\":{\"enabled\":" + enabled
+                + ",\"pagesToScan\":2000,\"sleepMillis\":20,\"zeroPagesEnabled\":false}}}");
+        return state;
+    }
+
+    @Test public void reachableObserverUsesConfirmedKsmProofWithoutOfferingPoolActions() {
+        for (boolean enabled : new boolean[]{true, false}) {
+            MemoryStateInventory state = observerKsmState(enabled);
+            MemoryStatePresentation.populate(state, 100100L);
+            assertEquals(enabled ? "Active" : "Disabled", state.getFeatureState());
+            assertEquals("KSM_NATIVE", state.getFeatureStateSource());
+            assertEquals(java.util.Collections.singletonList("query"), state.getAllowedActions());
+        }
+    }
+
+    @Test public void observerKsmProofRejectsMissingFencesAndNativePoolContradictions() {
+        for (String defect : new String[]{"control", "revision", "busy", "unknown", "stale",
+                "boot", "mode", "authorized", "pool", "hold", "paused", "maintenance"}) {
+            MemoryStateInventory state = observerKsmState(true);
+            JsonObject raw = new JsonParser().parse(state.getState()).getAsJsonObject();
+            if ("control".equals(defect)) raw.addProperty("lastConfirmedOperationUuid", "other");
+            if ("revision".equals(defect)) raw.addProperty("lastConfirmedAppliedRevision", 30);
+            if ("busy".equals(defect)) state.setActiveTaskUuid("busy");
+            if ("unknown".equals(defect)) state.setStatus("Unknown");
+            if ("stale".equals(defect)) state.setLastSampleTime(1L);
+            if ("boot".equals(defect)) raw.remove("bootId");
+            if ("mode".equals(defect)) raw.addProperty("mode", "reclaim");
+            if ("authorized".equals(defect)) raw.addProperty("resource_authorized", true);
+            if ("pool".equals(defect)) raw.getAsJsonObject("host_zram").addProperty("pool_generation", "pool");
+            if ("hold".equals(defect)) raw.getAsJsonObject("lifecycle").add("migrationHold", new JsonObject());
+            if ("paused".equals(defect)) raw.getAsJsonObject("lifecycle").addProperty("paused", true);
+            if ("maintenance".equals(defect)) raw.addProperty("maintenance_blocks_activation", true);
+            state.setState(raw.toString());
+            MemoryStatePresentation.populate(state, 100100L);
+            assertEquals(defect, "Unknown", state.getFeatureState());
+            assertEquals(defect, java.util.Collections.singletonList("query"), state.getAllowedActions());
+        }
+    }
+
     private MemoryStateInventory runningGoState() {
         MemoryStateInventory state = new MemoryStateInventory();
         state.setHostUuid("host-1"); state.setControlOperationUuid("op-1");

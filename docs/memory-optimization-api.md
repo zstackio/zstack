@@ -14,7 +14,7 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 
 | Existing page or interaction | Read/display APIs | Configuration or operation APIs |
 | --- | --- | --- |
-| Global settings → Basic settings → Hardware resources → Host (全局设置 → 基本设置 → 硬件资源 → 物理机) | Existing GlobalConfig reads; GetMemoryPolicy with resourceUuid=global; PreviewMemoryPolicy before confirmation | UpdateGlobalConfig for one setting at a time |
+| Global settings → Memory optimization settings (全局设置 → 内存优化设置) | Select Hosts first; ResourceConfig reads and GetMemoryPolicy/PreviewMemoryPolicy for each selected Host | UpdateResourceConfigs separately for each selected Host; never UpdateGlobalConfig from this page |
 | Cluster details → Configuration (集群详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Cluster UUID; PreviewMemoryPolicy before confirmation | UpdateResourceConfig, UpdateResourceConfigs, DeleteResourceConfig |
 | Host details → Configuration (物理机详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Host UUID; GetMemoryStates for actual state; PreviewMemoryPolicy before confirmation | UpdateResourceConfig, UpdateResourceConfigs, DeleteResourceConfig |
 | Global/Cluster/Host maintenance menus and confirmation dialogs | GetMemoryStates and current policy/preview evidence for the selected Hosts | UpdateMemoryPolicy with pause, resume or drain; each Host must satisfy that action's current requirements |
@@ -28,7 +28,7 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 
 Expose only the product settings supported at that resource level: KSM and zero-page switches, ZRAM enablement/capacity, and permitted per-Host writeback settings. Advanced scan/scheduling tuning remains a backend/CLI operation; the UI may display its effective values. Do not render every backend configuration key as an editable control. Writeback device binding/preparation is Host-specific, and Global writeback enablement is rejected.
 
-The UI saves ordinary settings only through UpdateGlobalConfig, UpdateResourceConfig(s), or DeleteResourceConfig. It does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute. Resource identity comes from the current page. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
+The memory optimization UI saves ordinary settings only through UpdateResourceConfig(s) or DeleteResourceConfig. The Global settings page is a batch editor for selected Hosts, not an editor of Global defaults. No selection means no save; unselected Hosts and GlobalConfig remain unchanged. Each Host's related fields are submitted atomically in its own request, with separate outcomes across Hosts; this is not a cross-Host transaction. Mixed values are not replaced by the first Host's value, selection/edit changes invalidate previews, and lost/unknown write responses are not automatically retried. Cluster and Host details retain their own resource scope. UpdateGlobalConfig remains the standard backend/CLI entry for actual Global defaults, not this batch page. The UI does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
 
 ## Data sources
 

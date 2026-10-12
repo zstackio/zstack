@@ -718,7 +718,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         command.put("action", "clearOverride".equals(task.getAction()) ? "apply" : task.getAction());
         if (active) {
             String policyPlanHash = task.getPolicyPlanHash();
-            command.put("policyMode", policyPlanHash != null && !policyPlanHash.trim().isEmpty()
+            command.put("policyMode", !"clearOverride".equals(task.getAction())
+                    && policyPlanHash != null && !policyPlanHash.trim().isEmpty()
                     ? "delta" : "effective");
         }
         command.put("desiredRevision", task.getDesiredRevision());
@@ -729,6 +730,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         command.put("expectedInstanceGeneration", task.getExpectedInstanceGeneration());
         command.put("expectedControlOperationUuid", task.getExpectedControlOperationUuid());
         command.put("policy", active ? MemoryPolicyRules.decode(task.getPolicy()) : Collections.emptyMap());
+        if (active && "apply".equals(task.getAction()) && "Host".equals(task.getScope())) {
+            Map<String, Object> partialKsm = repository.coldKsmNativeObservationForTask(task);
+            if (!partialKsm.isEmpty()) {
+                command.put("requiresKsmNativePartialFence", true);
+                command.put("ksmNativeObservationBootId", partialKsm.get("bootId"));
+                command.put("ksmNativeObservationSampleTime", partialKsm.get("sampleTime"));
+            }
+        }
         if (MemoryBackendPreparationRules.ACTION.equals(task.getAction())) {
             command.put("backendPreparation", JSONObjectUtil.toObject(task.getPolicy(), Map.class));
         }
@@ -867,7 +876,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         try {
             call(host, "state", command(host, Platform.getUuid()), response -> {
                 try {
-                    if (successfulFreshObservation(response)) {
+                    if (MemoryObservationRules.isKsmNativePartial(response, System.currentTimeMillis())) {
+                        repository.observePartialKsm(host, response);
+                    } else if (successfulFreshObservation(response)) {
                         repository.observe(host, response);
                         applyInheritedPolicyAfterObservation(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);

@@ -171,6 +171,25 @@ public class MemoryLicenseConfigurationTest {
     }
 
     @Test
+    public void plannedStandardClearPersistsEffectiveWireModeAcrossDispatchAndPoll() throws Exception {
+        RecordingRepository repository = new RecordingRepository();
+        RecordingManager manager = manager(repository, System.currentTimeMillis() + 300_000);
+        MemoryTaskVO task = task("clearOverride");
+        task.setPolicyPlanHash("persisted-clear-plan-hash");
+        task.setPolicy("{\"schemaVersion\":1,\"ksm\":{}}");
+        task.setDesiredRevision(2L);
+        dispatch(manager, task, false);
+        dispatch(manager, task, true);
+        for (Map<String, Object> command : manager.commands) {
+            JsonObject wire = wireCommand(command);
+            assertPolicyMode(wire, "effective");
+            assertEquals("apply", wire.get("action").getAsString());
+            assertDispatchIdentity(wire, task, 2L);
+            assertEquals(new JsonParser().parse(task.getPolicy()), wire.get("policy"));
+        }
+    }
+
+    @Test
     public void bootstrapAndConnectHostPlanTasksUseDeltaRegardlessOfFullPolicyBody() throws Exception {
         for (String actor : Arrays.asList("system:memory-fresh-cloud-bootstrap", "system:memory-host-connect-policy")) {
             RecordingRepository repository = new RecordingRepository();
@@ -552,6 +571,11 @@ public class MemoryLicenseConfigurationTest {
         @Override public MemoryCloudBootstrapVO freshCloudBootstrap() { return null; }
         @Override MemoryTaskVO findTask(String uuid) { return null; }
         @Override public void observe(String hostUuid, MemoryAgentResponse response) { }
+        @Override public Map<String, Object> coldKsmNativeObservationForTask(MemoryTaskVO task) {
+            // This License-mode unit test is about dispatch wire policy, not
+            // the repository's SQL-backed cold-KSM admission lookup.
+            return Collections.emptyMap();
+        }
         @Override public void authorizePermit(String hostUuid, boolean allowed, long deadline) {
             authorizePermitCalls++;
         }
