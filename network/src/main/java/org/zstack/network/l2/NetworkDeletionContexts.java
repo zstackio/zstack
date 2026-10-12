@@ -11,12 +11,16 @@ public final class NetworkDeletionContexts {
     private NetworkDeletionContexts() {
     }
 
+    public static String key(String l2NetworkUuid) {
+        return KEY_PREFIX + l2NetworkUuid;
+    }
+
     public static NetworkDeletionContext get(CascadeAction action, String l2NetworkUuid) {
-        return action.getContext(KEY_PREFIX + l2NetworkUuid);
+        return action.getContext(key(l2NetworkUuid));
     }
 
     public static void put(CascadeAction action, NetworkDeletionContext context) {
-        action.putContext(KEY_PREFIX + context.getL2NetworkUuid(), context);
+        action.putContext(key(context.getL2NetworkUuid()), context);
         if (context.isZnsSegmentProjectionDelete()) {
             action.putContext(PROJECTION_DELETE_KEY, context);
         }

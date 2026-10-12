@@ -3,11 +3,25 @@ package org.zstack.header.network.l2;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import org.zstack.header.network.l3.L3NetworkInventory;
 
 public class NetworkDeletionContext {
     public enum Origin {
         WHOLE_L2_SEGMENT_DELETE,
-        ZNS_SEGMENT_PROJECTION_DELETE
+        ZNS_SEGMENT_PROJECTION_DELETE,
+        L3_NETWORK_DELETE
+    }
+
+    private Map<String, L3NetworkInventory> l3Snapshots = new HashMap<>();
+
+    public Map<String, L3NetworkInventory> getL3Snapshots() {
+        return l3Snapshots;
+    }
+
+    public void setL3Snapshots(Map<String, L3NetworkInventory> snapshots) {
+        l3Snapshots = snapshots;
     }
 
     private Origin origin;

@@ -200,7 +200,20 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         if (CascadeConstant.DELETION_CODES.contains(action.getActionCode())) {
             List<L3NetworkInventory> ctx = l3NetworkFromAction(action);
             if (ctx != null) {
-                return action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
+                CascadeAction copy = action.copy().setParentIssuer(NAME).setParentIssuerContext(ctx);
+                for (L3NetworkInventory l3inv : ctx) {
+                    NetworkDeletionContext delCtx = copy.getContext(NetworkDeletionContexts.key(l3inv.getL2NetworkUuid()));
+                    if (delCtx == null) {
+                        delCtx = new NetworkDeletionContext();
+                        delCtx.setL2NetworkUuid(l3inv.getL2NetworkUuid());
+                        copy.putContext(NetworkDeletionContexts.key(l3inv.getL2NetworkUuid()), delCtx);
+                    }
+                    delCtx.getL3Snapshots().putIfAbsent(l3inv.getUuid(), l3inv);
+                    if (delCtx.getOrigin() == null) {
+                        delCtx.setOrigin(NetworkDeletionContext.Origin.L3_NETWORK_DELETE);
+                    }
+                }
+                return copy;
             }
         }
 
