@@ -43,6 +43,9 @@ public class CreateZsDatasetModelProfileAction extends AbstractAction {
     @Param(required = true, validValues = {"TEXT","VISION","PARSER"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String capability;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List projectUuids;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
