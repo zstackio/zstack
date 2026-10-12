@@ -95,16 +95,4 @@ doc {
 		type "String"
 		since "5.5.38"
 	}
-	field {
-		name "bootstrapStatus"
-		desc "仅Global首次安装引导存在时返回的引导状态。"
-		type "String"
-		since "5.5.38"
-	}
-	field {
-		name "bootstrapReason"
-		desc "Global首次安装引导的阻塞或诊断原因。"
-		type "String"
-		since "5.5.38"
-	}
 }

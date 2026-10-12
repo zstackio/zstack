@@ -76,13 +76,6 @@ public class MemoryApiContractTest {
         assertNotNull(MemoryPolicyInventory.class.getDeclaredMethod("getPreflightRequiredActions"));
     }
 
-    @Test public void globalPolicyReadCanDiagnosePendingFreshCloudBootstrap() throws Exception {
-        assertNotNull(MemoryPolicyInventory.class.getDeclaredField("bootstrapStatus"));
-        assertNotNull(MemoryPolicyInventory.class.getDeclaredField("bootstrapReason"));
-        assertNotNull(MemoryPolicyInventory.class.getDeclaredMethod("getBootstrapStatus"));
-        assertNotNull(MemoryPolicyInventory.class.getDeclaredMethod("getBootstrapReason"));
-    }
-
     @Test public void stateAndTaskPlanEvidenceAppearsInActualInventoryJson() {
         MemoryStateInventory state = new MemoryStateInventory();
         state.setPolicyPlanStatus("NeedsReview");

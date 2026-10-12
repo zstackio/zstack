@@ -17,10 +17,10 @@ public class MemoryStandardGlobalConfig {
     @GlobalConfigDef(defaultValue = EMPTY, description = "KSM zero-page scanning")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig KSM_ZERO_PAGES = new GlobalConfig(CATEGORY, "memory.ksm.zeroPagesEnabled");
-    @GlobalConfigDef(defaultValue = EMPTY, description = "KSM pages scanned per batch")
+    @GlobalConfigDef(defaultValue = "2000", description = "KSM pages scanned per batch")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig KSM_PAGES_TO_SCAN = new GlobalConfig(CATEGORY, "memory.ksm.pagesToScan");
-    @GlobalConfigDef(defaultValue = EMPTY, description = "KSM sleep interval in milliseconds")
+    @GlobalConfigDef(defaultValue = "20", description = "KSM sleep interval in milliseconds")
     @BindResourceConfig({HostVO.class, ClusterVO.class})
     public static GlobalConfig KSM_SLEEP_MILLIS = new GlobalConfig(CATEGORY, "memory.ksm.sleepMillis");
 

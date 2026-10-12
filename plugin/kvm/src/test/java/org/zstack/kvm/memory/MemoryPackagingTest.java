@@ -34,7 +34,7 @@ public class MemoryPackagingTest {
             String xml = new String(Files.readAllBytes(root.resolve(manifest)), StandardCharsets.UTF_8);
             for (String entity : Arrays.asList("MemoryPolicyVO", "MemoryTaskVO", "MemoryTaskIdempotencyReceiptVO", "MemoryStateVO",
                     "MemoryMigrationVO", "MemoryVmExclusionVO", "MemoryTargetShardVO",
-                    "MemoryTaskFailureOutboxVO", "MemoryCloudBootstrapVO", "MemoryQueryVersionVO",
+                    "MemoryTaskFailureOutboxVO", "MemoryQueryVersionVO",
                     "MemoryStandardConfigMigrationVO")) {
                 assertTrue(manifest + " missing " + entity,
                         xml.contains("<class>org.zstack.kvm.memory." + entity + "</class>"));
