@@ -74,13 +74,4 @@ public class MemoryPolicyInventory {
     public String getEffectivePolicy() { return effectivePolicy; }
     public void setEffectivePolicy(String value) { effectivePolicy = value; }
 
-    /** Present only on Global policy reads while/after the first-install bootstrap exists. */
-    private String bootstrapStatus;
-    public String getBootstrapStatus() { return bootstrapStatus; }
-    public void setBootstrapStatus(String value) { bootstrapStatus = value; }
-
-    private String bootstrapReason;
-    public String getBootstrapReason() { return bootstrapReason; }
-    public void setBootstrapReason(String value) { bootstrapReason = value; }
-
 }

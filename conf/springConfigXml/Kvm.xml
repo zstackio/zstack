@@ -251,6 +251,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="MemoryFirstInstallGlobalConfigExtension"
+          class="org.zstack.kvm.memory.MemoryFirstInstallGlobalConfigExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="XmlHookManager" class="org.zstack.kvm.xmlhook.XmlHookManagerImpl">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.Component"/>

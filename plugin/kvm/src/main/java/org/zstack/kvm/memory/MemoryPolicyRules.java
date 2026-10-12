@@ -20,8 +20,8 @@ public final class MemoryPolicyRules {
     private MemoryPolicyRules() { }
 
     public static String defaults() {
-        // Upgrade bootstrap is deliberately inert. Fresh-install target policy is
-        // applied separately after capability checks, never inferred from missing data.
+        // Optional mechanisms remain off until explicitly configured. KSM scan
+        // defaults are supplied by the standard GlobalConfig layer.
         return "{\"schemaVersion\":1,\"ksm\":{},\"zram\":{\"enabled\":false},\"writeback\":{\"enabled\":false}}";
     }
 

@@ -39,9 +39,16 @@ public class KvmHostConfigChecker implements AnsibleChecker {
                 .setPassword(password).setPort(sshPort)
                 .setHostname(targetIp);
         try {
-            // The managed ksmtuned writer owns the policy while this marker exists.
-            // Reconnect must not race it by redeploying legacy KSM configuration.
-            ssh.sudoCommand("if test -f /etc/zstack/memory-optimization/ksm-controller; then echo managed; else cat /sys/kernel/mm/ksm/run; fi");
+            // A native config already controlled through the memory apply path
+            // must not be overwritten by the legacy connect-time run switch.
+            // This only routes the check; the Agent still verifies the full
+            // config and live sysfs before acknowledging a policy. Even a
+            // partial managed block is not permission for a legacy write.
+            ssh.sudoCommand("if test -e /etc/ksmtuned.conf; then "
+                    + "grep -Eq '^# (BEGIN|END) ZSTACK MEMORY OPTIMIZATION$' /etc/ksmtuned.conf; rc=$?; "
+                    + "if test \"$rc\" = 0; then echo managed; "
+                    + "elif test \"$rc\" = 1; then cat /sys/kernel/mm/ksm/run; else exit \"$rc\"; fi; "
+                    + "else cat /sys/kernel/mm/ksm/run; fi");
             SshResult ret = ssh.setTimeout(60).runAndClose();
             if (ret.getReturnCode() != 0) {
                 logger.warn(String.format("exec ssh command failed, return code: %d, stdout: %s, stderr: %s",

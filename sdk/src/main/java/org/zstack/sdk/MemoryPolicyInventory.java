@@ -116,20 +116,4 @@ public class MemoryPolicyInventory  {
         return this.effectivePolicy;
     }
 
-    public java.lang.String bootstrapStatus;
-    public void setBootstrapStatus(java.lang.String bootstrapStatus) {
-        this.bootstrapStatus = bootstrapStatus;
-    }
-    public java.lang.String getBootstrapStatus() {
-        return this.bootstrapStatus;
-    }
-
-    public java.lang.String bootstrapReason;
-    public void setBootstrapReason(java.lang.String bootstrapReason) {
-        this.bootstrapReason = bootstrapReason;
-    }
-    public java.lang.String getBootstrapReason() {
-        return this.bootstrapReason;
-    }
-
 }

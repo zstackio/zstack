@@ -187,13 +187,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         APIGetMemoryPolicyReply reply = new APIGetMemoryPolicyReply();
         MemoryPolicyInventory inventory = repository.getPolicy(msg.getScope(), msg.getResourceUuid());
         describe(inventory);
-        if ("Global".equals(inventory.getScope())) {
-            MemoryCloudBootstrapVO bootstrap = repository.freshCloudBootstrap();
-            if (bootstrap != null) {
-                inventory.setBootstrapStatus(bootstrap.getStatus());
-                inventory.setBootstrapReason(bootstrap.getReason());
-            }
-        }
         reply.setInventory(inventory);
         bus.reply(msg, reply);
     }
@@ -630,7 +623,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void tick() {
         if (!ticking.compareAndSet(false, true)) { return; }
         try {
-            processFreshCloudBootstrap();
             for (MemoryTaskVO task : repository.claim(Platform.getManagementServerId())) { dispatch(task, false); }
             for (MemoryTaskVO task : repository.outstanding(Platform.getManagementServerId())) { dispatch(task, true); }
             dispatchFailureNotifications(Platform.getManagementServerId());
@@ -640,28 +632,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         } catch (Exception e) {
             logger.warn("Memory optimization task polling failed; no task is assumed successful", e);
         } finally { ticking.set(false); }
-    }
-
-    private void processFreshCloudBootstrap() {
-        MemoryCloudBootstrapVO bootstrap = repository.freshCloudBootstrap();
-        if (bootstrap == null || !MemoryCloudBootstrapVO.PENDING.equals(bootstrap.getStatus())) { return; }
-        String blocked = repository.freshCloudBootstrapBlockReason();
-        if (blocked != null) {
-            repository.updateFreshCloudBootstrapReason(blocked);
-            return;
-        }
-        if (licenseDeadline() <= System.currentTimeMillis()) {
-            repository.updateFreshCloudBootstrapReason("MEMORY_LICENSE_UNAVAILABLE");
-            return;
-        }
-        try {
-            repository.submitFreshCloudBootstrap(bootstrap.getRequestUuid());
-        } catch (MemoryOperationException e) {
-            repository.updateFreshCloudBootstrapReason(e.getCode());
-        } catch (RuntimeException e) {
-            logger.warn("Fresh-cloud memory defaults remain pending; no task is assumed accepted", e);
-            repository.updateFreshCloudBootstrapReason("BOOTSTRAP_ADMISSION_RETRY");
-        }
     }
 
     private void dispatchFailureNotifications(String owner) {

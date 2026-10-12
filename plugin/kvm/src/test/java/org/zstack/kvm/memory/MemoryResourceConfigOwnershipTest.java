@@ -26,7 +26,9 @@ import org.zstack.resourceconfig.ResourceConfigDeleteValidatorExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfigVO;
 import org.zstack.resourceconfig.ResourceConfigFacadeImpl;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.resourceconfig.ResourceConfigTransactionalMutationExtensionPoint;
+import org.zstack.core.config.ConfigMutation;
+import org.zstack.core.config.ConfigMutationContext;
+import org.zstack.core.config.ConfigTransactionalMutationExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfigCanonicalEvents;
 
 import javax.persistence.EntityManager;
@@ -275,14 +277,13 @@ public class MemoryResourceConfigOwnershipTest {
         config.installUpdateExtension((ignored, uuid, type, oldValue, newValue) -> {
             throw new IllegalStateException("post-commit callback failure must be isolated");
         });
-        config.installTransactionalMutationExtension(new ResourceConfigTransactionalMutationExtensionPoint() {
-            @Override public boolean requiresAtomicBulkTransaction() { return true; }
-            @Override public void beforeUpdate(EntityManager entityManager, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue, String newValue) {
+        config.installConfigMutationExtension(new ConfigTransactionalMutationExtensionPoint() {
+            @Override public void beforeMutations(EntityManager entityManager,
+                    List<ConfigMutation> changes, ConfigMutationContext context) {
                 TestMutationVO marker = new TestMutationVO(); marker.uuid = "committed"; entityManager.persist(marker);
             }
-            @Override public void beforeDelete(EntityManager entityManager, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue) { }
+            @Override public void afterMutations(EntityManager entityManager,
+                    List<ConfigMutation> changes, ConfigMutationContext context) { }
         });
 
         GlobalConfigFacade gcf = (GlobalConfigFacade) Proxy.newProxyInstance(GlobalConfigFacade.class.getClassLoader(),
@@ -387,15 +388,14 @@ public class MemoryResourceConfigOwnershipTest {
                     if (m.getName().equals("fire")) events[0]++;
                     return null;
                 }));
-        config.installTransactionalMutationExtension(new ResourceConfigTransactionalMutationExtensionPoint() {
-            @Override public boolean requiresAtomicBulkTransaction() { return true; }
-            @Override public void beforeUpdate(EntityManager entityManager, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue, String newValue) {
+        config.installConfigMutationExtension(new ConfigTransactionalMutationExtensionPoint() {
+            @Override public void beforeMutations(EntityManager entityManager,
+                    List<ConfigMutation> changes, ConfigMutationContext context) {
                 TestMutationVO marker = new TestMutationVO(); marker.uuid = "rolled-back"; entityManager.persist(marker);
                 throw new IllegalStateException("reject after same-transaction mutation");
             }
-            @Override public void beforeDelete(EntityManager entityManager, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue) { }
+            @Override public void afterMutations(EntityManager entityManager,
+                    List<ConfigMutation> changes, ConfigMutationContext context) { }
         });
 
         try {
@@ -456,12 +456,11 @@ public class MemoryResourceConfigOwnershipTest {
                     }
                     return null;
                 }));
-        config.installTransactionalMutationExtension(new ResourceConfigTransactionalMutationExtensionPoint() {
-            @Override public boolean requiresAtomicBulkTransaction() { return true; }
-            @Override public void beforeUpdate(EntityManager em, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue, String newValue) { }
-            @Override public void beforeDelete(EntityManager em, ResourceConfig ignored,
-                    String resourceUuid, String resourceType, String oldValue) { }
+        config.installConfigMutationExtension(new ConfigTransactionalMutationExtensionPoint() {
+            @Override public void beforeMutations(EntityManager em,
+                    List<ConfigMutation> changes, ConfigMutationContext context) { }
+            @Override public void afterMutations(EntityManager em,
+                    List<ConfigMutation> changes, ConfigMutationContext context) { }
         });
         config.installDeleteExtension((ignored, uuid, type, oldValue) -> writeWithRequiredTransaction("after-delete-commit"));
 
