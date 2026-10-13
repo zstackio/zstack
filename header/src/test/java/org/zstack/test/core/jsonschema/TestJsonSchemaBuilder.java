@@ -38,13 +38,13 @@ public class TestJsonSchemaBuilder {
 
     @Test
     public void dynamicImageAnswerTypesDoNotBreakEventSchema() {
-        List<String> labels = Arrays.asList("右侧", "数字标签-0", "含逗号,标签");
+        List<String> labels = Arrays.asList("\u53f3\u4fa7", "\u6570\u5b57\u6807\u7b7e-0", "\u542b\u9017\u53f7,\u6807\u7b7e");
         Map<String, Object> customFormat = new LinkedHashMap<>();
         customFormat.put("labels", labels);
 
         assertFalse(new JsonSchemaBuilder(new DynamicAnswerEvent(labels)).build().containsKey("answer"));
         assertFalse(new JsonSchemaBuilder(new DynamicAnswerEvent(customFormat)).build().containsKey("answer"));
-        assertFalse(new JsonSchemaBuilder(new DynamicAnswerEvent("右侧")).build().containsKey("answer"));
+        assertFalse(new JsonSchemaBuilder(new DynamicAnswerEvent("\u53f3\u4fa7")).build().containsKey("answer"));
         assertFalse(new JsonSchemaBuilder(new DynamicAnswerEvent(null)).build().containsKey("answer"));
     }
 
