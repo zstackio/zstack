@@ -12,6 +12,7 @@ import org.springframework.beans.factory.wiring.BeanWiringInfo;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.transaction.aspectj.AnnotationTransactionAspect;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.zstack.core.aspect.EncryptColumnAspect;
 import org.zstack.core.aspect.MessageSafeAspect;
 import org.zstack.core.cloudbus.CloudBus;
@@ -24,6 +25,7 @@ import org.zstack.core.config.ConfigTransactionalMutationExtensionPoint;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigFacadeImpl;
+import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.core.config.APIUpdateGlobalConfigMsg;
 import org.zstack.core.config.APIUpdateGlobalConfigEvent;
 import org.zstack.core.db.DatabaseFacade;
@@ -40,6 +42,8 @@ import org.zstack.resourceconfig.APIUpdateResourceConfigsMsg;
 import org.zstack.resourceconfig.APIUpdateResourceConfigMsg;
 import org.zstack.resourceconfig.APIDeleteResourceConfigMsg;
 import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigApiInterceptor;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.resourceconfig.ResourceConfigFacadeImpl;
 import org.zstack.resourceconfig.ResourceConfigStruct;
 import org.zstack.resourceconfig.ResourceConfigVO;
@@ -75,6 +79,7 @@ public class MemoryStandardConfigurationFrameworkTest {
     private ResourceConfigFacadeImpl facade;
     private ResourceConfig enabled, zeroPages;
     private ConfigTransactionalMutationExtensionPoint postWriteFailure;
+    private DefaultListableBeanFactory beanFactory;
 
     @Before public void setUp() throws Exception {
         Class.forName("org.zstack.core.Platform");
@@ -102,6 +107,10 @@ public class MemoryStandardConfigurationFrameworkTest {
                     if (m.getName().equals("getExtensionList") && a != null && a.length == 1
                             && a[0] == MemoryLicenseExtensionPoint.class) {
                         return Collections.singletonList((MemoryLicenseExtensionPoint) licenseDeadline::get);
+                    }
+                    if (m.getName().equals("getExtensionList") && a != null && a.length == 1
+                            && a[0] == org.zstack.core.config.GlobalConfigInitExtensionPoint.class) {
+                        return Collections.singletonList(new MemoryFirstInstallGlobalConfigExtension());
                     }
                     return Collections.emptyList();
                 });
@@ -139,6 +148,53 @@ public class MemoryStandardConfigurationFrameworkTest {
         assertEquals("true", configValue(MemoryStandardField.KSM_ZERO_PAGES));
         assertEquals(1L, repository.getPolicy("Host", "host1").getRevision());
         assertTrue("real coordinator must create its task in the same backing EMF", taskCount() > 0);
+    }
+
+    @Test public void interceptorOnlyAndRejectedBatchHaveNoPersistentSideEffects() throws Exception {
+        Map<String, GlobalConfig> globals = new HashMap<>();
+        globals.put(identity(MemoryStandardField.KSM_ENABLED), (GlobalConfig) field(enabled, "globalConfig"));
+        globals.put(identity(MemoryStandardField.KSM_ZERO_PAGES), (GlobalConfig) field(zeroPages, "globalConfig"));
+        GlobalConfigFacade gcf = (GlobalConfigFacade) Proxy.newProxyInstance(GlobalConfigFacade.class.getClassLoader(),
+                new Class<?>[]{GlobalConfigFacade.class}, (p, m, a) ->
+                        m.getName().equals("getAllConfig") ? globals : null);
+        ResourceConfigFacade rcf = (ResourceConfigFacade) Proxy.newProxyInstance(ResourceConfigFacade.class.getClassLoader(),
+                new Class<?>[]{ResourceConfigFacade.class}, (p, m, a) -> {
+                    if (!m.getName().equals("getResourceConfig")) { return null; }
+                    return identity(MemoryStandardField.KSM_ENABLED).equals(a[0]) ? enabled : zeroPages;
+                });
+        beanFactory.registerSingleton("globalConfigFacade", gcf);
+        beanFactory.registerSingleton("resourceConfigFacade", rcf);
+        beanFactory.registerSingleton("accountManager", Proxy.newProxyInstance(
+                org.zstack.identity.AccountManager.class.getClassLoader(),
+                new Class<?>[]{org.zstack.identity.AccountManager.class},
+                (p, m, a) -> defaultValue(m.getReturnType())));
+        ResourceConfigApiInterceptor interceptor = new ResourceConfigApiInterceptor();
+        APIUpdateResourceConfigsMsg request = bulk("true", "true");
+        interceptor.intercept(request);
+        interceptor.intercept(request);
+        assertNull(configValue(MemoryStandardField.KSM_ENABLED));
+        assertNull(configValue(MemoryStandardField.KSM_ZERO_PAGES));
+        assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+        assertEquals(0L, taskCount());
+
+        APIUpdateResourceConfigsMsg rejected = bulk("true", "true");
+        APIUpdateResourceConfigsMsg.ResourceConfigAO invalid = new APIUpdateResourceConfigsMsg.ResourceConfigAO();
+        invalid.setCategory("missing"); invalid.setName("unknown"); invalid.setValue("x");
+        List<APIUpdateResourceConfigsMsg.ResourceConfigAO> items = new ArrayList<>(rejected.getResourceConfigs());
+        items.add(invalid); rejected.setResourceConfigs(items);
+        try { interceptor.intercept(rejected); fail("invalid later item must reject the complete request"); }
+        catch (org.zstack.header.apimediator.ApiMessageInterceptionException expected) { }
+        assertNull(configValue(MemoryStandardField.KSM_ENABLED));
+        assertNull(configValue(MemoryStandardField.KSM_ZERO_PAGES));
+        assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+        assertEquals(0L, taskCount());
+
+        facade.handleMessage(request);
+        assertNoApiError();
+        assertEquals("true", configValue(MemoryStandardField.KSM_ENABLED));
+        assertEquals("true", configValue(MemoryStandardField.KSM_ZERO_PAGES));
+        assertEquals(1L, repository.getPolicy("Host", "host1").getRevision());
+        assertTrue("only the actual handler creates coordinator tasks", taskCount() > 0);
     }
 
     @Test public void expiredLicenseRejectsBeforeAnyPersistentWrite() {
@@ -307,6 +363,146 @@ public class MemoryStandardConfigurationFrameworkTest {
         } finally { em.close(); }
     }
 
+    @Test public void newCloudDefaultsPersistAndRepeatThroughStandardInitializer() throws Exception {
+        resetInitializerRows();
+        for (int startup = 0; startup < 2; startup++) {
+            Map<String, GlobalConfig> configs = initializeMemoryGlobalConfigs();
+            assertStoredGlobal("host.ksm", "true", "true");
+            assertStoredGlobal("memory.ksm.zeroPagesEnabled", "true", "true");
+            assertStoredGlobal("memory.zram.enabled", "true", "true");
+            assertStoredGlobal("memory.ksm.pagesToScan", "2000", "2000");
+            assertStoredGlobal("memory.ksm.sleepMillis", "20", "20");
+            assertEquals("false", configs.get("kvm.memory.writeback.enabled").value());
+            assertEquals(0L, taskCount());
+        }
+    }
+
+    @Test public void oldCloudWithoutHostsPreservesEveryLegacyKsmSwitch() throws Exception {
+        for (String switchValue : Arrays.asList("none", "false", "true")) {
+            resetInitializerRows("host.ksm", "none", switchValue);
+            for (int startup = 0; startup < 2; startup++) {
+                initializeMemoryGlobalConfigs();
+                assertStoredGlobal("host.ksm", "none", switchValue);
+                assertStoredGlobal("memory.ksm.zeroPagesEnabled", "", "");
+                assertStoredGlobal("memory.zram.enabled", "false", "false");
+                assertStoredGlobal("memory.ksm.pagesToScan", "2000", "2000");
+                assertStoredGlobal("memory.ksm.sleepMillis", "20", "20");
+            }
+        }
+    }
+
+    @Test public void oldEmptyZeroValueStaysUnmanagedWhileUnsetScanDefaultsAdvance() throws Exception {
+        resetInitializerRows("host.ksm", "none", "none",
+                "memory.ksm.zeroPagesEnabled", "", "",
+                "memory.zram.enabled", "false", "true",
+                "memory.ksm.pagesToScan", "", "",
+                "memory.ksm.sleepMillis", "", "");
+        initializeMemoryGlobalConfigs();
+        assertStoredGlobal("memory.ksm.zeroPagesEnabled", "", "");
+        assertStoredGlobal("memory.zram.enabled", "false", "true");
+        assertStoredGlobal("memory.ksm.pagesToScan", "2000", "2000");
+        assertStoredGlobal("memory.ksm.sleepMillis", "20", "20");
+    }
+
+    @Test public void explicitMemoryAndResourceValuesSurviveInitialization() throws Exception {
+        resetInitializerRows("host.ksm", "none", "false",
+                "memory.ksm.zeroPagesEnabled", "", "false",
+                "memory.zram.enabled", "false", "true",
+                "memory.ksm.pagesToScan", "", "3100",
+                "memory.ksm.sleepMillis", "", "35");
+        EntityManager seed = factory.createEntityManager(); seed.getTransaction().begin();
+        ResourceConfigVO override = new ResourceConfigVO();
+        override.setUuid("initializer-override"); override.setCategory("kvm");
+        override.setName("host.ksm"); override.setResourceUuid("host1");
+        override.setResourceType("HostVO"); override.setValue("none"); seed.persist(override);
+        seed.getTransaction().commit(); seed.close();
+        initializeMemoryGlobalConfigs();
+        initializeMemoryGlobalConfigs();
+        assertStoredGlobal("host.ksm", "none", "false");
+        assertStoredGlobal("memory.ksm.zeroPagesEnabled", "", "false");
+        assertStoredGlobal("memory.zram.enabled", "false", "true");
+        assertStoredGlobal("memory.ksm.pagesToScan", "2000", "3100");
+        assertStoredGlobal("memory.ksm.sleepMillis", "20", "35");
+        assertEquals("none", configValue(MemoryStandardField.KSM_ENABLED));
+        assertEquals(0L, taskCount());
+    }
+
+    private void resetInitializerRows(String... rows) {
+        EntityManager em = factory.createEntityManager(); em.getTransaction().begin();
+        em.createQuery("delete from GlobalConfigVO").executeUpdate();
+        em.createQuery("delete from HostVO").executeUpdate();
+        assertEquals(0L, (long) em.createQuery("select count(h) from HostVO h", Long.class).getSingleResult());
+        for (int i = 0; i < rows.length; i += 3) {
+            GlobalConfigVO row = new GlobalConfigVO(); row.setCategory("kvm"); row.setName(rows[i]);
+            row.setDescription("existing " + rows[i]); row.setDefaultValue(rows[i + 1]); row.setValue(rows[i + 2]);
+            em.persist(row);
+        }
+        em.getTransaction().commit(); em.close();
+    }
+
+    private void assertStoredGlobal(String name, String expectedDefault, String expectedValue) {
+        EntityManager em = factory.createEntityManager();
+        try {
+            GlobalConfigVO row = em.createQuery("select c from GlobalConfigVO c where c.category='kvm' and c.name=:name", GlobalConfigVO.class)
+                    .setParameter("name", name).getSingleResult();
+            assertEquals(name + " default", expectedDefault, row.getDefaultValue());
+            assertEquals(name + " value", expectedValue, row.getValue());
+        } finally { em.close(); }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<String, GlobalConfig> initializeMemoryGlobalConfigs() throws Exception {
+        List<Field> fields = new ArrayList<>();
+        fields.add(org.zstack.kvm.KVMGlobalConfig.class.getField("HOST_KSM"));
+        for (Field field : MemoryStandardGlobalConfig.class.getFields()) {
+            if (GlobalConfig.class.equals(field.getType())) { fields.add(field); }
+        }
+        Map<Field, GlobalConfig> originals = new HashMap<>();
+        for (Field field : fields) {
+            GlobalConfig original = (GlobalConfig) field.get(null); originals.put(field, original);
+            field.set(null, new GlobalConfig(original.getCategory(), original.getName()));
+        }
+        try {
+            GlobalConfigFacadeImpl globalFacade = new GlobalConfigFacadeImpl();
+            set(GlobalConfigFacadeImpl.class, globalFacade, "dbf", dbf);
+            set(GlobalConfigFacadeImpl.class, globalFacade, "evtf", eventFacade());
+            set(GlobalConfigFacadeImpl.class, globalFacade, "pluginRgty", registry);
+            Class<?> type = Class.forName("org.zstack.core.config.GlobalConfigFacadeImpl$1GlobalConfigInitializer");
+            java.lang.reflect.Constructor<?> constructor = type.getDeclaredConstructors()[0];
+            constructor.setAccessible(true); Object initializer = constructor.newInstance(globalFacade);
+            set(type, initializer, "globalConfigFields", fields);
+            // Execute the real initializer in production order. The fixture
+            // scopes definitions to this feature; only MySQL GLock acquisition
+            // and unrelated XML/GuestOS initialization are outside this H2 test.
+            invoke(initializer, "loadSystemProperties");
+            invoke(initializer, "loadConfigFromJava");
+            invoke(initializer, "loadConfigFromAutoGeneration");
+            invoke(initializer, "loadConfigFromDatabase");
+            invoke(initializer, "createValidatorForBothXmlAndDatabase");
+            invoke(initializer, "validateConfigFromXml");
+            invoke(initializer, "validateConfigFromDatabase");
+            new TransactionTemplate(txManager).execute(status -> {
+                try { invoke(initializer, "persistConfigInXmlButNotInDatabase"); }
+                catch (Exception e) { throw new RuntimeException(e); }
+                return null;
+            });
+            invoke(initializer, "mergeXmlDatabase");
+            invoke(initializer, "link"); invoke(initializer, "initAllConfig");
+            Map<String, GlobalConfig> configs = (Map<String, GlobalConfig>) get(type, initializer, "configsFromXml");
+            set(GlobalConfigFacadeImpl.class, globalFacade, "allConfig", configs);
+            invoke(initializer, "validateAll");
+            for (GlobalConfig config : configs.values()) {
+                assertEquals(config.getName() + " type", String.class.getName(), config.getType());
+                assertNotNull(config.getDescription());
+            }
+            try { org.zstack.kvm.KVMGlobalConfig.HOST_KSM.validate("invalid"); fail("original validValues must remain enforced"); }
+            catch (org.zstack.core.config.GlobalConfigException expected) { }
+            return configs;
+        } finally {
+            for (Map.Entry<Field, GlobalConfig> original : originals.entrySet()) { original.getKey().set(null, original.getValue()); }
+        }
+    }
+
     private ResourceConfig resourceConfig(MemoryStandardField field, ConfigTransactionalMutationExtensionPoint coordinator) throws Exception {
         ResourceConfig rc = new ResourceConfig();
         GlobalConfig gc = new GlobalConfig(field.category(), field.configName());
@@ -396,11 +592,12 @@ public class MemoryStandardConfigurationFrameworkTest {
         ComponentLoader loader = (ComponentLoader) Proxy.newProxyInstance(ComponentLoader.class.getClassLoader(), new Class<?>[]{ComponentLoader.class},
                 (p,m,a) -> m.getName().equals("getComponent") && a != null && a.length == 1 && a[0] == DatabaseFacade.class
                         ? dbfProxy : m.getName().equals("getComponent") && a != null && a.length == 1 && a[0] == ErrorFacade.class
-                        ? errors : defaultValue(m.getReturnType()));
+                        ? errors : m.getName().equals("getComponent") && a != null && a.length == 1 && a[0] == PluginRegistry.class
+                        ? registry : defaultValue(m.getReturnType()));
         set(org.zstack.core.Platform.class, null, "loader", loader);
     }
     private void installWiringAndAspects() throws Exception {
-        DefaultListableBeanFactory beanFactory = new DefaultListableBeanFactory();
+        beanFactory = new DefaultListableBeanFactory();
         AutowiredAnnotationBeanPostProcessor autowired = new AutowiredAnnotationBeanPostProcessor(); autowired.setBeanFactory(beanFactory); beanFactory.addBeanPostProcessor(autowired);
         beanFactory.registerSingleton("databaseFacadeImpl", dbf); beanFactory.registerSingleton("eventFacade", eventFacade());
         beanFactory.registerSingleton("transactionManager", txManager); beanFactory.registerSingleton("cloudBus", cloudBus());
