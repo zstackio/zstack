@@ -34,10 +34,10 @@ public class UpdateKmsAction extends AbstractAction {
     @Param(required = false, validValues = {"1.0","1.1","1.2","1.3","1.4","2.0","2.1"}, maxLength = 32, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String kmipVersion;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String username;
 
-    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    @Param(required = false, maxLength = 255, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String password;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = false, noTrim = false)
