@@ -23,6 +23,7 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
+import org.zstack.header.core.WhileCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.FlowChain;
 import org.zstack.header.core.workflow.FlowDoneHandler;
@@ -386,10 +387,12 @@ public class PhysicalServerResourceAssignmentBase {
         Map<String, PhysicalServerResourceAssignmentVO> current = assignments.mapByRole(serverUuid);
         Map<String, List<ResourceConsumerHandle>> consumers = resolveConsumers(current.keySet());
         Map<String, ErrorCode> roleErrors = new LinkedHashMap<>();
+        Map<String, WhileCompletion> roleCompletions = new LinkedHashMap<>();
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         List<String> roles = new ArrayList<>(current.keySet());
         roles.sort(String::compareTo);
         new While<>(roles).each((role, each) -> {
+            roleCompletions.put(role, each);
             PhysicalServerResourceAssignmentObserver observer = getObserver(role);
             if (!(observer instanceof PhysicalServerResourceUsageObserver)) {
                 each.done();
@@ -428,7 +431,13 @@ public class PhysicalServerResourceAssignmentBase {
                     });
         }).run(new WhileDoneCompletion(msg) {
             @Override
-            public void done(ErrorCodeList ignored) {
+            public void done(ErrorCodeList errors) {
+                int errorIndex = 0;
+                for (Map.Entry<String, WhileCompletion> entry : roleCompletions.entrySet()) {
+                    if (entry.getValue().getAddErrorCalled().get()) {
+                        roleErrors.put(entry.getKey(), errors.getCauses().get(errorIndex++));
+                    }
+                }
                 reply.setServices(PhysicalServerManagedServiceInventory.valueOf(result));
                 reply.setRoleErrors(roleErrors);
                 bus.reply(msg, reply);
