@@ -59,4 +59,20 @@ public class GetZsDatasetSourceContentResult {
         return this.requestHeaders;
     }
 
+    public java.lang.String spaceUuid;
+    public void setSpaceUuid(java.lang.String spaceUuid) {
+        this.spaceUuid = spaceUuid;
+    }
+    public java.lang.String getSpaceUuid() {
+        return this.spaceUuid;
+    }
+
+    public java.lang.String requestTarget;
+    public void setRequestTarget(java.lang.String requestTarget) {
+        this.requestTarget = requestTarget;
+    }
+    public java.lang.String getRequestTarget() {
+        return this.requestTarget;
+    }
+
 }
