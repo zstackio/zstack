@@ -19,6 +19,19 @@
         <osRelease>UOS 20</osRelease>
         <acpi>true</acpi>
     </osInfo>
+    <osInfo>
+        <architecture>aarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 4</osRelease>
+        <acpi>false</acpi>
+    </osInfo>
+    <!-- loongarch64 -->
+    <osInfo>
+        <architecture>loongarch64</architecture>
+        <platform>Linux</platform>
+        <osRelease>Kylin 4</osRelease>
+        <acpi>false</acpi>
+    </osInfo>
 
 
     <!-- x86_64 -->
