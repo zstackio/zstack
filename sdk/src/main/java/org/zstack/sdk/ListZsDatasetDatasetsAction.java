@@ -40,6 +40,9 @@ public class ListZsDatasetDatasetsAction extends AbstractAction {
     @Param(required = false, validValues = {"unscored","1","2","3","4","5"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.List manualScores;
 
+    @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String taskId;
+
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,200L}, noTrim = false)
     public java.lang.Integer limit;
 
