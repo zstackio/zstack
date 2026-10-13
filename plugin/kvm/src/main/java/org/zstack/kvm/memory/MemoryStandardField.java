@@ -50,7 +50,9 @@ public enum MemoryStandardField {
     ZRAM_ALGORITHM("zram.algorithm", MemoryStandardGlobalConfig.ZRAM_ALGORITHM, Kind.STRING, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     WRITEBACK_ENABLED("writeback.enabled", MemoryStandardGlobalConfig.WRITEBACK_ENABLED, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     WRITEBACK_BACKEND_RESOURCE("writeback.backendResourceUuid", MemoryStandardGlobalConfig.WRITEBACK_BACKEND_RESOURCE, Kind.STRING, Scope.HOST),
-    WRITEBACK_BACKEND_CAPACITY("writeback.backendCapacityBytes", MemoryStandardGlobalConfig.WRITEBACK_BACKEND_CAPACITY, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
+    // Backend identity and its capacity are Host-owned.  Global/Cluster may
+    // express only the independent writeback intent and tuning fields.
+    WRITEBACK_BACKEND_CAPACITY("writeback.backendCapacityBytes", MemoryStandardGlobalConfig.WRITEBACK_BACKEND_CAPACITY, Kind.LONG, Scope.HOST),
     WRITEBACK_BATCH("writeback.batchBytes", MemoryStandardGlobalConfig.WRITEBACK_BATCH, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     WRITEBACK_IDLE_OBSERVATION("writeback.idleObservationSeconds", MemoryStandardGlobalConfig.WRITEBACK_IDLE_OBSERVATION, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
     WRITEBACK_OPERATION_INTERVAL("writeback.operationIntervalSeconds", MemoryStandardGlobalConfig.WRITEBACK_OPERATION_INTERVAL, Kind.LONG, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),

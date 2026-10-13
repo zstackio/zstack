@@ -23,7 +23,6 @@ import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
-import org.zstack.core.config.GlobalConfigBeforeUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigUpdateExtensionPoint;
 import org.zstack.core.config.GlobalConfigValidatorExtensionPoint;
 import org.zstack.core.config.GuestOsExtensionPoint;
@@ -82,7 +81,6 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
-import org.zstack.resourceconfig.ResourceConfigTransactionalMutationExtensionPoint;
 import org.zstack.kvm.memory.MemoryRepository;
 import org.zstack.kvm.memory.MemoryStandardField;
 import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator;
@@ -991,28 +989,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             global.installConfigMutationExtension(coordinator);
             rcf.getResourceConfig(global.getIdentity()).installConfigMutationExtension(coordinator);
         }
-    }
-
-    /** Historical coordination helper retained for legacy regression tests, not registered at startup. */
-    void installLegacyHostKsmCoordination() {
-        ResourceConfig hostKsm = rcf.getResourceConfig(KVMGlobalConfig.HOST_KSM.getIdentity());
-        KVMGlobalConfig.HOST_KSM.enableTransactionalUpdate();
-        KVMGlobalConfig.HOST_KSM.installBeforeUpdateExtension(new GlobalConfigBeforeUpdateExtensionPoint() {
-            @Override public void beforeUpdateExtensionPoint(GlobalConfig oldConfig, String newValue) {
-                memoryRepository.recordLegacyKsmGlobalMutation(oldConfig.value(), newValue);
-            }
-        });
-        hostKsm.installTransactionalMutationExtension(new ResourceConfigTransactionalMutationExtensionPoint() {
-            @Override public boolean requiresAtomicBulkTransaction() { return true; }
-            @Override public void beforeUpdate(javax.persistence.EntityManager em, ResourceConfig config,
-                    String resourceUuid, String resourceType, String oldValue, String newValue) {
-                memoryRepository.recordLegacyKsmResourceMutation(em, resourceUuid);
-            }
-            @Override public void beforeDelete(javax.persistence.EntityManager em, ResourceConfig config,
-                    String resourceUuid, String resourceType, String oldValue) {
-                memoryRepository.recordLegacyKsmResourceMutation(em, resourceUuid);
-            }
-        });
     }
 
     private void cleanDeviceAddress(SystemTagInventory tag) {

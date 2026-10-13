@@ -54,7 +54,6 @@ public class ResourceConfig {
     private List<ResourceConfigDeleteExtensionPoint> deleteExtensions = new ArrayList<>();
     private List<ResourceConfigDeleteValidatorExtensionPoint> deleteValidatorExtensions = new ArrayList<>();
     private List<ResourceConfigValidatorExtensionPoint> validatorExtensions = new ArrayList<>();
-    private List<ResourceConfigTransactionalMutationExtensionPoint> transactionalMutationExtensions = new ArrayList<>();
     private List<ConfigTransactionalMutationExtensionPoint> configMutationExtensions = new ArrayList<>();
 
     public static ResourceConfig valueOf(GlobalConfig globalConfig, BindResourceConfig bindInfo) {
@@ -93,13 +92,8 @@ public class ResourceConfig {
         validatorExtensions.add(ext);
     }
 
-    public void installTransactionalMutationExtension(ResourceConfigTransactionalMutationExtensionPoint ext) {
-        transactionalMutationExtensions.add(ext);
-    }
-
     public boolean requiresAtomicBulkTransaction() {
-        return hasConfigMutationExtensions() || transactionalMutationExtensions.stream()
-                .anyMatch(ResourceConfigTransactionalMutationExtensionPoint::requiresAtomicBulkTransaction);
+        return hasConfigMutationExtensions();
     }
 
     public void installConfigMutationExtension(ConfigTransactionalMutationExtensionPoint extension) {
@@ -131,7 +125,7 @@ public class ResourceConfig {
     @Transactional
     public void updateValue(String resourceUuid, String newValue, ConfigMutationContext context) {
         if (!hasConfigMutationExtensions()) {
-            updateValue(resourceUuid, getResourceType(resourceUuid), newValue, true, requiresAtomicBulkTransaction());
+            updateValue(resourceUuid, getResourceType(resourceUuid), newValue, true, false);
             return;
         }
         applyMutations(Collections.singletonList(this), Collections.singletonList(
@@ -146,7 +140,7 @@ public class ResourceConfig {
     @Transactional
     public void deleteValue(String resourceUuid, ConfigMutationContext context) {
         if (!hasConfigMutationExtensions()) {
-            deleteValue(resourceUuid, getResourceType(resourceUuid), true, requiresAtomicBulkTransaction());
+            deleteValue(resourceUuid, getResourceType(resourceUuid), true, false);
             return;
         }
         applyMutations(Collections.singletonList(this), Collections.singletonList(
@@ -284,8 +278,6 @@ public class ResourceConfig {
             globalConfig.getValidators().forEach(it ->
                     it.validateGlobalConfig(globalConfig.getCategory(), globalConfig.getName(), oldValue, newValue));
             validatorExtensions.forEach(it -> it.validateResourceConfig(resourceUuid, oldValue, newValue));
-            transactionalMutationExtensions.forEach(it ->
-                    it.beforeUpdate(dbf.getEntityManager(), this, resourceUuid, resourceType, oldValue, newValue));
             updateValueInDb(resourceUuid, resourceType, newValue);
         }
         if (deferCallbacks) {
@@ -331,8 +323,6 @@ public class ResourceConfig {
 
         if (localDelete) {
             deleteValidatorExtensions.forEach(it -> it.validateDelete(resourceUuid, oldValue));
-            transactionalMutationExtensions.forEach(it ->
-                    it.beforeDelete(dbf.getEntityManager(), this, resourceUuid, resourceType, oldValue));
             deleteInDb(resourceUuid);
         }
         if (deferCallbacks) {

@@ -2,6 +2,7 @@ package org.zstack.kvm.memory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.time.Instant;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -91,5 +92,66 @@ public class MemoryPolicyAdmissionRulesTest {
                 MemoryPolicyAdmissionRules.blockedFields(enableZram, state, 2000).get("zram.enabled"));
         assertEquals("Unknown", state.getStatus());
         assertNull(state.getAppliedRevision());
+    }
+
+    @Test public void writebackRequiresHostBackendReadinessBeforeAgentPayload() {
+        String id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        Map<String, String> changed = MemoryPolicyAdmissionRules.changedFields(
+                "{\"zram\":{\"enabled\":false},\"writeback\":{\"enabled\":false}}",
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                        + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}" );
+        MemoryStateVO state = state(1000, "{\"supported\":true,\"zram\":true,\"writeback\":true}");
+        Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(changed, state, 2000,
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                        + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}");
+        assertEquals("BACKEND_NOT_READY", blocked.get("writeback.enabled"));
+
+        state.setState("{\"actual\":{\"writeback\":{\"backend\":{"
+                + "\"resource_uuid\":\"" + id
+                + "\",\"state\":\"PREPARED\",\"fingerprint\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\","
+                + "\"capacity_bytes\":4096,\"observed_at\":\"" + Instant.ofEpochMilli(1500) + "\"}}}}");
+        assertFalse(MemoryPolicyAdmissionRules.blockedFields(changed, state, 2000,
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                        + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}").containsKey("writeback.enabled"));
+    }
+
+    @Test public void writebackReadinessRejectsInvalidFingerprintAndStaleObservation() {
+        String id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        Map<String, String> changed = MemoryPolicyAdmissionRules.changedFields(
+                "{\"writeback\":{\"enabled\":false}}",
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                        + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}");
+        MemoryStateVO state = state(1000, "{\"supported\":true,\"zram\":true,\"writeback\":true}");
+        state.setState("{\"actual\":{\"writeback\":{\"backend\":{"
+                + "\"resource_uuid\":\"" + id + "\",\"state\":\"PREPARED\","
+                + "\"fingerprint\":\"short\",\"capacity_bytes\":4096,"
+                + "\"observed_at\":\"" + Instant.ofEpochMilli(1500) + "\"}}}}");
+        Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(changed, state, 2000,
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                        + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}");
+        assertEquals("BACKEND_NOT_READY", blocked.get("writeback.enabled"));
+
+        state.setState("{\"actual\":{\"writeback\":{\"backend\":{"
+                + "\"resource_uuid\":\"" + id + "\",\"state\":\"PREPARED\","
+                + "\"fingerprint\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\","
+                + "\"capacity_bytes\":4096,\"observed_at\":\"" + Instant.ofEpochMilli(-90000) + "\"}}}}");
+        assertEquals("BACKEND_RESOURCE_STALE",
+                MemoryPolicyAdmissionRules.blockedFields(changed, state, 2000,
+                        "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                                + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}")
+                        .get("writeback.enabled"));
+
+        state.setState("{\"actual\":{\"writeback\":{\"backend\":{"
+                + "\"resource_uuid\":\"" + id + "\",\"state\":\"PREPARED\","
+                + "\"fingerprint\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\","
+                + "\"capacity_bytes\":4096.5,\"observed_at\":\"" + Instant.ofEpochMilli(1500) + "\"}}}}");
+        assertTrue("fractional capacity must remain blocked",
+                MemoryPolicyAdmissionRules.blockedFields(changed, state, 2000,
+                        "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true,"
+                                + "\"backendResourceUuid\":\"" + id + "\",\"backendCapacityBytes\":4096}}")
+                        .containsKey("writeback.enabled"));
+        assertEquals("CAPABILITY_STALE", MemoryPolicyAdmissionRules.blockedFields(changed, state, 100000,
+                "{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true}}")
+                .get("writeback.enabled"));
     }
 }

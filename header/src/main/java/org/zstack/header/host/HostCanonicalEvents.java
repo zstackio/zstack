@@ -37,6 +37,24 @@ public class HostCanonicalEvents {
     public static final String HOST_PING_SKIP = "/host/ping/skip";
     public static final String HOST_PING_CANCEL_SKIP = "/host/ping/cancel/skip";
     public static final String HOST_MULTIPATH_CONFIG_CHANGED = "/host/multipathConfig/changed";
+    public static final String HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH = "/host/memory-optimization/service-state-changed";
+
+    @NeedJsonSchema
+    public static class HostMemoryOptimizationServiceStateChangedData {
+        private String hostUuid;
+        private String service;
+        private String status;
+        private String reason;
+
+        public String getHostUuid() { return hostUuid; }
+        public void setHostUuid(String value) { hostUuid = value; }
+        public String getService() { return service; }
+        public void setService(String value) { service = value; }
+        public String getStatus() { return status; }
+        public void setStatus(String value) { status = value; }
+        public String getReason() { return reason; }
+        public void setReason(String value) { reason = value; }
+    }
 
     @NeedJsonSchema
     public static class HostPhysicalHbaPortStateAbnormalData {

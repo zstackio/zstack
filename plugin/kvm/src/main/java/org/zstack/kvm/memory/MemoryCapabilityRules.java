@@ -29,7 +29,12 @@ final class MemoryCapabilityRules {
                     : freshFullSample && Boolean.TRUE.equals(capabilities.get("supported"))
                     && Boolean.TRUE.equals(capabilities.get(capability));
             if (!supported) {
-                item.getValue().writable = false;
+                // Writeback settings are durable desired values. Backend
+                // ownership/readiness gates execution, not persistence;
+                // retain writability while exposing the unavailable reason.
+                if (!"writeback".equals(capability)) {
+                    item.getValue().writable = false;
+                }
                 Object reason = partialKsm ? partialReason : capabilities.get(capability + "ReasonCode");
                 if (!(reason instanceof String) || "SUPPORTED".equals(reason)) { reason = capabilities.get("reasonCode"); }
                 item.getValue().reasonCode = reason instanceof String && !"SUPPORTED".equals(reason)

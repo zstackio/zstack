@@ -20,7 +20,8 @@ public class MemoryCapabilityRulesTest {
         assertTrue(fields.get("ksm.enabled").writable);
         assertFalse(fields.get("ksm.zeroPagesEnabled").writable);
         assertFalse(fields.get("zram.enabled").writable);
-        assertFalse(fields.get("writeback.enabled").writable);
+        assertTrue("writeback intent remains writable when execution capability is unavailable",
+                fields.get("writeback.enabled").writable);
     }
     @Test public void staleOrUnsupportedHostCannotEnableOptimization() {
         MemoryStateVO state = new MemoryStateVO(); state.setLastSampleTime(1000L);
@@ -58,7 +59,7 @@ public class MemoryCapabilityRulesTest {
                 fields.get("ksm.enabled").writable);
         assertFalse(fields.get("ksm.zeroPagesEnabled").writable);
         assertFalse(fields.get("zram.enabled").writable);
-        assertFalse(fields.get("writeback.enabled").writable);
+        assertTrue(fields.get("writeback.enabled").writable);
         assertEquals("Unknown", state.getStatus());
         assertNull("partial evidence never fabricates a complete sample time", state.getLastSampleTime());
     }

@@ -4,12 +4,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostConstant;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -39,6 +41,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         ManagementNodeChangeListener, HostAfterConnectedExtensionPoint {
     private static final CLogger logger = Utils.getLogger(MemoryOptimizationManager.class);
     @Autowired private CloudBus bus;
+    @Autowired private EventFacade evtf;
     @Autowired private ThreadFacade thdf;
     @Autowired private PluginRegistry pluginRgty;
     @Autowired private MemoryRepository repository;
@@ -187,13 +190,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         APIGetMemoryPolicyReply reply = new APIGetMemoryPolicyReply();
         MemoryPolicyInventory inventory = repository.getPolicy(msg.getScope(), msg.getResourceUuid());
         describe(inventory);
-        if ("Global".equals(inventory.getScope())) {
-            MemoryCloudBootstrapVO bootstrap = repository.freshCloudBootstrap();
-            if (bootstrap != null) {
-                inventory.setBootstrapStatus(bootstrap.getStatus());
-                inventory.setBootstrapReason(bootstrap.getReason());
-            }
-        }
         reply.setInventory(inventory);
         bus.reply(msg, reply);
     }
@@ -273,7 +269,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             fields.put("ksm.zeroPagesEnabled", new MemoryFieldCapability(licensed, true, "boolean", null, "NextPolicyCycle"));
             fields.put("ksm.pagesToScan", new MemoryFieldCapability(licensed, false, "int64", "pages", "NextPolicyCycle"));
             fields.put("ksm.sleepMillis", new MemoryFieldCapability(licensed, false, "int64", "milliseconds", "NextPolicyCycle"));
-            addPolicyCapabilities(fields, licensed);
+            addPolicyCapabilities(fields, licensed, inventory.getScope());
         }
         MemoryStateVO hostState = null;
         MemoryStateInventory hostStateView = null;
@@ -315,7 +311,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** Keep the public policy schema and the discovery contract in lockstep. */
-    private static void addPolicyCapabilities(Map<String, MemoryFieldCapability> fields, boolean writable) {
+    private static void addPolicyCapabilities(Map<String, MemoryFieldCapability> fields, boolean writable,
+                                              String scope) {
         fields.put("schemaVersion", capability(writable, false, "int32", "version", "PersistedSchema"));
         fields.put("zram.enabled", capability(writable, true, "boolean", null, "EnableOrDrain"));
         // VM selection is a CLI/advanced policy control; the basic UI only
@@ -351,9 +348,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             fields.put("zram." + field, capability(writable, false, "int64", "seconds", "NextPolicyCycle"));
         }
         fields.put("writeback.enabled", capability(writable, false, "boolean", null, "OfflinePreparationMayBeRequired"));
-        fields.put("writeback.backendResourceUuid", capability(writable, false, "uuid", null, "DrainAndOfflinePreparation"));
+        boolean hostBackend = "Host".equals(scope);
+        fields.put("writeback.backendResourceUuid", capability(writable && hostBackend, false, "uuid", null, "DrainAndOfflinePreparation"));
         for (String field : Arrays.asList("backendCapacityBytes", "batchBytes", "metadataBudgetBytes", "filesystemReserveBytes")) {
-            fields.put("writeback." + field, capability(writable, false, "int64", "bytes", "DrainAndOfflinePreparation"));
+            fields.put("writeback." + field, capability(writable && (hostBackend || !"backendCapacityBytes".equals(field)), false,
+                    "int64", "bytes", "DrainAndOfflinePreparation"));
         }
         for (String field : Arrays.asList("idleObservationSeconds", "operationIntervalSeconds", "slowOperationSeconds",
                 "backoffSeconds", "ioErrorBackoffSeconds")) {
@@ -630,7 +629,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void tick() {
         if (!ticking.compareAndSet(false, true)) { return; }
         try {
-            processFreshCloudBootstrap();
             for (MemoryTaskVO task : repository.claim(Platform.getManagementServerId())) { dispatch(task, false); }
             for (MemoryTaskVO task : repository.outstanding(Platform.getManagementServerId())) { dispatch(task, true); }
             dispatchFailureNotifications(Platform.getManagementServerId());
@@ -640,28 +638,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         } catch (Exception e) {
             logger.warn("Memory optimization task polling failed; no task is assumed successful", e);
         } finally { ticking.set(false); }
-    }
-
-    private void processFreshCloudBootstrap() {
-        MemoryCloudBootstrapVO bootstrap = repository.freshCloudBootstrap();
-        if (bootstrap == null || !MemoryCloudBootstrapVO.PENDING.equals(bootstrap.getStatus())) { return; }
-        String blocked = repository.freshCloudBootstrapBlockReason();
-        if (blocked != null) {
-            repository.updateFreshCloudBootstrapReason(blocked);
-            return;
-        }
-        if (licenseDeadline() <= System.currentTimeMillis()) {
-            repository.updateFreshCloudBootstrapReason("MEMORY_LICENSE_UNAVAILABLE");
-            return;
-        }
-        try {
-            repository.submitFreshCloudBootstrap(bootstrap.getRequestUuid());
-        } catch (MemoryOperationException e) {
-            repository.updateFreshCloudBootstrapReason(e.getCode());
-        } catch (RuntimeException e) {
-            logger.warn("Fresh-cloud memory defaults remain pending; no task is assumed accepted", e);
-            repository.updateFreshCloudBootstrapReason("BOOTSTRAP_ADMISSION_RETRY");
-        }
     }
 
     private void dispatchFailureNotifications(String owner) {
@@ -902,6 +878,18 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         try {
             call(host, "state", command(host, Platform.getUuid()), response -> {
                 try {
+                    // Use the existing observation and persisted control intent before
+                    // reconciliation can queue another operation. No health poller or
+                    // service restart is introduced here.
+                    try {
+                        for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event :
+                                MemoryObservationRules.serviceEvents(host, response,
+                                        repository.serviceObservationPolicy(host), System.currentTimeMillis())) {
+                            evtf.fire(HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, event);
+                        }
+                    } catch (RuntimeException eventFailure) {
+                        logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
+                    }
                     if (MemoryObservationRules.isKsmNativePartial(response, System.currentTimeMillis())) {
                         repository.observePartialKsm(host, response);
                     } else if (successfulFreshObservation(response)) {

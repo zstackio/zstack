@@ -23,7 +23,7 @@ doc {
 	}
 	field {
 		name "fieldSources"
-		desc "各字段当前生效值的配置来源。"
+		desc "各字段继承合并期望值的配置来源；Host优先于Cluster、Cluster优先于Global，不证明Host已执行。"
 		type "Map"
 		since "5.5.38"
 	}
@@ -54,7 +54,7 @@ doc {
 	ref {
 		name "fieldCapabilities"
 		path "org.zstack.kvm.memory.MemoryPolicyInventory.fieldCapabilities"
-		desc "字段能力映射；用于展示，不构成授权凭据。"
+		desc "字段配置资格及原因提示，不构成授权凭据；writeback开关可保存合法期望值与Host当前能否执行须区分，后端字段仅Host。"
 		type "Map"
 		since "5.5.38"
 		clz MemoryFieldCapability.class
@@ -91,19 +91,7 @@ doc {
 	}
 	field {
 		name "effectivePolicy"
-		desc "合并继承后用于执行的有效策略JSON。"
-		type "String"
-		since "5.5.38"
-	}
-	field {
-		name "bootstrapStatus"
-		desc "仅Global首次安装引导存在时返回的引导状态。"
-		type "String"
-		since "5.5.38"
-	}
-	field {
-		name "bootstrapReason"
-		desc "Global首次安装引导的阻塞或诊断原因。"
+		desc "合并继承后的期望策略JSON；writeback可能因Host后端未准备或能力/保护暂未执行，实际生效须另查Host状态。"
 		type "String"
 		since "5.5.38"
 	}
