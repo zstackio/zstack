@@ -37,6 +37,7 @@ public class LoginContext {
      */
     private String loginPluginName;
 
+    private transient Object loginBackendContext;
 
     private Map<String, String> properties = new HashMap<>();
     private List<AdditionalAuthFeature> ignoreFeatures = new ArrayList<>();
@@ -106,6 +107,14 @@ public class LoginContext {
 
     public void setLoginBackendType(String loginBackendType) {
         this.loginBackendType = loginBackendType;
+    }
+
+    public Object getLoginBackendContext() {
+        return loginBackendContext;
+    }
+
+    public void setLoginBackendContext(Object loginBackendContext) {
+        this.loginBackendContext = loginBackendContext;
     }
 
     public List<String> getSystemTags() {
