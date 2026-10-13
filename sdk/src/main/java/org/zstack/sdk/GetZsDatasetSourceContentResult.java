@@ -43,4 +43,20 @@ public class GetZsDatasetSourceContentResult {
         return this.filename;
     }
 
+    public java.lang.String endpoint;
+    public void setEndpoint(java.lang.String endpoint) {
+        this.endpoint = endpoint;
+    }
+    public java.lang.String getEndpoint() {
+        return this.endpoint;
+    }
+
+    public java.util.Map requestHeaders;
+    public void setRequestHeaders(java.util.Map requestHeaders) {
+        this.requestHeaders = requestHeaders;
+    }
+    public java.util.Map getRequestHeaders() {
+        return this.requestHeaders;
+    }
+
 }
