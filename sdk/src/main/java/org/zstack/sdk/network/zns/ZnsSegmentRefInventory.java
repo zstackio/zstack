@@ -1,0 +1,175 @@
+package org.zstack.sdk.network.zns;
+
+
+
+public class ZnsSegmentRefInventory  {
+
+    public java.lang.String uuid;
+    public void setUuid(java.lang.String uuid) {
+        this.uuid = uuid;
+    }
+    public java.lang.String getUuid() {
+        return this.uuid;
+    }
+
+    public java.lang.String sdnControllerUuid;
+    public void setSdnControllerUuid(java.lang.String sdnControllerUuid) {
+        this.sdnControllerUuid = sdnControllerUuid;
+    }
+    public java.lang.String getSdnControllerUuid() {
+        return this.sdnControllerUuid;
+    }
+
+    public java.lang.String znsSegmentUuid;
+    public void setZnsSegmentUuid(java.lang.String znsSegmentUuid) {
+        this.znsSegmentUuid = znsSegmentUuid;
+    }
+    public java.lang.String getZnsSegmentUuid() {
+        return this.znsSegmentUuid;
+    }
+
+    public boolean isStretched;
+    public void setIsStretched(boolean isStretched) {
+        this.isStretched = isStretched;
+    }
+    public boolean getIsStretched() {
+        return this.isStretched;
+    }
+
+    public java.lang.String stretchL2Uuid;
+    public void setStretchL2Uuid(java.lang.String stretchL2Uuid) {
+        this.stretchL2Uuid = stretchL2Uuid;
+    }
+    public java.lang.String getStretchL2Uuid() {
+        return this.stretchL2Uuid;
+    }
+
+    public java.util.List vpcRouterUuids;
+    public void setVpcRouterUuids(java.util.List vpcRouterUuids) {
+        this.vpcRouterUuids = vpcRouterUuids;
+    }
+    public java.util.List getVpcRouterUuids() {
+        return this.vpcRouterUuids;
+    }
+
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
+    public java.lang.String l2NetworkUuid;
+    public void setL2NetworkUuid(java.lang.String l2NetworkUuid) {
+        this.l2NetworkUuid = l2NetworkUuid;
+    }
+    public java.lang.String getL2NetworkUuid() {
+        return this.l2NetworkUuid;
+    }
+
+    public java.lang.String l3NetworkUuid;
+    public void setL3NetworkUuid(java.lang.String l3NetworkUuid) {
+        this.l3NetworkUuid = l3NetworkUuid;
+    }
+    public java.lang.String getL3NetworkUuid() {
+        return this.l3NetworkUuid;
+    }
+
+    public java.lang.String znsTenantRouterUuid;
+    public void setZnsTenantRouterUuid(java.lang.String znsTenantRouterUuid) {
+        this.znsTenantRouterUuid = znsTenantRouterUuid;
+    }
+    public java.lang.String getZnsTenantRouterUuid() {
+        return this.znsTenantRouterUuid;
+    }
+
+    public java.lang.String managedBy;
+    public void setManagedBy(java.lang.String managedBy) {
+        this.managedBy = managedBy;
+    }
+    public java.lang.String getManagedBy() {
+        return this.managedBy;
+    }
+
+    public java.lang.Long currentConfigVersion;
+    public void setCurrentConfigVersion(java.lang.Long currentConfigVersion) {
+        this.currentConfigVersion = currentConfigVersion;
+    }
+    public java.lang.Long getCurrentConfigVersion() {
+        return this.currentConfigVersion;
+    }
+
+    public java.lang.String state;
+    public void setState(java.lang.String state) {
+        this.state = state;
+    }
+    public java.lang.String getState() {
+        return this.state;
+    }
+
+    public java.lang.String operationUuid;
+    public void setOperationUuid(java.lang.String operationUuid) {
+        this.operationUuid = operationUuid;
+    }
+    public java.lang.String getOperationUuid() {
+        return this.operationUuid;
+    }
+
+    public java.lang.String operationStep;
+    public void setOperationStep(java.lang.String operationStep) {
+        this.operationStep = operationStep;
+    }
+    public java.lang.String getOperationStep() {
+        return this.operationStep;
+    }
+
+    public java.lang.Long appliedConfigVersion;
+    public void setAppliedConfigVersion(java.lang.Long appliedConfigVersion) {
+        this.appliedConfigVersion = appliedConfigVersion;
+    }
+    public java.lang.Long getAppliedConfigVersion() {
+        return this.appliedConfigVersion;
+    }
+
+    public java.sql.Timestamp leaseUntil;
+    public void setLeaseUntil(java.sql.Timestamp leaseUntil) {
+        this.leaseUntil = leaseUntil;
+    }
+    public java.sql.Timestamp getLeaseUntil() {
+        return this.leaseUntil;
+    }
+
+    public java.lang.String lastErrorCode;
+    public void setLastErrorCode(java.lang.String lastErrorCode) {
+        this.lastErrorCode = lastErrorCode;
+    }
+    public java.lang.String getLastErrorCode() {
+        return this.lastErrorCode;
+    }
+
+    public java.lang.String lastErrorDetails;
+    public void setLastErrorDetails(java.lang.String lastErrorDetails) {
+        this.lastErrorDetails = lastErrorDetails;
+    }
+    public java.lang.String getLastErrorDetails() {
+        return this.lastErrorDetails;
+    }
+
+    public java.sql.Timestamp createDate;
+    public void setCreateDate(java.sql.Timestamp createDate) {
+        this.createDate = createDate;
+    }
+    public java.sql.Timestamp getCreateDate() {
+        return this.createDate;
+    }
+
+    public java.sql.Timestamp lastOpDate;
+    public void setLastOpDate(java.sql.Timestamp lastOpDate) {
+        this.lastOpDate = lastOpDate;
+    }
+    public java.sql.Timestamp getLastOpDate() {
+        return this.lastOpDate;
+    }
+
+}
