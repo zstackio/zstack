@@ -54,6 +54,10 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
 
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -133,6 +137,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
             verifyZstoneCgroupUsageIsObserved()
             verifyReadOnlyAssignmentRetainsLastBoundaryOnProbeFailure()
             associateHost(SERIAL)
+            verifyInvalidManifestReturnsRoleError()
             verifyProviderIdentityMismatchReturnsRoleError()
             verifyZbsCannotBeControlledByCloud()
             verifySerialIdentityWithoutIpFallback()
@@ -456,6 +461,29 @@ class ZbsResourceUsageObservationCase extends SubCase {
         assertUsage(byName["zstone.cs.slice"], "2-5", 2_000L, SizeUnit.GIGABYTE.toByte(3), null)
         assertUsage(
                 byName["zstone.vhost.slice"], "6-7", 3_000L, SizeUnit.MEGABYTE.toByte(512), SizeUnit.GIGABYTE.toByte(1))
+    }
+
+    private void verifyInvalidManifestReturnsRoleError() {
+        Path profile = Paths.get(getClass().classLoader.getResource("physical-server-roles/zbs.yaml").toURI())
+        byte[] original = Files.readAllBytes(profile)
+        AtomicReference<Map> manifests = RoleServiceManifest.MANIFESTS
+        Map originalManifests = manifests.get()
+        try {
+            String invalid = new String(original, StandardCharsets.UTF_8).replace("roleType: ZBS", "roleType: INVALID")
+            Files.write(profile, invalid.getBytes(StandardCharsets.UTF_8))
+            manifests.set(originalManifests.findAll { key, value -> value.roleType != "ZBS" })
+
+            GetPhysicalServerManagedServicesAction.Result result = new GetPhysicalServerManagedServicesAction(
+                    sessionId: adminSession(), serverUuid: serverUuid).call()
+            assert result.error == null : "one invalid Role manifest must not fail the complete API"
+            assert result.value.roleErrors["ZBS"]?.details?.contains("invalid role service manifest") :
+                    "first-load manifest validation must be reported under ZBS: actual=${result.value.roleErrors}"
+            assert result.value.services.any { it.roleType == "COMPUTE" }
+            assert !result.value.services.any { it.roleType == "ZBS" }
+        } finally {
+            Files.write(profile, original)
+            manifests.set(originalManifests)
+        }
     }
 
     private void verifyProviderIdentityMismatchReturnsRoleError() {
