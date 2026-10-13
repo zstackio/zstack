@@ -11,12 +11,16 @@ public class RBAInfo implements RBACDescription {
     public void permissions() {
         permissionBuilder()
                 .adminOnlyAPIs("org.zstack.directory.**")
+                .normalAPIs(APIQueryDirectoryMsg.class)
                 .build();
     }
 
     @Override
     public void contributeToRoles() {
-
+        roleContributorBuilder()
+                .roleName("other")
+                .actions(APIQueryDirectoryMsg.class)
+                .build();
     }
 
     @Override

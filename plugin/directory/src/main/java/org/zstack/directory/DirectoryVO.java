@@ -1,6 +1,7 @@
 package org.zstack.directory;
 
 import org.zstack.header.identity.OwnedByAccount;
+import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ToInventory;
@@ -15,6 +16,11 @@ import java.sql.Timestamp;
  */
 @Entity
 @Table
+@EntityGraph(
+        parents = {
+                @EntityGraph.Neighbour(type = ZoneVO.class, myField = "zoneUuid", targetField = "uuid")
+        }
+)
 public class DirectoryVO extends ResourceVO implements OwnedByAccount, ToInventory {
     @Column
     private String name;
