@@ -22,6 +22,15 @@ doc {
 			params {
 
 				column {
+					name "resetTpm"
+					enclosedIn "params"
+					desc "是否重置vTPM：false或省略时恢复快照组根盘保存的TPM状态和密钥，true时生成新的TPM并使用默认密钥提供程序；NVRAM始终从该快照恢复。显式设置本参数要求快照存在保存的TPM状态，普通无TPM快照应省略本参数"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.5.38"
+				}
+				column {
 					name "name"
 					enclosedIn "params"
 					desc "资源名称"

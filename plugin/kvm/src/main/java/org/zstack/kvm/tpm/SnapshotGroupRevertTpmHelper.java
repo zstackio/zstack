@@ -5,14 +5,19 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.compute.vm.devices.TpmEncryptedResourceKeyBackend;
 import org.zstack.core.db.Q;
+import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupRefVO_;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotGroupMsg;
+import org.zstack.header.vm.APICreateVmInstanceFromVolumeSnapshotMsg;
 import org.zstack.header.vm.CreateVmInstanceMsg;
 import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
+import org.zstack.header.volume.VolumeType;
 import org.zstack.kvm.KVMSystemTags;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -20,6 +25,8 @@ import org.zstack.utils.logging.CLogger;
 import java.util.List;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ALLOWED_TPM_VM_WITHOUT_KMS;
+import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10163;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SnapshotGroupRevertTpmHelper {
@@ -29,12 +36,43 @@ public class SnapshotGroupRevertTpmHelper {
     private TpmEncryptedResourceKeyBackend tpmKeyBackend;
 
     public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotGroupMsg apiMsg, CreateVmInstanceMsg cmsg) {
-        String snapshotGroupUuid = apiMsg.getVolumeSnapshotGroupUuid();
+        setupFromSnapshotGroup(apiMsg.getVolumeSnapshotGroupUuid(), apiMsg.getResetTpm() == Boolean.TRUE,
+                false, cmsg);
+    }
 
-        boolean resetTpm = apiMsg.getResetTpm() == Boolean.TRUE;
+    public void setupFromApi(APICreateVmInstanceFromVolumeSnapshotMsg apiMsg, CreateVmInstanceMsg cmsg) {
+        String snapshotGroupUuid = Q.New(VolumeSnapshotGroupRefVO.class)
+                .select(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid)
+                .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid, apiMsg.getVolumeSnapshotUuid())
+                .eq(VolumeSnapshotGroupRefVO_.volumeType, VolumeType.Root.toString())
+                .eq(VolumeSnapshotGroupRefVO_.snapshotDeleted, false)
+                .findValue();
+        if (snapshotGroupUuid == null) {
+            if (apiMsg.getResetTpm() != null) {
+                throw new OperationFailureException(operr(
+                        ORG_ZSTACK_KVM_10163,
+                        "volume snapshot[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
+                        apiMsg.getVolumeSnapshotUuid()));
+            }
+            return;
+        }
+
+        setupFromSnapshotGroup(snapshotGroupUuid, apiMsg.getResetTpm() == Boolean.TRUE,
+                apiMsg.getResetTpm() != null, cmsg);
+    }
+
+    private void setupFromSnapshotGroup(String snapshotGroupUuid, boolean resetTpm,
+                                        boolean requireTpmBackup, CreateVmInstanceMsg cmsg) {
         List<VmHostBackupFileVO> backupFiles = Q.New(VmHostBackupFileVO.class)
                 .eq(VmHostBackupFileVO_.resourceUuid, snapshotGroupUuid)
                 .list();
+
+        if (requireTpmBackup && backupFiles.stream().noneMatch(f -> f.getType() == VmHostFileType.TpmState)) {
+            throw new OperationFailureException(operr(
+                    ORG_ZSTACK_KVM_10163,
+                    "volume snapshot group[uuid:%s] has no saved TPM state, cannot configure TPM restoration",
+                    snapshotGroupUuid));
+        }
 
         if (backupFiles.isEmpty()) {
             logger.debug(String.format(
