@@ -25,6 +25,9 @@ public class MemoryHostConnectedObservationTest {
         int partialKsmObservations;
         int policyAdmissions;
         MemoryAgentResponse lastObservation;
+        MemoryPolicyConfig servicePolicy;
+
+        @Override MemoryPolicyConfig serviceObservationPolicy(String host) { return servicePolicy; }
 
         @Override public void observe(String hostUuid, MemoryAgentResponse response) {
             observations++; lastObservation = response;
@@ -164,6 +167,57 @@ public class MemoryHostConnectedObservationTest {
                 StandardCharsets.UTF_8);
         assertTrue(xml.contains("id=\"MemoryOptimizationManager\""));
         assertTrue(xml.contains("interface=\"org.zstack.header.host.HostAfterConnectedExtensionPoint\""));
+    }
+
+    @Test public void explicitNativeFailureUsesExistingObservationWithoutAdmittingUnknownControl() throws Exception {
+        Manager manager = configuredManager();
+        Repository repository = field(manager, "repository", Repository.class);
+        repository.servicePolicy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
+        List<org.zstack.header.host.HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> events = new ArrayList<>();
+        org.zstack.core.cloudbus.EventFacade facade = (org.zstack.core.cloudbus.EventFacade) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[]{org.zstack.core.cloudbus.EventFacade.class}, (proxy, method, args) -> {
+                    if ("fire".equals(method.getName())) {
+                        assertEquals(org.zstack.header.host.HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, args[0]);
+                        events.add((org.zstack.header.host.HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData) args[1]);
+                    }
+                    return null;
+                });
+        inject(manager, "evtf", facade);
+        MemoryAgentResponse failed = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"success\":false,\"status\":\"Unknown\",\"reasonCode\":\"LOCAL_SERVICE_UNAVAILABLE\","
+                        + "\"sampleTime\":" + System.currentTimeMillis()
+                        + ",\"state\":{\"bootId\":\"boot-a\",\"actual\":{\"ksm\":{\"enabled\":null,"
+                        + "\"serviceState\":\"failed\",\"tunedServiceState\":\"activating\"}}}}", MemoryAgentResponse.class);
+        manager.runScan("host-a"); manager.complete(failed);
+        assertEquals(1, events.size());
+        assertEquals("ksm", events.get(0).getService());
+        assertEquals("Failed", events.get(0).getStatus());
+        assertEquals(0, repository.observations);
+        assertEquals(0, repository.partialKsmObservations);
+        assertEquals(0, repository.policyAdmissions);
+        // A pause/disconnect/unknown fence re-read at callback time suppresses service events.
+        repository.servicePolicy = null;
+        manager.runScan("host-a"); manager.complete(failed);
+        assertEquals(1, events.size());
+        assertEquals(2, manager.agentCalls);
+    }
+
+    @Test public void eventDeliveryFailureDoesNotBlockExistingObservationAndPolicyReconciliation() throws Exception {
+        Manager manager = configuredManager();
+        Repository repository = field(manager, "repository", Repository.class);
+        repository.servicePolicy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
+        org.zstack.core.cloudbus.EventFacade broken = (org.zstack.core.cloudbus.EventFacade) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[]{org.zstack.core.cloudbus.EventFacade.class},
+                (proxy, method, args) -> { throw new IllegalStateException("event delivery unavailable"); });
+        inject(manager, "evtf", broken);
+        MemoryAgentResponse response = successfulObservation(System.currentTimeMillis());
+        response.state = new LinkedHashMap<>(response.state);
+        response.state.put("actual", Collections.singletonMap("ksm", Collections.singletonMap("serviceState", "failed")));
+        manager.runScan("host-a"); manager.complete(response);
+        assertEquals(1, repository.observations);
+        assertEquals(1, repository.policyAdmissions);
+        manager.runScan("host-a");
+        assertEquals("failed notification must release the observation slot", 2, manager.agentCalls);
     }
 
     private static Manager configuredManager() throws Exception {

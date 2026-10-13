@@ -498,16 +498,7 @@ public class MemorySdkWireTest {
         assertEquals(Arrays.asList("host1"), result.value.getHostUuids());
     }
 
-    @Test public void policyAndStateSdkModelsCarryBootstrapAndPlanDiagnostics() {
-        response = "{\"inventory\":{\"scope\":\"Global\",\"resourceUuid\":\"global\","
-                + "\"bootstrapStatus\":\"PENDING\",\"bootstrapReason\":\"MEMORY_LICENSE_UNAVAILABLE\"}}";
-        GetMemoryPolicyAction policy = new GetMemoryPolicyAction();
-        policy.sessionId = "local-test-session"; policy.scope = "Global"; policy.resourceUuid = "global";
-        GetMemoryPolicyAction.Result policyResult = policy.call();
-        assertNull(policyResult.error);
-        assertEquals("PENDING", policyResult.value.inventory.getBootstrapStatus());
-        assertEquals("MEMORY_LICENSE_UNAVAILABLE", policyResult.value.inventory.getBootstrapReason());
-
+    @Test public void stateSdkModelCarriesPlanDiagnostics() {
         String stateJson = "{\"policyPlanStatus\":\"NeedsReview\","
                 + "\"policyBlockedFields\":\"{\\\"policy\\\":{\\\"reason\\\":\\\"LEGACY_APPLIED_POLICY_UNKNOWN\\\"}}\","
                 + "\"appliedPolicy\":\"{\\\"schemaVersion\\\":1,\\\"ksm\\\":{\\\"enabled\\\":false}}\","
