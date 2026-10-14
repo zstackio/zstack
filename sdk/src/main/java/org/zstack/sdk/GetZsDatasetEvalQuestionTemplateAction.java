@@ -28,6 +28,9 @@ public class GetZsDatasetEvalQuestionTemplateAction extends AbstractAction {
     @Param(required = true, validValues = {"true_false","single_choice","multiple_choice","short_answer","open_ended"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String questionType;
 
+    @Param(required = false, validValues = {"xlsx","json"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String format;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
