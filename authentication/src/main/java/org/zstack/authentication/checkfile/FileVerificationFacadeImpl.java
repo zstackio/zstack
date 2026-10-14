@@ -23,6 +23,7 @@ import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.utils.Utils;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.Q;
@@ -31,7 +32,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
@@ -43,7 +43,6 @@ import javax.persistence.Tuple;
 import static org.zstack.authentication.checkfile.FileVerification.NODE_MANAGEMENT_NODE;
 
 import static org.zstack.core.Platform.argerr;
-import static java.nio.file.StandardCopyOption.*;
 import static org.zstack.core.Platform.operr;
 
 public class FileVerificationFacadeImpl extends AbstractService implements FileVerificationFacade, Component, ManagementNodeReadyExtensionPoint {
@@ -215,13 +214,13 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     }
 
     public void backupRestoreLocalFile(String srcPath, String dstPath) throws IOException {
-        File source = new File(srcPath);
-        File dest = new File(dstPath);
+        File source = new File(srcPath).getAbsoluteFile();
+        File dest = new File(dstPath).getAbsoluteFile();
         if (!dest.getParentFile().exists()){
-            dest.getParentFile().mkdirs();
+            ShellUtils.run(String.format("mkdir -p -- '%s'", dest.getParent().replace("'", "'\\''")));
         }
-        Files.copy(source.toPath(), dest.toPath(), REPLACE_EXISTING);
-
+        ShellUtils.run(String.format("cp --no-target-directory --remove-destination --preserve=all -- '%s' '%s'",
+                source.getPath().replace("'", "'\\''"), dest.getPath().replace("'", "'\\''")));
     }
 
     private String getLocalFileDigest(FileVerification fv){
@@ -326,8 +325,8 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     private void recoverFileToCheckList(FileVerification fv) throws IOException{
         if (NODE_MANAGEMENT_NODE.equals(fv.getNode())){
             String digest = getLocalFileDigest(fv);
+            backupRestoreLocalFile(fv.getPath(), PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()));
             if(! digest.equals(fv.getDigest())){
-                backupRestoreLocalFile(fv.getPath(), PathUtil.join(LOCAL_BACKUP_DIR, fv.getUuid()));
                 allFile.get(fv.getUuid()).setDigest(digest);
                 SQL.New(FileVerificationVO.class).eq(FileVerificationVO_.uuid, fv.getUuid()).set(FileVerificationVO_.digest, digest).update();
             }
