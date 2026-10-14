@@ -4628,7 +4628,7 @@
   "ORG_ZSTACK_IPSEC_10014": "HA组%s没有主VPC",
   "ORG_ZSTACK_VPCFIREWALL_10018": "只有ICMP协议可以使用ICMP類型",
   "ORG_ZSTACK_IPSEC_10015": "儲在使用旧IPsec插件的VPC[%s]，請升級以創建IPsec隧道",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "規则 [%s] 编號無效",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "預設規則[%s]不支援修改啟停狀態",
   "ORG_ZSTACK_IPSEC_10016": "已经在同一虚拟路由器和对端地址上儲在IPsec連接[uuid:%s, name:%s]",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "使用厚分配卷作为缓儲卷。卷[%s]的准备状态为%s",
   "ORG_ZSTACK_IPSEC_10010": "所有在同一IPsec連接中的网络应同属一种類型",

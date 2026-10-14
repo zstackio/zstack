@@ -4538,7 +4538,7 @@
   "ORG_ZSTACK_IPSEC_10014": "HA 그룹 %s의 마스터 VPC가 없습니다",
   "ORG_ZSTACK_VPCFIREWALL_10018": "ICMP 프로토콜은 ICMP 타입을 사용할 수 있는 유일한 프로토콜입니다. 올바른 프로토콜을 지정했는지 확인하세요.",
   "ORG_ZSTACK_IPSEC_10015": "이전 IPsec 플러그인을 사용하는 VPC[%s]가 있습니다. IPsec 연결을 생성하려면 업그레이드하세요.",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "규칙 [%%s] 인덱스가 유효하지 않습니다",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "기본 규칙[%s]의 활성화 상태를 변경할 수 없습니다",
   "ORG_ZSTACK_IPSEC_10016": "동일한 가상 라우터와 피어 주소를 가진 IPsec 연결[uuid:%s, name:%s]이 이미 존재합니다",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "캐시 볼륨으로 Thick-Provisioned 스토리지를 사용합니다. 볼륨 [%s]의 프로비저닝은 %s입니다.",
   "ORG_ZSTACK_IPSEC_10010": "동일한 IPsec 연결 내의 모든 네트워크는 동일한 유형이어야 합니다.",

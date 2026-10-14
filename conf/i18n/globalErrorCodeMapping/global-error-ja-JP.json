@@ -4598,7 +4598,7 @@
   "ORG_ZSTACK_IPSEC_10014": "HAグループ%sの master VPCが存在しません",
   "ORG_ZSTACK_VPCFIREWALL_10018": "ICMPプロトコルはICMPタイプを使用できる唯一のプロトコルです。正しいプロトコルを指定してください",
   "ORG_ZSTACK_IPSEC_10015": "古いIPsecプラグインを使用しているVPC[%s]があります。IPsec接続を作成するにはアップグレードしてください",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "ルール[%%s]の索引が無効です",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "デフォルトルール[%s]の有効・無効状態は変更できません",
   "ORG_ZSTACK_IPSEC_10016": "同じ仮想ルーターとピアアドレスを持つIPsec接続[uuid:%s, name:%s]がすでに存在します",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "キャッシュボリュームとしてシックプロビジョニングストレージを使用する; ボリューム[%s]のプロビジョニングは%sです",
   "ORG_ZSTACK_IPSEC_10010": "同じIPsec接続内のすべてのネットワークは同一タイプでなければなりません。",
