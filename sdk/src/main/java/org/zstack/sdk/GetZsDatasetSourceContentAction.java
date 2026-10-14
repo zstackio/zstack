@@ -28,6 +28,9 @@ public class GetZsDatasetSourceContentAction extends AbstractAction {
     @Param(required = true, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String sourceId;
 
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.Boolean downloadRequest;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
