@@ -36213,9 +36213,9 @@
     "fileName": "src/main/java/org/zstack/vpcfirewall/VpcFirewallApiInterceptor.java"
   },
   {
-    "raw": "the rule [%s] number is invalid",
-    "en_US": "the rule [{0}] number is invalid",
-    "zh_CN": "规则[{0}]编号无效",
+    "raw": "cannot change the state of default rule[%s]",
+    "en_US": "cannot change the state of default rule[{0}]",
+    "zh_CN": "默认规则[{0}]不支持修改启停状态",
     "arguments": [
       "msg.getUuid()"
     ],
