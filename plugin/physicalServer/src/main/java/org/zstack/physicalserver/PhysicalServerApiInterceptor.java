@@ -26,10 +26,11 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
             validate((APIRestartPhysicalServerManagedServicesMsg) msg);
         }
 
-        if (msg instanceof PhysicalServerMessage
-                || msg instanceof APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
+        if (msg instanceof PhysicalServerMessage) {
             bus.makeTargetServiceIdByResourceUuid(
-                    msg, PhysicalServerConstant.SERVICE_ID, PhysicalServerConstant.CONTROL_OWNER_KEY);
+                    msg, PhysicalServerConstant.SERVICE_ID, ((PhysicalServerMessage) msg).getServerUuid());
+        } else if (msg instanceof APIRefreshPhysicalServerResourceAssignmentsFromProfileMsg) {
+            msg.setServiceId(bus.makeLocalServiceId(PhysicalServerConstant.SERVICE_ID));
         }
         return msg;
     }

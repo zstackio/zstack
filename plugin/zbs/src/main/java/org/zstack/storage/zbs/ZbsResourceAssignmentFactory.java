@@ -6,11 +6,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.EventCallback;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.EventFacade;
-import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.Q;
 import org.zstack.header.Component;
@@ -18,11 +18,9 @@ import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.physicalserver.*;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO;
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_;
-import org.zstack.physicalserver.PhysicalServerConstant;
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig;
 import org.zstack.physicalserver.PhysicalServerVO;
 import org.zstack.physicalserver.PhysicalServerVO_;
@@ -30,8 +28,7 @@ import org.zstack.storage.addon.primary.ExternalPrimaryStorageCanonicalEvent;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-public class ZbsResourceAssignmentFactory implements PhysicalServerResourceAssignmentFactory,
-        Component, ManagementNodeReadyExtensionPoint {
+public class ZbsResourceAssignmentFactory implements PhysicalServerResourceAssignmentFactory, Component {
     public static final PhysicalServerRoleType type = new PhysicalServerRoleType("ZBS");
     public static final String ROLE_SERVICE_MANIFEST_PATH = "physical-server-roles/zbs.yaml";
     private static final CLogger logger = Utils.getLogger(ZbsResourceAssignmentFactory.class);
@@ -40,8 +37,6 @@ public class ZbsResourceAssignmentFactory implements PhysicalServerResourceAssig
     private PluginRegistry pluginRgty;
     @Autowired(required = false)
     private PhysicalServerManager physicalServerManager;
-    @Autowired
-    private ResourceDestinationMaker destinationMaker;
     @Autowired
     private EventFacade evtf;
     @Autowired
@@ -62,21 +57,19 @@ public class ZbsResourceAssignmentFactory implements PhysicalServerResourceAssig
         return new ZbsResourceAssignmentObserver(serverUuid);
     }
 
-    public void refreshAssignments() {
-        if (!canRefresh()) {
-            return;
-        }
+    @Override
+    public void initializeAssociations(int batchSize, BiConsumer<Collection<String>, Completion> batch,
+                                       Completion completion) {
         Set<String> serialNumbers = new LinkedHashSet<>();
         for (ZbsNodeRefContributor contributor : pluginRgty.getExtensionList(ZbsNodeRefContributor.class)) {
             serialNumbers.addAll(contributor.getAllNodesBySerialNumber().keySet());
         }
-        registerServersAndRefreshAssignments(serialNumbers);
+        batch.accept(physicalServerManager.resolveBySerialNumbers(serialNumbers).values(), completion);
     }
 
     private boolean canRefresh() {
         return physicalServerManager != null
-                && PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value(Boolean.class)
-                && destinationMaker.isManagedByUs(PhysicalServerConstant.CONTROL_OWNER_KEY);
+                && PhysicalServerResourceAssignmentGlobalConfig.ENABLED.value(Boolean.class);
     }
 
     private void refreshAssignments(Collection<String> serverUuids) {
@@ -134,18 +127,8 @@ public class ZbsResourceAssignmentFactory implements PhysicalServerResourceAssig
     }
 
     @Override
-    public void managementNodeReady() {
-        refreshAssignments();
-    }
-
-    @Override
     public boolean start() {
-        PhysicalServerResourceAssignmentGlobalConfig.ENABLED.installUpdateExtension((oldConfig, newConfig) -> {
-            if (newConfig.value(Boolean.class)) {
-                refreshAssignments();
-            }
-        });
-        evtf.on(ExternalPrimaryStorageCanonicalEvent.ADDON_INFO_CHANGED_PATH,
+        evtf.onLocal(ExternalPrimaryStorageCanonicalEvent.ADDON_INFO_CHANGED_PATH,
                 new EventCallback<ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData>() {
             @Override
             protected void run(Map tokens, ExternalPrimaryStorageCanonicalEvent.AddonInfoChangedData data) {

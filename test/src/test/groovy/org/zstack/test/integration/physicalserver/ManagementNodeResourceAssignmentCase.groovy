@@ -2,11 +2,16 @@ package org.zstack.test.integration.physicalserver
 
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.zstack.core.Platform
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusCallBack
+import org.zstack.core.cloudbus.ResourceDestinationMaker
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
 import org.zstack.header.managementnode.ManagementNodeVO
 import org.zstack.header.managementnode.ManagementNodeVO_
 import org.zstack.header.core.Completion
+import org.zstack.header.message.MessageReply
+import org.zstack.header.message.NeedReplyMessage
 import org.zstack.header.physicalserver.PhysicalServerManager
 import org.zstack.header.physicalserver.PhysicalServerCpuTopology
 import org.zstack.header.physicalserver.PhysicalServerNumaNode
@@ -20,6 +25,9 @@ import org.zstack.portal.managementnode.ManagementNodeResourceAssignmentFactory
 import org.zstack.portal.managementnode.ReleaseManagementNodeResourceControlMsg
 import org.zstack.portal.managementnode.RestartManagementNodeManagedServicesMsg
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
+import org.zstack.physicalserver.PhysicalServerManagerImpl
+import org.zstack.physicalserver.PhysicalServerConstant
+import org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentMsg
 import org.zstack.sdk.PhysicalServerResourceAssignmentInventory
 import org.zstack.sdk.RestartPhysicalServerManagedServicesAction
 import org.zstack.testlib.EnvSpec
@@ -97,7 +105,18 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
             topologyCollector.setTestTopology(topology())
             executor.enableTestMode()
 
-            adapter.associateLocalNode(Platform.getManagementServerId())
+            def coordinator = bean(PhysicalServerManagerImpl.class)
+            def originalDestination = coordinator.destinationMaker
+            coordinator.destinationMaker = mock(ResourceDestinationMaker.class)
+            try {
+                coordinator.managementNodeReady()
+                retryInSecs {
+                    verify(manager, atLeastOnce()).refreshResourceAssignment(
+                            anyString(), eq("MANAGEMENT"), any(Completion.class))
+                }
+            } finally {
+                coordinator.destinationMaker = originalDestination
+            }
             waitForLocalAssociation()
 
             verifyAssociationAndDefaultAssignment()
@@ -123,6 +142,7 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
             verifyCpuAndMemoryPatch()
             verifyManagedServiceUsageAndRestart()
             verifyDisabledRelease(receiver)
+            verifyEnableOnlyRefreshesOwnedServers()
             verify(receiver, never()).roleServices()
         }
     }
@@ -266,6 +286,40 @@ class ManagementNodeResourceAssignmentCase extends SubCase {
                 "Release must carry sender-resolved services: ${released.get().handles*.serviceName}"
         assert assignment().state == "Unsynced" :
                 "disabled MANAGEMENT must retain its Assignment as Unsynced, actual=${assignment().state}"
+    }
+
+    private void verifyEnableOnlyRefreshesOwnedServers() {
+        def manager = bean(PhysicalServerManagerImpl.class)
+        def originalDestination = manager.destinationMaker
+        def originalBus = manager.bus
+        def recorder = mock(CloudBus.class)
+        doAnswer { invocation ->
+            (invocation.arguments[1] as CloudBusCallBack).run(new MessageReply())
+            return null
+        }.when(recorder).send(any(NeedReplyMessage.class) as NeedReplyMessage,
+                any(CloudBusCallBack.class) as CloudBusCallBack)
+        def destinations = mock(ResourceDestinationMaker.class)
+        manager.bus = recorder
+        manager.destinationMaker = destinations
+        try {
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
+            retryInSecs { verify(destinations, atLeastOnce()).isManagedByUs(serverUuid) }
+            verify(recorder, never()).makeTargetServiceIdByResourceUuid(
+                    any(RefreshPhysicalServerResourceAssignmentMsg.class), anyString(), anyString())
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("false")
+            when(destinations.isManagedByUs(serverUuid)).thenReturn(true)
+            PhysicalServerResourceAssignmentGlobalConfig.ENABLED.updateValue("true")
+            retryInSecs {
+                verify(recorder, atLeastOnce()).makeTargetServiceIdByResourceUuid(
+                        any(RefreshPhysicalServerResourceAssignmentMsg.class),
+                        eq(PhysicalServerConstant.SERVICE_ID), eq(serverUuid))
+            }
+        } finally {
+            manager.bus = originalBus
+            manager.destinationMaker = originalDestination
+        }
+        manager.managementNodeReady()
+        retryInSecs { assert assignment().state == "Synced" }
     }
 
     private static PhysicalServerCpuTopology topology() {
