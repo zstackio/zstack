@@ -4628,7 +4628,7 @@
   "ORG_ZSTACK_IPSEC_10014": "Il n'y a pas de VPC maître pour le groupe HA %s",
   "ORG_ZSTACK_VPCFIREWALL_10018": "le protocole ICMP est le seul protocole qui peut utiliser les types ICMP. Veuillez vous assurer que votre code spécifie le protocole correct.",
   "ORG_ZSTACK_IPSEC_10015": "Il y a un VPC[%s] utilisant un ancien plugin IPsec ; veuillez le mettre à jour pour créer une connexion IPsec.",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "l'indice de la règle [%s] est invalide",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "la règle par défaut[%s] ne peut pas être activée ou désactivée",
   "ORG_ZSTACK_IPSEC_10016": "Il existe déjà une connexion IPsec[uuid:%s, name:%s] avec le même routeur virtuel et la même adresse homologue.",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "utiliser le stockage à provisionnement thick comme volume de cache ; le provisionnement du volume [%s] est %s",
   "ORG_ZSTACK_IPSEC_10010": "Tous les réseaux au sein de la même connexion IPsec doivent être du même type.",
