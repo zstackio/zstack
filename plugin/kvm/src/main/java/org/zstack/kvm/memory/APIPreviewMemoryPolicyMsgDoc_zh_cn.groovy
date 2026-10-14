@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """只读预览策略变化及受影响Host的资格和阻塞字段；不会保存配置或派发任务。"""
+    desc """只读预览配置变化及受影响Host的执行资格和阻塞字段，不保存配置或派发任务。合法的Global/Cluster/Host writeback开关可先于Host后端保存；缺后端、未就绪或运行能力不足应表示为逐Host未生效原因，不等于期望配置非法。后端字段仅Host，设备准备另走有安全证明的维护入口。"""
 
     rest {
         request {

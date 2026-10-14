@@ -20,8 +20,8 @@ public final class MemoryPolicyRules {
     private MemoryPolicyRules() { }
 
     public static String defaults() {
-        // Upgrade bootstrap is deliberately inert. Fresh-install target policy is
-        // applied separately after capability checks, never inferred from missing data.
+        // Optional mechanisms remain off until explicitly configured. KSM scan
+        // defaults are supplied by the standard GlobalConfig layer.
         return "{\"schemaVersion\":1,\"ksm\":{},\"zram\":{\"enabled\":false},\"writeback\":{\"enabled\":false}}";
     }
 
@@ -32,12 +32,10 @@ public final class MemoryPolicyRules {
     public static String merge(String current, String patch, String scope) {
         String merged = mergeOverridesOnly(current, patch, scope);
         MemoryPolicyConfig config = GSON.fromJson(merged, MemoryPolicyConfig.class);
-        if (config.writeback != null && Boolean.TRUE.equals(config.writeback.enabled)) {
-            if (config.zram == null || !Boolean.TRUE.equals(config.zram.enabled)
-                    || config.writeback.backendResourceUuid == null || config.writeback.backendCapacityBytes == null) {
-                throw invalid("writeback", "requires enabled zram and explicit backend resource/capacity");
-            }
-        }
+        // Writeback intent is independently persisted from the Host backend.
+        // Backend ownership/readiness and ZRAM capability are execution-time
+        // admission concerns; they must not reject a valid Global/Cluster
+        // desired value or force callers to submit fields from another scope.
         if (config.zram != null && config.zram.ramLimitBytes != null && config.zram.logicalCapacityBytes != null
                 && config.zram.ramLimitBytes > config.zram.logicalCapacityBytes) {
             throw invalid("ramLimitBytes", "must not exceed logicalCapacityBytes");

@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """读取指定作用域的内存优化策略、当前生效配置、revision、来源和可用动作。"""
+    desc """读取资源的继承合并期望配置、revision、来源和可用动作；不是Host已经生效的证明。writeback开关按Host优先于Cluster、Cluster优先于Global继承，后端身份和容量仅Host配置。开关与后端可独立保存，实际状态及未生效原因通过Host状态和任务回读。"""
 
     rest {
         request {

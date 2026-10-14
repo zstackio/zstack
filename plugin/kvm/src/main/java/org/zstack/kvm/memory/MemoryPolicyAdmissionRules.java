@@ -3,6 +3,8 @@ package org.zstack.kvm.memory;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.*;
 
 /** Capability admission for changed fields and for already-enabled mechanisms in the full Agent payload. */
@@ -50,9 +52,93 @@ final class MemoryPolicyAdmissionRules {
             }
             if (effective.writeback != null && Boolean.TRUE.equals(effective.writeback.enabled)) {
                 addActiveBlock(blocked, "writeback.enabled", state, "writeback", now);
+                String readiness = writebackReadinessReason(effective, state, now);
+                if (readiness != null) { blocked.putIfAbsent("writeback.enabled", readiness); }
+                // These fields are one execution dependency group. A partial
+                // backend/tuning apply must not claim that a blocked enable
+                // was applied, nor mutate a different currently active pool.
+                String reason = blocked.get("writeback.enabled");
+                if (reason != null) {
+                    for (String field : changed.keySet()) {
+                        if (field.startsWith("writeback.")) { blocked.putIfAbsent(field, reason); }
+                    }
+                }
+            } else if (effective.writeback != null && changed.keySet().stream()
+                    .anyMatch(field -> field.startsWith("writeback.backend"))) {
+                String readiness = writebackReadinessReason(effective, state, now);
+                if (readiness != null) {
+                    for (String field : changed.keySet()) {
+                        if (field.startsWith("writeback.backend")) { blocked.putIfAbsent(field, readiness); }
+                    }
+                }
             }
         }
         return blocked;
+    }
+
+    /**
+     * Capability=true only means the host can run writeback.  Applying it
+     * additionally requires the persisted Host-owned backend to be the same
+     * qualified, prepared resource observed by the Agent.
+     */
+    private static String writebackReadinessReason(MemoryPolicyConfig policy, MemoryStateVO state, long now) {
+        if (Boolean.TRUE.equals(policy.writeback.enabled)
+                && (policy.zram == null || !Boolean.TRUE.equals(policy.zram.enabled))) {
+            return "ZRAM_NOT_ENABLED";
+        }
+        if (policy.writeback.backendResourceUuid == null || policy.writeback.backendCapacityBytes == null) {
+            return "BACKEND_NOT_CONFIGURED";
+        }
+        if (state == null || state.getState() == null) { return "BACKEND_NOT_READY"; }
+        try {
+            Map<String, Object> root = new Gson().fromJson(state.getState(), MAP_TYPE);
+            Object actual = root == null ? null : root.get("actual");
+            if (!(actual instanceof Map)) { return "BACKEND_NOT_READY"; }
+            Object writeback = ((Map<?, ?>) actual).get("writeback");
+            if (!(writeback instanceof Map)) { return "BACKEND_NOT_READY"; }
+            Object observed = ((Map<?, ?>) writeback).get("backend");
+            if (!(observed instanceof Map)) { return "BACKEND_NOT_READY"; }
+            Map<?, ?> view = (Map<?, ?>) observed;
+            Object backend = view.get("backend_resource");
+            // RuntimeSnapshot exposes the backend resource directly; retain
+            // compatibility with the wrapped backend-view envelope.
+            Map<?, ?> resource = backend instanceof Map ? (Map<?, ?>) backend : view;
+            if (!Objects.equals(policy.writeback.backendResourceUuid, resource.get("resource_uuid"))) {
+                return "BACKEND_RESOURCE_NOT_ACTIVE";
+            }
+            Object stateValue = resource.get("state");
+            if (!("PREPARED".equals(stateValue) || "ACTIVE".equals(stateValue))) {
+                return "BACKEND_RESOURCE_NOT_ACTIVE";
+            }
+            Object fingerprint = resource.get("fingerprint");
+            if (!(fingerprint instanceof String) || !((String) fingerprint).matches("[0-9a-f]{64}")) {
+                return "BACKEND_NOT_READY";
+            }
+            Object capacity = resource.get("capacity_bytes");
+            if (!(capacity instanceof Number)
+                    || new BigDecimal(capacity.toString()).longValueExact() != policy.writeback.backendCapacityBytes) {
+                return "BACKEND_CAPACITY_MISMATCH";
+            }
+            Object observedAt = resource.get("observed_at");
+            if (!(observedAt instanceof String)) { return "BACKEND_RESOURCE_TIMESTAMP_UNKNOWN"; }
+            long observedMillis = OffsetDateTime.parse((String) observedAt).toInstant().toEpochMilli();
+            if (observedMillis > now) { return "BACKEND_RESOURCE_TIMESTAMP_FUTURE"; }
+            // Match the existing Agent backend proof's 90-second bound; this
+            // cached admission never replaces its fresh local device check.
+            if (now - observedMillis > 90000L) { return "BACKEND_RESOURCE_STALE"; }
+            // Newer Agent snapshots may expose the stronger ownership proof
+            // alongside the backend resource. If present, honor it; older
+            // snapshots intentionally expose only the observed resource view
+            // and are still eligible for the Agent's final local proof.
+            if (view.containsKey("identity_qualified")
+                    && (!Boolean.TRUE.equals(view.get("identity_qualified"))
+                    || !Objects.equals(policy.writeback.backendResourceUuid, view.get("ownership_generation")))) {
+                return "BACKEND_RESOURCE_IDENTITY_UNQUALIFIED";
+            }
+            return null;
+        } catch (RuntimeException malformed) {
+            return "BACKEND_NOT_READY";
+        }
     }
 
     private static void addActiveBlock(Map<String, String> blocked, String field, MemoryStateVO state,

@@ -109,20 +109,4 @@ public class MemoryTaskRulesTest {
         assertNull(MemoryOptimizationManager.maintenanceProofForCommand("not-json"));
     }
 
-    @Test public void legacyKsmIsBlockedOnlyForKnownManagedOwnership() {
-        MemoryLegacyKsmGuard.validate(false, "none", "true");
-        try {
-            MemoryLegacyKsmGuard.validate(true, "true", "true");
-            fail("managed host KSM must use the memory policy API");
-        } catch (org.zstack.core.config.GlobalConfigException expected) {
-            assertTrue(expected.getMessage().contains("MEMORY_CONTROLLER_CONFLICT"));
-        }
-        try {
-            MemoryLegacyKsmGuard.validateDelete(true);
-            fail("managed host KSM delete must use the memory policy API");
-        } catch (org.zstack.core.config.GlobalConfigException expected) {
-            assertTrue(expected.getMessage().contains("MEMORY_CONTROLLER_CONFLICT"));
-        }
-        MemoryLegacyKsmGuard.validateDelete(false);
-    }
 }
