@@ -1575,10 +1575,12 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                 }
                             });
 
-                            done(new FlowDoneHandler(completion, chain) {
+                            flow(new Flow() {
+                                String __name__ = "persist-and-sign-image-cache";
+                                ImageCacheVO vo = new ImageCacheVO();
+
                                 @Override
-                                public void handle(Map data) {
-                                    ImageCacheVO vo = new ImageCacheVO();
+                                public void run(final FlowTrigger trigger, Map data) {
                                     vo.setState(ImageCacheState.ready);
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
@@ -1598,6 +1600,8 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                     ImageCacheInventory inv = ImageCacheInventory.valueOf(vo);
                                     inv.setInstallUrl(primaryStorageInstallPath);
 
+                                    data.put(ImageCacheInventory.class.getSimpleName(), inv);
+
                                     new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
                                         ext.saveEncryptAfterCreateImageCache(hostUuid, inv, new Completion(whileCompletion) {
                                             @Override
@@ -1611,16 +1615,47 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                                                 whileCompletion.allDone();
                                             }
                                         });
-                                    }).run(new WhileDoneCompletion(completion) {
+                                    }).run(new WhileDoneCompletion(trigger) {
                                         @Override
                                         public void done(ErrorCodeList errorCodeList) {
                                             if (!errorCodeList.getCauses().isEmpty()) {
-                                                logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                                trigger.fail(errorCodeList.getCauses().get(0));
+                                                return;
                                             }
-                                            completion.success(inv);
-                                            chain.next();
+                                            trigger.next();
                                         }
                                     });
+                                }
+
+                                @Override
+                                public void rollback(FlowRollback trigger, Map data) {
+                                    if (vo.getId() != 0) {
+                                        dbf.remove(vo);
+                                    }
+                                    DeleteBitsCmd cmd = new DeleteBitsCmd();
+                                    cmd.setPath(primaryStorageInstallPath);
+                                    cmd.setHostUuid(hostUuid);
+                                    httpCall(DELETE_BITS_PATH, hostUuid, cmd, DeleteBitsRsp.class, new ReturnValueCompletion<DeleteBitsRsp>(trigger) {
+                                        @Override
+                                        public void success(DeleteBitsRsp rsp) {
+                                            trigger.rollback();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            // shortcut: failed deletion needs cleanup; a retry must protect caches rebuilt at the same path.
+                                            logger.warn(String.format("failed to delete unsigned image cache: %s", errorCode));
+                                            trigger.rollback();
+                                        }
+                                    });
+                                }
+                            });
+
+                            done(new FlowDoneHandler(completion, chain) {
+                                @Override
+                                public void handle(Map data) {
+                                    completion.success((ImageCacheInventory) data.get(ImageCacheInventory.class.getSimpleName()));
+                                    chain.next();
                                 }
                             });
 
