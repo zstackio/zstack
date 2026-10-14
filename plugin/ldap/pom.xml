@@ -73,11 +73,9 @@
         </plugins>
     </build>
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.springframework.security/spring-security-ldap -->
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-ldap</artifactId>
-            <version>5.7.13</version>
+            <groupId>org.springframework.ldap</groupId>
+            <artifactId>spring-ldap-core</artifactId>
         </dependency>
         <dependency>
             <groupId>org.zstack</groupId>

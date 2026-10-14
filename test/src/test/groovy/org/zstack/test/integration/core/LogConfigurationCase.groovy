@@ -1,5 +1,12 @@
 package org.zstack.test.integration.core
 
+import org.apache.logging.log4j.core.config.ConfigurationSource
+import org.apache.logging.log4j.core.config.xml.XmlConfiguration
+import org.zstack.utils.path.PathUtil
+import javax.xml.parsers.DocumentBuilderFactory
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.dom.DOMSource
+import javax.xml.transform.stream.StreamResult
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.core.Filter
 import org.apache.logging.log4j.core.LogEvent
@@ -50,6 +57,7 @@ class LogConfigurationCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testDisabledRetentionDoesNotDeleteArchives()
             testUpdateLogConfig()
             testDiagnosticQueueDoesNotBlockProducers()
             testImportantQueueDoesNotBlockProducers()
@@ -282,6 +290,67 @@ class LogConfigurationCase extends SubCase {
             }
             assertSaturatedQueue(context, directory, Level.TRACE, "Async", "DiagnosticLogDrops")
             assertSaturatedQueue(context, directory, Level.WARN, "AsyncImportant", "ImportantLogDrops")
+        }
+    }
+
+    void testDisabledRetentionDoesNotDeleteArchives() {
+        String sizeBefore = LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.value()
+        String daysBefore = LogGlobalConfig.LOG_DELETE_LAST_MODIFIED.value()
+        File logXml = PathUtil.findFileOnClassPath("log4j2.xml", true)
+        String original = logXml.getText("UTF-8")
+        try {
+            updateGlobalConfig {
+                category = LogGlobalConfig.CATEGORY
+                name = LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.name
+                value = "-1"
+            }
+            for (int days : [-1, 1, -1]) {
+                updateGlobalConfig {
+                    category = LogGlobalConfig.CATEGORY
+                    name = LogGlobalConfig.LOG_DELETE_LAST_MODIFIED.name
+                    value = days.toString()
+                }
+                def document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(logXml)
+                def conditions = document.getElementsByTagName("IfAny")
+                assert conditions.length == 2
+                for (int i = 0; i < conditions.length; i++) {
+                    def predicate = new StringWriter()
+                    TransformerFactory.newInstance().newTransformer().transform(
+                            new DOMSource(conditions.item(i)), new StreamResult(predicate))
+                    String conditionXml = predicate.toString().replaceFirst(/<\?xml[^>]*\?>/, "")
+                    File dir = Files.createTempDirectory("log-retention-regression-").toFile()
+                    File archive = new File(dir, "retained.log.gz")
+                    archive.text = "retained"
+                    assert archive.setLastModified(System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2))
+                    String xml = """<Configuration status="ERROR"><Appenders><RollingFile name="retention" fileName="${dir}/active.log" filePattern="${dir}/active-%i.log"><PatternLayout pattern="%m"/><Policies><SizeBasedTriggeringPolicy size="1 MB"/></Policies><DefaultRolloverStrategy><Delete basePath="${dir}" maxDepth="1"><IfFileName glob="*.log.gz">${conditionXml}</IfFileName></Delete></DefaultRolloverStrategy></RollingFile></Appenders><Loggers><Root level="off"/></Loggers></Configuration>"""
+                    def context = new LoggerContext("log-retention-regression")
+                    def config = new XmlConfiguration(context, new ConfigurationSource(
+                            new ByteArrayInputStream(xml.getBytes("UTF-8"))))
+                    try {
+                        config.initialize()
+                        def appender = config.getAppender("retention")
+                        assert appender != null
+                        appender.manager.rolloverStrategy.customActions[0].execute()
+                        assert archive.exists() == (days < 0)
+                    } finally {
+                        config.stop()
+                        context.stop()
+                        dir.deleteDir()
+                    }
+                }
+            }
+        } finally {
+            updateGlobalConfig {
+                category = LogGlobalConfig.CATEGORY
+                name = LogGlobalConfig.LOG_DELETE_ACCUMULATED_FILE_SIZE.name
+                value = sizeBefore
+            }
+            updateGlobalConfig {
+                category = LogGlobalConfig.CATEGORY
+                name = LogGlobalConfig.LOG_DELETE_LAST_MODIFIED.name
+                value = daysBefore
+            }
+            logXml.setText(original, "UTF-8")
         }
     }
 

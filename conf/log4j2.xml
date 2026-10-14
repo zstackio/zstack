@@ -13,6 +13,9 @@
                 <Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
                     <IfFileName glob="management-server-*.log.gz">
                         <IfAny>
+                            <IfNot>
+                                <IfFileName glob="**"/>
+                            </IfNot>
                         </IfAny>
                     </IfFileName>
                 </Delete>
@@ -31,6 +34,9 @@
                 <Delete basePath="${sys:catalina.home}/logs/" maxDepth="1">
                     <IfFileName glob="zstack-api-*.log.gz">
                         <IfAny>
+                            <IfNot>
+                                <IfFileName glob="**"/>
+                            </IfNot>
                         </IfAny>
                     </IfFileName>
                 </Delete>

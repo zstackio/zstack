@@ -136,6 +136,18 @@ public class Log4jXMLModifier {
     }
 
     void updateLog4jXMLFile() throws Exception {
+        NodeList conditions = doc.getElementsByTagName("IfAny");
+        for (int i = 0; i < conditions.getLength(); i++) {
+            Element condition = (Element) conditions.item(i);
+            if (condition.getElementsByTagName("*").getLength() != 0) {
+                continue;
+            }
+            Element allFiles = doc.createElement("IfFileName");
+            allFiles.setAttribute("glob", "**");
+            Element disabled = doc.createElement("IfNot");
+            disabled.appendChild(allFiles);
+            condition.appendChild(disabled);
+        }
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
         Transformer transformer = transformerFactory.newTransformer();;
 
