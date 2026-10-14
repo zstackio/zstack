@@ -78,8 +78,22 @@ class FileVerificationLocalRestoreCase extends SubCase {
         }
     }
 
-    void checkLocalFile() {
+    void checkLocalFile(boolean expectedRecoverFlag = true) {
+        def previousRecords = queryFileVerificationRecords {
+            conditions = ["fileVerificationUuid=${fileUuid}"]
+        }
+        long previousMaxId = previousRecords.empty ? 0 : previousRecords.collect { it.id }.max()
+        int previousCount = previousRecords.size()
         facade.checkLocalFiles([dbf.findByUuid(fileUuid, FileVerificationVO.class)])
+        retryInSecs {
+            def records = queryFileVerificationRecords {
+                conditions = ["fileVerificationUuid=${fileUuid}"]
+            }
+            def newRecords = records.findAll { it.id > previousMaxId }
+            assert records.size() == previousCount + 1: "each restore attempt must append one audit record"
+            assert newRecords.size() == 1
+            assert newRecords[0].recoverFlag == expectedRecoverFlag
+        }
     }
 
     void assertRestoredFile() {
@@ -87,13 +101,6 @@ class FileVerificationLocalRestoreCase extends SubCase {
         assert new String(Files.readAllBytes(protectedFile)) == "original content"
         assert Files.getOwner(protectedFile).name == "root"
         assert ((Files.getAttribute(protectedFile, "unix:mode") as int) & 0777) == 0755
-        retryInSecs {
-            def records = queryFileVerificationRecords {
-                conditions = ["fileVerificationUuid=${fileUuid}"]
-            }
-            assert !records.empty
-            assert records.every { it.recoverFlag }
-        }
     }
 
     void testRestoreDeletedProtectedFile() {
@@ -148,26 +155,27 @@ class FileVerificationLocalRestoreCase extends SubCase {
     void testMissingBackupReportsFailure() {
         String backup = PathUtil.join(PathUtil.getZStackHomeFolder(), "backupfiles", fileUuid)
         ShellUtils.run("rm -- ${quote(backup)} ${quote(protectedFile.toString())}")
-        checkLocalFile()
+        checkLocalFile(false)
         assert !Files.exists(protectedFile)
-        retryInSecs {
-            assert queryFileVerificationRecords {
-                conditions = ["fileVerificationUuid=${fileUuid}", "recoverFlag=false"]
-            }.size() == 1
-        }
     }
 
     @Override
     void clean() {
-        if (fileUuid != null) {
-            deleteVerificationFile { uuid = fileUuid }
-            SQL.New(FileVerificationRecordsVO.class)
-                    .eq(FileVerificationRecordsVO_.fileVerificationUuid, fileUuid).delete()
-            ShellUtils.run("rm -f -- ${quote(PathUtil.join(PathUtil.getZStackHomeFolder(), 'backupfiles', fileUuid))}")
+        try {
+            if (fileUuid != null) {
+                deleteVerificationFile { uuid = fileUuid }
+                SQL.New(FileVerificationRecordsVO.class)
+                        .eq(FileVerificationRecordsVO_.fileVerificationUuid, fileUuid).delete()
+                ShellUtils.run("rm -f -- ${quote(PathUtil.join(PathUtil.getZStackHomeFolder(), 'backupfiles', fileUuid))}")
+            }
+        } finally {
+            try {
+                if (fixtureRoot != null) {
+                    ShellUtils.run("rm -rf -- ${quote(fixtureRoot.toString())}")
+                }
+            } finally {
+                env.delete()
+            }
         }
-        if (fixtureRoot != null) {
-            ShellUtils.run("rm -rf -- ${quote(fixtureRoot.toString())}")
-        }
-        env.delete()
     }
 }
