@@ -34,6 +34,12 @@ public class ListZsDatasetConversationsAction extends AbstractAction {
     @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String questionId;
 
+    @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String taskId;
+
+    @Param(required = false, validValues = {"unscored","1","2","3","4","5"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List manualScores;
+
     @Param(required = false, maxLength = 256, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String keyword;
 
