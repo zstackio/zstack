@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryPolicyVO` (
     `revision` BIGINT NOT NULL DEFAULT 0,
     `policy` LONGTEXT NOT NULL,
     `legacyPolicy` LONGTEXT DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `memory_policy_scope_resource` (`scope`, `resourceUuid`)
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskVO` (
     `targetSnapshotHash` VARCHAR(64) DEFAULT NULL,
     `expectedControlOperationUuid` VARCHAR(32) DEFAULT NULL,
     `policyPlanHash` VARCHAR(64) DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `memory_task_request` (`requestKey`),
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryStateVO` (
     `policyPlanHash` VARCHAR(64) DEFAULT NULL,
     `policyPlanStatus` VARCHAR(16) DEFAULT NULL,
     `policyBlockedFields` TEXT DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`hostUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskFailureOutboxVO` (
     `hostUuid` VARCHAR(32) NOT NULL,
     `action` VARCHAR(32) NOT NULL,
     `reason` VARCHAR(2048) DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `leaseOwner` VARCHAR(255) DEFAULT NULL,
     `leaseUntil` BIGINT DEFAULT NULL,
     `attempts` INT NOT NULL DEFAULT 0,
@@ -144,7 +144,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryCloudBootstrapVO` (
     `taskUuid` VARCHAR(32) DEFAULT NULL,
     `targetPolicyHash` VARCHAR(64) DEFAULT NULL,
     `reason` VARCHAR(2048) DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
     UNIQUE KEY `memory_cloud_bootstrap_request` (`requestUuid`)
@@ -160,7 +160,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryStandardConfigMigrationVO` (
     `uuid` VARCHAR(64) NOT NULL,
     `status` VARCHAR(16) NOT NULL,
     `reason` VARCHAR(2048) NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
@@ -178,8 +178,8 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskIdempotencyReceiptVO` (
 -- Seed only stable system/query rows. Bootstrap, exclusion, task, state,
 -- migration and receipt tables intentionally start empty.
 INSERT IGNORE INTO `zstack`.`MemoryPolicyVO`
-    (`uuid`, `scope`, `resourceUuid`, `revision`, `policy`)
-    VALUES ('Global:global', 'Global', 'global', 0, '{"schemaVersion":1}');
+    (`uuid`, `scope`, `resourceUuid`, `revision`, `policy`, `createDate`, `lastOpDate`)
+    VALUES ('Global:global', 'Global', 'global', 0, '{"schemaVersion":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
 
 INSERT IGNORE INTO `zstack`.`MemoryQueryVersionVO` (`name`, `revision`)
     VALUES ('state', 0), ('task', 0);
