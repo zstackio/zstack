@@ -52,9 +52,11 @@ public class RestrictExprVisitor implements ASTVisitor<String, ASTNode.RestrictE
             }
         }
 
-        String template = makeQueryTemplate(vertex, node.getField());
-        String primaryKey = EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName();
-        template = String.format("(%s.%s IN %s)", src.simpleInventoryName(), primaryKey, template);
+        String template = makeQueryTemplate(vertex.next == null ? vertex : vertex.next, node.getField());
+        String sourceKey = vertex.next == null
+                ? EntityMetadata.getPrimaryKeyField(src.inventoryAnnotation.mappingVOClass()).getName()
+                : vertex.srcKey;
+        template = String.format("(%s.%s IN %s)", src.simpleInventoryName(), sourceKey, template);
         return String.format(template, node.getOperator(), ((ASTNode)node.getValue()).accept(new ValueVisitor()));
     }
 
