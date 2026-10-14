@@ -17,7 +17,7 @@ doc {
 	}
 	field {
 		name "drainControlOperationUuid"
-		desc "已成功完成且对应该Host/池代次的排空操作UUID，32位小写十六进制。"
+		desc "激活恢复时必填：已成功完成且对应该Host/池代次的排空操作UUID，32位小写十六进制。仅恢复已确认调参后缺失的最后CPU回收开关时省略此字段；不得填null或借用排空证明。"
 		type "String"
 		since "5.5.38"
 	}

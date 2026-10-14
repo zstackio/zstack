@@ -220,6 +220,8 @@ class AbstractAction(object):
     def _query_string(self, params):
         queryParams = {}
         for k, v in params.items():
+            if k == "sessionId":
+                continue
             if k == "accessKeySecret":
                 continue
             if k == "accessKeyId":
@@ -461,6 +463,9 @@ class QueryAction(AbstractAction):
 
         for k, v in ps.items():
             if v is None:
+                continue
+
+            if k == 'sessionId':
                 continue
 
             if k == 'accessKeySecret':

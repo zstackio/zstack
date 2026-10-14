@@ -66,8 +66,19 @@ public class MemoryMaintenanceRequestAdaptersTest {
         bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"resetConfirmed\":true}",
                 MemoryZramPoolPreparation.class);
         bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"confirmed\":true}", MemoryUncertainRecovery.class);
+                + "\"}", MemoryUncertainRecovery.class);
         bad("null", MemoryZramPoolPreparation.class);
+    }
+
+    @Test public void cpuRecoveryOmitsDrainWhileActivationRetainsStrictDrainIdentity() {
+        String raw = "{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
+                + "\",\"confirmed\":true}";
+        MemoryUncertainRecovery decoded = gson.fromJson(raw, MemoryUncertainRecovery.class);
+        assertEquals(null, decoded.getDrainControlOperationUuid());
+        assertEquals(raw, gson.toJson(decoded));
+        bad(raw.replace("\"confirmed\"", "\"drainControlOperationUuid\":null,\"confirmed\""), MemoryUncertainRecovery.class);
+        decoded.setDrainControlOperationUuid(UUID);
+        assertEquals(UUID, gson.fromJson(gson.toJson(decoded), MemoryUncertainRecovery.class).getDrainControlOperationUuid());
     }
 
     @Test public void keepsLargeAlignedCapacityExactWithoutDoubleConversion() {

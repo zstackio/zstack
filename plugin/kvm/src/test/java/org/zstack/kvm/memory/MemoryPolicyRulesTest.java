@@ -63,7 +63,15 @@ public class MemoryPolicyRulesTest {
         merge("{}", "{\"zram\":{\"logicalCapacityBytes\":1099511631872}}", "Host");
         merge("{}", "{\"writeback\":{\"batchBytes\":67112960}}", "Host");
         reject("{\"zram\":{\"ramLimitBytes\":9223372036854775808}}", "Host");
-        reject("{\"writeback\":{\"enabled\":true}}", "Host");
+    }
+
+    @Test public void writebackIntentIsIndependentFromBackendAndZram() throws Exception {
+        JsonObject result = new JsonParser().parse(merge("{}",
+                "{\"writeback\":{\"enabled\":true}}", "Global")).getAsJsonObject();
+        assertTrue(result.getAsJsonObject("writeback").get("enabled").getAsBoolean());
+        result = new JsonParser().parse(merge("{}",
+                "{\"writeback\":{\"backendCapacityBytes\":4096}}", "Host")).getAsJsonObject();
+        assertEquals(4096, result.getAsJsonObject("writeback").get("backendCapacityBytes").getAsInt());
     }
 
     @Test public void vmCannotModifyHostSettings() throws Exception {

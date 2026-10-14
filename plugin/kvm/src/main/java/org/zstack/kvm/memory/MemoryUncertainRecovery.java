@@ -40,7 +40,7 @@ public final class MemoryUncertainRecovery {
                 }
             }
             StrictMaintenanceJson.end(in, seen, "expectedHostBootId", "expectedPoolGeneration",
-                    "drainControlOperationUuid", "confirmed");
+                    "confirmed");
             return value;
         }
 
@@ -49,7 +49,9 @@ public final class MemoryUncertainRecovery {
             out.beginObject();
             out.name("expectedHostBootId").value(value.expectedHostBootId);
             out.name("expectedPoolGeneration").value(value.expectedPoolGeneration);
-            out.name("drainControlOperationUuid").value(value.drainControlOperationUuid);
+            if (value.drainControlOperationUuid != null) {
+                out.name("drainControlOperationUuid").value(value.drainControlOperationUuid);
+            }
             out.name("confirmed").value(value.confirmed);
             out.endObject();
         }

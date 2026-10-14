@@ -24,7 +24,7 @@ doc {
 				column {
 					name "recovery"
 					enclosedIn "updateMemoryPolicy"
-					desc "不确定结果恢复证据对象；只用于 recoverUncertain。对象字段：expectedHostBootId (String，当前Host启动标识，必须匹配最新观测)；expectedPoolGeneration (String，待恢复旧池代次，64位小写十六进制摘要)；drainControlOperationUuid (String，已成功排空该Host/池代次的操作UUID，32位小写十六进制)；confirmed (boolean，操作者已核实恢复前置条件，必须为true)。恢复不会伪造原Unknown任务结果。"
+					desc "不确定结果恢复证据对象；只用于 recoverUncertain。对象字段：expectedHostBootId (String，当前Host启动标识，必须匹配最新观测)；expectedPoolGeneration (String，当前待恢复池代次，64位小写十六进制摘要)；drainControlOperationUuid (String，激活恢复必填，已成功排空该Host/池代次的操作UUID；仅恢复调参后的最后CPU开关时省略，不得填null)；confirmed (boolean，操作者已核实恢复前置条件，必须为true)。仅补有原回执和当前版本证明的最后一步，不重放调参、压缩或写回，原Unknown任务结果保持。"
 					location "body"
 					type "MemoryUncertainRecovery"
 					optional true

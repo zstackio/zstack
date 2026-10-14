@@ -9,6 +9,7 @@ public class MemoryUncertainRecoveryRulesTest {
     static final String DRAIN = "22222222222222222222222222222222";
     static final String BOOT = "12345678-1234-1234-1234-123456789abc";
     static final String POOL = String.join("", Collections.nCopies(64, "a"));
+    static final String TUNING_POLICY = "{\"schemaVersion\":1,\"writeback\":{\"batchBytes\":67108864}}";
 
     static Map<String, Object> request() {
         Map<String, Object> request = new LinkedHashMap<>();
@@ -63,6 +64,34 @@ public class MemoryUncertainRecoveryRulesTest {
         return response;
     }
 
+    static MemoryAgentResponse policyProof(String operation) {
+        MemoryAgentResponse response = proof(operation);
+        response.appliedRevision = 9L; response.sampleTime = System.currentTimeMillis();
+        response.state.remove("maintenanceProof");
+        response.state.put("phase", "POLICY_RECOVERED");
+        response.state.put("lastConfirmedOperationUuid", operation);
+        response.state.put("lastConfirmedAppliedRevision", 9L);
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("schemaVersion", 1); proof.put("hostUuid", "host1"); proof.put("bootId", BOOT);
+        proof.put("recoveryOperationUuid", operation); proof.put("unresolvedOperationUuid", OLD);
+        proof.put("expectedPoolGeneration", POOL); proof.put("originalRequestHash", POOL);
+        proof.put("originalPolicyHash", org.apache.commons.codec.digest.DigestUtils.sha256Hex(
+                MemoryPolicyRules.canonicalRequest(MemoryPolicyRules.decode(TUNING_POLICY))));
+        proof.put("originalDesiredRevision", 9); proof.put("tuningRevision", 6);
+        proof.put("cpuExpectedRevision", 13); proof.put("finalCpuRestored", true);
+        proof.put("originalOutcome", "Unknown"); response.state.put("recoveryProof", proof);
+        Map<String, Object> before = new LinkedHashMap<>();
+        before.put("revision", 12); before.put("efficiency_enabled", true);
+        before.put("idle_cpu_threshold_percent", 5); before.put("idle_duration_seconds", 60);
+        response.state.put("cpuBefore", before);
+        Map<String, Object> receipt = new LinkedHashMap<>(before);
+        receipt.put("revision", 14); receipt.put("request_id", OLD + "-cpu");
+        response.state.put("cpuReceipt", receipt);
+        Map<String, Object> readback = new LinkedHashMap<>(receipt); readback.remove("request_id");
+        response.state.put("cpuReadback", readback);
+        return response;
+    }
+
     private APIUpdateMemoryPolicyMsg message() {
         APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setAction("recoverUncertain");
@@ -71,6 +100,9 @@ public class MemoryUncertainRecoveryRulesTest {
 
     @Test public void requiresExplicitNarrowHostRecoveryWithoutPolicyWrites() {
         MemoryUncertainRecoveryRules.validate(message());
+        APIUpdateMemoryPolicyMsg ordinary = message();
+        ordinary.getRecovery().setDrainControlOperationUuid(null);
+        MemoryUncertainRecoveryRules.validate(ordinary);
         APIUpdateMemoryPolicyMsg msg = message(); msg.getRecovery().setConfirmed(false); rejects(msg);
         msg = message(); msg.setAction("apply"); rejects(msg);
         msg = message(); msg.setScope("Global"); rejects(msg);
@@ -78,6 +110,30 @@ public class MemoryUncertainRecoveryRulesTest {
         msg = message(); msg.setPolicy("{\"zram\":{\"enabled\":true}}"); rejects(msg);
         msg = message(); msg.getRecovery().setExpectedPoolGeneration("../path"); rejects(msg);
         assertTrue(MemoryTaskRules.requiresLicenseForConfiguration("recoverUncertain", "{}"));
+    }
+
+    @Test public void policyRecoveryRequiresExactOriginalAndCompleteFinalReceipt() {
+        MemoryTaskVO recovery = new MemoryTaskVO(); recovery.setUuid("recovery"); recovery.setHostUuid("host1");
+        recovery.setScope("Host"); recovery.setAction("recoverUncertain"); recovery.setDesiredRevision(9);
+        recovery.setExpectedControlOperationUuid(OLD);
+        Map<String, Object> request = request(); request.remove("drainControlOperationUuid");
+        recovery.setPolicy(org.zstack.utils.gson.JSONObjectUtil.toJsonString(request));
+        MemoryTaskVO old = new MemoryTaskVO(); old.setUuid(OLD); old.setHostUuid("host1"); old.setScope("Host");
+        old.setAction("apply"); old.setStatus("Unknown"); old.setDesiredRevision(9); old.setPolicy(TUNING_POLICY);
+        MemoryStateVO host = new MemoryStateVO(); host.setHostUuid("host1"); host.setControlOperationUuid(OLD);
+        host.setDesiredRevision(9); host.setAppliedRevision(8L); host.setState("{\"bootId\":\"" + BOOT + "\"}");
+        assertTrue(MemoryUncertainRecoveryRules.confirmsPolicy(recovery, old, host, policyProof("recovery")));
+        for (String section : Arrays.asList("recoveryProof", "cpuBefore", "cpuReceipt", "cpuReadback")) {
+            for (Object key : ((Map<?, ?>) policyProof("recovery").state.get(section)).keySet()) {
+                MemoryAgentResponse broken = policyProof("recovery");
+                ((Map<?, ?>) broken.state.get(section)).remove(key);
+                assertFalse(section + "." + key, MemoryUncertainRecoveryRules.confirmsPolicy(recovery, old, host, broken));
+            }
+        }
+        MemoryAgentResponse stale = policyProof("recovery"); stale.sampleTime = 1L;
+        assertFalse(MemoryUncertainRecoveryRules.confirmsPolicy(recovery, old, host, stale));
+        old.setPolicy("{\"writeback\":{\"batchBytes\":8192}}");
+        assertFalse(MemoryUncertainRecoveryRules.confirmsPolicy(recovery, old, host, policyProof("recovery")));
     }
 
     private void rejects(APIUpdateMemoryPolicyMsg msg) {

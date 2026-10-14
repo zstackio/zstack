@@ -57,7 +57,7 @@
     },
     {
       "action": "recoverUncertain",
-      "preconditions": "Host-only retirement of an unresolved apply/clearOverride after verifying same boot, exact Unknown operation, successful drain, and current pool generation. It does not assert the old request succeeded or failed.",
+      "preconditions": "Host-only explicit recovery. This example retires an unresolved maintenance activation and requires its successful drain UUID. To restore only a tuning-only apply's proven missing final CPU gate, omit drainControlOperationUuid (do not send null); all other fences remain required. Agent must prove the original tuning and CPU guard receipts, unchanged versions, same boot/pool/control and no active operations. No tuning, compression or writeback is replayed. The old task remains Unknown.",
       "request": {
         "scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"recoverUncertain","expectedRevision":0,
         "expectedControlOperationUuid":"22222222222222222222222222222222",

@@ -6,6 +6,8 @@ This guide covers the 15 public API messages, their request and response models,
 
 A Connected KVM Host schedules an asynchronous read-only observation through the Host connection extension; periodic scanning provides a fallback. Observations are evaluated against license, policy, transaction and unresolved-operation checks. Reconnection preserves pool state, Unknown history and confirmed pauses.
 
+Backend-resource readiness accepts RFC3339 observation timestamps with `Z` or a positive/negative timezone offset and fractional seconds, including on Java 8. It compares the original instant without rewriting the observation time; the existing 90-second backend proof bound, future-time rejection, identity and capacity checks remain unchanged. This adds no API parameter.
+
 ## Frontend configuration model and pages
 
 **Users edit memory optimization settings through the existing configuration pages. MemoryPolicy is a backend view of effective configuration and related execution metadata, not a separate policy resource for users to create, name, select or attach.** Do not add a MemoryPolicy management page, policy selector or policy JSON editor.
@@ -17,7 +19,6 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 | Global settings → Memory optimization settings (全局设置 → 内存优化设置) | Existing GlobalConfig reads; GetMemoryPolicy with resourceUuid=global; optional PreviewMemoryPolicy for the proposed Global change | UpdateGlobalConfig once per setting; no Host selection or per-Host configuration writes |
 | Cluster details → Configuration (集群详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Cluster UUID; optional PreviewMemoryPolicy for the proposed Cluster change | UpdateResourceConfig, UpdateResourceConfigs or DeleteResourceConfig with the Cluster UUID; no per-Host configuration writes |
 | Host details → Configuration (物理机详情 → 配置) | Existing ResourceConfig reads; GetMemoryPolicy with the Host UUID; GetMemoryStates for actual state; optional PreviewMemoryPolicy | UpdateResourceConfig, UpdateResourceConfigs or DeleteResourceConfig with the Host UUID |
-| Optional batch settings for explicitly selected Hosts (物理机批量设置) | ResourceConfig reads and GetMemoryPolicy for each selected Host; optional per-Host PreviewMemoryPolicy | UpdateResourceConfig(s) separately with each selected Host UUID; DeleteResourceConfig removes an individual Host override |
 | Global/Cluster/Host maintenance menus and confirmation dialogs | GetMemoryStates and current policy/preview evidence for the selected Hosts | UpdateMemoryPolicy with pause, resume or drain; each Host must satisfy that action's current requirements |
 | Host ZRAM pool or writeback-backend preparation dialog | GetHostMemoryWritebackBackends and current Host state/preparation evidence | UpdateMemoryPolicy with prepareWritebackBackend or prepareZramPool; device/pool preparation targets one Host |
 | Operation feedback, task progress and failure-alarm task details | GetMemoryTasks; refresh GetMemoryStates to confirm actual application | CancelMemoryTask only for a queued, undispatched task |
@@ -27,11 +28,11 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 | VM details → Memory optimization statistics | GetVmMemoryOptimization; ZWatch for applicable VM historical metrics | Read-only; no VM policy, participation, capacity or enable/disable form |
 | VM list → ZRAM savings column | GetVmMemoryOptimizations for the current page's VM UUIDs | Read-only; batch the request rather than querying each VM separately |
 
-Expose only the product settings supported at that resource level: KSM and zero-page switches, ZRAM enablement/capacity, and permitted per-Host writeback settings. Advanced scan/scheduling tuning remains a backend/CLI operation; the UI may display its effective values. Do not render every backend configuration key as an editable control. Writeback device binding/preparation is Host-specific, and Global writeback enablement is rejected.
+Expose only the product settings supported at that resource level: KSM and zero-page switches, ZRAM enablement/capacity, and the writeback switch on Global, Cluster and Host. Writeback device identity, capacity and preparation are Host-only. Advanced scan/scheduling tuning remains a backend/CLI operation; the UI may display its effective values. Do not render every backend configuration key as an editable control. Desired writeback enablement can be saved before a Host backend is configured or ready; execution remains gated separately.
 
-The memory optimization UI saves ordinary settings through UpdateGlobalConfig, UpdateResourceConfig(s) or DeleteResourceConfig according to the resource level being edited. A Global KSM or ZRAM switch updates one GlobalConfig value; a Cluster switch updates one ResourceConfig value using the Cluster UUID. Neither workflow requires a Host list or client-side iteration over Hosts. The backend determines the affected Hosts from the resulting effective configuration and handles per-Host application. Global and Cluster changes preserve more specific overrides. Hosts added later inherit the applicable Cluster/Global settings unless they have their own overrides.
+The memory optimization UI saves ordinary settings through UpdateGlobalConfig, UpdateResourceConfig(s) or DeleteResourceConfig according to the resource level being edited. A Global KSM, ZRAM or writeback switch updates one GlobalConfig value; a Cluster switch updates one ResourceConfig value using the Cluster UUID. Neither workflow requires a Host list or client-side iteration over Hosts. The backend determines the affected Hosts from the resulting effective configuration and handles per-Host application. Global and Cluster changes preserve more specific overrides. Hosts added later inherit the applicable Cluster/Global settings unless they have their own overrides.
 
-A UI may also offer batch editing for explicitly selected Hosts, including selecting all current Hosts. This writes Host overrides and leaves unselected Hosts, Cluster settings and GlobalConfig unchanged; it does not establish a default for future Hosts. No selection means no save, and selecting all does not save until the user confirms. To turn all selected Hosts off, save false for the relevant switch; deselecting them does not disable anything. Submit each Host's related fields atomically with UpdateResourceConfigs, with separate outcomes across Hosts; there is no cross-Host transaction. Preserve mixed values until explicitly edited, invalidate previews after selection or value changes, and do not automatically retry writes whose responses are lost or unknown.
+This release does not add a Host batch-configuration page. Global and Cluster pages edit their own configuration, not a selected set of Host overrides. Related fields on one resource use the existing atomic UpdateResourceConfigs request; that does not create a cross-Host transaction. Invalidate previews after edits, and do not automatically retry writes whose responses are lost or unknown. Configuration values and their sources are distinct from actual Host state and unapplied reasons.
 
 The UI does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute for standard configuration APIs. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
 
@@ -81,7 +82,7 @@ GetMemoryPolicy, PreviewMemoryPolicy and UpdateMemoryPolicy calls identify the r
 
 MemoryTask history has no automatic age-based TTL, matching the existing LongJob policy. `DeleteMemoryTask` is the explicit cleanup path and accepts only a root task UUID. It atomically removes the root and its full Host-child set, bumps the task-query snapshot version, and preserves a permanent five-field tombstone (`taskUuid`, `requestKey`, `requestHash`, `originalStatus`, `deletedDate`) so a previously accepted `clientRequestUuid` can never be replayed as a new operation. The tombstone has no TTL.
 
-Deletion is rejected for queued/running/Unknown/Blocked roots or children, inconsistent partial aggregates, open child sets, target-snapshot replay evidence, active/control/recovery/migration/bootstrap references, malformed Host control-state JSON, or undelivered failure notifications. A missing or already deleted UUID is a successful no-op with `deleted=false`; a child UUID is rejected and callers must use its root. Successful deletion only removes task history and delivered outbox bookkeeping; platform audit/alarm history remains governed by platform policy. This API is admin-only and performs no Host/Agent operation, policy mutation, revision change or License-gated configuration.
+Deletion is rejected for queued/running/Unknown/Blocked roots or children, inconsistent partial aggregates, open child sets, target-snapshot replay evidence, active/control/recovery/migration references, malformed Host control-state JSON, or undelivered failure notifications. A missing or already deleted UUID is a successful no-op with `deleted=false`; a child UUID is rejected and callers must use its root. Successful deletion only removes task history and delivered outbox bookkeeping; platform audit/alarm history remains governed by platform policy. This API is admin-only and performs no Host/Agent operation, policy mutation, revision change or License-gated configuration.
 
 ```http
 DELETE /zstack/v1/memory-optimization/tasks/<rootTaskUuid>
@@ -103,6 +104,9 @@ When the root request is replayed with the same actor, `clientRequestUuid`, and 
 - For state/task pagination, use the returned snapshot token for subsequent pages. A changed query version is a conflict: restart from the first page instead of silently combining pages from different snapshots. Task state transitions can invalidate a token even when the number of rows is unchanged.
 - Use the Get Actions for read requests. The deprecated Query routes are compatibility aliases with the same explicit parameters; they do not support generic AutoQuery filters.
 - SDK `MemoryTaskInventory` includes `expectedControlOperationUuid` and `reconcileOperationUuid`; `MemoryPolicyInventory` includes `migrationExclusion`. `Unknown` remains unresolved, not success.
+- `reconcile` queries the original operation; it never reapplies its policy. A verified ordinary Host success retains that original control ID and applies the original task's delta/clear semantics to MN bookkeeping. If an older MN already completed the query but retained its query ID, the same existing `reconcile` action can query that successful original again, with unchanged desired revision. Automatic/configuration dispatch remains fenced until that bookkeeping is confirmed. Host, boot, revision, current control and fresh Agent proof must still agree. A missing/contradictory proof stays unresolved; no manual database edit, new apply, or relaxed identity check is required.
+- An ordinary successful reconciliation may return an immutable historical receipt. MN then uses the existing read-only Agent `state` endpoint to obtain independent current proof; it does not add a current timestamp or identity to the old receipt. The state envelope identifies the locally verified Host and boot, current sample time and same-boot confirmed original operation/revision. Both replies and the persisted active/control/revision must agree. A missing/expired read, a reboot between reads, or a changed control owner keeps the query unresolved. This is internal readback, not another user operation or a configuration replay; dedicated maintenance/VM recovery contracts remain unchanged.
+- Sparse backend/tuning updates also read the native CPU policy. If the original operation temporarily disabled dispatch, tuning equality alone cannot complete it: its final CPU receipt and current revision/values must agree. A missing final receipt remains `Unknown`; a lost final GET can be reconciled from the original successful receipt and matching current readback. Reconciliation never issues the missing CPU write or silently reenables dispatch.
 
 ## Standard configuration APIs
 
@@ -115,11 +119,17 @@ The 46 ordinary scalar settings use **GlobalConfig / ResourceConfig as the sole 
 | UpdateResourceConfigs | POST `/resource-configurations/{resourceUuid}/resource-configs/actions` | Atomically update multiple settings on one Host or Cluster; resourceUuid is that resource's UUID, not a Host list; wrapper `params`, list `resourceConfigs` |
 | DeleteResourceConfig | DELETE `/resource-configurations/{category}/{name}/{resourceUuid}` | Remove this resource's explicit value so the normal parent value applies; no JSON body |
 
-Category is `kvm`. The KSM switch is `host.ksm`. The remaining keys use `memory.` followed by the policy field path: for example `memory.ksm.zeroPagesEnabled`, `memory.ksm.pagesToScan`, `memory.ksm.sleepMillis`, `memory.zram.enabled`, `memory.zram.logicalCapacityBytes` and `memory.zram.ramLimitBytes`. The exact mapping and permitted resource levels are defined by [MemoryStandardField](../plugin/kvm/src/main/java/org/zstack/kvm/memory/MemoryStandardField.java); the backend device UUID is Host-only. A Global writeback enable is rejected; an individual Host backend must be prepared and validated before activation.
+Category is `kvm`. The KSM switch is `host.ksm`. The remaining keys use `memory.` followed by the policy field path: for example `memory.ksm.zeroPagesEnabled`, `memory.ksm.pagesToScan`, `memory.ksm.sleepMillis`, `memory.zram.enabled`, `memory.zram.logicalCapacityBytes` and `memory.zram.ramLimitBytes`. The exact mapping and permitted resource levels are defined by [MemoryStandardField](../plugin/kvm/src/main/java/org/zstack/kvm/memory/MemoryStandardField.java). `memory.writeback.enabled` is valid on Global, Cluster and Host; `memory.writeback.backendResourceUuid` and `memory.writeback.backendCapacityBytes` are Host-only. Global and Cluster requests cannot bind a Host device or prepare it.
+
+Writeback intent and Host backend configuration are independently saved. Either may be configured first; disabling writeback preserves the backend, and saving/preparing a backend does not enable writeback or ZRAM. Legal desired values remain saved when the Host lacks a backend, a ready backend or runtime support. The existing `policyPlanStatus`, `policyBlockedFields`, task reasons and actual-state reads describe why execution has not occurred; API save success is not Applied. A Host can execute only when inherited writeback intent, ZRAM intent, fresh backend identity/readiness, capability and existing safety checks all permit it. The existing configuration/Host reconciliation path re-evaluates after preparation or capability changes without asking the user to toggle the parent switch again. No additional public API, polling loop or configuration store is introduced.
 
 Host overrides Cluster, which overrides Global, independently for each setting. An explicit `false` is a real override, not missing/unset. Deleting a Host value reveals the Cluster/Global value; deleting a Cluster value reveals Global while leaving Host overrides unchanged. Removing an override is not pool deletion, swapoff, drain, journal cleanup or permission to clear an unresolved operation. The UI should use its existing configuration editing/deletion conventions, without adding a separate inheritance or resource-type selection form.
 
 Scalar prevalidation is read-only. The actual commit validates the complete proposed configuration and affected inherited Host policies, then writes configuration and the memory revision/task records in the same transaction. A rejected configuration or rolled-back write commits none of them and sends no successful configuration notification. A batch validates the combined values as one configuration. Notifications are emitted after commit. Non-memory settings retain their standard configuration behavior.
+
+New-cloud defaults are created by the existing GlobalConfig initialization path: KSM, zero-page merging and ZRAM desired switches are enabled; writeback is disabled. Upgrades preserve existing switch values (including `host.ksm=none` and an empty unmanaged zero-page setting), even on an old cloud with no Hosts. Unset scan settings use 2000 pages and 20 milliseconds; explicit Global/Cluster/Host values are retained. There is no fresh-cloud installer argument, initialization API, separate bootstrap resource or default-seeding polling loop. Desired defaults still require ordinary per-Host capability and safety validation before execution.
+
+KSM is controlled through the distribution's native `ksm.service` and `ksmtuned.service`, without an additional scan daemon. If the kernel has no `use_zero_pages` interface, ordinary KSM remains supported and internal completion evidence marks zero pages as unsupported; state does not invent `zeroPagesEnabled=false`. A request explicitly enabling zero pages is rejected before writes. Permission errors, malformed values and missing required ordinary-KSM evidence remain errors. Existing complete zero-page readback evidence is still verified strictly; this compatibility change adds no public parameter or API.
 
 Legacy `host.ksm` has three explicit values: `true`, `false`, and `none`. An explicit `none` stops inheritance of **that switch**, leaves it unmanaged, and is not an alias for `false` or a deleted row. Deleting the ResourceConfig override reveals the parent. The read-only `MemoryPolicyInventory.fieldModes` reports `{"ksm.enabled":"Unmanaged"}` for an explicit unmanaged source; `effectivePolicy` and the Agent target omit that switch. Other KSM tuning/zero-page fields remain independent. When a tuning-only target has no switch, Agent preserves the existing valid setting or reads native `run=0/1` before its first write; missing/invalid native state rejects the change instead of implicitly enabling KSM. VM participation policies have no KSM field mode.
 
@@ -173,7 +183,7 @@ Content-Type: application/json
 {"updateResourceConfig":{"value":"true"}}
 ```
 
-Update coupled capacity fields atomically for one Host. For Cluster capacity settings, use the Cluster UUID in the same route. Explicit multi-Host editing sends a separate request for each selected Host:
+Update coupled ZRAM capacity fields atomically for one Host. For Cluster ZRAM capacity settings, use the Cluster UUID in the same route; Host writeback-backend capacity is not a Cluster setting:
 
 ```http
 POST /zstack/v1/resource-configurations/<hostUuid>/resource-configs/actions
@@ -190,6 +200,52 @@ Remove one Host's zero-page override so its parent setting applies:
 ```http
 DELETE /zstack/v1/resource-configurations/kvm/memory.ksm.zeroPagesEnabled/<hostUuid>
 ```
+
+Save a Global writeback intent even before individual Hosts have backends:
+
+```http
+PUT /zstack/v1/global-configurations/kvm/memory.writeback.enabled/actions
+Content-Type: application/json
+
+{"updateGlobalConfig":{"value":"true"}}
+```
+
+Override that intent to false for one Cluster, then remove the override to inherit again. Neither request deletes any Host backend; a more specific Host override remains authoritative:
+
+```http
+PUT /zstack/v1/resource-configurations/kvm/memory.writeback.enabled/<clusterUuid>/actions
+Content-Type: application/json
+
+{"updateResourceConfig":{"value":"false"}}
+```
+
+```http
+DELETE /zstack/v1/resource-configurations/kvm/memory.writeback.enabled/<clusterUuid>
+```
+
+Save one Host's valid backend fields without including an enable switch. Obtain its identity/capacity from the existing Host candidate API; these sample placeholders are not permission to use an arbitrary disk:
+
+```http
+POST /zstack/v1/resource-configurations/<hostUuid>/resource-configs/actions
+Content-Type: application/json
+
+{"params":{"resourceConfigs":[
+  {"category":"kvm","name":"memory.writeback.backendResourceUuid","value":"<hostBackendResourceUuid>"},
+  {"category":"kvm","name":"memory.writeback.backendCapacityBytes","value":"21474836480"}
+]}}
+```
+
+Preparation still uses the existing explicit Host maintenance workflow and fresh proof described below. Saving fields does not prepare, format or replace an active device. Inspect the inherited desired value and actual application independently:
+
+```http
+GET /zstack/v1/memory-policies/<hostUuid>
+```
+
+```http
+GET /zstack/v1/memory-optimization/states?hostUuids=<hostUuid>
+```
+
+The same standard `UpdateGlobalConfigAction`, `UpdateResourceConfigAction`, `UpdateResourceConfigsAction` and `DeleteResourceConfigAction` handle these examples; no new SDK Action is required. Unknown operations, stale evidence, confirmed pauses and device ownership protections are unchanged.
 
 Values above are strings because that is the existing configuration API contract; capacities are exact decimal bytes, not GiB strings or floating-point numbers. Follow the usual asynchronous API event/job flow, then query effective policy/state for Host application. Standard configuration APIs return their platform Event schemas.
 
@@ -270,7 +326,14 @@ Use `targetVmUuids` for staging; never send both target-list fields. Staging bin
 
 `recovery`, `backendPreparation` and `poolPreparation` are fixed `MemoryUncertainRecovery`, `MemoryBackendPreparation` and `MemoryZramPoolPreparation` objects. Unknown/duplicate members and wrong JSON types are rejected using the original request JSON before generic Map conversion can hide them. Capacity must be an exact in-range integer number; an equivalent JSON literal such as `8192.0` or `8.192e3` remains accepted, while a string, fraction or overflow is rejected. Omit inapplicable objects; do not send a null object or mix maintenance object types in one action.
 
-All twelve action bodies and their preconditions are published in [the action examples](../plugin/kvm/src/main/resources/memory-optimization/update-memory-policy-actions.json). Each `request` is wrapped as `{"updateMemoryPolicy": REQUEST}` and sent to PUT `/zstack/v1/memory-policies/RESOURCE_UUID/actions`, using the same resource UUID in the body and path and normal OAuth authentication. Use current read/preview values for revision, complete source chain, boot/pool/control fences and a new request UUID; the illustrative UUIDs are not live targets. `apply`/`clearOverride` are compatibility operations; ordinary configuration uses the standard APIs above. `recoverUncertain` only covers the existing maintenance-activation retirement contract, not arbitrary ordinary Unknown operations.
+All twelve action bodies and their preconditions are published in [the action examples](../plugin/kvm/src/main/resources/memory-optimization/update-memory-policy-actions.json). Each `request` is wrapped as `{"updateMemoryPolicy": REQUEST}` and sent to PUT `/zstack/v1/memory-policies/RESOURCE_UUID/actions`, using the same resource UUID in the body and path and normal OAuth authentication. Use current read/preview values for revision, complete source chain, boot/pool/control fences and a new request UUID; the illustrative UUIDs are not live targets. `apply`/`clearOverride` are compatibility operations; ordinary configuration uses the standard APIs above.
+
+`recoverUncertain` is backend/CLI-only and supports two narrow cases, not arbitrary Unknown operations:
+
+- Maintenance activation retirement requires the exact successful `drainControlOperationUuid` as before.
+- A tuning-only Host apply that committed tuning but did not restore its temporarily disabled CPU reclaim gate omits `drainControlOperationUuid` (not `null`). The Agent verifies the original tuning/guard receipts, unchanged native revisions/settings, the same Host/boot/pool/control, and no active operations. It issues only the original final CPU CAS request and saves its receipt. It never replays tuning, compression, writeback or drain.
+
+For both cases, the original task remains Unknown for audit and replay protection. The new recovery task may finish only with verified evidence. CPU recovery returns `phase=POLICY_RECOVERED`, the original applied revision, and the new recovery control UUID; MN merges only the original confirmed policy into the applied snapshot. Pre-dispatch rejection restores the original unresolved slot. If the CPU PUT response is lost before its receipt is durable, recovery stays Unknown even when a later GET shows equal values. `reconcile` is always read-only; it can finish only when the saved receipt and current versions agree. Repeating a completed recovery returns the original receipt and does not issue another PUT.
 
 VM replies use `MemoryVmAccountingInventory` (batch: map from every distinct requested VM UUID to that model). Public names use camelCase: `observedAt`, `hostBootId`, `schemaVersion`, `ownershipSemantics`, nested identity and metric names. Missing values stay null, observed zero stays zero, and valid negative savings/differences are not clamped. uint64 identity tokens remain decimal strings; unsafe already-rounded floating-point identities are unavailable. Samples use their own `observedAt` and server `displayTtlMillis`, not request time.
 
@@ -356,6 +419,30 @@ Frontend implementation and environment functional tests use the same public man
 - Read VM statistics through the single/batch public VM APIs with the applicable account or IAM2 project session. Verify access denial and unavailable samples separately.
 - Verify KSM, zero-page, ZRAM and writeback statistics through the frontend's current-statistics APIs and ZWatch historical-metric path. Native/Agent/Go/Prometheus observations can corroborate results, but do not replace the public API checks.
 - Record the tested package identity, sanitized request/response, task result, Host readback and monitoring evidence. Keep unit tests, simulated dependencies, backend-only maintenance and compatibility regressions separate from environment results for the frontend path.
+
+## Standard event alarms and UI visibility
+
+Use the existing ZWatch event-subscription APIs, not metric alarms or a memory-specific alarm API. Both events are in `ZStack/Host`: `HostMemoryOptimizationTaskFailed` (actual failed tasks, with the existing default subscription) and `HostMemoryOptimizationServiceAbnormal` (explicit component failure). Neither event is a time-series metric.
+
+For example, POST `/zwatch/events/subscriptions` through the standard authenticated REST root:
+
+```json
+{
+  "params": {
+    "name": "Host memory service failure",
+    "namespace": "ZStack/Host",
+    "eventName": "HostMemoryOptimizationServiceAbnormal",
+    "emergencyLevel": "Normal",
+    "labels": [{"key": "HostUuid", "value": "<hostUuid>"}]
+  }
+}
+```
+
+Select notification actions through the existing event-alarm workflow; this example alone does not configure an external email/SMS destination. Query, update, enable/disable and delete use standard EventSubscription APIs and their authorization. Do not merge subscriptions into metric Alarm pagination or create a second task-failure default subscription.
+
+Service facts come from the existing read-only Host observation. Native KSM/ksmtuned `failed` is abnormal only while the effective policy expects it to run; `active` is the corresponding component's recovery fact. Off, paused, maintenance, disconnected, unknown, normal pressure-controlled `run=0`, and a missing optional Go service in a KSM-only deployment are not failures. Writeback requires a new native backend I/O error; recovery requires successful post-backoff I/O in the same pool, not merely an elapsed timer or successful idle marking. Existing ZWatch barriers deduplicate by Host and component. These internal observations do not add a public health API, configuration or polling task and do not override Unknown control fences.
+
+Only administrators see memory-optimization/savings widgets, columns and configuration entries. Tenant views also stop their associated display queries. Existing single/batch VM read APIs retain their resource/account/IAM2 permission semantics; UI hiding does not make these APIs admin-only.
 
 ## Backend compatibility appendix
 

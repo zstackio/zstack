@@ -21,6 +21,7 @@
     </bean>
     <bean id="MemoryOptimizationManager" class="org.zstack.kvm.memory.MemoryOptimizationManager">
         <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.config.GlobalConfigInitExtensionPoint"/>
             <zstack:extension interface="org.zstack.header.Component"/>
             <zstack:extension interface="org.zstack.header.Service"/>
             <zstack:extension interface="org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint"/>

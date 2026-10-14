@@ -2,7 +2,10 @@ package org.zstack.kvm.memory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import org.zstack.header.host.HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData;
 
 /** Export only the requested VM. Missing or stale attribution never becomes zero. */
 public final class MemoryObservationRules {
@@ -16,6 +19,102 @@ public final class MemoryObservationRules {
     };
 
     private MemoryObservationRules() {
+    }
+
+    /** Interpret only explicit fresh service facts, never control Unknown or run=0 as failure. */
+    static List<HostMemoryOptimizationServiceStateChangedData> serviceEvents(String host,
+            MemoryAgentResponse response, MemoryPolicyConfig policy, long now) {
+        List<HostMemoryOptimizationServiceStateChangedData> result = new ArrayList<>();
+        if (policy == null || response == null || response.state == null || response.sampleTime == null
+                || now < response.sampleTime || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                || !(response.state.get("bootId") instanceof String)
+                || ((String) response.state.get("bootId")).trim().isEmpty()
+                || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
+        boolean complete = response.isSuccess() && "Succeeded".equals(response.status);
+        boolean nativeOnly = !response.isSuccess() && "Unknown".equals(response.status)
+                && "LOCAL_SERVICE_UNAVAILABLE".equals(response.reasonCode);
+        if (!complete && !nativeOnly) { return result; }
+        Map<String, Object> state = response.state;
+        Map<?, ?> lifecycle = map(state.get("lifecycle"));
+        if (Boolean.TRUE.equals(state.get("maintenance_blocks_activation"))
+                || lifecycle != null && (Boolean.TRUE.equals(lifecycle.get("paused"))
+                || "paused".equalsIgnoreCase(stringOrNull(lifecycle.get("activeState"))))) { return result; }
+        if (policy.ksm != null && Boolean.TRUE.equals(policy.ksm.enabled)) {
+            Map<?, ?> actual = map(state.get("actual"));
+            Map<?, ?> ksm = actual == null ? null : map(actual.get("ksm"));
+            if (ksm != null && !"unknown".equals(ksm.get("quality"))) {
+                nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"));
+                nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"));
+            }
+        }
+        if (complete && policy.zram != null && Boolean.TRUE.equals(policy.zram.enabled)
+                && policy.writeback != null && Boolean.TRUE.equals(policy.writeback.enabled)
+                && Boolean.TRUE.equals(state.get("resource_authorized"))
+                && observationFailure(state.get("observed_at"), now,
+                        MemoryOptimizationGlobalConfig.displayTtlMillis()) == null) {
+            Map<?, ?> health = map(state.get("backend_health"));
+            if (health != null && "DEGRADED".equals(health.get("state"))
+                    && "NATIVE_BACKEND_IO_ERROR_BACKOFF".equals(health.get("reason"))
+                    && Boolean.FALSE.equals(health.get("new_io_permitted_by_backend_health"))) {
+                result.add(serviceEvent(host, "zram-writeback", "Failed", "NATIVE_BACKEND_IO_ERROR_BACKOFF"));
+            } else if (health != null && writebackRecovered(state, health)) {
+                result.add(serviceEvent(host, "zram-writeback", "Recovered", "WRITEBACK_IO_SUCCEEDED_AFTER_BACKOFF"));
+            }
+        }
+        return result;
+    }
+
+    private static void nativeServiceEvent(List<HostMemoryOptimizationServiceStateChangedData> events,
+                                           String host, String service, Object state) {
+        if ("failed".equals(state)) { events.add(serviceEvent(host, service, "Failed", "SYSTEMD_FAILED")); }
+        else if ("active".equals(state)) { events.add(serviceEvent(host, service, "Recovered", "SYSTEMD_ACTIVE")); }
+    }
+
+    private static HostMemoryOptimizationServiceStateChangedData serviceEvent(String host, String service,
+                                                                             String status, String reason) {
+        HostMemoryOptimizationServiceStateChangedData result = new HostMemoryOptimizationServiceStateChangedData();
+        result.setHostUuid(host); result.setService(service); result.setStatus(status); result.setReason(reason);
+        return result;
+    }
+
+    private static boolean writebackRecovered(Map<String, Object> state, Map<?, ?> health) {
+        if (!"READY".equals(health.get("state"))
+                || !"BACKOFF_ELAPSED_BOUNDED_IO_PERMITTED".equals(health.get("reason"))
+                || !Boolean.TRUE.equals(health.get("new_io_permitted_by_backend_health"))) { return false; }
+        Map<?, ?> returned = map(state.get("last_writeback_return"));
+        Map<?, ?> schedule = map(state.get("writeback_schedule"));
+        Map<?, ?> pool = map(state.get("host_zram"));
+        if (returned == null || schedule == null || pool == null
+                || !Boolean.TRUE.equals(returned.get("kernel_called"))
+                || returned.get("error") != null && !"".equals(returned.get("error"))
+                || !(returned.get("operation_id") instanceof String)
+                || ((String) returned.get("operation_id")).isEmpty()
+                || !returned.get("operation_id").equals(schedule.get("last_completed_id"))
+                || !(pool.get("pool_generation") instanceof String)
+                || ((String) pool.get("pool_generation")).isEmpty()
+                || !pool.get("pool_generation").equals(schedule.get("pool_generation"))
+                || !"native_host_device".equals(pool.get("quality"))) { return false; }
+        Map<?, ?> before = map(returned.get("before"));
+        Map<?, ?> after = map(returned.get("after"));
+        if (before == null || after == null || !"native_host_device".equals(before.get("quality"))
+                || !"native_host_device".equals(after.get("quality"))) { return false; }
+        try {
+            java.time.Instant until = java.time.OffsetDateTime.parse((String) health.get("backoff_until")).toInstant();
+            java.time.Instant started = java.time.OffsetDateTime.parse((String) before.get("observed_at")).toInstant();
+            java.time.Instant ended = java.time.OffsetDateTime.parse((String) returned.get("returned_at")).toInstant();
+            java.time.Instant observed = java.time.OffsetDateTime.parse((String) state.get("observed_at")).toInstant();
+            // idle marking also has a successful return: require real committed writeback progress.
+            Long oldPages = nullableLong(before.get("committed_writeback_pages_total"));
+            Long newPages = nullableLong(after.get("committed_writeback_pages_total"));
+            if (oldPages == null || oldPages < 0 || newPages == null || newPages <= oldPages
+                    || !started.isAfter(until) || ended.isBefore(started) || observed.isBefore(ended)) { return false; }
+            for (String counter : new String[]{"read_errors", "write_errors"}) {
+                Long previous = nullableLong(before.get(counter));
+                Long current = nullableLong(after.get(counter));
+                if (previous == null || previous < 0 || !previous.equals(current)) { return false; }
+            }
+            return true;
+        } catch (RuntimeException malformed) { return false; }
     }
 
     /**

@@ -191,7 +191,7 @@ public class MemoryLicenseConfigurationTest {
 
     @Test
     public void bootstrapAndConnectHostPlanTasksUseDeltaRegardlessOfFullPolicyBody() throws Exception {
-        for (String actor : Arrays.asList("system:memory-fresh-cloud-bootstrap", "system:memory-host-connect-policy")) {
+        for (String actor : Arrays.asList("system:memory-host-connect-policy")) {
             RecordingRepository repository = new RecordingRepository();
             RecordingManager manager = manager(repository, System.currentTimeMillis() + 300_000);
             MemoryTaskVO task = task("apply");
@@ -568,7 +568,6 @@ public class MemoryLicenseConfigurationTest {
         }
         @Override boolean canResumeControl(String hostUuid, String controlUuid) { return false; }
         @Override boolean canReconcileRejectedResume(String hostUuid, String controlUuid) { return false; }
-        @Override public MemoryCloudBootstrapVO freshCloudBootstrap() { return null; }
         @Override MemoryTaskVO findTask(String uuid) { return null; }
         @Override public void observe(String hostUuid, MemoryAgentResponse response) { }
         @Override public void authorizePermit(String hostUuid, boolean allowed, long deadline) {
