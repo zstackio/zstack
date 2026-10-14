@@ -4628,7 +4628,7 @@
   "ORG_ZSTACK_IPSEC_10014": "Tidak ada master VPC untuk HA group %s",
   "ORG_ZSTACK_VPCFIREWALL_10018": "Protokol ICMP adalah satu-satunya protokol yang dapat menggunakan tipe ICMP. Harap pastikan kode Anda menentukan protokol yang benar",
   "ORG_ZSTACK_IPSEC_10015": "Ada VPC[%s] yang menggunakan plugin IPsec lama; harap upgrade untuk membuat koneksi IPsec",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "indeks aturan [%%s] tidak valid",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "aturan default[%s] tidak dapat diaktifkan atau dinonaktifkan",
   "ORG_ZSTACK_IPSEC_10016": "Sudah ada koneksi IPsec[uuid:%s, name:%s] dengan virtual router dan alamat peer yang sama",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "gunakan penyimpanan thick-provisioning sebagai volume cache; provisioning volume [%s] adalah %s",
   "ORG_ZSTACK_IPSEC_10010": "Semua jaringan dalam koneksi IPsec yang sama harus memiliki jenis yang sama.",

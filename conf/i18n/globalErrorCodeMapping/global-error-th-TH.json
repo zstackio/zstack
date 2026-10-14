@@ -4628,7 +4628,7 @@
   "ORG_ZSTACK_IPSEC_10014": "ไม่มี master VPC สำหรับ HA group %s",
   "ORG_ZSTACK_VPCFIREWALL_10018": "ICMP protocol เป็น protocol เดียวที่สามารถใช้ ICMP types ได้ โปรดตรวจสอบว่า code ระบุ protocol ที่ถูกต้อง",
   "ORG_ZSTACK_IPSEC_10015": "มี VPC[%s] ที่ใช้ IPsec plugin เวอร์ชันเก่าอยู่ โปรดอัปเกรดเพื่อสร้าง IPsec connection",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "rule [%%s] index ไม่ถูกต้อง",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "ไม่สามารถเปิดหรือปิดใช้งานกฎเริ่มต้น[%s]ได้",
   "ORG_ZSTACK_IPSEC_10016": "มี IPsec connection[uuid:%s, name:%s] ที่มี virtual router และ peer address เดียวกันอยู่แล้ว",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "ใช้พื้นที่เก็บข้อมูลแบบ thick-provisioned เป็น volume แคช; การจัดสรรของ volume [%s] คือ %s",
   "ORG_ZSTACK_IPSEC_10010": "",
