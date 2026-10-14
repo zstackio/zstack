@@ -214,12 +214,13 @@ public class FileVerificationFacadeImpl extends AbstractService implements FileV
     }
 
     public void backupRestoreLocalFile(String srcPath, String dstPath) throws IOException {
+        File source = new File(srcPath).getAbsoluteFile();
         File dest = new File(dstPath).getAbsoluteFile();
         if (!dest.getParentFile().exists()){
             ShellUtils.run(String.format("mkdir -p -- '%s'", dest.getParent().replace("'", "'\\''")));
         }
         ShellUtils.run(String.format("cp --no-target-directory --remove-destination --preserve=all -- '%s' '%s'",
-                srcPath.replace("'", "'\\''"), dest.getPath().replace("'", "'\\''")));
+                source.getPath().replace("'", "'\\''"), dest.getPath().replace("'", "'\\''")));
     }
 
     private String getLocalFileDigest(FileVerification fv){

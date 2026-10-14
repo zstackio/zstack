@@ -16,6 +16,7 @@ import org.zstack.utils.path.PathUtil
 
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 
 class FileVerificationLocalRestoreCase extends SubCase {
     EnvSpec env
@@ -48,7 +49,7 @@ class FileVerificationLocalRestoreCase extends SubCase {
         env.create {
             facade = bean(FileVerificationFacadeImpl.class)
             dbf = bean(DatabaseFacade.class)
-            fixtureRoot = Files.createTempDirectory("file-verification-")
+            fixtureRoot = Files.createTempDirectory(Paths.get(System.getProperty("user.dir"), "target"), "file-verification-")
             Path protectedDir = Files.createDirectory(fixtureRoot.resolve("protected directory"))
             protectedFile = protectedDir.resolve("verified ' file")
             Files.write(protectedFile, "original content".bytes)
@@ -65,7 +66,9 @@ class FileVerificationLocalRestoreCase extends SubCase {
             FileVerificationInventory inventory = queryVerificationFile {
                 conditions = ["node=mn"]
             }.find { it.path == protectedFile.toString() }
+            assert inventory != null: "verification file was not created for ${protectedFile}"
             fileUuid = inventory.uuid
+            testRelativeSourcePath()
             testRestoreDeletedProtectedFile()
             testRestoreModifiedProtectedFile()
             testRefreshLegacyBackup()
@@ -97,6 +100,15 @@ class FileVerificationLocalRestoreCase extends SubCase {
         ShellUtils.run("rm -- ${quote(protectedFile.toString())}")
         checkLocalFile()
         assertRestoredFile()
+    }
+
+    void testRelativeSourcePath() {
+        String relativeSource = Paths.get(System.getProperty("user.dir")).relativize(protectedFile).toString()
+        Path copy = fixtureRoot.resolve("relative source copy")
+        facade.backupRestoreLocalFile(relativeSource, copy.toString())
+        assert new String(Files.readAllBytes(copy)) == "original content"
+        assert Files.getOwner(copy).name == "root"
+        assert ((Files.getAttribute(copy, "unix:mode") as int) & 0777) == 0755
     }
 
     void testRestoreModifiedProtectedFile() {
