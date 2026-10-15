@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.host.HostDeletionGuard;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -2082,12 +2083,25 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                attachDataVolume(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
+                try {
+                    attachDataVolume(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                } catch (OperationFailureException e) {
+                    AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
+                    reply.setError(e.getErrorCode());
+                    bus.reply(msg, reply);
+                    chain.next();
+                } catch (RuntimeException e) {
+                    logger.warn("failed to prepare volume attachment", e);
+                    AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
+                    reply.setError(Platform.inerr(e.getMessage()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
             }
 
             @Override
@@ -3115,6 +3129,24 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void setFlowMarshaller(FlowChain chain) {
+        FlowFinallyHandler previous = chain instanceof FlowChainMutable
+                ? ((FlowChainMutable) chain).getFlowFinallyHandler() : null;
+        chain.Finally(new FlowFinallyHandler(null) {
+            @Override
+            public void Finally() {
+                try {
+                    if (previous != null) {
+                        previous.Finally();
+                    }
+                } finally {
+                    VmInstanceSpec spec = (VmInstanceSpec) chain.getData().get(Params.VmInstanceSpec.toString());
+                    if (spec != null && spec.getCurrentVmOperation() != VmOperation.Migrate
+                            && spec.getCurrentVmOperation() != VmOperation.Start) {
+                        HostDeletionGuard.releaseVm(spec);
+                    }
+                }
+            }
+        });
         chain.setFlowMarshaller(new FlowMarshaller() {
             @Override
             public Flow marshalTheNextFlow(String previousFlowClassName, String nextFlowClassName, FlowChain chain, Map data) {
@@ -4078,6 +4110,37 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void recoverVm(final Completion completion) {
+        String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        // Recovery after the former host has already been deleted remains valid.
+        Long lease = hostUuid != null && dbf.isExist(hostUuid, HostVO.class)
+                ? new HostDeletionGuard().acquire(hostUuid, false) : null;
+        try {
+            recoverVmWithLease(new Completion(completion) {
+                @Override
+                public void success() {
+                    if (lease != null) {
+                        HostDeletionGuard.release(lease);
+                    }
+                    completion.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    if (lease != null) {
+                        HostDeletionGuard.release(lease);
+                    }
+                    completion.fail(errorCode);
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            if (lease != null) {
+                HostDeletionGuard.release(lease);
+            }
+            throw e;
+        }
+    }
+
+    private void recoverVmWithLease(final Completion completion) {
         final VmInstanceInventory vm = getSelfInventory();
         final List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
         for (RecoverVmExtensionPoint ext : exts) {
@@ -6361,13 +6424,49 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
-        final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
         ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
         if (err != null) {
             throw new OperationFailureException(err);
         }
 
+        // Offline attachment of a ready local disk does not access the former
+        // host. Non-local/undetermined disks still need lastHost protection:
+        // stopped VMs are included in direct host deletion's storage check.
+        VolumeInventory volume = msg.getVolume();
+        boolean offlineLocal = self.getHostUuid() == null && self.getState() == VmInstanceState.Stopped
+                && VolumeStatus.Ready.toString().equals(volume.getStatus())
+                && volume.getPrimaryStorageUuid() != null
+                && Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, volume.getPrimaryStorageUuid())
+                        .eq(PrimaryStorageVO_.type, PrimaryStorageConstants.LOCAL_STORAGE_TYPE).isExists();
+        String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        if (offlineLocal || (self.getHostUuid() == null && !dbf.isExist(hostUuid, HostVO.class))) {
+            hostUuid = null;
+        }
+        Long lease = hostUuid == null ? null : new HostDeletionGuard().acquire(hostUuid, false);
+        try {
+            attachDataVolumeWithLease(msg, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    try {
+                        if (lease != null) {
+                            HostDeletionGuard.release(lease);
+                        }
+                    } finally {
+                        completion.done();
+                    }
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            if (lease != null) {
+                HostDeletionGuard.release(lease);
+            }
+            throw e;
+        }
+    }
+
+    private void attachDataVolumeWithLease(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
+        final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         Map data = new HashMap();
 
         final VolumeInventory volume = msg.getVolume();
@@ -6502,9 +6601,11 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void doMigrateVm(final MigrateVmMessage msg, final Completion completion) {
+    private void doMigrateVm(final MigrateVmMessage msg, final Completion originalCompletion) {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
+        // Start/migration failures may resolve the actual host asynchronously.
+        final Completion completion = HostDeletionGuard.releasingCompletion(spec, originalCompletion);
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);
@@ -6646,6 +6747,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
+        final Completion guardedCompletion = HostDeletionGuard.releasingCompletion(spec, completion);
         spec.setMessage(msg);
 
         if (msg instanceof APIStartVmInstanceMsg) {
@@ -6695,10 +6797,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         String vmLastHostUuid = self.getLastHostUuid();
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler(completion) {
+        chain.done(new FlowDoneHandler(guardedCompletion) {
             @Override
             public void handle(final Map data) {
-                provisionAfterStartVm(spec, new NoErrorCompletion(completion) {
+                provisionAfterStartVm(spec, new NoErrorCompletion(guardedCompletion) {
                     @Override
                     public void done() {
                         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -6721,11 +6823,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                         extEmitter.afterStartVm(inv);
-                        completion.success();
+                        guardedCompletion.success();
                     }
                 });
             }
-        }).error(new FlowErrorHandler(completion) {
+        }).error(new FlowErrorHandler(guardedCompletion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
@@ -6748,16 +6850,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }.execute();
 
                 if (HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(completion) {
+                    checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(guardedCompletion) {
                         @Override
                         public void done() {
-                            completion.fail(errCode);
+                            guardedCompletion.fail(errCode);
                         }
                     });
                     return;
                 }
 
-                completion.fail(errCode);
+                guardedCompletion.fail(errCode);
             }
         }).start();
     }

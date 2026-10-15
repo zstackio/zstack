@@ -1,6 +1,8 @@
 package org.zstack.test.integration.kvm.vm.attachvolume
 
 import org.zstack.header.vm.VmInstanceVO
+import org.zstack.header.vm.VmInstanceVO_
+import org.zstack.core.db.SQL
 import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.DiskOfferingInventory
@@ -164,12 +166,15 @@ class AttachVolumeToStoppedVmCase extends SubCase {
 
     void testAttachWhenVmLastHostUuidIsNull() {
         VmInstanceInventory vm = env.inventoryByName("vm")
-        HostInventory host = env.inventoryByName("kvm")
         DiskOfferingInventory diskOfferingInventory = env.inventoryByName("diskOffering")
 
-        deleteHost {
-            uuid = host.uuid
-        }
+        // A host with a stopped Ceph VM cannot be deleted. Construct the
+        // hostless VM fixture directly to retain this attachment-error test.
+        SQL.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vm.uuid)
+                .set(VmInstanceVO_.hostUuid, null)
+                .set(VmInstanceVO_.lastHostUuid, null)
+                .update()
         retryInSecs(3,1) {
             VmInstanceVO vo = dbFindByUuid(vm.uuid, VmInstanceVO.class)
             assert vo.getHostUuid() == null

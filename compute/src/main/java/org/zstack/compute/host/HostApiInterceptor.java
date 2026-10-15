@@ -5,6 +5,7 @@ import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -12,9 +13,11 @@ import org.zstack.header.agent.versioncontrol.AgentVersionVO;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
 import org.zstack.utils.network.NetworkUtils;
+
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -64,6 +67,12 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        try {
+            new HostDeletionGuard().validateVmStorage(msg.getUuid());
+        } catch (OperationFailureException e) {
+            throw new ApiMessageInterceptionException(e.getErrorCode());
         }
     }
 

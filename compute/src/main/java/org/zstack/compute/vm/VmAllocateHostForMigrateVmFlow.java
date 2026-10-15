@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.host.HostDeletionGuard;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -81,6 +82,9 @@ public class VmAllocateHostForMigrateVmFlow implements Flow {
                     AllocateHostReply ar = (AllocateHostReply)reply;
                     spec.setDestHost(ar.getHost());
                     data.put(SUCCESS, true);
+                    if (!HostDeletionGuard.protectVm(spec, ar.getHost().getUuid(), chain)) {
+                        return;
+                    }
                     chain.next();
                 } else {
                     chain.fail(reply.getError());
