@@ -1,5 +1,6 @@
 package org.zstack.storage.ceph;
 
+import java.math.BigInteger;
 import java.util.Map;
 
 /**
@@ -10,9 +11,9 @@ public class CephPoolCapacity {
     int replicatedSize;
     String securityPolicy;
     Float diskUtilization;
-    Long availableCapacity;
-    Long usedCapacity;
-    Long totalCapacity;
+    BigInteger availableCapacity;
+    BigInteger usedCapacity;
+    BigInteger totalCapacity;
     String relatedOsds;
     Map<String, OsdCapacity> relatedOsdCapacity;
 
@@ -78,11 +79,11 @@ public class CephPoolCapacity {
     }
 
     public Long getAvailableCapacity() {
-        return availableCapacity;
+        return availableCapacity == null ? null : availableCapacity.longValueExact();
     }
 
     public void setAvailableCapacity(Long availableCapacity) {
-        this.availableCapacity = availableCapacity;
+        this.availableCapacity = availableCapacity == null ? null : BigInteger.valueOf(availableCapacity);
     }
 
     public int getReplicatedSize() {
@@ -94,19 +95,19 @@ public class CephPoolCapacity {
     }
 
     public Long getUsedCapacity() {
-        return usedCapacity;
+        return usedCapacity == null ? null : usedCapacity.longValueExact();
     }
 
     public void setUsedCapacity(Long usedCapacity) {
-        this.usedCapacity = usedCapacity;
+        this.usedCapacity = usedCapacity == null ? null : BigInteger.valueOf(usedCapacity);
     }
 
     public Long getTotalCapacity() {
-        return totalCapacity;
+        return totalCapacity == null ? null : totalCapacity.longValueExact();
     }
 
     public void setTotalCapacity(Long totalCapacity) {
-        this.totalCapacity = totalCapacity;
+        this.totalCapacity = totalCapacity == null ? null : BigInteger.valueOf(totalCapacity);
     }
 
     public void setDiskUtilization(Float diskUtilization) {
