@@ -4525,6 +4525,7 @@
   "ORG_ZSTACK_CORE_ANSIBLE_10002": "cannot verify MD5 checksum of files in the directory[%s].\\nstdout:%s\\nstderr:%s",
   "ORG_ZSTACK_CORE_ANSIBLE_10003": "cannot verify MD5 checksum of files in the folder[%s] on the host[ip:%s].\\nstdout:%s\\nstderr:%s",
   "ORG_ZSTACK_CORE_ANSIBLE_10000": "User name, password, or port number may be incorrect. Please verify and try again.",
+  "ORG_ZSTACK_CORE_ANSIBLE_10008": "Failed to restart agent[%s] on host[%s]: %s",
   "ORG_ZSTACK_COMPUTE_HOST_10065": "failed to update host network label [uuid:%s]",
   "ORG_ZSTACK_SNS_PLATFORM_EMAIL_10000": "The problem may be caused by an incorrect access key or secret key or IAM policy permission denied. [error\u003d%s]",
   "ORG_ZSTACK_COMPUTE_HOST_10064": "failed to delete host network label [uuid:%s]",

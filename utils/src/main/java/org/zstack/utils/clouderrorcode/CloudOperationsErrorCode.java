@@ -3058,6 +3058,8 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_CORE_ANSIBLE_10007 = "ORG_ZSTACK_CORE_ANSIBLE_10007";
 
+    public static final String ORG_ZSTACK_CORE_ANSIBLE_10008 = "ORG_ZSTACK_CORE_ANSIBLE_10008";
+
     public static final String ORG_ZSTACK_CORE_PLATFORM_10000 = "ORG_ZSTACK_CORE_PLATFORM_10000";
 
     public static final String ORG_ZSTACK_CORE_PLATFORM_10001 = "ORG_ZSTACK_CORE_PLATFORM_10001";

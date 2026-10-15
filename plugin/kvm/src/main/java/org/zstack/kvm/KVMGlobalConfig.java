@@ -72,6 +72,11 @@ public class KVMGlobalConfig {
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
 
+    @GlobalConfigValidation(numberGreaterThan = 31)
+    @GlobalConfigDef(defaultValue = "120", type = Integer.class,
+            description = "maximum time in seconds for restarting a suspected fake-dead KVM agent during host connection; must be greater than 30")
+    public static GlobalConfig AGENT_RESTART_TIMEOUT = new GlobalConfig(CATEGORY, "agentRestartTimeout");
+
     @GlobalConfigValidation
     public static GlobalConfig KVMAGENT_ALLOW_PORTS_LIST = new GlobalConfig(CATEGORY, "kvmagent.allow.ports");
 

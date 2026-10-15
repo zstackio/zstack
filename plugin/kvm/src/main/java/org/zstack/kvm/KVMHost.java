@@ -6483,7 +6483,7 @@ public class KVMHost extends HostBase implements Host {
                     }
                 });
 
-                flow(new NoRollbackFlow() {
+                flow(Platform.New(() -> new NoRollbackFlow() {
                     String __name__ = "echo-host";
 
                     @Override
@@ -6507,14 +6507,15 @@ public class KVMHost extends HostBase implements Host {
                                 boolean needRestart = KVMGlobalConfig.RESTART_AGENT_IF_FAKE_DEAD.value(Boolean.class);
                                 if (!deployed && needRestart) {
                                     // if not deployed and echo failed, we thought it is fake dead, see: ZSTACK-18628
-                                    AnsibleRunner runner = new AnsibleRunner();
+                                    AnsibleRunner runner = Platform.New(AnsibleRunner::new);
                                     runner.setAgentPort(KVMGlobalProperty.AGENT_PORT);
                                     runner.setTargetIp(getSelf().getManagementIp());
                                     runner.setTargetUuid(getSelf().getUuid());
                                     runner.setUsername(getSelf().getUsername());
                                     runner.setPassword(getSelf().getPassword());
                                     runner.setSshPort(getSelf().getPort());
-                                    runner.restartAgent(AnsibleConstant.KVM_AGENT_NAME, new Completion(trigger) {
+                                    runner.restartAgent(AnsibleConstant.KVM_AGENT_NAME,
+                                            KVMGlobalConfig.AGENT_RESTART_TIMEOUT.value(Integer.class), new Completion(trigger) {
                                         @Override
                                         public void success() {
                                             restf.echo(echoPath, new Completion(trigger) {
@@ -6541,7 +6542,7 @@ public class KVMHost extends HostBase implements Host {
                             }
                         }, TimeUnit.SECONDS.toMillis(1), echoTimeout);
                     }
-                });
+                }));
 
                 // Existing hosts recover HA in the pre-connect stage before updating packages.
                 if (info.isNewAdded()) {

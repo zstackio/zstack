@@ -30,6 +30,11 @@ import static org.zstack.utils.path.PathUtil.writeFile;
  */
 public class Ssh {
     private static final CLogger logger = Utils.getLogger(Ssh.class);
+    private static final int MAX_CHANNEL_SETUP_TIMEOUT_MILLIS = 5000;
+    // Channel open, PTY and exec requests each use the channel timeout.
+    private static final int CHANNEL_SETUP_REQUEST_COUNT = 3;
+    public static final int SCRIPT_CHANNEL_SETUP_TIMEOUT_SECONDS = (int) TimeUnit.MILLISECONDS.toSeconds(
+            (long) CHANNEL_SETUP_REQUEST_COUNT * MAX_CHANNEL_SETUP_TIMEOUT_MILLIS);
 
     private String hostname;
     private String username;
@@ -47,6 +52,9 @@ public class Ssh {
      */
     private int timeout = 5;
     private int execTimeout = 604800;
+    private int execTimeoutKillAfter;
+    private long executionTimeout;
+    private SshExecutionDeadline executionDeadline;
     private int socketTimeout = 300;
     private List<SshRunner> commands = new ArrayList<SshRunner>();
     private Session session;
@@ -57,6 +65,7 @@ public class Ssh {
     private String language = "LANG=\"en_US.UTF-8\"; ";
 
     private boolean init = false;
+    private boolean executed = false;
 
     private interface SshRunner {
         SshResult run();
@@ -86,54 +95,46 @@ public class Ssh {
                 scriptFile = new File(PathUtil.join(PathUtil.getFolderUnderZStackHomeFolder("temp-scripts"), srcScript));
                 scriptContent = s(contents).formatByMap(token);
 
-                String remoteScript = ln(
-                        "cat << EOF1 > {remotePath}",
-                        "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
-                        "{scriptContent}",
-                        "EOF1",
-                        "timeout {execTimeout} /bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
-                        "ret=$?",
-                        "test -f {stdout} && cat {stdout}",
-                        "test -f {stderr} && cat {stderr} 1>&2",
-                        "rm -f {remotePath}",
-                        "rm -f {stdout}",
-                        "rm -f {stderr}",
-                        "exit $ret"
-                ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                        e("scriptContent", scriptContent),
-                        e("parameters", parameters),
-                        e("execTimeout", execTimeout),
-                        e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                        e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
-                ));
-
-                scriptCommand = createCommand(remoteScript);
+                scriptCommand = createScriptCommand(scriptContent, parameters);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
 
         ScriptRunner(String script) {
-            String remoteScript = ln(
+            scriptCommand = createScriptCommand(script, "");
+        }
+
+        private SshRunner createScriptCommand(String content, String parameters) {
+            final int seconds = execTimeout;
+            final int killAfter = execTimeoutKillAfter;
+            final Map tokens = map(
+                    e("remotePath", String.format("/tmp/%s", UUID.randomUUID())),
+                    e("scriptContent", content), e("parameters", parameters),
+                    e("execTimeout", remoteTimeoutOptions(seconds, killAfter)),
+                    e("stdout", String.format("/tmp/%s", UUID.randomUUID())),
+                    e("stderr", String.format("/tmp/%s", UUID.randomUUID())));
+            final org.zstack.utils.StringDSL.StringWrapper template = ln(
                     "cat << EOF1 > {remotePath}",
                     "PATH=/usr/local/bin:/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/sbin",
-                    "{scriptContent}",
-                    "EOF1",
-                    "timeout {execTimeout} /bin/bash {remotePath} 1>{stdout} 2>{stderr}",
-                    "ret=$?",
-                    "test -f {stdout} && cat {stdout}",
+                    "{scriptContent}", "EOF1",
+                    "timeout {execTimeout} /bin/bash {remotePath} {parameters} 1>{stdout} 2>{stderr}",
+                    "ret=$?", "test -f {stdout} && cat {stdout}",
                     "test -f {stderr} && cat {stderr} 1>&2",
-                    "rm -f {remotePath}",
-                    "rm -f {stdout}",
-                    "rm -f {stderr}",
-                    "exit $ret"
-            ).formatByMap(map(e("remotePath", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                    e("scriptContent", script),
-                    e("execTimeout", execTimeout),
-                    e("stdout", String.format("/tmp/%s", UUID.randomUUID().toString())),
-                    e("stderr", String.format("/tmp/%s", UUID.randomUUID().toString()))
-            ));
-            scriptCommand = createCommand(remoteScript);
+                    "rm -f {remotePath}", "rm -f {stdout}", "rm -f {stderr}", "exit $ret");
+            return createCommand(template.formatByMap(tokens), channelTimeout -> {
+                // Session connection has finished. Also reserve the full channel-open
+                // allowance (open, PTY and exec requests each use this timeout),
+                // remote KILL grace, and one second to collect the exit status.
+                long remaining = executionDeadline.remainingMillis()
+                        - (long) CHANNEL_SETUP_REQUEST_COUNT * channelTimeout;
+                int remoteSeconds = (int) TimeUnit.MILLISECONDS.toSeconds(remaining) - killAfter - 1;
+                if (remoteSeconds <= 0) {
+                    throw new java.net.SocketTimeoutException("Insufficient SSH execution time to start remote script");
+                }
+                tokens.put("execTimeout", remoteTimeoutOptions(Math.min(seconds, remoteSeconds), killAfter));
+                return template.formatByMap(tokens);
+            });
         }
 
         SshResult run() {
@@ -156,6 +157,37 @@ public class Ssh {
     public Ssh setExecTimeout(int execTimeout) {
         this.execTimeout = execTimeout;
         return this;
+    }
+
+    /** Configure before shell()/script(), which capture the remote command. */
+    public Ssh setExecTimeoutKillAfter(int seconds) {
+        if (seconds <= 0) {
+            throw new IllegalArgumentException("kill-after must be positive");
+        }
+        this.execTimeoutKillAfter = seconds;
+        return this;
+    }
+
+    /**
+     * Opt-in local budget in milliseconds, including session/channel connection.
+     * Requires a fresh instance: a reused session's socket is not owned by a new deadline.
+     */
+    public Ssh setExecutionTimeout(long milliseconds) {
+        if (milliseconds <= 0) {
+            throw new IllegalArgumentException("execution timeout must be positive");
+        }
+        this.executionTimeout = milliseconds;
+        return this;
+    }
+
+    private static String remoteTimeoutOptions(int seconds, int killAfter) {
+        return killAfter == 0 ? String.valueOf(seconds)
+                : String.format("--kill-after=%s %s", killAfter, seconds);
+    }
+
+    private int connectionTimeout() throws IOException {
+        int configured = getTimeoutInMilli(timeout);
+        return executionDeadline == null ? configured : executionDeadline.connectionTimeout(configured);
     }
 
     public String getHostname() {
@@ -230,7 +262,15 @@ public class Ssh {
         return this;
     }
 
+    private interface CommandBuilder {
+        String build(int channelTimeout) throws IOException;
+    }
+
     private SshRunner createCommand(final String cmdWithoutPrefix) {
+        return createCommand(cmdWithoutPrefix, null);
+    }
+
+    private SshRunner createCommand(final String cmdWithoutPrefix, final CommandBuilder builder) {
        final String cmd = language + cmdWithoutPrefix;
        return new SshRunner() {
            @Override
@@ -241,28 +281,49 @@ public class Ssh {
 
                try {
                    ChannelExec channel = null;
+                   SshExecutionDeadline.PhaseTimeout setupDeadline = null;
                    try {
                        channel = (ChannelExec) session.openChannel("exec");
                        channel.setPty(true);
-                       channel.setCommand(cmd);
+                       int channelTimeout = connectionTimeout();
+                       String executionCommand = cmd;
+                       if (executionDeadline != null && builder != null) {
+                           channelTimeout = Math.min(MAX_CHANNEL_SETUP_TIMEOUT_MILLIS, channelTimeout);
+                           setupDeadline = executionDeadline.watchPhase(
+                                   (long) CHANNEL_SETUP_REQUEST_COUNT * channelTimeout);
+                           executionCommand = language + builder.build(channelTimeout);
+                       }
+                       ret.setCommandToExecute(SshCmdHelper.removeSensitiveInfoFromCmd(executionCommand));
+                       channel.setCommand(executionCommand);
                        if (logger.isTraceEnabled()) {
                            logger.trace(String.format("[start SSH] %s", cmdWithoutPassword));
                        }
 
                        try (InputStream ins = channel.getInputStream();
                             InputStream errs = channel.getErrStream()) {
-                           channel.connect(getTimeoutInMilli(timeout));
+                           if (executionDeadline != null) {
+                               executionDeadline.remainingMillis();
+                           }
+                           channel.connect(channelTimeout);
+                           if (setupDeadline != null) {
+                               setupDeadline.close();
+                           }
 
-                           String output = IOUtils.toString(ins, Charsets.UTF_8);
-                           String stderr = IOUtils.toString(errs, Charsets.UTF_8);
+                           if (executionDeadline == null) {
+                               ret.setStdout(IOUtils.toString(ins, Charsets.UTF_8));
+                               ret.setStderr(IOUtils.toString(errs, Charsets.UTF_8));
+                           } else {
+                               executionDeadline.readOutput(channel, ins, errs, ret);
+                           }
                            ret.setReturnCode(channel.getExitStatus());
-                           ret.setStderr(stderr);
-                           ret.setStdout(output);
                            if (logger.isTraceEnabled()) {
                                logger.trace(String.format("[end SSH] %s, return code: %d", cmdWithoutPassword, ret.getReturnCode()));
                            }
                        }
                    } finally {
+                       if (setupDeadline != null) {
+                           setupDeadline.close();
+                       }
                        if (channel != null) {
                            channel.disconnect();
                        }
@@ -423,7 +484,10 @@ public class Ssh {
             session.setConfig("server_host_key", session.getConfig("server_host_key") + ",ssh-rsa,ssh-dss");
             session.setConfig("PubkeyAcceptedKeyTypes", session.getConfig("PubkeyAcceptedKeyTypes") + ",ssh-rsa,ssh-dss");
             session.setTimeout(getTimeoutInMilli(socketTimeout)/2);
-            session.connect(getTimeoutInMilli(timeout));
+            if (executionDeadline != null) {
+                session.setSocketFactory(executionDeadline);
+            }
+            session.connect(connectionTimeout());
         } catch (JSchException ex) {
             throw new IOException(ex);
         }
@@ -457,7 +521,31 @@ public class Ssh {
         if (closed) {
             throw new SshException("this Ssh instance has been closed, you can not call run() after close()");
         }
+        if (executionTimeout > 0 && executed) {
+            throw new SshException("use a new Ssh instance for each run() with an execution timeout");
+        }
+        executed = true;
+        executionDeadline = executionTimeout > 0
+                ? new SshExecutionDeadline(executionTimeout, getTimeoutInMilli(timeout)) : null;
+        if (executionDeadline != null) {
+            executionDeadline.watch();
+        }
+        try {
+            SshResult result = runInternal();
+            if (executionDeadline != null && !executionDeadline.finish()) {
+                result.setSshFailure(true);
+                result.setReturnCode(1);
+                result.setExitErrorMessage("SSH execution timed out (total budget " + executionTimeout + " ms)");
+            }
+            return result;
+        } finally {
+            if (executionDeadline != null) {
+                executionDeadline.finish();
+            }
+        }
+    }
 
+    private SshResult runInternal() {
         StopWatch watch = new StopWatch();
         watch.start();
         try {
@@ -565,15 +653,15 @@ public class Ssh {
     }
 
     public SshResult runAndClose() {
-        SshResult ret = run();
-        close();
-        return ret;
+        try {
+            return run();
+        } finally {
+            close();
+        }
     }
 
     public void runErrorByExceptionAndClose() {
-        SshResult ret = run();
-        close();
-        ret.raiseExceptionIfFailed();
+        runAndClose().raiseExceptionIfFailed();
     }
 
     @Deprecated

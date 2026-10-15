@@ -8,6 +8,7 @@ import org.zstack.core.ManagedComponentEndpoint;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.timeout.ApiTimeoutManagerImpl;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
@@ -17,6 +18,7 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.utils.ShellUtils;
+import org.zstack.utils.TaskContext;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6NetworkUtils;
@@ -46,6 +48,14 @@ public class AnsibleRunner {
     private static final CLogger logger = Utils.getLogger(AnsibleRunner.class);
     static final String HTTP_URL_FORMAT = "http://%s:%d%s";
     static final String PYPI_SIMPLE_PATH = "/zstack/static/pypi/simple";
+    private static final int RESTART_AGENT_KILL_AFTER_SECONDS = 5;
+    private static final int RESTART_AGENT_EXIT_STATUS_RESERVE_SECONDS = 1;
+    private static final int RESTART_AGENT_MIN_COMMAND_TIMEOUT_SECONDS = 1;
+    private static final int RESTART_AGENT_COMMAND_TIMEOUT_RESERVE_SECONDS =
+            RESTART_AGENT_KILL_AFTER_SECONDS + RESTART_AGENT_EXIT_STATUS_RESERVE_SECONDS;
+    private static final int RESTART_AGENT_MINIMUM_BUDGET_SECONDS =
+            Ssh.SCRIPT_CHANNEL_SETUP_TIMEOUT_SECONDS + RESTART_AGENT_COMMAND_TIMEOUT_RESERVE_SECONDS
+                    + RESTART_AGENT_MIN_COMMAND_TIMEOUT_SECONDS;
 
     @Autowired
     private AnsibleFacade asf;
@@ -463,12 +473,55 @@ public class AnsibleRunner {
 
     public void restartAgent(String agentName, Completion completion) {
         String script = String.format("sudo bash /etc/init.d/%s restart\n", agentName);
-
         if (CoreGlobalProperty.UNIT_TEST_ON) {
             logger.debug("skip restartAgent as it's unittest");
         } else {
             new Ssh().shell(script).setTimeout(60).setPrivateKey(asf.getPrivateKey()).setUsername(username).setHostname(targetIp)
                     .setPort(sshPort).setPassword(password).runErrorByExceptionAndClose();
+        }
+        completion.success();
+    }
+
+    protected Ssh createRestartAgentSsh() {
+        return new Ssh();
+    }
+
+    static long restartTimeoutMillis(int timeoutSeconds) {
+        long budget = TimeUnit.SECONDS.toMillis(timeoutSeconds);
+        Object deadline = TaskContext.getTaskContextItem(ApiTimeoutManagerImpl.TASK_CONTEXT_MESSAGE_DEADLINE);
+        if (deadline != null) {
+            budget = Math.min(budget, Long.parseLong(deadline.toString()) - System.currentTimeMillis());
+        }
+        return budget;
+    }
+
+    public void restartAgent(String agentName, int timeoutSeconds, Completion completion) {
+        String script = String.format("sudo bash /etc/init.d/%s restart\n", agentName);
+
+        if (CoreGlobalProperty.UNIT_TEST_ON) {
+            logger.debug("skip restartAgent as it's unittest");
+        } else {
+            long budget = restartTimeoutMillis(timeoutSeconds);
+            // Leave time for remote SIGKILL and collecting the command's exit status.
+            if (budget < TimeUnit.SECONDS.toMillis(RESTART_AGENT_MINIMUM_BUDGET_SECONDS)) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10008,
+                        "Failed to restart agent[%s] on host[%s]: %s", agentName, targetIp,
+                        "Insufficient time remaining to restart agent before the connection deadline"));
+            }
+            SshResult result = createRestartAgentSsh()
+                    .setExecTimeout((int) TimeUnit.MILLISECONDS.toSeconds(budget)
+                            - RESTART_AGENT_COMMAND_TIMEOUT_RESERVE_SECONDS)
+                    .setExecTimeoutKillAfter(RESTART_AGENT_KILL_AFTER_SECONDS).setExecutionTimeout(budget)
+                    .shell(script).setTimeout(60).setPrivateKey(asf.getPrivateKey())
+                    .setUsername(username).setHostname(targetIp).setPort(sshPort).setPassword(password)
+                    .runAndClose();
+            if (result.getReturnCode() != 0 || result.isSshFailure()) {
+                throw new OperationFailureException(operr(ORG_ZSTACK_CORE_ANSIBLE_10008,
+                        "Failed to restart agent[%s] on host[%s]: %s", agentName, targetIp,
+                        String.format("SSH exit code[%s], error[%s], stderr[%s], stdout[%s]",
+                                result.getReturnCode(), result.getExitErrorMessage(),
+                                result.getStderr(), result.getStdout())));
+            }
         }
         completion.success();
     }
