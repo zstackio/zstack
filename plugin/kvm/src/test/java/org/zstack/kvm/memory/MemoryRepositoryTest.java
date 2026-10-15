@@ -3500,6 +3500,67 @@ public class MemoryRepositoryTest {
         assertTrue(repository.tasks(query).stream().anyMatch(task -> "Unknown".equals(task.getStatus())));
     }
 
+    @Test public void claimProjectsExactActiveTaskIntoState() {
+        registerStandardResources();
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                null, null, "true")), ConfigMutationContext.internal(), false);
+        List<MemoryTaskVO> claimed = repository.claim("mn-states");
+        assertEquals(2, claimed.size());
+        for (MemoryTaskVO task : claimed) {
+            MemoryStateVO state = repository.states(Collections.singletonList(task.getHostUuid()), 0, 1).get(0);
+            assertEquals("claim must advance the matching State row", "Applying", state.getStatus());
+            assertEquals(task.getUuid(), state.getActiveTaskUuid());
+            assertEquals("Applying", state.getPolicyPlanStatus());
+        }
+    }
+
+    @Test public void claimDoesNotOverwriteNewBlockedPlanWithOldQueuedTask() {
+        registerStandardResources();
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                "host1", "HostVO", "true")), ConfigMutationContext.internal(), false);
+        String oldTask = host1State().getActiveTaskUuid();
+        assertNotNull(oldTask);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.WRITEBACK_ENABLED,
+                "host1", "HostVO", "true")), ConfigMutationContext.internal(), false);
+        String newPlan = host1State().getPolicyPlanHash();
+        String blockers = host1State().getPolicyBlockedFields();
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertTrue(repository.claim("mn-states-retry").isEmpty());
+        assertEquals("Failed", repository.findTask(oldTask).getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertEquals(newPlan, host1State().getPolicyPlanHash());
+        assertEquals(blockers, host1State().getPolicyBlockedFields());
+    }
+
+    @Test public void claimingDrainPreservesNeedsReviewUntilAgentReportsDraining() {
+        repository.transaction(em -> {
+            TestHost drainHost = new TestHost(); drainHost.uuid = "host4";
+            drainHost.hypervisorType = "KVM"; drainHost.clusterUuid = "cluster1";
+            drainHost.zoneUuid = "zone4"; drainHost.status = HostStatus.Connected; em.persist(drainHost);
+            MemoryStateVO draining = new MemoryStateVO(); draining.setHostUuid("host4");
+            draining.setStatus("Queued"); draining.setPolicyPlanStatus("NeedsReview");
+            MemoryTaskVO drainParent = testTask("drain-parent", null, "drain", "Succeeded", null);
+            em.persist(drainParent);
+            MemoryTaskVO drain = testTask("drain-visible", drainParent.getUuid(), "drain", "Queued", null);
+            drain.setHostUuid("host4"); em.persist(drain); draining.setActiveTaskUuid(drain.getUuid());
+            em.persist(draining);
+            return null;
+        });
+        MemoryTaskVO drain = repository.claim("mn-states-drain").stream()
+                .filter(task -> "drain-visible".equals(task.getUuid())).findFirst().orElse(null);
+        assertNotNull(drain);
+        assertEquals("drain", drain.getAction());
+        assertEquals("drain-visible", repository.states(Collections.singletonList("host4"), 0, 1)
+                .get(0).getActiveTaskUuid());
+        MemoryStateVO state = repository.states(Collections.singletonList("host4"), 0, 1).get(0);
+        assertEquals("Applying", state.getStatus());
+        assertEquals("NeedsReview", state.getPolicyPlanStatus());
+        repository.result(drain.getUuid(), "Draining", "executor running", null);
+        assertEquals("Draining", repository.states(Collections.singletonList("host4"), 0, 1)
+                .get(0).getStatus());
+    }
+
     @Test public void queuedCancelReleasesClaimsButNeverCancelsStartedOperation() {
         MemoryTaskInventory task = repository.submit(request(0));
         assertEquals("Cancelled", repository.cancel(task.getUuid()).getStatus());
