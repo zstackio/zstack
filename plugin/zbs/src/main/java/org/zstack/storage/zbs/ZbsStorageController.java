@@ -809,7 +809,7 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
         for (MdsInfo mdsInfo : mdsInfos) {
             addonInfo.getMdsInfos().stream()
-                    .filter(mdsInfo::equals)
+                    .filter(existing -> existing != null && Objects.equals(existing.getAddr(), mdsInfo.getAddr()))
                     .map(MdsInfo::getPhysicalServerSerialNumber)
                     .filter(Objects::nonNull).findFirst().ifPresent(mdsInfo::setPhysicalServerSerialNumber);
         }
@@ -920,6 +920,19 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
             return;
         }
 
+        Map<String, MdsInfo> configuredMds = MdsInfo.valueOf(config.getMdsUrls()).stream()
+                .collect(Collectors.toMap(MdsInfo::getAddr, mdsInfo -> mdsInfo));
+        for (MdsInfo mdsInfo : addonInfo.getMdsInfos()) {
+            MdsInfo credentials = configuredMds.get(mdsInfo.getAddr());
+            if (credentials == null) {
+                completion.fail(operr(ORG_ZSTACK_STORAGE_ZBS_10024,
+                        "no MDS credentials configured for address[%s]", mdsInfo.getAddr()));
+                return;
+            }
+            mdsInfo.setUsername(credentials.getUsername());
+            mdsInfo.setPassword(credentials.getPassword());
+            mdsInfo.setPort(credentials.getPort());
+        }
         final List<ZbsPrimaryStorageMdsBase> mds = CollectionUtils.transformToList(addonInfo.getMdsInfos(), ZbsPrimaryStorageMdsBase::new);
         new While<>(mds).each((m, comp) -> m.ping(addonInfo.getClusterInfo(), new Completion(comp) {
             @Override
