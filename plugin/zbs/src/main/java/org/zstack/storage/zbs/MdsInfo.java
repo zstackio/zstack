@@ -11,7 +11,7 @@ import java.util.stream.Collectors;
  */
 public class MdsInfo {
     private String username;
-    private String password;
+    private transient String password;
     private int port = 22;
     private String addr;
     private String externalAddr;
