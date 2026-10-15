@@ -3,6 +3,11 @@ package org.zstack.test.integration.kvm.host.deletion
 import org.springframework.test.util.ReflectionTestUtils
 import org.zstack.compute.host.HostDeletionGuard
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.Platform
+import org.zstack.core.jsonlabel.JsonLabel
+import org.zstack.core.jsonlabel.JsonLabelVO
+import org.zstack.core.jsonlabel.JsonLabelVO_
+import org.zstack.core.db.Q
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.SQL
@@ -297,6 +302,48 @@ class DeleteHostWithNonLocalVmCase extends SubCase {
         } finally {
             HostDeletionGuard.release(operation)
         }
+
+        // A missing MN heartbeat is not proof that its asynchronous work ended.
+        long orphan = new JsonLabel().create("hostDeletionGuard::using::" + Platform.uuid,
+                "unavailable-node::1", host.uuid).id
+        try {
+            ["Permissive", "Enforcing"].each { mode ->
+                def result = new DeleteHostAction(uuid: host.uuid, deleteMode: mode,
+                        sessionId: currentEnvSpec.session.uuid).call()
+                assert result.error != null
+                assert result.error.details.contains("pending operations have stopped")
+                assert Q.New(JsonLabelVO.class).eq(JsonLabelVO_.id, orphan).isExists()
+                assert dbFindByUuid(host.uuid, HostVO.class).state == HostState.Enabled
+            }
+        } finally {
+            HostDeletionGuard.release(orphan)
+        }
+
+        VolumeInventory local = createDataVolume {
+            name = "ready-local-data"
+            primaryStorageUuid = env.inventoryByName("local").uuid
+            diskOfferingUuid = env.inventoryByName("disk").uuid
+        }
+        attachDataVolumeToVm { vmInstanceUuid = vm.uuid; volumeUuid = local.uuid }
+        detachDataVolumeFromVm { uuid = local.uuid }
+        stopVmInstance { uuid = vm.uuid }
+        deleting = guard.acquire(host.uuid, true)
+        try {
+            // Non-local offline attachment must still protect lastHostUuid.
+            def rejected = new AttachDataVolumeToVmAction(vmInstanceUuid: vm.uuid, volumeUuid: volume.uuid,
+                    sessionId: currentEnvSpec.session.uuid).call()
+            assert rejected.error != null
+            assert rejected.error.details.contains("host deletion is in progress")
+            assert dbFindByUuid(volume.uuid, VolumeVO.class).vmInstanceUuid == null
+
+            // A ready local disk needs no hypervisor access for a stopped VM.
+            attachDataVolumeToVm { vmInstanceUuid = vm.uuid; volumeUuid = local.uuid }
+            assert dbFindByUuid(local.uuid, VolumeVO.class).vmInstanceUuid == vm.uuid
+            detachDataVolumeFromVm { uuid = local.uuid }
+        } finally {
+            HostDeletionGuard.release(deleting)
+        }
+        startVmInstance { uuid = vm.uuid; hostUuid = host.uuid }
     }
 
     @Override

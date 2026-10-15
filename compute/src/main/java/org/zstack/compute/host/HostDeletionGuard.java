@@ -65,16 +65,22 @@ public class HostDeletionGuard {
             if (owner == null) {
                 throw new OperationFailureException(operr("management node is no longer available; retry the operation"));
             }
-            SQL.New("delete from JsonLabelVO label where label.resourceUuid = :hostUuid" +
-                            " and label.labelKey like :prefix and label.labelValue not in (:owners)")
-                    .param("hostUuid", hostUuid).param("prefix", PREFIX + "%")
-                    .param("owners", owners.values()).execute();
-
-            boolean busy = deleting
+            // Losing a heartbeat record does not fence the old process or its
+            // asynchronous work. Never reclaim its guards automatically.
+            List<JsonLabelVO> blockers = deleting
                     ? Q.New(JsonLabelVO.class).eq(JsonLabelVO_.resourceUuid, hostUuid)
-                            .like(JsonLabelVO_.labelKey, PREFIX + "%").isExists()
-                    : Q.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, DELETING + hostUuid).isExists();
-            if (busy) {
+                            .like(JsonLabelVO_.labelKey, PREFIX + "%").list()
+                    : Q.New(JsonLabelVO.class).eq(JsonLabelVO_.labelKey, DELETING + hostUuid).list();
+            for (JsonLabelVO blocker : blockers) {
+                if (!owners.containsValue(blocker.getLabelValue())) {
+                    throw new OperationFailureException(operr(
+                            "cannot use/delete host[uuid:%s]: unreleased operation guard[id:%s] belongs to an" +
+                                    " unavailable or restarted management node. Verify that the old process and" +
+                                    " its pending operations have stopped before manually removing the guard",
+                            hostUuid, blocker.getId()));
+                }
+            }
+            if (!blockers.isEmpty()) {
                 throw new OperationFailureException(operr(deleting
                                 ? "cannot delete host[uuid:%s]: a VM operation or another deletion is in progress; retry after it completes"
                                 : "cannot use host[uuid:%s]: host deletion is in progress", hostUuid));

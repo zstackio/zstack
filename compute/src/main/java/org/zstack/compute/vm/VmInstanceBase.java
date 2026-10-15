@@ -2083,12 +2083,25 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                attachDataVolume(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
+                try {
+                    attachDataVolume(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                } catch (OperationFailureException e) {
+                    AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
+                    reply.setError(e.getErrorCode());
+                    bus.reply(msg, reply);
+                    chain.next();
+                } catch (RuntimeException e) {
+                    logger.warn("failed to prepare volume attachment", e);
+                    AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
+                    reply.setError(Platform.inerr(e.getMessage()));
+                    bus.reply(msg, reply);
+                    chain.next();
+                }
             }
 
             @Override
@@ -6412,7 +6425,24 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         refreshVO();
+        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
+        if (err != null) {
+            throw new OperationFailureException(err);
+        }
+
+        // Offline attachment of a ready local disk does not access the former
+        // host. Non-local/undetermined disks still need lastHost protection:
+        // stopped VMs are included in direct host deletion's storage check.
+        VolumeInventory volume = msg.getVolume();
+        boolean offlineLocal = self.getHostUuid() == null && self.getState() == VmInstanceState.Stopped
+                && VolumeStatus.Ready.toString().equals(volume.getStatus())
+                && volume.getPrimaryStorageUuid() != null
+                && Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, volume.getPrimaryStorageUuid())
+                        .eq(PrimaryStorageVO_.type, PrimaryStorageConstants.LOCAL_STORAGE_TYPE).isExists();
         String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        if (offlineLocal || (self.getHostUuid() == null && !dbf.isExist(hostUuid, HostVO.class))) {
+            hostUuid = null;
+        }
         Long lease = hostUuid == null ? null : new HostDeletionGuard().acquire(hostUuid, false);
         try {
             attachDataVolumeWithLease(msg, new NoErrorCompletion(completion) {
@@ -6437,12 +6467,6 @@ public class VmInstanceBase extends AbstractVmInstance {
 
     private void attachDataVolumeWithLease(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
-        refreshVO();
-        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
-        if (err != null) {
-            throw new OperationFailureException(err);
-        }
-
         Map data = new HashMap();
 
         final VolumeInventory volume = msg.getVolume();
