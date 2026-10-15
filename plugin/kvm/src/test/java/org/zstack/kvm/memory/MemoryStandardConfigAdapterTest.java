@@ -52,11 +52,11 @@ public class MemoryStandardConfigAdapterTest {
         if (registryField != null) { registryField.set(aspect, oldRegistry); }
     }
 
-    @Test public void globalClusterHostPrecedenceAndClearFallsBack() {
+    @Test public void globalClusterHostFeatureIntentAndClearFallsBack() {
         inTransaction(em -> {
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
-            assertEquals(Boolean.FALSE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+            assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", null);
             assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", null);
@@ -67,6 +67,20 @@ public class MemoryStandardConfigAdapterTest {
             adapter.writeGlobal(em, "ksm.enabled", null);
             assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
                     adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+            return null;
+        });
+    }
+
+    @Test public void featureIntentSwitchesUseAnyTrueAcrossGlobalClusterAndHost() {
+        seedGlobal("ksm.zeroPagesEnabled", "false", "false");
+        String[] paths = {"ksm.enabled", "ksm.zeroPagesEnabled", "zram.enabled", "writeback.enabled"};
+        inTransaction(em -> {
+            for (String path : paths) {
+                adapter.writeGlobal(em, path, true);
+                adapter.writeOverride(em, "cluster1", "ClusterVO", path, false);
+                adapter.writeOverride(em, "host1", "HostVO", path, false);
+                assertEquals(path, Boolean.TRUE, adapter.readEffective(em, path, Arrays.asList("host1", "cluster1")));
+            }
             return null;
         });
     }
@@ -141,10 +155,69 @@ public class MemoryStandardConfigAdapterTest {
             em.flush();
             assertTrue(changes.refreshAfterCommit().isEmpty());
             assertEquals(2, changes.resourceChanges().size());
-            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.enabled", Collections.singletonList("host1")));
+            assertEquals(Boolean.FALSE, adapter.readOverrideOwn(em, "zram.enabled", "host1"));
+            assertEquals(Boolean.TRUE, adapter.readEffective(em, "zram.enabled", Collections.singletonList("host1")));
             assertEquals(Long.valueOf(0), adapter.readEffective(em, "zram.hostFloorBytes", Collections.singletonList("host1")));
             ResourceConfigVO zero = resourceRow(em, "host1", "memory.zram.hostFloorBytes");
             assertNotNull(zero); assertEquals("0", zero.getValue());
+            adapter.writeGlobal(em, "zram.enabled", false);
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.enabled", Collections.singletonList("host1")));
+            return null;
+        });
+    }
+
+    @Test public void legacyNoneHostCanBeReplacedByFalseAndClusterNoneStillIsolatesFalseHost() {
+        inTransaction(em -> {
+            adapter.writeGlobal(em, "ksm.enabled", true);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);
+            MemoryStandardField field = MemoryStandardField.forPath("ksm.enabled");
+            ResourceConfigVO hostNone = new ResourceConfigVO();
+            hostNone.setUuid(UUID.randomUUID().toString().replace("-", "")); hostNone.setCategory(field.category());
+            hostNone.setName(field.configName()); hostNone.setValue("none");
+            hostNone.setResourceUuid("host1"); hostNone.setResourceType("HostVO"); em.persist(hostNone);
+            assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
+                    adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+
+            adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            assertEquals(Boolean.FALSE, adapter.readOverrideOwn(em, "ksm.enabled", "host1"));
+            assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+
+            ResourceConfigVO cluster = resourceRow(em, "cluster1", field.configName());
+            assertNotNull(cluster); cluster.setValue("none");
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+            return null;
+        });
+    }
+
+    @Test public void ordinaryTuningAndSafetyGuardsKeepMostSpecificExplicitValue() {
+        seedGlobal("ksm.pagesToScan", "4000", "2000");
+        seedGlobal("zram.hostCpuGuardEnabled", "true", "true");
+        seedGlobal("zram.hostMemoryPsiGuardEnabled", "true", "true");
+        seedGlobal("zram.hostIoPsiGuardEnabled", "true", "true");
+        inTransaction(em -> {
+            adapter.writeGlobal(em, "ksm.pagesToScan", 4000L);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.pagesToScan", 3000L);
+            adapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 2048L);
+            adapter.writeGlobal(em, "zram.hostFloorBytes", 1024L);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "zram.hostFloorBytes", 512L);
+            adapter.writeOverride(em, "host1", "HostVO", "zram.hostFloorBytes", 0L);
+            adapter.writeGlobal(em, "zram.hostCpuGuardEnabled", true);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "zram.hostCpuGuardEnabled", true);
+            adapter.writeOverride(em, "host1", "HostVO", "zram.hostCpuGuardEnabled", false);
+            adapter.writeGlobal(em, "zram.hostMemoryPsiGuardEnabled", false);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "zram.hostMemoryPsiGuardEnabled", true);
+            adapter.writeOverride(em, "host1", "HostVO", "zram.hostMemoryPsiGuardEnabled", false);
+            adapter.writeGlobal(em, "zram.hostIoPsiGuardEnabled", true);
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "zram.hostIoPsiGuardEnabled", false);
+            return null;
+        });
+        inTransaction(em -> {
+            List<String> levels = Arrays.asList("host1", "cluster1");
+            assertEquals(Long.valueOf(2048), adapter.readEffective(em, "ksm.pagesToScan", levels));
+            assertEquals(Long.valueOf(0), adapter.readEffective(em, "zram.hostFloorBytes", levels));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.hostCpuGuardEnabled", levels));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.hostMemoryPsiGuardEnabled", levels));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.hostIoPsiGuardEnabled", levels));
             return null;
         });
     }

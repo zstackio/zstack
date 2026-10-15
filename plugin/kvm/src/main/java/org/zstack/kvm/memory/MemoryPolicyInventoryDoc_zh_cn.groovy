@@ -23,7 +23,7 @@ doc {
 	}
 	field {
 		name "fieldSources"
-		desc "各字段继承合并期望值的配置来源；Host优先于Cluster、Cluster优先于Global，不证明Host已执行。"
+		desc "各字段合成期望值的来源；四功能开关开启时取最近贡献true的层，全部false时取最近明确false层；其它参数取Host、Cluster、Global最近明确值。不证明Host已执行，也不表示该层之外没有本级配置行。"
 		type "Map"
 		since "5.5.38"
 	}
@@ -85,13 +85,13 @@ doc {
 	}
 	field {
 		name "policy"
-		desc "该作用域显式配置的策略JSON；未设置的字段可继承上级值。"
+		desc "该作用域的配置JSON；本级false仍保留false，功能开关的跨层合成结果另见effectivePolicy，不能用生效来源判断本级是否有记录。"
 		type "String"
 		since "5.5.38"
 	}
 	field {
 		name "effectivePolicy"
-		desc "合并继承后的期望策略JSON；writeback可能因Host后端未准备或能力/保护暂未执行，实际生效须另查Host状态。"
+		desc "合成后的期望策略JSON；KSM/零页/ZRAM/writeback四开关任一级true即开启，其它参数取最近明确值，legacy none屏障保留。writeback可能因Host后端未准备或能力/保护暂未执行，实际生效须另查Host状态。"
 		type "String"
 		since "5.5.38"
 	}

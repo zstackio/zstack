@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """读取资源的继承合并期望配置、revision、来源和可用动作；不是Host已经生效的证明。writeback开关按Host优先于Cluster、Cluster优先于Global继承，后端身份和容量仅Host配置。开关与后端可独立保存，实际状态及未生效原因通过Host状态和任务回读。"""
+    desc """读取资源的本级配置、合成期望配置、revision、来源和可用动作；不是Host已经生效的证明。KSM、零页、ZRAM、writeback四个功能开关任一级true即期望开启，本级false不屏蔽父级true；其它参数取Host、Cluster、Global最近明确值，合法0有效。旧host.ksm=none保留不管理屏障。后端身份和容量仅Host配置，开关与后端可独立保存；实际状态及未生效原因通过Host状态和任务回读。"""
 
     rest {
         request {
