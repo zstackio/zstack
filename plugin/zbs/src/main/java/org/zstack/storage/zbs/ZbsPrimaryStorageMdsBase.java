@@ -91,6 +91,7 @@ public class ZbsPrimaryStorageMdsBase extends ZbsMdsBase {
                             checker.setTargetIp(getSelf().getAddr());
                             checker.setUsername(getSelf().getUsername());
                             checker.setPassword(getSelf().getPassword());
+                            checker.setSshPort(getSelf().getPort());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/zbsp/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/zbsp/%s", ZbsGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME), true).getAbsolutePath(),
                                     String.format("/var/lib/zstack/zbsp/package/%s", ZbsGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME));

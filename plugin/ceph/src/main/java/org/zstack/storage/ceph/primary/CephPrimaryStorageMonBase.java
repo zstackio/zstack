@@ -177,6 +177,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
                             checker.setTargetIp(getSelf().getHostname());
                             checker.setUsername(getSelf().getSshUsername());
                             checker.setPassword(getSelf().getSshPassword());
+                            checker.setSshPort(getSelf().getSshPort());
                             checker.addSrcDestPair(SshFileMd5Checker.ZSTACKLIB_SRC_PATH, String.format("/var/lib/zstack/cephp/package/%s", AnsibleGlobalProperty.ZSTACKLIB_PACKAGE_NAME));
                             checker.addSrcDestPair(PathUtil.findFileOnClassPath(String.format("ansible/cephp/%s", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME), true).getAbsolutePath(),
                                     String.format("/var/lib/zstack/cephp/package/%s", CephGlobalProperty.PRIMARY_STORAGE_PACKAGE_NAME));
