@@ -36,6 +36,7 @@ abstract class CgroupResourceControlBackend {
     abstract String memoryUsageFile();
     abstract boolean matchesCpuHierarchy(String[] fields);
     abstract void enableCpuController(Path target);
+    abstract void enableMemoryController(Path target);
     abstract void initializeCpus(Path target);
     abstract void requireCpuTarget(Path target);
     abstract void releaseCpuSet(Path target);

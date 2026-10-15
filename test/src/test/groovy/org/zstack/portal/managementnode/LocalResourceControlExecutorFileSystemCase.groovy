@@ -411,6 +411,21 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     @Test
+    void testActiveSliceEnablesMemoryControllerBeforeValidatingUsage() {
+        configureV2(true)
+        Path slice = configureV2SystemdRole(true, false)
+        put(slice.parent.resolve("cgroup.subtree_control"), "")
+        long memory = SizeUnit.MEGABYTE.toByte(256)
+
+        assert !Files.exists(slice.resolve("memory.current"))
+        assert executor.apply(command("1-2", memory, [systemdHandle()])) :
+                "an active slice must initialize its memory controller before validating the requested limit"
+        assert text(slice.resolve("memory.max")) == "${memory}" :
+                "the requested memory limit must be applied after controller initialization"
+        assert text(slice.resolve("cpuset.cpus")) == "1-2"
+    }
+
+    @Test
     void testRejectsMemoryLimitBelowCurrentSliceUsageBeforeChangingConfig() {
         configureV2(true)
         Path slice = configureV2SystemdRole(true)
@@ -1215,6 +1230,7 @@ class LocalResourceControlExecutorFileSystemCase {
                     new String(input, StandardCharsets.US_ASCII)
             if (path.fileName.toString() == "cgroup.subtree_control" && value.contains("+memory")) {
                 path.parent.toFile().eachDir { File child ->
+                    putIfMissing(child.toPath().resolve("cgroup.controllers"), "memory")
                     putIfMissing(child.toPath().resolve("memory.max"), "max")
                     putIfMissing(child.toPath().resolve("memory.current"), "0")
                 }
