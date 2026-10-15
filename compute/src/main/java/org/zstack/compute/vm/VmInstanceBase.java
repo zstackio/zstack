@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.host.HostDeletionGuard;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -3115,6 +3116,23 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void setFlowMarshaller(FlowChain chain) {
+        FlowFinallyHandler previous = chain instanceof FlowChainMutable
+                ? ((FlowChainMutable) chain).getFlowFinallyHandler() : null;
+        chain.Finally(new FlowFinallyHandler(null) {
+            @Override
+            public void Finally() {
+                try {
+                    if (previous != null) {
+                        previous.Finally();
+                    }
+                } finally {
+                    VmInstanceSpec spec = (VmInstanceSpec) chain.getData().get(Params.VmInstanceSpec.toString());
+                    if (spec != null && spec.getCurrentVmOperation() != VmOperation.Migrate) {
+                        HostDeletionGuard.releaseVm(spec);
+                    }
+                }
+            }
+        });
         chain.setFlowMarshaller(new FlowMarshaller() {
             @Override
             public Flow marshalTheNextFlow(String previousFlowClassName, String nextFlowClassName, FlowChain chain, Map data) {
@@ -6361,6 +6379,31 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
+        refreshVO();
+        String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        Long lease = hostUuid == null ? null : new HostDeletionGuard().acquire(hostUuid, false);
+        try {
+            attachDataVolumeWithLease(msg, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    try {
+                        if (lease != null) {
+                            HostDeletionGuard.release(lease);
+                        }
+                    } finally {
+                        completion.done();
+                    }
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            if (lease != null) {
+                HostDeletionGuard.release(lease);
+            }
+            throw e;
+        }
+    }
+
+    private void attachDataVolumeWithLease(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
         ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
@@ -6502,9 +6545,24 @@ public class VmInstanceBase extends AbstractVmInstance {
         }).start();
     }
 
-    private void doMigrateVm(final MigrateVmMessage msg, final Completion completion) {
+    private void doMigrateVm(final MigrateVmMessage msg, final Completion originalCompletion) {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
+        // Migration failure may resolve the VM's actual host asynchronously.
+        // Keep the destination protected until that resolution has completed.
+        final Completion completion = new Completion(originalCompletion) {
+            @Override
+            public void success() {
+                HostDeletionGuard.releaseVm(spec);
+                originalCompletion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                HostDeletionGuard.releaseVm(spec);
+                originalCompletion.fail(errorCode);
+            }
+        };
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);

@@ -455,7 +455,7 @@ public abstract class HostBase extends AbstractHost {
         });
     }
 
-    private void deleteHostByApiMessage(APIDeleteHostMsg msg) {
+    private void deleteHostByApiMessage(APIDeleteHostMsg msg, long deletionLease) {
         final APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
 
         final String issuer = HostVO.class.getSimpleName();
@@ -565,11 +565,26 @@ public abstract class HostBase extends AbstractHost {
                 evt.setError(err(SysErrors.DELETE_RESOURCE_ERROR, errCode, errCode.getDetails()));
                 bus.publish(evt);
             }
+        }).Finally(new FlowFinallyHandler(msg) {
+            @Override
+            public void Finally() {
+                HostDeletionGuard.release(deletionLease);
+            }
         }).start();
     }
 
     private void handle(final APIDeleteHostMsg msg) {
-        deleteHostByApiMessage(msg);
+        HostDeletionGuard guard = new HostDeletionGuard();
+        long lease = guard.acquire(msg.getUuid(), true);
+        try {
+            // Recheck after closing admission to new VM storage/topology changes.
+            // Both deletion modes must pass before changing host/VM state.
+            guard.validateVmStorage(msg.getUuid());
+            deleteHostByApiMessage(msg, lease);
+        } catch (RuntimeException | Error e) {
+            HostDeletionGuard.release(lease);
+            throw e;
+        }
     }
 
     protected HostState changeState(HostStateEvent event) {

@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.zstack.compute.host.HostDeletionGuard;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
@@ -140,6 +141,9 @@ public class VmAllocateHostFlow implements Flow {
                 if (reply.isSuccess()) {
                     AllocateHostReply areply = (AllocateHostReply) reply;
                     spec.setDestHost(areply.getHost());
+                    if (!HostDeletionGuard.protectVm(spec, areply.getHost().getUuid(), chain)) {
+                        return;
+                    }
 
                     // the vm instance will still be stopped after ChangeImage
                     if (spec.getCurrentVmOperation() == VmOperation.ChangeImage) {
