@@ -89,6 +89,10 @@ public enum MemoryStandardField {
     public String category() { return config.getCategory(); }
     public String configName() { return config.getName(); }
     public Kind kind() { return kind; }
+    boolean isFeatureSwitch() {
+        return this == KSM_ENABLED || this == KSM_ZERO_PAGES
+                || this == ZRAM_ENABLED || this == WRITEBACK_ENABLED;
+    }
     public boolean allows(Scope scope) { return scopes.contains(scope); }
     public Set<Scope> scopes() { return Collections.unmodifiableSet(scopes); }
     public static MemoryStandardField forPath(String path) {

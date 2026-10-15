@@ -50,16 +50,18 @@ public final class MemoryStandardConfigAdapter {
         Objects.requireNonNull(em, "EntityManager");
         Objects.requireNonNull(resourceUuidsMostSpecificFirst, "resourceUuidsMostSpecificFirst");
         MemoryStandardField field = MemoryStandardField.forPath(path);
+        Object nearestDisabled = null;
         for (String uuid : resourceUuidsMostSpecificFirst) {
             if (uuid == null || uuid.trim().isEmpty()) { throw new IllegalArgumentException("resource UUID is required"); }
             Object override = readOverrideOwn(em, field.path(), uuid);
-            if (isUnmanaged(override)) { return override; }
-            if (override != null) { return override; }
+            if (isUnmanaged(override)) { return nearestDisabled == null ? override : nearestDisabled; }
+            if (override != null) {
+                if (!field.isFeatureSwitch() || Boolean.TRUE.equals(override)) { return override; }
+                nearestDisabled = override;
+            }
         }
-        GlobalConfigVO global = globalRow(em, field);
-        String value = global == null ? null : global.getValue();
-        if (value == null || value.trim().isEmpty()) { value = global == null ? field.config().getDefaultValue() : global.getDefaultValue(); }
-        return readStored(field, value);
+        Object global = readGlobalOwn(em, path);
+        return nearestDisabled != null && !Boolean.TRUE.equals(global) ? nearestDisabled : global;
     }
 
     /** Value owned at exactly this resource level; null means inherit. */

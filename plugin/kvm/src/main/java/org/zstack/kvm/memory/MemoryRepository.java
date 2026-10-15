@@ -734,8 +734,20 @@ public class MemoryRepository {
                 legacy = standardConfigs.readOverrideOwn(em, "ksm.enabled", resource);
             }
         }
-        if (forceUnmanagedKsm || MemoryStandardConfigAdapter.isUnmanaged(legacy)) {
+        if (forceUnmanagedKsm || (MemoryStandardConfigAdapter.isUnmanaged(legacy)
+                && MemoryStandardConfigCodec.get(candidateOwn, "ksm.enabled") == null)) {
             inherited = removePolicyPath(inherited, "ksm.enabled");
+        }
+        // Only cross-scope feature intent is additive. A write within one scope
+        // still replaces its stored value, and scalar/guard fields remain nearest-wins.
+        if (!"Global".equals(scope)) {
+            for (MemoryStandardField field : MemoryStandardField.values()) {
+                if (field.isFeatureSwitch()
+                        && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(inherited, field.path()))
+                        && Boolean.FALSE.equals(MemoryStandardConfigCodec.get(candidateOwn, field.path()))) {
+                    candidateOwn = MemoryStandardConfigCodec.put(candidateOwn, field.path(), true);
+                }
+            }
         }
         return MemoryPolicyRules.merge(inherited, candidateOwn, scope);
     }
@@ -903,6 +915,7 @@ public class MemoryRepository {
             Set<String> previewClearedFields, String previewPatch) {
         Map<String, Long> revisions = new LinkedHashMap<>();
         Map<String, String> fields = new LinkedHashMap<>();
+        Map<String, String> enabledSources = new LinkedHashMap<>();
         if (!"VM".equals(scope)) { MemoryPolicyRules.addFieldSources(MemoryPolicyRules.defaults(), "Default", fields); }
         for (MemoryPolicyVO source : sourceChain(em, scope, resource)) {
             revisions.put(source.getUuid(), source.getRevision());
@@ -914,10 +927,29 @@ public class MemoryRepository {
                 for (String field : previewClearedFields) { layerFields.remove(field); }
             }
             fields.putAll(layerFields);
+            if (!"VM".equals(scope)) {
+                boolean editedScope = source.getUuid().equals(scope + ":" + resource);
+                String layerPolicy = ownPolicy(em, source.getScope(), source.getResourceUuid());
+                for (MemoryStandardField field : MemoryStandardField.values()) {
+                    if (!field.isFeatureSwitch()) { continue; }
+                    if (editedScope && previewClearedFields.contains(field.path())) { continue; }
+                    Object value = MemoryStandardConfigCodec.get(layerPolicy, field.path());
+                    Object patched = editedScope && previewPatch != null
+                            ? MemoryStandardConfigCodec.get(previewPatch, field.path()) : null;
+                    if (patched != null) { value = patched; }
+                    if (value == null && field == MemoryStandardField.KSM_ENABLED
+                            && MemoryStandardConfigAdapter.isUnmanaged(standardValue(em, source, field))) {
+                        enabledSources.remove(field.path());
+                    } else if (Boolean.TRUE.equals(value)) {
+                        enabledSources.put(field.path(), source.getUuid());
+                    }
+                }
+            }
         }
         // Preview patches belong to the edited scope, including explicit false.
         // A GET's ownPolicy includes schema defaults; they are not explicit writes.
         if (previewPatch != null) { MemoryPolicyRules.addFieldSources(previewPatch, scope + ":" + resource, fields); }
+        fields.putAll(enabledSources);
         result.setSourceRevisions(revisions);
         result.setFieldSources(fields);
         result.setFieldModes(unmanagedFieldModes(em, scope, resource, previewClearedFields,
@@ -2492,12 +2524,45 @@ public class MemoryRepository {
             List<MemoryTaskVO> list = em.createQuery("from MemoryTaskVO t where t.hostUuid is not null " +
                     "and t.status = 'Queued' and exists (select h.uuid from HostVO h where h.uuid = t.hostUuid) order by t.createDate", MemoryTaskVO.class)
                     .setMaxResults((int) (concurrency - active)).getResultList();
+            List<MemoryTaskVO> stale = new ArrayList<>();
             if (!list.isEmpty()) { bumpQueryVersion(em, "task"); }
             for (MemoryTaskVO task : list) {
+                if (!"VM".equals(task.getScope())
+                        && Arrays.asList("apply", "clearOverride").contains(task.getAction())) {
+                    String currentPolicy = effective(em, "Host", task.getHostUuid());
+                    MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());
+                    if (task.getPolicyPlanHash() != null && state != null && state.getPolicyTargetHash() != null) {
+                        // Compare the admitted desired target, not the delta payload:
+                        // maintenance initialization may legitimately send writeback=false.
+                        if (!Objects.equals(task.getPolicyPlanHash(), state.getPolicyPlanHash())
+                                || !Objects.equals(state.getPolicyTargetHash(), digest(
+                                        explicitlyManagedPolicy(em, task.getHostUuid(), currentPolicy).toString()))) {
+                            stale.add(task);
+                        }
+                    } else {
+                        // Legacy full-policy tasks may predate target hashes. Never
+                        // dispatch their old nearest-wins false over an enabled ancestor.
+                        for (MemoryStandardField field : MemoryStandardField.values()) {
+                            if (field.isFeatureSwitch()
+                                    && Boolean.FALSE.equals(MemoryStandardConfigCodec.get(task.getPolicy(), field.path()))
+                                    && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(currentPolicy, field.path()))) {
+                                stale.add(task);
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (stale.contains(task)) {
+                    // No Agent request has been sent. result() joins this transaction,
+                    // so failure, parent aggregation and outbox commit with the claim.
+                    result(task.getUuid(), "Failed", "MEMORY_REVISION_CONFLICT: effective policy changed before dispatch; request was not sent", null);
+                    continue;
+                }
                 task.setStatus("Applying"); task.setOwnerManagementNodeUuid(owner);
                 MemoryTaskVO parent = em.find(MemoryTaskVO.class, task.getParentUuid());
                 if (parent != null) { parent.setStatus("Applying"); }
             }
+            list.removeAll(stale);
             em.flush();
             return list;
         });

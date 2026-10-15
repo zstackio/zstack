@@ -16,7 +16,7 @@ Backend-resource readiness accepts RFC3339 observation timestamps with `Z` or a 
 
 **Users edit memory optimization settings through the existing configuration pages. MemoryPolicy is a backend view of effective configuration and related execution metadata, not a separate policy resource for users to create, name, select or attach.** Do not add a MemoryPolicy management page, policy selector or policy JSON editor.
 
-GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host overrides, with per-field precedence Host > Cluster > Global. These standard settings are the sole value source. GetMemoryPolicy supplies a read-only effective-configuration view and capability information; PreviewMemoryPolicy evaluates a proposed change without saving it. The preview payload is not a second configuration store or an alternative save operation.
+GlobalConfig stores Global settings and ResourceConfig stores Cluster and Host values. The four feature-intent switches combine enabled values across these levels; other parameters use the nearest configured Host > Cluster > Global value. These standard settings are the sole value source. GetMemoryPolicy supplies a read-only effective-configuration view and capability information; PreviewMemoryPolicy evaluates a proposed change without saving it. The preview payload is not a second configuration store or an alternative save operation.
 
 | Existing page or interaction | Read/display APIs | Configuration or operation APIs |
 | --- | --- | --- |
@@ -34,7 +34,7 @@ GlobalConfig stores Global settings. ResourceConfig stores Cluster and Host over
 
 Expose only the product settings supported at that resource level: KSM and zero-page switches, ZRAM enablement/capacity, and the writeback switch on Global, Cluster and Host. Writeback device identity, capacity and preparation are Host-only. Advanced scan/scheduling tuning remains a backend/CLI operation; the UI may display its effective values. Do not render every backend configuration key as an editable control. Desired writeback enablement can be saved before a Host backend is configured or ready; execution remains gated separately.
 
-The memory optimization UI saves ordinary settings through UpdateGlobalConfig, UpdateResourceConfig(s) or DeleteResourceConfig according to the resource level being edited. A Global KSM, ZRAM or writeback switch updates one GlobalConfig value; a Cluster switch updates one ResourceConfig value using the Cluster UUID. Neither workflow requires a Host list or client-side iteration over Hosts. The backend determines the affected Hosts from the resulting effective configuration and handles per-Host application. Global and Cluster changes preserve more specific overrides. Hosts added later inherit the applicable Cluster/Global settings unless they have their own overrides.
+The memory optimization UI saves ordinary settings through UpdateGlobalConfig, UpdateResourceConfig(s) or DeleteResourceConfig according to the resource level being edited. A Global KSM, ZRAM or writeback switch updates one GlobalConfig value; a Cluster switch updates one ResourceConfig value using the Cluster UUID. Neither workflow requires a Host list or client-side iteration over Hosts. The backend determines the affected Hosts from the resulting effective configuration and handles per-Host application. Global and Cluster changes preserve stored Host values, but may change a feature's effective intent even when the Host has stored false. Newly added Hosts use the same switch-combination and nearest-parameter rules.
 
 This release does not add a Host batch-configuration page. Global and Cluster pages edit their own configuration, not a selected set of Host overrides. Related fields on one resource use the existing atomic UpdateResourceConfigs request; that does not create a cross-Host transaction. Invalidate previews after edits, and do not automatically retry writes whose responses are lost or unknown. Configuration values and their sources are distinct from actual Host state and unapplied reasons.
 
@@ -128,7 +128,11 @@ Category is `kvm`. The KSM switch is `host.ksm`. The remaining keys use `memory.
 
 Writeback intent and Host backend configuration are independently saved. Either may be configured first; disabling writeback preserves the backend, and saving/preparing a backend does not enable writeback or ZRAM. Legal desired values remain saved when the Host lacks a backend, a ready backend or runtime support. The existing `policyPlanStatus`, `policyBlockedFields`, task reasons and actual-state reads describe why execution has not occurred; API save success is not Applied. A Host can execute only when inherited writeback intent, ZRAM intent, fresh backend identity/readiness, capability and existing safety checks all permit it. The existing configuration/Host reconciliation path re-evaluates after preparation or capability changes without asking the user to toggle the parent switch again. No additional public API, polling loop or configuration store is introduced.
 
-Host overrides Cluster, which overrides Global, independently for each setting. An explicit `false` is a real override, not missing/unset. Deleting a Host value reveals the Cluster/Global value; deleting a Cluster value reveals Global while leaving Host overrides unchanged. Removing an override is not pool deletion, swapoff, drain, journal cleanup or permission to clear an unresolved operation. The UI should use its existing configuration editing/deletion conventions, without adding a separate inheritance or resource-type selection form.
+The four feature-intent switches (`ksm.enabled`, `ksm.zeroPagesEnabled`, `zram.enabled` and `writeback.enabled`) combine enabled values across Host, Cluster and Global. A Host `true` enables the desired feature; otherwise an enabled Cluster or Global value enables it. A local `false` is stored as `false`, but does not disable an enabled parent. With boolean values at all three levels, the desired feature is disabled only when all three are `false`. The legacy KSM `none` boundary described below remains unmanaged, not a boolean or an empty value. Capability, licensing, pause/drain, unresolved operations and other safety checks still independently govern actual execution.
+
+Other parameters use the nearest configured value: Host, then Cluster, then Global. For example, logical capacities of 4 GiB, 8 GiB and 16 GiB respectively produce 4 GiB; deleting the Host value selects 8 GiB, and deleting the Cluster value then selects 16 GiB. The three Host CPU/Memory PSI/I/O PSI guard settings follow this parameter rule, not the feature-switch rule. A valid numeric `0` remains an explicit value. Host-only backend settings do not inherit from Cluster or Global.
+
+The read-only `MemoryPolicyInventory.policy` contains this scope's values, while `effectivePolicy` reports the combined desired result. These are distinct from standard ResourceConfig queries that may resolve a value through their normal inheritance lookup. The Host editor must distinguish a local switch set to `false` from an effective feature enabled by an upper level. For enabled feature switches, `fieldSources` identifies the nearest level contributing `true`; when all applicable values are `false`, it retains the nearest explicitly configured source. Remove a custom value with the standard per-field DELETE operation, not an empty value or `none`. Removing a value is not pool deletion, swapoff, drain, journal cleanup or permission to clear an unresolved operation.
 
 Scalar prevalidation is read-only. The actual commit validates the complete proposed configuration and affected inherited Host policies, then writes configuration and the memory revision/task records in the same transaction. A rejected configuration or rolled-back write commits none of them and sends no successful configuration notification. A batch validates the combined values as one configuration. Notifications are emitted after commit. Non-memory settings retain their standard configuration behavior.
 
@@ -166,7 +170,7 @@ Content-Type: application/json
 {"updateGlobalConfig":{"value":"true"}}
 ```
 
-Disable KSM for one Cluster, preserving any Host overrides within it. The client sends one request with the Cluster UUID:
+Set one Cluster's KSM switch to false, preserving stored Host values. An enabled Global or Host switch still enables the effective intent. The client sends one request with the Cluster UUID:
 
 ```http
 PUT /zstack/v1/resource-configurations/kvm/host.ksm/<clusterUuid>/actions
@@ -180,6 +184,23 @@ Use memory.zram.enabled in the same Cluster route to configure its ZRAM switch. 
 ```http
 DELETE /zstack/v1/resource-configurations/kvm/host.ksm/<clusterUuid>
 ```
+
+Save a disabled KSM switch at the Host level:
+
+```http
+PUT /zstack/v1/resource-configurations/kvm/host.ksm/<hostUuid>/actions
+Content-Type: application/json
+
+{"updateResourceConfig":{"value":"false"}}
+```
+
+If either the Cluster or Global KSM switch is `true`, the Host's effective desired switch remains enabled. To remove the stored Host value instead, use DELETE:
+
+```http
+DELETE /zstack/v1/resource-configurations/kvm/host.ksm/<hostUuid>
+```
+
+For the Host ZRAM switch, replace `host.ksm` with `memory.zram.enabled` in these two routes. Parent switch changes can change the effective result without overwriting the stored Host `false`. Neither request clears independent zero-page, scan, capacity or writeback-backend settings; removing those values is a separate per-field operation subject to existing validation and Host-only backend rules. Configuration success still requires the effective-policy, task and actual-Host reads described above before reporting execution success.
 
 Enable zero-page handling for one Host:
 
@@ -217,7 +238,7 @@ Content-Type: application/json
 {"updateGlobalConfig":{"value":"true"}}
 ```
 
-Override that intent to false for one Cluster, then remove the override to inherit again. Neither request deletes any Host backend; a more specific Host override remains authoritative:
+Store `false` for one Cluster, then remove that local value. An enabled Global or Host writeback switch still enables the effective intent; neither request deletes any Host backend:
 
 ```http
 PUT /zstack/v1/resource-configurations/kvm/memory.writeback.enabled/<clusterUuid>/actions
@@ -260,7 +281,7 @@ Use the standard configuration SDK Actions for scalar settings on Global, Cluste
 
 ## Configuration and maintenance boundary
 
-- Basic configuration uses the standard APIs above, including KSM/zero pages, ZRAM capacity and prepared per-Host writeback-device selection. Optional policy preview is read-only and does not replace commit-time validation. Host > Cluster > Global uses the same standard value source across standard and compatibility APIs.
+- Basic configuration uses the standard APIs above, including KSM/zero pages, ZRAM capacity and prepared per-Host writeback-device selection. Optional policy preview is read-only and does not replace commit-time validation. The four feature switches combine enabled intent; other parameters use Host > Cluster > Global precedence. Standard and compatibility APIs use the same stored values and effective rules.
 - UI/CLI controlled operations include pause/drain/resume and per-Host pool/backend preparation within the corresponding workflow. Backend/CLI only: `reconcile`, `recoverUncertain`, compatibility `clearOverride`, target-shard staging/commit/cancel, VM participation/exclusion and advanced tuning. Device preparation is not exposed as an arbitrary shell or reset operation.
 - `expectedRevision`, source revisions, request identity and required control/recovery evidence remain mandatory where applicable to the specialized UpdateMemoryPolicy workflow, not added to standard configuration API parameters. Preparation and recovery never waive License, ownership, running-operation or data-safety checks.
 - `allowedActions` is a current-state hint, not a durable authorization or promise that a later request cannot conflict. `preflightRequiredActions` identifies actions needing additional evidence; it must not be rendered as unconditional permission. Submission performs the final checks.
@@ -422,7 +443,7 @@ Implementation references in premium: the ZWatch API message classes, `HostAbstr
 Frontend implementation and environment functional tests use the same public management-node interfaces listed in the page table. A Java SDK or BFF wrapper is suitable when it sends the actual documented REST method, route, body wrapper and parameters through the platform authorization chain.
 
 - Exercise ordinary configuration, inheritance, deletion, atomic batches, validation failures and permission/license checks through GlobalConfig / ResourceConfig. Calling UpdateMemoryPolicy.apply/clearOverride, a Repository/Manager method, SQL or a Host-local control endpoint does not verify this frontend workflow.
-- Verify Global switches with UpdateGlobalConfig and Cluster switches with the Cluster UUID through ResourceConfig, without client-side Host configuration loops. Check inherited Hosts, preserved explicit overrides and inheritance on newly added Hosts. If the UI offers selected-Host batch editing, test it separately and verify that unselected Hosts and Cluster/Global settings remain unchanged.
+- Verify Global switches with UpdateGlobalConfig and Cluster switches with the Cluster UUID through ResourceConfig, without client-side Host configuration loops. Cover the eight boolean combinations for each feature switch, same-level replacement, stored false versus effective true, nearest-parameter values including zero, and newly added Hosts. Changes to Global/Cluster require an isolated test scope; do not change protected Hosts or unresolved operations to create that isolation.
 - Read effective settings, current Host state and execution tasks through GetMemoryPolicy, GetMemoryStates and GetMemoryTasks. Distinguish configuration saved, execution pending/blocked and Host state actually applied.
 - Exercise the exposed maintenance actions through UpdateMemoryPolicy, backend discovery through GetHostMemoryWritebackBackends, and queued-task cancellation through CancelMemoryTask. Use real replies for the action's identity and control evidence.
 - Read VM statistics through the single/batch public VM APIs with the applicable account or IAM2 project session. Verify access denial and unavailable samples separately.

@@ -34,6 +34,7 @@ import org.zstack.core.config.schema.GuestOsCharacter;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.jsonlabel.JsonLabel;
@@ -89,6 +90,7 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMConstant.KvmVmState;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoHelper;
 import org.zstack.kvm.hypervisor.KvmHypervisorInfoManager;
+import org.zstack.kvm.memory.MemoryStandardConfigAdapter;
 import org.zstack.network.l3.NetworkGlobalProperty;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -6335,7 +6337,17 @@ public class KVMHost extends HostBase implements Host {
                             deployArguments.setIsBareMetal2Gateway("true");
                         }
 
-                        String enableKsm = rcf.getResourceConfigValue(KVMGlobalConfig.HOST_KSM, self.getUuid(), String.class);
+                        Object ksmIntent = new SQLBatchWithReturn<Object>() {
+                            @Override protected Object scripts() {
+                                List<String> resources = new ArrayList<>();
+                                resources.add(self.getUuid());
+                                if (self.getClusterUuid() != null) { resources.add(self.getClusterUuid()); }
+                                return new MemoryStandardConfigAdapter().readEffective(
+                                        databaseFacade.getEntityManager(), "ksm.enabled", resources);
+                            }
+                        }.execute();
+                        String enableKsm = ksmIntent == null || MemoryStandardConfigAdapter.isUnmanaged(ksmIntent)
+                                ? "none" : ksmIntent.toString();
                         kvmHostConfigChecker.setRequireKsmCheck(enableKsm);
                         kvmHostConfigChecker.setRequireReservePorts("49152-49215");
                         deployArguments.setIsEnableKsm(enableKsm);
