@@ -5,6 +5,7 @@ import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
@@ -14,7 +15,16 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.host.*;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.volume.VolumeStatus;
+import org.zstack.header.volume.VolumeVO;
 import org.zstack.utils.network.NetworkUtils;
+
+import javax.persistence.Tuple;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -64,6 +74,53 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             APIDeleteHostEvent evt = new APIDeleteHostEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        validateVmStorageBeforeDeletingHost(msg.getUuid());
+    }
+
+    private void validateVmStorageBeforeDeletingHost(String hostUuid) {
+        // A stopped VM has no hostUuid. Do not treat the last host of a VM
+        // currently running elsewhere as its current owner.
+        List<Tuple> vms = SQL.New("select vm.uuid, vm.name from VmInstanceVO vm" +
+                        " where (vm.hostUuid = :hostUuid or" +
+                        " (vm.hostUuid is null and vm.lastHostUuid = :hostUuid))" +
+                        " and vm.state <> :destroyed order by vm.uuid", Tuple.class)
+                .param("hostUuid", hostUuid)
+                .param("destroyed", VmInstanceState.Destroyed)
+                .list();
+        if (vms.isEmpty()) {
+            return;
+        }
+
+        Map<String, String> vmNames = new LinkedHashMap<>();
+        vms.forEach(vm -> vmNames.put(vm.get(0, String.class), vm.get(1, String.class)));
+        List<Tuple> volumes = SQL.New("select vol, ps from VolumeVO vol, PrimaryStorageVO ps" +
+                        " where vol.primaryStorageUuid = ps.uuid and ps.type <> :localStorageType" +
+                        " and vol.status <> :deleted" +
+                        " and (vol.vmInstanceUuid in (:vmUuids) or vol.isShareable = true)" +
+                        " order by vol.uuid", Tuple.class)
+                .param("localStorageType", "LocalStorage")
+                .param("deleted", VolumeStatus.Deleted)
+                .param("vmUuids", vmNames.keySet())
+                .list();
+        for (Tuple tuple : volumes) {
+            VolumeVO volume = tuple.get(0, VolumeVO.class);
+            // Use the volume attachment extension for shareable data volumes,
+            // whose vmInstanceUuid may be null.
+            for (String vmUuid : volume.getAttachedVmUuids()) {
+                if (!vmNames.containsKey(vmUuid)) {
+                    continue;
+                }
+
+                PrimaryStorageVO storage = tuple.get(1, PrimaryStorageVO.class);
+                throw new ApiMessageInterceptionException(operr(
+                        "cannot delete host[uuid:%s]: vm[name:%s, uuid:%s] uses volume[name:%s, uuid:%s]" +
+                                " on non-local primary storage[name:%s, uuid:%s, type:%s]." +
+                                " Migrate the VM to another host or delete the VM before deleting this host",
+                        hostUuid, vmNames.get(vmUuid), vmUuid, volume.getName(), volume.getUuid(),
+                        storage.getName(), storage.getUuid(), storage.getType()));
+            }
         }
     }
 
