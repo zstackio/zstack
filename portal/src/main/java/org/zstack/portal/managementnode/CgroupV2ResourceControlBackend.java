@@ -106,6 +106,7 @@ class CgroupV2ResourceControlBackend extends CgroupResourceControlBackend {
         }
     }
 
+    @Override
     void enableMemoryController(Path target) {
         if (Files.isRegularFile(target.resolve("memory.max"))) {
             return;

@@ -51,6 +51,10 @@ class CgroupV1ResourceControlBackend extends CgroupResourceControlBackend {
     }
 
     @Override
+    void enableMemoryController(Path target) {
+    }
+
+    @Override
     void requireCpuTarget(Path target) {
     }
 

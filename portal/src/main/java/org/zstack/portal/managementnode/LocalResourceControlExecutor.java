@@ -105,7 +105,7 @@ public class LocalResourceControlExecutor {
             String desired, Long desiredMemory) {
         boolean manageCpu = !desired.isEmpty();
         boolean memoryError = desiredMemory != null && desiredMemory > 0
-                && !validateActiveSliceMemory(memoryBackend, command.getSliceName(), desiredMemory);
+                && !prepareActiveSliceMemory(memoryBackend, command.getSliceName(), desiredMemory);
         boolean changed = systemd.pruneServices(command.getSliceName(), command.getHandles().stream()
                 .filter(handle -> ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType()))
                 .map(ResourceConsumerHandle::getValue).collect(toSet()));
@@ -247,7 +247,7 @@ public class LocalResourceControlExecutor {
         return true;
     }
 
-    private boolean validateActiveSliceMemory(
+    private boolean prepareActiveSliceMemory(
             CgroupResourceControlBackend memoryBackend, String sliceName, long desiredMemory) {
         Map<String, String> properties = systemd.properties(sliceName);
         if (!"active".equals(properties.get("ActiveState"))) {
@@ -258,6 +258,7 @@ public class LocalResourceControlExecutor {
             return false;
         }
         memoryBackend.requireSubtreeMemoryLimit(memoryTarget);
+        memoryBackend.enableMemoryController(memoryTarget);
         memoryBackend.validateMemoryLimit(memoryTarget, desiredMemory);
         return true;
     }
