@@ -8,6 +8,8 @@ import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.OperationFailureException
+import org.zstack.header.core.ReturnValueCompletion
+import org.zstack.header.storage.addon.primary.PingResult
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply
@@ -28,6 +30,7 @@ import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageStatus
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.storage.zbs.MdsStatus
+import org.zstack.storage.zbs.MdsInfo
 import org.zstack.storage.zbs.MdsUri
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
@@ -186,6 +189,8 @@ class ZbsPrimaryStorageCase extends SubCase {
             kvm = env.inventoryByName("kvm-1") as KVMHostInventory
             evtf = bean(EventFacade.class)
             dbf = bean(DatabaseFacade.class)
+            testMdsCredentialsOnlyPersistInConfig()
+            testMdsReconnectUsesConfigCredentials()
             testSyncPrimaryStorageCapacityConcurrently()
             testDefaultConfig()
             testUpdateExternalPrimaryStorage()
@@ -207,6 +212,90 @@ class ZbsPrimaryStorageCase extends SubCase {
             testGetBackingChainNormalizesCbdParentUri()
             testBatchStatsNormalizesCbdInstallPath()
             testMdsPhysicalServerSerialPersistsAcrossReconnect()
+        }
+    }
+
+    void testMdsCredentialsOnlyPersistInConfig() {
+        ExternalPrimaryStorageVO vo = dbf.findByUuid(ps.uuid, ExternalPrimaryStorageVO.class)
+        def storedInfo = JSONObjectUtil.toObject(vo.addonInfo, LinkedHashMap.class)
+        assert storedInfo.mdsInfos.every { !it.containsKey("password") } :
+                "addonInfo must not persist a second copy of SSH passwords"
+        assert MdsInfo.valueOf(JSONObjectUtil.toObject(vo.config, Config.class).mdsUrls).every {
+            it.password == "password"
+        } : "config must retain the SSH credentials used for connection"
+
+        def queried = queryPrimaryStorage { conditions = ["uuid=${ps.uuid}"] }[0]
+        assert queried.addonInfo.mdsInfos.every { !it.containsKey("password") } :
+                "query responses must omit MDS passwords"
+
+        storedInfo.mdsInfos.each { it.password = "legacy-secret" }
+        vo = new ExternalPrimaryStorageVO(state: vo.state, status: vo.status,
+                config: vo.config, addonInfo: JSONObjectUtil.toJsonString(storedInfo))
+        def inventory = org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory.valueOf(vo)
+        assert inventory.addonInfo.mdsInfos.every { !it.containsKey("password") } :
+                "historical addonInfo must be filtered before it is returned"
+        assert vo.addonInfo.contains("legacy-secret") : "output filtering must not mutate the source VO"
+        assert JSONObjectUtil.toObject(vo.addonInfo, AddonInfo.class).mdsInfos.every { it.password == null } :
+                "historical addonInfo passwords must not be loaded as connection credentials"
+
+        inventory = new org.zstack.header.storage.addon.primary.ExternalPrimaryStorageInventory()
+        inventory.setConfig(JSONObjectUtil.toObject(vo.config, LinkedHashMap.class))
+        inventory.setAddonInfo(JSONObjectUtil.toObject(vo.addonInfo, LinkedHashMap.class))
+        assert inventory.config.mdsUrls.every { !it.contains("root:password@") } :
+                "discover responses must also filter config credentials"
+        assert inventory.addonInfo.mdsInfos.every { !it.containsKey("password") } :
+                "setter-based responses must also filter historical MDS passwords"
+    }
+
+    void testMdsReconnectUsesConfigCredentials() {
+        ExternalPrimaryStorageVO vo = dbf.findByUuid(ps.uuid, ExternalPrimaryStorageVO.class)
+        String originalConfig = vo.config
+        Config updated = JSONObjectUtil.toObject(originalConfig, Config.class)
+        updated.mdsUrls = updated.mdsUrls.collect {
+            "operator:current-secret@${MdsInfo.valueOf(it).addr}:2222".toString()
+        }
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = JSONObjectUtil.toJsonString(updated)
+        }
+
+        def controller = new ZbsStorageController(dbf.findByUuid(ps.uuid, ExternalPrimaryStorageVO.class))
+        def failureCountField = ZbsStorageController.getDeclaredField("mdsConsecutivePingFailureCount")
+        failureCountField.accessible = true
+        Set<String> reconnected = Collections.synchronizedSet(new HashSet<String>())
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp ->
+            rsp.success = false
+            rsp.error = "force automatic MDS reconnection"
+            return rsp
+        }
+        env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, ZbsPrimaryStorageMdsBase.SyncMetadataCmd.class)
+            MdsInfo mds = (failureCountField.get(controller) as Map).keySet().find { it.addr == cmd.addr }
+            if (mds == null) return rsp
+            assert mds.username == "operator" && mds.password == "current-secret" && mds.port == 2222 :
+                    "automatic reconnect must use current config credentials, not persisted addonInfo"
+            reconnected.add(cmd.addr)
+            return rsp
+        }
+        AtomicBoolean completed = new AtomicBoolean(false)
+        controller.ping(new ReturnValueCompletion<PingResult>(null) {
+            @Override
+            void success(PingResult result) {
+                assert result.success : "MDS reconnection must succeed with the configured credentials"
+                completed.set(true)
+            }
+
+            @Override
+            void fail(ErrorCode errorCode) {
+                assert false : "MDS reconnect failed: ${errorCode}"
+            }
+        })
+        retryInSecs { assert completed.get() }
+        assert reconnected.size() == updated.mdsUrls.size() : "all failed MDS nodes must reconnect"
+        env.cleanAfterSimulatorHandlers()
+        updateExternalPrimaryStorage {
+            uuid = ps.uuid
+            config = originalConfig
         }
     }
 
@@ -818,9 +907,9 @@ class ZbsPrimaryStorageCase extends SubCase {
         def addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
         assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
-                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
                 "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
                 "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
         assert data == null
@@ -852,9 +941,9 @@ class ZbsPrimaryStorageCase extends SubCase {
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
         assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
-                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Connected\"}]," +
                 "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
                 "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
@@ -901,9 +990,9 @@ class ZbsPrimaryStorageCase extends SubCase {
         addonInfo = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.addonInfo).eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
 
         assert addonInfo == "{\"clusterInfo\":{\"uuid\":\"123456789\",\"version\":\"1.6.1-for-test\"}," +
-                "\"mdsInfos\":[{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
-                "{\"username\":\"root\",\"password\":\"password\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}]," +
+                "\"mdsInfos\":[{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.1\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.2\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}," +
+                "{\"username\":\"root\",\"port\":22,\"addr\":\"127.0.1.3\",\"externalAddr\":\"127.0.0.1\",\"status\":\"Disconnected\"}]," +
                 "\"logicalPoolInfos\":[{\"physicalPoolID\":1,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":1,\"usedSize\":322961408,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":968884224,\"physicalPoolName\":\"pool1\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool1\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":3221225472}," +
                 "{\"physicalPoolID\":2,\"redundanceAndPlaceMentPolicy\":{\"copysetNum\":300,\"replicaNum\":3,\"zoneNum\":3},\"logicalPoolID\":2,\"usedSize\":123456789,\"quota\":0,\"createTime\":1735875794,\"type\":0,\"rawWalUsedSize\":0,\"allocateStatus\":0,\"rawUsedSize\":123456789,\"physicalPoolName\":\"pool2\",\"capacity\":579933831168,\"logicalPoolName\":\"lpool2\",\"userPolicy\":\"eyJwb2xpY3kiIDogMX0=\",\"allocatedSize\":987654321}]}"
 
