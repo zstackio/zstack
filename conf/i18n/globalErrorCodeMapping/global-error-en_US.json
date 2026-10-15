@@ -4141,6 +4141,7 @@
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10005": "no available host found with bound resource %s",
   "ORG_ZSTACK_NETWORK_L2_10011": "unsupported l2Network type[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10003": "virtual router[uuid:%s, ip:%s] failed to configure DNS%s for L3 Network[uuid:%s, name:%s], %s",
+  "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10004": "cannot migrate vm[uuid:%s]: default L3 network[uuid:%s] no longer exists; set a valid default network before retrying migration",
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10008": "The image[uuid:%s] is located on a backup storage[uuid:%s, type:%s] that requires interaction with primary storage[uuid:%s]; however, no suitable host was found to facilitate this interaction.",
   "ORG_ZSTACK_NETWORK_L2_10010": "l2Network[uuid:%s] has not been attached to cluster[uuid:%s]",
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10007": "The image[uuid:%s, name:%s] is stored on a backup storage[uuid:%s, type:%s] that requires primary storage of types %s; however, no host with compatible primary storage was found.",

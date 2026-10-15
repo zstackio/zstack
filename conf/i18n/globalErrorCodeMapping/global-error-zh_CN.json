@@ -4141,6 +4141,7 @@
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10005": "没有找到绑定资源 %s 的可用主机",
   "ORG_ZSTACK_NETWORK_L2_10011": "不支持的二层网络类型[%s]",
   "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10003": "虚拟路由器[uuid:%s, ip:%s]为L3网络[uuid:%s, name:%s]配置dns%s时失败，%s",
+  "ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10004": "无法迁移云主机[uuid:%s]：默认三层网络[uuid:%s]已不存在，请设置有效的默认网络后重试迁移",
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10008": "[uuid:%s] 的镜像位于需要与主存储[uuids:%s, 类型:%s]配合的备份存储[uuid:%s]上，然而并未找到适合与这些主存储配合的主机",
   "ORG_ZSTACK_NETWORK_L2_10010": "l2Network[uuid:%s] 没有绑定到集群[uuid:%s]",
   "ORG_ZSTACK_COMPUTE_ALLOCATOR_10007": "该镜像[uuid:%s, name:%s]位于需要与主存储配合的备份存储[uuid:%s, type:%s]上，然而未找到适合与这些主存储配合的主机。",
