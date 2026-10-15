@@ -186,6 +186,31 @@ public class MemoryRepositoryTest {
         }
     }
 
+    @Test public void hostEffectivePolicyBatchesStandardConfigReadsWithoutChangingInheritance() {
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", true);
+            standardConfigAdapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.pagesToScan", 2500L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 3100L);
+            return null;
+        });
+        factory.getStatistics().clear();
+        MemoryPolicyConfig policy = repository.serviceObservationPolicy("host1");
+        assertNotNull(policy);
+        assertEquals(Long.valueOf(3100), policy.ksm.pagesToScan);
+        assertEquals(Boolean.TRUE, policy.zram.enabled);
+        long configQueries = 0;
+        for (String query : factory.getStatistics().getQueries()) {
+            if (query.contains("GlobalConfigVO") || query.contains("ResourceConfigVO")) {
+                configQueries += factory.getStatistics().getQueryStatistics(query).getExecutionCount();
+            }
+        }
+        assertTrue("one scoped batch and KSM mode read per inheritance layer, got " + configQueries,
+                configQueries <= 6);
+        assertEquals(0, factory.getStatistics().getEntityInsertCount());
+        assertEquals(0, factory.getStatistics().getEntityUpdateCount());
+        assertEquals(0, factory.getStatistics().getEntityDeleteCount());
+    }
+
     @Test public void serviceObservationReusesConnectedPolicyAndExistingControlFencesWithoutWrites() {
         assertNotNull(repository.serviceObservationPolicy("host1"));
         assertNull(repository.serviceObservationPolicy("absent"));

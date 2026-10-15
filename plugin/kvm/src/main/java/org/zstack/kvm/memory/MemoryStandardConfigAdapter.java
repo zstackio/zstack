@@ -68,6 +68,10 @@ public final class MemoryStandardConfigAdapter {
     public Object readOverrideOwn(EntityManager em, String path, String resourceUuid) {
         MemoryStandardField field = MemoryStandardField.forPath(path);
         ResourceConfigVO row = resourceRow(em, field, resourceUuid);
+        return readResourceStored(field, row, resourceUuid);
+    }
+
+    private static Object readResourceStored(MemoryStandardField field, ResourceConfigVO row, String resourceUuid) {
         if (row == null) { return null; }
         String value = row.getValue();
         if (value == null || value.trim().isEmpty()) {
@@ -81,11 +85,56 @@ public final class MemoryStandardConfigAdapter {
     public Object readGlobalOwn(EntityManager em, String path) {
         MemoryStandardField field = MemoryStandardField.forPath(path);
         GlobalConfigVO row = globalRow(em, field);
+        return readGlobalStored(field, row);
+    }
+
+    private static Object readGlobalStored(MemoryStandardField field, GlobalConfigVO row) {
         String value = row == null ? field.config().getDefaultValue() : row.getValue();
         if (value == null || value.trim().isEmpty()) {
             value = row == null ? field.config().getDefaultValue() : row.getDefaultValue();
         }
         return readStored(field, value);
+    }
+
+    /** One scoped read in the caller's transaction; no process-wide config cache. */
+    public Map<MemoryStandardField, Object> readOwn(EntityManager em, MemoryStandardField.Scope scope,
+            String resourceUuid, Set<String> skippedPaths) {
+        Set<MemoryStandardField> selected = EnumSet.noneOf(MemoryStandardField.class);
+        Set<String> categories = new HashSet<>(), names = new HashSet<>();
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            if (field.allows(scope) && !skippedPaths.contains(field.path())) {
+                selected.add(field); categories.add(field.category()); names.add(field.configName());
+            }
+        }
+        Map<MemoryStandardField, Object> values = new EnumMap<>(MemoryStandardField.class);
+        if (selected.isEmpty()) { return values; }
+        if (scope == MemoryStandardField.Scope.GLOBAL) {
+            List<GlobalConfigVO> rows = em.createQuery(
+                    "select g from GlobalConfigVO g where g.category in :categories and g.name in :names", GlobalConfigVO.class)
+                    .setParameter("categories", categories).setParameter("names", names).getResultList();
+            for (GlobalConfigVO row : rows) {
+                MemoryStandardField field = MemoryStandardField.forConfig(row.getCategory(), row.getName());
+                if (!selected.contains(field)) { continue; }
+                if (values.containsKey(field)) { throw new javax.persistence.NonUniqueResultException(field.path()); }
+                values.put(field, readGlobalStored(field, row));
+            }
+            for (MemoryStandardField field : selected) {
+                if (!values.containsKey(field)) { values.put(field, readGlobalStored(field, null)); }
+            }
+        } else {
+            List<ResourceConfigVO> rows = em.createQuery(
+                    "select r from ResourceConfigVO r where r.category in :categories and r.name in :names "
+                            + "and r.resourceUuid = :resourceUuid", ResourceConfigVO.class)
+                    .setParameter("categories", categories).setParameter("names", names)
+                    .setParameter("resourceUuid", resourceUuid).getResultList();
+            for (ResourceConfigVO row : rows) {
+                MemoryStandardField field = MemoryStandardField.forConfig(row.getCategory(), row.getName());
+                if (!selected.contains(field)) { continue; }
+                if (values.containsKey(field)) { throw new javax.persistence.NonUniqueResultException(field.path()); }
+                values.put(field, readResourceStored(field, row, resourceUuid));
+            }
+        }
+        return values;
     }
 
     private static Object readStored(MemoryStandardField field, String value) {
