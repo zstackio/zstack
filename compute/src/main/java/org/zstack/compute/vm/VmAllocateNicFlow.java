@@ -117,10 +117,14 @@ public class VmAllocateNicFlow implements Flow {
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
             VmNicInventory nic = buildNicInventory(spec, nicSpec, nw, mac, customNicUuid, deviceId, disableL3Networks);
-            if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
-                errs.add(operr(ORG_ZSTACK_COMPUTE_VM_10069, "Duplicate mac address [%s]", nic.getMac()));
-                wcomp.allDone();
-                return;
+            int tries = VmMacAddressSchemaType.Ip.name().equals(VmGlobalProperty.vmMacAddressSchema) ? 5 : 1;
+            while (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
+                if (customMac != null || --tries == 0) {
+                    errs.add(operr(ORG_ZSTACK_COMPUTE_VM_10069, "Duplicate mac address [%s]", nic.getMac()));
+                    wcomp.allDone();
+                    return;
+                }
+                nic.setMac(allocateMac(customMac, deviceId));
             }
 
             // Persist VmNicVO first so that ResourceVO entry exists before extensions

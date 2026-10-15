@@ -162,7 +162,7 @@ public class MacOperator {
         sb.append(mgtIpStr, 4, 6).append(":");
         sb.append(mgtIpStr, 6, 8).append(":");
 
-        int seed = random.nextInt();
+        int seed = random.nextInt(1 << 16);
         String seedStr = Integer.toHexString(seed);
         if (seedStr.length() < 4) {
             String compensate = StringUtils.repeat("0", 4 - seedStr.length());
