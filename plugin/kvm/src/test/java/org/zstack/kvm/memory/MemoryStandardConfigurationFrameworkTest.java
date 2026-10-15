@@ -76,6 +76,7 @@ public class MemoryStandardConfigurationFrameworkTest {
     private Field configurerSupportField, transactionManagerField, encryptRegistryField;
     private Object priorMessageBus, priorMessageErrors, messageAspect;
     private Field messageBusField, messageErrorField;
+    private final List<Object[]> errorFacadeCalls = new ArrayList<>();
     private ResourceConfigFacadeImpl facade;
     private ResourceConfig enabled, zeroPages;
     private ConfigTransactionalMutationExtensionPoint postWriteFailure;
@@ -154,13 +155,41 @@ public class MemoryStandardConfigurationFrameworkTest {
         Map<String, GlobalConfig> globals = new HashMap<>();
         globals.put(identity(MemoryStandardField.KSM_ENABLED), (GlobalConfig) field(enabled, "globalConfig"));
         globals.put(identity(MemoryStandardField.KSM_ZERO_PAGES), (GlobalConfig) field(zeroPages, "globalConfig"));
+        Map<String, ResourceConfig> resources = new HashMap<>();
+        resources.put(identity(MemoryStandardField.KSM_ENABLED), enabled);
+        resources.put(identity(MemoryStandardField.KSM_ZERO_PAGES), zeroPages);
+
+        java.util.concurrent.atomic.AtomicReference<RuntimeException> forcedValidationFailure =
+                new java.util.concurrent.atomic.AtomicReference<>();
+        enabled.installValidatorExtension((uuid, oldValue, newValue) -> {
+            RuntimeException forced = forcedValidationFailure.get();
+            if (forced != null) { throw forced; }
+            MemoryStandardConfigurationCoordinator.validateScalar(MemoryStandardField.KSM_ENABLED, newValue);
+        });
+        zeroPages.installValidatorExtension((uuid, oldValue, newValue) ->
+                MemoryStandardConfigurationCoordinator.validateScalar(MemoryStandardField.KSM_ZERO_PAGES, newValue));
+
+        GlobalConfig unrelatedGlobal = new GlobalConfig("test", "unrelated");
+        unrelatedGlobal.installValidateExtension((category, name, oldValue, newValue) -> {
+            throw new org.zstack.core.config.GlobalConfigException("unrelated validator rejected value");
+        });
+        ResourceConfig unrelatedResource = new ResourceConfig();
+        set(ResourceConfig.class, unrelatedResource, "globalConfig", unrelatedGlobal);
+        set(ResourceConfig.class, unrelatedResource, "dbf", dbf);
+        set(ResourceConfig.class, unrelatedResource, "evtf", eventFacade());
+        set(ResourceConfig.class, unrelatedResource, "transactionManager", txManager);
+        set(ResourceConfig.class, unrelatedResource, "resourceClasses", Collections.singletonList(HostVO.class));
+        invoke(unrelatedResource, "initResourceConfigNodes");
+        globals.put(unrelatedGlobal.getIdentity(), unrelatedGlobal);
+        resources.put(unrelatedGlobal.getIdentity(), unrelatedResource);
+
         GlobalConfigFacade gcf = (GlobalConfigFacade) Proxy.newProxyInstance(GlobalConfigFacade.class.getClassLoader(),
                 new Class<?>[]{GlobalConfigFacade.class}, (p, m, a) ->
                         m.getName().equals("getAllConfig") ? globals : null);
         ResourceConfigFacade rcf = (ResourceConfigFacade) Proxy.newProxyInstance(ResourceConfigFacade.class.getClassLoader(),
                 new Class<?>[]{ResourceConfigFacade.class}, (p, m, a) -> {
                     if (!m.getName().equals("getResourceConfig")) { return null; }
-                    return identity(MemoryStandardField.KSM_ENABLED).equals(a[0]) ? enabled : zeroPages;
+                    return resources.get(a[0]);
                 });
         beanFactory.registerSingleton("globalConfigFacade", gcf);
         beanFactory.registerSingleton("resourceConfigFacade", rcf);
@@ -169,6 +198,48 @@ public class MemoryStandardConfigurationFrameworkTest {
                 new Class<?>[]{org.zstack.identity.AccountManager.class},
                 (p, m, a) -> defaultValue(m.getReturnType())));
         ResourceConfigApiInterceptor interceptor = new ResourceConfigApiInterceptor();
+
+        interceptor.intercept(bulk("false", "false"));
+
+        errorFacadeCalls.clear();
+        try {
+            interceptor.intercept(bulk("true", "not-a-boolean"));
+            fail("invalid memory boolean must be mapped to a standard argument interception error");
+        } catch (org.zstack.header.apimediator.ApiMessageInterceptionException expected) {
+            assertEquals("ORG_ZSTACK_RESOURCECONFIG_10003", expected.getError().getGlobalErrorCode());
+            assertPlatformArgumentError("ksm.zeroPagesEnabled", "not-a-boolean");
+        }
+        assertNull(configValue(MemoryStandardField.KSM_ENABLED));
+        assertNull(configValue(MemoryStandardField.KSM_ZERO_PAGES));
+        assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+        assertEquals(0L, taskCount());
+
+        APIUpdateResourceConfigsMsg unrelated = new APIUpdateResourceConfigsMsg();
+        unrelated.setResourceUuid("host1");
+        unrelated.setSession(new SessionInventory());
+        APIUpdateResourceConfigsMsg.ResourceConfigAO unrelatedItem = new APIUpdateResourceConfigsMsg.ResourceConfigAO();
+        unrelatedItem.setCategory(unrelatedGlobal.getCategory());
+        unrelatedItem.setName(unrelatedGlobal.getName());
+        unrelatedItem.setValue("value");
+        unrelated.setResourceConfigs(Collections.singletonList(unrelatedItem));
+        try {
+            interceptor.intercept(unrelated);
+            fail("non-memory GlobalConfigException must retain standard ResourceConfig validation mapping");
+        } catch (org.zstack.header.apimediator.ApiMessageInterceptionException expected) {
+            assertEquals("ORG_ZSTACK_RESOURCECONFIG_10003", expected.getError().getGlobalErrorCode());
+            assertPlatformArgumentError("unrelated validator rejected value");
+        }
+
+        IllegalStateException unknownFailure = new IllegalStateException("unexpected validator failure");
+        forcedValidationFailure.set(unknownFailure);
+        try {
+            interceptor.intercept(bulk("true", "false"));
+            fail("unknown runtime failures must not be mislabeled as invalid user input");
+        } catch (IllegalStateException expected) {
+            assertSame(unknownFailure, expected);
+        }
+        forcedValidationFailure.set(null);
+
         APIUpdateResourceConfigsMsg request = bulk("true", "true");
         interceptor.intercept(request);
         interceptor.intercept(request);
@@ -585,7 +656,10 @@ public class MemoryStandardConfigurationFrameworkTest {
     private void installPlatformLoader() throws Exception {
         priorPlatformLoader = get(org.zstack.core.Platform.class, null, "loader");
         ErrorFacade errors = (ErrorFacade) Proxy.newProxyInstance(ErrorFacade.class.getClassLoader(), new Class<?>[]{ErrorFacade.class},
-                (p,m,a) -> m.getReturnType() == ErrorCode.class ? new ErrorCode("MEMORY_TEST", "fixture") : defaultValue(m.getReturnType()));
+                (p,m,a) -> {
+                    if (m.getName().startsWith("instantiateErrorCode") && a != null) { errorFacadeCalls.add(a.clone()); }
+                    return m.getReturnType() == ErrorCode.class ? new ErrorCode("MEMORY_TEST", "fixture") : defaultValue(m.getReturnType());
+                });
         DatabaseFacade dbfProxy = (DatabaseFacade) Proxy.newProxyInstance(DatabaseFacade.class.getClassLoader(), new Class<?>[]{DatabaseFacade.class},
                 (p,m,a) -> m.getName().equals("getEntityManager") ? shared : m.getName().equals("getCriteriaBuilder")
                         ? factory.getCriteriaBuilder() : defaultValue(m.getReturnType()));
@@ -620,6 +694,14 @@ public class MemoryStandardConfigurationFrameworkTest {
                 Proxy.newProxyInstance(ErrorFacade.class.getClassLoader(), new Class<?>[]{ErrorFacade.class}, (p,m,a) -> defaultValue(m.getReturnType())));
     }
     private static Object defaultValue(Class<?> c) { if (c==boolean.class)return false; if(c==int.class)return 0; if(c==long.class)return 0L; if(c==short.class)return (short)0; if(c==byte.class)return (byte)0; if(c==float.class)return 0f; if(c==double.class)return 0d; if(c==char.class)return (char)0; return null; }
+    private void assertPlatformArgumentError(String... expectedDetailParts) {
+        assertFalse("Platform.argerr must call the standard ErrorFacade overload", errorFacadeCalls.isEmpty());
+        Object[] call = errorFacadeCalls.get(errorFacadeCalls.size() - 1);
+        assertSame(org.zstack.header.errorcode.SysErrors.INVALID_ARGUMENT_ERROR, call[0]);
+        assertTrue("argerr detail must preserve validator diagnostics", call.length > 1 && call[1] instanceof String);
+        String details = (String) call[1];
+        for (String part : expectedDetailParts) { assertTrue(details, details.contains(part)); }
+    }
     private static Object field(Object target, String name) throws Exception { return get(target.getClass(), target, name); }
     private static Object get(Class<?> type, Object target, String name) throws Exception { Field f=type.getDeclaredField(name); f.setAccessible(true); return f.get(target); }
     private static void set(Class<?> type, Object target, String name, Object value) throws Exception { Field f=type.getDeclaredField(name); f.setAccessible(true); f.set(target,value); }
