@@ -16,8 +16,11 @@ public class MemoryManagerReconcileTest {
         String status;
         String reason;
         MemoryTaskVO original;
+        MemoryTaskVO parent;
         @Override public void result(String id, String value, String reason, MemoryAgentResponse response) { status = value; this.reason = reason; }
-        @Override MemoryTaskVO findTask(String uuid) { return original; }
+        @Override MemoryTaskVO findTask(String uuid) {
+            return parent != null && parent.getUuid().equals(uuid) ? parent : original;
+        }
         @Override public java.util.List<MemoryStateVO> states(java.util.List<String> hosts, int start, int limit) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host");
             state.setState("{\"bootId\":\"boot-1\"}");
@@ -122,6 +125,52 @@ public class MemoryManagerReconcileTest {
         dispatch(manager, task);
         assertEquals("Succeeded", repository.status);
         assertNull("successful no-reason result must remain null", repository.reason);
+    }
+
+    @Test public void recoveryReconcileBindsOriginalRequestAndOnlyExactPreClaimRejection() throws Exception {
+        for (String reason : new String[]{
+                "Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID",
+                "RECOVERY_REQUEST_INVALID in transport stderr", "No confirmed Agent result"}) {
+            Manager manager = new Manager(); Repository repository = new Repository();
+            MemoryTaskVO original = new MemoryTaskVO(); original.setUuid("original-operation");
+            original.setHostUuid("host"); original.setScope("Host"); original.setResourceUuid("host");
+            original.setAction("recoverUncertain"); original.setStatus("Unknown");
+            original.setReason(reason); original.setExpectedControlOperationUuid("original-control");
+            original.setDesiredRevision(9); original.setParentUuid("original-parent");
+            MemoryTaskVO parent = new MemoryTaskVO(); parent.setUuid("original-parent");
+            parent.setScope("Host"); parent.setResourceUuid("host"); parent.setAction("recoverUncertain");
+            parent.setExpectedControlOperationUuid("original-control");
+            String requestHash = String.join("", Collections.nCopies(64, "a"));
+            parent.setRequestHash(requestHash); repository.parent = parent;
+            original.setCreateDate(new Timestamp(System.currentTimeMillis()));
+            original.setPolicy("{\"expectedHostBootId\":\"boot-1\",\"expectedPoolGeneration\":\"generation\",\"confirmed\":true}");
+            repository.original = original; inject(manager, "repository", repository);
+            MemoryTaskVO task = new MemoryTaskVO(); task.setUuid("reconcile-child");
+            task.setHostUuid("host"); task.setResourceUuid("host"); task.setScope("Host");
+            task.setAction("reconcile"); task.setReconcileOperationUuid("original-operation");
+            task.setDesiredRevision(10); // Do not bind the query child's later revision.
+            manager.returnedStatus = "Unknown"; manager.success = false;
+            dispatch(manager, task);
+            assertEquals("original-control", manager.command.get("expectedControlOperationUuid"));
+            assertEquals(9L, manager.command.get("desiredRevision"));
+            assertNull("Host children do not carry the parent admission hash", original.getRequestHash());
+            assertEquals(requestHash, manager.command.get("recoveryRequestHash"));
+            assertEquals("boot-1", ((Map) manager.command.get("recovery")).get("expectedHostBootId"));
+            assertEquals(Collections.emptyMap(), manager.command.get("policy"));
+            assertFalse(manager.command.containsKey("admissionConnected"));
+            if (reason.equals("Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID")) {
+                assertEquals("seal-rejected-recovery", manager.command.get("reconcileAction"));
+                assertEquals("RECOVERY_REQUEST_INVALID", manager.command.get("classification"));
+            } else {
+                assertFalse(manager.command.containsKey("reconcileAction"));
+                assertFalse(manager.command.containsKey("classification"));
+            }
+            parent.setExpectedControlOperationUuid("different-control");
+            dispatch(manager, task);
+            assertNull(manager.command.get("recoveryRequestHash"));
+            assertFalse("an unrelated parent cannot prove the rejected request",
+                    manager.command.containsKey("reconcileAction"));
+        }
     }
 
     private static void inject(Object target, String name, Object value) throws Exception {

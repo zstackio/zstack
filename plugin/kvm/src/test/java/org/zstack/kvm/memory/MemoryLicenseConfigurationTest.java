@@ -499,6 +499,55 @@ public class MemoryLicenseConfigurationTest {
         assertFalse(manager.applyCalled);
     }
 
+    @Test
+    public void expiredLicenseAllowsOnlyRepositoryProvenPreviouslyAppliedKsmReconnect() throws Exception {
+        RecordingRepository repository = new RecordingRepository();
+        repository.confirmedKsmReconnect = true;
+        MemoryStateVO state = new MemoryStateVO(); state.setHostUuid(HOST);
+        state.setState("{\"bootId\":\"new-boot\"}");
+        repository.states = Collections.singletonList(state);
+        RecordingManager manager = manager(repository, System.currentTimeMillis() - 1);
+        MemoryTaskVO task = task("apply");
+        task.setActorUuid("system:memory-host-connect-policy");
+        task.setExpectedControlOperationUuid("old-confirmed-control");
+        task.setPolicyPlanHash("confirmed-reconnect-plan");
+        task.setPolicy("{\"schemaVersion\":2,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}} ");
+
+        dispatch(manager, task, false);
+
+        assertTrue("the proof-checked reconnect continuation is sent", manager.applyCalled);
+        assertEquals("Succeeded", repository.resultStatus);
+        assertEquals(Boolean.TRUE, manager.command.get("confirmedKsmReconnect"));
+        assertEquals("new-boot", manager.command.get("reconnectObservationBootId"));
+        assertEquals("old-confirmed-control", manager.command.get("expectedControlOperationUuid"));
+        MemoryPolicyConfig sentPolicy = (MemoryPolicyConfig) manager.command.get("policy");
+        assertNull(sentPolicy.zram);
+        assertNull(sentPolicy.writeback);
+        assertEquals(Boolean.FALSE, sentPolicy.ksm.enabled);
+        assertEquals(Long.valueOf(2000), sentPolicy.ksm.pagesToScan);
+        assertEquals(Long.valueOf(20), sentPolicy.ksm.sleepMillis);
+
+        repository.confirmedKsmReconnect = false;
+        RecordingManager unprovenManager = manager(repository, System.currentTimeMillis() + 300_000);
+        task.setUuid("0123456789abcdef0123456789abcdef");
+        dispatch(unprovenManager, task, false);
+        assertFalse("an unproven internal reconnect cannot fall through to ordinary apply", unprovenManager.applyCalled);
+        assertFalse(unprovenManager.command.containsKey("confirmedKsmReconnect"));
+        assertEquals("Unknown", repository.resultStatus);
+        assertEquals("KSM_RECONNECT_PROOF_UNQUALIFIED", repository.resultReason);
+
+        repository.confirmedKsmReconnect = true;
+        MemoryStateVO missingBoot = new MemoryStateVO(); missingBoot.setHostUuid(HOST);
+        missingBoot.setState("{}"); repository.states = Collections.singletonList(missingBoot);
+        RecordingManager missingBootManager = manager(repository, System.currentTimeMillis() + 300_000);
+        task.setUuid("1123456789abcdef0123456789abcdef");
+        dispatch(missingBootManager, task, false);
+        assertFalse("a proof without a fresh current boot ID cannot become an ordinary apply", missingBootManager.applyCalled);
+        assertFalse(missingBootManager.command.containsKey("confirmedKsmReconnect"));
+        assertEquals("Unknown", repository.resultStatus);
+        assertEquals("KSM_RECONNECT_PROOF_UNQUALIFIED", repository.resultReason);
+    }
+
     private static MemoryTaskVO task(String action) {
         MemoryTaskVO task = new MemoryTaskVO();
         task.setUuid(TASK); task.setHostUuid(HOST); task.setScope("Host");
@@ -542,6 +591,8 @@ public class MemoryLicenseConfigurationTest {
         int recordTaskPermitCalls;
         int authorizePermitCalls;
         String resultStatus;
+        String resultReason;
+        boolean confirmedKsmReconnect;
         List<MemoryStateVO> states = Collections.emptyList();
         MemoryPolicyInventory policy = new MemoryPolicyInventory();
 
@@ -551,7 +602,7 @@ public class MemoryLicenseConfigurationTest {
         }
         @Override public void authorizeTaskPermit(String taskUuid) { }
         @Override public void result(String id, String status, String reason, MemoryAgentResponse response) {
-            resultStatus = status;
+            resultStatus = status; resultReason = reason;
         }
         @Override public List<String> targets(String scope, String resource) {
             return Collections.singletonList(HOST);
@@ -570,6 +621,7 @@ public class MemoryLicenseConfigurationTest {
         @Override boolean canReconcileRejectedResume(String hostUuid, String controlUuid) { return false; }
         @Override MemoryTaskVO findTask(String uuid) { return null; }
         @Override public void observe(String hostUuid, MemoryAgentResponse response) { }
+        @Override boolean isConfirmedKsmReconnectTask(String taskUuid) { return confirmedKsmReconnect; }
         @Override public void authorizePermit(String hostUuid, boolean allowed, long deadline) {
             authorizePermitCalls++;
         }

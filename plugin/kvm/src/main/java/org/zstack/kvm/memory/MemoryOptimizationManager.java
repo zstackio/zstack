@@ -738,7 +738,22 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         // Reconcile's empty user payload was already validated at admission;
         // dispatch sends only a result query, never that materialized policy.
         boolean configuration = !"reconcile".equals(task.getAction());
-        if (configuration && !poll && licenseDeadline() <= System.currentTimeMillis()) {
+        boolean ksmReconnectCandidate = active && !poll && "Host".equals(task.getScope())
+                && "apply".equals(task.getAction())
+                && "system:memory-host-connect-policy".equals(task.getActorUuid())
+                && task.getExpectedControlOperationUuid() != null;
+        boolean confirmedKsmReconnect = ksmReconnectCandidate
+                && repository.isConfirmedKsmReconnectTask(task.getUuid());
+        String reconnectObservationBootId = confirmedKsmReconnect ? observedBootId(task.getHostUuid()) : null;
+        confirmedKsmReconnect = confirmedKsmReconnect && reconnectObservationBootId != null;
+        if (ksmReconnectCandidate && !confirmedKsmReconnect) {
+            // Never let a stale/internal reconnect task fall through to an
+            // ordinary apply. The Agent's special journal guard is attached
+            // only to a fully proven request and cannot be synthesized later.
+            repository.result(task.getUuid(), "Unknown", "KSM_RECONNECT_PROOF_UNQUALIFIED", null);
+            return;
+        }
+        if (configuration && !poll && licenseDeadline() <= System.currentTimeMillis() && !confirmedKsmReconnect) {
             if (MemoryUncertainRecoveryRules.ACTION.equals(task.getAction())) {
                 repository.recoveryLicenseExpiredBeforeDispatch(task.getUuid()); return;
             }
@@ -767,6 +782,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         command.put("targetSnapshotGeneration", "policy-" + task.getDesiredRevision());
         command.put("expectedInstanceGeneration", task.getExpectedInstanceGeneration());
         command.put("expectedControlOperationUuid", task.getExpectedControlOperationUuid());
+        if (confirmedKsmReconnect) {
+            command.put("confirmedKsmReconnect", true);
+            command.put("reconnectObservationBootId", reconnectObservationBootId);
+        }
         command.put("policy", active ? MemoryPolicyRules.decode(task.getPolicy()) : Collections.emptyMap());
         if (active && Boolean.TRUE.equals(task.getRequiresKsmNativePartialFence())) {
             command.put("requiresKsmNativePartialFence", true);
@@ -813,6 +832,37 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 }
                 String bootId = observedBootId(task.getHostUuid());
                 if (bootId != null) { command.put("bootId", bootId); }
+            }
+            if (original != null && MemoryUncertainRecoveryRules.ACTION.equals(original.getAction())) {
+                // A recovery query must describe the original recovery, not
+                // borrow today's effective policy or the query child's identity.
+                command.remove("reconcileAction");
+                command.remove("classification");
+                command.remove("admissionConnected");
+                command.put("expectedControlOperationUuid", original.getExpectedControlOperationUuid());
+                command.put("desiredRevision", original.getDesiredRevision());
+                command.put("recovery", JSONObjectUtil.toObject(original.getPolicy(), Map.class));
+                // The standard admission stores the immutable request hash on
+                // the parent, not each dispatched Host child.
+                MemoryTaskVO requestOwner = original.getParentUuid() == null ? original
+                        : repository.findTask(original.getParentUuid());
+                String recoveryRequestHash = requestOwner != null
+                        && "Host".equals(requestOwner.getScope())
+                        && MemoryUncertainRecoveryRules.ACTION.equals(requestOwner.getAction())
+                        && Objects.equals(original.getResourceUuid(), requestOwner.getResourceUuid())
+                        && Objects.equals(original.getExpectedControlOperationUuid(), requestOwner.getExpectedControlOperationUuid())
+                        ? requestOwner.getRequestHash() : null;
+                command.put("recoveryRequestHash", recoveryRequestHash);
+                // This precise legacy result was returned before the Agent
+                // claimed or issued anything. Absence of a journal, a generic
+                // timeout, or a substring of an error is not that evidence.
+                if (recoveryRequestHash != null && recoveryRequestHash.matches("[0-9a-f]{64}")
+                        && "Host".equals(original.getScope()) && "Unknown".equals(original.getStatus())
+                        && Objects.equals(task.getHostUuid(), original.getHostUuid())
+                        && "Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID".equals(original.getReason())) {
+                    command.put("reconcileAction", "seal-rejected-recovery");
+                    command.put("classification", "RECOVERY_REQUEST_INVALID");
+                }
             }
         }
         final String queriedOperation = operation;

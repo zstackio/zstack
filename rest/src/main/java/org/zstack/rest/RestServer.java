@@ -661,8 +661,12 @@ public class RestServer implements Component, CloudBusEventListener {
             if (Collection.class.isAssignableFrom(f.getType())) {
                 Class gtype = FieldUtils.getGenericType(f);
                 List lst = new ArrayList();
-                for (String v : vals) {
-                    lst.add(TypeUtils.stringToValue(v, gtype));
+                try {
+                    for (String v : vals) {
+                        lst.add(TypeUtils.stringToValue(v, gtype));
+                    }
+                } catch (NumberFormatException e) {
+                    throw invalidQueryParameter(name, gtype);
                 }
 
                 return lst;
@@ -673,8 +677,21 @@ public class RestServer implements Component, CloudBusEventListener {
                                     " multiple values found", name));
                 }
 
-                return TypeUtils.stringToValue(vals[0], f.getType());
+                try {
+                    return TypeUtils.stringToValue(vals[0], f.getType());
+                } catch (NumberFormatException e) {
+                    throw invalidQueryParameter(name, f.getType());
+                }
             }
+        }
+
+        private RestException invalidQueryParameter(String name, Class type) {
+            if (Integer.TYPE.equals(type) || Integer.class.equals(type)) {
+                return new RestException(HttpStatus.BAD_REQUEST.value(),
+                        String.format("Invalid query parameter. '%s' must be an integer", name));
+            }
+            return new RestException(HttpStatus.BAD_REQUEST.value(),
+                    String.format("Invalid query parameter[%s]", name));
         }
     }
 

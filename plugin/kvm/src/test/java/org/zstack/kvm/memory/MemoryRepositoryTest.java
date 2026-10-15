@@ -11,6 +11,8 @@ import org.zstack.header.host.HostStatus;
 import javax.persistence.*;
 import java.util.*;
 import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.function.Function;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
@@ -1261,6 +1263,297 @@ public class MemoryRepositoryTest {
         assertNull("none is not an implicit false", unmanaged.ksm.enabled);
         assertEquals(Long.valueOf(3000), unmanaged.ksm.pagesToScan);
         assertEquals(Long.valueOf(30), unmanaged.ksm.sleepMillis);
+    }
+
+    @Test public void reconnectRepairsOnlyTrustedKsmActualDriftWhileRunRemainsDisabled() {
+        registerStandardResources();
+        repository.transaction(em -> {
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.zeroPagesEnabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", 20L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setDesiredRevision(8); state.setAppliedRevision(8L);
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20}}");
+            state.setAppliedPolicyHash("saved-policy-r8"); state.setControlOperationUuid("ksm-r8");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            MemoryTaskVO control = testTask("ksm-r8", null, "apply", "Succeeded", null);
+            control.setDesiredRevision(8); em.persist(control);
+            return null;
+        });
+        long tasksBeforeRepair = repository.taskCount(new APIQueryMemoryTaskMsg());
+
+        assertFalse("matching same-boot KSM values are not redispatched",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        assertTrue(repository.claim("mn-ksm-matching-values").isEmpty());
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            return null;
+        });
+        assertTrue("same-boot readback shows only zero-page drift", repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO repair = repository.claim("mn-ksm-actual-drift").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        MemoryPolicyConfig payload = MemoryPolicyRules.decode(repair.getPolicy());
+        assertEquals(Boolean.TRUE, payload.ksm.zeroPagesEnabled);
+        assertNull("actual-value repair must never start KSM", payload.ksm.enabled);
+        assertEquals(Long.valueOf(2000), payload.ksm.pagesToScan);
+        assertEquals(Long.valueOf(20), payload.ksm.sleepMillis);
+        assertFalse("the same actual drift must not create parallel repair tasks",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        assertEquals("repair adds exactly the normal parent and Host task, not duplicate tasks",
+                tasksBeforeRepair + 2, repository.taskCount(new APIQueryMemoryTaskMsg()));
+    }
+
+    @Test public void reconnectRestoresOnlyPreviouslyConfirmedKsmFieldsAcrossBoot() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,"
+                + "\"zeroPagesEnabled\":true,\"pagesToScan\":3000,\"sleepMillis\":30}}";
+        seedConfirmedKsmReconnect(policy);
+        long tasksBefore = repository.taskCount(new APIQueryMemoryTaskMsg());
+
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO restore = repository.claim("mn-ksm-reconnect-restore").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        assertEquals("apply", restore.getAction());
+        assertEquals("confirmed-ksm-r8", restore.getExpectedControlOperationUuid());
+        assertEquals("system:memory-host-connect-policy", restore.getActorUuid());
+        assertEquals(Long.valueOf(8), host1State().getAppliedRevision());
+        assertEquals(9L, restore.getDesiredRevision());
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(restore.getPolicy(), Map.class);
+        assertTrue(payload.containsKey("ksm"));
+        Map<String, Object> payloadKsm = (Map<String, Object>) payload.get("ksm");
+        assertEquals(Boolean.TRUE, payloadKsm.get("enabled"));
+        assertEquals(3000L, ((Number) payloadKsm.get("pagesToScan")).longValue());
+        assertEquals(30L, ((Number) payloadKsm.get("sleepMillis")).longValue());
+        assertEquals(Boolean.TRUE, payloadKsm.get("zeroPagesEnabled"));
+        assertFalse("a reconnect KSM restore never piggybacks ZRAM", payload.containsKey("zram"));
+        assertFalse("a reconnect KSM restore never piggybacks writeback", payload.containsKey("writeback"));
+        assertTrue(repository.isConfirmedKsmReconnectTask(restore.getUuid()));
+        assertFalse("duplicate reconnect callbacks cannot create another task",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        assertEquals(tasksBefore + 2, repository.taskCount(new APIQueryMemoryTaskMsg()));
+    }
+
+    @Test public void reconnectRestoresConfirmedDeltaAgainstTheCompleteAppliedKsmTarget() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
+                + "\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20}}";
+        String delta = "{\"schemaVersion\":1,\"ksm\":{\"pagesToScan\":2000,\"sleepMillis\":20}}";
+        for (String drift : Arrays.asList("scan", "enabled")) {
+            repository.transaction(em -> { em.createQuery("delete from MemoryTaskVO").executeUpdate(); return null; });
+            seedConfirmedKsmReconnect(policy);
+            repository.transaction(em -> {
+                em.find(MemoryTaskVO.class, "confirmed-ksm-r8").setPolicy(delta);
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setAppliedPolicyHash(sha256(delta));
+                state.setState("{\"bootId\":\"boot-b\",\"actual\":{\"ksm\":{\"enabled\":"
+                        + ("enabled".equals(drift) ? "true" : "false")
+                        + ",\"zeroPagesEnabled\":false,\"pagesToScan\":"
+                        + ("scan".equals(drift) ? "100" : "2000") + ",\"sleepMillis\":20}}}");
+                return null;
+            });
+            long before = repository.taskCount(new APIQueryMemoryTaskMsg());
+            assertTrue(drift, repository.applyEffectivePolicyAfterConnect("host1"));
+            MemoryTaskVO restore = repository.claim("mn-ksm-delta-reconnect").stream()
+                    .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+            Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(restore.getPolicy(), Map.class);
+            Map<String, Object> ksm = (Map<String, Object>) payload.get("ksm");
+            assertEquals(Boolean.FALSE, ksm.get("enabled"));
+            assertEquals(2000L, ((Number) ksm.get("pagesToScan")).longValue());
+            assertEquals(20L, ((Number) ksm.get("sleepMillis")).longValue());
+            assertFalse("zero-page authority is not inferred from a scan-only request", ksm.containsKey("zeroPagesEnabled"));
+            assertFalse(payload.containsKey("zram"));
+            assertFalse(payload.containsKey("writeback"));
+            assertTrue(repository.isConfirmedKsmReconnectTask(restore.getUuid()));
+            assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+            assertEquals(before + 2, repository.taskCount(new APIQueryMemoryTaskMsg()));
+            assertEquals(delta, repository.transaction(em -> em.find(MemoryTaskVO.class, "confirmed-ksm-r8").getPolicy()));
+        }
+    }
+
+    @Test public void reconnectKsmRestoreRequiresExactPriorControlAndFreshActualReadback() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
+                + "\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20}}";
+        repository.transaction(em -> {
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.zeroPagesEnabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", 20L);
+            return null;
+        });
+        for (String defect : Arrays.asList("matched", "unknown", "stale", "partial", "paused",
+                "pendingRevision", "wrongControl", "wrongAppliedHash", "missingActual", "unsupportedZero",
+                "emptyDelta", "conflictingDelta", "unknownDelta", "wrongDeltaType")) {
+            repository.transaction(em -> {
+                em.createQuery("delete from MemoryTaskVO").executeUpdate();
+                String controlPolicy = "emptyDelta".equals(defect) ? "{\"schemaVersion\":1,\"ksm\":{}}"
+                        : "conflictingDelta".equals(defect) ? policy.replace("2000", "2500")
+                        : "unknownDelta".equals(defect) ? policy.replace("\"enabled\":false", "\"unrecognized\":false")
+                        : "wrongDeltaType".equals(defect) ? policy.replace("\"enabled\":false", "\"enabled\":0") : policy;
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setStatus("unknown".equals(defect) ? "Unknown" : "Succeeded");
+                state.setActiveTaskUuid(null);
+                state.setDesiredRevision("pendingRevision".equals(defect) ? 9 : 8);
+                state.setAppliedRevision(8L);
+                state.setAppliedPolicy(policy);
+                state.setAppliedPolicyHash("wrongAppliedHash".equals(defect) ? "wrong" : sha256(controlPolicy));
+                state.setControlOperationUuid("wrongControl".equals(defect) ? "missing-control" : "confirmed-ksm-r8");
+                state.setCapabilities("partial".equals(defect)
+                        ? "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,"
+                            + "\"nativeKsmPartial\":{\"observationKind\":\"KSM_NATIVE_PARTIAL\"}}"
+                        : "unsupportedZero".equals(defect)
+                            ? "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":false}"
+                            : "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+                state.setLastSampleTime("stale".equals(defect)
+                        ? System.currentTimeMillis() - MemoryOptimizationGlobalConfig.displayTtlMillis() - 1
+                        : System.currentTimeMillis());
+                String lifecycle = "paused".equals(defect)
+                        ? ",\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}" : "";
+                String actualKsm = "matched".equals(defect)
+                        ? "\"enabled\":false,\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20"
+                        : "\"enabled\":true,\"zeroPagesEnabled\":false,\"pagesToScan\":100,\"sleepMillis\":10";
+                if ("missingActual".equals(defect)) { actualKsm = "\"enabled\":true,\"pagesToScan\":100,\"sleepMillis\":10"; }
+                state.setState("{\"bootId\":\"boot-b\"" + lifecycle + ",\"actual\":{\"ksm\":{" + actualKsm + "}}}");
+                MemoryTaskVO control = testTask("confirmed-ksm-r8", null, "apply", "Succeeded", null);
+                control.setDesiredRevision(8); control.setPolicy(controlPolicy); em.persist(control);
+                return null;
+            });
+            long tasksBefore = repository.taskCount(new APIQueryMemoryTaskMsg());
+            assertFalse(defect, repository.applyEffectivePolicyAfterConnect("host1"));
+            assertTrue(defect, repository.claim("mn-ksm-untrusted-reconnect").isEmpty());
+            assertEquals(defect, tasksBefore, repository.taskCount(new APIQueryMemoryTaskMsg()));
+        }
+    }
+
+    private void seedConfirmedKsmReconnect(String policy) {
+        repository.transaction(em -> {
+            Map<String, Object> ksm = (Map<String, Object>) org.zstack.utils.gson.JSONObjectUtil.toObject(policy, Map.class).get("ksm");
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", ksm.get("enabled"));
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.zeroPagesEnabled", ksm.get("zeroPagesEnabled"));
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", ((Number) ksm.get("pagesToScan")).longValue());
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", ((Number) ksm.get("sleepMillis")).longValue());
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setDesiredRevision(8); state.setAppliedRevision(8L);
+            state.setActiveTaskUuid(null);
+            state.setPolicyPlanHash(null);
+            state.setAppliedPolicy(policy); state.setAppliedPolicyHash(sha256(policy));
+            state.setControlOperationUuid("confirmed-ksm-r8");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"bootId\":\"boot-b\",\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":100,\"sleepMillis\":20}}}");
+            MemoryTaskVO control = testTask("confirmed-ksm-r8", null, "apply", "Succeeded", null);
+            control.setDesiredRevision(8); control.setPolicy(policy); em.persist(control);
+            return null;
+        });
+    }
+
+    private static String sha256(String value) {
+        try {
+            byte[] bytes = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder result = new StringBuilder();
+            for (byte b : bytes) { result.append(String.format("%02x", b & 255)); }
+            return result.toString();
+        } catch (java.security.NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+    }
+
+    @Test public void reconnectDoesNotRepairKsmFromUnknownStaleOrIncompleteObservation() {
+        registerStandardResources();
+        repository.transaction(em -> {
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.zeroPagesEnabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", 20L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setDesiredRevision(8); state.setAppliedRevision(8L);
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"zeroPagesEnabled\":true,\"pagesToScan\":2000,\"sleepMillis\":20}}");
+            state.setAppliedPolicyHash("saved-policy-r8"); state.setControlOperationUuid("ksm-r8");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            MemoryTaskVO control = testTask("ksm-r8", null, "apply", "Succeeded", null);
+            control.setDesiredRevision(8); em.persist(control);
+            return null;
+        });
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded");
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            return null;
+        });
+        assertFalse("a missing actual zero-page value is not treated as zero", repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            state.setLastSampleTime(System.currentTimeMillis() - MemoryOptimizationGlobalConfig.displayTtlMillis() - 1);
+            return null;
+        });
+        assertFalse("stale same-boot values cannot authorize a repair", repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setLastSampleTime(System.currentTimeMillis());
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":false}");
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":false,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            return null;
+        });
+        assertFalse("unsupported zero-page capability cannot dispatch an actual-value repair",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":true,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+            return null;
+        });
+        assertFalse("actual run=1 is never changed by this disabled-target repair path",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        for (String defect : Arrays.asList("wrong-control", "wrong-revision", "missing-boot", "active-task", "paused", "partial")) {
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setStatus("Succeeded"); state.setAppliedRevision(8L); state.setDesiredRevision(8);
+                state.setControlOperationUuid("ksm-r8"); state.setLastSampleTime(System.currentTimeMillis());
+                state.setActiveTaskUuid("active-task".equals(defect) ? "in-flight" : null);
+                state.setCapabilities("partial".equals(defect)
+                        ? "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,"
+                                + "\"nativeKsmPartial\":{\"observationKind\":\"KSM_NATIVE_PARTIAL\"}}"
+                        : "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true}");
+                String boot = "missing-boot".equals(defect) ? "" : "boot-a";
+                String controlUuid = "wrong-control".equals(defect) ? "other-operation" : "ksm-r8";
+                long confirmedRevision = "wrong-revision".equals(defect) ? 7 : 8;
+                String lifecycle = "paused".equals(defect)
+                        ? ",\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}" : "";
+                state.setState("{\"bootId\":\"" + boot + "\",\"lastConfirmedOperationUuid\":\""
+                        + controlUuid + "\",\"lastConfirmedAppliedRevision\":" + confirmedRevision
+                        + lifecycle + ",\"actual\":{\"ksm\":{\"enabled\":false,\"zeroPagesEnabled\":false,"
+                        + "\"pagesToScan\":2000,\"sleepMillis\":20}}}");
+                return null;
+            });
+            assertFalse(defect + " must not authorize a KSM actual-value repair",
+                    repository.applyEffectivePolicyAfterConnect("host1"));
+        }
+        assertTrue(repository.claim("mn-ksm-untrusted").isEmpty());
+        assertEquals("only the pre-existing successful control record remains", 1L,
+                repository.taskCount(new APIQueryMemoryTaskMsg()));
     }
 
     @Test public void standardFinalKsmDeleteQueuesEffectiveClearAndOnlyAckRemovesAppliedFields() {
