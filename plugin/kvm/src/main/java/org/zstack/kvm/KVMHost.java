@@ -553,7 +553,8 @@ public class KVMHost extends HostBase implements Host {
                 .addState(VmInstanceState.Running, AttachVolumeToVmOnHypervisorMsg.class.getName())
                 .addState(VmInstanceState.Paused, AttachVolumeToVmOnHypervisorMsg.class.getName());
         skipOperations
-                .addState(VmInstanceState.Stopped, AttachVolumeToVmOnHypervisorMsg.class.getName());
+                .addState(VmInstanceState.Stopped, AttachVolumeToVmOnHypervisorMsg.class.getName())
+                .addState(VmInstanceState.Rebooting, AttachVolumeToVmOnHypervisorMsg.class.getName());
     }
 
     class Http<T> {
@@ -2726,6 +2727,7 @@ public class KVMHost extends HostBase implements Host {
         boolean running = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, msg.getVmInstanceUuid())
                 .notNull(VmInstanceVO_.hostUuid)
+                .notEq(VmInstanceVO_.state, VmInstanceState.Rebooting)
                 .isExists();
         if (!running) {
             logger.debug(String.format("Skip detach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
@@ -3820,6 +3822,7 @@ public class KVMHost extends HostBase implements Host {
         boolean running = Q.New(VmInstanceVO.class)
                 .eq(VmInstanceVO_.uuid, msg.getNicInventory().getVmInstanceUuid())
                 .notNull(VmInstanceVO_.hostUuid)
+                .notEq(VmInstanceVO_.state, VmInstanceState.Rebooting)
                 .isExists();
         if (!running) {
             logger.debug(String.format("Skip attach nic[uuid=%s] on hypervisor: VM[uuid=%s] is not running",
@@ -3897,7 +3900,7 @@ public class KVMHost extends HostBase implements Host {
                 .eq(VmInstanceVO_.uuid, msg.getVmInventory().getUuid())
                 .select(VmInstanceVO_.state)
                 .findValue();
-        if (Objects.equals(state, VmInstanceState.Stopped)) {
+        if (Objects.equals(state, VmInstanceState.Stopped) || Objects.equals(state, VmInstanceState.Rebooting)) {
             logger.debug(String.format("skip detach volume[uuid=%s] on hypervisor when VM[uuid=%s] is stopped",
                     msg.getInventory().getUuid(), msg.getVmInventory().getUuid()));
             bus.reply(msg, new DetachVolumeFromVmOnHypervisorReply());

@@ -75,6 +75,15 @@
                 <value>org.zstack.compute.vm.VmInstantiateResourcePostFlow</value>
             </list>
         </property>
+        <property name="restoreVmWorkFlowElements">
+            <list>
+                <value>org.zstack.compute.vm.VmPreRestoreFlow</value>
+                <value>org.zstack.compute.vm.VmReserveResourceForRestoreFlow</value>
+                <value>org.zstack.compute.vm.VmBeforeRestoreFlow</value>
+                <value>org.zstack.compute.vm.VmRestoreFlow</value>
+                <value>org.zstack.compute.vm.VmAfterRestoreFlow</value>
+            </list>
+        </property>
         <property name="migrateVmWorkFlowElements">
             <list>
                 <value>org.zstack.compute.vm.VmMigrationCheckL2NetworkOnHostFlow</value>

@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.allocator.HostAllocatorManager;
+import org.zstack.compute.allocator.HostCapacityReserveManager;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -133,6 +134,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected VmInstanceDeletionPolicyManager deletionPolicyMgr;
     @Autowired
     protected HostAllocatorManager hostAllocatorMgr;
+    @Autowired
+    private HostCapacityReserveManager hostCapacityReserveMgr;
     @Autowired
     private VmPriorityOperator priorityOperator;
     @Autowired
@@ -457,7 +460,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void handleLocalMessage(Message msg) {
-        if (msg instanceof InstantiateNewCreatedVmInstanceMsg) {
+        if (msg instanceof RestoreVmMsg) {
+            handle((RestoreVmMsg) msg);
+        } else if (msg instanceof InstantiateNewCreatedVmInstanceMsg) {
             handle((InstantiateNewCreatedVmInstanceMsg) msg);
         } else if (msg instanceof StartVmInstanceMsg) {
             handle((StartVmInstanceMsg) msg);
@@ -784,7 +789,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -1788,7 +1793,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -1820,7 +1825,9 @@ public class VmInstanceBase extends AbstractVmInstance {
                     return;
                 }
 
-                final ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
+                        ? VmInstanceState.Stopped : self.getState();
+                final ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
                     completion.fail(allowed);
                     chain.next();
@@ -2180,7 +2187,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -2204,7 +2211,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -2272,7 +2279,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void attachNic(final Message msg, final List<String> l3Uuids, final Map outerFlowData,
                            final ReturnValueCompletion<VmNicInventory> completion) {
         refreshVO();
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+        VmInstanceState state = msg instanceof VmAttachNicMsg && !((VmAttachNicMsg) msg).isQueuedInVm()
+                && self.getState() == VmInstanceState.Rebooting ? VmInstanceState.Stopped : self.getState();
+        ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
         if (allowed != null) {
             completion.fail(allowed);
             return;
@@ -2679,7 +2688,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg instanceof VmAttachNicMsg && !((VmAttachNicMsg) msg).isQueuedInVm() ? syncThreadName + "-config" : syncThreadName;
             }
 
             @Override
@@ -3702,7 +3711,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -6128,7 +6137,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -6159,7 +6168,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void fireVmConfigChangedEvent(VmInstanceInventory inventory) {
+    void fireVmConfigChangedEvent(VmInstanceInventory inventory) {
         VmCanonicalEvents.VmConfigChangedData d = new VmCanonicalEvents.VmConfigChangedData();
         d.setVmUuid(self.getUuid());
         d.setInv(inventory);
@@ -6662,7 +6671,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
@@ -7154,7 +7163,9 @@ public class VmInstanceBase extends AbstractVmInstance {
             return;
         }
 
-        ErrorCode allowed = validateOperationByState(msg, self.getState(), VmErrors.DETACH_VOLUME_ERROR);
+        VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
+                ? VmInstanceState.Stopped : self.getState();
+        ErrorCode allowed = validateOperationByState(msg, state, VmErrors.DETACH_VOLUME_ERROR);
         if (allowed != null) {
             completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10284, "Detaching volume is not allowed when VM[uuid=%s] is in state[%s]",
                     self.getUuid(), self.getState()));
@@ -7283,7 +7294,9 @@ public class VmInstanceBase extends AbstractVmInstance {
     protected void attachDataVolume(final AttachDataVolumeToVmMsg msg, final NoErrorCompletion completion) {
         final AttachDataVolumeToVmReply reply = new AttachDataVolumeToVmReply();
         refreshVO();
-        ErrorCode err = validateOperationByState(msg, self.getState(), VmErrors.ATTACH_VOLUME_ERROR);
+        VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
+                ? VmInstanceState.Stopped : self.getState();
+        ErrorCode err = validateOperationByState(msg, state, VmErrors.ATTACH_VOLUME_ERROR);
         if (err != null) {
             throw new OperationFailureException(err);
         }
@@ -7647,6 +7660,11 @@ public class VmInstanceBase extends AbstractVmInstance {
             spec.setMemorySnapshotUuid(((RestoreVmInstanceMsg) msg).getMemorySnapshotUuid());
         }
 
+        startVm(spec, completion);
+    }
+
+    protected void startVm(final VmInstanceSpec spec, final Completion completion) {
+        VmInstanceInventory inv = spec.getVmInventory();
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.starting);
 
@@ -8246,8 +8264,10 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation) {
-        VmInstanceSpec spec = new VmInstanceSpec();
+        return buildSpecFromInventory(inv, operation, new VmInstanceSpec());
+    }
 
+    protected VmInstanceSpec buildSpecFromInventory(VmInstanceInventory inv, VmOperation operation, VmInstanceSpec spec) {
         spec.setUserdataList(buildUserdata());
 
         // for L3Network that has been deleted
@@ -8469,6 +8489,183 @@ public class VmInstanceBase extends AbstractVmInstance {
                 completion.fail(errCode);
             }
         }).start();
+    }
+
+    private void handle(RestoreVmMsg msg) {
+        RestoreVmReply reply = new RestoreVmReply();
+        Map data = new HashMap();
+        data.put(RestoreVmMsg.class.getName(), msg);
+        data.put(RestoreVmReply.class.getName(), reply);
+        data.put(VmInstanceBase.class.getName(), this);
+        Completion replied = new Completion((Message) msg) {
+            @Override
+            public void success() {
+                bus.reply((Message) msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                success();
+            }
+        };
+        thdf.chainSubmit(new ChainTask(replied) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                restoreVm(data, new Completion(chain) {
+                    @Override
+                    public void success() {
+                        chain.next();
+                        replied.success();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        if (self != null) {
+                            reply.putExtensionData(VmInstanceState.class.getName(), self.getState());
+                        }
+                        chain.next();
+                        replied.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("restore-vm-%s", msg.getVmInstanceUuid());
+            }
+        });
+    }
+
+    private void restoreVm(Map data, Completion completion) {
+        RestoreVmMsg msg = (RestoreVmMsg) data.get(RestoreVmMsg.class.getName());
+        if (msg instanceof NeedReplyMessage) {
+            long deadline = ((NeedReplyMessage) msg).getMessageDeadline();
+            if (deadline > 0 && deadline <= System.currentTimeMillis()) {
+                completion.fail(errf.instantiateErrorCode(SysErrors.TIMEOUT,
+                        String.format("restore vm[uuid:%s] timed out waiting for its queue", msg.getVmInstanceUuid())));
+                return;
+            }
+        }
+        refreshVO();
+        if (self.getState() != VmInstanceState.Running && self.getState() != VmInstanceState.Stopped) {
+            completion.fail(err(ORG_ZSTACK_COMPUTE_VM_10019, VmErrors.NOT_IN_CORRECT_STATE,
+                    "vm[uuid:%s] must be Running or Stopped to restore, current state is %s", self.getUuid(), self.getState()));
+            return;
+        }
+
+        VmInstanceInventory original = getSelfInventory();
+        VmInstanceSpec spec = new VmInstanceSpec();
+        spec.setVmInventory(new VmInstanceInventory(original));
+        FlowChain chain = vmMgr.getRestoreVmWorkFlowChain();
+        chain.setName(String.format("restore-vm-%s", self.getUuid()));
+        data.put(Params.VmInstanceSpec.toString(), spec);
+        data.put(Params.vmInventory.toString(), original);
+        chain.setData(data);
+        setFlowMarshaller(chain);
+        chain.done(new FlowDoneHandler(completion) {
+            @Override
+            public void handle(Map data) {
+                completion.success();
+            }
+        }).error(new FlowErrorHandler(completion) {
+            @Override
+            public void handle(ErrorCode errorCode, Map data) {
+                ErrorCode rollbackError = (ErrorCode) data.get(RestoreVmExtensionPoint.ROLLBACK_ERROR);
+                if (rollbackError != null) {
+                    ((RestoreVmReply) data.get(RestoreVmReply.class.getName()))
+                            .putExtensionData(RestoreVmExtensionPoint.ROLLBACK_ERROR, rollbackError);
+                }
+                if (rollbackError != null && VmInstanceState.Running.toString().equals(original.getState())
+                        && data.containsKey(VmReserveResourceForRestoreFlow.class.getName())) {
+                    if (refreshVO().getState() != VmInstanceState.Rebooting) {
+                        if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
+                            for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
+                                ext.failedToRecoverVmAfterRestore(msg);
+                            }
+                        }
+                        completion.fail(rollbackError);
+                        return;
+                    }
+                    CheckVmStateOnHypervisorMsg cmsg = new CheckVmStateOnHypervisorMsg();
+                    cmsg.setVmInstanceUuids(list(self.getUuid()));
+                    cmsg.setHostUuid(original.getHostUuid());
+                    bus.makeTargetServiceIdByResourceUuid(cmsg, HostConstant.SERVICE_ID, original.getHostUuid());
+                    bus.send(cmsg, new CloudBusCallBack(completion) {
+                        @Override
+                        public void run(MessageReply reply) {
+                            if (refreshVO().getState() != VmInstanceState.Rebooting) {
+                                if (self.getState() == VmInstanceState.Stopped || self.getState() == VmInstanceState.Unknown) {
+                                    for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
+                                        ext.failedToRecoverVmAfterRestore(msg);
+                                    }
+                                }
+                                completion.fail(rollbackError);
+                                return;
+                            }
+                            Map<String, String> states = reply.isSuccess()
+                                    ? ((CheckVmStateOnHypervisorReply) reply).getStates() : null;
+                            String state = states == null ? null : states.get(self.getUuid());
+                            if (!VmInstanceState.Running.toString().equals(state)) {
+                                for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
+                                    ext.failedToRecoverVmAfterRestore(msg);
+                                }
+                            }
+                            if (VmInstanceState.Running.toString().equals(state)
+                                    || VmInstanceState.Stopped.toString().equals(state)) {
+                                changeVmStateInDb(VmInstanceState.Running.toString().equals(state)
+                                        ? VmInstanceStateEvent.running : VmInstanceStateEvent.stopped,
+                                        () -> self.setHostUuid(original.getHostUuid()));
+                                changeVmResource(original);
+                                fireVmConfigChangedEvent(getSelfInventory());
+                            } else {
+                                logger.warn(String.format("cannot confirm the state of vm[uuid:%s] on host[uuid:%s] after restore failure, keep its host and reserved capacity, %s",
+                                        self.getUuid(), original.getHostUuid(), reply.isSuccess() ? state : reply.getError()));
+                                changeVmStateInDb(VmInstanceStateEvent.unknown, () -> self.setHostUuid(original.getHostUuid()));
+                            }
+                            completion.fail(rollbackError);
+                        }
+                    });
+                    return;
+                }
+                if ((rollbackError != null || Boolean.TRUE.equals(data.get(RestoreVmExtensionPoint.UNSAFE_TO_START_VM)))
+                        && VmInstanceState.Stopped.toString().equals(original.getState())) {
+                    for (RestoreVmExtensionPoint ext : pluginRgty.getExtensionList(RestoreVmExtensionPoint.class)) {
+                        ext.failedToRecoverVmAfterRestore(msg);
+                    }
+                }
+                completion.fail(rollbackError == null ? errorCode : rollbackError);
+            }
+        }).start();
+    }
+
+    void changeVmResource(VmInstanceInventory inventory) {
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                self = findByUuid(self.getUuid(), VmInstanceVO.class);
+                String hostUuid = inventory.getHostUuid();
+                boolean keepResources = self.getState() == VmInstanceState.Running;
+                int cpuNum = inventory.getCpuNum();
+                long memorySize = inventory.getMemorySize();
+                int cpuDelta = (keepResources ? cpuNum : 0) - self.getCpuNum();
+                long memoryDelta = (keepResources ? memorySize : 0) - self.getMemorySize();
+                if (cpuDelta > 0 || memoryDelta > 0) {
+                    hostCapacityReserveMgr.reserveCapacity(hostUuid, Math.max(cpuDelta, 0), Math.max(memoryDelta, 0), false);
+                }
+                if (cpuDelta < 0 || memoryDelta < 0) {
+                    hostAllocatorMgr.returnComputeResourceCapacity(hostUuid, Math.max(-cpuDelta, 0), Math.max(-memoryDelta, 0));
+                }
+                self.setCpuNum(cpuNum);
+                self.setMemorySize(memorySize);
+                self = merge(self);
+            }
+        }.execute();
     }
 
     protected void returnHostCpacity(String hostUuid) {
@@ -8922,12 +9119,14 @@ public class VmInstanceBase extends AbstractVmInstance {
         thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
-                return syncThreadName;
+                return msg.isQueuedInVm() ? syncThreadName : syncThreadName + "-config";
             }
 
             @Override
             public void run(final SyncTaskChain chain) {
-                ErrorCode allowed = validateOperationByState(msg, self.getState(), SysErrors.OPERATION_ERROR);
+                VmInstanceState state = !msg.isQueuedInVm() && self.getState() == VmInstanceState.Rebooting
+                        ? VmInstanceState.Stopped : self.getState();
+                ErrorCode allowed = validateOperationByState(msg, state, SysErrors.OPERATION_ERROR);
                 if (allowed != null) {
                     reply.setError(allowed);
                     bus.reply(msg, reply);
@@ -8958,7 +9157,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
-    private void syncVmDevicesAddressInfo(String vmUuid) {
+    void syncVmDevicesAddressInfo(String vmUuid) {
         if (self.getHostUuid() == null) {
             return;
         }

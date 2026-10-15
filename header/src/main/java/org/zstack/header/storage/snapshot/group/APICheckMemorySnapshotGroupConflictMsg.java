@@ -24,7 +24,7 @@ public class APICheckMemorySnapshotGroupConflictMsg extends APISyncCallMessage {
 
     public static APICheckMemorySnapshotGroupConflictMsg __example__() {
         APICheckMemorySnapshotGroupConflictMsg msg = new APICheckMemorySnapshotGroupConflictMsg();
-        msg.setUuid(uuid(VolumeSnapshotGroupVO.class));
+        msg.setUuid(uuid());
         return msg;
     }
 }

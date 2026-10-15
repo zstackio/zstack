@@ -6,9 +6,10 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.asyncbatch.While;
+import org.zstack.core.cloudbus.AutoOffEventCallback;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -22,6 +23,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
@@ -30,7 +32,6 @@ import org.zstack.header.storage.snapshot.DeleteVolumeSnapshotMsg;
 import org.zstack.header.storage.snapshot.VolumeSnapshotConstant;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.group.*;
-import org.zstack.header.vm.RestoreVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.devices.VmInstanceDeviceAddressArchiveVO;
 import org.zstack.header.vm.devices.VmInstanceDeviceManager;
@@ -47,6 +48,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.touterr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
@@ -61,11 +63,11 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     @Autowired
     private CloudBus bus;
     @Autowired
+    private EventFacade evtf;
+    @Autowired
     private DatabaseFacade dbf;
     @Autowired
     private ThreadFacade thdf;
-    @Autowired
-    private PluginRegistry pluginRgty;
     @Autowired
     private VmInstanceDeviceManager vidm;
 
@@ -263,105 +265,75 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
     }
 
     private void handleRevert(APIRevertVmFromSnapshotGroupMsg msg, NoErrorCompletion completion) {
-        APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(msg.getId());
-        VolumeSnapshotGroupOperationValidator.validate(self.getVmInstanceUuid(),
+        long remaining = msg.getMessageDeadline() - System.currentTimeMillis();
+        if (remaining <= 1) {
+            throw new OperationFailureException(touterr(ORG_ZSTACK_CORE_CLOUDBUS_10002, msg.toErrorString()));
+        }
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getGroupUuid(), VolumeSnapshotGroupVO.class);
+        if (group == null) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000,
+                    "cannot find snapshot group[uuid:%s]", msg.getGroupUuid()));
+        }
+        VolumeSnapshotGroupOperationValidator.validate(group.getVmInstanceUuid(),
                 VolumeSnapshotGroupOperationValidator.Operation.REVERT);
+        RestoreVmFromSnapshotGroupMsg restore = new RestoreVmFromSnapshotGroupMsg();
+        restore.setApiId(msg.getId());
+        restore.setVmInstanceUuid(group.getVmInstanceUuid());
+        restore.setGroupUuid(group.getUuid());
+        boolean withMemory = group.getVolumeSnapshotRefs().stream()
+                .anyMatch(ref -> VolumeType.Memory.toString().equals(ref.getVolumeType()));
+        restore.setStartVm(withMemory ? Boolean.TRUE : msg.getStartVm());
+        restore.setSession(msg.getSession());
+        restore.setTimeout(remaining);
+        restore.setMessageDeadline(msg.getMessageDeadline());
+        bus.makeTargetServiceIdByResourceUuid(restore, VmInstanceConstant.SERVICE_ID, restore.getVmInstanceUuid());
+        evtf.on(String.format(VolumeSnapshotGroupConstant.RESTORE_COMPLETED_PATH, restore.getId()), new AutoOffEventCallback() {
+            @Override
+            public boolean run(Map tokens, Object data) {
+                completion.done();
+                return true;
+            }
+        });
+        bus.send(restore);
+    }
 
+    private void handle(RevertVmFromSnapshotGroupInnerMsg msg) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName(String.format("revert-vm-%s-from-snapshot-group-%s", self.getVmInstanceUuid(), msg.getGroupUuid()));
-        chain.getData().put(VolumeSnapshotGroupConstant.Parmas.SnapshotGroupUuid.toString(), self.getUuid());
-        chain.getData().put(VolumeSnapshotGroupConstant.Parmas.SnapshotGroup.toString(), getSelfInventory());
-        pluginRgty.getExtensionList(RevertVmFromSnapShotGroupExtension.class)
-                .stream()
-                .filter(RevertVmFromSnapShotGroupExtension::needRunExtension)
-                .forEach(v -> chain.then(v.getBeforeRevertFlow()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "validate-snapshot-group-revert";
 
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                VolumeSnapshotGroupAvailability availability = VolumeSnapshotGroupChecker.getAvailability(self);
+                if (!availability.isAvailable()) {
+                    trigger.fail(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000, availability.getReason()));
+                    return;
+                }
+                trigger.next();
+            }
+        });
         chain.then(new NoRollbackFlow() {
             String __name__ = "revert-volume-snapshots";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
-                imsg.setUuid(msg.getUuid());
-                imsg.setSession(msg.getSession());
-                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, msg.getUuid());
-                overlaySend(imsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        if (reply instanceof RevertVmFromSnapshotGroupInnerReply) {
-                            event.setResults(((RevertVmFromSnapshotGroupInnerReply) reply).getResults());
-                        }
-
-                        trigger.next();
-                    }
-                });
+                revertVolumes(msg, trigger);
             }
-        }).then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                VolumeVO volume = Q.New(VolumeVO.class).eq(VolumeVO_.vmInstanceUuid, self.getVmInstanceUuid()).eq(VolumeVO_.type, VolumeType.Memory).find();
-                if (volume == null) {
-                    trigger.next();
-                    return;
-                }
-
-                Optional opt = self.getVolumeSnapshotRefs().stream().filter(sp -> sp.getVolumeUuid().equals(volume.getUuid())).findFirst();
-                if (!opt.isPresent()) {
-                    trigger.next();
-                    return;
-                }
-
-                VolumeSnapshotGroupRefVO ref = (VolumeSnapshotGroupRefVO) opt.get();
-
-                RestoreVmInstanceMsg rmsg = new RestoreVmInstanceMsg();
-                rmsg.setVmInstanceUuid(self.getVmInstanceUuid());
-                rmsg.setMemorySnapshotUuid(ref.getVolumeSnapshotUuid());
-                bus.makeTargetServiceIdByResourceUuid(rmsg, VmInstanceConstant.SERVICE_ID, rmsg.getVmInstanceUuid());
-                bus.send(rmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                            return;
-                        }
-
-                        trigger.next();
-                    }
-                });
-
-            }
-        }).error(new FlowErrorHandler(completion) {
+        }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                event.setError(errCode);
-                bus.publish(event);
-                completion.done();
-            }
-        }).done(new FlowDoneHandler(completion) {
-            @Override
-            public void handle(Map data) {
-                bus.publish(event);
-                completion.done();
+                RevertVmFromSnapshotGroupInnerReply reply = new RevertVmFromSnapshotGroupInnerReply();
+                reply.setError(errCode);
+                bus.reply(msg, reply);
             }
         }).start();
     }
 
-    private void handle(RevertVmFromSnapshotGroupInnerMsg msg) {
+    private void revertVolumes(RevertVmFromSnapshotGroupInnerMsg msg, FlowTrigger trigger) {
         RevertVmFromSnapshotGroupInnerReply reply = new RevertVmFromSnapshotGroupInnerReply();
         List<VolumeSnapshotVO> snapshots = getEffectiveSnapshots();
         String vmUuid = self.getVmInstanceUuid();
-
-        VolumeSnapshotGroupAvailability availability = VolumeSnapshotGroupChecker.getAvailability(self);
-        if (!availability.isAvailable()) {
-            reply.setError(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10000, availability.getReason()));
-            bus.reply(msg, reply);
-            return;
-        }
 
         VolumeSnapshotGroupVO newGroup = null;
         if (VolumeSnapshotGlobalConfig.SNAPSHOT_BEFORE_REVERTVOLUME.value(Boolean.class)) {
@@ -398,10 +370,11 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     compl.done();
                 }
             });
-        }, concurrencyNum).run(new WhileDoneCompletion(msg) {
+        }, concurrencyNum).run(new WhileDoneCompletion(trigger) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 bus.reply(msg, reply);
+                trigger.next();
             }
         });
     }

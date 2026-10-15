@@ -155,6 +155,8 @@ public class VmAllocateNicForStartingVmFlow implements Flow {
                 } else {
                     VmInstanceVO vmvo = dbf.findByUuid(vm.getUuid(), VmInstanceVO.class);
                     spec.setVmInventory(VmInstanceInventory.valueOf(vmvo));
+                    spec.getVmInventory().setCpuNum(vm.getCpuNum());
+                    spec.getVmInventory().setMemorySize(vm.getMemorySize());
                     spec.setDestNics(spec.getVmInventory().getVmNics());
                     trigger.next();
                 }

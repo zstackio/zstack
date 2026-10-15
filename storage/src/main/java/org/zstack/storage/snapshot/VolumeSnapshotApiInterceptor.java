@@ -56,6 +56,9 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             vmsg.setTreeUuid(snapshot.getTreeUuid());
             String resourceUuid = getResourceIdToRouteMsg(snapshot);
             bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+        } else if (msg instanceof VolumeSnapshotGroupMessage) {
+            bus.makeTargetServiceIdByResourceUuid(msg, VolumeSnapshotConstant.SERVICE_ID,
+                    ((VolumeSnapshotGroupMessage) msg).getGroupUuid());
         }
     }
 
@@ -112,15 +115,6 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             if (errorCode != null) {
                 throw new ApiMessageInterceptionException(errorCode);
             }
-        }
-
-        if (isWithMemoryForSnapshotGroup(group)
-                && Q.New(VmInstanceVO.class)
-                .eq(VmInstanceVO_.uuid, group.getVmInstanceUuid())
-                .in(VmInstanceVO_.state, Arrays.asList(VmInstanceState.Running, VmInstanceState.Paused))
-                .isExists()) {
-            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_SNAPSHOT_10021, "Can not take memory snapshot, expected vm states are [%s, %s]",
-                    VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
         }
 
         msg.setVmInstanceUuid(group.getVmInstanceUuid());

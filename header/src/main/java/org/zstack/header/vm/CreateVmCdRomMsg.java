@@ -3,6 +3,16 @@ package org.zstack.header.vm;
 import org.zstack.header.message.NeedReplyMessage;
 
 public class CreateVmCdRomMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String resourceUuid;
     private String name;
     private String vmInstanceUuid;

@@ -13,6 +13,8 @@ public interface VmInstanceManager {
     
     FlowChain getStartVmWorkFlowChain(VmInstanceInventory inv);
     
+    FlowChain getRestoreVmWorkFlowChain();
+
     FlowChain getDestroyVmWorkFlowChain(VmInstanceInventory inv);
     
     FlowChain getMigrateVmWorkFlowChain(VmInstanceInventory inv);

@@ -115,6 +115,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private List<String> stopVmWorkFlowElements;
     private List<String> rebootVmWorkFlowElements;
     private List<String> startVmWorkFlowElements;
+    private List<String> restoreVmWorkFlowElements;
     private List<String> destroyVmWorkFlowElements;
     private List<String> migrateVmWorkFlowElements;
     private List<String> attachIsoWorkFlowElements;
@@ -127,6 +128,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private FlowChainBuilder stopVmFlowBuilder;
     private FlowChainBuilder rebootVmFlowBuilder;
     private FlowChainBuilder startVmFlowBuilder;
+    private FlowChainBuilder restoreVmFlowBuilder;
     private FlowChainBuilder destroyVmFlowBuilder;
     private FlowChainBuilder migrateVmFlowBuilder;
     private FlowChainBuilder attachVolumeFlowBuilder;
@@ -1631,6 +1633,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         stopVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(stopVmWorkFlowElements).construct();
         rebootVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(rebootVmWorkFlowElements).construct();
         startVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(startVmWorkFlowElements).construct();
+        restoreVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(restoreVmWorkFlowElements).construct();
         destroyVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(destroyVmWorkFlowElements).construct();
         migrateVmFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(migrateVmWorkFlowElements).construct();
         attachVolumeFlowBuilder = FlowChainBuilder.newBuilder().setFlowClassNames(attachVolumeWorkFlowElements).construct();
@@ -2178,6 +2181,11 @@ public class VmInstanceManagerImpl extends AbstractService implements
     }
 
     @Override
+    public FlowChain getRestoreVmWorkFlowChain() {
+        return restoreVmFlowBuilder.build();
+    }
+
+    @Override
     public FlowChain getDestroyVmWorkFlowChain(VmInstanceInventory inv) {
         return destroyVmFlowBuilder.build();
     }
@@ -2230,6 +2238,10 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
     public void setStartVmWorkFlowElements(List<String> startVmWorkFlowElements) {
         this.startVmWorkFlowElements = startVmWorkFlowElements;
+    }
+
+    public void setRestoreVmWorkFlowElements(List<String> restoreVmWorkFlowElements) {
+        this.restoreVmWorkFlowElements = restoreVmWorkFlowElements;
     }
 
     public void setDestroyVmWorkFlowElements(List<String> destroyVmWorkFlowElements) {

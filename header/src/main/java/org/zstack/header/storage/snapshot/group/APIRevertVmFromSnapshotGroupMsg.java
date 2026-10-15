@@ -36,6 +36,17 @@ public class APIRevertVmFromSnapshotGroupMsg extends APIMessage implements Volum
     @APINoSee
     private String vmInstanceUuid;
 
+    @APIParam(required = false)
+    private Boolean startVm;
+
+    public Boolean getStartVm() {
+        return startVm;
+    }
+
+    public void setStartVm(Boolean startVm) {
+        this.startVm = startVm;
+    }
+
     @Override
     public String getGroupUuid() {
         return uuid;

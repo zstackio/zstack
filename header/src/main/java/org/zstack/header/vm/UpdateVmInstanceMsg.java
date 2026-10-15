@@ -6,6 +6,16 @@ import org.zstack.header.message.NeedReplyMessage;
  * Created by LiangHanYu on 2022/9/22 10:03
  */
 public class UpdateVmInstanceMsg extends NeedReplyMessage implements VmInstanceMessage {
+    private boolean queuedInVm = true;
+
+    public boolean isQueuedInVm() {
+        return queuedInVm;
+    }
+
+    public void setQueuedInVm(boolean queuedInVm) {
+        this.queuedInVm = queuedInVm;
+    }
+
     private String uuid;
     private String name;
     private String description;

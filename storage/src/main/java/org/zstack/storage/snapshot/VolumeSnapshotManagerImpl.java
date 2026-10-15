@@ -17,7 +17,6 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.header.AbstractService;
-import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.core.*;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
@@ -35,13 +34,16 @@ import org.zstack.header.storage.snapshot.*;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.storage.snapshot.reference.VolumeSnapshotReferenceMessage;
 import org.zstack.header.vm.*;
-import org.zstack.header.vm.devices.*;
+import org.zstack.header.vm.devices.VmInstanceDeviceManager;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO;
+import org.zstack.header.vm.devices.VmInstanceDeviceAddressGroupVO_;
 import org.zstack.header.volume.*;
 import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.storage.snapshot.group.MemorySnapshotGroupReferenceFactory;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupChecker;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupConstant;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceTreeBase;
 import org.zstack.storage.snapshot.reference.VolumeSnapshotReferenceUtils;
 import org.zstack.storage.volume.FireSnapShotCanonicalEvent;
@@ -72,6 +74,7 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class VolumeSnapshotManagerImpl extends AbstractService implements
         VolumeSnapshotManager,
         MarshalReplyMessageExtensionPoint,
+        RestoreVmExtensionPoint,
         VolumeBeforeExpungeExtensionPoint,
         ResourceOwnerAfterChangeExtensionPoint,
         ReportQuotaExtensionPoint,
@@ -82,6 +85,7 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         OverwriteVolumeExtensionPoint, FlattenVolumeExtensionPoint,
         CleanUpVmBackupExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VolumeSnapshotManagerImpl.class);
+    private static final String RESTORE_VM_RESULT = RevertVmFromSnapshotGroupInnerReply.class.getName();
     private String syncSignature;
     @Autowired
     private ThreadFacade thdf;
@@ -1267,21 +1271,24 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     private void handle(APICheckMemorySnapshotGroupConflictMsg msg) {
+        String targetQuery = String.format("query volumesnapshotgroup.uuid where uuid = '%s'", msg.getUuid());
+        List<?> visibleGroups = ZQL.fromString(targetQuery).getSingleResultWithSession(msg.getSession()).inventories;
+        if (visibleGroups.isEmpty()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001, "snapshot group is unavailable or inaccessible"));
+        }
         APICheckMemorySnapshotGroupConflictReply reply = new APICheckMemorySnapshotGroupConflictReply();
 
-        VmInstanceResourceMetadataGroupVO metadataGroupVO = Q.New(VmInstanceResourceMetadataGroupVO.class)
-                .eq(VmInstanceResourceMetadataGroupVO_.resourceUuid, msg.getUuid()).find();
+        VmInstanceDeviceAddressGroupVO metadataGroupVO = Q.New(VmInstanceDeviceAddressGroupVO.class)
+                .eq(VmInstanceDeviceAddressGroupVO_.resourceUuid, msg.getUuid()).find();
         if (metadataGroupVO == null) {
-            throw new ApiMessageInterceptionException(
-                    operr("cannot find VmInstanceResourceMetadataGroupVO of the memory snapshot group[uuid:%s]", msg.getUuid()));
+            throw new OperationFailureException(
+                    operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001, "cannot find device address archive of memory snapshot group[uuid:%s]", msg.getUuid()));
         }
-        // Retrieve ArchiveVmNicBundle archives related to memory snapshot groups
         List<VmNicInventory> vmNics = metadataGroupVO.getAddressList().stream()
                 .filter(vo -> Objects.equals(vo.getMetadataClass(), ArchiveVmNicBundle.class.getCanonicalName()))
                 .map(vo -> JSONObjectUtil.toObject(vo.getMetadata(), ArchiveVmNicBundle.class).getVmNicInventory())
                 .filter(Objects::nonNull).collect(Collectors.toList());
 
-        // Collect IP and MAC from memory snapshot vmNic
         Set<String> groupIps = vmNics.stream().map(VmNicInventory::getIp).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<String> groupMacs = vmNics.stream().map(VmNicInventory::getMac).filter(Objects::nonNull).collect(Collectors.toSet());
 
@@ -1299,11 +1306,11 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
 
             boolean isConflict = false;
             VmNicConflictEntry vmNicConflictEntry = new VmNicConflictEntry();
-            if (ip != null && groupIps.contains(ip)) {
+            if (groupIps.contains(ip)) {
                 vmNicConflictEntry.setIp(ip);
                 isConflict = true;
             }
-            if (mac != null && groupMacs.contains(mac)) {
+            if (groupMacs.contains(mac)) {
                 vmNicConflictEntry.setMac(mac);
                 isConflict = true;
             }
@@ -1317,14 +1324,32 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
             vmNetworkConflictEntries.add(vmNicConflictEntry);
         }));
 
-        if (!conflictVmUuids.isEmpty()) {
-            List<Tuple> conflictVmNames = Q.New(VmInstanceVO.class).in(VmInstanceVO_.uuid, conflictVmUuids).select(VmInstanceVO_.uuid, VmInstanceVO_.name).listTuple();
-            Map<String, String> vmNameByVmUuid = conflictVmNames.stream().collect(Collectors.toMap(t -> t.get(0, String.class), t -> t.get(1, String.class)));
-            vmNetworkConflictEntries.forEach(vmNicConflictEntry -> vmNicConflictEntry.setVmInstanceName(vmNameByVmUuid.get(vmNicConflictEntry.getVmInstanceUuid())));
-        }
+        hideInvisibleConflictDetails(msg.getSession(), conflictVmUuids, vmNetworkConflictEntries);
 
         reply.setVmNicConflict(vmNetworkConflictEntries);
         bus.reply(msg, reply);
+    }
+
+    private void hideInvisibleConflictDetails(SessionInventory session, Set<String> vmUuids,
+                                             List<VmNicConflictEntry> conflicts) {
+        if (vmUuids.isEmpty()) {
+            return;
+        }
+        String zql = String.format("query vminstance.uuid,name where uuid in ('%s')", String.join("','", vmUuids));
+        List<?> visibleVms = ZQL.fromString(zql).getSingleResultWithSession(session).inventories;
+        Map<String, String> visibleNames = new HashMap<>();
+        for (Object inventory : visibleVms) {
+            VmInstanceInventory vm = (VmInstanceInventory) inventory;
+            visibleNames.put(vm.getUuid(), vm.getName());
+        }
+        for (VmNicConflictEntry entry : conflicts) {
+            if (visibleNames.containsKey(entry.getVmInstanceUuid())) {
+                entry.setVmInstanceName(visibleNames.get(entry.getVmInstanceUuid()));
+            } else {
+                entry.setVmInstanceUuid(null);
+                entry.setVmNicName(null);
+            }
+        }
     }
 
     @Override
@@ -1376,9 +1401,58 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
     }
 
     @Override
+    public Flow getRestoreVmFlow(RestoreVmMsg msg, VmInstanceSpec spec, RestoreVmReply reply) {
+        if (!(msg instanceof RestoreVmFromSnapshotGroupMsg)) {
+            return null;
+        }
+
+        RestoreVmFromSnapshotGroupMsg restore = (RestoreVmFromSnapshotGroupMsg) msg;
+        return new NoRollbackFlow() {
+            String __name__ = "restore-snapshot-group-data";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                RevertVmFromSnapshotGroupInnerMsg imsg = new RevertVmFromSnapshotGroupInnerMsg();
+                imsg.setUuid(restore.getGroupUuid());
+                imsg.setSession(restore.getSession());
+                bus.makeTargetServiceIdByResourceUuid(imsg, VolumeSnapshotConstant.SERVICE_ID, restore.getGroupUuid());
+                bus.send(imsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply innerReply) {
+                        if (!(innerReply instanceof RevertVmFromSnapshotGroupInnerReply)) {
+                            data.put(UNSAFE_TO_START_VM, true);
+                            trigger.fail(innerReply.getError());
+                            return;
+                        }
+
+                        RevertVmFromSnapshotGroupInnerReply result = (RevertVmFromSnapshotGroupInnerReply) innerReply;
+                        reply.putExtensionData(RESTORE_VM_RESULT, result);
+                        if (!innerReply.isSuccess()) {
+                            trigger.fail(innerReply.getError());
+                            return;
+                        }
+
+                        Optional<RevertSnapshotGroupResult> failed = result.getResults().stream()
+                                .filter(it -> !it.isSuccess()).findFirst();
+                        if (failed.isPresent()) {
+                            data.put(UNSAFE_TO_START_VM, true);
+                            trigger.fail(failed.get().getError());
+                            return;
+                        }
+
+                        trigger.next();
+                    }
+                });
+            }
+        };
+    }
+
+    @Override
     public List<Class> getReplyMessageClassForMarshalExtensionPoint() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIQueryVolumeSnapshotTreeReply.class);
+        ret.add(RestoreVmReply.class);
+        ret.add(MessageReply.class);
         return ret;
     }
 
@@ -1387,6 +1461,41 @@ public class VolumeSnapshotManagerImpl extends AbstractService implements
         if (replyOrEvent instanceof APIQueryVolumeSnapshotTreeReply) {
             marshal(((APIMessage) msg).getSession(), (APIQueryVolumeSnapshotTreeReply) replyOrEvent);
         }
+    }
+
+    @Override
+    @ExceptionSafe
+    public void marshalReplyMessageBeforeDropping(Message replyOrEvent, NeedReplyMessage msg) {
+        if (!(msg instanceof RestoreVmFromSnapshotGroupMsg)) {
+            return;
+        }
+
+        RestoreVmFromSnapshotGroupMsg restore = (RestoreVmFromSnapshotGroupMsg) msg;
+        if (!(replyOrEvent instanceof RestoreVmReply)) {
+            RestoreVmReply reply = new RestoreVmReply();
+            reply.setError(((MessageReply) replyOrEvent).getError());
+            bus.reply(restore, reply);
+            return;
+        }
+
+        SafeConsumer<RestoreVmReply> publish = reply -> {
+            RevertVmFromSnapshotGroupInnerReply result = reply.getExtensionData(RESTORE_VM_RESULT,
+                    RevertVmFromSnapshotGroupInnerReply.class);
+            APIRevertVmFromSnapshotGroupEvent event = new APIRevertVmFromSnapshotGroupEvent(restore.getApiId());
+            event.setResults(result == null ? Collections.emptyList() : result.getResults());
+            if (!reply.isSuccess()) {
+                VmInstanceState state = reply.getExtensionData(VmInstanceState.class.getName(), VmInstanceState.class);
+                ErrorCode rollbackError = reply.getExtensionData(ROLLBACK_ERROR, ErrorCode.class);
+                boolean memberFailure = result != null && result.isSuccess()
+                        && result.getResults().stream().anyMatch(it -> !it.isSuccess());
+                if (!memberFailure || state != VmInstanceState.Stopped || rollbackError != null) {
+                    event.setError(reply.getError());
+                }
+            }
+            bus.publish(event);
+        };
+        publish.safeAccept((RestoreVmReply) replyOrEvent);
+        evtf.fire(String.format(VolumeSnapshotGroupConstant.RESTORE_COMPLETED_PATH, restore.getId()), null);
     }
 
     private void marshal(SessionInventory session, APIQueryVolumeSnapshotTreeReply reply) {

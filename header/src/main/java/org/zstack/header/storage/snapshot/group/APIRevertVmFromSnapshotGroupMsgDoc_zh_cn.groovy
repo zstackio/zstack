@@ -48,6 +48,15 @@ doc {
 					optional true
 					since "3.6.0"
 				}
+				column {
+					name "startVm"
+					enclosedIn "revertVmFromSnapshotGroup"
+					desc "普通快照组恢复成功后是否开机。未传入时，恢复前为 Running 默认 true，为 Stopped 默认 false；含内存快照的组恢复成功后始终为 Running，本参数不改变该行为。"
+					location "body"
+					type "Boolean"
+					optional true
+					since "5.5.38"
+				}
 			}
         }
 
