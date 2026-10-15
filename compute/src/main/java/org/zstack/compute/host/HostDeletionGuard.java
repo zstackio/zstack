@@ -76,8 +76,13 @@ public class HostDeletionGuard {
                     throw new OperationFailureException(operr(
                             "cannot use/delete host[uuid:%s]: unreleased operation guard[id:%s] belongs to an" +
                                     " unavailable or restarted management node. Verify that the old process and" +
-                                    " its pending operations have stopped before manually removing the guard",
-                            hostUuid, blocker.getId()));
+                                    " its pending operations have stopped before manually removing the guard." +
+                                    " Inspect: SELECT id, labelKey, labelValue, resourceUuid FROM JsonLabelVO WHERE id=%s;" +
+                                    " after verification, remove only this guard:" +
+                                    " DELETE FROM JsonLabelVO WHERE id=%s AND resourceUuid='%s'" +
+                                    " AND labelKey='%s' AND labelValue='%s'",
+                            hostUuid, blocker.getId(), blocker.getId(), blocker.getId(), hostUuid,
+                            blocker.getLabelKey(), blocker.getLabelValue()));
                 }
             }
             if (!blockers.isEmpty()) {
