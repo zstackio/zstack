@@ -52,6 +52,70 @@ public class MemoryStandardConfigAdapterTest {
         if (registryField != null) { registryField.set(aspect, oldRegistry); }
     }
 
+    @Test public void scopedBatchMatchesScalarReadsAndSeesSameTransactionChanges() {
+        inTransaction(em -> {
+            adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.pagesToScan", 2500L);
+            adapter.writeOverride(em, "host1", "HostVO", "zram.enabled", false);
+            for (MemoryStandardField.Scope scope : MemoryStandardField.Scope.values()) {
+                String resource = scope == MemoryStandardField.Scope.CLUSTER ? "cluster1" : "host1";
+                Map<MemoryStandardField, Object> values = adapter.readOwn(em, scope, resource, Collections.emptySet());
+                for (MemoryStandardField field : MemoryStandardField.values()) {
+                    if (!field.allows(scope)) { assertFalse(values.containsKey(field)); continue; }
+                    Object scalar = scope == MemoryStandardField.Scope.GLOBAL
+                            ? adapter.readGlobalOwn(em, field.path()) : adapter.readOverrideOwn(em, field.path(), resource);
+                    assertEquals(scope + ":" + field.path(), scalar, values.get(field));
+                    assertEquals(scope == MemoryStandardField.Scope.GLOBAL
+                                    || adapter.hasOverrideRow(em, field.path(), resource), values.containsKey(field));
+                }
+            }
+            adapter.writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            assertEquals(Boolean.TRUE, adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1",
+                    Collections.emptySet()).get(MemoryStandardField.ZRAM_ENABLED));
+            adapter.writeOverride(em, "host1", "HostVO", "zram.enabled", null);
+            assertFalse(adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1",
+                    Collections.emptySet()).containsKey(MemoryStandardField.ZRAM_ENABLED));
+            return null;
+        });
+    }
+
+    @Test public void scopedBatchRejectsInvalidStoredOverridesButAllowsExplicitReplacement() {
+        inTransaction(em -> {
+            adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            ResourceConfigVO row = resourceRow(em, "host1", MemoryStandardField.KSM_ENABLED.configName());
+            row.setValue("none");
+            assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
+                    adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1", Collections.emptySet())
+                            .get(MemoryStandardField.KSM_ENABLED));
+            row.setValue(" ");
+            assertThrows(IllegalArgumentException.class,
+                    () -> adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1", Collections.emptySet()));
+            assertFalse(adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1",
+                    Collections.singleton("ksm.enabled")).containsKey(MemoryStandardField.KSM_ENABLED));
+            adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", null);
+            assertFalse(adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1", Collections.emptySet())
+                    .containsKey(MemoryStandardField.KSM_ENABLED));
+            return null;
+        });
+    }
+
+    @Test public void scopedBatchRejectsDuplicateOverridesLikeScalarReads() {
+        inTransaction(em -> {
+            MemoryStandardField field = MemoryStandardField.ZRAM_ENABLED;
+            for (String value : Arrays.asList("true", "false")) {
+                ResourceConfigVO row = new ResourceConfigVO();
+                row.setUuid(UUID.randomUUID().toString().replace("-", ""));
+                row.setCategory(field.category()); row.setName(field.configName()); row.setValue(value);
+                row.setResourceUuid("host1"); row.setResourceType("HostVO"); em.persist(row);
+            }
+            em.flush();
+            assertThrows(javax.persistence.NonUniqueResultException.class,
+                    () -> adapter.readOverrideOwn(em, field.path(), "host1"));
+            assertThrows(javax.persistence.NonUniqueResultException.class,
+                    () -> adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1", Collections.emptySet()));
+            return null;
+        });
+    }
+
     @Test public void globalClusterHostFeatureIntentAndClearFallsBack() {
         inTransaction(em -> {
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);

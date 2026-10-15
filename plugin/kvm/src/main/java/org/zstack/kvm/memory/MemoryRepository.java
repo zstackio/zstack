@@ -771,15 +771,18 @@ public class MemoryRepository {
         if ("VM".equals(scope)) { return policy(em, scope, resource).getPolicy(); }
         String compatibility = policy(em, scope, resource).getPolicy();
         MemoryStandardField.Scope level = scopeOf(scope);
+        Map<MemoryStandardField, Object> values = level == null ? Collections.emptyMap()
+                : standardConfigs.readOwn(em, level, resource, replacedFields);
         if (level != null) {
             for (MemoryStandardField field : MemoryStandardField.values()) {
                 if (field.allows(level) && (replacedFields.contains(field.path())
-                        || standardFieldAuthoritative(em, scope, resource, field))) {
+                        || ("Global".equals(scope) ? values.get(field) != null || field == MemoryStandardField.KSM_ENABLED
+                                : values.containsKey(field)))) {
                     compatibility = MemoryStandardConfigCodec.put(compatibility, field.path(), null);
                 }
             }
         }
-        return MemoryStandardPolicy.combine(compatibility, standardOwnPolicy(em, scope, resource, replacedFields));
+        return MemoryStandardPolicy.combine(compatibility, standardOwnPolicy(values));
     }
 
     private boolean standardFieldAuthoritative(EntityManager em, String scope, String resource,
@@ -800,11 +803,13 @@ public class MemoryRepository {
     private String standardOwnPolicy(EntityManager em, String scope, String resource, Set<String> skipFields) {
         MemoryStandardField.Scope standardScope = scopeOf(scope);
         if (standardScope == null) { return "{\"schemaVersion\":1}"; }
+        return standardOwnPolicy(standardConfigs.readOwn(em, standardScope, resource, skipFields));
+    }
+
+    private String standardOwnPolicy(Map<MemoryStandardField, Object> values) {
         JsonObject result = new JsonObject(); result.addProperty("schemaVersion", 1);
         for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (!field.allows(standardScope) || skipFields.contains(field.path())) { continue; }
-            Object value = "Global".equals(scope) ? standardConfigs.readGlobalOwn(em, field.path())
-                    : standardConfigs.readOverrideOwn(em, field.path(), resource);
+            Object value = values.get(field);
             if (value == null) { continue; }
             if (MemoryStandardConfigAdapter.isUnmanaged(value)) { continue; }
             String[] parts = field.path().split("\\.", -1);
