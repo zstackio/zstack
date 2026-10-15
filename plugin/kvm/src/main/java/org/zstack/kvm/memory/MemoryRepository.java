@@ -1589,6 +1589,8 @@ public class MemoryRepository {
         boolean replacesAppliedPolicy;
         boolean maintenanceActivation;
         boolean writebackDisableOnly;
+        boolean confirmedKsmReconnect;
+        String expectedControlOperationUuid;
     }
 
     private HostPolicyPlan planForHost(EntityManager em, String hostUuid, String effectivePolicy,
@@ -1604,6 +1606,15 @@ public class MemoryRepository {
         plan.changedFields.remove("schemaVersion");
         ignoreAbsentDisabledMechanismDefaults(applied, target, plan.changedFields);
         long now = System.currentTimeMillis();
+        if (plan.changedFields.isEmpty()) {
+            plan.confirmedKsmReconnect = addTrustedAppliedKsmReconnectDrift(
+                    em, hostUuid, state, target, now, plan.changedFields);
+            if (!plan.confirmedKsmReconnect) {
+                addTrustedDisabledKsmActualDrift(em, hostUuid, state, target, now, plan.changedFields);
+            } else {
+                plan.expectedControlOperationUuid = state.getControlOperationUuid();
+            }
+        }
         // A successful, same-boot offline drain permits only the existing
         // initialization contract. Its first activation must keep writeback
         // off. This changes the execution payload, never the desired rows.
@@ -1706,6 +1717,188 @@ public class MemoryRepository {
         return plan;
     }
 
+    /**
+     * A durable applied policy can outlive an out-of-band KSM parameter reset.
+     * Reconcile only a fresh, successful same-boot observation anchored to the
+     * exact applied control revision. This path deliberately handles only a
+     * disabled KSM target: it may restore scan/zero-page settings, but never
+     * starts KSM as a side effect of reconnect reconciliation.
+     */
+    private static void addTrustedDisabledKsmActualDrift(EntityManager em, String hostUuid,
+            MemoryStateVO state, JsonObject target, long now, Map<String, String> changedFields) {
+        JsonElement enabled = jsonPath(target, "ksm.enabled");
+        if (enabled == null || !enabled.isJsonPrimitive() || !enabled.getAsJsonPrimitive().isBoolean()
+                || enabled.getAsBoolean() || state == null || !"Succeeded".equals(state.getStatus())
+                || state.getActiveTaskUuid() != null || state.getAppliedRevision() == null
+                || state.getAppliedRevision() != state.getDesiredRevision()
+                || !hasFreshCapabilityObservation(state, now)
+                || MemoryCapabilityRules.hasPartialKsmMarker(state)
+                || MemoryPolicyAdmissionRules.capabilityReason(state, "ksm", now) != null
+                || state.getControlOperationUuid() == null) { return; }
+
+        try {
+            JsonObject root = new JsonParser().parse(state.getState()).getAsJsonObject();
+            JsonElement boot = root.get("bootId");
+            JsonElement confirmed = root.get("lastConfirmedOperationUuid");
+            JsonElement confirmedRevision = root.get("lastConfirmedAppliedRevision");
+            JsonObject actual = root.getAsJsonObject("actual");
+            JsonObject ksm = actual == null ? null : actual.getAsJsonObject("ksm");
+            if (boot == null || !boot.isJsonPrimitive() || !boot.getAsJsonPrimitive().isString()
+                    || boot.getAsString().trim().isEmpty()
+                    || confirmed == null || !confirmed.isJsonPrimitive()
+                    || !confirmed.getAsString().equals(state.getControlOperationUuid())
+                    || !Objects.equals(exactJsonLong(confirmedRevision), state.getAppliedRevision()) || ksm == null
+                    || !ksm.has("enabled") || !ksm.get("enabled").isJsonPrimitive()
+                    || !ksm.get("enabled").getAsJsonPrimitive().isBoolean()
+                    || ksm.get("enabled").getAsBoolean()) { return; }
+
+            MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+            if (control == null || !"Host".equals(control.getScope())
+                    || !hostUuid.equals(control.getHostUuid()) || !"Succeeded".equals(control.getStatus())
+                    || !Arrays.asList("apply", "clearOverride").contains(control.getAction())
+                    || control.getDesiredRevision() != state.getAppliedRevision()) { return; }
+
+            Map<String, String> actualDrift = new LinkedHashMap<>();
+            JsonElement pages = jsonPath(target, "ksm.pagesToScan");
+            JsonElement sleep = jsonPath(target, "ksm.sleepMillis");
+            if (pages != null) {
+                Long expected = exactJsonLong(pages), observed = exactJsonLong(ksm.get("pagesToScan"));
+                if (expected == null || observed == null) { return; }
+                if (!expected.equals(observed)) { actualDrift.put("ksm.pagesToScan", pages.toString()); }
+            }
+            if (sleep != null) {
+                Long expected = exactJsonLong(sleep), observed = exactJsonLong(ksm.get("sleepMillis"));
+                if (expected == null || observed == null) { return; }
+                if (!expected.equals(observed)) { actualDrift.put("ksm.sleepMillis", sleep.toString()); }
+            }
+            JsonElement zero = jsonPath(target, "ksm.zeroPagesEnabled");
+            if (zero != null) {
+                if (!zero.isJsonPrimitive() || !zero.getAsJsonPrimitive().isBoolean()
+                        || MemoryPolicyAdmissionRules.capabilityReason(state, "ksmZeroPages", now) != null
+                        || !ksm.has("zeroPagesEnabled") || !ksm.get("zeroPagesEnabled").isJsonPrimitive()
+                        || !ksm.get("zeroPagesEnabled").getAsJsonPrimitive().isBoolean()) { return; }
+                if (zero.getAsBoolean() != ksm.get("zeroPagesEnabled").getAsBoolean()) {
+                    actualDrift.put("ksm.zeroPagesEnabled", zero.toString());
+                }
+            }
+            changedFields.putAll(actualDrift);
+        } catch (RuntimeException invalidOrIncompleteObservation) {
+            // A malformed or incomplete read is not evidence that a field was
+            // reset. Keep it out of the write plan and preserve existing state.
+        }
+    }
+
+    /**
+     * A reconnect restores the applied KSM target only when the last confirmed
+     * Host delta agrees. The Agent independently proves the complete target
+     * from that operation's native readback while holding the Host writer lock.
+     */
+    private static boolean addTrustedAppliedKsmReconnectDrift(EntityManager em, String hostUuid,
+            MemoryStateVO state, JsonObject target, long now, Map<String, String> changedFields) {
+        if (state == null || state.getStatus() == null || !"Succeeded".equals(state.getStatus())
+                || state.getActiveTaskUuid() != null || state.getAppliedRevision() == null
+                || state.getAppliedRevision() != state.getDesiredRevision()
+                || state.getControlOperationUuid() == null || state.getAppliedPolicyHash() == null
+                || state.getAppliedPolicy() == null || !hasFreshCapabilityObservation(state, now)
+                || MemoryCapabilityRules.hasPartialKsmMarker(state)
+                || MemoryPolicyAdmissionRules.capabilityReason(state, "ksm", now) != null) { return false; }
+
+        try {
+            JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
+            JsonElement bootId = observed.get("bootId");
+            // The current Agent reports lastConfirmed* only when its durable
+            // operation belongs to this boot. Reconnect restoration is only
+            // considered when a fresh observation has no same-boot anchor;
+            // a conflicting/partial anchor is not equivalent to absence.
+            if (bootId == null || !bootId.isJsonPrimitive() || !bootId.getAsJsonPrimitive().isString()
+                    || bootId.getAsString().trim().isEmpty()
+                    || observed.has("lastConfirmedOperationUuid")
+                    || observed.has("lastConfirmedAppliedRevision")) { return false; }
+            JsonObject actualRoot = observed.getAsJsonObject("actual");
+            JsonObject actualKsm = actualRoot == null ? null : actualRoot.getAsJsonObject("ksm");
+            if (actualKsm == null) { return false; }
+
+            MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+            if (control == null || !"Host".equals(control.getScope()) || !hostUuid.equals(control.getHostUuid())
+                    || !"Succeeded".equals(control.getStatus())
+                    || !Arrays.asList("apply", "clearOverride").contains(control.getAction())
+                    || control.getDesiredRevision() != state.getAppliedRevision()
+                    || !Objects.equals(state.getAppliedPolicyHash(), digest(control.getPolicy()))) { return false; }
+
+            JsonObject savedApplied = new JsonParser().parse(state.getAppliedPolicy()).getAsJsonObject();
+            JsonObject appliedKsm = savedApplied.getAsJsonObject("ksm");
+            JsonObject desiredKsm = target.getAsJsonObject("ksm");
+            JsonObject confirmedTaskPolicy = new JsonParser().parse(control.getPolicy()).getAsJsonObject();
+            JsonObject confirmedTaskKsm = confirmedTaskPolicy.getAsJsonObject("ksm");
+            if (appliedKsm == null || appliedKsm.entrySet().isEmpty() || desiredKsm == null
+                    || !appliedKsm.equals(desiredKsm) || confirmedTaskKsm == null
+                    || confirmedTaskKsm.entrySet().isEmpty() || !appliedKsm.has("enabled")
+                    || !appliedKsm.get("enabled").isJsonPrimitive()
+                    || !appliedKsm.get("enabled").getAsJsonPrimitive().isBoolean()
+                    || exactJsonLong(appliedKsm.get("pagesToScan")) == null
+                    || exactJsonLong(appliedKsm.get("sleepMillis")) == null) {
+                return false;
+            }
+            for (Map.Entry<String, JsonElement> entry : confirmedTaskKsm.entrySet()) {
+                if (!Arrays.asList("enabled", "pagesToScan", "sleepMillis", "zeroPagesEnabled").contains(entry.getKey())
+                        || !entry.getValue().equals(appliedKsm.get(entry.getKey()))) { return false; }
+            }
+            JsonObject restoreKsm = new JsonObject();
+            for (String field : Arrays.asList("enabled", "pagesToScan", "sleepMillis")) {
+                restoreKsm.add(field, appliedKsm.get(field));
+            }
+            if (confirmedTaskKsm.has("zeroPagesEnabled")) {
+                restoreKsm.add("zeroPagesEnabled", confirmedTaskKsm.get("zeroPagesEnabled"));
+            }
+            boolean anyActualDrift = false;
+            for (Map.Entry<String, JsonElement> entry : restoreKsm.entrySet()) {
+                String field = entry.getKey();
+                JsonElement saved = entry.getValue();
+                if ("zeroPagesEnabled".equals(field)) {
+                    if (!saved.isJsonPrimitive() || !saved.getAsJsonPrimitive().isBoolean()
+                            || MemoryPolicyAdmissionRules.capabilityReason(state, "ksmZeroPages", now) != null
+                            || !actualKsm.has(field) || !actualKsm.get(field).isJsonPrimitive()
+                            || !actualKsm.get(field).getAsJsonPrimitive().isBoolean()) { return false; }
+                    if (saved.getAsBoolean() != actualKsm.get(field).getAsBoolean()) {
+                        anyActualDrift = true;
+                    }
+                } else if ("enabled".equals(field)) {
+                    if (!saved.isJsonPrimitive() || !saved.getAsJsonPrimitive().isBoolean()
+                            || !actualKsm.has(field) || !actualKsm.get(field).isJsonPrimitive()
+                            || !actualKsm.get(field).getAsJsonPrimitive().isBoolean()) { return false; }
+                    if (saved.getAsBoolean() != actualKsm.get(field).getAsBoolean()) {
+                        anyActualDrift = true;
+                    }
+                } else if ("pagesToScan".equals(field) || "sleepMillis".equals(field)) {
+                    Long expected = exactJsonLong(saved), actual = exactJsonLong(actualKsm.get(field));
+                    if (expected == null || actual == null) { return false; }
+                    if (!expected.equals(actual)) { anyActualDrift = true; }
+                } else {
+                    // Do not turn fields unknown to this native-restore
+                    // contract into implicit write authority.
+                    return false;
+                }
+            }
+            if (!anyActualDrift) { return false; }
+            // The native writer uses defaults for omitted scan values. Restore
+            // the complete applied target; the Agent must prove every sent
+            // value from the old readback. Do not infer zero-page authority
+            // from a merged default absent from the original task.
+            for (Map.Entry<String, JsonElement> entry : restoreKsm.entrySet()) {
+                changedFields.put("ksm." + entry.getKey(), entry.getValue().toString());
+            }
+            return true;
+        } catch (RuntimeException invalidOrIncompleteEvidence) {
+            return false;
+        }
+    }
+
+    private static Long exactJsonLong(JsonElement value) {
+        if (value == null || !value.isJsonPrimitive() || !value.getAsJsonPrimitive().isNumber()) { return null; }
+        try { return value.getAsBigDecimal().longValueExact(); }
+        catch (ArithmeticException | NumberFormatException invalid) { return null; }
+    }
+
     private static void ignoreAbsentDisabledMechanismDefaults(String appliedPolicy, JsonObject target,
             Map<String, String> changedFields) {
         JsonObject applied = new JsonParser().parse(appliedPolicy).getAsJsonObject();
@@ -1786,6 +1979,8 @@ public class MemoryRepository {
         plan.hasBlockers = true;
         plan.changedFields = source.changedFields;
         plan.replacesAppliedPolicy = source.replacesAppliedPolicy;
+        plan.confirmedKsmReconnect = source.confirmedKsmReconnect;
+        plan.expectedControlOperationUuid = source.expectedControlOperationUuid;
         plan.planHash = digest(plan.targetHash + "|deferred|" + plan.blockedFields);
         return plan;
     }
@@ -1847,12 +2042,107 @@ public class MemoryRepository {
             bumpQueryVersion(em, "task");
             MemoryTaskVO child = task(msg, parent.getUuid(), hostUuid, revision, plan.payload, actor);
             child.setPolicyPlanHash(plan.planHash);
+            if (plan.confirmedKsmReconnect) {
+                child.setExpectedControlOperationUuid(plan.expectedControlOperationUuid);
+            }
             em.persist(child);
             state.setDesiredRevision(revision); state.setActiveTaskUuid(child.getUuid());
             state.setControlOperationUuid(child.getUuid()); state.setPermitAuthorized(false);
             state.setStatus("Queued"); state.setReason(null);
             recordPolicyPlan(state, plan, "Queued");
             return true;
+        });
+    }
+
+    /**
+     * Dispatch-time proof for the narrow license-expiry exception. The
+     * Agent repeats the journal/boot checks under its Host writer lock; this
+     * MN check prevents ordinary or stale tasks from borrowing that path.
+     */
+    boolean isConfirmedKsmReconnectTask(String taskUuid) {
+        if (taskUuid == null) { return false; }
+        return transaction(em -> {
+            MemoryTaskVO task = em.find(MemoryTaskVO.class, taskUuid);
+            if (task == null || !"Host".equals(task.getScope()) || task.getHostUuid() == null
+                    || !"apply".equals(task.getAction())
+                    || !"system:memory-host-connect-policy".equals(task.getActorUuid())
+                    || !"Applying".equals(task.getStatus())
+                    || task.getExpectedControlOperationUuid() == null
+                    || task.getPolicyPlanHash() == null || task.getPolicy() == null) { return false; }
+            MemoryTaskVO original = em.find(MemoryTaskVO.class, task.getExpectedControlOperationUuid());
+            MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());
+            if (state == null || !("Queued".equals(state.getStatus()) || "Applying".equals(state.getStatus()))
+                    || !Objects.equals(taskUuid, state.getActiveTaskUuid())
+                    || !Objects.equals(taskUuid, state.getControlOperationUuid())
+                    || task.getDesiredRevision() != state.getDesiredRevision()
+                    || state.getAppliedRevision() == null || task.getDesiredRevision() != state.getAppliedRevision() + 1
+                    || original == null || !state.getAppliedRevision().equals(original.getDesiredRevision())
+                    || state.getAppliedPolicyHash() == null || state.getAppliedPolicy() == null
+                    || !hasFreshCapabilityObservation(state, System.currentTimeMillis())
+                    || MemoryCapabilityRules.hasPartialKsmMarker(state)
+                    || MemoryPolicyAdmissionRules.capabilityReason(state, "ksm", System.currentTimeMillis()) != null) {
+                return false;
+            }
+            if (original == null || !"Host".equals(original.getScope())
+                    || !task.getHostUuid().equals(original.getHostUuid())
+                    || !"Succeeded".equals(original.getStatus())
+                    || !Arrays.asList("apply", "clearOverride").contains(original.getAction())
+                    || !Objects.equals(state.getControlOperationUuid(), task.getUuid())
+                    || !Objects.equals(state.getAppliedPolicyHash(), digest(original.getPolicy()))) { return false; }
+
+            try {
+                JsonObject observation = new JsonParser().parse(state.getState()).getAsJsonObject();
+                JsonElement boot = observation.get("bootId");
+                if (boot == null || !boot.isJsonPrimitive() || !boot.getAsJsonPrimitive().isString()
+                        || boot.getAsString().trim().isEmpty() || observation.has("lastConfirmedOperationUuid")
+                        || observation.has("lastConfirmedAppliedRevision") || isConfirmedPausedState(state.getState())) {
+                    return false;
+                }
+                JsonObject actualRoot = observation.getAsJsonObject("actual");
+                JsonObject actualKsm = actualRoot == null ? null : actualRoot.getAsJsonObject("ksm");
+                JsonObject payload = new JsonParser().parse(task.getPolicy()).getAsJsonObject();
+                JsonObject payloadKsm = payload.getAsJsonObject("ksm");
+                JsonObject originalPolicy = new JsonParser().parse(original.getPolicy()).getAsJsonObject();
+                JsonObject originalKsm = originalPolicy.getAsJsonObject("ksm");
+                JsonObject applied = new JsonParser().parse(state.getAppliedPolicy()).getAsJsonObject();
+                JsonObject appliedKsm = applied.getAsJsonObject("ksm");
+                JsonObject effectiveKsm = new JsonParser().parse(effective(em, "Host", task.getHostUuid()))
+                        .getAsJsonObject().getAsJsonObject("ksm");
+                if (payloadKsm == null || payloadKsm.entrySet().isEmpty() || originalKsm == null
+                        || originalKsm.entrySet().isEmpty()
+                        || appliedKsm == null || effectiveKsm == null || actualKsm == null
+                        || payload.has("zram") || payload.has("writeback") || payload.entrySet().size() != 2
+                        || !payloadKsm.has("enabled") || !payloadKsm.get("enabled").isJsonPrimitive()
+                        || !payloadKsm.get("enabled").getAsJsonPrimitive().isBoolean()
+                        || !payloadKsm.has("pagesToScan") || exactJsonLong(payloadKsm.get("pagesToScan")) == null
+                        || !payloadKsm.has("sleepMillis") || exactJsonLong(payloadKsm.get("sleepMillis")) == null
+                        || payloadKsm.has("zeroPagesEnabled") != originalKsm.has("zeroPagesEnabled")
+                        || !appliedKsm.equals(effectiveKsm)) { return false; }
+                for (Map.Entry<String, JsonElement> entry : originalKsm.entrySet()) {
+                    if (!entry.getValue().equals(payloadKsm.get(entry.getKey()))) { return false; }
+                }
+                boolean actualMismatch = false;
+                for (Map.Entry<String, JsonElement> entry : payloadKsm.entrySet()) {
+                    String field = entry.getKey(); JsonElement value = entry.getValue();
+                    if (!appliedKsm.has(field) || !value.equals(appliedKsm.get(field))
+                            || !actualKsm.has(field)) { return false; }
+                    if ("enabled".equals(field) || "zeroPagesEnabled".equals(field)) {
+                        if (!value.isJsonPrimitive() || !value.getAsJsonPrimitive().isBoolean()
+                                || !actualKsm.get(field).isJsonPrimitive()
+                                || !actualKsm.get(field).getAsJsonPrimitive().isBoolean()) { return false; }
+                        if (value.getAsBoolean() != actualKsm.get(field).getAsBoolean()) { actualMismatch = true; }
+                        if ("zeroPagesEnabled".equals(field)
+                                && MemoryPolicyAdmissionRules.capabilityReason(state, "ksmZeroPages", System.currentTimeMillis()) != null) {
+                            return false;
+                        }
+                    } else if ("pagesToScan".equals(field) || "sleepMillis".equals(field)) {
+                        Long expected = exactJsonLong(value), observed = exactJsonLong(actualKsm.get(field));
+                        if (expected == null || observed == null) { return false; }
+                        if (!expected.equals(observed)) { actualMismatch = true; }
+                    } else { return false; }
+                }
+                return actualMismatch;
+            } catch (RuntimeException invalidOrIncompleteEvidence) { return false; }
         });
     }
 
