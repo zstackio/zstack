@@ -537,15 +537,13 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public void login(LoginContext loginContext, ReturnValueCompletion<LoginSessionInfo> completion) {
-        String ldapLoginName = loginContext.getUsername();
-        if (!isValid(ldapLoginName, loginContext.getPassword())) {
+        String dn = loginContext.getProperties().get(LdapConstant.LDAP_DN_KEY);
+        if (!ldapUtil.isValidDn(loginContext)) {
             completion.fail(err(ORG_ZSTACK_LDAP_10005, IdentityErrors.AUTHENTICATION_ERROR,
                     "Login validation failed in LDAP"));
             return;
         }
 
-        LdapTemplateContextSource ldapTemplateContextSource = ldapUtil.readLdapServerConfiguration();
-        String dn = ldapUtil.getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUtil.getLdapUseAsLoginName(), ldapLoginName);
         LdapAccountRefVO vo = ldapUtil.findLdapAccountRefVO(dn);
 
         if (vo == null) {
@@ -582,7 +580,7 @@ public class LdapManagerImpl extends AbstractService implements LdapManager, Log
 
     @Override
     public void collectUserInfoIntoContext(LoginContext loginContext) {
-        loginContext.setUserUuid(getUserIdByName(loginContext.getUsername()));
+        loginContext.setUserUuid(ldapUtil.collectUserDn(loginContext));
     }
 
     @Override

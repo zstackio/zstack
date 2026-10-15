@@ -11,6 +11,7 @@ import org.springframework.ldap.core.support.*;
 import org.springframework.ldap.filter.AndFilter;
 import org.springframework.ldap.filter.EqualsFilter;
 import org.springframework.ldap.filter.Filter;
+import org.springframework.ldap.support.LdapUtils;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -18,12 +19,14 @@ import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.login.LoginContext;
 import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attributes;
+import javax.naming.directory.DirContext;
 import javax.naming.directory.SearchControls;
 import javax.net.ssl.*;
 import java.net.Socket;
@@ -766,7 +769,18 @@ public class LdapUtil {
     }
 
     public String getFullUserDn(String uid) {
+        return getFullUserDn(readLdapServerConfiguration(), uid);
+    }
+
+    public String collectUserDn(LoginContext loginContext) {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
+        String dn = getFullUserDn(ldapTemplateContextSource, loginContext.getUsername());
+        loginContext.setLoginBackendContext(ldapTemplateContextSource);
+        loginContext.getProperties().put(LdapConstant.LDAP_DN_KEY, dn);
+        return dn;
+    }
+
+    private String getFullUserDn(LdapTemplateContextSource ldapTemplateContextSource, String uid) {
         String ldapUseAsLoginName = getLdapUseAsLoginName();
         String fullUserDn = null;
         try {
@@ -820,20 +834,8 @@ public class LdapUtil {
         LdapTemplateContextSource ldapTemplateContextSource = readLdapServerConfiguration();
         String ldapUseAsLoginName = getLdapUseAsLoginName();
         try {
-            boolean valid;
             String fullUserDn = getFullUserDn(ldapTemplateContextSource.getLdapTemplate(), ldapUseAsLoginName, uid);
-            if (fullUserDn.equals("") || password.equals("")) {
-                return false;
-            }
-
-            LdapServerVO ldapServerVO = getLdapServer();
-            LdapServerInventory ldapServerInventory = LdapServerInventory.valueOf(ldapServerVO);
-            LdapTemplateContextSource ldapTemplateContextSource2 = loadLdap(ldapServerInventory);
-
-            AndFilter filter = new AndFilter();
-            filter.and(new EqualsFilter(ldapUseAsLoginName, uid));
-            valid = ldapTemplateContextSource2.getLdapTemplate().
-                    authenticate("", filter.toString(), password);
+            boolean valid = isValidDn(ldapTemplateContextSource.getLdapContextSource(), fullUserDn, password);
             logger.info(String.format("isValid[%s:%s, dn:%s, valid:%s]", ldapUseAsLoginName, uid, fullUserDn, valid));
             return valid;
         } catch (NamingException e) {
@@ -842,6 +844,33 @@ public class LdapUtil {
         } catch (Exception e) {
             logger.info("isValid error userName:" + uid, e);
             return false;
+        }
+    }
+
+    public boolean isValidDn(LoginContext loginContext) {
+        Object context = loginContext.getLoginBackendContext();
+        if (!(context instanceof LdapTemplateContextSource)) {
+            return false;
+        }
+
+        return isValidDn(((LdapTemplateContextSource) context).getLdapContextSource(),
+                loginContext.getProperties().get(LdapConstant.LDAP_DN_KEY), loginContext.getPassword());
+    }
+
+    private boolean isValidDn(LdapContextSource contextSource, String dn, String password) {
+        if (StringUtils.isEmpty(dn) || StringUtils.isEmpty(password)) {
+            return false;
+        }
+
+        DirContext context = null;
+        try {
+            context = contextSource.getContext(dn, password);
+            return true;
+        } catch (Exception e) {
+            logger.info("isValid fail dn:" + dn, e);
+            return false;
+        } finally {
+            LdapUtils.closeContext(context);
         }
     }
 
