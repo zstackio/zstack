@@ -2530,6 +2530,7 @@ public class MemoryRepository {
                     "and t.status = 'Queued' and exists (select h.uuid from HostVO h where h.uuid = t.hostUuid) order by t.createDate", MemoryTaskVO.class)
                     .setMaxResults((int) (concurrency - active)).getResultList();
             List<MemoryTaskVO> stale = new ArrayList<>();
+            boolean stateChanged = false;
             if (!list.isEmpty()) { bumpQueryVersion(em, "task"); }
             for (MemoryTaskVO task : list) {
                 if (!"VM".equals(task.getScope())
@@ -2564,9 +2565,26 @@ public class MemoryRepository {
                     continue;
                 }
                 task.setStatus("Applying"); task.setOwnerManagementNodeUuid(owner);
+                MemoryStateVO state = "VM".equals(task.getScope()) ? null
+                        : em.find(MemoryStateVO.class, task.getHostUuid());
+                if (state != null && task.getUuid().equals(state.getActiveTaskUuid())
+                        && task.getDesiredRevision() == state.getDesiredRevision()) {
+                    // Claiming an old task must not replace a newer target or
+                    // lifecycle fence. Project only the admitted queued work;
+                    // actual drain/completion stages still come from its result.
+                    if ("Queued".equals(state.getStatus())) {
+                        state.setStatus("Applying"); stateChanged = true;
+                    }
+                    if (task.getPolicyPlanHash() != null
+                            && task.getPolicyPlanHash().equals(state.getPolicyPlanHash())
+                            && "Queued".equals(state.getPolicyPlanStatus())) {
+                        state.setPolicyPlanStatus("Applying"); stateChanged = true;
+                    }
+                }
                 MemoryTaskVO parent = em.find(MemoryTaskVO.class, task.getParentUuid());
                 if (parent != null) { parent.setStatus("Applying"); }
             }
+            if (stateChanged) { bumpQueryVersion(em, "state"); }
             list.removeAll(stale);
             em.flush();
             return list;
