@@ -20,6 +20,7 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.sdk.AttachDataVolumeToVmAction
 import org.zstack.sdk.DeleteHostAction
 import org.zstack.sdk.HostInventory
+import org.zstack.sdk.RecoverVmInstanceAction
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
@@ -172,6 +173,16 @@ class DeleteHostWithNonLocalVmCase extends SubCase {
             VmGlobalConfig.VM_DELETION_POLICY.updateValue("Delay")
             destroyVmInstance { uuid = vm.uuid }
             assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Destroyed
+            long deleting = new HostDeletionGuard().acquire(destination.uuid, true)
+            try {
+                def result = new RecoverVmInstanceAction(uuid: vm.uuid,
+                        sessionId: currentEnvSpec.session.uuid).call()
+                assert result.error != null
+                assert result.error.details.contains("host deletion is in progress")
+                assert dbFindByUuid(vm.uuid, VmInstanceVO.class).state == VmInstanceState.Destroyed
+            } finally {
+                HostDeletionGuard.release(deleting)
+            }
             deleteHost { uuid = destination.uuid }
             assert dbFindByUuid(destination.uuid, HostVO.class) == null
         } finally {

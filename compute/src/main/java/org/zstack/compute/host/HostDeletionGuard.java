@@ -11,6 +11,8 @@ import org.zstack.core.db.SQL;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.jsonlabel.JsonLabelVO;
 import org.zstack.core.jsonlabel.JsonLabelVO_;
+import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.host.HostVO;
@@ -116,6 +118,22 @@ public class HostDeletionGuard {
                     leases.stream().map(Long::valueOf).collect(Collectors.toList())).hardDelete();
             spec.putExtensionData(LEASES, new ArrayList<String>());
         }
+    }
+
+    public static Completion releasingCompletion(VmInstanceSpec spec, Completion completion) {
+        return new Completion(completion) {
+            @Override
+            public void success() {
+                releaseVm(spec);
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                releaseVm(spec);
+                completion.fail(errorCode);
+            }
+        };
     }
 
     public void validateVmStorage(String hostUuid) {

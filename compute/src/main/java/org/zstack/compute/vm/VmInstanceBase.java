@@ -3127,7 +3127,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     }
                 } finally {
                     VmInstanceSpec spec = (VmInstanceSpec) chain.getData().get(Params.VmInstanceSpec.toString());
-                    if (spec != null && spec.getCurrentVmOperation() != VmOperation.Migrate) {
+                    if (spec != null && spec.getCurrentVmOperation() != VmOperation.Migrate
+                            && spec.getCurrentVmOperation() != VmOperation.Start) {
                         HostDeletionGuard.releaseVm(spec);
                     }
                 }
@@ -4096,6 +4097,37 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void recoverVm(final Completion completion) {
+        String hostUuid = self.getHostUuid() == null ? self.getLastHostUuid() : self.getHostUuid();
+        // Recovery after the former host has already been deleted remains valid.
+        Long lease = hostUuid != null && dbf.isExist(hostUuid, HostVO.class)
+                ? new HostDeletionGuard().acquire(hostUuid, false) : null;
+        try {
+            recoverVmWithLease(new Completion(completion) {
+                @Override
+                public void success() {
+                    if (lease != null) {
+                        HostDeletionGuard.release(lease);
+                    }
+                    completion.success();
+                }
+
+                @Override
+                public void fail(ErrorCode errorCode) {
+                    if (lease != null) {
+                        HostDeletionGuard.release(lease);
+                    }
+                    completion.fail(errorCode);
+                }
+            });
+        } catch (RuntimeException | Error e) {
+            if (lease != null) {
+                HostDeletionGuard.release(lease);
+            }
+            throw e;
+        }
+    }
+
+    private void recoverVmWithLease(final Completion completion) {
         final VmInstanceInventory vm = getSelfInventory();
         final List<RecoverVmExtensionPoint> exts = pluginRgty.getExtensionList(RecoverVmExtensionPoint.class);
         for (RecoverVmExtensionPoint ext : exts) {
@@ -6548,21 +6580,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     private void doMigrateVm(final MigrateVmMessage msg, final Completion originalCompletion) {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Migrate);
-        // Migration failure may resolve the VM's actual host asynchronously.
-        // Keep the destination protected until that resolution has completed.
-        final Completion completion = new Completion(originalCompletion) {
-            @Override
-            public void success() {
-                HostDeletionGuard.releaseVm(spec);
-                originalCompletion.success();
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                HostDeletionGuard.releaseVm(spec);
-                originalCompletion.fail(errorCode);
-            }
-        };
+        // Start/migration failures may resolve the actual host asynchronously.
+        final Completion completion = HostDeletionGuard.releasingCompletion(spec, originalCompletion);
 
         final VmInstanceState originState = self.getState();
         changeVmStateInDb(VmInstanceStateEvent.migrating);
@@ -6704,6 +6723,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         }
 
         final VmInstanceSpec spec = buildSpecFromInventory(inv, VmOperation.Start);
+        final Completion guardedCompletion = HostDeletionGuard.releasingCompletion(spec, completion);
         spec.setMessage(msg);
 
         if (msg instanceof APIStartVmInstanceMsg) {
@@ -6753,10 +6773,10 @@ public class VmInstanceBase extends AbstractVmInstance {
         String vmLastHostUuid = self.getLastHostUuid();
         chain.setName(String.format("start-vm-%s", self.getUuid()));
         chain.getData().put(VmInstanceConstant.Params.VmInstanceSpec.toString(), spec);
-        chain.done(new FlowDoneHandler(completion) {
+        chain.done(new FlowDoneHandler(guardedCompletion) {
             @Override
             public void handle(final Map data) {
-                provisionAfterStartVm(spec, new NoErrorCompletion(completion) {
+                provisionAfterStartVm(spec, new NoErrorCompletion(guardedCompletion) {
                     @Override
                     public void done() {
                         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -6779,11 +6799,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                         logger.debug(String.format("vm[uuid:%s] is running ..", self.getUuid()));
                         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
                         extEmitter.afterStartVm(inv);
-                        completion.success();
+                        guardedCompletion.success();
                     }
                 });
             }
-        }).error(new FlowErrorHandler(completion) {
+        }).error(new FlowErrorHandler(guardedCompletion) {
             @Override
             public void handle(final ErrorCode errCode, Map data) {
                 // reload self because some nics may have been deleted in start phase because a former L3Network deletion.
@@ -6806,16 +6826,16 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }.execute();
 
                 if (HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR.isEqual(errCode.getCode())) {
-                    checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(completion) {
+                    checkState(spec.getDestHost().getUuid(), new NoErrorCompletion(guardedCompletion) {
                         @Override
                         public void done() {
-                            completion.fail(errCode);
+                            guardedCompletion.fail(errCode);
                         }
                     });
                     return;
                 }
 
-                completion.fail(errCode);
+                guardedCompletion.fail(errCode);
             }
         }).start();
     }
