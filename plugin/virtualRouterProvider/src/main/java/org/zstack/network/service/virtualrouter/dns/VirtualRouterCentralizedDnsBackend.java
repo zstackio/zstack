@@ -15,6 +15,7 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -44,6 +45,9 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static org.zstack.core.Platform.operr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10004;
 
 /**
  * Created by AlanJager on 2017/7/8.
@@ -231,6 +235,12 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         }
 
         L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
+        if (defaultL3 == null) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SERVICE_VIRTUALROUTER_DNS_10004,
+                    "cannot migrate vm[uuid:%s]: default L3 network[uuid:%s] no longer exists; " +
+                            "set a valid default network before retrying migration",
+                    inv.getUuid(), inv.getDefaultL3NetworkUuid()));
+        }
         if (!defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
                 .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS.toString())) {
             return;
@@ -294,6 +304,12 @@ public class VirtualRouterCentralizedDnsBackend extends AbstractVirtualRouterBac
         }
         
         L3NetworkVO defaultL3 = dbf.findByUuid(inv.getDefaultL3NetworkUuid(), L3NetworkVO.class);
+        if (defaultL3 == null) {
+            logger.warn(String.format("skip DNS forwarding cleanup for vm[uuid:%s] on host[uuid:%s]: " +
+                            "default L3 network[uuid:%s] no longer exists",
+                    inv.getUuid(), destHostUuid, inv.getDefaultL3NetworkUuid()));
+            return;
+        }
         if (!defaultL3.getNetworkServices().stream().map(NetworkServiceL3NetworkRefVO::getNetworkServiceType)
                 .collect(Collectors.toList()).contains(NetworkServiceType.Centralized_DNS.toString())) {
             return;
