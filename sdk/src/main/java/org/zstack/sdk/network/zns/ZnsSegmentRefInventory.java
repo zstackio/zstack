@@ -92,14 +92,6 @@ public class ZnsSegmentRefInventory  {
         return this.managedBy;
     }
 
-    public java.lang.Long currentConfigVersion;
-    public void setCurrentConfigVersion(java.lang.Long currentConfigVersion) {
-        this.currentConfigVersion = currentConfigVersion;
-    }
-    public java.lang.Long getCurrentConfigVersion() {
-        return this.currentConfigVersion;
-    }
-
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
@@ -108,36 +100,12 @@ public class ZnsSegmentRefInventory  {
         return this.state;
     }
 
-    public java.lang.String operationUuid;
-    public void setOperationUuid(java.lang.String operationUuid) {
-        this.operationUuid = operationUuid;
-    }
-    public java.lang.String getOperationUuid() {
-        return this.operationUuid;
-    }
-
-    public java.lang.String operationStep;
-    public void setOperationStep(java.lang.String operationStep) {
-        this.operationStep = operationStep;
-    }
-    public java.lang.String getOperationStep() {
-        return this.operationStep;
-    }
-
     public java.lang.Long appliedConfigVersion;
     public void setAppliedConfigVersion(java.lang.Long appliedConfigVersion) {
         this.appliedConfigVersion = appliedConfigVersion;
     }
     public java.lang.Long getAppliedConfigVersion() {
         return this.appliedConfigVersion;
-    }
-
-    public java.sql.Timestamp leaseUntil;
-    public void setLeaseUntil(java.sql.Timestamp leaseUntil) {
-        this.leaseUntil = leaseUntil;
-    }
-    public java.sql.Timestamp getLeaseUntil() {
-        return this.leaseUntil;
     }
 
     public java.lang.String lastErrorCode;

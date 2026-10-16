@@ -432,12 +432,20 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
+        enableNetworkService(l3VO, providerType, systemTags, Collections.emptyMap(), completion);
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Map<String, Object> headers, Completion completion) {
         String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
         if (sdnControllerUuid != null) {
             SdnControllerEnableDHCPMsg msg = new SdnControllerEnableDHCPMsg();
             msg.setL3NetworkUuid(l3VO.getUuid());
             msg.setSdnControllerUuid(sdnControllerUuid);
             msg.setSystemTags(systemTags);
+            if (headers != null && !headers.isEmpty()) {
+                msg.getHeaders().putAll(headers);
+            }
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override
@@ -463,11 +471,19 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
+        disableNetworkService(l3VO, providerType, Collections.emptyMap(), completion);
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Map<String, Object> headers, Completion completion) {
         String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
         if (sdnControllerUuid != null) {
             SdnControllerDisableDHCPMsg msg = new SdnControllerDisableDHCPMsg();
             msg.setL3NetworkUuid(l3VO.getUuid());
             msg.setSdnControllerUuid(sdnControllerUuid);
+            if (headers != null && !headers.isEmpty()) {
+                msg.getHeaders().putAll(headers);
+            }
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
                 @Override

@@ -18,7 +18,6 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     private Integer vlan;
     private String resourceUuid;
     private String accountUuid;
-    private NetworkCreateContext context;
     private SessionInventory session;
     @NoLogging(behavior = NoLogging.Behavior.Auto)
     private Object subtypeMessage;
@@ -46,8 +45,6 @@ public class CreateL2NetworkMsg extends NeedReplyMessage {
     public void setResourceUuid(String value) { resourceUuid = value; }
     public String getAccountUuid() { return accountUuid; }
     public void setAccountUuid(String value) { accountUuid = value; }
-    public NetworkCreateContext getContext() { return context; }
-    public void setContext(NetworkCreateContext value) { context = value; }
     public SessionInventory getSession() { return session; }
     public void setSession(SessionInventory value) { session = value; }
     public APICreateL2NetworkMsg getSubtypeMessage() {

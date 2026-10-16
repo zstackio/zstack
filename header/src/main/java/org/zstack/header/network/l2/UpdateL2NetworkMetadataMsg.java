@@ -6,7 +6,6 @@ public class UpdateL2NetworkMetadataMsg extends NeedReplyMessage implements L2Ne
     private String l2NetworkUuid;
     private String name;
     private String description;
-    private NetworkCreateContext context;
 
     @Override
     public String getL2NetworkUuid() {
@@ -31,13 +30,5 @@ public class UpdateL2NetworkMetadataMsg extends NeedReplyMessage implements L2Ne
 
     public void setDescription(String description) {
         this.description = description;
-    }
-
-    public NetworkCreateContext getContext() {
-        return context;
-    }
-
-    public void setContext(NetworkCreateContext context) {
-        this.context = context;
     }
 }

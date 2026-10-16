@@ -43,35 +43,17 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
 
     @Override
     public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
-        createL2Network(vo, msg, NetworkCreateContext.api(), completion);
-    }
 
-    @Override
-    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, NetworkCreateContext context,
-                                ReturnValueCompletion<L2NetworkInventory> completion) {
-
+        L2NetworkInventory inv = L2NetworkInventory.valueOf(vo);
         FlowChain chain = new SimpleFlowChain();
         chain.setName("create-no-vlan-network");
-        chain.then(new Flow() {
-            String __name__ = "write-db";
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                dbf.persist(vo);
-                trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                dbf.removeByPrimaryKey(vo.getUuid(), L2NetworkVO.class);
-                trigger.rollback();
-            }
-        }).then(new NoRollbackFlow() {
+        chain.then(new NoRollbackFlow() {
             String __name__ = "create-l2-network-extension";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.postCreateL2Network(L2NetworkInventory.valueOf(vo), msg, context, new Completion(trigger) {
+                        .each((exp, wcompl) -> exp.postCreateL2Network(inv, msg, msg == null ? null : msg.getHeaders(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 wcompl.done();
@@ -93,18 +75,45 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
                             }
                         });
             }
+        }).then(new Flow() {
+            String __name__ = "write-db";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new org.zstack.core.db.SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                            exp.beforeCommitL2NetworkInDb(inv, msg, msg == null ? null : msg.getHeaders());
+                        }
+                        persist(vo);
+                    }
+                }.execute();
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                dbf.removeByPrimaryKey(vo.getUuid(), L2NetworkVO.class);
+                trigger.rollback();
+            }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
+                }
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                L2NetworkInventory inv = L2NetworkInventory.valueOf(
+                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
+                }
+                L2NetworkInventory persistedInv = L2NetworkInventory.valueOf(
                         dbf.findByUuid(vo.getUuid(), L2NetworkVO.class));
-                logger.debug("Successfully created NoVlanL2Network: " + printer.print(inv));
-                completion.success(inv);
+                logger.debug("Successfully created NoVlanL2Network: " + printer.print(persistedInv));
+                completion.success(persistedInv);
             }
         }).start();
     }

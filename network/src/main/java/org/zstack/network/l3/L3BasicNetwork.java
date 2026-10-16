@@ -44,13 +44,6 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO_;
 import org.zstack.header.network.l2.L2NetworkConstant;
 import org.zstack.header.network.l2.L2NetworkVO;
 import org.zstack.header.network.l2.L2NetworkVO_;
-import org.zstack.header.network.l2.NetworkCreateContext;
-import org.zstack.header.network.l2.NetworkDeletionContext;
-import org.zstack.network.l2.NetworkDeletionContexts;
-import org.zstack.header.network.LocalNetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChangeCoordinator;
-import org.zstack.header.network.l2.NetworkOperationOrigin;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
@@ -112,7 +105,6 @@ public class L3BasicNetwork implements L3Network {
     private NetworkServiceManager nsMgr;
 
     private L3NetworkVO self;
-    private L3NetworkBackend backend;
 
     protected String syncThreadName;
 
@@ -176,7 +168,7 @@ public class L3BasicNetwork implements L3Network {
         if (msg.getResourceUuid() == null) {
             msg.setResourceUuid(Platform.getUuid());
         }
-        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, NetworkCreateContext.api());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg);
         addIpRange(add, apiTagCreator(msg), new ReturnValueCompletion<IpRangeInventory>(msg) {
             @Override
             public void success(IpRangeInventory inv) {
@@ -207,7 +199,7 @@ public class L3BasicNetwork implements L3Network {
                     return;
                 }
 
-                addIpRange(ipr, msg, msg.getContext(), tagCreator, new ReturnValueCompletion<IpRangeInventory>(msg) {
+                addIpRange(ipr, msg, tagCreator, new ReturnValueCompletion<IpRangeInventory>(msg) {
                     @Override
                     public void success(IpRangeInventory inv) {
                         completion.success(inv);
@@ -256,10 +248,10 @@ public class L3BasicNetwork implements L3Network {
                 L3NetworkVO.class.getSimpleName());
     }
 
-    private void addIpRange(IpRangeInventory ipr, AddIpRangeMsg msg, NetworkCreateContext context,
+    private void addIpRange(IpRangeInventory ipr, AddIpRangeMsg msg,
                             java.util.function.Consumer<String> tagCreator,
                             ReturnValueCompletion<IpRangeInventory> completion) {
-        addIpRanges(Collections.singletonList(ipr), msg, context, tagCreator,
+        addIpRanges(Collections.singletonList(ipr), msg, tagCreator,
                 new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
                     @Override
                     public void success(List<IpRangeInventory> inventories) {
@@ -273,14 +265,9 @@ public class L3BasicNetwork implements L3Network {
                 });
     }
 
-    private void addIpRanges(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
+    private void addIpRanges(List<IpRangeInventory> iprs, AddIpRangeMsg msg,
                              java.util.function.Consumer<String> tagCreator,
                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
-        if (context == null) {
-            completion.fail(Platform.inerr(ORG_ZSTACK_NETWORK_L3_10084,
-                    "network create context is required for internal IP range creation"));
-            return;
-        }
         for (IpRangeInventory ipr : iprs) {
             ErrorCode errorCode = validateManagementNetworkIpRangeVersionBeforeCreate(ipr);
             if (errorCode != null) {
@@ -289,55 +276,8 @@ public class L3BasicNetwork implements L3Network {
             }
         }
 
-        if (context.getOrigin() == NetworkOperationOrigin.API
-                && iprs.stream().allMatch(ipr -> ipr.getIpRangeType() == IpRangeType.Normal)) {
-            IpRangeInventory first = iprs.get(0);
-            List<NormalIpRangeVO> existingRanges = Q.New(NormalIpRangeVO.class)
-                    .eq(IpRangeVO_.l3NetworkUuid, first.getL3NetworkUuid())
-                    .eq(IpRangeVO_.ipVersion, first.getIpVersion())
-                    .list();
-            List<NetworkConfigChange.IpRange> ranges = existingRanges.stream()
-                    .map(existing -> new NetworkConfigChange.IpRange(
-                            existing.getUuid(), existing.getStartIp(), existing.getEndIp(), existing.getAddressMode()))
-                    .collect(Collectors.toList());
-            List<NetworkConfigChange.IpRange> addedRanges = iprs.stream()
-                    .map(ipr -> new NetworkConfigChange.IpRange(
-                            ipr.getUuid(), ipr.getStartIp(), ipr.getEndIp(), ipr.getAddressMode()))
-                    .collect(Collectors.toList());
-            ranges.addAll(addedRanges);
-            int prefix = first.getIpVersion() == IPv6Constants.IPv6
-                    ? first.getPrefixLen()
-                    : NetworkUtils.getPrefixLengthFromNetmask(first.getNetmask());
-            NetworkConfigChange change = NetworkConfigChange.replaceIpRangeConfiguration(
-                    self.getL2NetworkUuid(), context.getOrigin(), msg.getId(),
-                    msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                    first.getL3NetworkUuid(),
-                    first.getIpVersion(), first.getGateway() + "/" + prefix, ranges,
-                    NetworkConfigChange.CollectionChangeOperation.ADD, addedRanges, null);
-            java.util.concurrent.atomic.AtomicReference<List<IpRangeInventory>> created =
-                    new java.util.concurrent.atomic.AtomicReference<>();
-            if (coordinateNetworkConfigChange(change,
-                    localCompletion -> addIpRanges(iprs, msg,
-                            NetworkCreateContext.cloudCommit(msg.getId()),
-                            tagCreator,
-                            new ReturnValueCompletion<List<IpRangeInventory>>(localCompletion) {
-                                @Override
-                                public void success(List<IpRangeInventory> inventories) {
-                                    created.set(inventories);
-                                    localCompletion.success();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    localCompletion.fail(errorCode);
-                                }
-                            }), created, completion)) {
-                return;
-            }
-        }
-
         IpRangeFactory factory = l3NwMgr.getIpRangeFactory(iprs.get(0).getIpRangeType());
-        factory.createIpRange(iprs, msg, context, new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
+        factory.createIpRange(iprs, msg, new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
             @Override
             public void success(List<IpRangeInventory> invs) {
                 for (IpRangeInventory inv : invs) {
@@ -352,37 +292,6 @@ public class L3BasicNetwork implements L3Network {
                 completion.fail(errorCode);
             }
         });
-    }
-
-    private <T> boolean coordinateNetworkConfigChange(NetworkConfigChange change,
-                                            LocalNetworkConfigChange localChange,
-                                            java.util.concurrent.atomic.AtomicReference<T> result,
-                                            ReturnValueCompletion<T> completion) {
-        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
-                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
-                .filter(coordinator -> coordinator.isApplicable(change))
-                .collect(Collectors.toList());
-        if (coordinators.isEmpty()) {
-            return false;
-        }
-        if (coordinators.size() != 1) {
-            completion.fail(errf.stringToInternalError(String.format(
-                    "network mutation[%s] matched[%s] providers",
-                    change.getKind(), coordinators.size())));
-            return true;
-        }
-        coordinators.get(0).coordinate(change, localChange, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.success(result.get());
-            }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-        return true;
     }
 
     private ErrorCode validateManagementNetworkIpRangeVersionBeforeCreate(IpRangeInventory ipr) {
@@ -411,10 +320,6 @@ public class L3BasicNetwork implements L3Network {
     private void handleLocalMessage(Message msg) {
         if (msg instanceof AddIpRangeMsg) {
             handle((AddIpRangeMsg) msg);
-        } else if (msg instanceof DeleteL3NetworkMsg) {
-            handle((DeleteL3NetworkMsg) msg);
-        } else if (msg instanceof DeleteIpRangeMsg) {
-            handle((DeleteIpRangeMsg) msg);
         } else if (msg instanceof AllocateIpMsg) {
             handle((AllocateIpMsg)msg);
         } else if (msg instanceof ReturnIpMsg) {
@@ -428,19 +333,7 @@ public class L3BasicNetwork implements L3Network {
         } else if (msg instanceof AttachNetworkServiceToL3Msg) {
             handle((AttachNetworkServiceToL3Msg) msg);
         } else {
-            if (backend == null) {
-                String vSwitchType = Q.New(L2NetworkVO.class).select(L2NetworkVO_.vSwitchType)
-                        .eq(L2NetworkVO_.uuid, self.getL2NetworkUuid()).findValue();
-                L3NetworkVendorFactory factory = l3NwMgr.getL3NetworkVendorFactory(vSwitchType);
-                if (factory == null) {
-                    bus.dealWithUnknownMessage(msg);
-                    return;
-                }
-                L3NetworkBackendContext context = new L3NetworkBackendContext(
-                        self.getUuid(), self.getL2NetworkUuid(), getSyncId(), syncThreadName);
-                backend = factory.create(context);
-            }
-            backend.handleMessage(msg);
+            bus.dealWithUnknownMessage(msg);
         }
     }
 
@@ -458,11 +351,23 @@ public class L3BasicNetwork implements L3Network {
                 normalIpRanges.get(0).getUuid().equals(ipRangeUuid);
     }
 
+    private static final java.util.concurrent.ConcurrentHashMap<String, Map<String, Object>> pendingDeleteIpRangeHeaders =
+            new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.concurrent.ConcurrentHashMap<String, ErrorCode> pendingDeleteIpRangeErrors =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
     private void handle(IpRangeDeletionMsg msg) {
+        Map<String, Object> pendingHeaders = pendingDeleteIpRangeHeaders.remove(msg.getIpRangeUuid());
+        if (pendingHeaders != null && !pendingHeaders.isEmpty()) {
+            for (Map.Entry<String, Object> entry : pendingHeaders.entrySet()) {
+                if (msg.getHeaderEntry(entry.getKey()) == null) {
+                    msg.putHeaderEntry(entry.getKey(), entry.getValue());
+                }
+            }
+        } else if (msg.getHeaderEntry("znsOperationOrigin") == null) {
+            msg.putHeaderEntry("znsCascadeIpRangeDelete", Boolean.TRUE);
+        }
         IpRangeDeletionReply reply = new IpRangeDeletionReply();
-        SdnControllerL3 controller = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
-        boolean coordinated = controller != null
-                && controller.isCoordinatedIpRangeDeletion(getSelfInventory(), msg.getNetworkDeletionContext());
         doDeleteIpRange(msg, new Completion(msg) {
             @Override
             public void success() {
@@ -471,8 +376,10 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (Boolean.TRUE.equals(msg.getHeaderEntry("znsStandaloneIpRangeDelete"))) {
+                    pendingDeleteIpRangeErrors.put(msg.getIpRangeUuid(), errorCode);
+                }
                 reply.setError(errorCode);
-                reply.setCoordinatedNetworkConfigFailure(coordinated);
                 bus.reply(msg, reply);
             }
         });
@@ -491,21 +398,44 @@ public class L3BasicNetwork implements L3Network {
                 }
 
                 final IpRangeInventory inv = IpRangeInventory.valueOf(iprvo);
+                final boolean isLastIpRange = isLastNormalIpRangeOfVersion(msg.getIpRangeUuid(), inv.getIpVersion());
+                final SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
 
                 for (IpRangeDeletionExtensionPoint ext : exts) {
-                    ext.preDeleteIpRange(inv, msg.getNetworkDeletionContext());
+                    ext.preDeleteIpRange(inv);
                 }
 
                 CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
                     @Override
                     public void run(IpRangeDeletionExtensionPoint arg) {
-                        arg.beforeDeleteIpRange(inv, msg.getNetworkDeletionContext());
+                        arg.beforeDeleteIpRange(inv);
                     }
                 });
 
                 FlowChain chain = new SimpleFlowChain();
                 chain.setName(String.format("del-ip-range-%s", inv.getUuid()));
                 chain.then(new NoRollbackFlow() {
+                    String __name__ = "acquire-sdn-fence";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (sdnL3 == null) {
+                            trigger.next();
+                            return;
+                        }
+                        sdnL3.beforeDeleteIpRange(inv, isLastIpRange, msg.getHeaders(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                }).then(new NoRollbackFlow() {
                     String __name__ = "disable-sdn-dhcp";
 
                     @Override
@@ -521,7 +451,9 @@ public class L3BasicNetwork implements L3Network {
                         dhcpMsg.setIpVersion(iprvo.getIpVersion());
                         dhcpMsg.setSdnControllerUuid(sdnControllerUuid);
                         dhcpMsg.setCheckIpRange(true);
-                        dhcpMsg.setNetworkDeletionContext(msg.getNetworkDeletionContext());
+                        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+                            dhcpMsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
+                        }
                         bus.makeTargetServiceIdByResourceUuid(dhcpMsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
                         bus.send(dhcpMsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -539,15 +471,12 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
                         if (sdnL3 == null) {
                             trigger.next();
                             return;
                         }
 
-                        boolean isLastIpRange = isLastNormalIpRangeOfVersion(msg.getIpRangeUuid(), inv.getIpVersion());
-                        sdnL3.deleteIpRange(inv, isLastIpRange, msg.getNetworkDeletionContext(),
-                                new Completion(trigger) {
+                        sdnL3.deleteIpRange(inv, isLastIpRange, msg.getHeaders(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -564,14 +493,27 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).delete();
-                        dbf.remove(iprvo);
-                        IpRangeHelper.updateL3NetworkIpversion(iprvo);
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                if (sdnL3 != null) {
+                                    sdnL3.beforeCommitDeleteIpRangeInDb(inv, msg.getHeaders());
+                                }
+                                SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).hardDelete();
+                                dbf.removeByPrimaryKeysInCurrentTransaction(
+                                        Collections.singletonList(iprvo.getUuid()), IpRangeVO.class);
+                                IpRangeHelper.updateL3NetworkIpversion(iprvo);
+                                Runnable afterRemoveHook = (Runnable) msg.getHeaderEntry("znsAfterRemoveIpRangeInTx");
+                                if (afterRemoveHook != null) {
+                                    afterRemoveHook.run();
+                                }
+                            }
+                        }.execute();
 
                         CollectionUtils.safeForEach(exts, new ForEachFunction<IpRangeDeletionExtensionPoint>() {
                             @Override
                             public void run(IpRangeDeletionExtensionPoint arg) {
-                                arg.afterDeleteIpRange(inv, msg.getNetworkDeletionContext());
+                                arg.afterDeleteIpRange(inv);
                             }
                         });
                         trigger.next();
@@ -583,7 +525,7 @@ public class L3BasicNetwork implements L3Network {
                     public void run (FlowTrigger trigger, Map data){
                         CollectionUtils.safeForEach(
                                 pluginRgty.getExtensionList(AfterDeleteIpRangeExtensionPoint.class),
-                                ext -> ext.afterDeleteIpRange(inv, msg.getNetworkDeletionContext())
+                                ext -> ext.afterDeleteIpRange(inv)
                         );
                         trigger.next();
                     }
@@ -591,6 +533,9 @@ public class L3BasicNetwork implements L3Network {
                     @Override
                     @Deferred
                     public void handle(ErrorCode errCode, Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterIpRangeFinally(inv, msg.getHeaders());
+                        }
                         completion.fail(errCode);
                         chainTask.next();
                     }
@@ -598,6 +543,9 @@ public class L3BasicNetwork implements L3Network {
                     @Override
                     @Deferred
                     public void handle(Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterIpRangeFinally(inv, msg.getHeaders());
+                        }
                         completion.success();
                         chainTask.next();
                     }
@@ -638,12 +586,7 @@ public class L3BasicNetwork implements L3Network {
                             return;
                         }
 
-                        L3NetworkInventory deletionInventory = msg.getNetworkDeletionContext() == null
-                                ? L3NetworkInventory.valueOf(l3NetworkVO)
-                                : msg.getNetworkDeletionContext().getL3Snapshots().getOrDefault(
-                                        l3NetworkVO.getUuid(), L3NetworkInventory.valueOf(l3NetworkVO));
-                        controllerL3.deleteL3Network(deletionInventory,
-                                msg.getNetworkDeletionContext(), new Completion(trigger) {
+                        controllerL3.deleteL3Network(L3NetworkInventory.valueOf(l3NetworkVO), new Completion(trigger) {
                             @Override
                             public void success() {
                                 trigger.next();
@@ -651,12 +594,7 @@ public class L3BasicNetwork implements L3Network {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                if (msg.getNetworkDeletionContext() != null &&
-                                        msg.getNetworkDeletionContext().isWholeL2SegmentDelete()) {
-                                    trigger.fail(errorCode);
-                                } else {
-                                    trigger.next();
-                                }
+                                trigger.next();
                             }
                         });
                     }
@@ -690,9 +628,9 @@ public class L3BasicNetwork implements L3Network {
                         }
 
                         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
-                        extpEmitter.beforeDelete(inv, msg.getNetworkDeletionContext());
+                        extpEmitter.beforeDelete(inv);
                         deleteHook();
-                        extpEmitter.afterDelete(inv, msg.getNetworkDeletionContext());
+                        extpEmitter.afterDelete(inv);
 
                         trigger.next();
                     }
@@ -1254,6 +1192,11 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void detachNetworkServiceFromL3NetworkMsg(L3NetworkVO l3VO, List<NetworkServiceL3NetworkRefVO> refs, Completion completion) {
+        detachNetworkServiceFromL3NetworkMsg(l3VO, refs, Collections.emptyMap(), false, completion);
+    }
+
+    private void detachNetworkServiceFromL3NetworkMsg(L3NetworkVO l3VO, List<NetworkServiceL3NetworkRefVO> refs,
+                                                      Map<String, Object> headers, boolean failOnError, Completion completion) {
         List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
         Map<String, String> providerUuidTypeMap = new HashMap<>();
         for (NetworkServiceProviderVO providerVO : networkServiceProviderVOS) {
@@ -1264,7 +1207,7 @@ public class L3BasicNetwork implements L3Network {
             NetworkServiceProviderType pType = NetworkServiceProviderType.valueOf(providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid()));
             NetworkServiceType nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
 
-            nsMgr.disableNetworkService(l3VO, pType, nsType, new Completion(wcomp) {
+            nsMgr.disableNetworkService(l3VO, pType, nsType, headers, new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -1272,12 +1215,21 @@ public class L3BasicNetwork implements L3Network {
 
                 @Override
                 public void fail(ErrorCode errorCode) {
-                    wcomp.done();
+                    if (failOnError) {
+                        wcomp.addError(errorCode);
+                        wcomp.allDone();
+                    } else {
+                        wcomp.done();
+                    }
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
+                if (failOnError && !errorCodeList.getCauses().isEmpty()) {
+                    completion.fail(errorCodeList.getCauses().get(0));
+                    return;
+                }
                 completion.success();
             }
         });
@@ -1317,50 +1269,68 @@ public class L3BasicNetwork implements L3Network {
                 bus.publish(evt);
             }
         };
-        if (refs.stream().anyMatch(ref -> NetworkServiceType.DHCP.toString()
-                .equals(ref.getNetworkServiceType()))) {
-            NetworkConfigChange change = NetworkConfigChange.updateDhcpConfiguration(
-                    self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                    msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                    msg.getL3NetworkUuid(), false, msg.getSystemTags());
-            java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
-                    new java.util.concurrent.atomic.AtomicReference<>();
-            if (coordinateNetworkConfigChange(change,
-                    localCompletion -> detachNetworkServicesLocally(l3VO, refs, true,
-                            new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
-                                @Override
-                                public void success(L3NetworkInventory inventory) {
-                                    result.set(inventory);
-                                    localCompletion.success();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    localCompletion.fail(errorCode);
-                                }
-                            }), result, completion)) {
-                return;
-            }
-        }
-        detachNetworkServicesLocally(l3VO, refs, false, completion);
+        detachNetworkServicesLocally(l3VO, refs, msg, completion);
     }
 
     private void detachNetworkServicesLocally(L3NetworkVO l3VO,
-                                               List<NetworkServiceL3NetworkRefVO> refs, boolean dhcpApplied,
+                                               List<NetworkServiceL3NetworkRefVO> refs,
+                                               APIDetachNetworkServiceFromL3NetworkMsg msg,
                                                ReturnValueCompletion<L3NetworkInventory> completion) {
-        List<NetworkServiceL3NetworkRefVO> pending = dhcpApplied ? refs.stream()
-                .filter(ref -> !NetworkServiceType.DHCP.toString().equals(ref.getNetworkServiceType()))
-                .collect(Collectors.toList()) : refs;
-        detachNetworkServiceFromL3NetworkMsg(l3VO, pending, new Completion(completion) {
+        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
+        Runnable runDetach = () -> detachNetworkServiceFromL3NetworkMsg(l3VO, refs, msg.getHeaders(), true, new Completion(completion) {
             @Override
             public void success() {
-                dbf.removeCollection(refs, NetworkServiceL3NetworkRefVO.class);
+                try {
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            if (sdnL3 != null) {
+                                sdnL3.beforeCommitNetworkServiceInDb(getSelfInventory(), msg.getHeaders());
+                            }
+                            for (NetworkServiceL3NetworkRefVO ref : refs) {
+                                NetworkServiceL3NetworkRefVO managed = dbf.getEntityManager().find(
+                                        NetworkServiceL3NetworkRefVO.class, ref.getId());
+                                if (managed != null) {
+                                    remove(managed);
+                                }
+                            }
+                        }
+                    }.execute();
+                } catch (OperationFailureException e) {
+                    if (sdnL3 != null) {
+                        sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                    }
+                    completion.fail(e.getErrorCode());
+                    return;
+                }
+                if (sdnL3 != null) {
+                    sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                }
                 self = dbf.reload(self);
                 completion.success(L3NetworkInventory.valueOf(self));
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
+                if (sdnL3 != null) {
+                    sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                }
+                completion.fail(errorCode);
+            }
+        });
+        if (sdnL3 == null) {
+            runDetach.run();
+            return;
+        }
+        sdnL3.beforeChangeNetworkService(getSelfInventory(), msg.getNetworkServices(), false, msg.getHeaders(), new Completion(completion) {
+            @Override
+            public void success() {
+                runDetach.run();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
                 completion.fail(errorCode);
             }
         });
@@ -1494,9 +1464,9 @@ public class L3BasicNetwork implements L3Network {
         List<IpRangeInventory> iprs = IpRangeInventory.fromMessage(msg);
         assignStableIpRangeUuids(iprs, msg.getResourceUuid());
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, iprs.get(0), NetworkCreateContext.api());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, iprs.get(0));
 
-        addIpRanges(iprs, add, NetworkCreateContext.api(), apiTagCreator(msg),
+        addIpRanges(iprs, add, apiTagCreator(msg),
                 new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
@@ -1520,9 +1490,9 @@ public class L3BasicNetwork implements L3Network {
             ipr.setUuid(Platform.getUuid());
         }
         APIAddIpRangeByNetworkCidrEvent evt = new APIAddIpRangeByNetworkCidrEvent(msg.getId());
-        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr, NetworkCreateContext.api());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr);
 
-        addIpRanges(Collections.singletonList(ipr), add, NetworkCreateContext.api(), apiTagCreator(msg),
+        addIpRanges(Collections.singletonList(ipr), add, apiTagCreator(msg),
                 new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
@@ -1545,9 +1515,9 @@ public class L3BasicNetwork implements L3Network {
             ipr.setUuid(Platform.getUuid());
         }
         APIAddIpRangeEvent evt = new APIAddIpRangeEvent(msg.getId());
-        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr, NetworkCreateContext.api());
+        AddIpRangeMsg add = AddIpRangeMsg.fromApi(msg, ipr);
 
-        addIpRanges(Collections.singletonList(ipr), add, NetworkCreateContext.api(), apiTagCreator(msg),
+        addIpRanges(Collections.singletonList(ipr), add, apiTagCreator(msg),
                 new ReturnValueCompletion<List<IpRangeInventory>>(msg) {
             @Override
             public void success(List<IpRangeInventory> invs) {
@@ -1603,72 +1573,46 @@ public class L3BasicNetwork implements L3Network {
                 bus.publish(evt);
             }
         };
-        List<String> desiredDns = Q.New(L3NetworkDnsVO.class)
-                .select(L3NetworkDnsVO_.dns)
-                .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid())
-                .notEq(L3NetworkDnsVO_.dns, msg.getDns()).listValues();
-        NetworkConfigChange change = NetworkConfigChange.updateDnsConfiguration(
-                self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
-                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns,
-                NetworkConfigChange.CollectionChangeOperation.REMOVE, msg.getDns());
-        java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
-                new java.util.concurrent.atomic.AtomicReference<>();
-        if (coordinateNetworkConfigChange(change,
-                localCompletion -> removeDns(msg, true,
-                        new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
-                            @Override
-                            public void success(L3NetworkInventory inventory) {
-                                result.set(inventory);
-                                localCompletion.success();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                localCompletion.fail(errorCode);
-                            }
-                        }), result, completion)) {
-            return;
-        }
-        removeDns(msg, false, completion);
+        removeDns(msg, completion);
     }
 
     private void removeDns(final APIRemoveDnsFromL3NetworkMsg msg,
-                           boolean remoteCommitted,
                            ReturnValueCompletion<L3NetworkInventory> completion) {
 
+        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
         SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
+        final boolean remoteWriteFirst = sdnL3 != null && sdnL3.isRemoteWriteFirst();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("remove-dns-%s-from-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new NoRollbackFlow() {
-                    String __name__ = "remove-dns-from-db";
+                Flow acquireFenceFlow = new NoRollbackFlow() {
+                    String __name__ = "acquire-sdn-fence";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-                        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-                        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-                        L3NetworkDnsVO dns = q.find();
-                        if (dns != null) {
-                            //TODO: create extension points
-                            dbf.remove(dns);
+                        if (sdnL3 == null) {
+                            trigger.next();
+                            return;
                         }
-                        trigger.next();
-                    }
-                });
+                        sdnL3.beforeChangeDns(getSelfInventory(), msg.getDns(), false, msg.getHeaders(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
 
-                flow(new NoRollbackFlow() {
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                };
+
+                Flow removeDnsFromSdnFlow = new NoRollbackFlow() {
                     String __name__ = "remove-dns-from-sdn";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return remoteCommitted;
-                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -1686,6 +1630,9 @@ public class L3BasicNetwork implements L3Network {
                         }
                         dmsg.setL3NetworkUuid(self.getUuid());
                         dmsg.setSdnControllerUuid(sdnControllerUuid);
+                        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+                            dmsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
+                        }
                         bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
@@ -1698,7 +1645,43 @@ public class L3BasicNetwork implements L3Network {
                             }
                         });
                     }
-                });
+                };
+
+                Flow removeDnsFromDbFlow = new NoRollbackFlow() {
+                    String __name__ = "remove-dns-from-db";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                if (sdnL3 != null) {
+                                    sdnL3.beforeCommitDnsInDb(getSelfInventory(), msg.getHeaders());
+                                }
+                                SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
+                                q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
+                                q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
+                                L3NetworkDnsVO dns = q.find();
+                                if (dns != null) {
+                                    L3NetworkDnsVO managed = dbf.getEntityManager().find(L3NetworkDnsVO.class, dns.getId());
+                                    if (managed != null) {
+                                        remove(managed);
+                                    }
+                                }
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+                };
+
+                flow(acquireFenceFlow);
+                if (remoteWriteFirst) {
+                    flow(removeDnsFromSdnFlow);
+                    flow(removeDnsFromDbFlow);
+                } else {
+                    flow(removeDnsFromDbFlow);
+                    flow(removeDnsFromSdnFlow);
+                }
 
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
@@ -1732,6 +1715,9 @@ public class L3BasicNetwork implements L3Network {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
+                        }
                         completion.success(L3NetworkInventory.valueOf(dbf.reload(self)));
                     }
                 });
@@ -1739,6 +1725,9 @@ public class L3BasicNetwork implements L3Network {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
+                        }
                         completion.fail(errCode);
                     }
                 });
@@ -1761,82 +1750,46 @@ public class L3BasicNetwork implements L3Network {
                 bus.publish(evt);
             }
         };
-        List<String> desiredDns = Q.New(L3NetworkDnsVO.class)
-                .select(L3NetworkDnsVO_.dns)
-                .eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).listValues();
-        if (!desiredDns.contains(msg.getDns())) {
-            desiredDns.add(msg.getDns());
-        }
-        NetworkConfigChange change = NetworkConfigChange.updateDnsConfiguration(
-                self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                msg.getL3NetworkUuid(), NetworkUtils.isIpv4Address(msg.getDns())
-                        ? IPv6Constants.IPv4 : IPv6Constants.IPv6, desiredDns,
-                NetworkConfigChange.CollectionChangeOperation.ADD, msg.getDns());
-        java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
-                new java.util.concurrent.atomic.AtomicReference<>();
-        if (coordinateNetworkConfigChange(change,
-                localCompletion -> addDns(msg, true,
-                        new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
-                            @Override
-                            public void success(L3NetworkInventory inventory) {
-                                result.set(inventory);
-                                localCompletion.success();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                localCompletion.fail(errorCode);
-                            }
-                        }), result, completion)) {
-            return;
-        }
-        addDns(msg, false, completion);
+        addDns(msg, completion);
     }
 
     private void addDns(final APIAddDnsToL3NetworkMsg msg,
-                        boolean remoteCommitted,
                         ReturnValueCompletion<L3NetworkInventory> completion) {
 
+        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
         SdnControllerDhcp sdnDhcp = l3NwMgr.getSdnControllerDhcp(msg.getL3NetworkUuid());
+        final boolean remoteWriteFirst = sdnL3 != null && sdnL3.isRemoteWriteFirst();
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("add-dns-%s-to-l3-%s", msg.getDns(), msg.getL3NetworkUuid()));
         chain.then(new ShareFlow() {
             @Override
             public void setup() {
-                flow(new Flow() {
-                    String __name__ = "write-dns-to-db";
-
-                    L3NetworkDnsVO dnsvo;
-                    boolean s = false;
+                Flow acquireFenceFlow = new NoRollbackFlow() {
+                    String __name__ = "acquire-sdn-fence";
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        dnsvo = new L3NetworkDnsVO();
-                        dnsvo.setDns(msg.getDns());
-                        dnsvo.setL3NetworkUuid(self.getUuid());
-                        dnsvo = dbf.persist(dnsvo);
-                        s = true;
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void rollback(FlowRollback trigger, Map data) {
-                        if (s) {
-                            dbf.remove(dnsvo);
+                        if (sdnL3 == null) {
+                            trigger.next();
+                            return;
                         }
-                        trigger.rollback();
-                    }
-                });
+                        sdnL3.beforeChangeDns(getSelfInventory(), msg.getDns(), true, msg.getHeaders(), new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                trigger.next();
+                            }
 
-                flow(new NoRollbackFlow() {
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                trigger.fail(errorCode);
+                            }
+                        });
+                    }
+                };
+
+                Flow applyToSdnFlow = new NoRollbackFlow() {
                     String __name__ = "apply-to-sdn";
-
-                    @Override
-                    public boolean skip(Map data) {
-                        return remoteCommitted;
-                    }
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
@@ -1854,7 +1807,10 @@ public class L3BasicNetwork implements L3Network {
                         }
                         dmsg.setL3NetworkUuid(self.getUuid());
                         dmsg.setSdnControllerUuid(sdnControllerUuid);
-                        bus.makeTargetServiceIdByResourceUuid(dmsg,  SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+                            dmsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
+                        }
+                        bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
                         bus.send(dmsg, new CloudBusCallBack(trigger) {
                             @Override
                             public void run(MessageReply reply) {
@@ -1866,7 +1822,49 @@ public class L3BasicNetwork implements L3Network {
                             }
                         });
                     }
-                });
+                };
+
+                Flow writeDnsToDbFlow = new Flow() {
+                    String __name__ = "write-dns-to-db";
+
+                    L3NetworkDnsVO dnsvo;
+                    boolean s = false;
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                if (sdnL3 != null) {
+                                    sdnL3.beforeCommitDnsInDb(getSelfInventory(), msg.getHeaders());
+                                }
+                                dnsvo = new L3NetworkDnsVO();
+                                dnsvo.setDns(msg.getDns());
+                                dnsvo.setL3NetworkUuid(self.getUuid());
+                                persist(dnsvo);
+                            }
+                        }.execute();
+                        s = true;
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (s) {
+                            dbf.remove(dnsvo);
+                        }
+                        trigger.rollback();
+                    }
+                };
+
+                flow(acquireFenceFlow);
+                if (remoteWriteFirst) {
+                    flow(applyToSdnFlow);
+                    flow(writeDnsToDbFlow);
+                } else {
+                    flow(writeDnsToDbFlow);
+                    flow(applyToSdnFlow);
+                }
 
                 if (L3NetworkConstant.L3_BASIC_NETWORK_TYPE.equals(self.getType()) && !self.getNetworkServices().isEmpty()) {
                     flow(new NoRollbackFlow() {
@@ -1900,6 +1898,9 @@ public class L3BasicNetwork implements L3Network {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
+                        }
                         self = dbf.reload(self);
                         logger.debug(String.format("successfully added dns[%s] to L3Network[uuid:%s, name:%s]", msg.getDns(), self.getUuid(), self.getName()));
                         completion.success(L3NetworkInventory.valueOf(self));
@@ -1909,12 +1910,15 @@ public class L3BasicNetwork implements L3Network {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
+                        }
                         completion.fail(errCode);
                     }
                 });
             }
         }).start();
-	}
+    }
 
     private void handle(final AttachNetworkServiceToL3Msg msg) {
         MessageReply reply = new MessageReply();
@@ -1937,22 +1941,62 @@ public class L3BasicNetwork implements L3Network {
             logger.debug(String.format("successfully attached network service provider[uuid:%s] to l3network[uuid:%s, name:%s] with services%s", e.getKey(), self.getUuid(), self.getName(), e.getValue()));
         }
 
-        try {
-            new SQLBatch() {
+        SdnControllerL3 sdnL3 = l3NwMgr.getSdnControllerL3(self.getL2NetworkUuid());
+        final boolean remoteWriteFirst = sdnL3 != null && sdnL3.isRemoteWriteFirst();
+        if (!remoteWriteFirst) {
+            dbf.persistCollection(refVOS);
+            new While<>(refVOS).each((ref, wcomp) -> {
+                String provideType = providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid());
+                NetworkServiceProviderType ptype = NetworkServiceProviderType.valueOf(provideType);
+                NetworkServiceType nsType = null;
+                try {
+                    nsType = NetworkServiceType.valueOf(ref.getNetworkServiceType());
+                } catch (Exception e) {
+                    logger.debug(e.toString());
+                    wcomp.done();
+                    return;
+                }
+
+                nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), msg.getHeaders(), new Completion(wcomp) {
+                    @Override
+                    public void success() {
+                        wcomp.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        wcomp.addError(errorCode);
+                        wcomp.allDone();
+                    }
+                });
+            }).run(new WhileDoneCompletion(msg) {
                 @Override
-                protected void scripts() {
-                    for (NetworkServiceL3NetworkRefVO ref : refVOS) {
-                        persist(ref);
+                public void done(ErrorCodeList errorCodeList) {
+                    if (errorCodeList.getCauses().isEmpty()) {
+                        bus.reply(msg, reply);
+                    } else {
+                        detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, msg.getHeaders(), false, new Completion(msg) {
+                            @Override
+                            public void success() {
+                                dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
+                                reply.setError(errorCodeList.getCauses().get(0));
+                                bus.reply(msg, reply);
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
+                                reply.setError(errorCodeList.getCauses().get(0));
+                                bus.reply(msg, reply);
+                            }
+                        });
                     }
                 }
-            }.execute();
-        } catch (OperationFailureException e) {
-            reply.setError(e.getErrorCode());
-            bus.reply(msg, reply);
+            });
             return;
         }
 
-        new While<>(refVOS).each((ref, wcomp) -> {
+        Runnable enableServices = () -> new While<>(refVOS).each((ref, wcomp) -> {
             String provideType = providerUuidTypeMap.get(ref.getNetworkServiceProviderUuid());
             NetworkServiceProviderType ptype = NetworkServiceProviderType.valueOf(provideType);
             NetworkServiceType nsType = null;
@@ -1966,13 +2010,7 @@ public class L3BasicNetwork implements L3Network {
                 return;
             }
 
-            if (msg.getContext() != null && msg.getContext().isRemoteWriteSuppressed()
-                    && nsType == NetworkServiceType.DHCP) {
-                wcomp.done();
-                return;
-            }
-
-            nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), new Completion(wcomp) {
+            nsMgr.enableNetworkService(l3VO, ptype, nsType, msg.getApiSystemTags(), msg.getHeaders(), new Completion(wcomp) {
                 @Override
                 public void success() {
                     wcomp.done();
@@ -1988,24 +2026,65 @@ public class L3BasicNetwork implements L3Network {
             @Override
             public void done(ErrorCodeList errorCodeList) {
                 if (errorCodeList.getCauses().isEmpty()) {
+                    try {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                if (sdnL3 != null) {
+                                    sdnL3.beforeCommitNetworkServiceInDb(getSelfInventory(), msg.getHeaders());
+                                }
+                                for (NetworkServiceL3NetworkRefVO ref : refVOS) {
+                                    persist(ref);
+                                }
+                            }
+                        }.execute();
+                    } catch (OperationFailureException e) {
+                        if (sdnL3 != null) {
+                            sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                        }
+                        reply.setError(e.getErrorCode());
+                        bus.reply(msg, reply);
+                        return;
+                    }
+                    if (sdnL3 != null) {
+                        sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                    }
                     bus.reply(msg, reply);
                 } else {
-                    detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, new Completion(msg) {
+                    detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, msg.getHeaders(), false, new Completion(msg) {
                         @Override
                         public void success() {
-                            dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
+                            if (sdnL3 != null) {
+                                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                            }
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
                         }
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
+                            if (sdnL3 != null) {
+                                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                            }
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
                         }
                     });
                 }
+            }
+        });
+
+        sdnL3.beforeChangeNetworkService(getSelfInventory(), msg.getNetworkServices(), true, msg.getHeaders(), new Completion(msg) {
+            @Override
+            public void success() {
+                enableServices.run();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
             }
         });
     }
@@ -2032,55 +2111,20 @@ public class L3BasicNetwork implements L3Network {
                 bus.publish(evt);
             }
         };
-        if (containsDhcp(msg.getNetworkServices())) {
-            NetworkConfigChange change = NetworkConfigChange.updateDhcpConfiguration(
-                    self.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                    msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                    msg.getL3NetworkUuid(), true, msg.getSystemTags());
-            java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result =
-                    new java.util.concurrent.atomic.AtomicReference<>();
-            if (coordinateNetworkConfigChange(change,
-                    localCompletion -> attachNetworkServices(msg,
-                            NetworkCreateContext.cloudCommit(msg.getId()),
-                            new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
-                                @Override
-                                public void success(L3NetworkInventory inventory) {
-                                    result.set(inventory);
-                                    localCompletion.success();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    localCompletion.fail(errorCode);
-                                }
-                            }), result, completion)) {
-                return;
-            }
-        }
-        attachNetworkServices(msg, NetworkCreateContext.api(), completion);
+        attachNetworkServices(msg, completion);
 	}
 
-    private boolean containsDhcp(Map<String, List<String>> networkServices) {
-        if (networkServices == null || networkServices.isEmpty()) {
-            return false;
-        }
-        List<String> services = networkServices.values().stream()
-                .filter(Objects::nonNull)
-                .flatMap(Collection::stream)
-                .collect(Collectors.toList());
-        return services.stream().anyMatch(NetworkServiceType.DHCP.toString()::equals);
-    }
-
     private void attachNetworkServices(APIAttachNetworkServiceToL3NetworkMsg msg,
-                                       NetworkCreateContext context,
                                        ReturnValueCompletion<L3NetworkInventory> completion) {
         AttachNetworkServiceToL3Msg attach = new AttachNetworkServiceToL3Msg();
         attach.setTimeout(msg.getTimeout());
         attach.setL3NetworkUuid(msg.getL3NetworkUuid());
         attach.setNetworkServices(msg.getNetworkServices());
-        attach.setContext(context);
         if (msg.getSystemTags() != null) {
             attach.setApiSystemTags(msg.getSystemTags());
+        }
+        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+            attach.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
         }
         bus.makeTargetServiceIdByResourceUuid(attach, L3NetworkConstant.SERVICE_ID,
                 msg.getL3NetworkUuid());
@@ -2097,8 +2141,19 @@ public class L3BasicNetwork implements L3Network {
         });
     }
 
-    private void doDeleteIpRange(DeleteIpRangeMsg msg, Completion completion) {
+    private void doDeleteIpRange(APIDeleteIpRangeMsg msg, Completion completion) {
         IpRangeVO vo = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
+        if (vo == null) {
+            completion.success();
+            return;
+        }
+        Map<String, Object> deleteHeaders = new LinkedHashMap<>();
+        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+            deleteHeaders.putAll(msg.getHeaders());
+        }
+        deleteHeaders.put("znsStandaloneIpRangeDelete", Boolean.TRUE);
+        pendingDeleteIpRangeHeaders.put(vo.getUuid(), deleteHeaders);
+        pendingDeleteIpRangeErrors.remove(vo.getUuid());
         final String issuer = IpRangeVO.class.getSimpleName();
         final List<IpRangeInventory> ctx = IpRangeInventory.valueOf(Arrays.asList(vo));
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -2157,109 +2212,23 @@ public class L3BasicNetwork implements L3Network {
         chain.done(new FlowDoneHandler(msg) {
             @Override
             public void handle(Map data) {
+                pendingDeleteIpRangeHeaders.remove(vo.getUuid());
+                ErrorCode err = pendingDeleteIpRangeErrors.remove(vo.getUuid());
+                if (err != null && msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
+                    completion.fail(err);
+                    return;
+                }
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
                 completion.success();
             }
         }).error(new FlowErrorHandler(msg) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                pendingDeleteIpRangeHeaders.remove(vo.getUuid());
+                pendingDeleteIpRangeErrors.remove(vo.getUuid());
                 completion.fail(errCode);
             }
         }).start();
-    }
-
-    private void deleteIpRangeWithMutation(DeleteIpRangeMsg msg, Runnable releaseQueue, Completion completion) {
-        String operationUuid = msg.getOperationUuid() == null ? msg.getId() : msg.getOperationUuid();
-        IpRangeVO deleting = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
-        if (!(deleting instanceof NormalIpRangeVO)) {
-            doDeleteIpRange(msg, completion);
-            return;
-        }
-        List<NormalIpRangeVO> remaining = Q.New(NormalIpRangeVO.class)
-                .eq(IpRangeVO_.l3NetworkUuid, deleting.getL3NetworkUuid())
-                .eq(IpRangeVO_.ipVersion, deleting.getIpVersion())
-                .notEq(IpRangeVO_.uuid, deleting.getUuid())
-                .list();
-        NetworkConfigChange.IpRange removedRange = new NetworkConfigChange.IpRange(
-                deleting.getUuid(), deleting.getStartIp(), deleting.getEndIp(), deleting.getAddressMode());
-        NetworkConfigChange change;
-        if (remaining.isEmpty()) {
-            change = NetworkConfigChange.removeIpRangeConfiguration(
-                    self.getL2NetworkUuid(), NetworkOperationOrigin.API, operationUuid,
-                    msg.getAccountUuid(),
-                    deleting.getL3NetworkUuid(), deleting.getIpVersion(), deleting.getUuid(), removedRange);
-        } else {
-            List<NetworkConfigChange.IpRange> targets = remaining.stream()
-                    .map(range -> new NetworkConfigChange.IpRange(
-                            range.getUuid(), range.getStartIp(), range.getEndIp(), range.getAddressMode()))
-                    .collect(Collectors.toList());
-            NormalIpRangeVO first = remaining.get(0);
-            int prefix = first.getIpVersion() == IPv6Constants.IPv6
-                    ? first.getPrefixLen()
-                    : NetworkUtils.getPrefixLengthFromNetmask(first.getNetmask());
-            change = NetworkConfigChange.replaceIpRangeConfiguration(
-                    self.getL2NetworkUuid(), NetworkOperationOrigin.API, operationUuid,
-                    msg.getAccountUuid(),
-                    deleting.getL3NetworkUuid(), deleting.getIpVersion(),
-                    first.getGateway() + "/" + prefix, targets,
-                    NetworkConfigChange.CollectionChangeOperation.REMOVE, null, deleting.getUuid(), removedRange);
-        }
-        java.util.concurrent.atomic.AtomicReference<Boolean> deleted =
-                new java.util.concurrent.atomic.AtomicReference<>(false);
-        if (coordinateNetworkConfigChange(change,
-                localCompletion -> thdf.chainSubmit(new ChainTask(localCompletion) {
-                    @Override
-                    public void run(SyncTaskChain localChain) {
-                        IpRangeVO current = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
-                        boolean sameRange = current != null && Objects.equals(current.getL3NetworkUuid(), change.getIpRangeConfiguration().getL3Uuid())
-                                && current.getIpVersion() == change.getIpRangeConfiguration().getIpVersion()
-                                && (current.getIpVersion() == IPv6Constants.IPv4
-                                ? NetworkUtils.ipv4StringToLong(current.getStartIp()) == NetworkUtils.ipv4StringToLong(removedRange.getStartIp())
-                                    && NetworkUtils.ipv4StringToLong(current.getEndIp()) == NetworkUtils.ipv4StringToLong(removedRange.getEndIp())
-                                : IPv6Address.fromString(current.getStartIp()).equals(IPv6Address.fromString(removedRange.getStartIp()))
-                                    && IPv6Address.fromString(current.getEndIp()).equals(IPv6Address.fromString(removedRange.getEndIp())));
-                        if (!sameRange) {
-                            deleted.set(true);
-                            localChain.next();
-                            localCompletion.success();
-                            return;
-                        }
-                        doDeleteIpRange(msg, new Completion(localCompletion) {
-                            @Override
-                            public void success() {
-                                deleted.set(true);
-                                localChain.next();
-                                localCompletion.success();
-                            }
-
-                            @Override
-                            public void fail(ErrorCode errorCode) {
-                                localChain.next();
-                                localCompletion.fail(errorCode);
-                            }
-                        });
-                    }
-
-                    @Override
-                    public String getSyncSignature() { return getSyncId(); }
-
-                    @Override
-                    public String getName() { return "apply-coordinated-ip-range-delete"; }
-                }), deleted, new ReturnValueCompletion<Boolean>(completion) {
-                    @Override
-                    public void success(Boolean ignored) {
-                        completion.success();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
-                    }
-                })) {
-            releaseQueue.run();
-            return;
-        }
-        doDeleteIpRange(msg, completion);
     }
 
     private void syncManagementServiceTypeWhileDelete(ServiceTypeExtensionPoint ext, L2NetworkVO l2NetworkVO, List<String> hostUuids) {
@@ -2279,44 +2248,6 @@ public class L3BasicNetwork implements L3Network {
     private void handle(APIDeleteIpRangeMsg msg) {
         final APIDeleteIpRangeEvent evt = new APIDeleteIpRangeEvent(msg.getId());
 
-        DeleteIpRangeMsg dmsg = new DeleteIpRangeMsg();
-        dmsg.setUuid(msg.getUuid());
-        dmsg.setL3NetworkUuid(msg.getL3NetworkUuid());
-        dmsg.setDeletionMode(msg.getDeletionMode());
-        dmsg.setAccountUuid(msg.getSession() == null ? null : msg.getSession().getAccountUuid());
-        dmsg.setOperationUuid(msg.getId());
-        inheritApiTimeout(msg, dmsg);
-        bus.makeTargetServiceIdByResourceUuid(dmsg, L3NetworkConstant.SERVICE_ID, msg.getL3NetworkUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                }
-                bus.publish(evt);
-            }
-        });
-    }
-
-    private void handle(DeleteIpRangeMsg msg) {
-        String l3NetworkUuid = msg.getL3NetworkUuid();
-        if (l3NetworkUuid == null) {
-            IpRangeVO range = dbf.findByUuid(msg.getUuid(), IpRangeVO.class);
-            if (range == null) {
-                bus.reply(msg, new MessageReply());
-                return;
-            }
-            l3NetworkUuid = range.getL3NetworkUuid();
-            msg.setL3NetworkUuid(l3NetworkUuid);
-        }
-        self = dbf.findByUuid(l3NetworkUuid, L3NetworkVO.class);
-        if (self == null) {
-            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L3_10077,
-                    "cannot find L3Network[uuid:%s] for IP range deletion", l3NetworkUuid));
-            return;
-        }
-
-        final DeleteIpRangeMsg dmsg = msg;
         thdf.chainSubmit(new ChainTask(msg) {
                     @Override
                     public String getSyncSignature() {
@@ -2325,28 +2256,23 @@ public class L3BasicNetwork implements L3Network {
 
                     @Override
                     public String getName() {
-                        return "delete-ip-range-" + dmsg.getIpRangeUuid();
+                        return "delete-ip-range-" + msg.getIpRangeUuid();
                     }
 
                     @Override
                     public void run(SyncTaskChain chain) {
-                        java.util.concurrent.atomic.AtomicBoolean released = new java.util.concurrent.atomic.AtomicBoolean();
-                        Runnable releaseQueue = () -> {
-                            if (released.compareAndSet(false, true)) {
-                                chain.next();
-                            }
-                        };
-                        deleteIpRangeWithMutation(dmsg, releaseQueue, new Completion(chain) {
+                        doDeleteIpRange(msg, new Completion(chain) {
                             @Override
                             public void success() {
-                                bus.reply(dmsg, new MessageReply());
-                                releaseQueue.run();
+                                bus.publish(evt);
+                                chain.next();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                bus.replyErrorByMessageType(dmsg, errorCode);
-                                releaseQueue.run();
+                                evt.setError(errorCode);
+                                bus.publish(evt);
+                                chain.next();
                             }
                         });
                     }
@@ -2354,16 +2280,9 @@ public class L3BasicNetwork implements L3Network {
         );
     }
 
-    private void doDeleteL3Network(DeleteL3NetworkMsg msg, Completion completion) {
+    private void doDeleteL3Network(APIDeleteL3NetworkMsg msg, Completion completion) {
         final String issuer = L3NetworkVO.class.getSimpleName();
         final List<L3NetworkInventory> ctx = L3NetworkInventory.valueOf(Arrays.asList(self));
-        CascadeAction action = new CascadeAction().setRootIssuer(issuer).setRootIssuerContext(ctx)
-                .setParentIssuer(issuer).setParentIssuerContext(ctx);
-        NetworkDeletionContext deletion = new NetworkDeletionContext();
-        deletion.setOrigin(NetworkDeletionContext.Origin.L3_NETWORK_DELETE);
-        deletion.setL2NetworkUuid(self.getL2NetworkUuid());
-        deletion.getL3Snapshots().put(self.getUuid(), ctx.get(0));
-        action.putContext(NetworkDeletionContexts.key(self.getL2NetworkUuid()), deletion);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         L3NetworkVO l3NetworkVO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         L2NetworkVO l2NetworkVO = dbf.findByUuid(l3NetworkVO.getL2NetworkUuid(), L2NetworkVO.class);
@@ -2372,7 +2291,7 @@ public class L3BasicNetwork implements L3Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -2387,7 +2306,7 @@ public class L3BasicNetwork implements L3Network {
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -2404,7 +2323,7 @@ public class L3BasicNetwork implements L3Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(action.copy().setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -2448,48 +2367,16 @@ public class L3BasicNetwork implements L3Network {
     private void handle(APIDeleteL3NetworkMsg msg) {
         final APIDeleteL3NetworkEvent evt = new APIDeleteL3NetworkEvent(msg.getId());
 
-        DeleteL3NetworkMsg dmsg = new DeleteL3NetworkMsg();
-        dmsg.setUuid(msg.getUuid());
-        dmsg.setDeletionMode(msg.getDeletionMode());
-        dmsg.setAccountUuid(msg.getSession() == null ? null : msg.getSession().getAccountUuid());
-        dmsg.setOperationUuid(msg.getId());
-        inheritApiTimeout(msg, dmsg);
-        bus.makeTargetServiceIdByResourceUuid(dmsg, L3NetworkConstant.SERVICE_ID, msg.getUuid());
-        bus.send(dmsg, new CloudBusCallBack(msg) {
-            @Override
-            public void run(MessageReply reply) {
-                if (!reply.isSuccess()) {
-                    evt.setError(reply.getError());
-                }
-                bus.publish(evt);
-            }
-        });
-    }
-
-    private void inheritApiTimeout(APIMessage from, NeedReplyMessage to) {
-        if (from.getTimeout() > 0) {
-            to.setTimeout(from.getTimeout());
-        }
-        if (from.getMessageDeadline() > 0) {
-            to.setMessageDeadline(from.getMessageDeadline());
-        }
-    }
-
-    private void handle(DeleteL3NetworkMsg msg) {
-        if (self == null) {
-            bus.reply(msg, new MessageReply());
-            return;
-        }
-
         doDeleteL3Network(msg, new Completion(msg) {
             @Override
             public void success() {
-                bus.reply(msg, new MessageReply());
+                bus.publish(evt);
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                bus.replyErrorByMessageType(msg, errorCode);
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
         });
     }

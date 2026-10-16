@@ -10,7 +10,6 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
-import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -19,11 +18,9 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.NetworkDeleteGuardExtensionPoint;
 import org.zstack.header.vm.*;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.resourceconfig.ResourceConfig;
@@ -97,6 +94,7 @@ public class VmAllocateNicFlow implements Flow {
         data.put(VmInstanceConstant.Params.VmAllocateNicFlow_nics.toString(), nics);
         List<ErrorCode> errs = new ArrayList<>();
         List<String> vmSystemTags = spec.getMessage() instanceof APIMessage ? ((APIMessage) spec.getMessage()).getSystemTags() : null;
+
         new While<>(VmNicSpec.getFirstL3NetworkInventoryOfSpec(spec.getL3Networks())).each((nicSpec, wcomp) -> {
             L3NetworkInventory nw = nicSpec.getL3Invs().get(0);
             int deviceId = deviceIdBitmap.nextClearBit(0);
@@ -125,47 +123,20 @@ public class VmAllocateNicFlow implements Flow {
 
             // Persist VmNicVO first so that ResourceVO entry exists before extensions
             // (e.g. SDN controllers) attempt to create SystemTags referencing the NIC UUID.
-            VmNicVO nicVO;
-            try {
-                nicVO = new SQLBatchWithReturn<VmNicVO>() {
-                    @Override
-                    protected VmNicVO scripts() {
-                        ErrorCode guardError = checkNetworkDeleteGuards(nw.getUuid(), true);
-                        if (guardError != null) {
-                            throw new OperationFailureException(guardError);
-                        }
-                        return vnicFactory.createVmNic(nic, spec);
-                    }
-                }.execute();
-            } catch (OperationFailureException e) {
-                errs.add(e.getErrorCode());
-                wcomp.allDone();
-                return;
-            }
+            VmNicVO nicVO = vnicFactory.createVmNic(nic, spec);
 
             callBeforeAllocateVmNicExtensions(nic, spec, new Completion(wcomp) {
                 @Override
                 public void success() {
-                    try {
-                        new SQLBatch() {
-                            @Override
-                            protected void scripts() {
-                                ErrorCode guardError = checkNetworkDeleteGuards(nw.getUuid(), true);
-                                if (guardError != null) {
-                                    throw new OperationFailureException(guardError);
-                                }
-                                persistStaticIpIfNeeded(nic, nicVO, nw, nicNetworkInfoMap, spec);
-                                VmNicVO updated = dbf.updateAndRefresh(nicVO);
-                                addVmNicConfig(updated, spec, nicSpec);
-                            }
-                        }.execute();
-                    } catch (OperationFailureException e) {
-                        dbf.removeByPrimaryKey(nicVO.getUuid(), VmNicVO.class);
-                        errs.add(e.getErrorCode());
-                        wcomp.allDone();
-                        return;
-                    }
-                    nics.add(nic);
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            persistStaticIpIfNeeded(nic, nicVO, nw, nicNetworkInfoMap, spec);
+                            nics.add(nic);
+                            VmNicVO updated = dbf.updateAndRefresh(nicVO);
+                            addVmNicConfig(updated, spec, nicSpec);
+                        }
+                    }.execute();
                     if (customMac != null) {
                         mo.deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nw.getUuid(), customMac);
                     }
@@ -292,13 +263,6 @@ public class VmAllocateNicFlow implements Flow {
 
         VmNicParam vmNicParm = vmNicParms.get(0);
 
-        if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
-            ErrorCode qosError = validateVmNicQos(vmNicVO.getL3NetworkUuid());
-            if (qosError != null) {
-                throw new OperationFailureException(qosError);
-            }
-        }
-
         // add vmnic bandwidth systemtag
         if (vmNicParm.getInboundBandwidth() != null || vmNicParm.getOutboundBandwidth() != null) {
             VmNicQosConfigBackend backend = vmMgr.getVmNicQosConfigBackend(vmSpec.getVmInventory().getType());
@@ -311,29 +275,6 @@ public class VmAllocateNicFlow implements Flow {
             Integer queues = vmNicParm.getMultiQueueNum();
             multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
         }
-    }
-
-    private ErrorCode checkNetworkDeleteGuards(String l3NetworkUuid, boolean lock) {
-        for (NetworkDeleteGuardExtensionPoint extension :
-                pluginRgty.getExtensionList(NetworkDeleteGuardExtensionPoint.class)) {
-            ErrorCode errorCode = lock ? extension.checkL3NetworkWithLock(l3NetworkUuid)
-                    : extension.checkL3Network(l3NetworkUuid);
-            if (errorCode != null) {
-                return errorCode;
-            }
-        }
-        return null;
-    }
-
-    private ErrorCode validateVmNicQos(String l3NetworkUuid) {
-        for (VmNicQosConfigExtensionPoint extension :
-                pluginRgty.getExtensionList(VmNicQosConfigExtensionPoint.class)) {
-            ErrorCode errorCode = extension.validateVmNicQos(l3NetworkUuid);
-            if (errorCode != null) {
-                return errorCode;
-            }
-        }
-        return null;
     }
 
     private void callBeforeAllocateVmNicExtensions(VmNicInventory nic, VmInstanceSpec spec, Completion completion) {

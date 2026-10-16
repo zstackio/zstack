@@ -1,14 +1,12 @@
 package org.zstack.header.network.l3;
 
 import org.zstack.header.message.DeletionMessage;
-import org.zstack.header.network.l2.NetworkDeletionContext;
 
 /**
  */
 public class IpRangeDeletionMsg extends DeletionMessage implements L3NetworkMessage {
     private String l3NetworkUuid;
     private String ipRangeUuid;
-    private NetworkDeletionContext networkDeletionContext;
 
     @Override
     public String getL3NetworkUuid() {
@@ -25,13 +23,5 @@ public class IpRangeDeletionMsg extends DeletionMessage implements L3NetworkMess
 
     public void setIpRangeUuid(String ipRangeUuid) {
         this.ipRangeUuid = ipRangeUuid;
-    }
-
-    public NetworkDeletionContext getNetworkDeletionContext() {
-        return networkDeletionContext;
-    }
-
-    public void setNetworkDeletionContext(NetworkDeletionContext networkDeletionContext) {
-        this.networkDeletionContext = networkDeletionContext;
     }
 }

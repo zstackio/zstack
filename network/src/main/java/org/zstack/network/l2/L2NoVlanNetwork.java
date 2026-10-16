@@ -40,9 +40,6 @@ import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
-import org.zstack.header.network.LocalNetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChangeCoordinator;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -75,8 +72,6 @@ public class L2NoVlanNetwork implements L2Network {
     protected PluginRegistry pluginRgty;
     @Autowired
     protected CascadeFacade casf;
-    @Autowired
-    protected L2NetworkCascadeExtension l2NetworkCascadeExtension;
     @Autowired
     protected ErrorFacade errf;
     @Autowired
@@ -137,12 +132,6 @@ public class L2NoVlanNetwork implements L2Network {
 
     private void handle(UpdateL2NetworkMetadataMsg msg) {
         MessageReply reply = new MessageReply();
-        NetworkCreateContext context = msg.getContext();
-        if (context == null || !context.isProjection() || context.getExternalRef() == null) {
-            bus.replyErrorByMessageType(msg, argerr(ORG_ZSTACK_NETWORK_L2_10030,
-                    "L2 network metadata projection requires an external network reference"));
-            return;
-        }
         if (Objects.equals(self.getName(), msg.getName())
                 && Objects.equals(self.getDescription(), msg.getDescription())) {
             bus.reply(msg, reply);
@@ -157,36 +146,53 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void run(SyncTaskChain chain) {
-                NetworkConfigChange change = NetworkConfigChange.updateL2Metadata(
-                        msg.getL2NetworkUuid(), context.getOrigin(),
-                        context.getOperationUuid(),
-                        context.getExternalRef().getAccountUuid(),
-                        msg.getName(), msg.getDescription());
-                coordinateNetworkConfigChange(change, localCompletion -> {
-                    String originalName = self.getName();
-                    String originalDescription = self.getDescription();
-                    try {
-                        self.setName(msg.getName());
-                        self.setDescription(msg.getDescription());
-                        self = dbf.updateAndRefresh(self);
-                        localCompletion.success();
-                    } catch (Exception e) {
-                        self.setName(originalName);
-                        self.setDescription(originalDescription);
-                        localCompletion.fail(errf.throwableToInternalError(e));
-                    }
-                }, new Completion(chain) {
+                L2NetworkInventory target = getSelfInventory();
+                target.setName(msg.getName());
+                target.setDescription(msg.getDescription());
+                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
                     @Override
                     public void success() {
-                        bus.reply(msg, reply);
-                        chain.next();
+                        String originalName = self.getName();
+                        String originalDescription = self.getDescription();
+                        try {
+                            self = new SQLBatchWithReturn<L2NetworkVO>() {
+                                @Override
+                                protected L2NetworkVO scripts() {
+                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
+                                    self.setName(msg.getName());
+                                    self.setDescription(msg.getDescription());
+                                    L2NetworkVO merged = merge(self);
+                                    flush();
+                                    reload(merged);
+                                    return merged;
+                                }
+                            }.execute();
+                            bus.reply(msg, reply);
+                        } catch (OperationFailureException e) {
+                            self.setName(originalName);
+                            self.setDescription(originalDescription);
+                            reply.setError(e.getErrorCode());
+                            bus.reply(msg, reply);
+                        } catch (Exception e) {
+                            self.setName(originalName);
+                            self.setDescription(originalDescription);
+                            reply.setError(errf.throwableToInternalError(e));
+                            bus.reply(msg, reply);
+                        } finally {
+                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            chain.next();
+                        }
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        reply.setError(errorCode);
-                        bus.reply(msg, reply);
-                        chain.next();
+                        try {
+                            reply.setError(errorCode);
+                            bus.reply(msg, reply);
+                        } finally {
+                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            chain.next();
+                        }
                     }
                 });
             }
@@ -227,19 +233,13 @@ public class L2NoVlanNetwork implements L2Network {
         DeleteL2NetworkReply reply = new DeleteL2NetworkReply();
         final String issuer = L2NetworkVO.class.getSimpleName();
         final List<L2NetworkInventory> ctx = L2NetworkInventory.valueOf(Arrays.asList(self));
-        final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
-                .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
-        if (msg.getContext() != null) {
-            NetworkDeletionContexts.put(cascadeAction, msg.getContext());
-        }
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
-        addConfirmedDeletePreflight(chain, cascadeAction, msg.isForceDelete());
         if (msg.isForceDelete() == false) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -247,14 +247,14 @@ public class L2NoVlanNetwork implements L2Network {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            cancelConfirmedDelete(cascadeAction, errorCode, trigger);
+                            trigger.fail(errorCode);
                         }
                     });
                 }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -271,7 +271,7 @@ public class L2NoVlanNetwork implements L2Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -429,29 +429,18 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkDeleteExtensionPoint.class))
-                        .each((exp, wcompl) -> {
-                            if (exp.requiresConfirmedDelete(inv)) {
-                                exp.deleteL2Network(inv, msg.getNetworkDeletionContext(), new Completion(trigger) {
-                                    @Override
-                                    public void success() {
-                                        wcompl.done();
-                                    }
-
-                                    @Override
-                                    public void fail(ErrorCode errorCode) {
-                                        wcompl.addError(errorCode);
-                                        wcompl.allDone();
-                                    }
-                                });
-                                return;
+                        .each((exp, wcompl) -> exp.deleteL2Network(inv, new Completion(trigger) {
+                            @Override
+                            public void success() {
+                                wcompl.done();
                             }
-                            exp.deleteL2Network(inv, new NoErrorCompletion(trigger) {
-                                @Override
-                                public void done() {
-                                    wcompl.done();
-                                }
-                            });
-                        }).run(new WhileDoneCompletion(trigger) {
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                wcompl.addError(errorCode);
+                                wcompl.allDone();
+                            }
+                        })).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 if (errorCodeList.getCauses().isEmpty()) {
@@ -470,7 +459,6 @@ public class L2NoVlanNetwork implements L2Network {
                 deleteHook(new Completion(msg) {
                     @Override
                     public void success() {
-                        extpEmitter.afterDelete(inv);
                         trigger.next();
                     }
 
@@ -540,46 +528,70 @@ public class L2NoVlanNetwork implements L2Network {
                 L2NetworkInventory target = getSelfInventory();
                 target.setType(msg.getType());
                 target.setVirtualNetworkId(msg.getVlan() == null ? 0 : msg.getVlan());
-                NetworkConfigChange change = NetworkConfigChange.changeL2Encapsulation(
-                        msg.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                        msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                        target.getType(), target.getVirtualNetworkId());
-                coordinateNetworkConfigChange(change, localCompletion -> {
-                    try {
-                        extpEmitter.beforeUpdate(target);
-                    } catch (OperationFailureException e) {
-                        localCompletion.fail(e.getErrorCode());
-                        return;
-                    } catch (Exception e) {
-                        localCompletion.fail(errf.throwableToInternalError(e));
-                        return;
-                    }
-                    changeL2NetworkVlanId(msg, new Completion(localCompletion) {
-                        @Override
-                        public void success() {
-                            changeL2NetworkVlanIdInDb(msg);
-                            extpEmitter.afterUpdate(getSelfInventory());
-                            localCompletion.success();
-                        }
-
-                        @Override
-                        public void fail(ErrorCode errorCode) {
-                            localCompletion.fail(errorCode);
-                        }
-                    });
-                }, new Completion(chain) {
+                try {
+                    extpEmitter.beforeUpdate(target);
+                } catch (OperationFailureException e) {
+                    event.setError(e.getErrorCode());
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                } catch (Exception e) {
+                    event.setError(errf.throwableToInternalError(e));
+                    bus.publish(event);
+                    chain.next();
+                    return;
+                }
+                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
                     @Override
                     public void success() {
-                        event.setInventory(getSelfInventory());
-                        bus.publish(event);
-                        chain.next();
+                        changeL2NetworkVlanId(msg, new Completion(chain) {
+                            @Override
+                            public void success() {
+                                try {
+                                    new SQLBatch() {
+                                        @Override
+                                        protected void scripts() {
+                                            extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
+                                            changeL2NetworkVlanIdInDb(msg);
+                                        }
+                                    }.execute();
+                                    extpEmitter.afterUpdate(getSelfInventory());
+                                    event.setInventory(getSelfInventory());
+                                    bus.publish(event);
+                                } catch (OperationFailureException e) {
+                                    event.setError(e.getErrorCode());
+                                    bus.publish(event);
+                                } catch (Exception e) {
+                                    event.setError(errf.throwableToInternalError(e));
+                                    bus.publish(event);
+                                } finally {
+                                    extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                                    chain.next();
+                                }
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                try {
+                                    event.setError(errorCode);
+                                    bus.publish(event);
+                                } finally {
+                                    extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                                    chain.next();
+                                }
+                            }
+                        });
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        event.setError(errorCode);
-                        bus.publish(event);
-                        chain.next();
+                        try {
+                            event.setError(errorCode);
+                            bus.publish(event);
+                        } finally {
+                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            chain.next();
+                        }
                     }
                 });
             }
@@ -589,26 +601,6 @@ public class L2NoVlanNetwork implements L2Network {
                 return String.format("change-l2-network-%s-vlan", msg.getL2NetworkUuid());
             }
         });
-    }
-
-    protected void coordinateNetworkConfigChange(NetworkConfigChange change,
-                                                 LocalNetworkConfigChange localChange,
-                                       Completion completion) {
-        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
-                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
-                .filter(coordinator -> coordinator.isApplicable(change))
-                .collect(Collectors.toList());
-        if (coordinators.isEmpty()) {
-            localChange.apply(completion);
-            return;
-        }
-        if (coordinators.size() != 1) {
-            completion.fail(errf.stringToInternalError(String.format(
-                    "network mutation[%s] matched[%s] providers",
-                    change.getKind(), coordinators.size())));
-            return;
-        }
-        coordinators.get(0).coordinate(change, localChange, completion);
     }
 
     protected String getL2NetworkOperationSyncSignature(String l2NetworkUuid) {
@@ -631,40 +623,62 @@ public class L2NoVlanNetwork implements L2Network {
 
             @Override
             public void run(SyncTaskChain chain) {
-                NetworkConfigChange change = NetworkConfigChange.updateL2Metadata(
-                        msg.getL2NetworkUuid(), NetworkOperationOrigin.API, msg.getId(),
-                        msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                        msg.getName(), msg.getDescription());
-                coordinateNetworkConfigChange(change, localCompletion -> {
-                    String originalName = self.getName();
-                    String originalDescription = self.getDescription();
-                    try {
-                        if (msg.getName() != null) {
-                            self.setName(msg.getName());
-                        }
-                        if (msg.getDescription() != null) {
-                            self.setDescription(msg.getDescription());
-                        }
-                        self = dbf.updateAndRefresh(self);
-                        localCompletion.success();
-                    } catch (Exception e) {
-                        self.setName(originalName);
-                        self.setDescription(originalDescription);
-                        localCompletion.fail(errf.throwableToInternalError(e));
-                    }
-                }, new Completion(chain) {
+                L2NetworkInventory target = getSelfInventory();
+                if (msg.getName() != null) {
+                    target.setName(msg.getName());
+                }
+                if (msg.getDescription() != null) {
+                    target.setDescription(msg.getDescription());
+                }
+                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
                     @Override
                     public void success() {
-                        evt.setInventory(getSelfInventory());
-                        bus.publish(evt);
-                        chain.next();
+                        String originalName = self.getName();
+                        String originalDescription = self.getDescription();
+                        try {
+                            self = new SQLBatchWithReturn<L2NetworkVO>() {
+                                @Override
+                                protected L2NetworkVO scripts() {
+                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
+                                    if (msg.getName() != null) {
+                                        self.setName(msg.getName());
+                                    }
+                                    if (msg.getDescription() != null) {
+                                        self.setDescription(msg.getDescription());
+                                    }
+                                    L2NetworkVO merged = merge(self);
+                                    flush();
+                                    reload(merged);
+                                    return merged;
+                                }
+                            }.execute();
+                            evt.setInventory(getSelfInventory());
+                            bus.publish(evt);
+                        } catch (OperationFailureException e) {
+                            self.setName(originalName);
+                            self.setDescription(originalDescription);
+                            evt.setError(e.getErrorCode());
+                            bus.publish(evt);
+                        } catch (Exception e) {
+                            self.setName(originalName);
+                            self.setDescription(originalDescription);
+                            evt.setError(errf.throwableToInternalError(e));
+                            bus.publish(evt);
+                        } finally {
+                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            chain.next();
+                        }
                     }
 
                     @Override
                     public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
-                        chain.next();
+                        try {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                        } finally {
+                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            chain.next();
+                        }
                     }
                 });
             }
@@ -738,7 +752,8 @@ public class L2NoVlanNetwork implements L2Network {
             L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, self.getUuid()).find();
             l2Vo.setType(targetType);
             l2Vo.setVirtualNetworkId(targetVlan);
-            self = dbf.updateAndRefresh(l2Vo);
+            self = dbf.getEntityManager().merge(l2Vo);
+            dbf.getEntityManager().flush();
             // can not operate L2VlanNetworkVO directly due to it extends from L2NetworkVO
             // use native sql to insert or delete
             if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(targetType)) {
@@ -753,12 +768,15 @@ public class L2NoVlanNetwork implements L2Network {
                         String.format("delete from L2VlanNetworkVO where uuid = '%s'", l2Vo.getUuid())
                 ).executeUpdate();
             }
+            dbf.getEntityManager().refresh(self);
         } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(currentType)) {
             // update L2VlanNetwork vlan id
             L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, self.getUuid()).find();
             l2VlanNetworkVO.setVirtualNetworkId(targetVlan);
             l2VlanNetworkVO.setVlan(targetVlan);
-            self = dbf.updateAndRefresh(l2VlanNetworkVO);
+            self = dbf.getEntityManager().merge(l2VlanNetworkVO);
+            dbf.getEntityManager().flush();
+            dbf.getEntityManager().refresh(self);
         }
     }
 
@@ -988,6 +1006,9 @@ public class L2NoVlanNetwork implements L2Network {
         amsg.setL2NetworkUuid(msg.getL2NetworkUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
         amsg.setL2ProviderType(msg.getL2ProviderType());
+        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+            amsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
+        }
 
         bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.SERVICE_ID, amsg.getL2NetworkUuid());
         bus.send(amsg, new CloudBusCallBack(amsg) {
@@ -1044,17 +1065,13 @@ public class L2NoVlanNetwork implements L2Network {
         final APIDeleteL2NetworkEvent evt = new APIDeleteL2NetworkEvent(msg.getId());
         final String issuer = L2NetworkVO.class.getSimpleName();
         final List<L2NetworkInventory> ctx = L2NetworkInventory.valueOf(Arrays.asList(self));
-        final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
-                .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-l2Network-%s", msg.getL2NetworkUuid()));
-        addConfirmedDeletePreflight(chain, cascadeAction,
-                msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing);
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1062,14 +1079,14 @@ public class L2NoVlanNetwork implements L2Network {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            cancelConfirmedDelete(cascadeAction, errorCode, trigger);
+                            trigger.fail(errorCode);
                         }
                     });
                 }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1086,7 +1103,7 @@ public class L2NoVlanNetwork implements L2Network {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1115,44 +1132,6 @@ public class L2NoVlanNetwork implements L2Network {
                 bus.publish(evt);
             }
         }).start();
-    }
-
-    private void addConfirmedDeletePreflight(FlowChain chain, CascadeAction action,
-                                              boolean forceDelete) {
-        chain.then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                action.setActionCode(forceDelete
-                        ? CascadeConstant.DELETION_FORCE_DELETE_CODE
-                        : CascadeConstant.DELETION_CHECK_CODE);
-                l2NetworkCascadeExtension.prepareConfirmedDelete(action, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        });
-    }
-
-    private void cancelConfirmedDelete(CascadeAction action, ErrorCode errorCode,
-                                        FlowTrigger trigger) {
-        l2NetworkCascadeExtension.cancelConfirmedDelete(action, new Completion(trigger) {
-            @Override
-            public void success() {
-                trigger.fail(errorCode);
-            }
-
-            @Override
-            public void fail(ErrorCode cancelError) {
-                trigger.fail(errorCode);
-            }
-        });
     }
 
     private void  attachL2NetworkToCluster(final AttachL2NetworkToClusterMsg msg, final Completion completion){
@@ -1266,6 +1245,7 @@ public class L2NoVlanNetwork implements L2Network {
                 .eq(HostVO_.status,HostStatus.Connected).list();
         List<HostInventory> hvinvs = HostInventory.valueOf(hosts);
 
+        L2NetworkInventory inv = getSelfInventory();
         prepareL2NetworkForCluster(msg, hvinvs, new Completion(msg,completion) {
             @Override
             public void success() {
@@ -1273,6 +1253,9 @@ public class L2NoVlanNetwork implements L2Network {
                     new SQLBatch() {
                         @Override
                         protected void scripts() {
+                            for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
+                                ext.beforeCommitAttachInDb(inv, msg.getClusterUuid(), msg.getHeaders());
+                            }
                             L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
                             rvo.setClusterUuid(msg.getClusterUuid());
                             rvo.setL2NetworkUuid(self.getUuid());
@@ -1280,21 +1263,29 @@ public class L2NoVlanNetwork implements L2Network {
                             persist(rvo);
                         }
                     }.execute();
+                    logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
+                    self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
+                    completion.success();
                 } catch (OperationFailureException e) {
                     completion.fail(e.getErrorCode());
-                    return;
                 } catch (Exception e) {
                     completion.fail(errf.throwableToInternalError(e));
-                    return;
+                } finally {
+                    for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
+                        ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders());
+                    }
                 }
-                logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
-                self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                completion.success();
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                try {
+                    completion.fail(errorCode);
+                } finally {
+                    for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
+                        ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders());
+                    }
+                }
             }
         });
     }
@@ -1306,6 +1297,7 @@ public class L2NoVlanNetwork implements L2Network {
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class))
                         .each((extension, next) -> extension.prepareAttach(getSelfInventory(), msg.getClusterUuid(),
+                                msg.getHeaders(),
                                 new Completion(next) {
                                     @Override
                                     public void success() { next.done(); }

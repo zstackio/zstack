@@ -548,9 +548,16 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
                                      NetworkServiceType nsType, List<String> systemTags, Completion completion) {
+        enableNetworkService(l3VO, providerType, nsType, systemTags, Collections.emptyMap(), completion);
+    }
+
+    @Override
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                                     NetworkServiceType nsType, List<String> systemTags,
+                                     Map<String, Object> headers, Completion completion) {
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceType() == nsType) {
-                ns.enableNetworkService(l3VO, providerType, systemTags, completion);
+                ns.enableNetworkService(l3VO, providerType, systemTags, headers == null ? Collections.emptyMap() : headers, completion);
                 return;
             }
         }
@@ -560,9 +567,15 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion) {
+        disableNetworkService(l3VO, providerType, nsType, Collections.emptyMap(), completion);
+    }
+
+    @Override
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                                      NetworkServiceType nsType, Map<String, Object> headers, Completion completion) {
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceType() == nsType) {
-                ns.disableNetworkService(l3VO, providerType, completion);
+                ns.disableNetworkService(l3VO, providerType, headers == null ? Collections.emptyMap() : headers, completion);
                 return;
             }
         }

@@ -34,7 +34,6 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.IpAllocatedReason;
-import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l2.L2NetworkClusterRefVO;
 import org.zstack.header.network.l2.L2NetworkInventory;
 import org.zstack.header.network.l2.L2NetworkVO;
@@ -2600,14 +2599,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
      *      */
     @Override
     public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags) {
-        afterAddIpRange(ipr, systemTags, null);
-    }
-
-    @Override
-    public void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags, NetworkCreateContext context) {
-        if (context != null && context.isProjection()) {
-            return;
-        }
         L3NetworkVO l3NetworkVO = dbf.findByUuid(ipr.getL3NetworkUuid(), L3NetworkVO.class);
         List<ReservedIpRangeVO> reservedIpRanges = null;
         if (ipr.getIpVersion() == IPv6Constants.IPv4) {
@@ -2681,10 +2672,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         if (!Q.New(NormalIpRangeVO.class).eq(NormalIpRangeVO_.uuid, ipr.getUuid()).isExists()) {
-            return;
-        }
-
-        if (context != null && context.isRemoteCommitted()) {
             return;
         }
 

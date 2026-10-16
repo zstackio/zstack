@@ -15,7 +15,6 @@ import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.utils.CollectionUtils;
@@ -26,6 +25,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,138 +50,39 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
     @Override
     public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
-        createIpRange(iprs, msg, NetworkCreateContext.api(), completion);
-    }
-
-    @Override
-    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
-                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
-        String resolvedAccountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
-        if (resolvedAccountUuid == null && context != null && context.getExternalRef() != null) {
-            resolvedAccountUuid = context.getExternalRef().getAccountUuid();
-        }
+        String resolvedAccountUuid = msg.getSession() == null ? msg.getAccountUuid() : msg.getSession().getAccountUuid();
         if (resolvedAccountUuid == null) {
             completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10092,
                     "account uuid is required for normal IP range creation"));
             return;
         }
         String accountUuid = resolvedAccountUuid;
-        FlowChain chain = new SimpleFlowChain();
-        chain.setName(String.format("add-iprange-to-l3-%s", iprs.get(0).getL3NetworkUuid()));
-        chain.then(new Flow() {
-            String __name__ = "save-db";
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                List<IpRangeVO> vos = new ArrayList<>();
-                for (IpRangeInventory ipr : iprs) {
-                    NormalIpRangeVO vo = new SQLBatchWithReturn<NormalIpRangeVO>() {
-                        @Override
-                        protected NormalIpRangeVO scripts() {
-                            NormalIpRangeVO vo = (NormalIpRangeVO) IpRangeHelper
-                                    .fromIpRangeInventory(ipr, accountUuid);
-                            dbf.getEntityManager().persist(vo);
-                            dbf.getEntityManager().flush();
-                            dbf.getEntityManager().refresh(vo);
+        List<NormalIpRangeVO> preparedVos = new ArrayList<>();
+        List<IpRangeInventory> preparedIprs = new ArrayList<>();
+        for (IpRangeInventory ipr : iprs) {
+            NormalIpRangeVO vo = (NormalIpRangeVO) IpRangeHelper.fromIpRangeInventory(ipr, accountUuid);
+            ipr.setUuid(vo.getUuid());
+            preparedVos.add(vo);
+            preparedIprs.add(IpRangeInventory.valueOf(vo));
+        }
+        msg.putHeaderEntry("znsAddingIpRanges", preparedIprs);
+        IpRangeInventory primaryIpr = preparedIprs.get(0);
 
-                            return vo;
-                        }
-                    }.execute();
+        L3NetworkVO initialL3Vo = dbf.findByUuid(primaryIpr.getL3NetworkUuid(), L3NetworkVO.class);
+        final SdnControllerL3 sdnL3 = initialL3Vo == null ? null : l3Mgr.getSdnControllerL3(initialL3Vo.getL2NetworkUuid());
+        final boolean remoteWriteFirst = sdnL3 != null && sdnL3.isRemoteWriteFirst();
 
-                    IpRangeHelper.updateL3NetworkIpversion(vo);
-
-                    // Update UsedIpVO records that have ipRangeUuid=null and IP is within the new range
-                    List<UsedIpVO> usedIpVos = Q.New(UsedIpVO.class)
-                            .eq(UsedIpVO_.l3NetworkUuid, vo.getL3NetworkUuid())
-                            .eq(UsedIpVO_.ipVersion, vo.getIpVersion())
-                            .isNull(UsedIpVO_.ipRangeUuid).list();
-                    List<UsedIpVO> updateVos = new ArrayList<>();
-                    for (UsedIpVO ipvo : usedIpVos) {
-                        if (ipvo.getIpVersion() == IPv6Constants.IPv4) {
-                            if (NetworkUtils.isInRange(ipvo.getIp(), vo.getStartIp(), vo.getEndIp())) {
-                                ipvo.setIpRangeUuid(vo.getUuid());
-                                updateVos.add(ipvo);
-                            }
-                        } else {
-                            if (IPv6NetworkUtils.isIpv6InRange(ipvo.getIp(), vo.getStartIp(), vo.getEndIp())) {
-                                ipvo.setIpRangeUuid(vo.getUuid());
-                                updateVos.add(ipvo);
-                            }
-                        }
-                    }
-
-                    if (!updateVos.isEmpty()) {
-                        dbf.updateCollection(updateVos);
-                    }
-
-                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
-                        @Override
-                        public void run(AfterAddIpRangeExtensionPoint ext) {
-                            ext.afterAddIpRange(IpRangeInventory.valueOf(vo), msg.getSystemTags(), context);
-                        }
-                    });
-
-                    vos.add(vo);
-                }
-
-                data.put("IpRangeVO", vos);
-                trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
-                dbf.removeCollection(vos, IpRangeVO.class);
-                trigger.rollback();
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "enable-sdn-dhcp";
+        Flow createInSdnFlow = new NoRollbackFlow() {
+            String __name__ = "create-ip-range-in-sdn";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if (context.isRemoteWriteSuppressed()) {
-                    trigger.next();
-                    return;
-                }
-                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(iprs.get(0).getL3NetworkUuid());
-                if (sdnControllerUuid == null) {
-                    trigger.next();
-                    return;
-                }
-
-                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
-                dmsg.setL3NetworkUuid(iprs.get(0).getL3NetworkUuid());
-                dmsg.setIpVersion(iprs.get(0).getIpVersion());
-                dmsg.setSdnControllerUuid(sdnControllerUuid);
-                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
-                bus.send(dmsg, new CloudBusCallBack(trigger) {
-                    @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            trigger.fail(reply.getError());
-                        } else {
-                            trigger.next();
-                        }
-                    }
-                });
-            }
-        }).then(new NoRollbackFlow() {
-            String __name__ = "add-sdn-subnet";
-
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                if (context.isRemoteWriteSuppressed()) {
-                    trigger.next();
-                    return;
-                }
-                L3NetworkVO l3vo = dbf.findByUuid(iprs.get(0).getL3NetworkUuid(), L3NetworkVO.class);
-                SdnControllerL3 sdnL3 = l3Mgr.getSdnControllerL3(l3vo.getL2NetworkUuid());
                 if (sdnL3 == null) {
                     trigger.next();
                     return;
                 }
 
-                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
-                sdnL3.createIpRange(IpRangeInventory.valueOf(vos.get(0)), new Completion(trigger) {
+                sdnL3.createIpRange(primaryIpr, msg.getSystemTags(), msg.getHeaders(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -193,14 +94,148 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     }
                 });
             }
-        }).error(new FlowErrorHandler(completion) {
+        };
+
+        Flow notifySdnDhcpFlow = new NoRollbackFlow() {
+            String __name__ = "notify-sdn-dhcp-ip";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                if ("ZNS_PROJECTION".equals(msg.getHeaderEntry("znsOperationOrigin"))) {
+                    trigger.next();
+                    return;
+                }
+                String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(primaryIpr.getL3NetworkUuid());
+                if (sdnControllerUuid == null) {
+                    trigger.next();
+                    return;
+                }
+
+                SdnControllerUpdateDHCPMsg dmsg = new SdnControllerUpdateDHCPMsg();
+                dmsg.setL3NetworkUuid(primaryIpr.getL3NetworkUuid());
+                dmsg.setIpVersion(primaryIpr.getIpVersion());
+                dmsg.setSdnControllerUuid(sdnControllerUuid);
+                if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
+                    dmsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
+                }
+                bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
+                bus.send(dmsg, new CloudBusCallBack(trigger) {
+                    @Override
+                    public void run(MessageReply reply) {
+                        if (!reply.isSuccess()) {
+                            trigger.fail(reply.getError());
+                        } else {
+                            Object pendingDhcp = reply.getHeaderEntry("znsPendingDhcpDataJson");
+                            if (pendingDhcp != null) {
+                                msg.putHeaderEntry("znsPendingDhcpDataJson", pendingDhcp);
+                            }
+                            trigger.next();
+                        }
+                    }
+                });
+            }
+        };
+
+        Flow saveDbFlow = new Flow() {
+            String __name__ = "save-db";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                List<IpRangeVO> vos = new SQLBatchWithReturn<List<IpRangeVO>>() {
+                    @Override
+                    protected List<IpRangeVO> scripts() {
+                        if (sdnL3 != null) {
+                            sdnL3.beforeCommitIpRangeInDb(primaryIpr, msg.getHeaders());
+                        }
+                        List<IpRangeVO> persisted = new ArrayList<>();
+                        for (NormalIpRangeVO vo : preparedVos) {
+                            persist(vo);
+                            flush();
+                            reload(vo);
+                            IpRangeHelper.updateL3NetworkIpversion(vo);
+
+                            List<UsedIpVO> usedIpVos = Q.New(UsedIpVO.class)
+                                    .eq(UsedIpVO_.l3NetworkUuid, vo.getL3NetworkUuid())
+                                    .eq(UsedIpVO_.ipVersion, vo.getIpVersion())
+                                    .isNull(UsedIpVO_.ipRangeUuid).list();
+                            List<UsedIpVO> updateVos = new ArrayList<>();
+                            for (UsedIpVO ipvo : usedIpVos) {
+                                if (ipvo.getIpVersion() == IPv6Constants.IPv4) {
+                                    if (NetworkUtils.isInRange(ipvo.getIp(), vo.getStartIp(), vo.getEndIp())) {
+                                        ipvo.setIpRangeUuid(vo.getUuid());
+                                        updateVos.add(ipvo);
+                                    }
+                                } else {
+                                    if (IPv6NetworkUtils.isIpv6InRange(ipvo.getIp(), vo.getStartIp(), vo.getEndIp())) {
+                                        ipvo.setIpRangeUuid(vo.getUuid());
+                                        updateVos.add(ipvo);
+                                    }
+                                }
+                            }
+                            updateVos.forEach(this::merge);
+                            persisted.add(vo);
+                        }
+                        return persisted;
+                    }
+                }.execute();
+
+                for (IpRangeVO vo : vos) {
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
+                        @Override
+                        public void run(AfterAddIpRangeExtensionPoint ext) {
+                            ext.afterAddIpRange(IpRangeInventory.valueOf(vo), msg.getSystemTags());
+                        }
+                    });
+                }
+
+                data.put("IpRangeVO", vos);
+                if (sdnL3 == null) {
+                    trigger.next();
+                    return;
+                }
+                sdnL3.afterCommitIpRangeInDb(IpRangeInventory.valueOf(vos.get(0)), msg.getHeaders(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
+                if (vos != null && !vos.isEmpty()) {
+                    dbf.removeCollection(vos, IpRangeVO.class);
+                }
+                trigger.rollback();
+            }
+        };
+
+        FlowChain chain = new SimpleFlowChain();
+        chain.setName(String.format("add-iprange-to-l3-%s", primaryIpr.getL3NetworkUuid()));
+        if (remoteWriteFirst) {
+            chain.then(createInSdnFlow).then(notifySdnDhcpFlow).then(saveDbFlow);
+        } else {
+            chain.then(saveDbFlow).then(notifySdnDhcpFlow).then(createInSdnFlow);
+        }
+        chain.error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                if (sdnL3 != null) {
+                    sdnL3.afterIpRangeFinally(primaryIpr, msg.getHeaders());
+                }
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                if (sdnL3 != null) {
+                    sdnL3.afterIpRangeFinally(primaryIpr, msg.getHeaders());
+                }
                 List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
                 completion.success(IpRangeInventory.valueOf(vos));
             }

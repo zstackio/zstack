@@ -18,7 +18,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L2_10024;
@@ -36,8 +38,8 @@ public class L2NetworkExtensionPointEmitter implements Component {
         for (L2NetworkDeleteExtensionPoint ext : extensions) {
             try {
                 ext.preDeleteL2Network(inv);
-            } catch (L2NetworkException l2e) {
-                throw l2e;
+            } catch (L2NetworkException | OperationFailureException e) {
+                throw e;
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception happened while calling L2NetworkDeleteExtensionPoint.preDeleteL2Network of %s", ext.getClass().getCanonicalName()), e);
             }
@@ -112,6 +114,57 @@ public class L2NetworkExtensionPointEmitter implements Component {
                 }
             }
         });
+    }
+
+    public void beforeUpdateL2Network(final L2NetworkInventory inv, final Map<String, Object> headers, Completion completion) {
+        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
+        new While<>(updateExtensions).each((extension, extensionCompletion) -> {
+            try {
+                extension.beforeUpdateL2Network(inv, safeHeaders, new Completion(extensionCompletion) {
+                    @Override
+                    public void success() {
+                        extensionCompletion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        extensionCompletion.addError(errorCode);
+                        extensionCompletion.allDone();
+                    }
+                });
+            } catch (OperationFailureException e) {
+                extensionCompletion.addError(e.getErrorCode());
+                extensionCompletion.allDone();
+            } catch (RuntimeException e) {
+                logger.warn(String.format("exception in L2NetworkUpdateExtensionPoint.beforeUpdateL2Network of %s",
+                        extension.getClass().getCanonicalName()), e);
+                extensionCompletion.addError(inerr(ORG_ZSTACK_NETWORK_L2_10024,
+                        "l2 network update extension[%s] failed before updating l2 network: %s",
+                        extension.getClass().getCanonicalName(), e.getMessage()));
+                extensionCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    public void beforeCommitUpdateInDb(final L2NetworkInventory inv, final Map<String, Object> headers) {
+        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
+        for (L2NetworkUpdateExtensionPoint ext : updateExtensions) {
+            ext.beforeCommitUpdateL2NetworkInDb(inv, safeHeaders);
+        }
+    }
+
+    public void afterUpdateFinally(final L2NetworkInventory inv, final Map<String, Object> headers) {
+        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
+        CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterUpdateL2NetworkFinally(inv, safeHeaders));
     }
 
     public void afterUpdate(final L2NetworkInventory inv) {

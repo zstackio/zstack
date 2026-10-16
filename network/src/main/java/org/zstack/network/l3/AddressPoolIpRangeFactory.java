@@ -7,7 +7,6 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.network.l3.*;
-import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.ForEachFunction;
 
@@ -30,15 +29,9 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
 
     @Override
     public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, ReturnValueCompletion<List<IpRangeInventory>> completion) {
-        createIpRange(iprs, msg, NetworkCreateContext.api(), completion);
-    }
-
-    @Override
-    public void createIpRange(List<IpRangeInventory> iprs, AddIpRangeMsg msg, NetworkCreateContext context,
-                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
         String resolvedAccountUuid = msg.getSession() == null ? null : msg.getSession().getAccountUuid();
-        if (resolvedAccountUuid == null && context != null && context.getExternalRef() != null) {
-            resolvedAccountUuid = context.getExternalRef().getAccountUuid();
+        if (resolvedAccountUuid == null) {
+            resolvedAccountUuid = msg.getAccountUuid();
         }
         if (resolvedAccountUuid == null) {
             completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10093,
@@ -79,7 +72,7 @@ public class AddressPoolIpRangeFactory implements IpRangeFactory {
             CollectionUtils.safeForEach(pluginRgty.getExtensionList(AfterAddIpRangeExtensionPoint.class), new ForEachFunction<AfterAddIpRangeExtensionPoint>() {
                 @Override
                 public void run(AfterAddIpRangeExtensionPoint ext) {
-                    ext.afterAddIpRange(finalIpr, msg.getSystemTags(), context);
+                    ext.afterAddIpRange(finalIpr, msg.getSystemTags());
                 }
             });
         }

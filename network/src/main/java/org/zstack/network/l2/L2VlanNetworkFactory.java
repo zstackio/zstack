@@ -51,40 +51,21 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
 
     @Override
     public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
-        createL2Network(ovo, msg, NetworkCreateContext.api(), completion);
-    }
+        APICreateL2VlanNetworkMsg amsg = (APICreateL2VlanNetworkMsg) msg;
+        L2VlanNetworkVO vo = new L2VlanNetworkVO(ovo);
+        vo.setVlan(amsg.getVlan());
+        vo.setVirtualNetworkId(vo.getVlan());
+        L2VlanNetworkInventory inv = L2VlanNetworkInventory.valueOf(vo);
 
-    @Override
-    public void createL2Network(L2NetworkVO ovo, APICreateL2NetworkMsg msg, NetworkCreateContext context,
-                                ReturnValueCompletion<L2NetworkInventory> completion) {
         FlowChain chain = new SimpleFlowChain();
         chain.setName("create-no-vlan-network");
-        chain.then(new Flow() {
-            String __name__ = "write-db";
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                APICreateL2VlanNetworkMsg amsg = (APICreateL2VlanNetworkMsg) msg;
-                L2VlanNetworkVO vo = new L2VlanNetworkVO(ovo);
-                vo.setVlan(amsg.getVlan());
-                vo.setVirtualNetworkId(vo.getVlan());
-                dbf.persist(vo);
-                trigger.next();
-            }
-
-            @Override
-            public void rollback(FlowRollback trigger, Map data) {
-                dbf.removeByPrimaryKey(ovo.getUuid(), L2VlanNetworkVO.class);
-                trigger.rollback();
-            }
-        }).then(new NoRollbackFlow() {
+        chain.then(new NoRollbackFlow() {
             String __name__ = "create-l2-network-extension";
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                L2VlanNetworkInventory inv = L2VlanNetworkInventory.valueOf(
-                        dbf.findByUuid(ovo.getUuid(), L2VlanNetworkVO.class));
                 new While<>(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.postCreateL2Network(inv, msg, context, new Completion(trigger) {
+                        .each((exp, wcompl) -> exp.postCreateL2Network(inv, msg, msg == null ? null : msg.getHeaders(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 wcompl.done();
@@ -106,19 +87,46 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
                             }
                         });
             }
+        }).then(new Flow() {
+            String __name__ = "write-db";
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                new org.zstack.core.db.SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                            exp.beforeCommitL2NetworkInDb(inv, msg, msg == null ? null : msg.getHeaders());
+                        }
+                        persist(vo);
+                    }
+                }.execute();
+                trigger.next();
+            }
+
+            @Override
+            public void rollback(FlowRollback trigger, Map data) {
+                dbf.removeByPrimaryKey(ovo.getUuid(), L2VlanNetworkVO.class);
+                trigger.rollback();
+            }
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
+                }
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                L2VlanNetworkInventory inv = L2VlanNetworkInventory.valueOf(
+                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
+                }
+                L2VlanNetworkInventory persistedInv = L2VlanNetworkInventory.valueOf(
                         dbf.findByUuid(ovo.getUuid(), L2VlanNetworkVO.class));
                 logger.debug(String.format("Successfully created VlanL2Network[uuid:%s, name:%s]",
-                        inv.getUuid(), inv.getName()));
-                completion.success(inv);
+                        persistedInv.getUuid(), persistedInv.getName()));
+                completion.success(persistedInv);
             }
         }).start();
 

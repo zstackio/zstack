@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerApiCompatibilityVO` (
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'managedBy', 'VARCHAR(32)', 1, NULL);
-UPDATE `zstack`.`ZnsSegmentRefVO` SET `managedBy` = 'ZNS' WHERE `managedBy` IS NULL;
+UPDATE `zstack`.`ZnsSegmentRefVO` SET `managedBy` = 'UNVERIFIED' WHERE `managedBy` IS NULL;
 
 -- ZCF-6749: shared durable inbox for sync-resource-v2.
 DROP PROCEDURE IF EXISTS `ENSURE_ZNS_SYNC_RESOURCE_V2_COLUMNS`;
@@ -54,3 +54,52 @@ DROP PROCEDURE `ENSURE_ZNS_SYNC_RESOURCE_V2_COLUMNS`;
 
 ALTER TABLE `zstack`.`ZnsSegmentInventoryVO` MODIFY COLUMN `transportZoneUuid` varchar(36) NULL;
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'leaseUntil', 'TIMESTAMP NULL', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'fenceToken', 'varchar(32)', 1, NULL);
+CALL ADD_COLUMN('ZnsSegmentRefVO', 'fenceUntil', 'TIMESTAMP NULL', 1, NULL);
+
+CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRemoteDeleteVO` (
+    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+    `controllerUuid` varchar(32) NOT NULL,
+    `segmentUuid` varchar(36) NOT NULL,
+    `l2NetworkUuid` varchar(32) NOT NULL,
+    `zoneUuid` varchar(32) NOT NULL,
+    `fenceToken` varchar(32) DEFAULT NULL,
+    `fenceUntil` timestamp NULL DEFAULT NULL,
+    `attempt` int NOT NULL DEFAULT 0,
+    `lastErrorCode` varchar(128) DEFAULT NULL,
+    `lastErrorDetails` text DEFAULT NULL,
+    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
+    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `ukZnsSegmentRemoteDelete` (`controllerUuid`, `segmentUuid`),
+    CONSTRAINT `fkZnsSegmentRemoteDeleteVOSdnControllerVO`
+        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+UPDATE `zstack`.`ZnsSegmentRefVO`
+SET `fenceToken` = `operationUuid`,
+    `fenceUntil` = DATE_ADD(NOW(), INTERVAL 600 SECOND),
+    `operationDigest` = NULL
+WHERE `fenceToken` IS NULL
+  AND `operationUuid` IS NOT NULL
+  AND `state` IN ('Initializing', 'Syncing', 'Deleting', 'Error', 'PlacementConflict', 'SourceUnavailable');
+
+DROP TABLE IF EXISTS `zstack`.`ZnsControllerTransitionVO`;
+DROP TABLE IF EXISTS `zstack`.`ZnsControllerCapabilityVO`;
+DROP TABLE IF EXISTS `zstack`.`ZnsCloudOfferSnapshotVO`;
+DROP TABLE IF EXISTS `zstack`.`ZnsPeerOfferVO`;
+DROP TABLE IF EXISTS `zstack`.`ZnsCloudProtocolIdentityVO`;
+DROP TABLE IF EXISTS `zstack`.`ZnsSegmentProjectionDeleteVO`;
+
+CALL DELETE_INDEX('ZnsSegmentRefVO', 'idxZnsSegmentRefVOOperationUuid');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationCapabilityName');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationCapabilityContract');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationCapabilityEpoch');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationProviderIdentity');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationProfileIdentity');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationAdapterIdentity');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationUuid');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationStep');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'operationDigest');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'leaseUntil');
+CALL DROP_COLUMN('ZnsSegmentRefVO', 'currentConfigVersion');

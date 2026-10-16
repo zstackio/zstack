@@ -1,7 +1,6 @@
 package org.zstack.network.l3;
 
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.network.l2.NetworkCreateContext;
 import org.zstack.header.network.l3.L3NetworkMessage;
 
 import java.util.ArrayList;
@@ -17,7 +16,6 @@ public class AttachNetworkServiceToL3Msg extends NeedReplyMessage implements L3N
     private Map<String, List<String>> networkServices;
 
     private List<String> apiSystemTags = new ArrayList<>();
-    private NetworkCreateContext context;
 
     public void setL3NetworkUuid(String l3NetworkUuid) {
         this.l3NetworkUuid = l3NetworkUuid;
@@ -42,13 +40,5 @@ public class AttachNetworkServiceToL3Msg extends NeedReplyMessage implements L3N
 
     public void setApiSystemTags(List<String> apiSystemTags) {
         this.apiSystemTags = apiSystemTags;
-    }
-
-    public NetworkCreateContext getContext() {
-        return context;
-    }
-
-    public void setContext(NetworkCreateContext context) {
-        this.context = context;
     }
 }

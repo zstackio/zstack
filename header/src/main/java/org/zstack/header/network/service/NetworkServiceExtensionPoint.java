@@ -30,5 +30,13 @@ public interface NetworkServiceExtensionPoint {
 
     void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion);
 
+    default void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Map<String, Object> headers, Completion completion) {
+        enableNetworkService(l3VO, providerType, systemTags, completion);
+    }
+
     void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion);
+
+    default void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Map<String, Object> headers, Completion completion) {
+        disableNetworkService(l3VO, providerType, completion);
+    }
 }

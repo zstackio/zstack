@@ -2,7 +2,6 @@ package org.zstack.sdk.network.zns;
 
 import org.zstack.sdk.L2NetworkInventory;
 import org.zstack.sdk.L3NetworkInventory;
-import org.zstack.sdk.network.zns.ZnsSegmentSyncOperationInventory;
 
 public class ZnsSegmentCloudProjectionInventory  {
 
@@ -38,6 +37,14 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.isStretched;
     }
 
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
+    }
+
     public java.lang.String stretchL2Uuid;
     public void setStretchL2Uuid(java.lang.String stretchL2Uuid) {
         this.stretchL2Uuid = stretchL2Uuid;
@@ -62,14 +69,6 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.tenantRouters;
     }
 
-    public java.lang.String zoneUuid;
-    public void setZoneUuid(java.lang.String zoneUuid) {
-        this.zoneUuid = zoneUuid;
-    }
-    public java.lang.String getZoneUuid() {
-        return this.zoneUuid;
-    }
-
     public java.lang.String l2NetworkUuid;
     public void setL2NetworkUuid(java.lang.String l2NetworkUuid) {
         this.l2NetworkUuid = l2NetworkUuid;
@@ -86,6 +85,14 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.l3NetworkUuid;
     }
 
+    public java.lang.String managedBy;
+    public void setManagedBy(java.lang.String managedBy) {
+        this.managedBy = managedBy;
+    }
+    public java.lang.String getManagedBy() {
+        return this.managedBy;
+    }
+
     public java.lang.String state;
     public void setState(java.lang.String state) {
         this.state = state;
@@ -94,36 +101,12 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.state;
     }
 
-    public java.lang.Long currentConfigVersion;
-    public void setCurrentConfigVersion(java.lang.Long currentConfigVersion) {
-        this.currentConfigVersion = currentConfigVersion;
-    }
-    public java.lang.Long getCurrentConfigVersion() {
-        return this.currentConfigVersion;
-    }
-
     public java.lang.Long appliedConfigVersion;
     public void setAppliedConfigVersion(java.lang.Long appliedConfigVersion) {
         this.appliedConfigVersion = appliedConfigVersion;
     }
     public java.lang.Long getAppliedConfigVersion() {
         return this.appliedConfigVersion;
-    }
-
-    public java.lang.String operationUuid;
-    public void setOperationUuid(java.lang.String operationUuid) {
-        this.operationUuid = operationUuid;
-    }
-    public java.lang.String getOperationUuid() {
-        return this.operationUuid;
-    }
-
-    public java.lang.String operationStep;
-    public void setOperationStep(java.lang.String operationStep) {
-        this.operationStep = operationStep;
-    }
-    public java.lang.String getOperationStep() {
-        return this.operationStep;
     }
 
     public java.lang.String lastErrorCode;
@@ -172,14 +155,6 @@ public class ZnsSegmentCloudProjectionInventory  {
     }
     public L3NetworkInventory getL3Network() {
         return this.l3Network;
-    }
-
-    public ZnsSegmentSyncOperationInventory operation;
-    public void setOperation(ZnsSegmentSyncOperationInventory operation) {
-        this.operation = operation;
-    }
-    public ZnsSegmentSyncOperationInventory getOperation() {
-        return this.operation;
     }
 
 }
