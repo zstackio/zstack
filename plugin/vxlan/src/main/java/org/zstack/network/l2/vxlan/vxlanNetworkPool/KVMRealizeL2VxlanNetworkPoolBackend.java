@@ -244,6 +244,7 @@ public class KVMRealizeL2VxlanNetworkPoolBackend implements L2NetworkRealization
                     bridgeCmd.setIgmpVersion(L2NetworkGlobalConfig.IGMPVersion.value(Integer.class));
                     bridgeCmd.setMldVersion(L2NetworkGlobalConfig.MLDVersion.value(Integer.class));
                     bridgeCmd.setEnableMulticastQuerier(L2NetworkGlobalConfig.BridgeMulticastQuerier.value(Boolean.class));
+                    bridgeCmd.setEnableMulticastSnooping(L2NetworkGlobalConfig.BridgeMulticastSnooping.value(Boolean.class));
                     cmd.getBridgeCmds().add(bridgeCmd);
                 }
 
