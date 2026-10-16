@@ -29,9 +29,6 @@ public class AcceptZnsSegmentOwnerAction extends AbstractAction {
     public java.lang.String segmentUuid;
 
     @Param(required = true, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
-    public java.lang.String computeManagerUuid;
-
-    @Param(required = true, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
     public java.lang.String zoneUuid;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
