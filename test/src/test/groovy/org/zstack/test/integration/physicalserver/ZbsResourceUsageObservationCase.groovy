@@ -6,6 +6,8 @@ import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.cloudbus.ResourceDestinationMaker
 import org.zstack.core.db.Q
+import org.zstack.header.rest.BeforeAsyncJsonPostInterceptor
+import org.zstack.header.rest.RESTFacade
 import org.zstack.header.core.Completion
 import org.zstack.header.core.FutureCompletion
 import org.zstack.header.core.NoErrorCompletion
@@ -32,6 +34,7 @@ import org.zstack.header.physicalserver.PhysicalServerRoleType
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO
 import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageVO_
 import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMGlobalConfig
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KvmResourceAssignmentFactory
 import org.zstack.physicalserver.PhysicalServerResourceAssignmentGlobalConfig
@@ -68,6 +71,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -97,6 +101,9 @@ class ZbsResourceUsageObservationCase extends SubCase {
     PrimaryStorageInventory first
     PrimaryStorageInventory second
     String originalResourceAssignmentEnabled
+    String originalConnectivityTimeout
+    Runnable removeTimeoutInterceptor
+    CountDownLatch releaseUsageQuery
 
     @Override
     void setup() {
@@ -110,6 +117,11 @@ class ZbsResourceUsageObservationCase extends SubCase {
 
     @Override
     void clean() {
+        removeTimeoutInterceptor?.run()
+        releaseUsageQuery?.countDown()
+        if (originalConnectivityTimeout != null) {
+            KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.updateValue(originalConnectivityTimeout)
+        }
         if (assignmentOnlyFactory != null) {
             bean(PluginRegistry.class).getExtensionList(PhysicalServerResourceAssignmentFactory.class)
                     .remove(assignmentOnlyFactory)
@@ -146,6 +158,7 @@ class ZbsResourceUsageObservationCase extends SubCase {
             verifyZstoneCgroupUsageIsObserved()
             verifyReadOnlyAssignmentRetainsLastBoundaryOnProbeFailure()
             associateHost(SERIAL)
+            verifyResourceUsageUsesSharedTimeout()
             verifyInvalidManifestReturnsRoleError()
             verifyProviderIdentityMismatchReturnsRoleError()
             verifyZbsCannotBeControlledByCloud()
@@ -356,8 +369,64 @@ class ZbsResourceUsageObservationCase extends SubCase {
                     response.physicalServerSerialNumber = providerReportedSerial
                     response.usages = observedUsages()
                 }
+                releaseUsageQuery?.await(15, TimeUnit.SECONDS)
                 return response
         }
+    }
+
+    private void verifyResourceUsageUsesSharedTimeout() {
+        originalConnectivityTimeout = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value()
+        Map<String, Long> timeouts = new ConcurrentHashMap<>()
+        List<String> paths = [ZbsAgentResourceUsageProvider.GET_RESOURCE_USAGE_PATH,
+                              KvmResourceAssignmentFactory.GET_MANAGED_SERVICE_USAGE_PATH]
+        removeTimeoutInterceptor = bean(RESTFacade.class).installBeforeAsyncJsonPostInterceptor(
+                new BeforeAsyncJsonPostInterceptor() {
+                    @Override
+                    void beforeAsyncJsonPost(String url, Object body, TimeUnit unit, long timeout) {
+                    }
+
+                    @Override
+                    void beforeAsyncJsonPost(String url, String body, TimeUnit unit, long timeout) {
+                        paths.findAll { url.endsWith(it) }.each { timeouts[it] = unit.toMillis(timeout) }
+                    }
+                })
+        [2L, 60L].each { configuredSeconds ->
+            updateGlobalConfig {
+                category = KVMGlobalConfig.CATEGORY
+                name = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.name
+                value = configuredSeconds.toString()
+            }
+            timeouts.clear()
+            def result = new GetPhysicalServerManagedServicesAction(
+                    serverUuid: serverUuid, sessionId: adminSession(), apiTimeout: 10L).call()
+            assert result.error == null : "usage query must still succeed: actual=${result.error}"
+            paths.each { path ->
+                long expectedMaximum = TimeUnit.SECONDS.toMillis(Math.min(configuredSeconds, 10L))
+                assert timeouts[path] > 0 && timeouts[path] <= expectedMaximum :
+                        "usage query must respect shared config and API timeout: " +
+                                "path=${path} maximum=${expectedMaximum} actual=${timeouts[path]}"
+            }
+        }
+
+        updateGlobalConfig {
+            category = KVMGlobalConfig.CATEGORY
+            name = KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.name
+            value = "2"
+        }
+        releaseUsageQuery = new CountDownLatch(1)
+        def partial = new GetPhysicalServerManagedServicesAction(
+                serverUuid: serverUuid, sessionId: adminSession(), apiTimeout: 10L).call()
+        releaseUsageQuery.countDown()
+        releaseUsageQuery = null
+        assert partial.error == null && partial.value.roleErrors["ZBS"] != null :
+                "ZBS query timeout must return a role error before the API expires: actual=${partial.error}"
+        assert partial.value.roleErrors["ZBS"].details.contains("[Async Http Timeout]") :
+                "the role error must come from the HTTP timeout, not an unrelated provider failure"
+        assert partial.value.services.any { it.roleType == "COMPUTE" } :
+                "a timed-out ZBS query must not discard healthy COMPUTE services"
+        removeTimeoutInterceptor.run()
+        removeTimeoutInterceptor = null
+        KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.updateValue(originalConnectivityTimeout)
     }
 
     private void installZbsSerialSimulator() {

@@ -44,7 +44,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_KVM_10000;
 
 public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssignmentFactory,
-        HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint, Component {
+        HostAfterConnectedExtensionPoint, HostDeleteExtensionPoint, KVMAgentHttpTimeoutExtensionPoint, Component {
     public static final PhysicalServerRoleType type = new PhysicalServerRoleType("COMPUTE");
     public static final String APPLY_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/apply";
     public static final String RELEASE_RESOURCE_CONTROL_PATH = "/host/resourcecontrol/release";
@@ -66,6 +66,11 @@ public class KvmResourceAssignmentFactory implements PhysicalServerResourceAssig
     @Override
     public PhysicalServerRoleType getRoleType() {
         return type;
+    }
+
+    @Override
+    public Set<String> agentHttpPathsWithShortTimeout() {
+        return Collections.singleton(GET_MANAGED_SERVICE_USAGE_PATH);
     }
 
     @Override
