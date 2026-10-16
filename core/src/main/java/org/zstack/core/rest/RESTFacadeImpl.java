@@ -107,6 +107,10 @@ public class RESTFacadeImpl implements RESTFacade {
         String getResourceUuid();
 
         long getSentAtMillis();
+
+        String getApiId();
+
+        String getPath();
     }
 
     private interface HttpCallHandlerWrapper {
@@ -642,6 +646,8 @@ public class RESTFacadeImpl implements RESTFacade {
 
         HttpEntity<String> req = new HttpEntity<String>(body, requestHeaders);
 
+        final String apiId = ThreadContext.get(Constants.THREAD_CONTEXT_API);
+        final String requestPath = URI.create(url).getPath();
         final long sentAtMillis = System.currentTimeMillis();
         final String resourceUuid = (headers == null) ? null : headers.get(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID);
 
@@ -774,6 +780,16 @@ public class RESTFacadeImpl implements RESTFacade {
             public long getSentAtMillis() {
                 return sentAtMillis;
             }
+
+            @Override
+            public String getApiId() {
+                return apiId;
+            }
+
+            @Override
+            public String getPath() {
+                return requestPath;
+            }
         };
 
         try {
@@ -807,6 +823,26 @@ public class RESTFacadeImpl implements RESTFacade {
     public void asyncJsonPost(String url, String body, AsyncRESTCallback callback) {
         Long timeout = timeoutMgr.getTimeout();
         asyncJsonPost(url, body, callback, TimeUnit.MILLISECONDS, timeout);
+    }
+
+    @Override
+    public int failPendingCallsForResourceAndApi(String resourceUuid, String apiId, String path, ErrorCode err) {
+        if (resourceUuid == null || apiId == null || path == null) {
+            return 0;
+        }
+        int drained = 0;
+        for (AsyncHttpWrapper w : wrappers.values()) {
+            if (resourceUuid.equals(w.getResourceUuid()) && apiId.equals(w.getApiId()) && path.equals(w.getPath())) {
+                try {
+                    w.fail(err);
+                    drained++;
+                } catch (Throwable t) {
+                    logger.warn(String.format("fail injection threw for resource[uuid:%s], api[id:%s], path[%s]: %s",
+                            resourceUuid, apiId, path, t.getMessage()), t);
+                }
+            }
+        }
+        return drained;
     }
 
     @Override

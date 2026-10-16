@@ -46,6 +46,7 @@ import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.core.workflow.ShareFlow;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.Constants;
+import org.zstack.header.longjob.LongJobConstants;
 import org.zstack.header.allocator.DesignatedAllocateHostMsg;
 import org.zstack.header.allocator.HostAllocatorConstant;
 import org.zstack.header.allocator.ReturnHostCapacityMsg;
@@ -3585,7 +3586,40 @@ public class KVMHost extends HostBase implements Host {
 
                             @Override
                             public void fail(ErrorCode errorCode) {
-                                trigger.fail(errorCode);
+                                // Reconcile only calls drained after agent restart or a missing agent job.
+                                if (!ORG_ZSTACK_CORE_REST_10013.equals(errorCode.getGlobalErrorCode())
+                                        && !ORG_ZSTACK_KVM_10124.equals(errorCode.getGlobalErrorCode())) {
+                                    trigger.fail(errorCode);
+                                    return;
+                                }
+
+                                // The agent may have finished migrating before its callback was lost.
+                                CheckVmStateOnHypervisorMsg check = new CheckVmStateOnHypervisorMsg();
+                                check.setVmInstanceUuids(Collections.singletonList(vmUuid));
+                                check.setHostUuid(dstHostUuid);
+                                check.setTimeout(TimeUnit.SECONDS.toMillis(30));
+                                bus.makeTargetServiceIdByResourceUuid(check, HostConstant.SERVICE_ID, dstHostUuid);
+                                ErrorCode failure = err(ORG_ZSTACK_KVM_10063,
+                                        HostErrors.FAILED_TO_MIGRATE_VM_ON_HYPERVISOR, errorCode,
+                                        "failed to migrate vm[uuid:%s] from kvm host[uuid:%s, ip:%s] to dest host[ip:%s], %s",
+                                        vmUuid, srcHostUuid, srcHostMigrateIp, dstHostMigrateIp, errorCode.getDetails());
+                                bus.send(check, new CloudBusCallBack(trigger) {
+                                    @Override
+                                    public void run(MessageReply reply) {
+                                        if (!reply.isSuccess()) {
+                                            trigger.fail(failure);
+                                            return;
+                                        }
+
+                                        CheckVmStateOnHypervisorReply rsp = reply.castReply();
+                                        String state = rsp.getStates() == null ? null : rsp.getStates().get(vmUuid);
+                                        if (VmInstanceState.Running.toString().equals(state)) {
+                                            trigger.next();
+                                        } else {
+                                            trigger.fail(failure);
+                                        }
+                                    }
+                                });
                             }
                         });
                     }
@@ -6991,6 +7025,12 @@ public class KVMHost extends HostBase implements Host {
             @Override
             public void success(CancelRsp ret) {
                 if (ret.isSuccess()) {
+                    completion.success();
+                } else if (LongJobConstants.NO_JOB_TO_CANCEL.equals(ret.getError())
+                        && restf.failPendingCallsForResourceAndApi(self.getUuid(), msg.getCancellationApiId(),
+                        KVMConstant.KVM_MIGRATE_VM_PATH,
+                        operr(ORG_ZSTACK_KVM_10124, "%s", ret.getError())) > 0) {
+                    // Only the matching migration is reconciled; other host jobs keep their cancellation semantics.
                     completion.success();
                 } else {
                     completion.fail(Platform.operr(ORG_ZSTACK_KVM_10124, "%s", ret.getError()));
