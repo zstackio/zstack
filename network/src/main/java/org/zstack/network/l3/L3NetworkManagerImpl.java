@@ -667,26 +667,31 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
                 trigger.next();
             }
-        }).error(new FlowErrorHandler(msg) {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                SdnControllerL3 controllerL3 = getSdnControllerL3(msg.getL2NetworkUuid());
-                if (controllerL3 != null) {
-                    controllerL3.afterL3NetworkFinally(L3NetworkInventory.valueOf(vo), msg.getHeaders());
-                }
+                finishL3NetworkCreation(vo, msg);
                 completion.fail(errCode);
             }
-        }).done(new FlowDoneHandler(msg) {
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                SdnControllerL3 controllerL3 = getSdnControllerL3(msg.getL2NetworkUuid());
-                if (controllerL3 != null) {
-                    controllerL3.afterL3NetworkFinally(L3NetworkInventory.valueOf(vo), msg.getHeaders());
-                }
+                finishL3NetworkCreation(vo, msg);
                 completion.success((L3NetworkInventory) data.get("L3NetworkInventory"));
             }
         }).start();
 
+    }
+
+    private void finishL3NetworkCreation(L3NetworkVO network, CreateL3NetworkMsg msg) {
+        try {
+            SdnControllerL3 controller = getSdnControllerL3(msg.getL2NetworkUuid());
+            if (controller != null) {
+                controller.afterL3NetworkFinally(L3NetworkInventory.valueOf(network), msg.getHeaders());
+            }
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish L3 network creation[uuid:%s]", network.getUuid()), e);
+        }
     }
 
     @Override

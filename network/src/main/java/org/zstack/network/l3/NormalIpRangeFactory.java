@@ -20,6 +20,8 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.utils.CollectionUtils;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.network.IPv6Constants;
@@ -35,6 +37,8 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10092;
 
 public class NormalIpRangeFactory implements IpRangeFactory {
+    private static final CLogger logger = Utils.getLogger(NormalIpRangeFactory.class);
+
     @Autowired
     DatabaseFacade dbf;
     @Autowired
@@ -239,20 +243,27 @@ public class NormalIpRangeFactory implements IpRangeFactory {
         chain.error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                if (sdnL3 != null) {
-                    sdnL3.afterIpRangeFinally(primaryIpr, msg.getHeaders());
-                }
+                finishIpRangeCreation(sdnL3, primaryIpr, msg.getHeaders());
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                if (sdnL3 != null) {
-                    sdnL3.afterIpRangeFinally(primaryIpr, msg.getHeaders());
-                }
+                finishIpRangeCreation(sdnL3, primaryIpr, msg.getHeaders());
                 List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
                 completion.success(IpRangeInventory.valueOf(vos));
             }
         }).start();
+    }
+
+    private void finishIpRangeCreation(SdnControllerL3 controller, IpRangeInventory range, Map<String, Object> headers) {
+        if (controller == null) {
+            return;
+        }
+        try {
+            controller.afterIpRangeFinally(range, headers);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish IP range creation[uuid:%s]", range.getUuid()), e);
+        }
     }
 }

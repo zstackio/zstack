@@ -55,6 +55,8 @@ class NetworkMutationFailureCase extends SubCase {
             testVlanCommitFailureRollsBackHost()
             testControllerLookupFailureRejectsUpdate()
             testRangeRollbackRestoresAddressFamilyAndUsedIp()
+            testL3CreateCleanupPreservesResult()
+            testRangeCreateCleanupPreservesResult()
             testRangeDeleteCleanupReleasesQueue()
             testSdnDeleteFailurePolicy()
             testNetworkServiceCommitFailureCompletes()
@@ -196,6 +198,67 @@ class NetworkMutationFailureCase extends SubCase {
         } finally {
             extensions.remove(controller)
             dbf.removeByPrimaryKey(usedIp.uuid, UsedIpVO)
+        }
+    }
+
+    void testL3CreateCleanupPreservesResult() {
+        def l2 = env.inventoryByName('l2')
+        def controller = new FailingL3(l2Uuid: l2.uuid, rejectL3Cleanup: true)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            def l3 = createL3Network {
+                name = 'l3-create-cleanup'; l2NetworkUuid = l2.uuid; timeout = 30000L
+            }
+            assert dbf.isExist(l3.uuid, L3NetworkVO)
+            assert controller.l3Finalized == 1
+            controller.rejectL3Create = true
+            String rejectedUuid = Platform.uuid
+            expectMutationFailure('L3 create rejected') {
+                createL3Network {
+                    name = 'l3-create-rejected'; l2NetworkUuid = l2.uuid
+                    resourceUuid = rejectedUuid; timeout = 30000L
+                }
+            }
+            assert !dbf.isExist(rejectedUuid, L3NetworkVO)
+            assert controller.l3Finalized == 2
+            controller.rejectL3Create = false
+            deleteL3Network { uuid = l3.uuid }
+        } finally { extensions.remove(controller) }
+    }
+
+    void testRangeCreateCleanupPreservesResult() {
+        def l2 = env.inventoryByName('l2')
+        def l3 = createL3Network { name = 'range-create-cleanup'; l2NetworkUuid = l2.uuid }
+        def controller = new FailingL3(l2Uuid: l2.uuid, rejectRangeCleanup: true)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            def range = addIpRange {
+                name = 'create-cleanup-range'; l3NetworkUuid = l3.uuid
+                startIp = '192.168.212.10'; endIp = '192.168.212.20'
+                netmask = '255.255.255.0'; gateway = '192.168.212.1'
+            }
+            assert dbf.isExist(range.uuid, IpRangeVO)
+            assert controller.rangeFinalized == 1
+            controller.rejectRange = true
+            String rejectedUuid = Platform.uuid
+            expectMutationFailure('range confirmation failed') {
+                addIpRange {
+                    name = 'create-range-rejected'; l3NetworkUuid = l3.uuid
+                    resourceUuid = rejectedUuid
+                    startIp = '192.168.212.30'; endIp = '192.168.212.40'
+                    netmask = '255.255.255.0'; gateway = '192.168.212.1'
+                }
+            }
+            assert !dbf.isExist(rejectedUuid, IpRangeVO)
+            assert dbf.isExist(range.uuid, IpRangeVO)
+            assert controller.rangeFinalized == 2
+            controller.rejectRangeCleanup = false
+            deleteIpRange { uuid = range.uuid }
+        } finally {
+            extensions.remove(controller)
+            deleteL3Network { uuid = l3.uuid }
         }
     }
 
@@ -393,6 +456,9 @@ class NetworkMutationFailureCase extends SubCase {
         boolean rejectDelete
         boolean rejectRangeCleanup
         int rangeFinalized
+        boolean rejectL3Create
+        boolean rejectL3Cleanup
+        int l3Finalized
         boolean rejectService
         boolean remoteFirst
         int rangeCallbacks
@@ -400,7 +466,14 @@ class NetworkMutationFailureCase extends SubCase {
         SdnControllerDhcp getSdnControllerDhcp(String uuid) { null }
         SdnControllerL3 getSdnControllerL3(String uuid) { uuid == l2Uuid ? this : null }
         boolean isRemoteWriteFirst() { remoteFirst }
-        void createL3Network(L3NetworkInventory inv, List<String> tags, Completion completion) { completion.success() }
+        void createL3Network(L3NetworkInventory inv, List<String> tags, Completion completion) {
+            if (rejectL3Create) { completion.fail(new ErrorCode('TEST.L3.CREATE', 'L3 create rejected')) }
+            else { completion.success() }
+        }
+        void afterL3NetworkFinally(L3NetworkInventory inv, Map<String, Object> headers) {
+            l3Finalized++
+            if (rejectL3Cleanup) { throw new IllegalStateException('L3 cleanup failed') }
+        }
         void deleteL3Network(L3NetworkInventory inv, Completion completion) { completion.success() }
         void createIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
         void deleteIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
