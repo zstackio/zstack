@@ -66,6 +66,12 @@ public class PatternedSystemTag extends SystemTag {
         tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
     }
 
+    public void deleteInCurrentTransaction(String resourceUuid, String tag, Boolean inherent) {
+        org.zstack.utils.DebugUtils.Assert(tag != null && isMatch(tag),
+                "exact tag must match this system tag pattern");
+        tagMgr.deleteSystemTagInCurrentTransaction(tag, resourceUuid, resourceClass.getSimpleName(), inherent);
+    }
+
     @Override
     public void deleteInherentTag(String resourceUuid, Class resourceClass) {
         tagMgr.deleteSystemTagUseLike(useTagFormat(), resourceUuid, resourceClass.getSimpleName(), true);

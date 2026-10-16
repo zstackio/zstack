@@ -2,6 +2,7 @@ package org.zstack.tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -532,6 +533,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit, boolean useLike) {
+        deleteSystemTag(tag, resourceUuid, resourceType, inherit, useLike, false);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void deleteSystemTagInCurrentTransaction(String tag, String resourceUuid, String resourceType, Boolean inherent) {
+        DebugUtils.Assert(tag != null && resourceUuid != null && resourceType != null,
+                "current transaction tag deletion requires an exact tag and resource");
+        deleteSystemTag(tag, resourceUuid, resourceType, inherent, false, true);
+    }
+
+    private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit,
+                                 boolean useLike, boolean currentTransaction) {
         DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null,
                 "tag, resourceUuid, resourceType cannot all be null");
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
@@ -560,7 +574,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             }
         }
 
-        dbf.removeCollection(vos, SystemTagVO.class);
+        if (currentTransaction) {
+            dbf.removeByPrimaryKeysInCurrentTransaction(
+                    vos.stream().map(SystemTagVO::getUuid).collect(Collectors.toList()), SystemTagVO.class);
+        } else {
+            dbf.removeCollection(vos, SystemTagVO.class);
+        }
 
         if (!vos.isEmpty()) {
             fireTagDeleted(SystemTagInventory.valueOf(vos));

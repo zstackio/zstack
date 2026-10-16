@@ -100,6 +100,22 @@ public class ZnsSegmentRefInventory  {
         return this.state;
     }
 
+    public java.lang.String consistencyStatus;
+    public void setConsistencyStatus(java.lang.String consistencyStatus) {
+        this.consistencyStatus = consistencyStatus;
+    }
+    public java.lang.String getConsistencyStatus() {
+        return this.consistencyStatus;
+    }
+
+    public java.lang.String consistencyDetails;
+    public void setConsistencyDetails(java.lang.String consistencyDetails) {
+        this.consistencyDetails = consistencyDetails;
+    }
+    public java.lang.String getConsistencyDetails() {
+        return this.consistencyDetails;
+    }
+
     public java.lang.Long appliedConfigVersion;
     public void setAppliedConfigVersion(java.lang.Long appliedConfigVersion) {
         this.appliedConfigVersion = appliedConfigVersion;

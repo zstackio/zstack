@@ -37,14 +37,6 @@ public class ZnsSegmentCloudProjectionInventory  {
         return this.isStretched;
     }
 
-    public java.lang.String zoneUuid;
-    public void setZoneUuid(java.lang.String zoneUuid) {
-        this.zoneUuid = zoneUuid;
-    }
-    public java.lang.String getZoneUuid() {
-        return this.zoneUuid;
-    }
-
     public java.lang.String stretchL2Uuid;
     public void setStretchL2Uuid(java.lang.String stretchL2Uuid) {
         this.stretchL2Uuid = stretchL2Uuid;
@@ -67,6 +59,14 @@ public class ZnsSegmentCloudProjectionInventory  {
     }
     public java.util.List getTenantRouters() {
         return this.tenantRouters;
+    }
+
+    public java.lang.String zoneUuid;
+    public void setZoneUuid(java.lang.String zoneUuid) {
+        this.zoneUuid = zoneUuid;
+    }
+    public java.lang.String getZoneUuid() {
+        return this.zoneUuid;
     }
 
     public java.lang.String l2NetworkUuid;
@@ -99,6 +99,22 @@ public class ZnsSegmentCloudProjectionInventory  {
     }
     public java.lang.String getState() {
         return this.state;
+    }
+
+    public java.lang.String consistencyStatus;
+    public void setConsistencyStatus(java.lang.String consistencyStatus) {
+        this.consistencyStatus = consistencyStatus;
+    }
+    public java.lang.String getConsistencyStatus() {
+        return this.consistencyStatus;
+    }
+
+    public java.lang.String consistencyDetails;
+    public void setConsistencyDetails(java.lang.String consistencyDetails) {
+        this.consistencyDetails = consistencyDetails;
+    }
+    public java.lang.String getConsistencyDetails() {
+        return this.consistencyDetails;
     }
 
     public java.lang.Long appliedConfigVersion;

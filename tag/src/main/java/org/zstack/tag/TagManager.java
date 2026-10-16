@@ -50,6 +50,8 @@ public interface TagManager {
 
     void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit);
 
+    void deleteSystemTagInCurrentTransaction(String tag, String resourceUuid, String resourceType, Boolean inherent);
+
     void deleteSystemTagUseLike(String tag, String resourceUuid, String resourceType, Boolean inherit);
 
     Collection<String> getManagedEntityNames();
