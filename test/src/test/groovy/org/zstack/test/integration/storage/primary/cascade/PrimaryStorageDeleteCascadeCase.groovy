@@ -2,7 +2,11 @@ package org.zstack.test.integration.storage.primary.cascade
 
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.header.message.AbstractBeforeDeliveryMessageInterceptor
+import org.zstack.header.message.Message
 import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.APIDeletePrimaryStorageMsg
 import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
@@ -10,7 +14,15 @@ import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeVO
 import org.zstack.header.volume.VolumeVO_
 import org.zstack.header.volume.VolumeStatus
+import org.zstack.sdk.CreateDataVolumeAction
 import org.zstack.sdk.DeletePrimaryStorageAction
+import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackend
+import org.zstack.storage.primary.nfs.NfsPrimaryStorageKVMBackendCommands
+
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
@@ -413,6 +425,106 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             assert dbFindByUuid(ps.uuid, PrimaryStorageVO.class).state == state
             assert Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid)
                     .select(VolumeVO_.uuid).listValues().sort() == before
+
+        }
+    }
+
+
+    void testVolumeAppearsAfterApiPreflight(PrimaryStorageInventory ps) {
+        ["Permissive", "Enforcing"].each { mode ->
+            assert !Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid).isExists()
+            CountDownLatch accepted = new CountDownLatch(1)
+            CountDownLatch resume = new CountDownLatch(1)
+            AtomicBoolean armed = new AtomicBoolean(true)
+            bean(CloudBus.class).installBeforeDeliveryMessageInterceptor(new AbstractBeforeDeliveryMessageInterceptor() {
+                @Override
+                void beforeDeliveryMessage(Message message) {
+                    APIDeletePrimaryStorageMsg msg = message as APIDeletePrimaryStorageMsg
+                    if (msg.uuid == ps.uuid && msg.deletionMode.toString() == mode && armed.compareAndSet(true, false)) {
+                        accepted.countDown()
+                        assert resume.await(60, TimeUnit.SECONDS)
+                    }
+                }
+            }, APIDeletePrimaryStorageMsg.class)
+            def pending = CompletableFuture.supplyAsync {
+                new DeletePrimaryStorageAction(uuid: ps.uuid, deleteMode: mode,
+                        sessionId: currentEnvSpec.session.uuid).call()
+            }
+            VolumeInventory volume
+            def result
+            try {
+                assert accepted.await(30, TimeUnit.SECONDS)
+                volume = createDataVolume {
+                    name = "created-after-delete-preflight"
+                    primaryStorageUuid = ps.uuid
+                    diskOfferingUuid = env.inventoryByName("diskOffering").uuid
+                }
+            } finally {
+                armed.set(false)
+                resume.countDown()
+                result = pending.get(45, TimeUnit.SECONDS)
+            }
+            assert result.error != null
+            assert result.error.details.contains("cannot delete non-local primary storage")
+            assert result.error.details.contains(volume.uuid)
+            assert dbFindByUuid(ps.uuid, PrimaryStorageVO.class).state.toString() == "Enabled"
+            assert dbFindByUuid(volume.uuid, VolumeVO.class).status == VolumeStatus.Ready
+            deleteDataVolume { uuid = volume.uuid }
+            if (dbFindByUuid(volume.uuid, VolumeVO.class) != null) {
+                expungeDataVolume { uuid = volume.uuid }
+            }
+        }
+    }
+
+    void testInFlightVolumeBeforeStorageBinding(PrimaryStorageInventory ps) {
+        CountDownLatch responseReady = new CountDownLatch(1)
+        CountDownLatch resume = new CountDownLatch(1)
+        String volumeUuid = UUID.randomUUID().toString().replace("-", "")
+        env.afterSimulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, NfsPrimaryStorageKVMBackendCommands.CreateEmptyVolumeCmd.class)
+            if (cmd.volumeUuid == volumeUuid) {
+                responseReady.countDown()
+                assert resume.await(60, TimeUnit.SECONDS)
+            }
+            return rsp
+        }
+        def future = CompletableFuture.supplyAsync {
+            new CreateDataVolumeAction(name: "in-flight", resourceUuid: volumeUuid,
+                    diskOfferingUuid: env.inventoryByName("diskOffering").uuid,
+                    primaryStorageUuid: ps.uuid, sessionId: currentEnvSpec.session.uuid).call()
+        }
+        def result
+        try {
+            assert responseReady.await(30, TimeUnit.SECONDS)
+            assert dbFindByUuid(volumeUuid, VolumeVO.class).primaryStorageUuid == null
+            detachPrimaryStorageFromCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = env.inventoryByName("cluster3").uuid
+            }
+            ["Permissive", "Enforcing"].each { mode ->
+                def result = new DeletePrimaryStorageAction(uuid: ps.uuid, deleteMode: mode,
+                        sessionId: currentEnvSpec.session.uuid).call()
+                assert result.error != null
+                assert result.error.details.contains("unfinished volume operation")
+            }
+            attachPrimaryStorageToCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = env.inventoryByName("cluster3").uuid
+            }
+        } finally {
+            resume.countDown()
+            try {
+                result = future.get(45, TimeUnit.SECONDS)
+            } finally {
+                env.afterSimulator(NfsPrimaryStorageKVMBackend.CREATE_EMPTY_VOLUME_PATH) { rsp, e -> rsp }
+            }
+        }
+        result.throwExceptionIfError()
+        assert dbFindByUuid(volumeUuid, VolumeVO.class).primaryStorageUuid == ps.uuid
+        assertNonLocalDeleteRejected(ps, volumeUuid)
+        deleteDataVolume { uuid = volumeUuid }
+        if (dbFindByUuid(volumeUuid, VolumeVO.class) != null) {
+            expungeDataVolume { uuid = volumeUuid }
         }
     }
 
@@ -442,6 +554,10 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(volumePolicy)
         }
         assert !Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid).isExists()
+        if (ps.type == "NFS") {
+            testInFlightVolumeBeforeStorageBinding(ps)
+            testVolumeAppearsAfterApiPreflight(ps)
+        }
         detachPrimaryStorageFromCluster { primaryStorageUuid = ps.uuid; clusterUuid = cluster.uuid }
     }
 }

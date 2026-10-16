@@ -47,6 +47,7 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.primary.PrimaryStorageDeletionGuard;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -256,6 +257,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String prePSInstallPath;
             String volumeFormat;
             String allocatedInstallUrl;
+            Long volumeOperationGuard;
 
             @Override
             public void setup() {
@@ -356,6 +358,20 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             bus.send(rmsg);
                         }
                         trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "protect-primary-storage-from-deletion";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        try {
+                            volumeOperationGuard = PrimaryStorageDeletionGuard.acquire(targetPrimaryStorage.getUuid(), vol.getUuid());
+                            trigger.next();
+                        } catch (OperationFailureException e) {
+                            trigger.fail(e.getErrorCode());
+                        }
                     }
                 });
 
@@ -506,6 +522,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         reply.setSuccess(false);
                         dbf.removeByPrimaryKey(vol.getUuid(), vol.getClass());
                         bus.reply(msg, reply);
+                    }
+                });
+
+                Finally(new FlowFinallyHandler(msg) {
+                    @Override
+                    public void Finally() {
+                        PrimaryStorageDeletionGuard.release(volumeOperationGuard);
                     }
                 });
             }

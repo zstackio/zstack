@@ -199,7 +199,7 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
             throw new StopRoutingException();
         }
 
-        ErrorCode error = PrimaryStorageDeletionValidator.checkVolumes(storage);
+        ErrorCode error = PrimaryStorageDeletionGuard.checkVolumes(storage);
         if (error != null) {
             throw new ApiMessageInterceptionException(error);
         }
