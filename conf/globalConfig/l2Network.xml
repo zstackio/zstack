@@ -30,7 +30,14 @@
     </config>
     <config>
         <name>bridge.multicastQuerier</name>
-        <description>Enable multicast querier and snooping on linux bridge when creating l2 network bridge</description>
+        <description>Enable multicast querier on linux bridge when creating l2 network bridge</description>
+        <defaultValue>true</defaultValue>
+        <category>l2Network</category>
+        <type>java.lang.Boolean</type>
+    </config>
+    <config>
+        <name>bridge.multicastSnooping</name>
+        <description>Enable multicast snooping on linux bridge when creating l2 network bridge</description>
         <defaultValue>true</defaultValue>
         <category>l2Network</category>
         <type>java.lang.Boolean</type>

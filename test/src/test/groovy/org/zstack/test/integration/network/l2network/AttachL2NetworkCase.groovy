@@ -11,6 +11,7 @@ import org.zstack.header.network.l2.L2NetworkClusterRefVO
 import org.zstack.header.network.l2.L2NetworkClusterRefVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.L2NetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
 import org.zstack.network.l3.NetworkGlobalProperty
 import org.zstack.sdk.ClusterInventory
@@ -97,6 +98,7 @@ public class AttachL2NetworkCase extends SubCase{
             testCreateL2NetworkWithoutPhysicalInterface()
             testAttachL2NoVlanNetwork()
             testAttachL2ValnNetwork()
+            testReconnectReappliesMulticastSnooping()
             testAttachL2NoVlanNetworkSynchronously()
             testAttachL2VlanNetworkSynchronously()
             testAddHost()
@@ -140,6 +142,12 @@ public class AttachL2NetworkCase extends SubCase{
         ClusterInventory cluster = env.inventoryByName("cluster1")
 
         NetworkGlobalProperty.BRIDGE_DISABLE_IPTABLES = true
+        assert L2NetworkGlobalConfig.BridgeMulticastSnooping.value(Boolean.class) == true
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = false
+        }
         KVMAgentCommands.CreateBridgeCmd createCmd = null
         env.afterSimulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             createCmd = json(e.body, KVMAgentCommands.CreateBridgeCmd.class)
@@ -151,6 +159,14 @@ public class AttachL2NetworkCase extends SubCase{
             clusterUuid = cluster.uuid
         }
         assert createCmd.disableIptables == true
+        assert createCmd.enableMulticastSnooping == false
+        assert createCmd.enableMulticastQuerier == true
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = true
+        }
 
         retryInSecs{
             L2NetworkClusterRefVO ref = Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).find();
@@ -172,6 +188,12 @@ public class AttachL2NetworkCase extends SubCase{
         L2NetworkInventory l22 = env.inventoryByName("l2-vlan-2")
         ClusterInventory cluster = env.inventoryByName("cluster1")
 
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastQuerier.name
+            value = false
+        }
+
         KVMAgentCommands.CreateVlanBridgeCmd createCmd = null
         env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
             createCmd = json(e.body, KVMAgentCommands.CreateVlanBridgeCmd.class)
@@ -183,6 +205,14 @@ public class AttachL2NetworkCase extends SubCase{
             clusterUuid = cluster.uuid
         }
         assert createCmd.disableIptables == true
+        assert createCmd.enableMulticastSnooping == true
+        assert createCmd.enableMulticastQuerier == false
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastQuerier.name
+            value = true
+        }
 
         retryInSecs{
             assert Q.New(L2NetworkClusterRefVO.class).eq(L2NetworkClusterRefVO_.clusterUuid,cluster.uuid).count() == 2l
@@ -193,6 +223,35 @@ public class AttachL2NetworkCase extends SubCase{
                 l2NetworkUuid = l22.uuid
                 clusterUuid = cluster.uuid
             }
+        }
+    }
+
+    void testReconnectReappliesMulticastSnooping() {
+        HostInventory host = env.inventoryByName("kvm")
+        List<KVMAgentCommands.CreateBridgeCmd> bridgeCmds = []
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2NOVLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            bridgeCmds.add(json(e.body, KVMAgentCommands.CreateBridgeCmd.class))
+            return rsp
+        }
+        env.afterSimulator(KVMConstant.KVM_REALIZE_L2VLAN_NETWORK_PATH) { rsp, HttpEntity<String> e ->
+            bridgeCmds.add(json(e.body, KVMAgentCommands.CreateVlanBridgeCmd.class))
+            return rsp
+        }
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = false
+        }
+
+        reconnectHost { uuid = host.uuid }
+        assert bridgeCmds.size() == 2
+        assert bridgeCmds.every { it.enableMulticastSnooping == false && it.enableMulticastQuerier == true }
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = true
         }
     }
 

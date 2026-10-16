@@ -25,4 +25,7 @@ public class L2NetworkGlobalConfig {
     @GlobalConfigValidation(validValues = {"true", "false"})
     public static GlobalConfig BridgeMulticastQuerier = new GlobalConfig(CATEGORY, "bridge.multicastQuerier");
 
+    @GlobalConfigValidation(validValues = {"true", "false"})
+    public static GlobalConfig BridgeMulticastSnooping = new GlobalConfig(CATEGORY, "bridge.multicastSnooping");
+
 }

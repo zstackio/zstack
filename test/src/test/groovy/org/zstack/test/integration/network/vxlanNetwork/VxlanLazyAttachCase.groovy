@@ -5,6 +5,7 @@ import org.springframework.http.HttpEntity
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
+import org.zstack.network.l2.L2NetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetwork.VxlanNetworkGlobalConfig
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanKvmAgentCommands
 import org.zstack.network.l2.vxlan.vxlanNetworkPool.VxlanNetworkPoolConstant
@@ -251,6 +252,12 @@ class VxlanLazyAttachCase extends SubCase {
         def host1 = env.inventoryByName("kvm1") as KVMHostInventory
         def host2 = env.inventoryByName("kvm2") as KVMHostInventory
 
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = false
+        }
+
         VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.@value = false;
         assert VxlanNetworkGlobalConfig.CLUSTER_LAZY_ATTACH.value(boolean .class) == false
 
@@ -346,6 +353,7 @@ class VxlanLazyAttachCase extends SubCase {
         }
         for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd cmd : createBridgeCmds) {
             assert cmd.peers.size() == 1
+            assert cmd.enableMulticastSnooping == false
             if (cmd.vtepIp == host1VtepIp) {
                 assert cmd.peers.get(0) == host2VtepIp
             } else {
@@ -391,6 +399,13 @@ class VxlanLazyAttachCase extends SubCase {
         for (VxlanKvmAgentCommands.CreateVxlanBridgeCmd bridgeCmd : vxlanCmd.bridgeCmds) {
             assert bridgeCmd.vni == vxlan2.vni || bridgeCmd.vni == vxlan1.vni
             assert bridgeCmd.mtu == 1450
+            assert bridgeCmd.enableMulticastSnooping == false
+        }
+
+        updateGlobalConfig {
+            category = L2NetworkGlobalConfig.CATEGORY
+            name = L2NetworkGlobalConfig.BridgeMulticastSnooping.name
+            value = true
         }
 
     }
