@@ -43,6 +43,28 @@ final class MemoryMetricsPresentation {
         out.setQuality(sampled == null || sampled > now + 5000 ? "Unknown"
                 : now - sampled >= MemoryOptimizationGlobalConfig.displayTtlMillis() ? "Stale"
                 : quality instanceof String ? (String) quality : "Unknown");
+        // Project the public result only after native eligibility and actions
+        // have been evaluated from the original control observation.
+        String status = source.getStatus();
+        switch (status == null ? "Unknown" : status) {
+            case "Queued": case "Applying": case "Draining": case "Unknown":
+                break;
+            case "Succeeded": case "Failed": case "Blocked":
+                if (source.getActiveTaskUuid() != null) {
+                    if (!"Blocked".equals(status)) status = "Unknown";
+                } else {
+                    String plan = source.getPolicyPlanStatus();
+                    if ("Blocked".equals(plan) || "NeedsReview".equals(plan)) status = "Blocked";
+                    else if ("Failed".equals(plan) || "Unknown".equals(plan)) status = plan;
+                    else if ("Queued".equals(plan) || "Applying".equals(plan) || "Draining".equals(plan)) {
+                        status = "Unknown";
+                    }
+                }
+                break;
+            default:
+                status = "Unknown";
+        }
+        out.setStatus(status == null ? "Unknown" : status);
         return out;
     }
 }

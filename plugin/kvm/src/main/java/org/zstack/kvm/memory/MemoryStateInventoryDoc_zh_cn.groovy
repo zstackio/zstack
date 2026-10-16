@@ -87,7 +87,7 @@ doc {
 	}
 	field {
 		name "status"
-		desc "控制器记录的应用状态。"
+		desc "GetMemoryStates及兼容QueryMemoryState响应中的后端七值投影，前端仅映射此字段：Queued等待执行、Applying配置中、Draining排空中、Succeeded配置已应用、Failed配置失败、Blocked暂无法执行、Unknown状态待确认。最新Blocked或NeedsReview计划不能被旧成功遮盖；在途和未决状态保留。Succeeded不表示持续压缩或已有节省。仅响应投影，不改变任务、控制权或allowedActions。ZQL中的MemoryState.status仍是持久化原始值；Host列表筛选由BFF按Host列表状态筛选指南转换为ZQL条件。"
 		type "String"
 		since "5.5.38"
 	}

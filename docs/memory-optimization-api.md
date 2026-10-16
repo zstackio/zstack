@@ -27,7 +27,7 @@ GlobalConfig stores Global settings and ResourceConfig stores Cluster and Host v
 | Host ZRAM pool or writeback-backend preparation dialog | GetHostMemoryWritebackBackends and current Host state/preparation evidence | UpdateMemoryPolicy with prepareWritebackBackend or prepareZramPool; device/pool preparation targets one Host |
 | Operation feedback, task progress and failure-alarm task details | GetMemoryTasks; refresh GetMemoryStates to confirm actual application | CancelMemoryTask only for a queued, undispatched task |
 | Home memory overview and Cluster memory summary | GetMemorySummary for current values/coverage; ZWatch for historical trends | Read-only; Cluster summaries pass the actual Host UUID set, not a clusterUuid parameter |
-| Host list and Host details → Overview | GetMemoryStates for state, current per-Host savings and quality; GetMemorySummary can summarize a single Host | Read-only display; reuse existing detail/configuration links |
+| Host list and Host details → Overview | Existing Host ZQL filtering through BFF; GetMemoryStates for only the current Host page's status, state, savings and quality; GetMemorySummary can summarize a single Host | Read-only display; reuse existing detail/configuration links |
 | Host details → Monitoring data → existing memory-reclaim chart | ZWatch metrics, directly or through the existing ZQL/BFF route | Read-only; extend the existing chart rather than adding a second savings chart |
 | VM details → Memory optimization statistics | GetVmMemoryOptimization; ZWatch for applicable VM historical metrics | Read-only; no VM policy, participation, capacity or enable/disable form |
 | VM list → ZRAM savings column | GetVmMemoryOptimizations for the current page's VM UUIDs | Read-only; batch the request rather than querying each VM separately |
@@ -39,6 +39,46 @@ The memory optimization UI saves ordinary settings through UpdateGlobalConfig, U
 This release does not add a Host batch-configuration page. Global and Cluster pages edit their own configuration, not a selected set of Host overrides. Related fields on one resource use the existing atomic UpdateResourceConfigs request; that does not create a cross-Host transaction. Invalidate previews after edits, and do not automatically retry writes whose responses are lost or unknown. Configuration values and their sources are distinct from actual Host state and unapplied reasons.
 
 The UI does not submit UpdateMemoryPolicy.apply/clearOverride as a substitute for standard configuration APIs. Revision and control evidence needed for maintenance are obtained from API replies and handled by the client, not entered by the user as configuration fields. The backend compatibility appendix is not a frontend configuration workflow.
+
+### Host list status filtering through existing ZQL
+
+The Host list keeps the existing Host ZQL query, ordering, paging and `return with (total)`. `MemoryState` is an inventory mapping to the existing state table, not a new resource, API or SQL view. Select `MemoryState.hostUuid` in a subquery to restrict Hosts **before** paging/counting. Infrastructure memory-state reads remain administrator-only, including direct ZQL and nested subqueries; ordinary Host visibility checks remain in place.
+
+The page sends the selected public `states.status` values. BFF translates them to predicates on the persisted `MemoryState.status`, `activeTaskUuid` and `policyPlanStatus`; it must not fetch all States/UUIDs to filter a Host page in memory. Raw ZQL `status` is the stored control result and is not always the final States presentation. The translation is:
+
+Both States routes return the same seven-value public status, and the list displays the `status` from the current-page States response without combining diagnostic fields. `Succeeded` means the applicable configuration operation succeeded; it does not promise continuous compression or positive memory savings.
+
+| Public status | Display label |
+| --- | --- |
+| `Queued` | 等待执行 |
+| `Applying` | 配置中 |
+| `Draining` | 排空中 |
+| `Succeeded` | 配置已应用 |
+| `Failed` | 配置失败 |
+| `Blocked` | 暂无法执行 |
+| `Unknown` | 状态待确认 |
+
+| Public status | Predicate meaning |
+| --- | --- |
+| `Queued`, `Applying`, `Draining` | The raw status equals the selected value, regardless of plan/activity. |
+| `Succeeded` | Raw `Succeeded`, no active task, and no plan overriding the result. |
+| `Failed` | Raw `Succeeded`/`Failed`/`Blocked`, no active task, and plan `Failed`; or raw `Failed`, no active task, and no overriding plan. |
+| `Blocked` | Raw `Blocked` with an active task; or any of the three terminal raw statuses with no active task and plan `Blocked`/`NeedsReview`; or raw `Blocked` with no active task and no overriding plan. |
+| `Unknown` | Every remaining Host, **including Hosts without a MemoryState row**. Implement as the complement of the six known public statuses, not only `raw status='Unknown'`. |
+
+An overriding plan is `Blocked`, `NeedsReview`, `Failed`, `Unknown`, `Queued`, `Applying` or `Draining`. A null/other plan retains the terminal raw result when there is no active task. An active raw `Succeeded`/`Failed` is `Unknown`; this does not alter stored state, execution ownership or recovery rules. Multi-select uses the union of selected predicates; negation excludes that union. `featureState` and metric `quality` are different fields and must not substitute for this status filter.
+
+For example, pass the following query through the existing authenticated `GET /zstack/v1/zql` `zql` parameter, URL-encoded by the normal client:
+
+```sql
+query Host.uuid,name where uuid in
+  (query MemoryState.hostUuid where status='Succeeded' and activeTaskUuid is null
+   and (policyPlanStatus is null or policyPlanStatus not in
+        ('Blocked','NeedsReview','Failed','Unknown','Queued','Applying','Draining')))
+return with (total) order by uuid asc limit 20 offset 0
+```
+
+After the Host page is returned, use the existing States request with **only that page's Host UUIDs** to populate the status column; an absent state displays `Unknown`. Do not filter this returned page again or recompute its total from page-local data. A later observation may change status between the two reads; no cross-API snapshot is promised. Failed/missing observations must not be presented as a successful applied state or fabricated zero savings.
 
 ## Data sources
 

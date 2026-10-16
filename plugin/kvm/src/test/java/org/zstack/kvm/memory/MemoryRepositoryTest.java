@@ -186,6 +186,54 @@ public class MemoryRepositoryTest {
         }
     }
 
+    @Test public void memoryStateZqlSubqueryFiltersBeforeHostPagingAndTotal() throws Exception {
+        // Use the product's once-only registration; invoking @StaticInit methods
+        // separately would poison a later Platform initialization in this JVM.
+        Class.forName("org.zstack.core.Platform");
+        repository.transaction(em -> {
+            for (String id : Arrays.asList("zql-a", "zql-b", "zql-c", "zql-d")) {
+                TestHost host = new TestHost(); host.uuid = id; host.hypervisorType = "KVM";
+                host.status = HostStatus.Connected; em.persist(host);
+                if ("zql-d".equals(id)) continue;
+                MemoryStateVO state = new MemoryStateVO(); state.setHostUuid(id);
+                state.setStatus("Succeeded"); state.setPolicyPlanStatus("Applied");
+                if ("zql-b".equals(id)) state.setPolicyPlanStatus("Blocked");
+                if ("zql-c".equals(id)) state.setActiveTaskUuid("running-operation");
+                em.persist(state);
+            }
+            return null;
+        });
+        // Public Unknown includes an unresolved active operation and a Host with no state row.
+        String known = "status in ('Queued','Applying','Draining') or "
+                + "(status in ('Succeeded','Failed','Blocked') and activeTaskUuid is null "
+                + "and (policyPlanStatus is null or policyPlanStatus not in ('Unknown','Queued','Applying','Draining'))) "
+                + "or (status='Blocked' and activeTaskUuid is not null)";
+        String text = "query Host.uuid where uuid like 'zql-%' and uuid not in "
+                + "(query MemoryState.hostUuid where " + known + ") "
+                + "return with (total) order by uuid asc limit 1 offset 1";
+        org.zstack.zql.antlr4.ZQLParser parser = new org.zstack.zql.antlr4.ZQLParser(
+                new org.antlr.v4.runtime.CommonTokenStream(new org.zstack.zql.antlr4.ZQLLexer(
+                        new org.antlr.v4.runtime.ANTLRInputStream(text))));
+        org.zstack.header.zql.ASTNode.Query query = parser.query().accept(
+                new org.zstack.zql.ast.parser.visitors.QueryVisitor());
+        assertEquals(0, parser.getNumberOfSyntaxErrors());
+        org.zstack.zql.ast.visitors.result.QueryResult compiled =
+                new org.zstack.zql.ast.visitors.QueryVisitor(false).visit(query);
+        repository.transaction(em -> {
+            assertEquals(Collections.singletonList("zql-d"), compiled.createJPAQuery.apply(em).getResultList());
+            assertEquals(2L, ((Number) compiled.createSimpleCountQuery.apply(em).getSingleResult()).longValue());
+            MemoryStateVO original = em.find(MemoryStateVO.class, "zql-b");
+            assertEquals("Succeeded", original.getStatus());
+            MemoryStateInventory converted = (MemoryStateInventory) org.zstack.header.vo.ToInventory.toInventory(original);
+            assertEquals("zql-b", converted.getHostUuid());
+            assertEquals("Succeeded", converted.getStatus());
+            assertEquals("Blocked", converted.getPolicyPlanStatus());
+            assertEquals("zql-b", MemoryStateInventory.valueOf(Collections.singletonList(original)).get(0).getHostUuid());
+            assertEquals("Blocked", MemoryMetricsPresentation.inventory(original, null, 100000L).getStatus());
+            return null;
+        });
+    }
+
     @Test public void hostEffectivePolicyBatchesStandardConfigReadsWithoutChangingInheritance() {
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "zram.enabled", true);

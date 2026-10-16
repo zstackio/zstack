@@ -1,7 +1,26 @@
 package org.zstack.kvm.memory;
 
+import org.zstack.header.search.Inventory;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
 /** Public API inventory. Nullable samples represent unknown, never a fabricated zero. */
+@Inventory(mappingVOClass = MemoryStateVO.class)
 public class MemoryStateInventory {
+    public static MemoryStateInventory valueOf(MemoryStateVO vo) {
+        return vo.toInventory();
+    }
+
+    public static List<MemoryStateInventory> valueOf(Collection<MemoryStateVO> vos) {
+        List<MemoryStateInventory> inventories = new ArrayList<>(vos.size());
+        for (MemoryStateVO vo : vos) {
+            inventories.add(valueOf(vo));
+        }
+        return inventories;
+    }
+
     public static MemoryStateInventory __example__() {
         MemoryStateInventory inventory = new MemoryStateInventory();
         inventory.setHostUuid("1234567890abcdef1234567890abcdef");
