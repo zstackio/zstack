@@ -47,6 +47,7 @@ import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.primary.PrimaryStorageDeleteBitGC;
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig;
+import org.zstack.storage.primary.PrimaryStorageDeletionGuard;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -256,6 +257,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String prePSInstallPath;
             String volumeFormat;
             String allocatedInstallUrl;
+            Long volumeOperationGuard;
 
             @Override
             public void setup() {
@@ -356,6 +358,20 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             bus.send(rmsg);
                         }
                         trigger.rollback();
+                    }
+                });
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "protect-primary-storage-from-deletion";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        try {
+                            volumeOperationGuard = PrimaryStorageDeletionGuard.acquire(targetPrimaryStorage.getUuid(), vol.getUuid());
+                            trigger.next();
+                        } catch (OperationFailureException e) {
+                            trigger.fail(e.getErrorCode());
+                        }
                     }
                 });
 
@@ -506,6 +522,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         reply.setSuccess(false);
                         dbf.removeByPrimaryKey(vol.getUuid(), vol.getClass());
                         bus.reply(msg, reply);
+                    }
+                });
+
+                Finally(new FlowFinallyHandler(msg) {
+                    @Override
+                    public void Finally() {
+                        PrimaryStorageDeletionGuard.release(volumeOperationGuard);
                     }
                 });
             }
@@ -711,9 +734,31 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setSystemTags(systemTags);
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+
+        // Snapshot creation also binds the target volume only after asynchronous
+        // storage IO. Keep admission until that binding (or error cleanup) commits.
+        String primaryStorageUuid = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshotUuid)
+                .select(VolumeSnapshotVO_.primaryStorageUuid).findValue();
+        final Long guard;
+        try {
+            guard = PrimaryStorageDeletionGuard.acquire(primaryStorageUuid, vo.getUuid());
+        } catch (RuntimeException e) {
+            dbf.removeByPrimaryKey(vo.getUuid(), VolumeVO.class);
+            completion.fail(e instanceof OperationFailureException
+                    ? ((OperationFailureException) e).getErrorCode() : Platform.inerr(e.getMessage()));
+            return;
+        }
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                try {
+                    completeVolume(reply);
+                } finally {
+                    PrimaryStorageDeletionGuard.release(guard);
+                }
+            }
+
+            private void completeVolume(MessageReply reply) {
                 VolumeVO vvo = dbf.reload(vo);
                 if (vvo == null) {
                     reply.setError(operr("target volume is expunged during volume creation"));

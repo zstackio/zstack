@@ -61,6 +61,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.err;
+import static org.zstack.core.Platform.inerr;
 import static org.zstack.core.Platform.operr;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE, dependencyCheck = true)
@@ -1547,12 +1548,21 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                deletePrimaryStorage(msg, new NoErrorCompletion(chain) {
-                    @Override
-                    public void done() {
-                        chain.next();
-                    }
-                });
+                try {
+                    deletePrimaryStorage(msg, new NoErrorCompletion(chain) {
+                        @Override
+                        public void done() {
+                            chain.next();
+                        }
+                    });
+                } catch (RuntimeException e) {
+                    logger.warn("failed to prepare primary storage deletion", e);
+                    APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
+                    evt.setError(e instanceof OperationFailureException
+                            ? ((OperationFailureException) e).getErrorCode() : inerr(e.getMessage()));
+                    bus.publish(evt);
+                    chain.next();
+                }
             }
 
             @Override
@@ -1564,13 +1574,31 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
     private void deletePrimaryStorage(final APIDeletePrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
-        self = dbf.reload(self);
-        Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
-        if (!pscRefs.isEmpty()) {
-            String clusterUuidsString = pscRefs.stream()
-                    .map(PrimaryStorageClusterRefVO::getClusterUuid)
-                    .collect(Collectors.joining(", "));
-            evt.setError(operr("primary storage[uuid:%s] cannot be deleted for still " + "being attached to cluster[uuid:%s].", self.getUuid(), clusterUuidsString));
+        GLock admission = PrimaryStorageDeletionGuard.lock(self.getUuid());
+        admission.lock();
+        try {
+            self = dbf.reload(self);
+            // Atomically check committed volumes and admitted volume operations
+            // before publishing Deleting, which rejects later admission.
+            ErrorCode volumeError = PrimaryStorageDeletionGuard.checkVolumes(self);
+            if (volumeError != null) {
+                evt.setError(volumeError);
+            } else {
+                Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
+                if (!pscRefs.isEmpty()) {
+                    String clusterUuidsString = pscRefs.stream()
+                            .map(PrimaryStorageClusterRefVO::getClusterUuid)
+                            .collect(Collectors.joining(", "));
+                    evt.setError(operr("primary storage[uuid:%s] cannot be deleted for still " + "being attached to cluster[uuid:%s].", self.getUuid(), clusterUuidsString));
+                } else {
+                    self.setState(PrimaryStorageState.Deleting);
+                    self = dbf.updateAndRefresh(self);
+                }
+            }
+        } finally {
+            admission.unlock();
+        }
+        if (evt.getError() != null) {
             bus.publish(evt);
             completion.done();
             return;
@@ -1578,9 +1606,6 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
 
         final String issuer = PrimaryStorageVO.class.getSimpleName();
         final List<PrimaryStorageInventory> ctx = PrimaryStorageInventory.valueOf(Collections.singletonList(self));
-        self.setState(PrimaryStorageState.Deleting);
-        self = dbf.updateAndRefresh(self);
-
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-primary-storage-%s", msg.getUuid()));
 

@@ -15,6 +15,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.group.APIRevertVmFromSnapshotGroupMsg;
@@ -191,10 +192,16 @@ public class PrimaryStorageApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIDeletePrimaryStorageMsg msg) {
-        if (!dbf.isExist(msg.getUuid(), PrimaryStorageVO.class)) {
+        PrimaryStorageVO storage = dbf.findByUuid(msg.getUuid(), PrimaryStorageVO.class);
+        if (storage == null) {
             APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
             bus.publish(evt);
             throw new StopRoutingException();
+        }
+
+        ErrorCode error = PrimaryStorageDeletionGuard.checkVolumes(storage);
+        if (error != null) {
+            throw new ApiMessageInterceptionException(error);
         }
     }
 

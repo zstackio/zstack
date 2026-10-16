@@ -52,6 +52,7 @@ import org.zstack.header.volume.VolumeConstant.Capability;
 import org.zstack.header.volume.VolumeDeletionPolicyManager.VolumeDeletionPolicy;
 import org.zstack.identity.AccountManager;
 import org.zstack.storage.snapshot.group.VolumeSnapshotGroupCreationValidator;
+import org.zstack.storage.primary.PrimaryStorageDeletionGuard;
 import org.zstack.tag.SystemTagCreator;
 import org.zstack.tag.TagManager;
 import org.zstack.utils.CollectionUtils;
@@ -411,6 +412,35 @@ public class VolumeBase implements Volume {
             return;
         }
 
+        Long lease = null;
+        try {
+            lease = PrimaryStorageDeletionGuard.acquire(msg.getPrimaryStorageUuid(), self.getUuid());
+            final Long guard = lease;
+            doInstantiateVolumeWithGuard(msg, new NoErrorCompletion(msg, completion) {
+                @Override
+                public void done() {
+                    try {
+                        PrimaryStorageDeletionGuard.release(guard);
+                    } finally {
+                        completion.done();
+                    }
+                }
+            });
+        } catch (OperationFailureException e) {
+            PrimaryStorageDeletionGuard.release(lease);
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            completion.done();
+        } catch (RuntimeException e) {
+            PrimaryStorageDeletionGuard.release(lease);
+            reply.setError(inerr(e.getMessage()));
+            bus.reply(msg, reply);
+            completion.done();
+        }
+    }
+
+    private void doInstantiateVolumeWithGuard(InstantiateVolumeMsg msg, NoErrorCompletion completion) {
+        InstantiateVolumeReply reply = new InstantiateVolumeReply();
         List<PreInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(PreInstantiateVolumeExtensionPoint.class);
         for (PreInstantiateVolumeExtensionPoint ext : exts) {
             ext.preInstantiateVolume(msg);
