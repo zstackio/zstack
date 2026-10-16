@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ZsDatasetSegmentationConfigSpec;
 
 public class ZsDatasetSourceInventory  {
 
