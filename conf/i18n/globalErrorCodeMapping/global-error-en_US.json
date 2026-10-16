@@ -4662,7 +4662,7 @@
   "ORG_ZSTACK_IPSEC_10014": "There is no master VPC for HA group %s",
   "ORG_ZSTACK_VPCFIREWALL_10018": "ICMP protocol is the only protocol that can use ICMP types. Please ensure your code specifies the correct protocol.",
   "ORG_ZSTACK_IPSEC_10015": "There is a VPC[%s] using an old IPsec plugin; please upgrade it to create an IPsec connection.",
-  "ORG_ZSTACK_VPCFIREWALL_10019": "the rule [%%s] index is invalid",
+  "ORG_ZSTACK_VPCFIREWALL_10019": "cannot change the state of default rule[%s]",
   "ORG_ZSTACK_IPSEC_10016": "There is already an IPsec connection[uuid:%s, name:%s] with the same virtual router and peer address.",
   "ORG_ZSTACK_STORAGE_PRIMARY_SHAREDBLOCK_10080": "use thick-provisioned storage as the cache volume; the provisioning of volume [%s] is %s",
   "ORG_ZSTACK_IPSEC_10010": "All networks within the same IPsec Connection must be of the same type.",
