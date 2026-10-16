@@ -22,7 +22,12 @@ import java.util.regex.Pattern;
  * Created by mingjian.deng on 2018/11/28.
  */
 public class StringSimilarity {
-    private static final CLogger logger = Utils.getLogger(StringSimilarity.class);
+    private static final CLogger logger = Utils.getLogger(StringSimilarity.class, raw -> {
+        for (Map.Entry<String, String> word : Utils.getLogMaskWords().entrySet()) {
+            raw = raw.replace(word.getKey(), word.getValue());
+        }
+        return raw;
+    });
 
     public static final String elaborateFolder = "errorElaborations";
     public static File classPathFolder = PathUtil.findFolderOnClassPath(StringSimilarity.elaborateFolder);
