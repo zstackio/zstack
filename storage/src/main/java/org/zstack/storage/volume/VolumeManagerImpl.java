@@ -734,9 +734,31 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setSystemTags(systemTags);
         String resourceUuid = volumeUuid != null ? volumeUuid : treeUuid;
         bus.makeTargetServiceIdByResourceUuid(cmsg, VolumeSnapshotConstant.SERVICE_ID, resourceUuid);
+
+        // Snapshot creation also binds the target volume only after asynchronous
+        // storage IO. Keep admission until that binding (or error cleanup) commits.
+        String primaryStorageUuid = Q.New(VolumeSnapshotVO.class).eq(VolumeSnapshotVO_.uuid, snapshotUuid)
+                .select(VolumeSnapshotVO_.primaryStorageUuid).findValue();
+        final Long guard;
+        try {
+            guard = PrimaryStorageDeletionGuard.acquire(primaryStorageUuid, vo.getUuid());
+        } catch (RuntimeException e) {
+            dbf.removeByPrimaryKey(vo.getUuid(), VolumeVO.class);
+            completion.fail(e instanceof OperationFailureException
+                    ? ((OperationFailureException) e).getErrorCode() : Platform.inerr(e.getMessage()));
+            return;
+        }
         bus.send(cmsg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {
+                try {
+                    completeVolume(reply);
+                } finally {
+                    PrimaryStorageDeletionGuard.release(guard);
+                }
+            }
+
+            private void completeVolume(MessageReply reply) {
                 VolumeVO vvo = dbf.reload(vo);
                 if (vvo == null) {
                     reply.setError(operr("target volume is expunged during volume creation"));

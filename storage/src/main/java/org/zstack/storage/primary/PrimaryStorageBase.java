@@ -1583,24 +1583,25 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
             ErrorCode volumeError = PrimaryStorageDeletionGuard.checkVolumes(self);
             if (volumeError != null) {
                 evt.setError(volumeError);
-                bus.publish(evt);
-                completion.done();
-                return;
+            } else {
+                Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
+                if (!pscRefs.isEmpty()) {
+                    String clusterUuidsString = pscRefs.stream()
+                            .map(PrimaryStorageClusterRefVO::getClusterUuid)
+                            .collect(Collectors.joining(", "));
+                    evt.setError(operr("primary storage[uuid:%s] cannot be deleted for still " + "being attached to cluster[uuid:%s].", self.getUuid(), clusterUuidsString));
+                } else {
+                    self.setState(PrimaryStorageState.Deleting);
+                    self = dbf.updateAndRefresh(self);
+                }
             }
-            Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
-            if (!pscRefs.isEmpty()) {
-                String clusterUuidsString = pscRefs.stream()
-                        .map(PrimaryStorageClusterRefVO::getClusterUuid)
-                        .collect(Collectors.joining(", "));
-                evt.setError(operr("primary storage[uuid:%s] cannot be deleted for still " + "being attached to cluster[uuid:%s].", self.getUuid(), clusterUuidsString));
-                bus.publish(evt);
-                completion.done();
-                return;
-            }
-            self.setState(PrimaryStorageState.Deleting);
-            self = dbf.updateAndRefresh(self);
         } finally {
             admission.unlock();
+        }
+        if (evt.getError() != null) {
+            bus.publish(evt);
+            completion.done();
+            return;
         }
 
         final String issuer = PrimaryStorageVO.class.getSimpleName();

@@ -54,7 +54,21 @@ public final class PrimaryStorageDeletionGuard {
     public static void release(Long lease) {
         if (lease != null) {
             try {
-                SQL.New(JsonLabelVO.class).eq(JsonLabelVO_.id, lease).hardDelete();
+                String storageUuid = Q.New(JsonLabelVO.class).eq(JsonLabelVO_.id, lease)
+                        .select(JsonLabelVO_.resourceUuid).findValue();
+                if (storageUuid == null) {
+                    return;
+                }
+                GLock lock = lock(storageUuid);
+                lock.lock();
+                try {
+                    // Publication of the VolumeVO binding precedes this release.
+                    // Serialize release with deletion's two queries so it cannot
+                    // observe neither the former guard nor the newly bound volume.
+                    SQL.New(JsonLabelVO.class).eq(JsonLabelVO_.id, lease).hardDelete();
+                } finally {
+                    lock.unlock();
+                }
             } catch (RuntimeException e) {
                 // Do not turn an already committed volume result into failure
                 // or strand its task queue. A remaining guard keeps deletion blocked.
