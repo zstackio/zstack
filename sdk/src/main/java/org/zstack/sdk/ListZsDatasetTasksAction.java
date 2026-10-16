@@ -49,8 +49,14 @@ public class ListZsDatasetTasksAction extends AbstractAction {
     @Param(required = false, validValues = {"DOCUMENT_PROCESSING","TEXT_QUESTION_GENERATION","SINGLE_TURN_ANSWER_GENERATION","SINGLE_TURN_QUALITY_EVALUATION","CHUNK_DATA_CLEANING","EVAL_QUESTION_GENERATION","IMAGE_QUESTION_GENERATION","IMAGE_VQA_GENERATION","MULTI_TURN_CONVERSATION_GENERATION"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String taskType;
 
+    @Param(required = false, validValues = {"DOCUMENT_PROCESSING","TEXT_QUESTION_GENERATION","SINGLE_TURN_ANSWER_GENERATION","SINGLE_TURN_QUALITY_EVALUATION","CHUNK_DATA_CLEANING","EVAL_QUESTION_GENERATION","IMAGE_QUESTION_GENERATION","IMAGE_VQA_GENERATION","MULTI_TURN_CONVERSATION_GENERATION"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List taskTypes;
+
     @Param(required = false, validValues = {"PROCESSING","COMPLETED","FAILED","INTERRUPTED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String status;
+
+    @Param(required = false, validValues = {"PROCESSING","COMPLETED","FAILED","INTERRUPTED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List statuses;
 
     @Param(required = false)
     public java.util.List systemTags;

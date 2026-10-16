@@ -40,6 +40,9 @@ public class ListZsDatasetPublicationsAction extends AbstractAction {
     @Param(required = false, validValues = {"SINGLE_TURN","MULTI_TURN","EVAL_QUESTION","IMAGE_VQA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String contentType;
 
+    @Param(required = false, validValues = {"SINGLE_TURN","MULTI_TURN","EVAL_QUESTION","IMAGE_VQA"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List contentTypes;
+
     @Param(required = false, validValues = {"FineTune","ModelEval"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String scenario;
 
