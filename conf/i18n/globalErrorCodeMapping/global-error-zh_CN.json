@@ -3575,6 +3575,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10018": "状态在更改密码时不正确。",
   "ORG_ZSTACK_COMPUTE_VM_10017": "未在数据库中找到目标主机的UUID：%s，无法向该主机发送修改密码命令！",
   "ORG_ZSTACK_STORAGE_DEVICE_10036": "HBG扫描错误: %s",
+  "ORG_ZSTACK_STORAGE_DEVICE_10051": "只能指定一个SCSI LUN挂载模式",
+  "ORG_ZSTACK_STORAGE_DEVICE_10052": "不支持的SCSI LUN挂载模式[%s]",
   "ORG_ZSTACK_COMPUTE_VM_10015": "vm [%s] 的 HostUuid 为空，无法同步网卡 qos",
   "ORG_ZSTACK_COMPUTE_VM_10014": "vm [%s] 的状态必须为运行中或暂停中才能同步网卡 qos",
   "ORG_ZSTACK_STORAGE_DEVICE_10031": "云实例[UUID: %s]主机[UUID: %s]未连接SCSI磁盘[UUID: %s]",

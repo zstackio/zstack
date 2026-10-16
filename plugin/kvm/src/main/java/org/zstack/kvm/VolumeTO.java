@@ -33,6 +33,16 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     public static final Map<VolumeProtocol, String> deviceTypes = new HashMap<>();
     public static List<KVMConvertVolumeExtensionPoint> exts;
 
+    private String diskMode;
+
+    public String getDiskMode() {
+        return diskMode;
+    }
+
+    public void setDiskMode(String diskMode) {
+        this.diskMode = diskMode;
+    }
+
     private String installPath;
     private Long size;
     private int deviceId;
@@ -69,6 +79,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     }
 
     public VolumeTO(VolumeTO other) {
+        this.diskMode = other.diskMode;
         this.installPath = other.installPath;
         this.size = other.size;
         this.deviceId = other.deviceId;

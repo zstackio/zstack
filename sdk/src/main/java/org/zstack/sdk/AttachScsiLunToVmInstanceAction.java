@@ -34,6 +34,9 @@ public class AttachScsiLunToVmInstanceAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public boolean disableMultiPathAttach = false;
 
+    @Param(required = false, validValues = {"virtio-blk","scsi-hd","scsi-block"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String diskMode;
+
     @Param(required = false)
     public java.util.List systemTags;
 

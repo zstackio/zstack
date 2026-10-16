@@ -3540,6 +3540,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_STORAGE_DEVICE_10049 = "ORG_ZSTACK_STORAGE_DEVICE_10049";
 
+    public static final String ORG_ZSTACK_STORAGE_DEVICE_10051 = "ORG_ZSTACK_STORAGE_DEVICE_10051";
+
+    public static final String ORG_ZSTACK_STORAGE_DEVICE_10052 = "ORG_ZSTACK_STORAGE_DEVICE_10052";
+
     public static final String ORG_ZSTACK_CORE_GC_10000 = "ORG_ZSTACK_CORE_GC_10000";
 
     public static final String ORG_ZSTACK_CORE_GC_10001 = "ORG_ZSTACK_CORE_GC_10001";
