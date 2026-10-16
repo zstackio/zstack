@@ -7,6 +7,7 @@ import org.zstack.header.identity.SharedResourceVO
 import org.zstack.header.image.ImageConstant
 import org.zstack.header.image.ImagePlatform
 import org.zstack.header.storage.primary.PrimaryStorageCapacityVO
+import org.zstack.header.storage.primary.PrimaryStorageOverProvisioningManager
 import org.zstack.header.volume.VolumeStatus
 import org.zstack.sdk.AccountInventory
 import org.zstack.sdk.BackupStorageInventory
@@ -210,8 +211,8 @@ class GetAttachCadidatesCase extends SubCase {
     }
 
     void testGetCadidatesForNotInstantiatedVolumeOnLocalPs() {
-        PrimaryStorageCapacityVO ps = dbf.findByUuid(ps.uuid,PrimaryStorageCapacityVO.class)
-        long psAvailableCapacity = ps.availableCapacity
+        PrimaryStorageCapacityVO capacity = dbf.findByUuid(ps.uuid, PrimaryStorageCapacityVO.class)
+        long psAvailableCapacity = capacity.availableCapacity
 
         DiskOfferingInventory diskOfferingInventory = createDiskOffering {
             name = "test"
@@ -226,8 +227,89 @@ class GetAttachCadidatesCase extends SubCase {
         GetDataVolumeAttachableVmAction action = new GetDataVolumeAttachableVmAction()
         action.volumeUuid = notInstantiateVolume.uuid
         action.sessionId = adminSession()
-        GetDataVolumeAttachableVmAction.Result result = action.call()
-        assert 0 == result.value.inventories.size()
+        PrimaryStorageOverProvisioningManager ratioMgr = bean(PrimaryStorageOverProvisioningManager.class)
+        double originalGlobalRatio = ratioMgr.globalRatio
+        Double originalRatio = ratioMgr.allRatio.get(ps.uuid)
+        try {
+            ratioMgr.setGlobalRatio(1)
+            ratioMgr.setRatio(ps.uuid, 1)
+            GetDataVolumeAttachableVmAction.Result result = action.call()
+            assert result.error == null : "Candidate query failed: ${result.error}"
+            assert result.value.inventories.empty :
+                    "Insufficient capacity without overprovisioning must exclude VMs: actual=${result.value.inventories*.uuid}"
+
+            ratioMgr.setRatio(ps.uuid, 10)
+            result = action.call()
+            Set<String> expectedVmUuids = [normalAccountVm.uuid,
+                                         (env.inventoryByName("vm") as VmInstanceInventory).uuid] as Set
+            assert result.error == null : "Candidate query failed: ${result.error}"
+            assert result.value.inventories*.uuid.toSet() == expectedVmUuids :
+                    "Per-storage ratio must admit an oversized uninstantiated volume: expected=${expectedVmUuids}, actual=${result.value.inventories*.uuid}"
+
+            ratioMgr.deleteRatio(ps.uuid)
+            ratioMgr.setGlobalRatio(10)
+            result = action.call()
+            assert result.error == null : "Global ratio candidate query failed: ${result.error}"
+            assert result.value.inventories*.uuid.toSet() == expectedVmUuids :
+                    "Storage without its own ratio must use the global ratio: expected=${expectedVmUuids}, actual=${result.value.inventories*.uuid}"
+            ratioMgr.setGlobalRatio(1)
+            ratioMgr.setRatio(ps.uuid, 10)
+
+            [psAvailableCapacity * 10, psAvailableCapacity * 10 + 1].each { long size ->
+                DiskOfferingInventory oversizedOffering = createDiskOffering {
+                    name = "oversized-offering-${size}"
+                    diskSize = size
+                } as DiskOfferingInventory
+                VolumeInventory oversizedVolume = createDataVolume {
+                    name = "oversized-volume-${size}"
+                    diskOfferingUuid = oversizedOffering.uuid
+                } as VolumeInventory
+                List<VmInstanceInventory> candidates = getDataVolumeAttachableVm {
+                    volumeUuid = oversizedVolume.uuid
+                } as List<VmInstanceInventory>
+                assert candidates.empty :
+                        "Volume at or above overprovisioned capacity must remain excluded: size=${size}, capacity=${psAvailableCapacity * 10}, actual=${candidates*.uuid}"
+            }
+
+            action.sessionId = normalSession.uuid
+            result = action.call()
+            assert result.error == null : "Normal account candidate query failed: ${result.error}"
+            assert result.value.inventories*.uuid == [normalAccountVm.uuid] :
+                    "Overprovisioning must preserve VM access control: expected=${normalAccountVm.uuid}, actual=${result.value.inventories*.uuid}"
+
+            changePrimaryStorageState {
+                uuid = ps.uuid
+                stateEvent = "disable"
+            }
+            result = action.call()
+            assert result.error == null : "Disabled storage candidate query failed: ${result.error}"
+            assert result.value.inventories.empty :
+                    "Disabled storage must not become eligible through overprovisioning: actual=${result.value.inventories*.uuid}"
+            changePrimaryStorageState {
+                uuid = ps.uuid
+                stateEvent = "enable"
+            }
+
+            VolumeInventory attachedVolume = attachDataVolumeToVm {
+                volumeUuid = notInstantiateVolume.uuid
+                vmInstanceUuid = normalAccountVm.uuid
+            } as VolumeInventory
+            assert attachedVolume.status == VolumeStatus.Ready.toString() :
+                    "The oversized volume must instantiate successfully: expected=Ready, actual=${attachedVolume.status}"
+            assert attachedVolume.vmInstanceUuid == normalAccountVm.uuid :
+                    "The oversized volume must attach to the selected VM: expected=${normalAccountVm.uuid}, actual=${attachedVolume.vmInstanceUuid}"
+        } finally {
+            changePrimaryStorageState {
+                uuid = ps.uuid
+                stateEvent = "enable"
+            }
+            ratioMgr.setGlobalRatio(originalGlobalRatio)
+            if (originalRatio == null) {
+                ratioMgr.deleteRatio(ps.uuid)
+            } else {
+                ratioMgr.setRatio(ps.uuid, originalRatio)
+            }
+        }
     }
 
     @Override
