@@ -26,7 +26,12 @@ public class ResourceConfigZQLExtension implements MarshalZQLASTTreeExtensionPoi
     @Override
     public String restrictByExpr(ZQLExtensionContext context, ASTNode.RestrictExpr expr) {
         if (RESOURCE_CONFIG_OWNER_FIELD.equals(expr.getField()) && RESOURCE_CONFIG_OWNER_NAME.equals(expr.getEntity())) {
-            return filterResourceOwner(context);
+            String resourceOwnerFilter = filterResourceOwner(context);
+            ZQLMetadata.InventoryMetadata src = ZQLMetadata.getInventoryMetadataByName(context.getQueryTargetInventoryName());
+            return String.format("((%s) or %s.resourceUuid in (select ref.resourceUuid from AccountResourceRefVO ref, SharedResourceVO shared" +
+                            " where ref.resourceUuid = shared.resourceUuid" +
+                            " and (shared.receiverAccountUuid = '%s' or shared.toPublic = 1)))",
+                    resourceOwnerFilter, src.simpleInventoryName(), context.getAPISession().getAccountUuid());
         }
 
         return null;
