@@ -69,11 +69,6 @@ public interface SdnControllerL3 {
         beforeCommitDeleteIpRangeInDb(inv, headers);
     }
 
-    default void afterDeleteIpRangeFinally(IpRangeInventory inv, boolean lastIpRange,
-                                           Map<String, Object> headers) {
-        afterIpRangeFinally(inv, headers);
-    }
-
     default void beforeChangeDns(L3NetworkInventory l3, String dns, boolean isAdd,
                                  Map<String, Object> headers, Completion completion) {
         completion.success();
