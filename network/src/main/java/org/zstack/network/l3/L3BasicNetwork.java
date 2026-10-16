@@ -1282,6 +1282,7 @@ public class L3BasicNetwork implements L3Network {
         Runnable runDetach = () -> detachNetworkServiceFromL3NetworkMsg(l3VO, refs, msg.getHeaders(), true, new Completion(completion) {
             @Override
             public void success() {
+                ErrorCode commitError = null;
                 try {
                     new SQLBatch() {
                         @Override
@@ -1299,14 +1300,15 @@ public class L3BasicNetwork implements L3Network {
                         }
                     }.execute();
                 } catch (OperationFailureException e) {
-                    if (sdnL3 != null) {
-                        sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
-                    }
-                    completion.fail(e.getErrorCode());
-                    return;
+                    commitError = e.getErrorCode();
+                } catch (RuntimeException e) {
+                    commitError = errf.throwableToInternalError(e);
+                } finally {
+                    finishNetworkServiceChange(sdnL3, msg.getHeaders());
                 }
-                if (sdnL3 != null) {
-                    sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                if (commitError != null) {
+                    completion.fail(commitError);
+                    return;
                 }
                 self = dbf.reload(self);
                 completion.success(L3NetworkInventory.valueOf(self));
@@ -1314,9 +1316,7 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                if (sdnL3 != null) {
-                    sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
-                }
+                finishNetworkServiceChange(sdnL3, msg.getHeaders());
                 completion.fail(errorCode);
             }
         });
@@ -1332,7 +1332,7 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                finishNetworkServiceChange(sdnL3, msg.getHeaders());
                 completion.fail(errorCode);
             }
         });
@@ -1717,9 +1717,7 @@ public class L3BasicNetwork implements L3Network {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
-                        }
+                        finishDnsChange(sdnL3, msg.getHeaders());
                         completion.success(L3NetworkInventory.valueOf(dbf.reload(self)));
                     }
                 });
@@ -1727,9 +1725,7 @@ public class L3BasicNetwork implements L3Network {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
-                        }
+                        finishDnsChange(sdnL3, msg.getHeaders());
                         completion.fail(errCode);
                     }
                 });
@@ -1900,9 +1896,7 @@ public class L3BasicNetwork implements L3Network {
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
-                        }
+                        finishDnsChange(sdnL3, msg.getHeaders());
                         self = dbf.reload(self);
                         logger.debug(String.format("successfully added dns[%s] to L3Network[uuid:%s, name:%s]", msg.getDns(), self.getUuid(), self.getName()));
                         completion.success(L3NetworkInventory.valueOf(self));
@@ -1912,9 +1906,7 @@ public class L3BasicNetwork implements L3Network {
                 error(new FlowErrorHandler(msg) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterChangeDnsFinally(getSelfInventory(), msg.getHeaders());
-                        }
+                        finishDnsChange(sdnL3, msg.getHeaders());
                         completion.fail(errCode);
                     }
                 });
@@ -2120,6 +2112,18 @@ public class L3BasicNetwork implements L3Network {
             controller.afterIpRangeFinally(range, headers);
         } catch (RuntimeException e) {
             logger.warn(String.format("failed to finish IP range deletion[uuid:%s]", range.getUuid()), e);
+        }
+    }
+
+    private void finishDnsChange(SdnControllerL3 controller, Map<String, Object> headers) {
+        if (controller == null) {
+            return;
+        }
+        try {
+            controller.afterChangeDnsFinally(getSelfInventory(), headers);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish DNS change for L3Network[uuid:%s]",
+                    self.getUuid()), e);
         }
     }
 

@@ -60,6 +60,8 @@ class NetworkMutationFailureCase extends SubCase {
             testRangeDeleteCleanupReleasesQueue()
             testSdnDeleteFailurePolicy()
             testNetworkServiceCommitFailureCompletes()
+            testDnsCleanupPreservesResult()
+            testNetworkServiceDetachCleanupPreservesResult()
             testNicTransactionRetryAndFailure()
         }
     }
@@ -358,6 +360,70 @@ class NetworkMutationFailureCase extends SubCase {
         } finally { extensions.remove(controller) }
     }
 
+    void testDnsCleanupPreservesResult() {
+        def l2 = env.inventoryByName('l2')
+        def l3 = createL3Network { name = 'dns-cleanup'; l2NetworkUuid = l2.uuid }
+        def controller = new FailingL3(l2Uuid: l2.uuid, remoteFirst: true, rejectDnsCommit: true)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            expectMutationFailure('DNS commit failed') {
+                addDnsToL3Network { l3NetworkUuid = l3.uuid; dns = '8.8.4.4' }
+            }
+            assert controller.dnsFinalized == 1
+            assert !Q.New(L3NetworkDnsVO).eq(L3NetworkDnsVO_.l3NetworkUuid, l3.uuid).isExists()
+            controller.rejectDnsCommit = false
+            addDnsToL3Network { l3NetworkUuid = l3.uuid; dns = '8.8.4.4' }
+            assert controller.dnsFinalized == 2
+            assert Q.New(L3NetworkDnsVO).eq(L3NetworkDnsVO_.l3NetworkUuid, l3.uuid).eq(L3NetworkDnsVO_.dns, '8.8.4.4').isExists()
+            controller.rejectDnsCommit = true
+            expectMutationFailure('DNS commit failed') {
+                removeDnsFromL3Network { l3NetworkUuid = l3.uuid; dns = '8.8.4.4' }
+            }
+            assert controller.dnsFinalized == 3
+            assert Q.New(L3NetworkDnsVO).eq(L3NetworkDnsVO_.l3NetworkUuid, l3.uuid).eq(L3NetworkDnsVO_.dns, '8.8.4.4').isExists()
+            controller.rejectDnsCommit = false
+            removeDnsFromL3Network { l3NetworkUuid = l3.uuid; dns = '8.8.4.4' }
+            assert controller.dnsFinalized == 4
+            assert !Q.New(L3NetworkDnsVO).eq(L3NetworkDnsVO_.l3NetworkUuid, l3.uuid).isExists()
+        } finally {
+            extensions.remove(controller)
+            deleteL3Network { uuid = l3.uuid }
+        }
+    }
+
+    void testNetworkServiceDetachCleanupPreservesResult() {
+        def l2 = env.inventoryByName('l2')
+        def l3 = createL3Network { name = 'detach-cleanup'; l2NetworkUuid = l2.uuid }
+        def controller = new FailingL3(l2Uuid: l2.uuid, remoteFirst: true)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            attachNetworkServiceToL3Network { l3NetworkUuid = l3.uuid; networkServices = ['SecurityGroup': ['SecurityGroup']] }
+            assert controller.serviceFinalized == 1
+            controller.rejectService = true
+            expectMutationFailure('network service commit failed') {
+                detachNetworkServiceFromL3Network { l3NetworkUuid = l3.uuid; networkServices = ['SecurityGroup': ['SecurityGroup']] }
+            }
+            assert controller.serviceFinalized == 2
+            assert Q.New(NetworkServiceL3NetworkRefVO).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3.uuid).isExists()
+            controller.rejectService = false
+            controller.serviceCommitError = new ErrorCode('TEST.SERVICE.COMMIT', 'service commit rejected')
+            expectMutationFailure('service commit rejected') {
+                detachNetworkServiceFromL3Network { l3NetworkUuid = l3.uuid; networkServices = ['SecurityGroup': ['SecurityGroup']] }
+            }
+            assert controller.serviceFinalized == 3
+            assert Q.New(NetworkServiceL3NetworkRefVO).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3.uuid).isExists()
+            controller.serviceCommitError = null
+            detachNetworkServiceFromL3Network { l3NetworkUuid = l3.uuid; networkServices = ['SecurityGroup': ['SecurityGroup']] }
+            assert controller.serviceFinalized == 4
+            assert !Q.New(NetworkServiceL3NetworkRefVO).eq(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, l3.uuid).isExists()
+        } finally {
+            extensions.remove(controller)
+            deleteL3Network { uuid = l3.uuid }
+        }
+    }
+
     void testNicTransactionRetryAndFailure() {
         def l3 = env.inventoryByName('l3-2')
         def image = env.inventoryByName('image1')
@@ -460,6 +526,9 @@ class NetworkMutationFailureCase extends SubCase {
         boolean rejectL3Cleanup
         int l3Finalized
         boolean rejectService
+        ErrorCode serviceCommitError
+        boolean rejectDnsCommit
+        int dnsFinalized
         boolean remoteFirst
         int rangeCallbacks
         int serviceFinalized
@@ -490,7 +559,15 @@ class NetworkMutationFailureCase extends SubCase {
             if (rejectRange) { completion.fail(new ErrorCode('TEST.RANGE.COMMIT', 'range confirmation failed')) }
             else { completion.success() }
         }
+        void beforeCommitDnsInDb(L3NetworkInventory inv, Map<String, Object> headers) {
+            if (rejectDnsCommit) { throw new IllegalStateException('DNS commit failed') }
+        }
+        void afterChangeDnsFinally(L3NetworkInventory inv, Map<String, Object> headers) {
+            dnsFinalized++
+            throw new IllegalStateException('DNS cleanup failed')
+        }
         void beforeCommitNetworkServiceInDb(L3NetworkInventory inv, Map<String, Object> headers) {
+            if (serviceCommitError != null) { throw new org.zstack.header.errorcode.OperationFailureException(serviceCommitError) }
             if (rejectService) { throw new IllegalStateException('network service commit failed') }
         }
         void afterChangeNetworkServiceFinally(L3NetworkInventory inv, Map<String, Object> headers) {
