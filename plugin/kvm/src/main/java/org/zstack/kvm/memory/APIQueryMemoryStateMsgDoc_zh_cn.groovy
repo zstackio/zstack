@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """旧路由兼容入口；新客户端请使用 `/memory-optimization/states`。响应和分页语义与GetMemoryStates一致。"""
+    desc """旧路由兼容入口；新客户端请使用 `/memory-optimization/states`。响应和分页语义与GetMemoryStates一致，包括由后端归一的七种status；前端只映射status，不组合诊断字段推断结果。"""
 
     rest {
         request {

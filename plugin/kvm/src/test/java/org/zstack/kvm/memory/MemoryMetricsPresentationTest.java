@@ -24,6 +24,71 @@ public class MemoryMetricsPresentationTest {
         assertEquals(-20, ((Number) result.getMetrics().get("totalSavedEstimateBytes")).longValue());
     }
 
+    @Test public void inventoryProjectsSevenValueStatusConservativelyFromPlanAndActivity() {
+        assertProjectedStatus("Succeeded", "Blocked", null, "Blocked");
+        assertProjectedStatus("Succeeded", "NeedsReview", null, "Blocked");
+        assertProjectedStatus("Succeeded", "Blocked", "active-task", "Unknown");
+        assertProjectedStatus("Failed", "Blocked", "active-task", "Unknown");
+        assertProjectedStatus("Blocked", "Blocked", "active-task", "Blocked");
+        assertProjectedStatus("Failed", "Blocked", null, "Blocked");
+        assertProjectedStatus("Blocked", "Blocked", null, "Blocked");
+        assertProjectedStatus("Unknown", "Blocked", null, "Unknown");
+        assertProjectedStatus("Succeeded", "Failed", null, "Failed");
+        assertProjectedStatus("Succeeded", "Unknown", null, "Unknown");
+        assertProjectedStatus("Failed", "Failed", null, "Failed");
+        assertProjectedStatus("Failed", "Unknown", null, "Unknown");
+        for (String raw : new String[]{"Queued", "Applying", "Draining"}) {
+            assertProjectedStatus(raw, "Blocked", null, raw);
+            assertProjectedStatus(raw, "Queued", null, raw);
+            assertProjectedStatus(raw, "Unknown", null, raw);
+        }
+        for (String raw : new String[]{"Succeeded", "Failed", "Blocked"}) {
+            for (String plan : new String[]{"Queued", "Applying", "Draining"}) {
+                assertProjectedStatus(raw, plan, null, "Unknown");
+            }
+        }
+        for (String raw : new String[]{null, "Cancelled", "Partial", "unexpected"}) {
+            assertProjectedStatus(raw, "Blocked", null, "Unknown");
+        }
+        assertProjectedStatus("Failed", "Applied", null, "Failed");
+        assertProjectedStatus("Unknown", "Applied", null, "Unknown");
+    }
+
+    @Test public void blockedProjectionDoesNotChangePausedResumeEligibilityOrSource() {
+        String nativeState = "{\"managed\":true,\"ksmOnly\":false,\"bootId\":\"boot-1\","
+                + "\"lastConfirmedOperationUuid\":\"op\",\"lastConfirmedAppliedRevision\":31,"
+                + "\"poolGeneration\":\"gen\",\"lifecycle\":{\"activeState\":\"paused\",\"paused\":true},"
+                + "\"host_zram\":{\"pool_generation\":\"gen\",\"device\":\"/dev/zram0\","
+                + "\"quality\":\"native_host_device\",\"observed_at\":\"1970-01-01T00:01:40Z\"},"
+                + "\"actual\":{\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":false,"
+                + "\"pagesToScan\":2000,\"sleepMillis\":20}}}";
+        MemoryStateVO blocked = state();
+        blocked.setStatus("Succeeded"); blocked.setPolicyPlanStatus("Blocked");
+        blocked.setControlOperationUuid("op"); blocked.setDesiredRevision(31); blocked.setAppliedRevision(31L);
+        blocked.setState(nativeState);
+        MemoryStateVO applied = state();
+        applied.setStatus("Succeeded"); applied.setPolicyPlanStatus("Applied");
+        applied.setControlOperationUuid("op"); applied.setDesiredRevision(31); applied.setAppliedRevision(31L);
+        applied.setState(nativeState);
+
+        MemoryStateInventory blockedResult = MemoryMetricsPresentation.inventory(blocked, null, 100100L, true, false);
+        MemoryStateInventory appliedResult = MemoryMetricsPresentation.inventory(applied, null, 100100L, true, false);
+        assertEquals("Blocked", blockedResult.getStatus());
+        assertEquals("Succeeded", appliedResult.getStatus());
+        assertEquals(appliedResult.getAllowedActions(), blockedResult.getAllowedActions());
+        assertEquals(java.util.Arrays.asList("query", "drain", "resume"), blockedResult.getAllowedActions());
+        assertEquals("Succeeded", blocked.getStatus());
+        assertEquals("Blocked", blocked.getPolicyPlanStatus());
+        assertEquals(nativeState, blocked.getState());
+    }
+
+    private void assertProjectedStatus(String raw, String plan, String active, String expected) {
+        MemoryStateVO source = state();
+        source.setStatus(raw); source.setPolicyPlanStatus(plan); source.setActiveTaskUuid(active);
+        MemoryStateInventory result = MemoryMetricsPresentation.inventory(source, null, 100000L);
+        assertEquals(expected, result.getStatus());
+    }
+
     private MemoryStateVO state() {
         MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host");
         state.setStatus("Succeeded"); state.setLastSampleTime(100000L);

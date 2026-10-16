@@ -15,12 +15,15 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostAfterConnectedExtensionPoint;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.zql.ASTNode;
+import org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint;
 import org.zstack.identity.AccountManager;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.managementnode.ManagementNodeChangeListener;
@@ -32,9 +35,13 @@ import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
+import org.zstack.zql.ZQLContext;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +51,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 public class MemoryOptimizationManager extends AbstractService implements ManagementNodeReadyExtensionPoint,
-        ManagementNodeChangeListener, HostAfterConnectedExtensionPoint, GlobalConfigInitExtensionPoint {
+        ManagementNodeChangeListener, HostAfterConnectedExtensionPoint, GlobalConfigInitExtensionPoint,
+        MarshalZQLASTTreeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(MemoryOptimizationManager.class);
     @Autowired private CloudBus bus;
     @Autowired private EventFacade evtf;
@@ -219,6 +227,43 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         // policy, or controls. Preserve the existing admin-only boundary.
         if (accountManager.getResourceUuidsCanAccessByAccount(api.getSession().getAccountUuid(), HostVO.class) != null) {
             throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "Infrastructure administrator access is required");
+        }
+    }
+
+    @Override
+    public void marshalZQLASTTree(ASTNode.Query query) {
+        Deque<ASTNode> pending = new ArrayDeque<>();
+        Set<ASTNode> visited = Collections.newSetFromMap(new IdentityHashMap<ASTNode, Boolean>());
+        pending.add(query);
+        while (!pending.isEmpty()) {
+            ASTNode node = pending.removeFirst();
+            if (!visited.add(node)) { continue; }
+            String entity = node instanceof ASTNode.QueryTarget ? ((ASTNode.QueryTarget) node).getEntity()
+                    : node instanceof ASTNode.SubQueryTarget ? ((ASTNode.SubQueryTarget) node).getEntity()
+                    : node instanceof ASTNode.RestrictExpr ? ((ASTNode.RestrictExpr) node).getEntity() : null;
+            if ("MemoryState".equalsIgnoreCase(entity)) {
+                APIGetMemoryStatesMsg request = new APIGetMemoryStatesMsg();
+                request.setSession(ZQLContext.getAPISession());
+                try {
+                    checkReadAuthorization(request);
+                } catch (MemoryOperationException denied) {
+                    throw new OperationFailureException(denied.toErrorCode());
+                }
+                return;
+            }
+            // Conditions/values are interface-typed and joins are lists: getChildren()
+            // alone misses nested targets. Inspect parsed AST nodes, never query text.
+            for (Field field : FieldUtils.getAllFields(node.getClass())) {
+                if (Modifier.isStatic(field.getModifiers())) { continue; }
+                Object value = FieldUtils.getFieldValue(field.getName(), node);
+                if (value instanceof ASTNode) {
+                    pending.add((ASTNode) value);
+                } else if (value instanceof Collection) {
+                    for (Object child : (Collection<?>) value) {
+                        if (child instanceof ASTNode) { pending.add((ASTNode) child); }
+                    }
+                }
+            }
         }
     }
 

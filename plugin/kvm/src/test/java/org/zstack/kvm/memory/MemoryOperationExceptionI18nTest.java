@@ -215,6 +215,65 @@ public class MemoryOperationExceptionI18nTest {
         }
     }
 
+    @Test public void memoryZqlTargetsKeepInfrastructureReadPermissionIncludingNestedQueries() {
+        String[] queries = {
+                "query MemoryState.hostUuid,status",
+                "count MemoryState",
+                "query Host.uuid restrict by (MemoryState.status='Succeeded')",
+                "query Host.uuid left join MemoryState on Host.uuid=MemoryState.hostUuid",
+                "query Host.uuid where uuid in (query MemoryState.hostUuid where status='Succeeded')",
+                "query VmInstance.uuid where hostUuid in (query Host.uuid where uuid in "
+                        + "(query MemoryState.hostUuid where status='Unknown'))",
+                "query Host.uuid where hypervisorType='KVM' and (uuid='other' or uuid not in "
+                        + "(query memorystate.hostUuid where activeTaskUuid is not null))"
+        };
+        for (String query : queries) {
+            for (String account : new String[]{null, "tenant"}) {
+                org.zstack.header.identity.SessionInventory session = null;
+                if (account != null) {
+                    session = new org.zstack.header.identity.SessionInventory();
+                    session.setAccountUuid(account);
+                }
+                try {
+                    checkMemoryZql(query, session, MemoryReadAuthorizationTest.managerFor(
+                            java.util.Collections.singletonList("host-1")));
+                    fail("memory target must not bypass the read boundary: " + query);
+                } catch (org.zstack.header.errorcode.OperationFailureException expected) {
+                    assertEquals("MEMORY_PERMISSION_DENIED", expected.getErrorCode().getCode());
+                    assertEquals("ORG_ZSTACK_MEMORY_11016", expected.getErrorCode().getGlobalErrorCode());
+                }
+            }
+            org.zstack.header.identity.SessionInventory admin = new org.zstack.header.identity.SessionInventory();
+            admin.setAccountUuid("admin");
+            checkMemoryZql(query, admin, MemoryReadAuthorizationTest.managerFor(null));
+        }
+    }
+
+    @Test public void memoryZqlGuardDoesNotChangeUnrelatedQueriesOrMatchQuotedValues() {
+        checkMemoryZql("query Host.uuid where name='MemoryState'", null,
+                MemoryReadAuthorizationTest.managerFor(java.util.Collections.emptyList()));
+        checkMemoryZql("query VmInstance.uuid where uuid in (query VmNic.vmInstanceUuid)", null,
+                MemoryReadAuthorizationTest.managerFor(java.util.Collections.emptyList()));
+    }
+
+    private void checkMemoryZql(String text, org.zstack.header.identity.SessionInventory session,
+                                MemoryOptimizationManager manager) {
+        org.zstack.zql.antlr4.ZQLParser parser = new org.zstack.zql.antlr4.ZQLParser(
+                new org.antlr.v4.runtime.CommonTokenStream(new org.zstack.zql.antlr4.ZQLLexer(
+                        new org.antlr.v4.runtime.ANTLRInputStream(text))));
+        org.zstack.header.zql.ASTNode.Query query = text.startsWith("count ")
+                ? parser.count().accept(new org.zstack.zql.ast.parser.visitors.CountVisitor())
+                : parser.query().accept(new org.zstack.zql.ast.parser.visitors.QueryVisitor());
+        assertEquals("test must exercise a valid parsed query", 0, parser.getNumberOfSyntaxErrors());
+        try {
+            org.zstack.zql.ZQLContext.cleanAPISession();
+            if (session != null) org.zstack.zql.ZQLContext.putAPISession(session);
+            ((org.zstack.header.zql.MarshalZQLASTTreeExtensionPoint) manager).marshalZQLASTTree(query);
+        } finally {
+            org.zstack.zql.ZQLContext.cleanAPISession();
+        }
+    }
+
     private void assertLocalized(String businessCode, int metadataId, String diagnostic,
                                  String english, String chinese) {
         ErrorCode code = new MemoryOperationException(businessCode, diagnostic).toErrorCode();
