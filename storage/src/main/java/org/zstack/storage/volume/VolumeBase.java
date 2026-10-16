@@ -99,6 +99,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
     @Autowired
     private VolumeDeletionPolicyManager deletionPolicyMgr;
     @Autowired
+    private PrimaryStorageOverProvisioningManager ratioMgr;
+    @Autowired
     private VmInstanceDeviceManager vidm;
 
     public VolumeBase(VolumeVO vo) {
@@ -2677,6 +2679,21 @@ public class VolumeBase extends AbstractVolume implements Volume {
             return new ArrayList<>();
         }
 
+        List<String> primaryStorageUuids = Collections.emptyList();
+        if (self.getStatus() == VolumeStatus.NotInstantiated) {
+            List<PrimaryStorageCapacityVO> capacities = SQL.New("select capacity" +
+                    " from PrimaryStorageCapacityVO capacity, PrimaryStorageEO ps" +
+                    " where capacity.uuid = ps.uuid and ps.state = :state")
+                    .param("state", PrimaryStorageState.Enabled).list();
+            primaryStorageUuids = capacities.stream()
+                    .filter(capacity -> ratioMgr.calculatePrimaryStorageAvailableCapacityByRatio(
+                            capacity.getUuid(), capacity.getAvailableCapacity()) > self.getSize())
+                    .map(PrimaryStorageCapacityVO::getUuid).collect(Collectors.toList());
+            if (primaryStorageUuids.isEmpty()) {
+                return new ArrayList<>();
+            }
+        }
+
         SQL sql = null;
         if (self.getStatus() == VolumeStatus.Ready) {
             List<String> hvTypes = VolumeFormat.valueOf(self.getFormat()).getHypervisorTypesSupportingThisVolumeFormatInString();
@@ -2695,19 +2712,15 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     .param("hvTypes", hvTypes);
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
             sql = SQL.New("select vm" +
-                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where "+ (vmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
                     " vm.state in (:vmStates)" +
                     " and vm.type in (:vmTypes)" +
                     " and vm.clusterUuid = ref.clusterUuid" +
-                    " and capacity.uuid = ps.uuid" +
-                    " and capacity.availableCapacity > :volumeSize" +
-                    " and ref.primaryStorageUuid = ps.uuid" +
-                    " and ps.state in (:psState)" +
+                    " and ref.primaryStorageUuid in (:primaryStorageUuids)" +
                     " group by vm.uuid")
-                    .param("volumeSize", self.getSize())
-                    .param("vmTypes", Arrays.asList(VmInstanceConstant.USER_VM_TYPE, "baremetal2"))
-                    .param("psState", PrimaryStorageState.Enabled);
+                    .param("primaryStorageUuids", primaryStorageUuids)
+                    .param("vmTypes", Arrays.asList(VmInstanceConstant.USER_VM_TYPE, "baremetal2"));
         } else {
             DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
         }
@@ -2717,7 +2730,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         }
         List<VmInstanceVO> ret = sql.param("vmStates", Arrays.asList(VmInstanceState.Running, VmInstanceState.Stopped)).list();
 
-        ret.addAll(getVmInstancesWithoutClusterInfo(vmUuids));
+        ret.addAll(getVmInstancesWithoutClusterInfo(vmUuids, primaryStorageUuids));
         //the vm doesn't suport to online attach volume when vm platform type is other
         ret.removeIf(it -> it.getPlatform().equals(ImagePlatform.Other.toString()) && it.getState() != VmInstanceState.Stopped);
         if (ret.isEmpty()) {
@@ -2731,7 +2744,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
         return ret;
     }
 
-    private List<VmInstanceVO> getVmInstancesWithoutClusterInfo(List<String> accessibleVmUuids) {
+    private List<VmInstanceVO> getVmInstancesWithoutClusterInfo(List<String> accessibleVmUuids, List<String> primaryStorageUuids) {
         SQL sql = null;
         if (self.getStatus() == VolumeStatus.Ready) {
             String primaryStorageUuid = self.getPrimaryStorageUuid();
@@ -2753,19 +2766,15 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     .param("hvTypes", hvTypes);
         } else if (self.getStatus() == VolumeStatus.NotInstantiated) {
             sql = SQL.New("select vm" +
-                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref, PrimaryStorageEO ps, PrimaryStorageCapacityVO capacity" +
+                    " from VmInstanceVO vm, PrimaryStorageClusterRefVO ref" +
                     " where "+ (accessibleVmUuids == null ? "" : " vm.uuid in (:vmUuids) and") +
                     " vm.state in (:vmStates)" +
                     " and vm.type = :vmType" +
                     " and vm.clusterUuid is NULL" +
-                    " and capacity.uuid = ps.uuid" +
-                    " and capacity.availableCapacity > :volumeSize" +
-                    " and ref.primaryStorageUuid = ps.uuid" +
-                    " and ps.state in (:psState)" +
+                    " and ref.primaryStorageUuid in (:primaryStorageUuids)" +
                     " group by vm.uuid")
-                    .param("volumeSize", self.getSize())
-                    .param("vmType", VmInstanceConstant.USER_VM_TYPE)
-                    .param("psState", PrimaryStorageState.Enabled);
+                    .param("primaryStorageUuids", primaryStorageUuids)
+                    .param("vmType", VmInstanceConstant.USER_VM_TYPE);
         } else {
             DebugUtils.Assert(false, String.format("should not reach here, volume[uuid:%s]", self.getUuid()));
         }
