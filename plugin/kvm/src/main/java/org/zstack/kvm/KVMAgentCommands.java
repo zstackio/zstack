@@ -982,6 +982,8 @@ public class KVMAgentCommands {
         private Integer mldVersion;
         @GrayVersion(value = "5.5.28")
         private Boolean enableMulticastQuerier;
+        @GrayVersion(value = "5.5.48")
+        private Boolean enableMulticastSnooping;
 
         public String getL2NetworkUuid() {
             return l2NetworkUuid;
@@ -1061,6 +1063,14 @@ public class KVMAgentCommands {
 
         public void setEnableMulticastQuerier(Boolean enableMulticastQuerier) {
             this.enableMulticastQuerier = enableMulticastQuerier;
+        }
+
+        public Boolean getEnableMulticastSnooping() {
+            return enableMulticastSnooping;
+        }
+
+        public void setEnableMulticastSnooping(Boolean enableMulticastSnooping) {
+            this.enableMulticastSnooping = enableMulticastSnooping;
         }
 
     }

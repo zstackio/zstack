@@ -124,6 +124,8 @@ public class VxlanKvmAgentCommands {
         private Integer mldVersion;
         @GrayVersion(value = "5.5.28")
         private Boolean enableMulticastQuerier;
+        @GrayVersion(value = "5.5.48")
+        private Boolean enableMulticastSnooping;
 
         public Integer getDstport() {
             return dstport;
@@ -203,6 +205,14 @@ public class VxlanKvmAgentCommands {
 
         public void setEnableMulticastQuerier(Boolean enableMulticastQuerier) {
             this.enableMulticastQuerier = enableMulticastQuerier;
+        }
+
+        public Boolean getEnableMulticastSnooping() {
+            return enableMulticastSnooping;
+        }
+
+        public void setEnableMulticastSnooping(Boolean enableMulticastSnooping) {
+            this.enableMulticastSnooping = enableMulticastSnooping;
         }
 
     }
