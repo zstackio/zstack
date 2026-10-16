@@ -42,6 +42,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.l3.L3NetworkVO_;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.utils.Utils;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.logging.CLogger;
 
 import javax.transaction.Transactional;
@@ -548,13 +549,6 @@ public class L2NoVlanNetwork implements L2Network {
                             @Override
                             public void success() {
                                 try {
-                                    new SQLBatch() {
-                                        @Override
-                                        protected void scripts() {
-                                            extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
-                                            changeL2NetworkVlanIdInDb(msg);
-                                        }
-                                    }.execute();
                                     extpEmitter.afterUpdate(getSelfInventory());
                                     event.setInventory(getSelfInventory());
                                     bus.publish(event);
@@ -867,6 +861,22 @@ public class L2NoVlanNetwork implements L2Network {
                     }
                 });
 
+                flow(new NoRollbackFlow() {
+                    String __name__ = "commit-l2-network-vlan";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                extpEmitter.beforeCommitUpdateInDb(newInv, msg.getHeaders());
+                                changeL2NetworkVlanIdInDb(msg);
+                            }
+                        }.execute();
+                        trigger.next();
+                    }
+                });
+
                 done(new FlowDoneHandler(completion) {
                     @Override
                     public void handle(Map data) {
@@ -877,6 +887,7 @@ public class L2NoVlanNetwork implements L2Network {
                 error(new FlowErrorHandler(completion) {
                     @Override
                     public void handle(ErrorCode errCode, Map data) {
+                        self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
                         completion.fail(errCode);
                     }
                 });
@@ -1249,6 +1260,7 @@ public class L2NoVlanNetwork implements L2Network {
         prepareL2NetworkForCluster(msg, hvinvs, new Completion(msg,completion) {
             @Override
             public void success() {
+                ErrorCode failure = null;
                 try {
                     new SQLBatch() {
                         @Override
@@ -1265,27 +1277,26 @@ public class L2NoVlanNetwork implements L2Network {
                     }.execute();
                     logger.debug(String.format("successfully attached L2Network[uuid:%s] to cluster [uuid:%s]", self.getUuid(), msg.getClusterUuid()));
                     self = dbf.findByUuid(self.getUuid(), L2NetworkVO.class);
-                    completion.success();
                 } catch (OperationFailureException e) {
-                    completion.fail(e.getErrorCode());
+                    failure = e.getErrorCode();
                 } catch (Exception e) {
-                    completion.fail(errf.throwableToInternalError(e));
+                    failure = errf.throwableToInternalError(e);
                 } finally {
-                    for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
-                        ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders());
-                    }
+                    CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class),
+                            ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders()));
+                }
+                if (failure == null) {
+                    completion.success();
+                } else {
+                    completion.fail(failure);
                 }
             }
 
             @Override
             public void fail(ErrorCode errorCode) {
-                try {
-                    completion.fail(errorCode);
-                } finally {
-                    for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
-                        ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders());
-                    }
-                }
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class),
+                        ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders()));
+                completion.fail(errorCode);
             }
         });
     }

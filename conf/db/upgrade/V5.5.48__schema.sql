@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsControllerApiCompatibilityVO` (
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'managedBy', 'VARCHAR(32)', 1, NULL);
-UPDATE `zstack`.`ZnsSegmentRefVO` SET `managedBy` = 'UNVERIFIED' WHERE `managedBy` IS NULL;
+UPDATE `zstack`.`ZnsSegmentRefVO` SET `managedBy` = 'CLOUD' WHERE `managedBy` IS NULL;
 
 -- ZCF-6749: shared durable inbox for sync-resource-v2.
 DROP PROCEDURE IF EXISTS `ENSURE_ZNS_SYNC_RESOURCE_V2_COLUMNS`;
@@ -75,14 +75,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRemoteDeleteVO` (
     CONSTRAINT `fkZnsSegmentRemoteDeleteVOSdnControllerVO`
         FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-UPDATE `zstack`.`ZnsSegmentRefVO`
-SET `fenceToken` = `operationUuid`,
-    `fenceUntil` = DATE_ADD(NOW(), INTERVAL 600 SECOND),
-    `operationDigest` = NULL
-WHERE `fenceToken` IS NULL
-  AND `operationUuid` IS NOT NULL
-  AND `state` IN ('Initializing', 'Syncing', 'Deleting', 'Error', 'PlacementConflict', 'SourceUnavailable');
 
 DROP TABLE IF EXISTS `zstack`.`ZnsControllerTransitionVO`;
 DROP TABLE IF EXISTS `zstack`.`ZnsControllerCapabilityVO`;

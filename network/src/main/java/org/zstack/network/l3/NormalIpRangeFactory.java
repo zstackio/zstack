@@ -7,6 +7,8 @@ import org.zstack.core.componentloader.PluginRegistry;
 
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.db.SQL;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.core.Completion;
@@ -209,7 +211,19 @@ public class NormalIpRangeFactory implements IpRangeFactory {
             public void rollback(FlowRollback trigger, Map data) {
                 List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
                 if (vos != null && !vos.isEmpty()) {
-                    dbf.removeCollection(vos, IpRangeVO.class);
+                    new SQLBatch() {
+                        @Override
+                        protected void scripts() {
+                            List<String> rangeUuids = new ArrayList<>();
+                            for (IpRangeVO vo : vos) {
+                                rangeUuids.add(vo.getUuid());
+                            }
+                            SQL.New(UsedIpVO.class).in(UsedIpVO_.ipRangeUuid, rangeUuids)
+                                    .set(UsedIpVO_.ipRangeUuid, null).update();
+                            dbf.removeByPrimaryKeysInCurrentTransaction(rangeUuids, IpRangeVO.class);
+                            IpRangeHelper.updateL3NetworkIpversion(vos.get(0));
+                        }
+                    }.execute();
                 }
                 trigger.rollback();
             }

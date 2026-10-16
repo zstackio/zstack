@@ -320,7 +320,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             }
 
             if (sdnControllerUuid == null) {
-                SdnControllerL2 fallbackController = findSdnControllerL2Safe(l2Network);
+                SdnControllerL2 fallbackController = findSdnControllerL2(l2Network);
                 if (fallbackController != null) {
                     fallbackController.createL2Network(l2Network, msg, headers == null ? Collections.emptyMap() : headers, completion);
                     return;
@@ -374,7 +374,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void beforeUpdateL2Network(L2NetworkInventory l2Inv, Map<String, Object> headers, Completion completion) {
-        SdnControllerL2 controller = findSdnControllerL2Safe(l2Inv);
+        SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller == null) {
             completion.success();
             return;
@@ -384,7 +384,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory l2Inv, Map<String, Object> headers) {
-        SdnControllerL2 controller = findSdnControllerL2Safe(l2Inv);
+        SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller != null) {
             controller.beforeCommitUpdateL2NetworkInDb(l2Inv, headers == null ? Collections.emptyMap() : headers);
         }
@@ -392,7 +392,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void afterUpdateL2NetworkFinally(L2NetworkInventory l2Inv, Map<String, Object> headers) {
-        SdnControllerL2 controller = findSdnControllerL2Safe(l2Inv);
+        SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller != null) {
             controller.afterL2NetworkFinally(l2Inv, headers == null ? Collections.emptyMap() : headers);
         }
@@ -402,6 +402,8 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
         try {
             return findSdnControllerL2(inv);
         } catch (Exception e) {
+            logger.warn(String.format("failed to resolve SDN controller while cleaning up L2Network[uuid:%s]",
+                    inv.getUuid()), e);
             return null;
         }
     }
@@ -424,7 +426,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             }
         }
         if (sdnControllerVO == null) {
-            return findSdnControllerL2Safe(l2Network);
+            return findSdnControllerL2(l2Network);
         }
         SdnControllerFactory factory = sdnControllerFactories.get(sdnControllerVO.getVendorType());
         return factory == null ? null : factory.getSdnControllerL2(sdnControllerVO);

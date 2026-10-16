@@ -2039,23 +2039,19 @@ public class L3BasicNetwork implements L3Network {
                             }
                         }.execute();
                     } catch (OperationFailureException e) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
-                        }
                         reply.setError(e.getErrorCode());
+                    } catch (RuntimeException e) {
+                        reply.setError(errf.throwableToInternalError(e));
+                    } finally {
+                        finishNetworkServiceChange(sdnL3, msg.getHeaders());
                         bus.reply(msg, reply);
-                        return;
                     }
-                    if (sdnL3 != null) {
-                        sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
-                    }
-                    bus.reply(msg, reply);
                 } else {
                     detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, msg.getHeaders(), false, new Completion(msg) {
                         @Override
                         public void success() {
                             if (sdnL3 != null) {
-                                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                                finishNetworkServiceChange(sdnL3, msg.getHeaders());
                             }
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
@@ -2064,7 +2060,7 @@ public class L3BasicNetwork implements L3Network {
                         @Override
                         public void fail(ErrorCode errorCode) {
                             if (sdnL3 != null) {
-                                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                                finishNetworkServiceChange(sdnL3, msg.getHeaders());
                             }
                             reply.setError(errorCodeList.getCauses().get(0));
                             bus.reply(msg, reply);
@@ -2082,7 +2078,7 @@ public class L3BasicNetwork implements L3Network {
 
             @Override
             public void fail(ErrorCode errorCode) {
-                sdnL3.afterChangeNetworkServiceFinally(getSelfInventory(), msg.getHeaders());
+                finishNetworkServiceChange(sdnL3, msg.getHeaders());
                 reply.setError(errorCode);
                 bus.reply(msg, reply);
             }
@@ -2113,6 +2109,18 @@ public class L3BasicNetwork implements L3Network {
         };
         attachNetworkServices(msg, completion);
 	}
+
+    private void finishNetworkServiceChange(SdnControllerL3 controller, Map<String, Object> headers) {
+        if (controller == null) {
+            return;
+        }
+        try {
+            controller.afterChangeNetworkServiceFinally(getSelfInventory(), headers);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish network service change for L3Network[uuid:%s]",
+                    self.getUuid()), e);
+        }
+    }
 
     private void attachNetworkServices(APIAttachNetworkServiceToL3NetworkMsg msg,
                                        ReturnValueCompletion<L3NetworkInventory> completion) {

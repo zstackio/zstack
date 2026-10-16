@@ -22,6 +22,7 @@ import org.zstack.network.service.MtuGetter;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.query.QueryFacade;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -111,17 +112,15 @@ public class L2VlanNetworkFactory extends AbstractService implements L2NetworkFa
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
-                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
-                }
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class),
+                        exp -> exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders()));
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
-                    exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders());
-                }
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class),
+                        exp -> exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getHeaders()));
                 L2VlanNetworkInventory persistedInv = L2VlanNetworkInventory.valueOf(
                         dbf.findByUuid(ovo.getUuid(), L2VlanNetworkVO.class));
                 logger.debug(String.format("Successfully created VlanL2Network[uuid:%s, name:%s]",

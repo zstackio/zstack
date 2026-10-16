@@ -18,6 +18,7 @@ import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.image.ImagePlatform;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.*;
@@ -128,15 +129,23 @@ public class VmAllocateNicFlow implements Flow {
             callBeforeAllocateVmNicExtensions(nic, spec, new Completion(wcomp) {
                 @Override
                 public void success() {
-                    new SQLBatch() {
-                        @Override
-                        protected void scripts() {
-                            persistStaticIpIfNeeded(nic, nicVO, nw, nicNetworkInfoMap, spec);
-                            nics.add(nic);
-                            VmNicVO updated = dbf.updateAndRefresh(nicVO);
-                            addVmNicConfig(updated, spec, nicSpec);
-                        }
-                    }.execute();
+                    try {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                persistStaticIpIfNeeded(nic, nicVO, nw, nicNetworkInfoMap, spec);
+                                VmNicVO updated = dbf.updateAndRefresh(nicVO);
+                                addVmNicConfig(updated, spec, nicSpec);
+                            }
+                        }.execute();
+                    } catch (OperationFailureException e) {
+                        fail(e.getErrorCode());
+                        return;
+                    } catch (RuntimeException e) {
+                        fail(errf.throwableToInternalError(e));
+                        return;
+                    }
+                    nics.add(nic);
                     if (customMac != null) {
                         mo.deleteCustomMacSystemTag(spec.getVmInventory().getUuid(), nw.getUuid(), customMac);
                     }
