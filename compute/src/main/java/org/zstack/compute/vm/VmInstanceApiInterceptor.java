@@ -458,12 +458,6 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(final APIUpdateVmNicDriverMsg msg) {
-        VmInstanceVO vo = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
-        if (vo.getPlatform().equals(ImagePlatform.Other.toString())) {
-            throw new ApiMessageInterceptionException(argerr(
-            ORG_ZSTACK_COMPUTE_VM_10114,         "Current platform %s not support update nic driver yet", vo.getPlatform()));
-        }
-
         List<String> supportNicDriverTypes = nicManager.getSupportNicDriverTypes();
         if (!supportNicDriverTypes.contains(msg.getDriverType())) {
             throw new ApiMessageInterceptionException(argerr(
