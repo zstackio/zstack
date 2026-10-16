@@ -1,8 +1,11 @@
 package org.zstack.storage.zbs;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
+import org.zstack.core.timeout.ApiTimeoutManager;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.kvm.KVMGlobalConfig;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,6 +18,9 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTAC
 
 public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
     public static final String GET_RESOURCE_USAGE_PATH = "/zbs/primarystorage/resource/usage";
+
+    @Autowired
+    private ApiTimeoutManager timeoutManager;
 
     @Override
     public boolean isAvailable(ZbsNodeRef nodeRef) {
@@ -29,6 +35,7 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
         command.setCgroupNames(new ArrayList<>(cgroupNames));
         MdsInfo mds = new MdsInfo();
         mds.setAddr(nodeRef.getNodeAddress());
+        long timeout = TimeUnit.SECONDS.toMillis(KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class));
         new ZbsPrimaryStorageMdsBase(mds).httpCall(
                 GET_RESOURCE_USAGE_PATH,
                 command, ResourceUsageResponse.class, new ReturnValueCompletion<ResourceUsageResponse>(completion) {
@@ -50,7 +57,7 @@ public class ZbsAgentResourceUsageProvider implements ZbsResourceUsageProvider {
                         }
                         completion.success(response.getUsages());
                     }
-                }, TimeUnit.MINUTES, 5);
+                }, TimeUnit.MILLISECONDS, Math.min(timeout, timeoutManager.getTimeout()));
     }
 
     public static class ResourceUsageCommand {
