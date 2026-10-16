@@ -66,6 +66,10 @@ public interface SdnControllerL2 {
     }
     void deleteL2Network(L2NetworkInventory inv, Completion completion);
 
+    default boolean isDeleteFailureBlocking() {
+        return false;
+    }
+
     default void afterDeleteL2Network(L2NetworkInventory inv) {
     }
 

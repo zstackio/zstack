@@ -533,21 +533,23 @@ public class L3BasicNetwork implements L3Network {
                     @Override
                     @Deferred
                     public void handle(ErrorCode errCode, Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterIpRangeFinally(inv, msg.getHeaders());
+                        try {
+                            finishIpRangeDeletion(sdnL3, inv, msg.getHeaders());
+                            completion.fail(errCode);
+                        } finally {
+                            chainTask.next();
                         }
-                        completion.fail(errCode);
-                        chainTask.next();
                     }
                 }).done(new FlowDoneHandler(msg) {
                     @Override
                     @Deferred
                     public void handle(Map data) {
-                        if (sdnL3 != null) {
-                            sdnL3.afterIpRangeFinally(inv, msg.getHeaders());
+                        try {
+                            finishIpRangeDeletion(sdnL3, inv, msg.getHeaders());
+                            completion.success();
+                        } finally {
+                            chainTask.next();
                         }
-                        completion.success();
-                        chainTask.next();
                     }
                 }).start();
             }
@@ -2109,6 +2111,17 @@ public class L3BasicNetwork implements L3Network {
         };
         attachNetworkServices(msg, completion);
 	}
+
+    private void finishIpRangeDeletion(SdnControllerL3 controller, IpRangeInventory range, Map<String, Object> headers) {
+        if (controller == null) {
+            return;
+        }
+        try {
+            controller.afterIpRangeFinally(range, headers);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish IP range deletion[uuid:%s]", range.getUuid()), e);
+        }
+    }
 
     private void finishNetworkServiceChange(SdnControllerL3 controller, Map<String, Object> headers) {
         if (controller == null) {

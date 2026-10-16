@@ -485,7 +485,13 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
             @Override
             public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
+                if (controllerL2.isDeleteFailureBlocking()) {
+                    completion.fail(errorCode);
+                } else {
+                    logger.warn(String.format("failed to delete L2Network[uuid:%s] on SDN controller: %s; continuing local deletion",
+                            inv.getUuid(), errorCode));
+                    completion.success();
+                }
             }
         });
     }

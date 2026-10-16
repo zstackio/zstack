@@ -115,6 +115,13 @@ public class VmAllocateNicFlow implements Flow {
             }
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
+            ErrorCode qosError = validateVmNicQos(nw.getUuid(), nicSpec);
+            if (qosError != null) {
+                errs.add(qosError);
+                wcomp.allDone();
+                return;
+            }
+
             VmNicInventory nic = buildNicInventory(spec, nicSpec, nw, mac, customNicUuid, deviceId, disableL3Networks);
             if (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
                 errs.add(operr(ORG_ZSTACK_COMPUTE_VM_10069, "Duplicate mac address [%s]", nic.getMac()));
@@ -284,6 +291,24 @@ public class VmAllocateNicFlow implements Flow {
             Integer queues = vmNicParm.getMultiQueueNum();
             multiQueues.updateValue(vmNicVO.getUuid(), queues.toString());
         }
+    }
+
+    private ErrorCode validateVmNicQos(String l3NetworkUuid, VmNicSpec nicSpec) {
+        if (CollectionUtils.isEmpty(nicSpec.getVmNicParams())) {
+            return null;
+        }
+        VmNicParam param = nicSpec.getVmNicParams().get(0);
+        if (param.getInboundBandwidth() == null && param.getOutboundBandwidth() == null) {
+            return null;
+        }
+        for (VmNicQosConfigExtensionPoint extension :
+                pluginRgty.getExtensionList(VmNicQosConfigExtensionPoint.class)) {
+            ErrorCode error = extension.validateVmNicQos(l3NetworkUuid);
+            if (error != null) {
+                return error;
+            }
+        }
+        return null;
     }
 
     private void callBeforeAllocateVmNicExtensions(VmNicInventory nic, VmInstanceSpec spec, Completion completion) {

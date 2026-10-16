@@ -21,6 +21,7 @@ import org.zstack.header.vm.VmNicVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.sdnController.SdnControllerFactory
+import org.zstack.sdnController.SdnControllerL2
 import org.zstack.sdnController.SdnControllerManagerImpl
 import org.zstack.test.integration.network.l3network.Env
 import org.zstack.testlib.EnvSpec
@@ -54,6 +55,8 @@ class NetworkMutationFailureCase extends SubCase {
             testVlanCommitFailureRollsBackHost()
             testControllerLookupFailureRejectsUpdate()
             testRangeRollbackRestoresAddressFamilyAndUsedIp()
+            testRangeDeleteCleanupReleasesQueue()
+            testSdnDeleteFailurePolicy()
             testNetworkServiceCommitFailureCompletes()
             testNicTransactionRetryAndFailure()
         }
@@ -196,6 +199,81 @@ class NetworkMutationFailureCase extends SubCase {
         }
     }
 
+    void testRangeDeleteCleanupReleasesQueue() {
+        def l2 = env.inventoryByName('l2')
+        def l3 = createL3Network { name = 'range-delete-cleanup'; l2NetworkUuid = l2.uuid }
+        def controller = new FailingL3(l2Uuid: l2.uuid)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            def range = addIpRange {
+                name = 'cleanup-range'; l3NetworkUuid = l3.uuid
+                startIp = '192.168.210.10'; endIp = '192.168.210.20'
+                netmask = '255.255.255.0'; gateway = '192.168.210.1'
+            }
+            controller.rejectDelete = true
+            controller.rejectRangeCleanup = true
+            expectMutationFailure('range delete rejected') { deleteIpRange { uuid = range.uuid } }
+            assert dbf.isExist(range.uuid, IpRangeVO)
+            assert controller.rangeFinalized == 2
+            controller.rejectDelete = false
+            deleteIpRange { uuid = range.uuid }
+            assert !dbf.isExist(range.uuid, IpRangeVO)
+            assert controller.rangeFinalized == 3
+            controller.rejectRangeCleanup = false
+            def nextRange = addIpRange {
+                name = 'queue-recovered'; l3NetworkUuid = l3.uuid
+                startIp = '192.168.210.10'; endIp = '192.168.210.20'
+                netmask = '255.255.255.0'; gateway = '192.168.210.1'
+            }
+            deleteIpRange { uuid = nextRange.uuid }
+            assert !dbf.isExist(nextRange.uuid, IpRangeVO)
+        } finally {
+            extensions.remove(controller)
+            deleteL3Network { uuid = l3.uuid }
+        }
+    }
+
+    void testSdnDeleteFailurePolicy() {
+        def zone = env.inventoryByName('zone')
+        def switchType = new VSwitchType('DeleteFailureSwitch')
+        switchType.sdnControllerType = 'DeleteFailureController'
+        def controller = mock(SdnControllerL2)
+        doAnswer { call ->
+            (call.arguments[1] as Completion).fail(new ErrorCode('TEST.SDN.DELETE', 'SDN delete failed'))
+            null
+        }.when(controller).deleteL2Network(any(L2NetworkInventory), any(Completion))
+        def factory = mock(SdnControllerFactory)
+        when(factory.getSdnControllerL2(anyString())).thenReturn(controller)
+        def factories = bean(SdnControllerManagerImpl).sdnControllerFactories
+        factories.put(switchType.sdnControllerType, factory)
+        try {
+            for (String mode : ['Permissive', 'Enforcing']) {
+                def l2 = createL2NoVlanNetwork { name = "delete-${mode}"; zoneUuid = zone.uuid; physicalInterface = 'eth9' }
+                def l3 = createL3Network { name = "delete-l3-${mode}"; l2NetworkUuid = l2.uuid }
+                def range = addIpRange {
+                    name = 'delete-range'; l3NetworkUuid = l3.uuid
+                    startIp = '192.168.211.10'; endIp = '192.168.211.20'
+                    netmask = '255.255.255.0'; gateway = '192.168.211.1'
+                }
+                SQL.New(L2NetworkVO).eq(L2NetworkVO_.uuid, l2.uuid).set(L2NetworkVO_.vSwitchType, switchType.toString()).update()
+                deleteL2Network { uuid = l2.uuid; deleteMode = mode }
+                assert !dbf.isExist(l2.uuid, L2NetworkVO)
+                assert !dbf.isExist(l3.uuid, L3NetworkVO)
+                assert !dbf.isExist(range.uuid, IpRangeVO)
+            }
+            def protectedL2 = createL2VlanNetwork { name = 'protected-delete'; zoneUuid = zone.uuid; physicalInterface = 'eth9'; vlan = 321 }
+            SQL.New(L2NetworkVO).eq(L2NetworkVO_.uuid, protectedL2.uuid).set(L2NetworkVO_.vSwitchType, switchType.toString()).update()
+            when(controller.isDeleteFailureBlocking()).thenReturn(true)
+            expectMutationFailure('SDN delete failed') { deleteL2Network { uuid = protectedL2.uuid } }
+            assert dbf.isExist(protectedL2.uuid, L2NetworkVO)
+            when(controller.isDeleteFailureBlocking()).thenReturn(false)
+            deleteL2Network { uuid = protectedL2.uuid }
+            assert !dbf.isExist(protectedL2.uuid, L2NetworkVO)
+            verify(controller, times(4)).deleteL2Network(any(L2NetworkInventory), any(Completion))
+        } finally { factories.remove(switchType.sdnControllerType) }
+    }
+
     void testNetworkServiceCommitFailureCompletes() {
         def l3 = env.inventoryByName('l3')
         def controller = new FailingL3(l2Uuid: l3.l2NetworkUuid, rejectService: true, remoteFirst: true)
@@ -312,6 +390,9 @@ class NetworkMutationFailureCase extends SubCase {
     static class FailingL3 implements SdnControllerL3, GetSdnControllerExtensionPoint {
         String l2Uuid
         boolean rejectRange
+        boolean rejectDelete
+        boolean rejectRangeCleanup
+        int rangeFinalized
         boolean rejectService
         boolean remoteFirst
         int rangeCallbacks
@@ -323,6 +404,14 @@ class NetworkMutationFailureCase extends SubCase {
         void deleteL3Network(L3NetworkInventory inv, Completion completion) { completion.success() }
         void createIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
         void deleteIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
+        void beforeDeleteIpRange(IpRangeInventory inv, boolean last, Map<String, Object> headers, Completion completion) {
+            if (rejectDelete) { completion.fail(new ErrorCode('TEST.RANGE.DELETE', 'range delete rejected')) }
+            else { completion.success() }
+        }
+        void afterIpRangeFinally(IpRangeInventory inv, Map<String, Object> headers) {
+            rangeFinalized++
+            if (rejectRangeCleanup) { throw new IllegalStateException('range cleanup failed') }
+        }
         void afterCommitIpRangeInDb(IpRangeInventory inv, Map<String, Object> headers, Completion completion) {
             rangeCallbacks++
             if (rejectRange) { completion.fail(new ErrorCode('TEST.RANGE.COMMIT', 'range confirmation failed')) }
