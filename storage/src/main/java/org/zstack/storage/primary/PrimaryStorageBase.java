@@ -1565,6 +1565,15 @@ public abstract class PrimaryStorageBase extends AbstractPrimaryStorage {
     private void deletePrimaryStorage(final APIDeletePrimaryStorageMsg msg, final NoErrorCompletion completion) {
         final APIDeletePrimaryStorageEvent evt = new APIDeletePrimaryStorageEvent(msg.getId());
         self = dbf.reload(self);
+        // Recheck at execution time, before changing state or cascading, even
+        // when the API passed validation before approval or queueing.
+        ErrorCode volumeError = PrimaryStorageDeletionValidator.checkVolumes(self);
+        if (volumeError != null) {
+            evt.setError(volumeError);
+            bus.publish(evt);
+            completion.done();
+            return;
+        }
         Set<PrimaryStorageClusterRefVO> pscRefs = self.getAttachedClusterRefs();
         if (!pscRefs.isEmpty()) {
             String clusterUuidsString = pscRefs.stream()

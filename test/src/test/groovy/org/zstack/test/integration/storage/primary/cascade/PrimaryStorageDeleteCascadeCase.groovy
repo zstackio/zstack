@@ -1,10 +1,16 @@
 package org.zstack.test.integration.storage.primary.cascade
 
 import org.springframework.http.HttpEntity
+import org.zstack.compute.vm.VmGlobalConfig
+import org.zstack.core.db.Q
+import org.zstack.header.storage.primary.PrimaryStorageVO
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.volume.VolumeVO
+import org.zstack.header.volume.VolumeVO_
+import org.zstack.header.volume.VolumeStatus
+import org.zstack.sdk.DeletePrimaryStorageAction
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.network.securitygroup.SecurityGroupConstant
@@ -16,6 +22,7 @@ import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.PrimaryStorageInventory
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.sdk.VolumeInventory
+import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
@@ -300,6 +307,8 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             volumeUuid = volume.uuid
         }
 
+        assertNonLocalDeleteRejected(ps)
+
         // detach cascade will set vm to stopped
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = ps.getUuid()
@@ -316,7 +325,11 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             destroyCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DestroyVmCmd.class)
             return rsp
         }
-        // delete primary storage cascade will destroy vm and data volume using delay strategy
+        assertNonLocalDeleteRejected(ps)
+        assert destroyCmd == null
+        removeVolumesBeforeDeletingStorage(ps, cluster, vm, volume)
+        destroyCmd = null
+        // Non-local storage must be empty before direct deletion.
         deletePrimaryStorage {
             uuid = ps.getUuid()
         }
@@ -325,10 +338,8 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             vo = dbFindByUuid(vm.getUuid(), VmInstanceVO.class)
             volVO = dbFindByUuid(volume.getUuid(), VolumeVO.class)
 
-            return {
-                assert vo == null
-                assert volVO == null
-            }
+            assert vo == null
+            assert volVO == null
         }
         assert destroyCmd == null
     }
@@ -349,6 +360,8 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             volumeUuid = volume.uuid
         }
 
+        assertNonLocalDeleteRejected(ps)
+
         // detach cascade will set vm to stopped
         detachPrimaryStorageFromCluster {
             primaryStorageUuid = ps.getUuid()
@@ -365,9 +378,14 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             destroyCmd = JSONObjectUtil.toObject(e.body, KVMAgentCommands.DestroyVmCmd.class)
             return rsp
         }
-        // delete primary storage cascade will destroy vm and data volume using delay strategy
+        assertNonLocalDeleteRejected(ps)
+        assert destroyCmd == null
+        removeVolumesBeforeDeletingStorage(ps, cluster, vm, volume)
+        destroyCmd = null
+        // An empty non-local storage can also be deleted in enforcing mode.
         deletePrimaryStorage {
             uuid = ps.getUuid()
+            deleteMode = "Enforcing"
         }
         VolumeVO volVO
         retryInSecs {
@@ -377,5 +395,53 @@ class PrimaryStorageDeleteCascadeCase extends SubCase {
             assert volVO == null
         }
         assert destroyCmd == null
+    }
+
+    void assertNonLocalDeleteRejected(PrimaryStorageInventory ps, String volumeUuid = null) {
+        def state = dbFindByUuid(ps.uuid, PrimaryStorageVO.class).state
+        List<String> before = Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid)
+                .select(VolumeVO_.uuid).listValues().sort()
+        ["Permissive", "Enforcing"].each { mode ->
+            def result = new DeletePrimaryStorageAction(uuid: ps.uuid, deleteMode: mode,
+                    sessionId: currentEnvSpec.session.uuid).call()
+            assert result.error != null
+            assert result.error.details.contains("cannot delete non-local primary storage")
+            assert result.error.details.contains(ps.uuid)
+            if (volumeUuid != null) {
+                assert result.error.details.contains(volumeUuid)
+            }
+            assert dbFindByUuid(ps.uuid, PrimaryStorageVO.class).state == state
+            assert Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid)
+                    .select(VolumeVO_.uuid).listValues().sort() == before
+        }
+    }
+
+    void removeVolumesBeforeDeletingStorage(PrimaryStorageInventory ps, ClusterInventory cluster,
+                                           VmInstanceInventory vm, VolumeInventory volume) {
+        attachPrimaryStorageToCluster { primaryStorageUuid = ps.uuid; clusterUuid = cluster.uuid }
+        detachDataVolumeFromVm { uuid = volume.uuid }
+        String policy = VmGlobalConfig.VM_DELETION_POLICY.value()
+        try {
+            VmGlobalConfig.VM_DELETION_POLICY.updateValue("Delay")
+            destroyVmInstance { uuid = vm.uuid }
+            expungeVmInstance { uuid = vm.uuid }
+        } finally {
+            VmGlobalConfig.VM_DELETION_POLICY.updateValue(policy)
+        }
+
+        // The unattached data volume is now the only remaining volume.
+        assertNonLocalDeleteRejected(ps, volume.uuid)
+        String volumePolicy = VolumeGlobalConfig.VOLUME_DELETION_POLICY.value()
+        try {
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue("Delay")
+            deleteDataVolume { uuid = volume.uuid }
+            assert dbFindByUuid(volume.uuid, VolumeVO.class).status == VolumeStatus.Deleted
+            assertNonLocalDeleteRejected(ps, volume.uuid)
+            expungeDataVolume { uuid = volume.uuid }
+        } finally {
+            VolumeGlobalConfig.VOLUME_DELETION_POLICY.updateValue(volumePolicy)
+        }
+        assert !Q.New(VolumeVO.class).eq(VolumeVO_.primaryStorageUuid, ps.uuid).isExists()
+        detachPrimaryStorageFromCluster { primaryStorageUuid = ps.uuid; clusterUuid = cluster.uuid }
     }
 }
