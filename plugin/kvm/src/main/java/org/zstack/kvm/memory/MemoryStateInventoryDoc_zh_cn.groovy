@@ -63,7 +63,7 @@ doc {
 	}
 	field {
 		name "controlOperationUuid"
-		desc "当前Host控制操作UUID。"
+		desc "管理端当前Host控制操作UUID；prepareWritebackBackend请求的expectedControlOperationUuid取同一Host的本字段，不取写回候选清单中的Agent观测控制UUID。"
 		type "String"
 		since "5.5.38"
 	}
@@ -87,7 +87,7 @@ doc {
 	}
 	field {
 		name "status"
-		desc "GetMemoryStates及兼容QueryMemoryState响应中的后端七值投影，前端仅映射此字段：Queued等待执行、Applying配置中、Draining排空中、Succeeded配置已应用、Failed配置失败、Blocked暂无法执行、Unknown状态待确认。最新Blocked或NeedsReview计划不能被旧成功遮盖；在途和未决状态保留。Succeeded不表示持续压缩或已有节省。仅响应投影，不改变任务、控制权或allowedActions。ZQL中的MemoryState.status仍是持久化原始值；Host列表筛选由BFF按Host列表状态筛选指南转换为ZQL条件。"
+		desc "States接口返回后端归一后的配置状态，页面映射此字段：Queued等待执行、Applying配置中、Draining排空中、Succeeded配置已应用、Failed配置失败、Blocked暂无法执行、Unknown状态待确认。最新Blocked或NeedsReview计划不能被旧成功遮盖；在途和未决状态保留。Succeeded不表示持续压缩或已有节省。MemoryState ZQL映射中的同名字段为存储的原控制结果，BFF须结合activeTaskUuid和policyPlanStatus转换所选状态的查询条件，再于Host分页和总数计算之前过滤；没有状态行的Host也属于Unknown。仅响应投影，不改变任务、控制权或allowedActions。"
 		type "String"
 		since "5.5.38"
 	}
@@ -121,6 +121,13 @@ doc {
 		type "String"
 		since "5.5.38"
 	}
+
+	field {
+		name "currentStep"
+		desc "后端或CLI诊断用的当前活动步骤：drain、prepareZramPool、prepareWritebackBackend、activateZramPool、restoreWriteback、apply、pause、resume、reconcile或recoverUncertain。前端状态展示只映射status，不依赖此字段组合判断。Unknown表示结果未决，无可信活动任务时为null，不表示零值或执行完成。普通clearOverride归为apply。"
+		type "String"
+		since "5.5.48"
+	}
 	field {
 		name "appliedPolicyHash"
 		desc "已应用策略摘要哈希。"
@@ -147,7 +154,7 @@ doc {
 	}
 	field {
 		name "policyPlanStatus"
-		desc "策略计划状态；需要复核不等同于已应用。"
+		desc "内部策略计划状态，用于诊断；前端只映射status，不组合此字段推断结果。需要复核不等同于已应用。"
 		type "String"
 		since "5.5.38"
 	}

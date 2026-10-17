@@ -3,14 +3,15 @@
   "endpoint": "PUT /v1/memory-policies/{resourceUuid}/actions",
   "notes": [
     "These are request-body examples; authentication/session metadata is supplied by the ZStack transport, not by JSON body fields.",
-    "UUIDs/revisions/opaque generations are illustrative. Obtain current values from preview/state/task APIs; never copy a stale fence into a live request.",
+    "UUIDs/revisions/opaque generations are illustrative. Maintenance identity comes from the current Policy, same-Host MN States control, and Backends candidate/boot/pool/capacity; never copy a stale fence or use the Agent candidate control as the MN control.",
+    "Ordinary frontend saves use GlobalConfig/ResourceConfig, including while status is Unknown. They do not use these compatibility apply/clearOverride or diagnostic recovery examples. Read States after saving; HTTP 202 accepts a REST job only. Poll its location: only final API success with MemoryTask inventory confirms maintenance task acceptance, still not Host completion.",
     "The URI resourceUuid must equal the body resourceUuid. Host maintenance actions target one Host scope at a time.",
     "Target-shard commit/cancel must reuse the same actor, clientRequestUuid, scope, and resourceUuid as the staged shard."
   ],
   "actions": [
     {
       "action": "apply",
-      "preconditions": "Use the previewed desired revision and complete sourceRevisions chain. For Host: Global, Cluster, and Host entries must match current preview.",
+      "preconditions": "Backend/CLI compatibility only; ordinary frontend configuration uses standard Config APIs. Use the previewed desired revision and complete sourceRevisions chain. For Host: Global, Cluster, and Host entries must match current preview.",
       "request": {
         "scope": "Host",
         "resourceUuid": "1234567890abcdef1234567890abcdef",
@@ -23,7 +24,7 @@
     },
     {
       "action": "clearOverride",
-      "preconditions": "Clear only fields explicitly owned at this scope. Refresh expectedRevision/sourceRevisions from preview.",
+      "preconditions": "Backend/CLI compatibility only; ordinary frontend override deletion uses DeleteResourceConfig. Clear only fields explicitly owned at this scope. Refresh expectedRevision/sourceRevisions from preview.",
       "request": {
         "scope": "Host",
         "resourceUuid": "1234567890abcdef1234567890abcdef",
@@ -67,11 +68,11 @@
     },
     {
       "action": "prepareWritebackBackend",
-      "preconditions": "Host-only. candidateId must be returned by current backend discovery; boot/pool fence and exact byte capacity must be current. No raw device path is accepted.",
+      "preconditions": "Host-only, existing prepare permission and explicit whole-device reset confirmation; no separate frontend drain permission or request. Submit once using current discovery candidateId, boot/pool and measured capacity, Policy revision/source chain and same-Host States MN control. The backend validates safety before accepting, then performs necessary drain, device preparation, verified owner/capacity registration and restoration of retained intent. HTTP 202 accepts only a REST job; final API success with MemoryTask inventory confirms task acceptance, not Host completion. Display outcome from States.status; candidate writebackReady alone is not proof of binding or completed maintenance. No raw path, invented owner, user-entered proof, second configuration PUT or frontend recovery orchestration. This cold example has no MN control and omits expectedControlOperationUuid; preserve it when present, never substitute the Agent candidate control.",
       "request": {
-        "scope":"Host","resourceUuid":"1234567890abcdef1234567890abcdef","action":"prepareWritebackBackend","expectedRevision":0,
+        "resourceUuid":"1234567890abcdef1234567890abcdef","action":"prepareWritebackBackend","expectedRevision":0,
         "expectedSourceRevisions":{"Global:global":0,"Cluster:234567890abcdef1234567890abcdef1":0,"Host:1234567890abcdef1234567890abcdef":0},
-        "clientRequestUuid":"00000000000000000000000000000008","policy":"{}",
+        "clientRequestUuid":"00000000000000000000000000000008",
         "backendPreparation":{"candidateId":"candidate:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","expectedHostBootId":"1e73a145-2662-4911-9c4f-b75a7d91a88e","expectedPoolGeneration":"none","backendCapacityBytes":21474836480,"resetConfirmed":true}
       }
     },

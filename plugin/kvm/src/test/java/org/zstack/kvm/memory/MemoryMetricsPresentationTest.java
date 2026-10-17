@@ -24,6 +24,42 @@ public class MemoryMetricsPresentationTest {
         assertEquals(-20, ((Number) result.getMetrics().get("totalSavedEstimateBytes")).longValue());
     }
 
+    @Test public void inventoryPreservesSourceControlAndCurrentStepWhileProjectingTrustedNativeFeature() {
+        MemoryStateVO state = new MemoryStateVO();
+        state.setHostUuid("host"); state.setStatus("Succeeded"); state.setReason("original");
+        state.setPolicyPlanStatus("Blocked"); state.setPolicyPlanHash("plan");
+        state.setActiveTaskUuid(null); state.setControlOperationUuid("op");
+        state.setDesiredRevision(31); state.setAppliedRevision(31L); state.setCurrentStep("drain");
+        state.setLastSampleTime(100000L);
+        String nativeState = "{\"managed\":true,\"ksmOnly\":true,\"mode\":\"observe\","
+                + "\"resource_authorized\":false,\"bootId\":\"boot-1\","
+                + "\"lastConfirmedOperationUuid\":\"op\",\"lastConfirmedAppliedRevision\":31,"
+                + "\"lifecycle\":{\"activeState\":\"compatibility\",\"paused\":false},"
+                + "\"host_zram\":{\"pool_generation\":\"\",\"device\":\"\",\"quality\":\"unavailable\"},"
+                + "\"actual\":{\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":false,"
+                + "\"pagesToScan\":2000,\"sleepMillis\":20}}}";
+        state.setState(nativeState);
+        String sourceState = state.getState();
+        MemoryStateInventory result = MemoryMetricsPresentation.inventory(state, null, 100100L);
+        assertEquals("drain", result.getCurrentStep());
+        assertEquals("Active", result.getFeatureState());
+        assertEquals("KSM_NATIVE", result.getFeatureStateSource());
+        assertEquals(java.util.Collections.singletonList("query"), result.getAllowedActions());
+        assertEquals(sourceState, state.getState());
+        assertEquals("Succeeded", state.getStatus());
+        assertEquals("original", state.getReason());
+        assertEquals("op", state.getControlOperationUuid());
+        assertEquals(Long.valueOf(31L), state.getAppliedRevision());
+        assertEquals("drain", state.getCurrentStep());
+        assertEquals("Blocked", result.getStatus());
+
+        MemoryStateInventory repeat = MemoryMetricsPresentation.inventory(state, null, 100100L);
+        assertEquals(result.getStatus(), repeat.getStatus());
+        assertEquals(result.getFeatureState(), repeat.getFeatureState());
+        assertEquals(result.getAllowedActions(), repeat.getAllowedActions());
+        assertEquals(result.getCurrentStep(), repeat.getCurrentStep());
+    }
+
     @Test public void inventoryProjectsSevenValueStatusConservativelyFromPlanAndActivity() {
         assertProjectedStatus("Succeeded", "Blocked", null, "Blocked");
         assertProjectedStatus("Succeeded", "NeedsReview", null, "Blocked");

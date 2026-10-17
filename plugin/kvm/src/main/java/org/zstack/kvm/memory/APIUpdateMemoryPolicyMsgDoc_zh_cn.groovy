@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """以revision和幂等请求UUID为条件提交策略或显式维护动作；异步响应只表示任务已接受，不表示Host执行成功。"""
+    desc """以revision和幂等请求UUID为条件提交显式维护动作。HTTP 202仅表示REST异步job已受理，须按location轮询原job；最终API成功并返回MemoryTask inventory才表示维护任务已接受，仍不表示Host执行成功。普通GlobalConfig/ResourceConfig保存不调用本接口，也不因Host为Unknown而要求前端先恢复或排空；后端仅在原回执及独立当前证明完整时自动收尾并应用最新保存配置，缺证保留Unknown。writeback开关可先于设备配置或准备独立保存，生效条件由后端检查，不能以候选未ready禁用普通保存。选盘仅提交一次prepareWritebackBackend，浏览器只需准备权限及整盘确认，不串联drain/reconcile。已准备后端但尚无池时，更换另一未使用设备仍走此请求，不要求先开启ZRAM或删除历史；后端须核完整准备回执、当前归属/配置与真实无池无数据，按原维护流程保存旧设备证据，不凭APPLIED或空代次放行。BFF仍须读取同Host的States控制身份、Policy版本及Backends候选证据；这些标识不是用户填写项。候选writebackReady不等于绑定及整项维护成功，不能据此提前报成功或重复格式化；BFF若等待任务完成，应核对返回root任务的聚合结果，不能只等prepare子任务。安全准入失败返回明确错误，任务受理后从States.status展示结果。"""
 
     rest {
         request {
@@ -17,7 +17,7 @@ doc {
 
             clz APIUpdateMemoryPolicyMsg.class
 
-            desc """请求体使用 `updateMemoryPolicy` action wrapper；`policy` 是JSON字符串。普通 apply 应先读取当前 revision/sourceRevisions。"""
+            desc """请求体使用 `updateMemoryPolicy` action wrapper。普通配置使用 GlobalConfig/ResourceConfig；本接口的 apply/clearOverride 仅为后端/CLI兼容操作，兼容调用应先读取当前 revision/sourceRevisions，policy 为JSON字符串。选盘使用 prepareWritebackBackend 一次提交，省略可选兼容 scope 和无配置用途的 policy；后端自动维护，前端仅从 States.status 展示结果。"""
 
 			params {
 
@@ -33,7 +33,7 @@ doc {
 				column {
 					name "backendPreparation"
 					enclosedIn "updateMemoryPolicy"
-					desc "写回设备准备证据对象；仅用于 prepareWritebackBackend。对象字段：candidateId (String，候选查询返回的candidate:加64位小写十六进制摘要，不是设备路径)；expectedHostBootId (String，候选查询时的Host启动标识，提交时须仍匹配)；expectedPoolGeneration (String，候选查询时池代次，无池为none，否则为64位小写十六进制摘要)；backendCapacityBytes (long，候选确认的容量，字节，须为4096整数倍且在接口范围内)；resetConfirmed (boolean，确认候选设备可供写回且现有内容可重置，必须为true)。"
+					desc "写回设备自动维护证据对象；仅用于 Host prepareWritebackBackend。对象字段：candidateId (String，候选查询返回的candidate:加64位小写十六进制摘要，不是设备路径)；expectedHostBootId (String，候选查询时的Host启动标识，提交时须仍匹配)；expectedPoolGeneration (String，候选查询时池代次，无池为none，否则为64位小写十六进制摘要)；backendCapacityBytes (long，候选实测整设备容量，字节，非任意使用配额，须为4096整数倍且在接口范围内)；resetConfirmed (boolean，明确确认所选设备现有内容可重置，必须为true)。后端校验并按需排空、准备设备、原子保存可信设备标识与容量，再恢复原策略；不隐式开启原关闭的功能。首次无池且仅服务未停时，核无数据、无未决及服务身份后自动正常退出、准备及恢复；超时不强杀，不改KSM或VM。前端无需串联维护、手动停服务或补写设备UUID，仅查询States.status展示结果。canPrepare描述可否直接离线准备，不能单凭其false推断自动维护一定不可受理，后端仍逐项核验拒绝原因及适用的首次使用或排空条件。"
 					location "body"
 					type "MemoryBackendPreparation"
 					optional true
@@ -134,7 +134,7 @@ doc {
 				column {
 					name "expectedControlOperationUuid"
 					enclosedIn "updateMemoryPolicy"
-					desc "预期Host控制操作UUID；受控动作的fencing凭据，参与请求幂等身份。分片暂存/提交/取消禁止传入。恢复、协调及准备动作按各自回执合同核对；其他Host动作提供时也必须匹配当前控制操作。"
+					desc "预期Host控制操作UUID；受控动作的fencing凭据，参与请求幂等身份。prepareWritebackBackend取同一Host的States.controlOperationUuid（管理端控制身份），不得用写回候选清单中Agent观测的同名字段代填。同Host状态记录无控制UUID时，首次准备沿原合同省略本参数，不伪造控制身份；查不到记录或读取失败不能当作无控制。分片暂存/提交/取消禁止传入。恢复、协调及其他准备动作按各自回执合同核对；其他Host动作提供时也必须匹配当前控制操作。"
 					location "body"
 					type "String"
 					optional true
