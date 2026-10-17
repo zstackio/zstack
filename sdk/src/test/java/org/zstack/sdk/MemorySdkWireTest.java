@@ -500,6 +500,7 @@ public class MemorySdkWireTest {
 
     @Test public void stateSdkModelCarriesPlanDiagnostics() {
         String stateJson = "{\"policyPlanStatus\":\"NeedsReview\","
+                + "\"currentStep\":\"reconcile-policy\","
                 + "\"policyBlockedFields\":\"{\\\"policy\\\":{\\\"reason\\\":\\\"LEGACY_APPLIED_POLICY_UNKNOWN\\\"}}\","
                 + "\"appliedPolicy\":\"{\\\"schemaVersion\\\":1,\\\"ksm\\\":{\\\"enabled\\\":false}}\","
                 + "\"featureState\":\"Active\",\"featureStateSource\":\"KSM_NATIVE\","
@@ -507,6 +508,9 @@ public class MemorySdkWireTest {
                 + "\"policyPlanHash\":\"plan-hash\"}";
         MemoryStateInventory state = new com.google.gson.Gson().fromJson(stateJson, MemoryStateInventory.class);
         assertEquals("NeedsReview", state.getPolicyPlanStatus());
+        assertEquals("reconcile-policy", state.getCurrentStep());
+        assertEquals("reconcile-policy", new com.google.gson.Gson().toJsonTree(state)
+                .getAsJsonObject().get("currentStep").getAsString());
         assertEquals("KSM_NATIVE", state.getFeatureStateSource());
         assertTrue(state.getPolicyBlockedFields().contains("LEGACY_APPLIED_POLICY_UNKNOWN"));
         assertEquals("applied-hash", state.getAppliedPolicyHash());

@@ -156,6 +156,14 @@ public class MemoryStateInventory  {
         return this.activeTaskUuid;
     }
 
+    public java.lang.String currentStep;
+    public void setCurrentStep(java.lang.String currentStep) {
+        this.currentStep = currentStep;
+    }
+    public java.lang.String getCurrentStep() {
+        return this.currentStep;
+    }
+
     public java.lang.String appliedPolicyHash;
     public void setAppliedPolicyHash(java.lang.String appliedPolicyHash) {
         this.appliedPolicyHash = appliedPolicyHash;
