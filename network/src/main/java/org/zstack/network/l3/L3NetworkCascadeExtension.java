@@ -86,6 +86,7 @@ public class L3NetworkCascadeExtension extends AbstractAsyncCascadeExtension {
         for (L3NetworkInventory l3inv : l3invs) {
             L3NetworkDeletionMsg msg = new L3NetworkDeletionMsg();
             msg.setL3NetworkUuid(l3inv.getUuid());
+            msg.setCascadeParentIssuer(action.getParentIssuer());
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3inv.getUuid());
             msgs.add(msg);

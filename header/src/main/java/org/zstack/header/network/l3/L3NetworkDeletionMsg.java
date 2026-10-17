@@ -6,6 +6,15 @@ import org.zstack.header.message.DeletionMessage;
  */
 public class L3NetworkDeletionMsg extends DeletionMessage implements L3NetworkMessage {
     private String l3NetworkUuid;
+    private String cascadeParentIssuer;
+
+    public String getCascadeParentIssuer() {
+        return cascadeParentIssuer;
+    }
+
+    public void setCascadeParentIssuer(String cascadeParentIssuer) {
+        this.cascadeParentIssuer = cascadeParentIssuer;
+    }
 
     public String getL3NetworkUuid() {
         return l3NetworkUuid;

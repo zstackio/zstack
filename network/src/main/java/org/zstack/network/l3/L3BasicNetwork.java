@@ -632,7 +632,7 @@ public class L3BasicNetwork implements L3Network {
                         L3NetworkInventory inv = L3NetworkInventory.valueOf(self);
                         extpEmitter.beforeDelete(inv);
                         deleteHook();
-                        extpEmitter.afterDelete(inv);
+                        extpEmitter.afterDelete(inv, msg.getCascadeParentIssuer());
 
                         trigger.next();
                     }

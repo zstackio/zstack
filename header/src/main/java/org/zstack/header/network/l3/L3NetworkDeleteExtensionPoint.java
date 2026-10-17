@@ -6,4 +6,8 @@ public interface L3NetworkDeleteExtensionPoint {
     void beforeDeleteL3Network(L3NetworkInventory inventory);
 
     void afterDeleteL3Network(L3NetworkInventory inventory);
+
+    default void afterDeleteL3Network(L3NetworkInventory inventory, String cascadeParentIssuer) {
+        afterDeleteL3Network(inventory);
+    }
 }

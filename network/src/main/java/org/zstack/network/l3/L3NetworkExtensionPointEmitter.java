@@ -54,10 +54,14 @@ public class L3NetworkExtensionPointEmitter implements Component {
     }
 
     public void afterDelete(final L3NetworkInventory inv) {
+        afterDelete(inv, null);
+    }
+
+    public void afterDelete(final L3NetworkInventory inv, final String cascadeParentIssuer) {
         CollectionUtils.safeForEach(deleteExtensions, new ForEachFunction<L3NetworkDeleteExtensionPoint>() {
             @Override
             public void run(L3NetworkDeleteExtensionPoint arg) {
-                arg.afterDeleteL3Network(inv);
+                arg.afterDeleteL3Network(inv, cascadeParentIssuer);
             }
         });
     }
