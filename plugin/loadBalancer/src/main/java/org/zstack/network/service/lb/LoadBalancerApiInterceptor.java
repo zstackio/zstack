@@ -22,6 +22,7 @@ import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.identity.IdentityErrors;
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.l3.AddressPoolVO;
@@ -33,6 +34,8 @@ import org.zstack.header.tag.SystemTagVO;
 import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
+import org.zstack.identity.AccountManager;
+import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO;
 import org.zstack.network.service.vip.VipNetworkServicesRefVO_;
@@ -54,6 +57,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.argerr;
+import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.network.service.lb.LoadBalancerConstants.*;
 import static org.zstack.utils.CollectionDSL.e;
@@ -74,6 +78,8 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     private TagManager tagMgr;
     @Autowired
     private LoadBalancerManager lbMgr;
+    @Autowired
+    private AccountManager accountManager;
 
     private static final CLogger logger = CLoggerImpl.getLogger(LoadBalancerApiInterceptor.class);
     private static String SPLIT = "-";
@@ -2386,6 +2392,16 @@ public class LoadBalancerApiInterceptor implements ApiMessageInterceptor, Global
     }
 
     private void validate(APIGetLoadBalancerListenerBackendServersMsg msg) {
+        if (!accountManager.isAdmin(msg.getSession())
+                && !CheckIfAccountCanAccessResource.check(
+                        Arrays.asList(msg.getListenerUuid(), msg.getServerGroupUuid()),
+                        msg.getSession().getAccountUuid()).isEmpty()) {
+            throw new ApiMessageInterceptionException(err(
+                    ORG_ZSTACK_NETWORK_SERVICE_LB_10195, IdentityErrors.PERMISSION_DENIED,
+                    "permission denied to read backend servers of listener[uuid:%s] and server group[uuid:%s]",
+                    msg.getListenerUuid(), msg.getServerGroupUuid()));
+        }
+
         LoadBalancerListenerVO listener = dbf.findByUuid(
                 msg.getListenerUuid(), LoadBalancerListenerVO.class);
         if (listener == null) {

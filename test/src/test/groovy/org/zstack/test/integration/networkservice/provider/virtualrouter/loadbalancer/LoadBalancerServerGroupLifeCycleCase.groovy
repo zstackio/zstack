@@ -4,6 +4,14 @@ import org.springframework.http.HttpEntity
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SQL
+import org.zstack.header.identity.AccountResourceRefVO
+import org.zstack.header.identity.AccountResourceRefVO_
+import org.zstack.header.identity.AccountType
+import org.zstack.header.identity.IdentityErrors
+import org.zstack.header.errorcode.SysErrors
+import org.zstack.core.Platform
+import org.zstack.header.identity.SharedResourceVO
+import org.zstack.header.identity.SharedResourceVO_
 import org.zstack.network.service.lb.LoadBalancerBackendServerState
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO
 import org.zstack.network.service.lb.LoadBalancerListenerServerGroupVmNicRefVO_
@@ -13,6 +21,7 @@ import org.zstack.test.integration.networkservice.provider.NetworkServiceProvide
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.lb.LoadBalancerConstants
 import org.zstack.network.service.portforwarding.PortForwardingConstant
@@ -204,8 +213,178 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
             createServerGroup()
             TestUpdateLoadBalancerServerGroup()
             TestServerGroupWithBackendServer()
+            testBackendReadPermissions()
             TestGetServerGroupBackendServer()
             TestDeleteLoadBalancerServerGroup()
+        }
+    }
+
+    void testBackendReadPermissions() {
+        def listener = env.inventoryByName("listener-22") as LoadBalancerListenerInventory
+        def resources = [listener.uuid, servergroup2.uuid]
+        def ownerRef = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, servergroup2.uuid).find()
+        def listenerOwnerRef = Q.New(AccountResourceRefVO.class)
+                .eq(AccountResourceRefVO_.resourceUuid, listener.uuid).find()
+        assert ownerRef != null && listenerOwnerRef != null
+        assert ownerRef.ownerAccountUuid == listenerOwnerRef.ownerAccountUuid
+
+        def adminMembers = getLoadBalancerListenerBackendServers {
+            listenerUuid = listener.uuid
+            serverGroupUuid = servergroup2.uuid
+        } as List<LoadBalancerListenerBackendServerInventory>
+        assert adminMembers.size() == 1
+        assert adminMembers[0].vmNicUuid != null
+
+        def account = createAccount {
+            name = "backend-reader"
+            password = "password"
+        } as AccountInventory
+        def session = logInByAccount {
+            accountName = account.name
+            password = "password"
+        } as SessionInventory
+
+        def checkAccess = { String phase, int listenerCount, int groupCount, boolean allowed ->
+            assert queryLoadBalancerListener {
+                conditions = ["uuid=${listener.uuid}".toString()]
+                sessionId = session.uuid
+            }.size() == listenerCount
+            assert queryLoadBalancerServerGroup {
+                conditions = ["uuid=${servergroup2.uuid}".toString()]
+                sessionId = session.uuid
+            }.size() == groupCount
+            def action = new GetLoadBalancerListenerBackendServersAction(
+                    listenerUuid: listener.uuid, serverGroupUuid: servergroup2.uuid,
+                    sessionId: session.uuid)
+            def result = action.call()
+            if (allowed) {
+                assert result.error == null : result.error
+                assert result.value.inventories.size() == adminMembers.size()
+                assert result.value.inventories[0].vmNicUuid == adminMembers[0].vmNicUuid
+                assert result.value.inventories[0].ipAddress == adminMembers[0].ipAddress
+                assert result.value.inventories[0].weight == adminMembers[0].weight
+                assert result.value.inventories[0].instancePort == adminMembers[0].instancePort
+            } else {
+                assert result.error != null : "GetBackend exposed members during ${phase}"
+                assert result.error.code == Constants.HTTP_ERROR
+                def body = JSONObjectUtil.toObject(result.error.details, Map.class)
+                assert body.error.code == IdentityErrors.PERMISSION_DENIED.toString()
+                assert body.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10195"
+                assert !body.containsKey("inventories")
+                assert result.value == null
+            }
+            println "Backend read permissions: phase=${phase}, allowed=${allowed}, error=${result.error?.code}"
+        }
+
+        try {
+            assert account.type == AccountType.Normal.toString()
+            assert ownerRef.ownerAccountUuid != account.uuid
+            assert Q.New(SharedResourceVO.class).in(SharedResourceVO_.resourceUuid, resources).count() == 0
+            checkAccess("unshared", 0, 0, false)
+            shareResource {
+                resourceUuids = [listener.uuid]
+                accountUuids = [account.uuid]
+            }
+            checkAccess("listener-only", 1, 0, false)
+            revokeResourceSharing {
+                resourceUuids = [listener.uuid]
+                accountUuids = [account.uuid]
+            }
+            shareResource {
+                resourceUuids = [servergroup2.uuid]
+                accountUuids = [account.uuid]
+            }
+            checkAccess("group-only", 0, 1, false)
+            shareResource {
+                resourceUuids = [listener.uuid]
+                accountUuids = [account.uuid]
+            }
+            checkAccess("both-shared", 1, 1, true)
+            revokeResourceSharing {
+                resourceUuids = resources
+                accountUuids = [account.uuid]
+            }
+            assert Q.New(SharedResourceVO.class).in(SharedResourceVO_.resourceUuid, resources).count() == 0
+            checkAccess("revoked", 0, 0, false)
+            shareResource {
+                resourceUuids = resources
+                toPublic = true
+            }
+            checkAccess("public", 1, 1, true)
+            revokeResourceSharing {
+                resourceUuids = resources
+                toPublic = true
+                all = true
+            }
+            checkAccess("public-revoked", 0, 0, false)
+            resources.each { resource ->
+                changeResourceOwner {
+                    resourceUuid = resource
+                    accountUuid = account.uuid
+                }
+            }
+            checkAccess("owner", 1, 1, true)
+
+            def absent = new GetLoadBalancerListenerBackendServersAction(
+                    listenerUuid: Platform.getUuid(), serverGroupUuid: servergroup2.uuid,
+                    sessionId: session.uuid).call()
+            assert absent.error != null
+            assert absent.error.code == Constants.HTTP_ERROR
+            assert JSONObjectUtil.toObject(absent.error.details, Map.class).error.code ==
+                    SysErrors.RESOURCE_NOT_FOUND.toString()
+            assert absent.value == null
+
+            def unattached = new GetLoadBalancerListenerBackendServersAction(
+                    listenerUuid: listener.uuid, serverGroupUuid: servergroup1.uuid,
+                    sessionId: env.session.uuid).call()
+            assert unattached.error != null
+            assert unattached.error.code == Constants.HTTP_ERROR
+            assert JSONObjectUtil.toObject(unattached.error.details, Map.class).error.code ==
+                    SysErrors.INVALID_ARGUMENT_ERROR.toString()
+            assert unattached.value == null
+
+            def otherVip = createVip {
+                name = "other-lb-vip"
+                l3NetworkUuid = (env.inventoryByName("pubL3") as L3NetworkInventory).uuid
+            } as VipInventory
+            try {
+                def otherLb = createLoadBalancer {
+                    name = "other-lb"
+                    vipUuid = otherVip.uuid
+                } as LoadBalancerInventory
+                try {
+                    def otherGroup = createLoadBalancerServerGroup {
+                        name = "other-lb-group"
+                        loadBalancerUuid = otherLb.uuid
+                    } as LoadBalancerServerGroupInventory
+                    def mismatched = new GetLoadBalancerListenerBackendServersAction(
+                            listenerUuid: listener.uuid, serverGroupUuid: otherGroup.uuid,
+                            sessionId: env.session.uuid).call()
+                    assert mismatched.error != null
+                    assert mismatched.error.code == Constants.HTTP_ERROR
+                    assert JSONObjectUtil.toObject(mismatched.error.details, Map.class).error.code ==
+                            SysErrors.INVALID_ARGUMENT_ERROR.toString()
+                    assert mismatched.value == null
+                } finally {
+                    deleteLoadBalancer { uuid = otherLb.uuid }
+                }
+            } finally {
+                deleteVip { uuid = otherVip.uuid }
+            }
+        } finally {
+            revokeResourceSharing {
+                resourceUuids = resources
+                all = true
+            }
+            resources.each { resource ->
+                changeResourceOwner {
+                    resourceUuid = resource
+                    accountUuid = ownerRef.ownerAccountUuid
+                }
+            }
+            logOut { sessionUuid = session.uuid }
+            deleteAccount { uuid = account.uuid }
         }
     }
 
