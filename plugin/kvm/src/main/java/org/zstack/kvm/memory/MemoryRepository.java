@@ -3173,6 +3173,50 @@ public class MemoryRepository {
                 resultStatus = "Unknown";
                 resultReason = "Query contradicts the confirmed original operation result";
             }
+            if (ordinaryReconcile && host != null && "Failed".equals(resultStatus)
+                    && Arrays.asList("apply", "clearOverride").contains(reconciledControl.getAction())
+                    && Arrays.asList("Unknown", "Blocked").contains(reconciledControl.getStatus())
+                    && "Host".equals(reconciledControl.getScope())
+                    && Objects.equals(reconciledControl.getHostUuid(), reconciledControl.getResourceUuid())
+                    && Objects.equals(task.getHostUuid(), reconciledControl.getHostUuid())
+                    && Objects.equals(task.getResourceUuid(), reconciledControl.getHostUuid())
+                    && Objects.equals(task.getUuid(), host.getActiveTaskUuid())
+                    && (isConfigurationReconcile(task)
+                        ? Objects.equals(task.getExpectedControlOperationUuid(), reconciledControl.getUuid())
+                            && Objects.equals(reconciledControl.getUuid(), host.getControlOperationUuid())
+                        : (task.getExpectedControlOperationUuid() == null
+                            || Objects.equals(task.getExpectedControlOperationUuid(), reconciledControl.getUuid()))
+                            && Objects.equals(task.getUuid(), host.getControlOperationUuid()))
+                    && task.getDesiredRevision() == reconciledControl.getDesiredRevision()
+                    && task.getDesiredRevision() == host.getDesiredRevision()
+                    && reconciledControl.getPolicyPlanHash() != null
+                    && Objects.equals(reconciledControl.getPolicyPlanHash(), host.getPolicyPlanHash())
+                    && response != null && !response.isSuccess() && "Failed".equals(response.status)
+                    && Objects.equals(reconciledControl.getUuid(), response.operationUuid)
+                    && (response.hostUuid == null || Objects.equals(task.getHostUuid(), response.hostUuid))
+                    && "FIRST_ZRAM_ADMISSION_NOT_ISSUED".equals(response.reasonCode)
+                    && response.appliedRevision == null && response.state != null
+                    && "NOT_ISSUED".equals(response.state.get("phase"))
+                    && Boolean.FALSE.equals(response.state.get("policyWritesIssued"))) {
+                try {
+                    Map<?, ?> current = JSONObjectUtil.toObject(host.getState(), Map.class);
+                    Object boot = current.get("bootId");
+                    Object proofBoot = response.state.get("bootId");
+                    Object requestHash = response.state.get("requestHash");
+                    if (boot instanceof String && !((String) boot).trim().isEmpty()
+                            && Objects.equals(boot, proofBoot)
+                            && (response.bootId == null || Objects.equals(boot, response.bootId))
+                            && requestHash instanceof String
+                            && ((String) requestHash).matches("[0-9a-f]{64}")) {
+                        // The Agent's immutable NOT_ISSUED receipt settles only
+                        // this still-current plan. It does not prove application
+                        // or replace the Host's last applied/native observation.
+                        appliedTask = reconciledControl;
+                    }
+                } catch (RuntimeException invalidState) {
+                    // Without the current boot binding, keep the plan unresolved.
+                }
+            }
             MemoryTaskVO recovery = uncertainRecoveryForResult(em, task);
             if (recovery != null) {
                 Map<?, ?> request = JSONObjectUtil.toObject(recovery.getPolicy(), Map.class);
