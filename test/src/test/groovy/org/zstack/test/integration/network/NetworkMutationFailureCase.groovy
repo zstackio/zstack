@@ -53,6 +53,7 @@ class NetworkMutationFailureCase extends SubCase {
             registry = bean(PluginRegistry)
             testCreateAndAttachCleanupFailure()
             testVlanCommitFailureRollsBackHost()
+            testVlanTypeConversion()
             testControllerLookupFailureRejectsUpdate()
             testRangeRollbackRestoresAddressFamilyAndUsedIp()
             testL3CreateCleanupPreservesResult()
@@ -139,6 +140,31 @@ class NetworkMutationFailureCase extends SubCase {
             assert changes.last() == ['100', '102']
             assert dbf.findByUuid(l2.uuid, L2VlanNetworkVO).vlan == 102
         } finally { extensions.remove(extension) }
+    }
+
+    void testVlanTypeConversion() {
+        def zone = env.inventoryByName('zone')
+        def network = createL2NoVlanNetwork {
+            name = 'vlan-type-conversion'
+            zoneUuid = zone.uuid
+            physicalInterface = 'eth12'
+            userTags = ['vlan-type-conversion']
+        }
+        String l2Uuid = network.uuid
+        def toVlan = changeL2NetworkVlanId {
+            uuid = l2Uuid; type = L2NetworkConstant.L2_VLAN_NETWORK_TYPE; vlan = 2000
+        }
+        assert toVlan.uuid == l2Uuid && toVlan.type == L2NetworkConstant.L2_VLAN_NETWORK_TYPE
+        assert dbf.findByUuid(l2Uuid, L2VlanNetworkVO).vlan == 2000
+        def toNoVlan = changeL2NetworkVlanId {
+            uuid = l2Uuid; type = L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE
+        }
+        assert toNoVlan.uuid == l2Uuid && toNoVlan.type == L2NetworkConstant.L2_NO_VLAN_NETWORK_TYPE
+        assert dbf.findByUuid(l2Uuid, L2NetworkVO).virtualNetworkId == 0
+        assert !dbf.isExist(l2Uuid, L2VlanNetworkVO)
+        assert queryUserTag { conditions = ["resourceUuid=${l2Uuid}", 'tag=vlan-type-conversion'] }.size() == 1
+        assert queryL2Network { conditions = ["uuid=${l2Uuid}"] }.first().name == network.name
+        deleteL2Network { uuid = l2Uuid }
     }
 
     void testControllerLookupFailureRejectsUpdate() {

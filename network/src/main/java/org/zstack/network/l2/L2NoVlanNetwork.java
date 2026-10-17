@@ -549,8 +549,9 @@ public class L2NoVlanNetwork implements L2Network {
                             @Override
                             public void success() {
                                 try {
-                                    extpEmitter.afterUpdate(getSelfInventory());
-                                    event.setInventory(getSelfInventory());
+                                    L2NetworkInventory updated = self.toInventory();
+                                    extpEmitter.afterUpdate(updated);
+                                    event.setInventory(updated);
                                     bus.publish(event);
                                 } catch (OperationFailureException e) {
                                     event.setError(e.getErrorCode());
@@ -762,7 +763,8 @@ public class L2NoVlanNetwork implements L2Network {
                         String.format("delete from L2VlanNetworkVO where uuid = '%s'", l2Vo.getUuid())
                 ).executeUpdate();
             }
-            dbf.getEntityManager().refresh(self);
+            dbf.getEntityManager().detach(self);
+            self = dbf.getEntityManager().find(L2NetworkVO.class, l2Vo.getUuid());
         } else if (L2NetworkConstant.L2_VLAN_NETWORK_TYPE.equals(currentType)) {
             // update L2VlanNetwork vlan id
             L2VlanNetworkVO l2VlanNetworkVO = Q.New(L2VlanNetworkVO.class).eq(L2VlanNetworkVO_.uuid, self.getUuid()).find();
