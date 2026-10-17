@@ -149,6 +149,10 @@ public class IpRangeHelper {
     public static List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
         List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
         usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+        if (ipr instanceof NormalIpRangeVO && ipr.getGateway() != null
+                && NetworkUtils.isInRange(ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp())) {
+            usedIps.add(ipr.getGateway());
+        }
 
         List<String> spareIps = new ArrayList<>();
         if (ipr.getIpVersion() == IPv6Constants.IPv6) {
