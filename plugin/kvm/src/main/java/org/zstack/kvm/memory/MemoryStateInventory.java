@@ -111,6 +111,10 @@ public class MemoryStateInventory {
     public String getActiveTaskUuid() { return activeTaskUuid; }
     public void setActiveTaskUuid(String value) { activeTaskUuid = value; }
 
+    private String currentStep;
+    public String getCurrentStep() { return currentStep; }
+    public void setCurrentStep(String value) { currentStep = value; }
+
     private String appliedPolicyHash;
     public String getAppliedPolicyHash() { return appliedPolicyHash; }
     public void setAppliedPolicyHash(String value) { appliedPolicyHash = value; }

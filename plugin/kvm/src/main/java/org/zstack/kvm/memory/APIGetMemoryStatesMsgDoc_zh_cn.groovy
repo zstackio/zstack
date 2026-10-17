@@ -7,7 +7,7 @@ doc {
 
     category "memoryOptimization"
 
-    desc """查询Host当前内存优化观测和控制状态；本接口返回当前快照，不提供历史趋势。前端仅映射inventory.status的七种状态，详见MemoryStateInventory；policyPlanStatus、reason和state供诊断，不作为前端组合判断条件。配置已应用不等于持续压缩或已有内存节省。"""
+    desc """查询Host当前内存优化观测和控制状态；本接口返回当前快照，不提供历史趋势，也不触发恢复或重放操作。普通配置先走标准GlobalConfig/ResourceConfig保存，再读取本接口展示结果，不以前置status作为合法保存的硬准入。后端仅在原完成回执和独立当前证明均通过时自动收尾并接续最新配置，否则仍保留Unknown及旧操作保护。选盘BFF为形成单次prepare请求仍需读取同Host的管理端controlOperationUuid，不得取候选上的Agent控制标识代替。前端仅映射inventory.status的七种状态，详见MemoryStateInventory；currentStep、policyPlanStatus、reason和state供诊断，不作为前端组合判断条件。配置已应用不等于持续压缩或已有内存节省。"""
 
     rest {
         request {

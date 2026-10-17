@@ -86,7 +86,7 @@ public class MemoryUpdatePolicyActionExamplesTest {
 
     private APIUpdateMemoryPolicyMsg parseHost(String action, String fixtureHost) {
         JsonObject request = body(action);
-        assertEquals("Host", request.get("scope").getAsString());
+        if (request.has("scope")) { assertEquals("Host", request.get("scope").getAsString()); }
         assertEquals(SAMPLE_HOST, request.get("resourceUuid").getAsString());
         request.addProperty("resourceUuid", fixtureHost); // explicit fixture-resource binding.
         bindGlobalHostTargets(request);
@@ -137,11 +137,10 @@ public class MemoryUpdatePolicyActionExamplesTest {
             String action = entry.get("action").getAsString();
             assertTrue("each action appears once", actions.add(action));
             assertEquals("entry and body action agree", action, request.get("action").getAsString());
-            assertTrue("scope present", request.has("scope"));
             assertTrue("resource UUID present", request.has("resourceUuid"));
             assertTrue("client request UUID present", request.has("clientRequestUuid"));
             assertUuid(request.get("clientRequestUuid").getAsString(), action + ".clientRequestUuid");
-            String scope = request.get("scope").getAsString();
+            String scope = request.has("scope") ? request.get("scope").getAsString() : null;
             String resource = request.get("resourceUuid").getAsString();
             if ("Global".equals(scope)) { assertEquals("global", resource); }
             else { assertUuid(resource, action + ".resourceUuid"); }
@@ -395,8 +394,8 @@ public class MemoryUpdatePolicyActionExamplesTest {
     @Test public void everyActionRejectsInapplicableFieldsWithoutPartialPersistence() {
         for (JsonElement entry : examples.getAsJsonArray("actions")) {
             String action = entry.getAsJsonObject().get("action").getAsString();
-            APIUpdateMemoryPolicyMsg request = "Global".equals(entry.getAsJsonObject().getAsJsonObject("request")
-                    .get("scope").getAsString()) ? parse(action) : parseHost(action, FIXTURE_HOST);
+            APIUpdateMemoryPolicyMsg request = "global".equals(entry.getAsJsonObject().getAsJsonObject("request")
+                    .get("resourceUuid").getAsString()) ? parse(action) : parseHost(action, FIXTURE_HOST);
             if ("clearOverride".equals(action)) { request.setTargetShardCount(1); }
             else { request.setClearOverrideFields(Collections.singletonList("ksm.enabled")); }
             try { repository.submit(request); fail("inapplicable field admitted for " + action); }
@@ -462,8 +461,8 @@ public class MemoryUpdatePolicyActionExamplesTest {
                         || ("expectedSourceRevisions".equals(field) || "expectedGlobalRevision".equals(field)) && (stage || cancel)
                         || "targetHostUuids".equals(field) && (stage || cancel);
                 if (!forbidden) { continue; }
-                APIUpdateMemoryPolicyMsg request = "Global".equals(entry.getAsJsonObject().getAsJsonObject("request")
-                        .get("scope").getAsString()) ? parse(action) : parseHost(action, FIXTURE_HOST);
+                APIUpdateMemoryPolicyMsg request = "global".equals(entry.getAsJsonObject().getAsJsonObject("request")
+                        .get("resourceUuid").getAsString()) ? parse(action) : parseHost(action, FIXTURE_HOST);
                 parameter.getValue().accept(request);
                 try { repository.submit(request); fail(action + " must reject " + field); }
                 catch (MemoryOperationException expected) {

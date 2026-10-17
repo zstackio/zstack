@@ -62,10 +62,12 @@ public class MemoryRepositoryTest {
     private Object previousRegistry;
     private Class<?> previousResourceBaseType;
     private String failResultUuid;
+    private boolean failAfterResourceConfigWrite;
 
     @Before public void setup() throws Exception {
         previousResourceBaseType = org.zstack.header.vo.ResourceTypeMetadata.concreteBaseTypeMapping.get(ResourceVO.class);
         failResultUuid = null;
+        failAfterResourceConfigWrite = false;
         org.zstack.header.vo.ResourceTypeMetadata.concreteBaseTypeMapping.put(ResourceVO.class,
                 org.zstack.header.host.HostVO.class);
         // The product's woven persist advice requires a registry even for entities
@@ -116,7 +118,24 @@ public class MemoryRepositoryTest {
                 try {
                     em.getTransaction().begin(); activeEm.set(em);
                     if (synchronize) { org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization(); }
-                    T result = function.apply(em);
+                    EntityManager transactionEm = em;
+                    if (failAfterResourceConfigWrite) {
+                        transactionEm = (EntityManager) Proxy.newProxyInstance(EntityManager.class.getClassLoader(),
+                                new Class<?>[]{EntityManager.class}, (proxy, method, args) -> {
+                                    try {
+                                        Object result = method.invoke(em, args);
+                                        if ("persist".equals(method.getName()) && args != null && args.length == 1
+                                                && args[0] instanceof ResourceConfigVO) {
+                                            failAfterResourceConfigWrite = false;
+                                            throw new IllegalStateException("injected post-write config failure");
+                                        }
+                                        return result;
+                                    } catch (java.lang.reflect.InvocationTargetException failure) {
+                                        throw failure.getCause();
+                                    }
+                                });
+                    }
+                    T result = function.apply(transactionEm);
                     em.getTransaction().commit();
                     if (synchronize) {
                         for (org.springframework.transaction.support.TransactionSynchronization callback :
@@ -203,7 +222,7 @@ public class MemoryRepositoryTest {
             }
             return null;
         });
-        // Public Unknown includes an unresolved active operation and a Host with no state row.
+        // Public Unknown contains an unresolved active operation and a Host with no state row.
         String known = "status in ('Queued','Applying','Draining') or "
                 + "(status in ('Succeeded','Failed','Blocked') and activeTaskUuid is null "
                 + "and (policyPlanStatus is null or policyPlanStatus not in ('Unknown','Queued','Applying','Draining'))) "
@@ -711,6 +730,895 @@ public class MemoryRepositoryTest {
         MemoryTaskVO child = repository.findTask(queued.getActiveTaskUuid());
         assertTrue(child.getPolicy().contains("writeback"));
         assertTrue(child.getPolicy().contains("backendResourceUuid"));
+    }
+
+    @Test public void standardZramCapacityChangeQueuesDrainBeforeCapacityApply() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+
+        List<MemoryTaskVO> tasks = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.hostUuid = :host order by t.createDate", MemoryTaskVO.class)
+                .setParameter("host", "host1").getResultList());
+        assertEquals("capacity change must queue a drain before any capacity apply", "drain",
+                tasks.get(tasks.size() - 1).getAction());
+    }
+
+    @Test public void standardZramPhysicalCapacityChangeQueuesDrainBeforeCapacityApply() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_RAM_LIMIT, null, null, "8192")),
+                ConfigMutationContext.internal(), false);
+        List<MemoryTaskVO> tasks = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.hostUuid = :host order by t.createDate", MemoryTaskVO.class)
+                .setParameter("host", "host1").getResultList());
+        assertEquals("physical capacity change must queue drain", "drain",
+                tasks.get(tasks.size() - 1).getAction());
+    }
+
+    @Test public void desiredCapacityMatchingEffectiveReadbackDoesNotDrainDespiteStaleAppliedPolicy() {
+        prepareCapacityObservation("Succeeded", false, false, false, 16384L, 4096L);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.action = :action", Long.class)
+                .setParameter("host", "host1").setParameter("action", "drain").getSingleResult()));
+    }
+
+    @Test public void staleQueuedDrainIsNotDispatchedAfterCapacityTargetChanges() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.action = :action and t.status = :status",
+                Long.class).setParameter("host", "host1").setParameter("action", "drain")
+                .setParameter("status", "Queued").getSingleResult()));
+        try {
+            standardCommit(Collections.singletonList(standardChange(
+                    MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "32768")),
+                    ConfigMutationContext.internal(), false);
+        } catch (RuntimeException ignored) {
+            // The RED must still prove the old queued drain is not dispatched.
+        }
+        assertTrue("old drain must not be sent for a newer capacity target",
+                repository.claim("capacity-stale-target").isEmpty());
+        assertTrue("new target must remain blocked or unknown",
+                Arrays.asList("Blocked", "Unknown").contains(host1State().getPolicyPlanStatus())
+                        || Arrays.asList("Blocked", "Unknown").contains(host1State().getStatus()));
+    }
+
+    @Test public void successfulCapacityDrainQueuesPoolPreparationFromFreshAgentInventory() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.action = :action and t.status = :status",
+                Long.class).setParameter("host", "host1").setParameter("action", "drain")
+                .setParameter("status", "Queued").getSingleResult()));
+        MemoryTaskVO drain = repository.claim("capacity-drain-agent").stream()
+                .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull("capacity maintenance must claim a drain task", drain);
+
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        Map<String, Object> backend = new LinkedHashMap<>();
+        backend.put("hostUuid", "host1");
+        backend.put("bootId", boot);
+        backend.put("observedAt", Instant.now().toString());
+        backend.put("status", "AVAILABLE");
+        backend.put("poolGeneration", pool);
+        backend.put("controlOperationUuid", drain.getUuid());
+        backend.put("canPrepareZramPool", true);
+        backend.put("zramPoolPreparationQuality", "Fresh");
+        backend.put("zramPoolPreparationObservedAt", System.currentTimeMillis());
+        backend.put("reasons", Collections.emptyList());
+        backend.put("candidates", Collections.emptyList());
+        Map<String, Object> actual = new LinkedHashMap<>();
+        Map<String, Object> nativeReadback = new LinkedHashMap<>();
+        nativeReadback.put("pool_generation", pool); nativeReadback.put("device", "/dev/zram0");
+        nativeReadback.put("state", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+        nativeReadback.put("active", false); nativeReadback.put("reset_performed", false);
+        Map<String, Object> receipt = new LinkedHashMap<>(nativeReadback);
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("hostUuid", "host1"); state.put("bootId", boot);
+        state.put("observedAt", Instant.now().toString()); state.put("status", "AVAILABLE");
+        state.put("poolGeneration", pool); state.put("controlOperationUuid", drain.getUuid());
+        state.put("canPrepareZramPool", true);
+        state.put("zramPoolPreparationQuality", "Fresh");
+        state.put("zramPoolPreparationObservedAt", System.currentTimeMillis());
+        state.put("reasons", Collections.emptyList()); state.put("candidates", Collections.emptyList());
+        state.put("phase", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED"); state.put("receipt", receipt);
+        state.put("nativeReadback", nativeReadback);
+
+        MemoryAgentResponse response = new MemoryAgentResponse();
+        response.operationUuid = drain.getUuid(); response.status = "Succeeded";
+        response.setSuccess(true); response.hostUuid = "host1";
+        response.appliedRevision = drain.getDesiredRevision(); response.state = state;
+        MemoryAgentResponse observation = new MemoryAgentResponse();
+        observation.operationUuid = drain.getUuid(); observation.status = "Succeeded";
+        observation.setSuccess(true); observation.hostUuid = "host1";
+        observation.appliedRevision = drain.getDesiredRevision(); observation.state = state;
+        repository.result(drain.getUuid(), "Succeeded", "drain completed", response, observation);
+
+        List<MemoryTaskVO> preparation = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.hostUuid = :host and t.action = :action", MemoryTaskVO.class)
+                .setParameter("host", "host1").setParameter("action", "prepareZramPool").getResultList());
+        assertFalse("fresh eligible inventory must create a pool-preparation sibling", preparation.isEmpty());
+        MemoryTaskVO root = repository.findTask(drain.getParentUuid());
+        assertNotNull(root);
+        assertNotEquals("drain root must not be reported Succeeded before preparation", "Succeeded", root.getStatus());
+    }
+
+    @Test public void drainReceiptWithWrongPoolIdentityDoesNotQueuePoolPreparation() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        MemoryTaskVO drain = repository.claim("capacity-invalid-inventory").stream()
+                .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(drain);
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        Map<String, Object> nativeReadback = new LinkedHashMap<>();
+        nativeReadback.put("pool_generation", pool);
+        nativeReadback.put("device", "/dev/zram9");
+        nativeReadback.put("state", "WITHDRAWN_SWAP_ACTIVE_POOL_PRESERVED");
+        nativeReadback.put("active", false); nativeReadback.put("reset_performed", false);
+        Map<String, Object> receipt = new LinkedHashMap<>(nativeReadback);
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("hostUuid", "host1"); state.put("bootId", boot);
+        state.put("observedAt", Instant.now().toString()); state.put("status", "AVAILABLE");
+        state.put("poolGeneration", pool); state.put("controlOperationUuid", drain.getUuid());
+        state.put("canPrepareZramPool", true); state.put("zramPoolPreparationQuality", "Fresh");
+        state.put("zramPoolPreparationObservedAt", System.currentTimeMillis());
+        state.put("reasons", Collections.emptyList()); state.put("candidates", Collections.emptyList());
+        state.put("phase", "WITHDRAWN_SWAP_ACTIVE_POOL_PRESERVED"); state.put("receipt", receipt);
+        state.put("nativeReadback", nativeReadback);
+        MemoryAgentResponse response = new MemoryAgentResponse();
+        response.operationUuid = drain.getUuid(); response.status = "Succeeded";
+        response.setSuccess(true); response.hostUuid = "host1";
+        response.appliedRevision = drain.getDesiredRevision(); response.state = state;
+        repository.result(drain.getUuid(), "Succeeded", "drain completed", response, response);
+        assertTrue(repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.action = :action", Long.class)
+                .setParameter("host", "host1").setParameter("action", "prepareZramPool").getSingleResult() == 0L));
+    }
+
+    @Test public void writebackBackendCapacityChangeRequiresBackendPreparationBeforeRamPoolPreparation() {
+        assertWritebackCapacityChange(null);
+    }
+
+    @Test public void automaticCapacityDrainQueryContinuesOriginalRootWithoutReplayingDrain() {
+        assertWritebackCapacityChange("drain");
+    }
+
+    @Test public void automaticCapacityPreparationQueryContinuesOriginalRootWithoutReplayingPreparation() {
+        assertWritebackCapacityChange("preparation");
+    }
+
+    @Test public void automaticCapacityActivationQueryRestoresWritebackUnderOriginalRoot() {
+        assertWritebackCapacityChange("activation");
+    }
+
+    @Test public void automaticCapacityDrainRejectsDifferentBackendOwner() {
+        assertWritebackCapacityChange("drain-owner-mismatch");
+    }
+
+    @Test public void automaticCapacityDrainRejectsExpiredBackendInventory() {
+        assertWritebackCapacityChange("drain-expired-inventory");
+    }
+
+    @Test public void automaticCapacityDrainDoesNotTrustUnknownInventoryWithCompleteFields() {
+        assertWritebackCapacityChange("drain-unknown-inventory");
+    }
+
+    @Test public void automaticCapacityPreparationRejectsReplacedBackendResource() {
+        assertWritebackCapacityChange("preparation-owner-mismatch");
+    }
+
+    @Test public void automaticCapacityActivationRejectsChangedBoot() {
+        assertWritebackCapacityChange("activation-boot-mismatch");
+    }
+
+    @Test public void automaticCapacityActivationRejectsWrongNativeCapacity() {
+        assertWritebackCapacityChange("activation-capacity-mismatch");
+    }
+
+    @Test public void automaticCapacityActivationDoesNotEnableDifferentBackend() {
+        assertWritebackCapacityChange("activation-backend-mismatch");
+    }
+
+    private void assertWritebackCapacityChange(String queryStage) {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        String resource = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        String fingerprint = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        String localFingerprint = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        String candidateId = "candidate:" + localFingerprint;
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendResourceUuid", resource);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendCapacityBytes", 8192L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"zram\":true,\"writeback\":true}");
+            com.google.gson.JsonObject current = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+            com.google.gson.JsonObject backend = new com.google.gson.JsonObject();
+            backend.addProperty("resource_uuid", resource); backend.addProperty("state", "ACTIVE");
+            backend.addProperty("active", true); backend.addProperty("fingerprint", fingerprint);
+            backend.addProperty("capacity_bytes", 8192L); backend.addProperty("observed_at", Instant.now().toString());
+            com.google.gson.JsonObject writeback = new com.google.gson.JsonObject(); writeback.add("backend", backend);
+            current.getAsJsonObject("actual").add("writeback", writeback); state.setState(current.toString());
+            state.setAppliedPolicy(MemoryPolicyRules.merge(state.getAppliedPolicy(),
+                    "{\"schemaVersion\":1,\"writeback\":{\"enabled\":true,\"backendResourceUuid\":\""
+                    + resource + "\",\"backendCapacityBytes\":8192}}", "Host"));
+            state.setLastSampleTime(System.currentTimeMillis());
+            return null;
+        });
+        standardCommit(Collections.singletonList(
+                standardChange(MemoryStandardField.ZRAM_LOGICAL_CAPACITY, "host1", "HostVO", "16384")),
+                ConfigMutationContext.internal(), false);
+        MemoryTaskVO drain = repository.claim("writeback-backend-capacity-red").stream()
+                .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull("capacity change with an existing backend must drain first: "
+                + host1State().getPolicyBlockedFields(), drain);
+        assertStateCurrentStep("drain");
+        Map<String, Object> stableIdentity = new LinkedHashMap<>();
+        stableIdentity.put("bootId", boot); stableIdentity.put("device", "/dev/vdb");
+        stableIdentity.put("byIdPath", "/dev/disk/by-id/local"); stableIdentity.put("majorMinor", "252:16");
+        stableIdentity.put("serial", "serial-local"); stableIdentity.put("wwn", "");
+        stableIdentity.put("capacityBytes", 8192L); stableIdentity.put("transport", "virtio");
+        stableIdentity.put("sysfsPath", "/sys/devices/local"); stableIdentity.put("sysfsInode", "1");
+        stableIdentity.put("rdev", 64528L); stableIdentity.put("nodeInode", 2L);
+        Map<String, Object> ownerProof = new LinkedHashMap<>();
+        ownerProof.put("schemaVersion", 1); ownerProof.put("hostUuid", "host1");
+        ownerProof.put("controlOperationUuid", drain.getUuid()); ownerProof.put("resourceUuid", resource);
+        ownerProof.put("fingerprint", fingerprint); ownerProof.put("stableIdentity", stableIdentity);
+        ownerProof.put("bootId", boot); ownerProof.put("poolGeneration", pool);
+        ownerProof.put("capacityBytes", 8192L); ownerProof.put("zramDevice", "/dev/zram0");
+        ownerProof.put("candidateIdentity", fingerprint); ownerProof.put("candidateState", "ACTIVE");
+        ownerProof.put("ownershipGeneration", resource);
+        ownerProof.put("observedAt", Instant.now().toString());
+        Map<String, Object> nativeReadback = new LinkedHashMap<>();
+        nativeReadback.put("pool_generation", pool);
+        nativeReadback.put("device", "/dev/zram0"); nativeReadback.put("state", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+        nativeReadback.put("active", false); nativeReadback.put("reset_performed", false);
+        Map<String, Object> receiptState = new LinkedHashMap<>();
+        receiptState.put("receipt", nativeReadback); receiptState.put("nativeReadback", nativeReadback);
+        receiptState.put("backendOwnerProof", ownerProof);
+        MemoryAgentResponse response = new MemoryAgentResponse(); response.operationUuid = drain.getUuid();
+        response.status = "Succeeded"; response.setSuccess(true); response.hostUuid = "host1";
+        response.appliedRevision = drain.getDesiredRevision(); response.state = receiptState;
+        MemoryAgentResponse observation = new MemoryAgentResponse(); observation.status = "Succeeded";
+        observation.setSuccess(true); observation.hostUuid = "host1"; observation.bootId = boot;
+        observation.sampleTime = System.currentTimeMillis(); observation.state = new LinkedHashMap<>();
+        observation.state.put("hostUuid", "host1"); observation.state.put("bootId", boot);
+        observation.state.put("observedAt", Instant.now().toString()); observation.state.put("status", "AVAILABLE");
+        observation.state.put("poolGeneration", pool); observation.state.put("controlOperationUuid", drain.getUuid());
+        observation.state.put("canPrepare", true); observation.state.put("canPrepareZramPool", false);
+        Map<String, Object> candidate = new LinkedHashMap<>();
+        candidate.put("resourceUuid", null); candidate.put("identity", candidateId);
+        candidate.put("fingerprint", localFingerprint); candidate.put("stableIdentity", stableIdentity);
+        candidate.put("eligible", true); candidate.put("writebackReady", false); candidate.put("active", false);
+        candidate.put("type", "block"); candidate.put("device", "/dev/vdb");
+        candidate.put("state", "NEEDS_OFFLINE_PREPARATION"); candidate.put("hostBootId", boot); candidate.put("capacityBytes", 8192L);
+        observation.state.put("candidates", Collections.singletonList(candidate));
+        if ("drain-owner-mismatch".equals(queryStage)) { ownerProof.put("ownershipGeneration", "different-owner"); }
+        if ("drain-expired-inventory".equals(queryStage)) {
+            observation.state.put("observedAt", Instant.now().minusMillis(
+                    MemoryOptimizationGlobalConfig.displayTtlMillis() + 1000).toString());
+        }
+        if ("drain-unknown-inventory".equals(queryStage)) { observation.status = "Unknown"; }
+        MemoryTaskVO drainResult = capacityResultTask(drain, "drain".equals(queryStage));
+        repository.result(drainResult.getUuid(), "Succeeded", "drain completed", response, observation);
+        if (queryStage != null && queryStage.startsWith("drain-")) {
+            assertCapacityFailureRemainsUnresolved(drain, 1L);
+            return;
+        }
+        assertTrue("writeback backend must be prepared before RAM pool preparation",
+                repository.transaction(em -> em.createQuery(
+                        "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action='prepareWritebackBackend'",
+                        Long.class).setParameter("p", drain.getParentUuid()).getSingleResult() > 0L));
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action='prepareZramPool'",
+                Long.class).setParameter("p", drain.getParentUuid()).getSingleResult()));
+        MemoryTaskVO preparation = repository.claim("backend-prepare").stream()
+                .filter(task -> "prepareWritebackBackend".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(preparation);
+        assertStateCurrentStep("prepareWritebackBackend");
+        MemoryTaskVO restore = assertCapacityPreparationQueuesRestore(drain, preparation, queryStage);
+        if ("preparation-owner-mismatch".equals(queryStage)) { return; }
+        assertStateCurrentStep("activateZramPool");
+        assertTrue(repository.claim("backend-activate").stream().anyMatch(task -> task.getUuid().equals(restore.getUuid())));
+        MemoryAgentResponse activated = new MemoryAgentResponse();
+        activated.operationUuid = restore.getUuid(); activated.status = "Succeeded"; activated.setSuccess(true);
+        activated.hostUuid = "host1"; activated.bootId = boot;
+        activated.appliedRevision = restore.getDesiredRevision(); activated.sampleTime = System.currentTimeMillis();
+        activated.capabilities = new LinkedHashMap<>();
+        for (String capability : Arrays.asList("supported", "ksm", "ksmZeroPages", "zram", "writeback")) {
+            activated.capabilities.put(capability, true);
+        }
+        activated.state = completeState(0L, "activated");
+        activated.state.put("bootId", boot);
+        activated.state.put("lastConfirmedOperationUuid", restore.getUuid());
+        activated.state.put("lastConfirmedAppliedRevision", restore.getDesiredRevision());
+        activated.state.put("poolGeneration", "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc");
+        Map<String, Object> lifecycle = new LinkedHashMap<>();
+        lifecycle.put("paused", false); lifecycle.put("activeState", "running");
+        activated.state.put("lifecycle", lifecycle);
+        Map<String, Object> capacity = new LinkedHashMap<>();
+        capacity.put("effective_logical_bytes", 16384L); capacity.put("effective_physical_limit_bytes", 4096L);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("enabled", true); zram.put("efficiencyEnabled", true); zram.put("capacity", capacity);
+        Map<String, Object> backend = new LinkedHashMap<>();
+        backend.put("resource_uuid", resource); backend.put("state", "ACTIVE"); backend.put("active", true);
+        backend.put("fingerprint", fingerprint); backend.put("capacity_bytes", 8192L);
+        backend.put("observed_at", Instant.now().toString());
+        Map<String, Object> actual = (Map<String, Object>) activated.state.get("actual");
+        actual.put("zram", zram); actual.put("writeback", Collections.singletonMap("backend", backend));
+        if ("activation-boot-mismatch".equals(queryStage)) { activated.bootId = "different-boot"; }
+        if ("activation-capacity-mismatch".equals(queryStage)) { capacity.put("effective_logical_bytes", 8192L); }
+        if ("activation-backend-mismatch".equals(queryStage)) { backend.put("resource_uuid", "different-owner"); }
+        MemoryTaskVO activationResult = capacityResultTask(restore, "activation".equals(queryStage));
+        repository.result(activationResult.getUuid(), "Succeeded", "pool activated", activated, activated);
+        if (queryStage != null && queryStage.startsWith("activation-")) {
+            assertCapacityFailureRemainsUnresolved(restore, 3L);
+            return;
+        }
+        MemoryTaskVO writeback = repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            return state.getActiveTaskUuid() == null ? null : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+        });
+        assertNotNull("activation must queue retained writeback before closing the root", writeback);
+        assertEquals(drain.getParentUuid(), writeback.getParentUuid());
+        assertEquals(writeback.getReason(), "Queued", writeback.getStatus());
+        assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(writeback.getPolicy()).writeback.enabled);
+        assertEquals(resource, MemoryPolicyRules.decode(writeback.getPolicy()).writeback.backendResourceUuid);
+        assertStateCurrentStep("restoreWriteback");
+        assertNotEquals("Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
+        repository.result(activationResult.getUuid(), "Succeeded", "duplicate activation", activated, activated);
+        assertEquals(writeback.getUuid(), host1State().getActiveTaskUuid());
+        assertTrue(repository.claim("backend-restore-writeback").stream()
+                .anyMatch(task -> task.getUuid().equals(writeback.getUuid())));
+        MemoryAgentResponse enabled = new MemoryAgentResponse();
+        enabled.operationUuid = writeback.getUuid(); enabled.status = "Succeeded"; enabled.setSuccess(true);
+        enabled.appliedRevision = writeback.getDesiredRevision();
+        repository.result(writeback.getUuid(), "Succeeded", "writeback restored", enabled);
+        assertEquals("writeback restore must close the root; restore=" + restore.getStatus() + "/"
+                + restore.getReason() + ", host=" + host1State().getActiveTaskUuid() + "/"
+                + host1State().getStatus() + "/" + host1State().getReason() + ", children="
+                + repository.transaction(em -> em.createQuery(
+                        "select concat(t.hostUuid, '/', t.action, '/', t.status, '/', t.desiredRevision, '/', t.policy) "
+                                + "from MemoryTaskVO t where t.parentUuid=:p order by t.uuid", String.class)
+                        .setParameter("p", drain.getParentUuid()).getResultList()),
+                "Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
+        assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(host1State().getAppliedPolicy()).writeback.enabled);
+        assertStateCurrentStep(null);
+    }
+
+    @Test public void successfulPoolPreparationQueuesRestoreTargetAsSiblingUnderSameParent() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        repository.transaction(em -> {
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", 20L);
+            return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, "host1", "HostVO", "16384")),
+                ConfigMutationContext.internal(), false);
+        MemoryTaskVO drain = repository.claim("capacity-activation-red").stream()
+                .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(drain);
+        assertStateCurrentStep("drain");
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        Map<String, Object> nativeReadback = new LinkedHashMap<>();
+        nativeReadback.put("pool_generation", pool);
+        nativeReadback.put("device", "/dev/zram0");
+        nativeReadback.put("state", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+        nativeReadback.put("active", false); nativeReadback.put("reset_performed", false);
+        Map<String, Object> receipt = new LinkedHashMap<>(nativeReadback);
+        Map<String, Object> drained = new LinkedHashMap<>();
+        drained.put("hostUuid", "host1"); drained.put("bootId", boot);
+        drained.put("observedAt", Instant.now().toString()); drained.put("status", "AVAILABLE");
+        drained.put("poolGeneration", pool); drained.put("controlOperationUuid", drain.getUuid());
+        drained.put("canPrepareZramPool", true); drained.put("zramPoolPreparationQuality", "Fresh");
+        drained.put("zramPoolPreparationObservedAt", System.currentTimeMillis());
+        drained.put("reasons", Collections.emptyList()); drained.put("candidates", Collections.emptyList());
+        drained.put("phase", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED"); drained.put("receipt", receipt);
+        drained.put("nativeReadback", nativeReadback);
+        MemoryAgentResponse drainResponse = new MemoryAgentResponse();
+        drainResponse.operationUuid = drain.getUuid(); drainResponse.status = "Succeeded";
+        drainResponse.setSuccess(true); drainResponse.hostUuid = "host1";
+        drainResponse.appliedRevision = drain.getDesiredRevision(); drainResponse.state = drained;
+        repository.result(drain.getUuid(), "Succeeded", "drain completed", drainResponse, drainResponse);
+        MemoryTaskVO preparation = repository.claim("capacity-activation-prep").stream()
+                .filter(task -> "prepareZramPool".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(preparation);
+        assertStateCurrentStep("prepareZramPool");
+        MemoryTaskVO restore = assertCapacityPreparationQueuesRestore(drain, preparation, null);
+        assertTrue(repository.claim("capacity-activation").stream()
+                .anyMatch(task -> task.getUuid().equals(restore.getUuid())));
+        assertStateCurrentStep("activateZramPool");
+
+        MemoryAgentResponse activated = new MemoryAgentResponse();
+        activated.operationUuid = restore.getUuid(); activated.status = "Succeeded"; activated.setSuccess(true);
+        activated.hostUuid = "host1"; activated.bootId = boot;
+        activated.appliedRevision = restore.getDesiredRevision(); activated.sampleTime = System.currentTimeMillis();
+        activated.capabilities = new LinkedHashMap<>();
+        activated.capabilities.put("supported", true); activated.capabilities.put("ksm", true);
+        activated.capabilities.put("ksmZeroPages", true); activated.capabilities.put("zram", true);
+        activated.capabilities.put("writeback", false);
+        activated.state = completeState(0L, "activated");
+        activated.state.put("bootId", boot);
+        activated.state.put("lastConfirmedOperationUuid", restore.getUuid());
+        activated.state.put("lastConfirmedAppliedRevision", restore.getDesiredRevision());
+        activated.state.put("poolGeneration", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+        Map<String, Object> lifecycle = new LinkedHashMap<>();
+        lifecycle.put("paused", false); lifecycle.put("activeState", "running");
+        activated.state.put("lifecycle", lifecycle);
+        Map<String, Object> capacity = new LinkedHashMap<>();
+        capacity.put("effective_logical_bytes", 16384L);
+        capacity.put("effective_physical_limit_bytes", 4096L);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("enabled", true); zram.put("efficiencyEnabled", true); zram.put("capacity", capacity);
+        Map<String, Object> actual = (Map<String, Object>) activated.state.get("actual");
+        actual.put("zram", zram);
+        Map<String, Object> ksm = new LinkedHashMap<>();
+        ksm.put("enabled", false); ksm.put("pagesToScan", 2000L); ksm.put("sleepMillis", 20L);
+        actual.put("ksm", ksm); actual.put("writeback", Collections.emptyMap());
+        repository.result(restore.getUuid(), "Succeeded", "pool activated", activated, activated);
+
+        assertEquals("RAM activation must close the root; restore=" + restore.getStatus() + "/"
+                + restore.getReason() + ", host=" + host1State().getActiveTaskUuid() + "/"
+                + host1State().getStatus() + "/" + host1State().getReason() + ", children="
+                + repository.transaction(em -> em.createQuery(
+                        "select concat(t.action, '/', t.status, '/', t.desiredRevision, '/', t.policy) "
+                                + "from MemoryTaskVO t where t.parentUuid=:p order by t.uuid", String.class)
+                        .setParameter("p", drain.getParentUuid()).getResultList()),
+                "Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertStateCurrentStep(null);
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action='prepareWritebackBackend'",
+                Long.class).setParameter("p", drain.getParentUuid()).getSingleResult()));
+        MemoryPolicyConfig applied = MemoryPolicyRules.decode(host1State().getAppliedPolicy());
+        assertEquals(Long.valueOf(16384L), applied.zram.logicalCapacityBytes);
+        assertEquals(Long.valueOf(4096L), applied.zram.ramLimitBytes);
+        assertEquals(Boolean.FALSE, applied.ksm.enabled);
+        assertEquals(Long.valueOf(2000L), applied.ksm.pagesToScan);
+        assertEquals(Long.valueOf(20L), applied.ksm.sleepMillis);
+    }
+
+    private void assertCapacityFailureRemainsUnresolved(MemoryTaskVO operation, long children) {
+        assertEquals("Unknown", repository.findTask(operation.getUuid()).getStatus());
+        assertEquals(operation.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals("Unknown", repository.findTask(operation.getParentUuid()).getStatus());
+        assertEquals(children, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.parentUuid=:parent", Long.class)
+                .setParameter("parent", operation.getParentUuid()).getSingleResult()));
+    }
+
+    private MemoryTaskVO capacityResultTask(MemoryTaskVO original, boolean query) {
+        if (!query) { return original; }
+        repository.result(original.getUuid(), "Unknown", "transport lost after execution", null);
+        APIUpdateMemoryPolicyMsg reconcile = request(repository.getPolicy("Host", "host1").getRevision());
+        reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
+        reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
+        MemoryTaskInventory accepted = repository.submit(reconcile);
+        MemoryTaskVO alias = repository.claim("capacity-query").stream()
+                .filter(task -> accepted.getUuid().equals(task.getParentUuid())).findFirst().get();
+        assertEquals(original.getUuid(), alias.getReconcileOperationUuid());
+        return alias;
+    }
+
+    private MemoryTaskVO assertCapacityPreparationQueuesRestore(MemoryTaskVO drain, MemoryTaskVO preparation,
+            String queryStage) {
+        com.google.gson.JsonObject context = new com.google.gson.JsonParser().parse(drain.getPolicy()).getAsJsonObject();
+        String boot = context.get("bootId").getAsString(), pool = context.get("poolGeneration").getAsString();
+        Map<String, Object> proof = new LinkedHashMap<>();
+        proof.put("drainOperationUuid", drain.getUuid()); proof.put("oldPoolGeneration", pool);
+        proof.put("maintenanceReady", true); proof.put("maintenanceArchived", true);
+        proof.put("executorExited", true); proof.put("activeOperations", 0);
+        proof.put("readyForInitialization", true); proof.put("originalDeviceInactive", true);
+        proof.put("oldPoolOwnershipAbsent", true); proof.put("poolOwnedByService", false);
+        Map<String, Object> readyState = new LinkedHashMap<>();
+        readyState.put("managed", true);
+        readyState.put("phase", "POOL_READY"); readyState.put("bootId", boot);
+        readyState.put("lastConfirmedOperationUuid", drain.getUuid());
+        readyState.put("lastConfirmedAppliedRevision", drain.getDesiredRevision());
+        Map<String, Object> readyLifecycle = new LinkedHashMap<>();
+        readyLifecycle.put("paused", true); readyLifecycle.put("activeState", "paused");
+        readyState.put("lifecycle", readyLifecycle);
+        readyState.put("maintenanceProof", proof);
+        readyState.putAll(completeState(0L, "ready"));
+        Map<String, Object> readyActual = new HashMap<>((Map<String, Object>) readyState.get("actual"));
+        Map<String, Object> readyZram = new HashMap<>((Map<String, Object>) readyActual.get("zram"));
+        readyZram.put("enabled", false);
+        readyZram.put("efficiencyEnabled", false);
+        readyActual.put("zram", readyZram);
+        readyState.put("actual", readyActual);
+        readyState.put("phase", "POOL_READY"); readyState.put("bootId", boot);
+        readyState.put("lastConfirmedOperationUuid", drain.getUuid());
+        readyState.put("lastConfirmedAppliedRevision", drain.getDesiredRevision());
+        readyState.put("lifecycle", readyLifecycle);
+        MemoryAgentResponse prepared = new MemoryAgentResponse();
+        prepared.operationUuid = preparation.getUuid(); prepared.status = "Succeeded";
+        prepared.setSuccess(true);
+        Map<String, Object> prepareState = new LinkedHashMap<>();
+        prepareState.put("phase", "APPLIED"); prepareState.put("writebackReady", false);
+        Map<String, Object> prepareReceipt = new LinkedHashMap<>();
+        prepareReceipt.put("stage", "APPLIED"); prepareReceipt.put("request_id", preparation.getUuid());
+        if ("prepareZramPool".equals(preparation.getAction())) {
+            prepareReceipt.put("expected_control_operation_uuid", drain.getUuid());
+        } else {
+            com.google.gson.JsonObject request = new com.google.gson.JsonParser()
+                    .parse(preparation.getPolicy()).getAsJsonObject();
+            prepareReceipt.put("candidate_id", request.get("candidateId").getAsString());
+            prepareReceipt.put("backend_resource_uuid", context.getAsJsonObject("backend")
+                    .get("resource_uuid").getAsString());
+            Map<String, Object> identity = new LinkedHashMap<>();
+            identity.put("boot_id", boot); identity.put("canonical_device", "/dev/vdb");
+            identity.put("capacity_bytes", request.get("backendCapacityBytes").getAsLong());
+            prepareReceipt.put("target_identity", identity);
+        }
+        prepareReceipt.put("host_boot_id", boot); prepareReceipt.put("pool_generation", pool);
+        prepareState.put("maintenance", prepareReceipt); prepared.state = prepareState;
+        MemoryAgentResponse observation = new MemoryAgentResponse();
+        observation.status = "Succeeded"; observation.setSuccess(true); observation.hostUuid = "host1";
+        observation.capabilities = new LinkedHashMap<>(); observation.capabilities.put("supported", true);
+        observation.capabilities.put("ksm", true); observation.capabilities.put("ksmZeroPages", true);
+        observation.capabilities.put("zram", true); observation.capabilities.put("writeback", false);
+        observation.appliedRevision = drain.getDesiredRevision(); observation.sampleTime = System.currentTimeMillis();
+        observation.bootId = boot; observation.state = readyState;
+        if ("preparation-owner-mismatch".equals(queryStage)) { prepareReceipt.put("backend_resource_uuid", "different-owner"); }
+        MemoryTaskVO resultTask = capacityResultTask(preparation, "preparation".equals(queryStage));
+        repository.result(resultTask.getUuid(), "Succeeded", "pool prepared", prepared, observation);
+        if ("preparation-owner-mismatch".equals(queryStage)) {
+            assertCapacityFailureRemainsUnresolved(preparation, 2L);
+            return null;
+        }
+
+        MemoryTaskVO restore = repository.transaction(em -> {
+            List<MemoryTaskVO> rows = em.createQuery(
+                "from MemoryTaskVO t where t.parentUuid = :parent and t.action in ('apply', 'clearOverride') "
+                        + "and t.expectedControlOperationUuid = :expected",
+                    MemoryTaskVO.class).setParameter("parent", drain.getParentUuid())
+                .setParameter("expected", drain.getUuid())
+                .setMaxResults(1).getResultList();
+            return rows.isEmpty() ? null : rows.get(0);
+        });
+        assertNotNull("successful preparation must queue the retained restore target; prep="
+                + repository.findTask(preparation.getUuid()).getStatus() + "/"
+                + repository.findTask(preparation.getUuid()).getReason() + ", host="
+                + host1State().getStatus() + "/" + host1State().getReason()
+                + ", drainPolicy=" + drain.getPolicy() + ", effective="
+                + repository.getPolicy("Host", "host1").getEffectivePolicy(), restore);
+        assertTrue("restore action must remain a standard activation action: " + restore.getAction(),
+                "apply".equals(restore.getAction()) || "clearOverride".equals(restore.getAction()));
+        assertEquals("restore=" + restore.getUuid() + ", action=" + restore.getAction()
+                + ", parent=" + restore.getParentUuid() + ", expected=" + restore.getExpectedControlOperationUuid(),
+                "Queued", restore.getStatus());
+        assertEquals(drain.getParentUuid(), restore.getParentUuid());
+        assertEquals(drain.getUuid(), restore.getExpectedControlOperationUuid());
+        return restore;
+    }
+
+    private void assertStateCurrentStep(String expected) {
+        MemoryQueryPage<MemoryStateVO> page = repository.statePage(Collections.singletonList("host1"), 0, 10, null);
+        assertEquals(1, page.items.size());
+        Map<String, Object> inventory = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                new com.google.gson.Gson().toJson(page.items.get(0).toInventory()), Map.class);
+        assertEquals(expected, inventory.get("currentStep"));
+    }
+
+    @Test public void statePageCurrentStepHasNoValueForEmptyPage() {
+        MemoryQueryPage<MemoryStateVO> page = repository.statePage(null, 500, 10, null);
+        assertTrue(page.items.isEmpty());
+    }
+
+    @Test public void statePageCurrentStepIgnoresTerminalOldActivePointer() {
+        repository.transaction(em -> {
+            em.persist(testTask("terminal-old-step", null, "drain", "Succeeded", null));
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setActiveTaskUuid("terminal-old-step");
+            return null;
+        });
+        assertStateCurrentStep(null);
+    }
+
+    @Test public void statePageCurrentStepPreservesKnownUnknownOperation() {
+        repository.transaction(em -> {
+            em.persist(testTask("unknown-step", null, "prepareZramPool", "Unknown", null));
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("unknown-step"); state.setDesiredRevision(0L);
+            return null;
+        });
+        assertStateCurrentStep("prepareZramPool");
+        MemoryStateVO state = host1State();
+        assertEquals("Unknown", state.getStatus());
+        assertEquals("unknown-step", state.getActiveTaskUuid());
+        assertEquals(0L, state.getDesiredRevision());
+    }
+
+    @Test public void statePageCurrentStepIgnoresMissingCrossHostAndWrongRevisionBindings() {
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("missing-active"); state.setDesiredRevision(7L);
+            return null;
+        });
+        MemoryStateVO missing = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
+        assertNull(missing.getCurrentStep());
+        assertEquals("Unknown", missing.getStatus());
+        assertEquals("missing-active", missing.getActiveTaskUuid());
+        assertEquals(7L, missing.getDesiredRevision());
+
+        repository.transaction(em -> {
+            MemoryTaskVO crossHost = testTask("cross-host-step", null, "drain", "Applying", null);
+            crossHost.setHostUuid("host2"); em.persist(crossHost);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("cross-host-step"); state.setDesiredRevision(0L);
+            return null;
+        });
+        MemoryStateVO crossHost = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
+        assertNull(crossHost.getCurrentStep());
+        assertEquals("Unknown", crossHost.getStatus());
+        assertEquals("cross-host-step", crossHost.getActiveTaskUuid());
+        assertEquals(0L, crossHost.getDesiredRevision());
+
+        repository.transaction(em -> {
+            MemoryTaskVO wrongRevision = testTask("wrong-revision-step", null, "drain", "Applying", null);
+            wrongRevision.setDesiredRevision(9L); em.persist(wrongRevision);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("wrong-revision-step"); state.setDesiredRevision(8L);
+            return null;
+        });
+        MemoryStateVO wrongRevision = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
+        assertNull(wrongRevision.getCurrentStep());
+        assertEquals("Unknown", wrongRevision.getStatus());
+        assertEquals("wrong-revision-step", wrongRevision.getActiveTaskUuid());
+        assertEquals(8L, wrongRevision.getDesiredRevision());
+    }
+
+    @Test public void metricsInventoryRetainsTransientCurrentStep() {
+        MemoryStateVO state = host1State();
+        state.setCurrentStep("drain");
+        MemoryStateInventory inventory = MemoryMetricsPresentation.inventory(state, null,
+                System.currentTimeMillis());
+        assertEquals("drain", inventory.getCurrentStep());
+        Map<String, Object> json = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                new com.google.gson.Gson().toJson(inventory), Map.class);
+        assertEquals("drain", json.get("currentStep"));
+    }
+
+    @Test public void standardZramCapacityChangeWithMatchingEffectiveCapacityDoesNotDrain() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "8192")),
+                ConfigMutationContext.internal(), false);
+
+        assertTrue("matching effective capacity must not queue a drain", repository.transaction(em ->
+                em.createQuery("select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.action = :action", Long.class)
+                        .setParameter("host", "host1").setParameter("action", "drain").getSingleResult() == 0L));
+    }
+
+    private void prepareCapacityObservation(String status, boolean paused, boolean stale, boolean ksmOnly) {
+        prepareCapacityObservation(status, paused, stale, ksmOnly, 8192L, 4096L);
+    }
+
+    private void prepareCapacityObservation(String status, boolean paused, boolean stale, boolean ksmOnly,
+                                            long effectiveLogical, long effectivePhysical) {
+        registerStandardResources();
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "zram.logicalCapacityBytes", 8192L);
+            standardConfigAdapter.writeGlobal(em, "zram.ramLimitBytes", 4096L);
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
+            MemoryTaskVO control = testTask("0123456789abcdef0123456789abcdef", null, "apply", "Succeeded", null);
+            em.persist(control);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus(status); state.setDesiredRevision(0L); state.setAppliedRevision(0L);
+            state.setControlOperationUuid(control.getUuid());
+            long sample = stale ? System.currentTimeMillis() - 120_000L : System.currentTimeMillis();
+            String boot = "01234567-89ab-cdef-0123-456789abcdef";
+            String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
+                    + "\"pagesToScan\":2000,\"sleepMillis\":20},\"zram\":{\"enabled\":true,"
+                    + "\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096}}");
+            state.setAppliedPolicyHash("807688c75514e917154c2e66c1b89b31fe9b0817784cafdb5d38c506b84dad6a");
+            state.setState("{\"bootId\":\"" + boot + "\",\"managed\":true,"
+                    + "\"lastConfirmedOperationUuid\":\"" + control.getUuid() + "\","
+                    + "\"lastConfirmedAppliedRevision\":0,\"ksmOnly\":" + ksmOnly + ","
+                    + "\"lifecycle\":{\"paused\":" + paused + ",\"activeState\":\""
+                    + (paused ? "paused" : "active") + "\"},\"poolGeneration\":\"" + pool + "\","
+                    + "\"host_zram\":{\"quality\":\"native_host_device\","
+                    + "\"device\":\"/dev/zram0\",\"pool_generation\":\"" + pool + "\","
+                    + "\"observed_at\":\"" + Instant.now() + "\"},"
+                    + "\"actual\":{\"zram\":{\"efficiencyEnabled\":true,"
+                    + "\"capacity\":{\"effective_logical_bytes\":" + effectiveLogical + ","
+                    + "\"effective_physical_limit_bytes\":" + effectivePhysical
+                    + ",\"apply_state\":\"APPLIED\"}}}}");
+            state.setLastSampleTime(sample);
+            return null;
+        });
+    }
+
+    @Test public void disconnectedCapacitySaveReconnectQueuesDrainFromFreshPoolObservation() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        repository.transaction(em -> {
+            em.find(TestHost.class, "host1").status = HostStatus.Disconnected;
+            return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        repository.transaction(em -> {
+            em.find(TestHost.class, "host1").status = HostStatus.Connected;
+            return null;
+        });
+        assertTrue("reconnect must queue drain for a changed effective capacity",
+                repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO child = repository.claim("capacity-reconnect-agent").stream()
+                .filter(task -> "host1".equals(task.getHostUuid())).findFirst().orElse(null);
+        assertNotNull(child);
+        assertEquals("drain", child.getAction());
+    }
+
+    @Test public void revertingBlockedCapacityTargetToAlreadyAppliedPolicyClearsOldPlanWithoutChild() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            em.find(TestHost.class, "host1").status = HostStatus.Disconnected;
+            return null;
+        });
+
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        MemoryStateVO blocked = host1State();
+        assertEquals("Blocked", blocked.getPolicyPlanStatus());
+        assertNull(blocked.getActiveTaskUuid());
+        String control = blocked.getControlOperationUuid();
+        Long desiredRevision = blocked.getDesiredRevision();
+        Long appliedRevision = blocked.getAppliedRevision();
+        long hostTasks = repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host", Long.class)
+                .setParameter("host", "host1").getSingleResult());
+
+        repository.transaction(em -> {
+            em.find(TestHost.class, "host1").status = HostStatus.Connected;
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setActiveTaskUuid(null);
+            state.setLastSampleTime(System.currentTimeMillis());
+            return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "8192")),
+                ConfigMutationContext.internal(), false);
+
+        MemoryStateVO settled = host1State();
+        assertEquals("Applied", settled.getPolicyPlanStatus());
+        assertNull(settled.getActiveTaskUuid());
+        assertEquals(control, settled.getControlOperationUuid());
+        assertEquals(desiredRevision.longValue(), settled.getDesiredRevision());
+        assertEquals(appliedRevision.longValue(), settled.getAppliedRevision().longValue());
+        assertEquals(hostTasks, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host", Long.class)
+                .setParameter("host", "host1").getSingleResult()));
+    }
+
+    @Test public void noOpDoesNotClearBlockedPlanForUnknownHost() {
+        prepareNoopBlockedProtection();
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setStatus("Unknown"); return null; });
+        assertNoopKeepsBlockedPlan();
+    }
+
+    @Test public void noOpDoesNotClearBlockedPlanForActiveHostOperation() {
+        prepareNoopBlockedProtection();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setActiveTaskUuid("noop-active");
+            em.persist(testTask("noop-active", "host1", "apply", "Applying", null));
+            return null;
+        });
+        assertNoopKeepsBlockedPlan();
+    }
+
+    @Test public void noOpDoesNotClearNeedsReviewProtection() {
+        prepareNoopBlockedProtection();
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setPolicyPlanStatus("NeedsReview"); return null; });
+        assertNoopKeepsPlan("NeedsReview");
+    }
+
+    @Test public void noOpDoesNotClearBlockedPlanForPausedHost() {
+        prepareNoopBlockedProtection();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setControlOperationUuid("noop-pause");
+            state.setState("{\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}}");
+            em.persist(testTask("noop-pause", null, "pause", "Succeeded", null));
+            return null;
+        });
+        assertNoopKeepsBlockedPlan();
+    }
+
+    @Test public void noOpDoesNotClearBlockedPlanForStaleHostObservation() {
+        prepareNoopBlockedProtection();
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1")
+                .setLastSampleTime(System.currentTimeMillis() - 120_000L); return null; });
+        assertNoopKeepsBlockedPlan();
+    }
+
+    private void prepareNoopBlockedProtection() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            em.find(MemoryStateVO.class, "host1").setPolicyPlanStatus("Blocked");
+            return null;
+        });
+    }
+
+    private void assertNoopKeepsBlockedPlan() { assertNoopKeepsPlan("Blocked"); }
+
+    private void assertNoopKeepsPlan(String expected) {
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "8192")),
+                ConfigMutationContext.internal(), false);
+        assertEquals(expected, host1State().getPolicyPlanStatus());
+    }
+
+    @Test public void capacityChangeDoesNotDrainUnknownHost() {
+        prepareCapacityObservation("Unknown", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.action = :action", Long.class)
+                .setParameter("action", "drain").getSingleResult()));
+    }
+
+    @Test public void capacityChangeDoesNotDrainPausedHost() {
+        prepareCapacityObservation("Succeeded", true, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.action = :action", Long.class)
+                .setParameter("action", "drain").getSingleResult()));
+    }
+
+    @Test public void capacityChangeDoesNotDrainStaleObservation() {
+        prepareCapacityObservation("Succeeded", false, true, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_LOGICAL_CAPACITY, null, null, "16384")),
+                ConfigMutationContext.internal(), false);
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.action = :action", Long.class)
+                .setParameter("action", "drain").getSingleResult()));
+    }
+
+    @Test public void ksmOnlyChangeDoesNotDrainZramPool() {
+        prepareCapacityObservation("Succeeded", false, false, true);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.KSM_PAGES_TO_SCAN, null, null, "3000")),
+                ConfigMutationContext.internal(), false);
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.action = :action", Long.class)
+                .setParameter("action", "drain").getSingleResult()));
     }
 
     @Test public void disablingWritebackDoesNotDeleteHostBackendAndDeleteRestoresInheritance() {
@@ -1281,7 +2189,9 @@ public class MemoryRepositoryTest {
             state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false}}");
             state.setAppliedPolicyHash("previous-ksm-policy");
             state.setControlOperationUuid("previous-ksm-apply");
-            em.persist(testTask("previous-ksm-apply", null, "apply", "Succeeded", null));
+            MemoryTaskVO original = testTask("previous-ksm-apply", null, "apply", "Succeeded", null);
+            original.setDesiredRevision(1L); original.setPolicy(state.getAppliedPolicy());
+            em.persist(original);
             return null;
         });
     }
@@ -1705,11 +2615,157 @@ public class MemoryRepositoryTest {
             em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown"); return null;
         });
         deleteStandardKsmEnabled();
-        assertEquals("previous-ksm-apply", host1State().getActiveTaskUuid());
+        MemoryTaskVO query = repository.claim("automatic-completion").stream().findFirst().get();
+        assertTrue(MemoryRepository.isConfigurationReconcile(query));
+        assertEquals("previous-ksm-apply", query.getReconcileOperationUuid());
+        assertEquals(query.getUuid(), host1State().getActiveTaskUuid());
         assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
         assertEquals(Long.valueOf(1), host1State().getAppliedRevision());
-        assertTrue(host1State().getPolicyBlockedFields().contains("HOST_OPERATION_UNRESOLVED"));
+        assertEquals("Unknown", host1State().getStatus());
+        assertEquals("Unknown", repository.findTask("previous-ksm-apply").getStatus());
         assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.result(query.getUuid(), "Unknown", "original receipt unavailable", null);
+        assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
+        assertEquals("Unknown", repository.findTask("previous-ksm-apply").getStatus());
+        assertTrue(repository.claim("automatic-completion").isEmpty());
+    }
+
+    @Test public void standardSaveQueriesUnknownOnceAndAppliesOnlyLatestDesiredAfterCurrentProof() {
+        prepareAppliedKsmForStandardClear();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("previous-ksm-apply");
+            state.setState("{\"bootId\":\"boot-1\"}");
+            em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown");
+            return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
+                "host1", "HostVO", "2500")), ConfigMutationContext.internal(), false);
+        MemoryTaskVO query = repository.claim("automatic-completion").stream().findFirst().get();
+        assertTrue(MemoryRepository.isConfigurationReconcile(query));
+        assertEquals("previous-ksm-apply", query.getExpectedControlOperationUuid());
+        assertEquals(1L, query.getDesiredRevision());
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
+                "host1", "HostVO", "3000")), ConfigMutationContext.internal(), false);
+        assertEquals(query.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals(1L, host1State().getDesiredRevision());
+        assertTrue(repository.claim("other-mn").isEmpty());
+        List<String> deferred = repository.transaction(em -> em.createQuery(
+                "select t.uuid from MemoryTaskVO t where t.hostUuid = :host and t.status = :status", String.class)
+                .setParameter("host", "host1").setParameter("status", "Blocked").getResultList());
+        assertEquals(1, deferred.size());
+        MemoryAgentResponse receipt = new MemoryAgentResponse(); receipt.setSuccess(true);
+        receipt.status = "Succeeded"; receipt.operationUuid = "previous-ksm-apply";
+        receipt.appliedRevision = 1L; receipt.hostUuid = "host1"; receipt.bootId = "boot-1";
+        MemoryAgentResponse current = new MemoryAgentResponse(); current.setSuccess(true);
+        current.status = "Succeeded"; current.hostUuid = "host1"; current.bootId = "boot-1";
+        current.sampleTime = System.currentTimeMillis(); current.appliedRevision = 1L;
+        current.state = new LinkedHashMap<>(); current.state.put("bootId", "boot-1");
+        current.state.put("lastConfirmedOperationUuid", "previous-ksm-apply");
+        current.state.put("lastConfirmedAppliedRevision", 1L);
+        current.capabilities = new LinkedHashMap<>(); current.capabilities.put("supported", true);
+        current.capabilities.put("ksm", true); current.capabilities.put("ksmZeroPages", true);
+        repository.result(query.getUuid(), "Succeeded", "immutable original receipt", receipt, current);
+        assertEquals("Succeeded", repository.findTask("previous-ksm-apply").getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
+        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
+                .getEffectivePolicy()).ksm.pagesToScan);
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO next = repository.claim("automatic-completion").stream().findFirst().get();
+        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(next.getPolicy()).ksm.pagesToScan);
+        assertEquals(2L, next.getDesiredRevision());
+        repository.result(query.getUuid(), "Succeeded", "late duplicate", receipt, current);
+        assertEquals(next.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals(next.getUuid(), host1State().getControlOperationUuid());
+        MemoryAgentResponse applied = new MemoryAgentResponse(); applied.appliedRevision = next.getDesiredRevision();
+        repository.result(next.getUuid(), "Succeeded", "latest desired applied", applied);
+        assertEquals("Succeeded", host1State().getStatus());
+        assertEquals("Applied", host1State().getPolicyPlanStatus());
+        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(host1State().getAppliedPolicy()).ksm.pagesToScan);
+        assertNull(host1State().getActiveTaskUuid());
+        // A formerly blocked attempt remains truthful history. It must not
+        // override the current States projection after the latest apply.
+        assertEquals("Blocked", repository.findTask(deferred.get(0)).getStatus());
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+    }
+
+    @Test public void savingUnchangedDesiredCanQueryUnknownButCannotReplayConfiguration() {
+        prepareAppliedKsmForStandardClear();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("previous-ksm-apply");
+            em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown"); return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                "host1", "HostVO", "false")), ConfigMutationContext.internal(), false);
+        List<MemoryTaskVO> tasks = repository.claim("automatic-completion");
+        assertEquals(1, tasks.size());
+        assertTrue(MemoryRepository.isConfigurationReconcile(tasks.get(0)));
+        assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
+        assertEquals(1L, host1State().getDesiredRevision());
+        assertEquals("Unknown", host1State().getStatus());
+    }
+
+    @Test public void upgradedAgentObservationRechecksUnsupportedCompletionOnlyOnce() {
+        prepareAppliedKsmForStandardClear();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Unknown"); state.setActiveTaskUuid("previous-ksm-apply");
+            em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown"); return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
+                "host1", "HostVO", "2500")), ConfigMutationContext.internal(), false);
+        MemoryTaskVO query = repository.claim("mn-before-agent-upgrade").get(0);
+        repository.result(query.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null);
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+
+        MemoryAgentResponse observation = new MemoryAgentResponse(); observation.setSuccess(true);
+        observation.status = "Succeeded"; observation.hostUuid = "host1"; observation.bootId = "boot-1";
+        observation.state = new LinkedHashMap<>(); observation.state.put("hostUuid", "host1");
+        observation.state.put("bootId", "boot-1"); observation.capabilities = new LinkedHashMap<>();
+        observation.capabilities.put("supported", true);
+        for (Object marker : new Object[]{false, "true", null}) {
+            observation.sampleTime = System.currentTimeMillis();
+            observation.capabilities.put("readOnlyCompletedReconcile", marker);
+            repository.observe("host1", observation);
+            assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+        }
+        observation.capabilities.put("readOnlyCompletedReconcile", true);
+        observation.sampleTime = System.currentTimeMillis(); repository.observe("host1", observation);
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, query.getUuid()).setReason("Original receipt unavailable"); return null;
+        });
+        assertFalse("other Unknown reasons must not become periodic retries", repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, query.getUuid()).setReason("READ_ONLY_COMPLETION_UNSUPPORTED");
+            em.find(MemoryStateVO.class, "host1").setLastSampleTime(1L); return null;
+        });
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+        observation.sampleTime = System.currentTimeMillis(); repository.observe("host1", observation);
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, "previous-ksm-apply").setDesiredRevision(2L); return null;
+        });
+        assertFalse("upgrading cannot waive the original revision fence", repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, "previous-ksm-apply").setDesiredRevision(1L); return null;
+        });
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        assertFalse("another MN/observation must not duplicate the active query", repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO retry = repository.claim("mn-after-agent-upgrade").get(0);
+        assertTrue(MemoryRepository.isConfigurationReconcile(retry));
+        assertEquals(query.getParentUuid(), retry.getParentUuid());
+        assertEquals(query.getReconcileOperationUuid(), retry.getReconcileOperationUuid());
+        assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
+        assertEquals(1L, host1State().getDesiredRevision());
+        assertEquals("Unknown", repository.findTask(query.getUuid()).getStatus());
+        repository.result(retry.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null);
+        for (int i = 0; i < 3; i++) {
+            observation.sampleTime = System.currentTimeMillis(); repository.observe("host1", observation);
+            assertFalse("only one upgrade recheck per saved request", repository.applyEffectivePolicyAfterConnect("host1"));
+        }
+        assertTrue(repository.claim("mn-after-agent-upgrade").isEmpty());
     }
 
     @Test public void standardKsmDeleteDoesNotResumePausedController() {
@@ -2365,6 +3421,1035 @@ public class MemoryRepositoryTest {
         msg.setExpectedControlOperationUuid("stale-drain");
         try { repository.submit(msg); fail("stale control anchor must fail"); }
         catch (MemoryOperationException expected) { assertEquals("MEMORY_CONTROL_OPERATION_FENCED", expected.getCode()); }
+    }
+
+    @Test public void selectedBackendCandidatePreparationQueuesDrainBeforePreparingNewDevice() {
+        selectedBackendCandidatePreparationFlow(false, false, false, false);
+    }
+
+    @Test public void selectedBackendPreparationAfterManualDrainRestoresWriteback() {
+        selectedBackendCandidatePreparationFlow(true, false, false, false);
+    }
+
+    @Test public void selectedBackendPreparationRejectsMismatchedReceiptWithoutRegisteringOwner() {
+        selectedBackendCandidatePreparationFlow(true, true, false, false);
+    }
+
+    @Test public void selectedBackendConfigWriteFailureRollsBackPreparationResultAtomically() {
+        selectedBackendCandidatePreparationFlow(true, false, true, false);
+    }
+
+    @Test public void selectedBackendPreparationAfterManualDrainKeepsZramDisabled() {
+        selectedBackendCandidatePreparationFlow(true, false, false, true);
+    }
+
+    @Test public void selectedBackendPreparationRejectsTargetChangedBeforePrepareResult() {
+        selectedBackendCandidatePreparationFlow(true, false, false, false, true, false, false, false);
+    }
+
+    @Test public void selectedBackendPreparationRejectsExpiredFreshObservation() {
+        selectedBackendCandidatePreparationFlow(true, false, false, false, false, true, false, false);
+    }
+
+    @Test public void selectedBackendPreparationRejectsWrongFreshBackendIdentity() {
+        selectedBackendCandidatePreparationFlow(true, false, false, false, false, false, true, false);
+    }
+
+    @Test public void duplicateSuccessfulSelectedPreparationResultDoesNotRepeatWrites() {
+        selectedBackendCandidatePreparationFlow(true, false, false, false, false, false, false, true);
+    }
+
+    private void selectedBackendCandidatePreparationFlow(
+            boolean manualDrain, boolean mismatchPrepareReceipt, boolean failConfigWrite, boolean zramDisabled) {
+        selectedBackendCandidatePreparationFlow(manualDrain, mismatchPrepareReceipt, failConfigWrite, zramDisabled,
+                false, false, false, false);
+    }
+
+    private void selectedBackendCandidatePreparationFlow(boolean manualDrain, boolean mismatchPrepareReceipt,
+            boolean failConfigWrite, boolean zramDisabled, boolean targetChangesBeforePrepareResult,
+            boolean staleFreshObservation, boolean wrongFreshBackendIdentity, boolean duplicatePrepareResult) {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        MemoryTaskVO manualDrainTask = null;
+        if (manualDrain) {
+            MemoryTaskVO parent = testTask("manual-selected-drain-parent", null, "control", "Applying", null);
+            MemoryTaskVO drain = testTask("manual-selected-drain", parent.getUuid(), "drain", "Applying", null);
+            manualDrainTask = drain;
+            repository.transaction(em -> {
+                em.persist(parent); em.persist(drain);
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setActiveTaskUuid(drain.getUuid()); state.setControlOperationUuid(drain.getUuid());
+                state.setCurrentStep("drain");
+                standardConfigAdapter.writeGlobal(em, "writeback.enabled", !zramDisabled);
+                if (zramDisabled) {
+                    standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
+                    standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2000L);
+                    standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+                    standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
+                    state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20},"
+                            + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096}}");
+                    com.google.gson.JsonObject stateJson = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+                    com.google.gson.JsonObject actualZram = stateJson.getAsJsonObject("actual").getAsJsonObject("zram");
+                    actualZram.addProperty("enabled", false); actualZram.addProperty("efficiencyEnabled", false);
+                    state.setState(stateJson.toString());
+                }
+                return null;
+            });
+            Map<String, Object> proof = new LinkedHashMap<>();
+            proof.put("device", "/dev/zram0"); proof.put("pool_generation",
+                    "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789");
+            proof.put("state", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+            proof.put("active", false); proof.put("reset_performed", false);
+            Map<String, Object> state = new LinkedHashMap<>();
+            state.put("hostUuid", "host1"); state.put("bootId", "01234567-89ab-cdef-0123-456789abcdef");
+            state.put("poolGeneration", proof.get("pool_generation")); state.put("controlOperationUuid", drain.getUuid());
+            state.put("observedAt", Instant.now().toString()); state.put("status", "AVAILABLE");
+            state.put("phase", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+            state.put("receipt", proof); state.put("nativeReadback", proof);
+            MemoryAgentResponse drained = new MemoryAgentResponse(); drained.operationUuid = drain.getUuid();
+            drained.status = "Succeeded"; drained.setSuccess(true); drained.hostUuid = "host1";
+            drained.bootId = "01234567-89ab-cdef-0123-456789abcdef";
+            drained.appliedRevision = drain.getDesiredRevision(); drained.sampleTime = System.currentTimeMillis();
+            drained.state = state;
+            repository.result(drain.getUuid(), "Succeeded", "manual drain completed", drained, drained);
+        }
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+        String fingerprint = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc";
+        String candidateId = "candidate:" + fingerprint;
+        String control = host1State().getControlOperationUuid();
+        Map<String, Object> stableIdentity = new LinkedHashMap<>();
+        stableIdentity.put("bootId", boot); stableIdentity.put("device", "/dev/vdb");
+        stableIdentity.put("byIdPath", "/dev/disk/by-id/local"); stableIdentity.put("majorMinor", "252:16");
+        stableIdentity.put("serial", "serial-local"); stableIdentity.put("wwn", "");
+        stableIdentity.put("capacityBytes", 8192L); stableIdentity.put("transport", "virtio");
+        stableIdentity.put("sysfsPath", "/sys/devices/local"); stableIdentity.put("sysfsInode", "1");
+        stableIdentity.put("rdev", 64528L); stableIdentity.put("nodeInode", 2L);
+        Map<String, Object> candidate = new LinkedHashMap<>();
+        candidate.put("resourceUuid", null); candidate.put("identity", candidateId);
+        candidate.put("fingerprint", fingerprint); candidate.put("stableIdentity", stableIdentity);
+        candidate.put("eligible", true); candidate.put("writebackReady", false); candidate.put("active", false);
+        candidate.put("type", "block"); candidate.put("device", "/dev/vdb");
+        candidate.put("state", "NEEDS_OFFLINE_PREPARATION"); candidate.put("hostBootId", boot);
+        candidate.put("capacityBytes", 8192L);
+        MemoryAgentResponse observation = new MemoryAgentResponse();
+        observation.status = "Succeeded"; observation.setSuccess(true); observation.hostUuid = "host1";
+        observation.bootId = boot; observation.sampleTime = System.currentTimeMillis();
+        observation.state = new LinkedHashMap<>();
+        observation.state.put("hostUuid", "host1"); observation.state.put("bootId", boot);
+        observation.state.put("poolGeneration", pool); observation.state.put("controlOperationUuid", control);
+        observation.state.put("observedAt", Instant.now().toString()); observation.state.put("status", "AVAILABLE");
+        observation.state.put("canPrepare", manualDrain);
+        observation.state.put("preparationReasons", manualDrain ? Collections.emptyList()
+                : Arrays.asList("MEMORY_SERVICE_NOT_STOPPED", "DRAIN_PROOF_UNAVAILABLE"));
+        Map<String, Object> hostZram = new LinkedHashMap<>();
+        hostZram.put("device", "/dev/zram0"); hostZram.put("pool_generation", pool);
+        observation.state.put("host_zram", hostZram);
+        observation.state.put("candidates", Collections.singletonList(candidate));
+
+        APIUpdateMemoryPolicyMsg request = request(0);
+        request.setScope("Host"); request.setResourceUuid("host1"); request.setTargetHostUuids(null);
+        request.setExpectedRevision(0L);
+        request.setExpectedGlobalRevision(repository.getPolicy("Global", "global").getRevision());
+        request.setAction("prepareWritebackBackend"); request.setPolicy("{}");
+        request.setExpectedControlOperationUuid(control);
+        MemoryBackendPreparation selected = new MemoryBackendPreparation();
+        selected.setCandidateId(candidateId); selected.setExpectedHostBootId(boot);
+        selected.setExpectedPoolGeneration(pool); selected.setBackendCapacityBytes(8192L);
+        selected.setResetConfirmed(true); request.setBackendPreparation(selected);
+
+        long beforeInvalid = repository.taskCount(new APIQueryMemoryTaskMsg());
+        if (!manualDrain) {
+        String originalHostState = host1State().getState();
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        observation.state.put("observedAt", Instant.now().minusMillis(
+                MemoryOptimizationGlobalConfig.displayTtlMillis() + 1000).toString());
+        expectSelectedPreparationRejected(request, observation);
+        observation.state.put("observedAt", Instant.now().toString());
+        observation.state.put("candidates", Arrays.asList(candidate, candidate));
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        observation.state.put("candidates", Collections.singletonList(candidate));
+        selected.setBackendCapacityBytes(4096L);
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        selected.setBackendCapacityBytes(8192L); selected.setResetConfirmed(false);
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        selected.setResetConfirmed(true); candidate.put("active", true);
+        observation.state.put("status", "UNKNOWN");
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        candidate.put("active", false); observation.state.put("status", "AVAILABLE");
+        observation.state.put("preparationReasons", Collections.emptyList());
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        if (!manualDrain) { expectSelectedPreparationRejected(request, observation); }
+        observation.state.put("preparationReasons", Arrays.asList("MEMORY_SERVICE_NOT_STOPPED", "DRAIN_PROOF_UNAVAILABLE"));
+        observation.state.remove("canPrepare");
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        observation.state.put("canPrepare", false);
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            com.google.gson.JsonObject root = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+            root.getAsJsonObject("host_zram").remove("device"); state.setState(root.toString()); return null;
+        });
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            com.google.gson.JsonObject root = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+            root.getAsJsonObject("host_zram").addProperty("device", "/dev/sda"); state.setState(root.toString()); return null;
+        });
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setState(originalHostState); return null; });
+        stableIdentity.remove("rdev");
+        request.setClientRequestUuid(UUID.randomUUID().toString());
+        expectSelectedPreparationRejected(request, observation);
+        stableIdentity.put("rdev", 64528L);
+        assertEquals(beforeInvalid, repository.taskCount(new APIQueryMemoryTaskMsg()));
+        }
+
+        MemoryTaskInventory parent = repository.submit(request, observation);
+        assertEquals("prepareWritebackBackend", parent.getAction());
+        MemoryTaskVO drain = manualDrain ? manualDrainTask : repository.claim("selected-candidate-drain").stream()
+                .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(drain);
+        if (manualDrain) {
+            assertNotEquals("selected preparation must have its own root, not reuse the manual drain root",
+                    drain.getParentUuid(), parent.getUuid());
+        } else {
+        assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+        assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action='drain'", Long.class)
+                .setParameter("p", parent.getUuid()).getSingleResult()));
+        Map<String, Object> drained = new LinkedHashMap<>();
+        drained.put("hostUuid", "host1"); drained.put("bootId", boot);
+        drained.put("observedAt", Instant.now().toString()); drained.put("status", "AVAILABLE");
+        drained.put("poolGeneration", pool); drained.put("controlOperationUuid", drain.getUuid());
+        drained.put("canPrepare", true); drained.put("canPrepareZramPool", false);
+        drained.put("preparationReasons", Collections.emptyList()); drained.put("candidates", Collections.singletonList(candidate));
+        drained.put("phase", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+        Map<String, Object> nativeReadback = new LinkedHashMap<>();
+        nativeReadback.put("device", "/dev/zram0"); nativeReadback.put("pool_generation", pool);
+        nativeReadback.put("state", "WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED");
+        nativeReadback.put("active", false); nativeReadback.put("reset_performed", false);
+        drained.put("receipt", nativeReadback); drained.put("nativeReadback", nativeReadback);
+        MemoryAgentResponse drainResponse = new MemoryAgentResponse();
+        drainResponse.operationUuid = drain.getUuid(); drainResponse.status = "Succeeded";
+        drainResponse.setSuccess(true); drainResponse.hostUuid = "host1";
+        drainResponse.bootId = boot; drainResponse.appliedRevision = drain.getDesiredRevision();
+        drainResponse.sampleTime = System.currentTimeMillis(); drainResponse.state = drained;
+        repository.result(drain.getUuid(), "Succeeded", "drain completed", drainResponse, drainResponse);
+        }
+        MemoryTaskVO preparation = repository.claim("selected-candidate-prep").stream()
+                .filter(task -> "prepareWritebackBackend".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull("successful drain must queue selected backend preparation; host="
+                + host1State().getStatus() + "/" + host1State().getReason() + "/"
+                + host1State().getActiveTaskUuid() + "/" + host1State().getPolicyBlockedFields(), preparation);
+        assertStateCurrentStep("prepareWritebackBackend");
+
+        // A first-use candidate has no owner UUID in the original target.  The
+        // trusted Agent receipt must therefore be the source of the new owner
+        // identity before the normal activation planner is admitted.
+        String newResource = "dddddddddddddddddddddddddddddddd";
+        Map<String, Object> targetIdentity = new LinkedHashMap<>();
+        targetIdentity.put("boot_id", boot); targetIdentity.put("canonical_device", "/dev/vdb");
+        targetIdentity.put("capacity_bytes", 8192L); targetIdentity.put("rdev", 64528L);
+        targetIdentity.put("node_inode", 2L); targetIdentity.put("sysfs_inode", mismatchPrepareReceipt ? 9L : 1L);
+        targetIdentity.put("stack_sha256", "0dfe6c2101c268391514432dd0d786b952739c2e72f5d1896e9b389f4b17dfe4");
+        targetIdentity.put("direct_io", false);
+        Map<String, Object> maintenance = new LinkedHashMap<>();
+        maintenance.put("stage", "APPLIED"); maintenance.put("request_id", preparation.getUuid());
+        maintenance.put("candidate_id", candidateId); maintenance.put("backend_resource_uuid", newResource);
+        maintenance.put("host_boot_id", boot); maintenance.put("pool_generation", pool);
+        maintenance.put("target_identity", targetIdentity);
+        MemoryAgentResponse prepared = new MemoryAgentResponse();
+        prepared.operationUuid = preparation.getUuid(); prepared.status = "Succeeded";
+        prepared.setSuccess(true); prepared.hostUuid = "host1"; prepared.bootId = boot;
+        prepared.appliedRevision = preparation.getDesiredRevision(); prepared.sampleTime = System.currentTimeMillis();
+        prepared.state = new LinkedHashMap<>(); prepared.state.put("maintenance", maintenance);
+        Map<String, Object> preparedState = new LinkedHashMap<>();
+        preparedState.put("bootId", boot); preparedState.put("poolGeneration", pool);
+        preparedState.put("lastConfirmedOperationUuid", drain.getUuid());
+        preparedState.put("lastConfirmedAppliedRevision", drain.getDesiredRevision());
+        preparedState.put("managed", true); preparedState.put("phase", "POOL_READY");
+        Map<String, Object> lifecycle = new LinkedHashMap<>();
+        lifecycle.put("paused", true); lifecycle.put("activeState", "paused");
+        preparedState.put("lifecycle", lifecycle);
+        Map<String, Object> maintenanceProof = new LinkedHashMap<>();
+        maintenanceProof.put("drainOperationUuid", drain.getUuid()); maintenanceProof.put("oldPoolGeneration", pool);
+        maintenanceProof.put("maintenanceReady", true); maintenanceProof.put("maintenanceArchived", true);
+        maintenanceProof.put("executorExited", true); maintenanceProof.put("activeOperations", 0L);
+        maintenanceProof.put("readyForInitialization", true); maintenanceProof.put("originalDeviceInactive", true);
+        maintenanceProof.put("oldPoolOwnershipAbsent", true); maintenanceProof.put("poolOwnedByService", false);
+        preparedState.put("maintenanceProof", maintenanceProof);
+        Map<String, Object> backendResource = new LinkedHashMap<>();
+        backendResource.put("resource_uuid", newResource); backendResource.put("capacity_bytes", 8192L);
+        backendResource.put("state", "PREPARED"); backendResource.put("active", false);
+        backendResource.put("fingerprint", fingerprint);
+        backendResource.put("observed_at", Instant.now().toString());
+        Map<String, Object> backend = new LinkedHashMap<>();
+        backend.put("backend_resource", backendResource);
+        Map<String, Object> actual = new LinkedHashMap<>();
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("enabled", false); zram.put("efficiencyEnabled", false);
+        Map<String, Object> capacity = new LinkedHashMap<>();
+        capacity.put("effective_logical_bytes", 8192L); capacity.put("effective_physical_limit_bytes", 4096L);
+        capacity.put("apply_state", "APPLIED");
+        zram.put("capacity", capacity);
+        actual.put("ksm", Collections.singletonMap("enabled", true));
+        actual.put("zram", zram); actual.put("writeback", Collections.singletonMap("backend", backend));
+        preparedState.put("actual", actual); prepared.state.putAll(preparedState);
+        Map<String, Object> savings = new LinkedHashMap<>();
+        savings.put("quality", "Fresh"); savings.put("formulaVersion", "mechanism-estimate-v1");
+        savings.put("sampleTime", System.currentTimeMillis());
+        preparedState.put("savings", savings);
+        MemoryAgentResponse fresh = new MemoryAgentResponse(); fresh.status = "Succeeded";
+        fresh.setSuccess(true); fresh.hostUuid = "host1"; fresh.bootId = boot;
+        fresh.sampleTime = System.currentTimeMillis(); fresh.state = preparedState;
+        fresh.capabilities = new LinkedHashMap<>();
+        for (String capability : Arrays.asList("supported", "ksm", "ksmZeroPages", "zram", "writeback")) {
+            fresh.capabilities.put(capability, true);
+        }
+        if (staleFreshObservation) {
+            fresh.sampleTime = System.currentTimeMillis() - MemoryOptimizationGlobalConfig.displayTtlMillis() - 1000L;
+        }
+        if (wrongFreshBackendIdentity) {
+            Map<String, Object> freshBackend = (Map<String, Object>) ((Map<String, Object>)
+                    ((Map<String, Object>) preparedState.get("actual")).get("writeback")).get("backend");
+            Map<String, Object> freshBackendResource = (Map<String, Object>) freshBackend.get("backend_resource");
+            freshBackendResource.put("resource_uuid", "ffffffffffffffffffffffffffffffff");
+        }
+        assertTrue("selected preparation fixture must carry an admissible maintenance archive: "
+                        + org.zstack.utils.gson.JSONObjectUtil.toJsonString(preparedState),
+                MemoryRepository.isMaintenanceRecoveryState(
+                        org.zstack.utils.gson.JSONObjectUtil.toJsonString(preparedState), drain.getUuid()));
+        if (failConfigWrite) {
+            MemoryStateVO stateBeforeResult = host1State();
+            String stateTextBeforeResult = stateBeforeResult.getState();
+            String activeTaskBeforeResult = stateBeforeResult.getActiveTaskUuid();
+            String parentStatusBeforeResult = repository.findTask(parent.getUuid()).getStatus();
+            String preparationStatusBeforeResult = repository.findTask(preparation.getUuid()).getStatus();
+            long taskCountBeforeResult = repository.taskCount(new APIQueryMemoryTaskMsg());
+            failAfterResourceConfigWrite = true;
+            try {
+                repository.result(preparation.getUuid(), "Succeeded", "backend prepared", prepared, fresh);
+                fail("post-write configuration failure must abort selected preparation result");
+            } catch (IllegalStateException expected) {
+                assertEquals("injected post-write config failure", expected.getMessage());
+            } finally {
+                failAfterResourceConfigWrite = false;
+            }
+            assertEquals(stateTextBeforeResult, host1State().getState());
+            assertEquals(activeTaskBeforeResult, host1State().getActiveTaskUuid());
+            assertEquals(parentStatusBeforeResult, repository.findTask(parent.getUuid()).getStatus());
+            assertEquals(preparationStatusBeforeResult, repository.findTask(preparation.getUuid()).getStatus());
+            assertEquals(taskCountBeforeResult, repository.taskCount(new APIQueryMemoryTaskMsg()));
+            assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+            assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
+                    em, "writeback.backendResourceUuid", "host1")));
+            assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
+                    em, "writeback.backendCapacityBytes", "host1")));
+            assertTrue(repository.transaction(em -> em.createQuery(
+                    "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                    Long.class).setParameter("p", parent.getUuid()).getSingleResult() == 0L));
+            return;
+        }
+        if (targetChangesBeforePrepareResult) {
+            repository.transaction(em -> {
+                standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
+                return null;
+            });
+        }
+        String appliedPolicyBeforePreparationResult = host1State().getAppliedPolicy();
+        String controlBeforePreparationResult = host1State().getControlOperationUuid();
+        long taskCountBeforePrepareResult = repository.taskCount(new APIQueryMemoryTaskMsg());
+        repository.result(preparation.getUuid(), "Succeeded", "backend prepared", prepared, fresh);
+        if (targetChangesBeforePrepareResult || staleFreshObservation || wrongFreshBackendIdentity) {
+            MemoryTaskVO rejectedPreparation = repository.findTask(preparation.getUuid());
+            String expectedReason = targetChangesBeforePrepareResult ? "MAINTENANCE_TARGET_CHANGED"
+                    : staleFreshObservation ? "CURRENT_POOL_PREPARATION_NOT_PROVEN"
+                    : "CURRENT_SELECTED_BACKEND_NOT_PROVEN";
+            assertEquals("untrusted completion must keep preparation fenced; reason=" + rejectedPreparation.getReason(),
+                    "Unknown", rejectedPreparation.getStatus());
+            assertTrue(rejectedPreparation.getReason(), rejectedPreparation.getReason().contains(expectedReason));
+            assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
+                    em, "writeback.backendResourceUuid", "host1")));
+            assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
+                    em, "writeback.backendCapacityBytes", "host1")));
+            assertEquals(taskCountBeforePrepareResult, repository.taskCount(new APIQueryMemoryTaskMsg()));
+            assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
+            assertEquals(new com.google.gson.JsonParser().parse(appliedPolicyBeforePreparationResult),
+                    new com.google.gson.JsonParser().parse(host1State().getAppliedPolicy()));
+            assertEquals(controlBeforePreparationResult, host1State().getControlOperationUuid());
+            assertTrue(repository.transaction(em -> em.createQuery(
+                    "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                    Long.class).setParameter("p", parent.getUuid()).getSingleResult() == 0L));
+            return;
+        }
+        if (mismatchPrepareReceipt) {
+            Object rejectedOwner = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+            Object rejectedCapacity = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
+            assertNull("untrusted prepare identity must not register a backend owner", rejectedOwner);
+            assertNull("untrusted prepare identity must not register backend capacity", rejectedCapacity);
+            assertFalse("untrusted prepare identity must not admit activation", repository.transaction(em -> !em.createQuery(
+                    "select t from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                    MemoryTaskVO.class).setParameter("p", parent.getUuid()).getResultList().isEmpty()));
+            return;
+        }
+        if (zramDisabled) {
+            Object preparedOwner = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+            Object preparedCapacity = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
+            List<MemoryTaskVO> rootTasks = repository.transaction(em -> em.createQuery(
+                    "from MemoryTaskVO t where t.parentUuid=:p order by t.createDate", MemoryTaskVO.class)
+                    .setParameter("p", parent.getUuid()).getResultList());
+            StringBuilder taskDetails = new StringBuilder();
+            for (MemoryTaskVO task : rootTasks) {
+                taskDetails.append(task.getAction()).append('/').append(task.getStatus())
+                        .append(':').append(task.getPolicy()).append(';');
+            }
+            MemoryStateVO postPrepareState = host1State();
+            assertEquals("selected prepare result=" + repository.findTask(preparation.getUuid()).getStatus() + "/"
+                    + repository.findTask(preparation.getUuid()).getReason() + ", root="
+                    + repository.findTask(parent.getUuid()).getStatus() + "/" + repository.findTask(parent.getUuid()).getReason()
+                    + ", host=" + host1State().getStatus() + "/" + host1State().getReason() + "/"
+                    + host1State().getCurrentStep() + ", children=" + taskDetails + ", effective="
+                    + repository.getPolicy("Host", "host1").getEffectivePolicy() + ", applied="
+                    + postPrepareState.getAppliedPolicy() + ", plan=" + postPrepareState.getPolicyPlanStatus()
+                    + ", blocked=" + postPrepareState.getPolicyBlockedFields(),
+                    newResource, preparedOwner == null ? null : preparedOwner.toString());
+            assertEquals("8192", preparedCapacity == null ? null : preparedCapacity.toString());
+            String expectedAppliedPolicy = MemoryPolicyRules.merge(appliedPolicyBeforePreparationResult,
+                    "{\"writeback\":{\"backendResourceUuid\":\"" + newResource
+                            + "\",\"backendCapacityBytes\":8192}}", "Host");
+            assertEquals("trusted prepare binding may add only the verified owner and whole-disk capacity",
+                    new com.google.gson.JsonParser().parse(expectedAppliedPolicy),
+                    new com.google.gson.JsonParser().parse(host1State().getAppliedPolicy()));
+            assertEquals(controlBeforePreparationResult, host1State().getControlOperationUuid());
+            assertEquals("Succeeded", repository.findTask(preparation.getUuid()).getStatus());
+            assertEquals("Succeeded", repository.findTask(parent.getUuid()).getStatus());
+            MemoryPolicyConfig effective = MemoryPolicyRules.decode(repository.getPolicy("Host", "host1").getEffectivePolicy());
+            assertEquals(Boolean.FALSE, effective.zram.enabled);
+            assertEquals(Boolean.FALSE, effective.writeback.enabled);
+            assertNull(host1State().getActiveTaskUuid());
+            List<MemoryTaskVO> followups = repository.transaction(em -> em.createQuery(
+                    "from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                    MemoryTaskVO.class).setParameter("p", parent.getUuid()).getResultList());
+            assertTrue("trusted PREPARED proof must bind owner/capacity without a normal apply child", followups.isEmpty());
+            return;
+        }
+        if (duplicatePrepareResult) {
+            String activeTaskBeforeDuplicate = host1State().getActiveTaskUuid();
+            String appliedPolicyBeforeDuplicate = host1State().getAppliedPolicy();
+            Object ownerBeforeDuplicate = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+            Object capacityBeforeDuplicate = repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
+            long taskCountBeforeDuplicate = repository.taskCount(new APIQueryMemoryTaskMsg());
+            long revisionBeforeDuplicate = repository.getPolicy("Host", "host1").getRevision();
+            repository.result(preparation.getUuid(), "Succeeded", "duplicate backend prepared", prepared, fresh);
+            assertEquals(taskCountBeforeDuplicate, repository.taskCount(new APIQueryMemoryTaskMsg()));
+            assertEquals(revisionBeforeDuplicate, repository.getPolicy("Host", "host1").getRevision());
+            assertEquals(appliedPolicyBeforeDuplicate, host1State().getAppliedPolicy());
+            assertEquals(activeTaskBeforeDuplicate, host1State().getActiveTaskUuid());
+            assertEquals(ownerBeforeDuplicate, repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1")));
+            assertEquals(capacityBeforeDuplicate, repository.transaction(em ->
+                    standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1")));
+            assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                    "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                    Long.class).setParameter("p", parent.getUuid()).getSingleResult()));
+        }
+        MemoryTaskVO activation = repository.transaction(em -> {
+            List<MemoryTaskVO> rows = em.createQuery(
+                    "from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride') order by t.createDate",
+                    MemoryTaskVO.class).setParameter("p", parent.getUuid()).getResultList();
+            return rows.isEmpty() ? null : rows.get(rows.size() - 1);
+        });
+        assertNotNull("trusted first-use preparation must queue activation and register its owner UUID; prep="
+                + repository.findTask(preparation.getUuid()).getStatus() + "/"
+                + repository.findTask(preparation.getUuid()).getReason() + ", host="
+                + host1State().getStatus() + "/" + host1State().getReason()
+                + ", drainPolicy=" + drain.getPolicy() + ", effective="
+                + repository.getPolicy("Host", "host1").getEffectivePolicy(), activation);
+        MemoryPolicyConfig activationPolicy = MemoryPolicyRules.decode(activation.getPolicy());
+        assertEquals(Boolean.FALSE, activationPolicy.writeback.enabled);
+        assertNull("first activation must not replay the new backend owner in its payload",
+                activationPolicy.writeback.backendResourceUuid);
+        Object savedOwner = repository.transaction(em ->
+                standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+        Object savedCapacity = repository.transaction(em ->
+                standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
+        assertEquals(newResource, savedOwner == null ? null : savedOwner.toString());
+        assertEquals("8192", savedCapacity == null ? null : savedCapacity.toString());
+        assertTrue("activation must remain dispatchable after owner registration: status="
+                        + activation.getStatus() + "/" + activation.getReason()
+                        + ", planHash=" + activation.getPolicyPlanHash()
+                        + ", hostTarget=" + host1State().getPolicyTargetHash(),
+                repository.claim("selected-candidate-activation").stream()
+                        .anyMatch(task -> task.getUuid().equals(activation.getUuid())));
+
+        MemoryAgentResponse activated = new MemoryAgentResponse();
+        activated.operationUuid = activation.getUuid(); activated.status = "Succeeded";
+        activated.setSuccess(true); activated.hostUuid = "host1"; activated.bootId = boot;
+        activated.appliedRevision = activation.getDesiredRevision(); activated.sampleTime = System.currentTimeMillis();
+        activated.capabilities = new LinkedHashMap<>();
+        for (String capability : Arrays.asList("supported", "ksm", "ksmZeroPages", "zram", "writeback")) {
+            activated.capabilities.put(capability, true);
+        }
+        Map<String, Object> activatedState = new LinkedHashMap<>();
+        activatedState.put("bootId", boot); activatedState.put("lastConfirmedOperationUuid", activation.getUuid());
+        activatedState.put("lastConfirmedAppliedRevision", activation.getDesiredRevision());
+        activatedState.put("poolGeneration", "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee");
+        Map<String, Object> activeLifecycle = new LinkedHashMap<>();
+        activeLifecycle.put("paused", false); activeLifecycle.put("activeState", "running");
+        activatedState.put("lifecycle", activeLifecycle);
+        Map<String, Object> activeCapacity = new LinkedHashMap<>();
+        activeCapacity.put("effective_logical_bytes", 8192L); activeCapacity.put("effective_physical_limit_bytes", 4096L);
+        Map<String, Object> activeZram = new LinkedHashMap<>();
+        activeZram.put("enabled", true); activeZram.put("efficiencyEnabled", true);
+        activeZram.put("capacity", activeCapacity);
+        Map<String, Object> activeBackendResource = new LinkedHashMap<>();
+        activeBackendResource.put("resource_uuid", newResource); activeBackendResource.put("capacity_bytes", 8192L);
+        activeBackendResource.put("state", "PREPARED"); activeBackendResource.put("active", false);
+        activeBackendResource.put("fingerprint", fingerprint); activeBackendResource.put("observed_at", Instant.now().toString());
+        Map<String, Object> activeBackend = new LinkedHashMap<>();
+        activeBackend.put("backend_resource", activeBackendResource);
+        Map<String, Object> activeActual = new LinkedHashMap<>(); activeActual.put("zram", activeZram);
+        activeActual.put("writeback", Collections.singletonMap("backend", activeBackend));
+        activatedState.put("actual", activeActual); activated.state = activatedState;
+        repository.result(activation.getUuid(), "Succeeded", "pool activated", activated, activated);
+        MemoryTaskVO restore = repository.findTask(host1State().getActiveTaskUuid());
+        assertNotNull("activation must queue retained backend restore before closing root", restore);
+        assertTrue("restore must remain a normal policy action", Arrays.asList("apply", "clearOverride")
+                .contains(restore.getAction()));
+        MemoryPolicyConfig restorePolicy = MemoryPolicyRules.decode(restore.getPolicy());
+        assertTrue("sparse restore must not disable the original writeback intent",
+                manualDrain ? restorePolicy.writeback.enabled == null || Boolean.TRUE.equals(restorePolicy.writeback.enabled)
+                        : restorePolicy.writeback.enabled == null || Boolean.FALSE.equals(restorePolicy.writeback.enabled));
+        assertEquals(newResource, restorePolicy.writeback.backendResourceUuid);
+        assertEquals(Long.valueOf(8192L), restorePolicy.writeback.backendCapacityBytes);
+        assertTrue(repository.claim("selected-candidate-restore").stream()
+                .anyMatch(task -> task.getUuid().equals(restore.getUuid())));
+        activated.operationUuid = restore.getUuid(); activated.appliedRevision = restore.getDesiredRevision();
+        activated.state.put("lastConfirmedOperationUuid", restore.getUuid());
+        activated.state.put("lastConfirmedAppliedRevision", restore.getDesiredRevision());
+        repository.result(restore.getUuid(), "Succeeded", "retained backend restored", activated, activated);
+        assertEquals(parent.getUuid(), restore.getParentUuid());
+        assertEquals("Succeeded", repository.findTask(parent.getUuid()).getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals(manualDrain ? Boolean.TRUE : Boolean.FALSE,
+                MemoryPolicyRules.decode(repository.getPolicy("Host", "host1").getEffectivePolicy()).writeback.enabled);
+        if (manualDrain) {
+            assertEquals("Succeeded", repository.findTask(drain.getUuid()).getStatus());
+            assertEquals("Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
+        }
+        Object retainedOwner = repository.transaction(em ->
+                standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+        assertEquals(newResource, retainedOwner == null ? null : retainedOwner.toString());
+        repository.result(restore.getUuid(), "Succeeded", "late duplicate restore", activated, activated);
+        assertEquals("Succeeded", repository.findTask(parent.getUuid()).getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+    }
+
+    @Test public void selectedBackendPreparationWithNoPoolKeepsZramDisabled() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(false, false);
+    }
+
+    @Test public void selectedBackendPreparationWithNoPoolKeepsExistingKsmControl() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false);
+    }
+
+    @Test public void selectedBackendPreparationWithNoPoolAcceptsBoundDisabledWritebackControl() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, false, false, false, false, true);
+    }
+
+    @Test public void selectedBackendPreparationReconcilesBoundDisabledWritebackControlReadOnly() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, false, false, true, false, true);
+    }
+
+    @Test public void selectedBackendPreparationWithNoPoolRejectsNonKsmControl() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, true);
+    }
+
+    @Test public void selectedBackendPreparationWithActiveServiceAndNoPoolSkipsDrain() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(false, false, true);
+    }
+
+    @Test public void selectedBackendPreparationWithActiveServiceAndNoPoolKeepsKsmControl() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, true);
+    }
+
+    @Test public void selectedBackendPreparationWithEmptyKsmHistoryUsesCurrentPreparationProofNotOldAck() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, true, true);
+    }
+
+    @Test public void standardSaveCompletesPreparedFirstBackendWithoutReplayingItAndUsesLatestPolicy() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, true, true, true);
+    }
+
+    @Test public void selectedBackendPreparationWithNoPoolKeepsConfirmedDisabledServiceControl() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, false, false, false, true);
+    }
+
+    @Test public void standardSaveCompletesPreparedBackendAfterConfirmedServiceDisable() {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(true, false, true, false, true, true);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram) {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(priorKsmControl, priorControlIncludesZram, false);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram, boolean activeServiceNotStopped) {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(priorKsmControl,
+                priorControlIncludesZram, activeServiceNotStopped, false);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram, boolean activeServiceNotStopped, boolean emptyKsm) {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(priorKsmControl,
+                priorControlIncludesZram, activeServiceNotStopped, emptyKsm, false);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram, boolean activeServiceNotStopped,
+            boolean emptyKsm, boolean automaticCompletion) {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(priorKsmControl,
+                priorControlIncludesZram, activeServiceNotStopped, emptyKsm, automaticCompletion, false);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram, boolean activeServiceNotStopped,
+            boolean emptyKsm, boolean automaticCompletion, boolean serviceDisableControl) {
+        selectedBackendPreparationWithNoPoolKeepsZramDisabled(priorKsmControl, priorControlIncludesZram,
+                activeServiceNotStopped, emptyKsm, automaticCompletion, serviceDisableControl, false);
+    }
+
+    private void selectedBackendPreparationWithNoPoolKeepsZramDisabled(
+            boolean priorKsmControl, boolean priorControlIncludesZram, boolean activeServiceNotStopped,
+            boolean emptyKsm, boolean automaticCompletion, boolean serviceDisableControl,
+            boolean boundDisabledWritebackControl) {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        String boot = "01234567-89ab-cdef-0123-456789abcdef";
+        String boundResource = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        String candidateId = "candidate:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd";
+        String fingerprint = candidateId.substring("candidate:".length());
+        String control = priorKsmControl ? "0123456789abcdef0123456789abcdef" : null;
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setControlOperationUuid(control); state.setActiveTaskUuid(null);
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20},"
+                    + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096},"
+                    + "\"writeback\":{\"enabled\":false}}");
+            state.setState("{\"bootId\":\"" + boot + "\",\"managed\":true,\"poolGeneration\":null,"
+                    + (priorKsmControl ? "\"lastConfirmedOperationUuid\":\"" + control
+                            + "\",\"lastConfirmedAppliedRevision\":0," : "")
+                    + "\"lifecycle\":{\"paused\":false,\"activeState\":\"running\"},"
+                    + "\"actual\":{\"ksm\":{\"enabled\":false},\"zram\":{\"enabled\":false,"
+                    + "\"efficiencyEnabled\":false,\"capacity\":{\"effective_logical_bytes\":8192,"
+                    + "\"effective_physical_limit_bytes\":4096,\"apply_state\":\"APPLIED\"}}}}");
+            if (boundDisabledWritebackControl) {
+                com.google.gson.JsonObject observed = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                observed.addProperty("ksmOnly", true);
+                com.google.gson.JsonObject actual = observed.getAsJsonObject("actual");
+                com.google.gson.JsonObject currentBackend = new com.google.gson.JsonObject();
+                currentBackend.addProperty("resource_uuid", boundResource);
+                currentBackend.addProperty("capacity_bytes", 8192L);
+                currentBackend.addProperty("state", "PREPARED");
+                currentBackend.addProperty("active", false);
+                actual.add("writeback", new com.google.gson.JsonParser().parse(
+                        "{\"tuning\":{\"enabled\":false},\"backend\":{\"backend_resource\":"
+                                + currentBackend + "}}").getAsJsonObject());
+                observed.add("backend_resource", currentBackend.deepCopy());
+                state.setState(observed.toString());
+                state.setAppliedPolicy(MemoryPolicyRules.merge(state.getAppliedPolicy(),
+                        "{\"writeback\":{\"backendResourceUuid\":\"" + boundResource
+                                + "\",\"backendCapacityBytes\":8192}}", "Host"));
+            }
+            state.setLastSampleTime(System.currentTimeMillis());
+            if (priorKsmControl) {
+                MemoryTaskVO controlTask = em.find(MemoryTaskVO.class, control);
+                controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
+                        + "\"pagesToScan\":2000,\"sleepMillis\":20}"
+                        + (priorControlIncludesZram ? ",\"zram\":{\"enabled\":false}" : "") + "}");
+                if (emptyKsm) { controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{}}"); }
+                if (serviceDisableControl) {
+                    controlTask.setPolicy("{\"schemaVersion\":1,\"writeback\":{\"enabled\":false}}");
+                    com.google.gson.JsonObject observed = new com.google.gson.JsonParser()
+                            .parse(state.getState()).getAsJsonObject();
+                    observed.getAsJsonObject("actual").add("writeback", new com.google.gson.JsonParser()
+                            .parse("{\"tuning\":{\"enabled\":false}}").getAsJsonObject());
+                    state.setState(observed.toString());
+                }
+                if (boundDisabledWritebackControl) {
+                    controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{},\"writeback\":{\"enabled\":false,"
+                            + "\"backendResourceUuid\":\"" + boundResource
+                            + "\",\"backendCapacityBytes\":8192}}");
+                    controlTask.setAction("clearOverride");
+                    controlTask.setDesiredRevision(0L);
+                }
+            }
+            return null;
+        });
+        Map<String, Object> identity = new LinkedHashMap<>();
+        identity.put("bootId", boot); identity.put("device", "/dev/vdb"); identity.put("byIdPath", "/dev/disk/by-id/cold");
+        identity.put("majorMinor", "252:16"); identity.put("serial", "cold-serial"); identity.put("wwn", "");
+        identity.put("capacityBytes", 8192L); identity.put("transport", "virtio"); identity.put("sysfsPath", "/sys/devices/cold");
+        identity.put("sysfsInode", "1"); identity.put("rdev", 64528L); identity.put("nodeInode", 2L);
+        Map<String, Object> candidate = new LinkedHashMap<>();
+        candidate.put("resourceUuid", null); candidate.put("identity", candidateId); candidate.put("fingerprint", fingerprint);
+        candidate.put("stableIdentity", identity); candidate.put("eligible", true); candidate.put("writebackReady", false);
+        candidate.put("active", false); candidate.put("type", "block"); candidate.put("device", "/dev/vdb");
+        candidate.put("state", "NEEDS_OFFLINE_PREPARATION"); candidate.put("hostBootId", boot); candidate.put("capacityBytes", 8192L);
+        MemoryAgentResponse observation = new MemoryAgentResponse(); observation.status = "Succeeded"; observation.setSuccess(true);
+        observation.hostUuid = "host1"; observation.bootId = boot; observation.sampleTime = System.currentTimeMillis();
+        observation.state = new LinkedHashMap<>(); observation.state.put("hostUuid", "host1"); observation.state.put("bootId", boot);
+        observation.state.put("poolGeneration", "none"); observation.state.put("controlOperationUuid", control);
+        if (priorKsmControl) {
+            observation.state.put("lastConfirmedOperationUuid", control);
+            observation.state.put("lastConfirmedAppliedRevision", 0L);
+        }
+        Map<String, Object> observedZram = new LinkedHashMap<>(); observedZram.put("efficiencyEnabled", false);
+        observation.state.put("actual", Collections.singletonMap("zram", observedZram));
+        observation.state.put("observedAt", Instant.now().toString()); observation.state.put("status", "AVAILABLE");
+        observation.state.put("canPrepare", !activeServiceNotStopped);
+        observation.state.put("preparationReasons", activeServiceNotStopped
+                ? Collections.singletonList("MEMORY_SERVICE_NOT_STOPPED") : Collections.emptyList());
+        observation.state.put("candidates", Collections.singletonList(candidate));
+        APIUpdateMemoryPolicyMsg request = request(0); request.setScope("Host"); request.setResourceUuid("host1");
+        request.setTargetHostUuids(null); request.setAction("prepareWritebackBackend"); request.setPolicy("{}");
+        request.setExpectedRevision(0L); request.setExpectedGlobalRevision(repository.getPolicy("Global", "global").getRevision());
+        request.setExpectedControlOperationUuid(control); request.setClientRequestUuid(UUID.randomUUID().toString());
+        MemoryBackendPreparation selected = new MemoryBackendPreparation(); selected.setCandidateId(candidateId);
+        selected.setExpectedHostBootId(boot); selected.setExpectedPoolGeneration("none"); selected.setBackendCapacityBytes(8192L);
+        selected.setResetConfirmed(true); request.setBackendPreparation(selected);
+        MemoryBackendPreparationRules.validate(request);
+        if (priorControlIncludesZram) {
+            expectSelectedPreparationRejected(request, observation);
+            assertTrue(repository.claim("preparation-must-not-start").isEmpty());
+            return;
+        }
+        if (serviceDisableControl) {
+            String savedState = host1State().getState();
+            for (String defect : Arrays.asList("control", "revision", "missingRevision", "boot", "differentBoot",
+                    "cpuEnabled", "tuningEnabled", "tuningMissing", "stale", "enablePolicy", "capacityPolicy")) {
+                repository.transaction(em -> {
+                    MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                    com.google.gson.JsonObject changed = new com.google.gson.JsonParser()
+                            .parse(savedState).getAsJsonObject();
+                    if ("control".equals(defect)) { changed.addProperty("lastConfirmedOperationUuid", "another-control"); }
+                    if ("revision".equals(defect)) { changed.addProperty("lastConfirmedAppliedRevision", 99L); }
+                    if ("missingRevision".equals(defect)) { changed.remove("lastConfirmedAppliedRevision"); }
+                    if ("boot".equals(defect)) { changed.remove("bootId"); }
+                    if ("differentBoot".equals(defect)) { changed.addProperty("bootId", "different-boot"); }
+                    if ("cpuEnabled".equals(defect)) {
+                        changed.getAsJsonObject("actual").getAsJsonObject("zram").addProperty("efficiencyEnabled", true);
+                    }
+                    if ("tuningEnabled".equals(defect)) {
+                        changed.getAsJsonObject("actual").getAsJsonObject("writeback")
+                                .getAsJsonObject("tuning").addProperty("enabled", true);
+                    }
+                    if ("tuningMissing".equals(defect)) { changed.getAsJsonObject("actual").remove("writeback"); }
+                    state.setState(changed.toString());
+                    state.setLastSampleTime("stale".equals(defect) ? 1L : System.currentTimeMillis());
+                    MemoryTaskVO task = em.find(MemoryTaskVO.class, control);
+                    task.setPolicy("enablePolicy".equals(defect) ? "{\"writeback\":{\"enabled\":true}}"
+                            : "capacityPolicy".equals(defect)
+                            ? "{\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192}}"
+                            : "{\"schemaVersion\":1,\"writeback\":{\"enabled\":false}}");
+                    return null;
+                });
+                request.setClientRequestUuid(UUID.randomUUID().toString());
+                expectSelectedPreparationRejected(request, observation);
+                assertTrue("unproven service control must not dispatch: " + defect,
+                        repository.claim("unproven-service-control").isEmpty());
+            }
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setState(savedState); state.setLastSampleTime(System.currentTimeMillis());
+                em.find(MemoryTaskVO.class, control).setPolicy("{\"schemaVersion\":1,\"writeback\":{\"enabled\":false}}");
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+        }
+        if (boundDisabledWritebackControl) {
+            String savedState = host1State().getState();
+            String savedPolicy = repository.findTask(control).getPolicy();
+            for (String defect : Arrays.asList("missingUuid", "missingCapacity", "extraField", "capacityType",
+                    "enabled", "policyIdentity", "policyCapacity", "stateIdentity", "actualIdentity",
+                    "actualCapacity", "boot")) {
+                repository.transaction(em -> {
+                    MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                    MemoryTaskVO task = em.find(MemoryTaskVO.class, control);
+                    com.google.gson.JsonObject policy = new com.google.gson.JsonParser()
+                            .parse(savedPolicy).getAsJsonObject();
+                    com.google.gson.JsonObject writeback = policy.getAsJsonObject("writeback");
+                    com.google.gson.JsonObject observed = new com.google.gson.JsonParser()
+                            .parse(savedState).getAsJsonObject();
+                    if ("missingUuid".equals(defect)) { writeback.remove("backendResourceUuid"); }
+                    if ("missingCapacity".equals(defect)) { writeback.remove("backendCapacityBytes"); }
+                    if ("extraField".equals(defect)) { writeback.addProperty("unknown", false); }
+                    if ("capacityType".equals(defect)) { writeback.addProperty("backendCapacityBytes", "8192"); }
+                    if ("enabled".equals(defect)) { writeback.addProperty("enabled", true); }
+                    if ("policyIdentity".equals(defect)) { writeback.addProperty("backendResourceUuid", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); }
+                    if ("policyCapacity".equals(defect)) { writeback.addProperty("backendCapacityBytes", 4096L); }
+                    if ("stateIdentity".equals(defect)) {
+                        observed.getAsJsonObject("backend_resource").addProperty("resource_uuid", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+                    }
+                    if ("actualIdentity".equals(defect)) {
+                        observed.getAsJsonObject("actual").getAsJsonObject("writeback")
+                                .getAsJsonObject("backend").getAsJsonObject("backend_resource")
+                                .addProperty("resource_uuid", "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+                    }
+                    if ("actualCapacity".equals(defect)) {
+                        observed.getAsJsonObject("actual").getAsJsonObject("writeback")
+                                .getAsJsonObject("backend").getAsJsonObject("backend_resource")
+                                .addProperty("capacity_bytes", 4096L);
+                    }
+                    if ("boot".equals(defect)) { observed.addProperty("bootId", "different-boot"); }
+                    task.setPolicy(policy.toString()); state.setState(observed.toString());
+                    return null;
+                });
+                request.setClientRequestUuid(UUID.randomUUID().toString());
+                expectSelectedPreparationRejected(request, observation);
+                assertTrue("unproven bound writeback control must not dispatch: " + defect,
+                        repository.claim("unproven-bound-writeback-control").isEmpty());
+            }
+            repository.transaction(em -> {
+                em.find(MemoryStateVO.class, "host1").setState(savedState);
+                em.find(MemoryTaskVO.class, control).setPolicy(savedPolicy);
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+        }
+        if (activeServiceNotStopped) {
+            observation.state.put("preparationReasons", Collections.singletonList("UNKNOWN_PREPARATION_BLOCKER"));
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            observation.state.put("preparationReasons", Arrays.asList(
+                    "MEMORY_SERVICE_NOT_STOPPED", "DRAIN_PROOF_UNAVAILABLE"));
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            observation.state.put("preparationReasons", Collections.singletonList("MEMORY_SERVICE_NOT_STOPPED"));
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.getAsJsonObject("actual").getAsJsonObject("zram")
+                        .addProperty("efficiencyEnabled", true);
+                state.setState(freshState.toString());
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.getAsJsonObject("actual").getAsJsonObject("zram").remove("efficiencyEnabled");
+                state.setState(freshState.toString());
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.getAsJsonObject("actual").getAsJsonObject("zram")
+                        .addProperty("efficiencyEnabled", false);
+                freshState.addProperty("bootId", "different-boot");
+                state.setState(freshState.toString());
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.addProperty("bootId", boot);
+                state.setState(freshState.toString());
+                return null;
+            });
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.addProperty("poolGeneration", "native-existing-pool");
+                state.setState(freshState.toString());
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                com.google.gson.JsonObject freshState = new com.google.gson.JsonParser()
+                        .parse(state.getState()).getAsJsonObject();
+                freshState.add("poolGeneration", com.google.gson.JsonNull.INSTANCE);
+                state.setState(freshState.toString());
+                return null;
+            });
+            repository.transaction(em -> {
+                em.find(MemoryStateVO.class, "host1").setActiveTaskUuid("unresolved-selected-control");
+                return null;
+            });
+            request.setClientRequestUuid(UUID.randomUUID().toString());
+            expectSelectedPreparationRejected(request, observation);
+            repository.transaction(em -> {
+                em.find(MemoryStateVO.class, "host1").setActiveTaskUuid(null);
+                return null;
+            });
+        }
+        MemoryTaskInventory root;
+        try { root = repository.submit(request, observation); }
+        catch (MemoryOperationException rejected) {
+            fail("cold selected backend should be accepted for preparation: " + rejected.getCode()
+                    + "/" + rejected.getMessage()); return;
+        }
+        assertEquals("prepareWritebackBackend", root.getAction());
+        if (activeServiceNotStopped) {
+            long drainChildren = repository.transaction(em -> em.createQuery(
+                    "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action='drain'",
+                    Long.class).setParameter("p", root.getUuid()).getSingleResult());
+            assertEquals("the cold active-service exception must not create a drain child", 0L, drainChildren);
+        }
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(host1State().getAppliedPolicy()).zram.enabled);
+        MemoryTaskVO preparation = repository.claim("cold-selected-preparation").stream()
+                .filter(task -> "prepareWritebackBackend".equals(task.getAction())).findFirst().orElse(null);
+        assertNotNull(preparation);
+        assertEquals("selected preparation must retain the caller's current control anchor",
+                control, preparation.getExpectedControlOperationUuid());
+        String newResource = "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
+        Map<String, Object> targetIdentity = new LinkedHashMap<>();
+        targetIdentity.put("boot_id", boot); targetIdentity.put("canonical_device", "/dev/vdb");
+        targetIdentity.put("capacity_bytes", 8192L); targetIdentity.put("rdev", 64528L);
+        targetIdentity.put("node_inode", 2L); targetIdentity.put("sysfs_inode", 1L);
+        targetIdentity.put("stack_sha256", "4f467c52a18bfc7b2d1c844de18d4262913a3f5f24c7f1614ed06d8c636a2e95");
+        targetIdentity.put("direct_io", false);
+        Map<String, Object> maintenance = new LinkedHashMap<>(); maintenance.put("stage", "APPLIED");
+        maintenance.put("request_id", preparation.getUuid()); maintenance.put("candidate_id", candidateId);
+        maintenance.put("backend_resource_uuid", newResource); maintenance.put("host_boot_id", boot);
+        maintenance.put("target_identity", targetIdentity);
+        MemoryAgentResponse prepared = new MemoryAgentResponse(); prepared.operationUuid = preparation.getUuid();
+        prepared.status = "Succeeded"; prepared.setSuccess(true); prepared.hostUuid = "host1";
+        prepared.bootId = boot; prepared.appliedRevision = preparation.getDesiredRevision();
+        prepared.sampleTime = System.currentTimeMillis(); prepared.state = new LinkedHashMap<>();
+        prepared.state.put("maintenance", maintenance);
+        Map<String, Object> backendResource = new LinkedHashMap<>(); backendResource.put("resource_uuid", newResource);
+        backendResource.put("capacity_bytes", 8192L); backendResource.put("state", "PREPARED");
+        backendResource.put("active", false); backendResource.put("fingerprint", fingerprint);
+        backendResource.put("observed_at", Instant.now().toString());
+        Map<String, Object> backend = new LinkedHashMap<>(); backend.put("backend_resource", backendResource);
+        Map<String, Object> actual = new LinkedHashMap<>();
+        Map<String, Object> zram = new LinkedHashMap<>(); zram.put("enabled", false); zram.put("efficiencyEnabled", false);
+        Map<String, Object> capacity = new LinkedHashMap<>();
+        capacity.put("effective_logical_bytes", 8192L); capacity.put("effective_physical_limit_bytes", 4096L);
+        zram.put("capacity", capacity); actual.put("zram", zram);
+        Map<String, Object> writeback = new LinkedHashMap<>(); writeback.put("backend", backend);
+        actual.put("writeback", writeback);
+        Map<String, Object> freshState = new LinkedHashMap<>(); freshState.put("bootId", boot);
+        freshState.put("poolGeneration", "none"); freshState.put("actual", actual);
+        if (serviceDisableControl) {
+            writeback.put("tuning", Collections.singletonMap("enabled", false));
+        }
+        if (priorKsmControl && !emptyKsm) {
+            freshState.put("lastConfirmedOperationUuid", control);
+            freshState.put("lastConfirmedAppliedRevision", 0L);
+        }
+        Map<String, Object> lifecycle = new LinkedHashMap<>(); lifecycle.put("paused", false); lifecycle.put("activeState", "running");
+        freshState.put("lifecycle", lifecycle);
+        MemoryAgentResponse fresh = new MemoryAgentResponse(); fresh.status = "Succeeded"; fresh.setSuccess(true);
+        fresh.hostUuid = "host1"; fresh.bootId = boot; fresh.sampleTime = System.currentTimeMillis();
+        fresh.state = freshState; fresh.capabilities = new LinkedHashMap<>(); fresh.capabilities.put("supported", true);
+        fresh.capabilities.put("ksm", true); fresh.capabilities.put("ksmZeroPages", true);
+        fresh.capabilities.put("zram", true); fresh.capabilities.put("writeback", true);
+        String appliedPolicyBeforePreparationResult = host1State().getAppliedPolicy();
+        String controlBeforePreparationResult = host1State().getControlOperationUuid();
+        MemoryTaskVO resultTask = preparation;
+        if (automaticCompletion) {
+            repository.result(preparation.getUuid(), "Unknown", "earlier completion proof unavailable", null);
+            standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
+                    "host1", "HostVO", "2500")), ConfigMutationContext.internal(), false);
+            resultTask = repository.claim("saved-configuration-query").stream().findFirst().get();
+            assertTrue(MemoryRepository.isConfigurationReconcile(resultTask));
+            assertEquals(preparation.getUuid(), resultTask.getReconcileOperationUuid());
+            assertEquals(control, host1State().getControlOperationUuid());
+            assertEquals("Unknown", repository.findTask(preparation.getUuid()).getStatus());
+            // The immutable receipt alone must not advance the new desired
+            // configuration across a reboot. No device command is requeued.
+            fresh.bootId = "another-boot";
+            repository.result(resultTask.getUuid(), "Succeeded", "completed receipt", prepared, fresh);
+            assertEquals("Unknown", host1State().getStatus());
+            assertEquals(control, host1State().getControlOperationUuid());
+            assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
+                    em, "writeback.backendResourceUuid", "host1")));
+            assertTrue(repository.claim("other-mn").isEmpty());
+            fresh.bootId = boot;
+        }
+        repository.result(resultTask.getUuid(), "Succeeded", "cold backend prepared", prepared, fresh);
+        Object savedOwner = repository.transaction(em ->
+                standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
+        MemoryTaskVO persistedPreparation = repository.findTask(preparation.getUuid());
+        assertEquals("trusted prepare must register the verified owner; prep=" + persistedPreparation.getStatus()
+                        + "/" + persistedPreparation.getReason(),
+                newResource, savedOwner == null ? null : savedOwner.toString());
+        Object savedCapacity = repository.transaction(em ->
+                standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
+        assertEquals("8192", savedCapacity == null ? null : savedCapacity.toString());
+        if (automaticCompletion) {
+            assertEquals("Succeeded", persistedPreparation.getStatus());
+            assertEquals(Long.valueOf(2500), MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
+                    .getEffectivePolicy()).ksm.pagesToScan);
+            MemoryTaskVO next = repository.claim("continue-latest-target").stream().findFirst().get();
+            assertTrue(Arrays.asList("apply", "clearOverride").contains(next.getAction()));
+            assertEquals(Long.valueOf(2500), MemoryPolicyRules.decode(next.getPolicy()).ksm.pagesToScan);
+            assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                    "select count(t) from MemoryTaskVO t where t.hostUuid='host1' and t.action='prepareWritebackBackend'",
+                    Long.class).getSingleResult()));
+            return;
+        }
+        String expectedAppliedPolicy = MemoryPolicyRules.merge(appliedPolicyBeforePreparationResult,
+                "{\"writeback\":{\"backendResourceUuid\":\"" + newResource
+                        + "\",\"backendCapacityBytes\":8192}}", "Host");
+        assertEquals("trusted prepare binding may add only the verified owner and whole-disk capacity",
+                new com.google.gson.JsonParser().parse(expectedAppliedPolicy),
+                new com.google.gson.JsonParser().parse(host1State().getAppliedPolicy()));
+        assertEquals("trusted prepare must preserve the current control; prep="
+                        + persistedPreparation.getStatus() + "/" + persistedPreparation.getReason(),
+                controlBeforePreparationResult, host1State().getControlOperationUuid());
+        MemoryTaskVO rootNow = repository.findTask(root.getUuid());
+        assertEquals("Succeeded", rootNow.getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(
+                repository.getPolicy("Host", "host1").getEffectivePolicy()).zram.enabled);
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(
+                repository.getPolicy("Host", "host1").getEffectivePolicy()).writeback.enabled);
+        assertTrue("trusted PREPARED proof must bind owner/capacity without a normal apply child",
+                repository.transaction(em -> em.createQuery(
+                        "select count(t) from MemoryTaskVO t where t.parentUuid=:p and t.action in ('apply','clearOverride')",
+                        Long.class).setParameter("p", root.getUuid()).getSingleResult() == 0L));
+    }
+
+    private void expectSelectedPreparationRejected(APIUpdateMemoryPolicyMsg request,
+                                                    MemoryAgentResponse observation) {
+        try {
+            repository.submit(request, observation);
+            fail("invalid selected backend evidence must be rejected");
+        } catch (MemoryOperationException expected) { }
     }
 
     @Test public void zramPoolPreparationKeepsDrainFenceAndDoesNotChangePolicy() {
@@ -3812,12 +5897,15 @@ public class MemoryRepositoryTest {
         registerStandardResources(); rejectedMaintenanceActivationFixture();
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "writeback.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2500L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
             standardConfigAdapter.writeOverride(em, "host1", "HostVO", "zram.enabled", true);
             standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendResourceUuid",
                     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
             standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendCapacityBytes", 4096L);
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setAppliedPolicy("{\"schemaVersion\":1,\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":false}}");
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"pagesToScan\":2500,\"sleepMillis\":20},\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":false}}");
             state.setAppliedPolicyHash("previous-policy-before-maintenance");
             state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true,\"writeback\":true}");
             state.setLastSampleTime(System.currentTimeMillis());
@@ -3843,6 +5931,10 @@ public class MemoryRepositoryTest {
                 .filter(task -> "host1".equals(task.getHostUuid())).findFirst().get();
         MemoryPolicyConfig payload = MemoryPolicyRules.decode(activation.getPolicy());
         assertTrue(payload.zram != null && Boolean.TRUE.equals(payload.zram.enabled));
+        assertNotNull("maintenance activation must retain the complete KSM target", payload.ksm);
+        assertEquals(Boolean.TRUE, payload.ksm.enabled);
+        assertEquals(Long.valueOf(2500L), payload.ksm.pagesToScan);
+        assertEquals(Long.valueOf(20L), payload.ksm.sleepMillis);
         assertNotNull(payload.writeback);
         assertEquals("activation explicitly disables prior tuning before initialization",
                 Boolean.FALSE, payload.writeback.enabled);
@@ -3873,6 +5965,44 @@ public class MemoryRepositoryTest {
         MemoryTaskVO continuation = repository.claim("mn-a").stream()
                 .filter(task -> "host1".equals(task.getHostUuid())).findFirst().get();
         assertTrue(MemoryPolicyRules.decode(continuation.getPolicy()).writeback.enabled);
+    }
+
+    @Test public void maintenanceActivationBlocksWhenFreshKsmCapabilityIsMissing() {
+        registerStandardResources(); rejectedMaintenanceActivationFixture();
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2500L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendResourceUuid",
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendCapacityBytes", 4096L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"pagesToScan\":2500,\"sleepMillis\":20},\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":false}}");
+            state.setAppliedPolicyHash("previous-policy-before-maintenance");
+            state.setCapabilities("{\"supported\":true,\"ksm\":false,\"ksmZeroPages\":false,\"zram\":true,\"writeback\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"managed\":true,\"bootId\":\"boot-a\","
+                    + "\"lastConfirmedOperationUuid\":\"completed-drain\","
+                    + "\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"},"
+                    + "\"maintenanceProof\":{\"maintenanceReady\":true,\"maintenanceArchived\":true,"
+                    + "\"drainOperationUuid\":\"completed-drain\",\"activeOperations\":0,"
+                    + "\"poolOwnedByService\":false,\"readyForInitialization\":true,"
+                    + "\"originalDeviceInactive\":true,\"oldPoolOwnershipAbsent\":true,"
+                    + "\"executorExited\":true},\"actual\":{\"writeback\":{\"backend\":{"
+                    + "\"resource_uuid\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"state\":\"PREPARED\","
+                    + "\"fingerprint\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\","
+                    + "\"capacity_bytes\":4096,\"observed_at\":\"" + Instant.now() + "\"}}}}");
+            return null;
+        });
+        boolean queued = repository.applyEffectivePolicyAfterConnect("host1");
+        assertFalse("missing fresh KSM capability must block retained KSM recovery; state="
+                + host1State().getPolicyPlanStatus() + ", active=" + host1State().getActiveTaskUuid(), queued);
+        assertEquals("Blocked", host1State().getPolicyPlanStatus());
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.hostUuid = :host and t.status in ('Queued','Applying')",
+                Long.class).setParameter("host", "host1").getSingleResult()));
     }
 
     @Test public void maintenanceActivationCanClearKsmOverrideWithoutEnablingWriteback() {
@@ -4214,9 +6344,19 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void freshObservationDoesNotReplaceContradictoryHistoricalReceipt() throws Exception {
+        for (boolean automatic : new boolean[]{false, true}) {
         for (String invalid : Arrays.asList("operation", "revision", "host", "boot", "status", "success",
                 "currentControl", "currentRevision", "currentFailure", "currentMissing", "currentStale")) {
             MemoryAgentResponse observation = ordinaryReconcileFixture("apply", false);
+            if (automatic) {
+                repository.transaction(em -> {
+                    MemoryTaskVO query = em.find(MemoryTaskVO.class, "query");
+                    query.setActorUuid("system:memory-config-reconcile");
+                    query.setExpectedControlOperationUuid("original");
+                    em.find(MemoryStateVO.class, "host1").setControlOperationUuid("original");
+                    return null;
+                });
+            }
             MemoryAgentResponse receipt = org.zstack.utils.gson.JSONObjectUtil.toObject(
                     "{\"operationUuid\":\"original\",\"appliedRevision\":8,\"status\":\"Succeeded\",\"success\":true}",
                     MemoryAgentResponse.class);
@@ -4237,6 +6377,7 @@ public class MemoryRepositoryTest {
             assertEquals(invalid, before.getAppliedPolicy(), host1State().getAppliedPolicy());
             assertEquals(invalid, before.getControlOperationUuid(), host1State().getControlOperationUuid());
             assertEquals(invalid, before.getActiveTaskUuid(), host1State().getActiveTaskUuid());
+        }
         }
     }
 

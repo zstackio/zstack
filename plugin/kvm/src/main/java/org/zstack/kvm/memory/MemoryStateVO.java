@@ -92,6 +92,11 @@ public class MemoryStateVO {
     public String getActiveTaskUuid() { return activeTaskUuid; }
     public void setActiveTaskUuid(String value) { activeTaskUuid = value; }
 
+    @Transient
+    private String currentStep;
+    public String getCurrentStep() { return currentStep; }
+    public void setCurrentStep(String value) { currentStep = value; }
+
     @Column(nullable = false)
     private java.sql.Timestamp createDate;
     public java.sql.Timestamp getCreateDate() { return createDate; }
@@ -123,6 +128,7 @@ public class MemoryStateVO {
         result.setState(state);
         result.setLastSampleTime(lastSampleTime);
         result.setActiveTaskUuid(activeTaskUuid);
+        result.setCurrentStep(currentStep);
         result.setControlOperationUuid(controlOperationUuid);
         result.setAppliedPolicyHash(appliedPolicyHash);
         result.setAppliedPolicy(appliedPolicy);

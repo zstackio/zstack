@@ -282,6 +282,25 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void update(APIUpdateMemoryPolicyMsg msg) {
         if (MemoryTaskRules.requiresLicenseForConfiguration(msg.getAction(), msg.getPolicy())) { requireLicense(); }
         APIUpdateMemoryPolicyEvent event = new APIUpdateMemoryPolicyEvent(msg.getId());
+        if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
+            // Device selection is authorized by the existing preparation DTO;
+            // the physical identity comes only from this fresh Agent probe.
+            repository.targets("Host", msg.getResourceUuid());
+            call(msg.getResourceUuid(), "writeback-backends", command(msg.getResourceUuid(), Platform.getUuid()), response -> {
+                try {
+                    MemoryAgentResponse observed = response;
+                    if (observed == null) { observed = new MemoryAgentResponse(); observed.setSuccess(false); }
+                    event.setInventory(repository.submit(msg, observed));
+                    bus.publish(event);
+                } catch (MemoryOperationException invalid) {
+                    bus.replyErrorByMessageType(msg, invalid.toErrorCode());
+                } catch (IllegalArgumentException invalid) {
+                    bus.replyErrorByMessageType(msg, new MemoryOperationException(
+                            "MEMORY_INVALID_REQUEST", invalid.getMessage()).toErrorCode());
+                }
+            });
+            return;
+        }
         event.setInventory(repository.submit(msg));
         bus.publish(event);
     }
@@ -910,7 +929,43 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 }
             }
         }
+        if (MemoryRepository.isConfigurationReconcile(task)) {
+            if (original == null || !Objects.equals(task.getHostUuid(), original.getHostUuid())
+                    || original.getDesiredRevision() != task.getDesiredRevision()
+                    || !Arrays.asList("Host", "Cluster", "Global").contains(original.getScope())
+                    || original.getResourceUuid() == null) {
+                repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_ORIGINAL_IDENTITY_INVALID", null);
+                return;
+            }
+            // Automatic completion is a read of the original completed
+            // receipt, never a request to continue an unfinished executor.
+            // The query task is Host-scoped, but the original standard
+            // Global/Cluster configuration retains its own scope on the wire.
+            command.put("scope", original.getScope());
+            command.put("resourceUuid", original.getResourceUuid());
+            command.put("reconcileAction", "verify-completed");
+            command.remove("classification"); command.remove("admissionConnected");
+            command.put("bootId", observedBootId(task.getHostUuid()));
+        }
         final String queriedOperation = operation;
+        MemoryTaskVO maintenanceTask = original == null ? task : original;
+        boolean maintenanceActivation = Arrays.asList("apply", "clearOverride").contains(maintenanceTask.getAction());
+        MemoryTaskVO maintenanceDrain = (maintenanceActivation || Arrays.asList(MemoryZramPoolPreparationRules.ACTION,
+                MemoryBackendPreparationRules.ACTION).contains(maintenanceTask.getAction()))
+                && maintenanceTask.getExpectedControlOperationUuid() != null
+                ? repository.findTask(maintenanceTask.getExpectedControlOperationUuid()) : maintenanceTask;
+        MemoryTaskVO maintenanceRoot = maintenanceDrain == null || maintenanceDrain.getParentUuid() == null
+                ? null : repository.findTask(maintenanceDrain.getParentUuid());
+        MemoryTaskVO selectedRoot = maintenanceTask.getParentUuid() == null ? null
+                : repository.findTask(maintenanceTask.getParentUuid());
+        final boolean automaticMaintenance = MemoryRepository.isSelectedBackendMaintenance(maintenanceTask, selectedRoot)
+                || MemoryRepository.isAutomaticCapacityDrain(maintenanceDrain, maintenanceRoot)
+                && Objects.equals(maintenanceTask.getHostUuid(), maintenanceDrain.getHostUuid())
+                && Objects.equals(maintenanceTask.getParentUuid(), maintenanceDrain.getParentUuid())
+                && (maintenanceActivation
+                    || Objects.equals(maintenanceTask.getPolicyPlanHash(), maintenanceDrain.getPolicyPlanHash()));
+        final String maintenanceObservation = "drain".equals(maintenanceTask.getAction())
+                ? "writeback-backends" : "state";
         final boolean ordinaryReconcile = original != null && !"VM".equals(task.getScope())
                 && !"VM".equals(original.getScope())
                 && Arrays.asList("apply", "clearOverride", "pause", "resume", "drain").contains(original.getAction())
@@ -918,7 +973,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         final String queryBootId = ordinaryReconcile ? observedBootId(task.getHostUuid()) : null;
         String endpoint = poll || "reconcile".equals(task.getAction()) ? "reconcile" : "apply";
         try {
-            call(task.getHostUuid(), endpoint, command, response -> {
+            Consumer<MemoryAgentResponse> completion = response -> {
                 String status = MemoryResultRules.status(queriedOperation, active ? task.getDesiredRevision() : -1, response);
                 if ("reconcile".equals(task.getAction()) && "VM".equals(task.getScope())
                         && "Succeeded".equals(status)) {
@@ -933,6 +988,21 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                                     ? "VM migration hold remains unknown" : errorCode.getDetails(), response);
                         }
                     });
+                    return;
+                }
+                if (automaticMaintenance && "Succeeded".equals(status)) {
+                    // Keep the immutable executor receipt separate from the
+                    // fresh proof needed to admit the next maintenance step.
+                    // Drain has stopped the service: its local inventory is
+                    // available even when a normal live state read is not.
+                    try {
+                        call(task.getHostUuid(), maintenanceObservation,
+                                command(task.getHostUuid(), Platform.getUuid()), observation ->
+                                        repository.result(task.getUuid(), status, response.reason, response, observation));
+                    } catch (RuntimeException observationFailure) {
+                        repository.result(task.getUuid(), "Unknown",
+                                "Maintenance result requires a fresh Host observation", response);
+                    }
                     return;
                 }
                 if (ordinaryReconcile && "Succeeded".equals(status)) {
@@ -968,7 +1038,33 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 repository.result(task.getUuid(), status,
                         ("Succeeded".equals(status) && reason == null) ? null
                                 : (reason == null ? "Agent returned no reason" : reason), response);
-            });
+            };
+            if (MemoryRepository.isConfigurationReconcile(task)) {
+                // Older Agents ignore unknown reconcileAction values and may
+                // resume an executor. Probe only the established read-only
+                // state endpoint before sending this new read-only action.
+                call(task.getHostUuid(), "state", command(task.getHostUuid(), Platform.getUuid()), support -> {
+                    if (!successfulFreshObservation(support)
+                            || !Objects.equals(task.getHostUuid(), support.hostUuid)
+                            || command.get("bootId") == null
+                            || !Objects.equals(command.get("bootId"), support.bootId)) {
+                        repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_OBSERVATION_UNQUALIFIED", null);
+                        return;
+                    }
+                    if (support.capabilities == null
+                            || !Boolean.TRUE.equals(support.capabilities.get("readOnlyCompletedReconcile"))) {
+                        repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null);
+                        return;
+                    }
+                    try { call(task.getHostUuid(), endpoint, command, completion); }
+                    catch (RuntimeException dispatchFailure) {
+                        repository.result(task.getUuid(), "Unknown",
+                                "Read-only original result could not be confirmed", null);
+                    }
+                });
+            } else {
+                call(task.getHostUuid(), endpoint, command, completion);
+            }
         } catch (RuntimeException error) {
             // A synchronous transport/serialization exception does not prove
             // whether the Agent received the command. Keep the operation

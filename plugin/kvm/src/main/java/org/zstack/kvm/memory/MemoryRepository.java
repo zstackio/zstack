@@ -519,7 +519,22 @@ public class MemoryRepository {
             }
             String effectivePolicy = effective(em, "Host", host);
             HostPolicyPlan plan = planForHost(em, host, effectivePolicy, state);
-            if (!compatibility && plan.changedFields.isEmpty()) { continue; }
+            if (!compatibility && queueConfigurationReconcile(em, parent, state)) {
+                queued = true;
+                continue;
+            }
+            if (!compatibility && plan.changedFields.isEmpty()) {
+                // Reverting to the confirmed applied target must not retain
+                // the previous target's blocker. Use the existing admission
+                // fences; a no-op save is not a recovery or a new execution.
+                if ("Succeeded".equals(state.getStatus())
+                        && !"NeedsReview".equals(state.getPolicyPlanStatus())
+                        && !plan.hasBlockers
+                        && standardMutationDeferReason(em, host, state, System.currentTimeMillis(), false) == null) {
+                    recordPolicyPlan(state, plan, "Applied");
+                }
+                continue;
+            }
             long admissionTime = System.currentTimeMillis();
             Map<String, Object> coldKsm = !compatibility && isPureKsmPlan(plan)
                     && MemoryCapabilityRules.coldKsmAdmissionReason(state, admissionTime) == null
@@ -540,13 +555,19 @@ public class MemoryRepository {
             String status = canIssue ? "Queued" : "Blocked";
             // An accepted request is not evidence that a legacy operation was
             // applied. Keep NeedsReview until the matching fresh Agent result.
-            if (!compatibility && !"NeedsReview".equals(state.getPolicyPlanStatus())) {
+            if (!compatibility && !"NeedsReview".equals(state.getPolicyPlanStatus())
+                    && !isConfigurationReconcile(state.getActiveTaskUuid() == null ? null
+                            : em.find(MemoryTaskVO.class, state.getActiveTaskUuid()))) {
                 recordPolicyPlan(state, plan, status);
             }
             long revision = Math.addExact(state.getDesiredRevision(), 1L);
             String childAction = !compatibility && plan.replacesAppliedPolicy ? "clearOverride" : action;
-            MemoryTaskVO child = configurationTask(scope, resource, childAction, parent.getUuid(), host, revision,
-                    compatibility && !plan.maintenanceActivation ? effectivePolicy : canIssue ? plan.payload : "{}", actor);
+            boolean automaticMaintenance = !compatibility && canIssue && plan.capacityMaintenance != null;
+            MemoryTaskVO child = configurationTask(automaticMaintenance ? "Host" : scope,
+                    automaticMaintenance ? host : resource, automaticMaintenance ? "drain" : childAction,
+                    parent.getUuid(), host, revision, automaticMaintenance ? plan.capacityMaintenance
+                            : compatibility && !plan.maintenanceActivation ? effectivePolicy : canIssue ? plan.payload : "{}", actor);
+            if (automaticMaintenance) { child.setExpectedControlOperationUuid(state.getControlOperationUuid()); }
             if (!compatibility || plan.maintenanceActivation) { child.setPolicyPlanHash(plan.planHash); }
             if (canIssue && coldKsm != null) {
                 child.setRequiresKsmNativePartialFence(true);
@@ -567,6 +588,54 @@ public class MemoryRepository {
         parent.setStatus(queued ? "Queued" : blocked ? "Blocked" : "Succeeded");
         em.flush();
         return parent.toInventory();
+    }
+
+    static boolean isConfigurationReconcile(MemoryTaskVO task) {
+        return task != null && "Host".equals(task.getScope()) && "reconcile".equals(task.getAction())
+                && task.getReconcileOperationUuid() != null
+                && "system:memory-config-reconcile".equals(task.getActorUuid());
+    }
+
+    private boolean queueConfigurationReconcile(EntityManager em, MemoryTaskVO parent, MemoryStateVO state) {
+        MemoryTaskVO active = state.getActiveTaskUuid() == null ? null
+                : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+        if (active == null || !"Unknown".equals(active.getStatus())
+                || !Objects.equals(state.getHostUuid(), active.getHostUuid())
+                || !hasFreshCapabilityObservation(state, System.currentTimeMillis())
+                || em.createQuery("select h.status from HostVO h where h.uuid = :uuid", HostStatus.class)
+                    .setParameter("uuid", state.getHostUuid()).getSingleResult() != HostStatus.Connected) { return false; }
+        MemoryTaskVO original = active.getReconcileOperationUuid() == null ? active
+                : em.find(MemoryTaskVO.class, active.getReconcileOperationUuid());
+        if (original == null || !"Unknown".equals(original.getStatus()) || "VM".equals(original.getScope())
+                || !Objects.equals(state.getHostUuid(), original.getHostUuid())
+                || original.getDesiredRevision() != state.getDesiredRevision()) { return false; }
+        MemoryTaskVO root = original.getParentUuid() == null ? null
+                : em.find(MemoryTaskVO.class, original.getParentUuid());
+        boolean preparation = isSelectedBackendMaintenance(original, root)
+                && MemoryBackendPreparationRules.ACTION.equals(original.getAction());
+        if (preparation) {
+            JsonObject context = new JsonParser().parse(root.getPolicy()).getAsJsonObject();
+            if (!Objects.equals(original.getExpectedControlOperationUuid(), state.getControlOperationUuid())
+                    || !"none".equals(getString(context, "poolGeneration"))
+                    || !isFirstPoolNonZramControl(em, state, getString(context, "bootId"))) { return false; }
+        } else if (!Arrays.asList("apply", "clearOverride").contains(original.getAction())
+                || !Objects.equals(original.getUuid(), state.getControlOperationUuid())
+                || !em.createQuery("select t.uuid from MemoryTaskVO t where t.action = :action "
+                        + "and t.expectedControlOperationUuid = :original and t.status not in ('Failed', 'Cancelled')", String.class)
+                    .setParameter("action", MemoryUncertainRecoveryRules.ACTION)
+                    .setParameter("original", original.getUuid()).setMaxResults(1).getResultList().isEmpty()) {
+            return false;
+        }
+        // A save schedules one result query, not another apply. Retain both
+        // the original revision and control fence until independent proof is
+        // verified. Another save while this query is in flight only saves intent.
+        MemoryTaskVO query = configurationTask("Host", state.getHostUuid(), "reconcile", parent.getUuid(),
+                state.getHostUuid(), original.getDesiredRevision(), "{}", "system:memory-config-reconcile");
+        query.setReconcileOperationUuid(original.getUuid());
+        query.setExpectedControlOperationUuid(state.getControlOperationUuid());
+        em.persist(query);
+        state.setActiveTaskUuid(query.getUuid()); state.setPermitAuthorized(false);
+        return true;
     }
 
     private String standardMutationDeferReason(EntityManager em, String host, MemoryStateVO state,
@@ -1230,18 +1299,22 @@ public class MemoryRepository {
     }
 
     public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
+        return submit(msg, (MemoryAgentResponse) null);
+    }
+
+    MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, MemoryAgentResponse backendObservation) {
         // Normalize before action validation and request hashing so omission and
         // the equivalent old explicit scope share one idempotency identity.
         msg.setScope(transaction(em -> resolvePolicyScope(em, msg.getScope(), msg.getResourceUuid())));
-        return submit(msg, null);
+        return submit(msg, null, null, backendObservation);
     }
 
     private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, String targetSnapshotHash) {
-        return submit(msg, targetSnapshotHash, null);
+        return submit(msg, targetSnapshotHash, null, null);
     }
 
     private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, String targetSnapshotHash,
-                                       String internalActor) {
+                                       String internalActor, MemoryAgentResponse backendObservation) {
         MemoryBackendPreparationRules.validate(msg);
         MemoryZramPoolPreparationRules.validate(msg);
         MemoryUncertainRecoveryRules.validate(msg);
@@ -1454,6 +1527,10 @@ public class MemoryRepository {
                 if (preparation && !Objects.equals(state.getControlOperationUuid(), msg.getExpectedControlOperationUuid())) {
                     throw error("MEMORY_CONTROL_OPERATION_FENCED", "Refresh the Host control operation before backend maintenance: " + host);
                 }
+                JsonObject backendMaintenance = MemoryBackendPreparationRules.ACTION.equals(msg.getAction())
+                        && backendObservation != null
+                        ? backendMaintenanceRequest(em, msg, state, backendObservation) : null;
+                if (backendMaintenance != null) { parent.setPolicy(backendMaintenance.toString()); }
                 if ("resume".equals(msg.getAction())) {
                     MemoryTaskVO pause = msg.getExpectedControlOperationUuid() == null ? null
                             : em.find(MemoryTaskVO.class, msg.getExpectedControlOperationUuid());
@@ -1479,6 +1556,16 @@ public class MemoryRepository {
                                 : preparation ? JSONObjectUtil.toJsonString(MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction())
                                 ? msg.getPoolPreparation() : msg.getBackendPreparation())
                                 : "VM".equals(msg.getScope()) ? desired.getPolicy() : effective(em, "Host", host), actor);
+                boolean backendDrain = backendMaintenance != null && getBoolean(backendMaintenance, "drainRequired");
+                if (backendMaintenance != null) {
+                    HostPolicyPlan plan = planForHost(em, host, effective(em, "Host", host), state);
+                    if (backendDrain) {
+                        child.setAction("drain"); child.setPolicy(backendMaintenance.toString());
+                    }
+                    child.setPolicyPlanHash(plan.planHash);
+                    recordPolicyPlan(state, plan, "Queued");
+                    state.setStatus("Queued"); state.setReason(null);
+                }
                 boolean preserveMaintenanceControlFence = recovery;
                 MemoryTaskVO rejectedResume = null;
                 // Reconcile tracks the original operation; it never repeats destructive commands.
@@ -1556,7 +1643,7 @@ public class MemoryRepository {
                 if (!vmOnly) {
                     state.setDesiredRevision(revision);
                     // Maintenance must retain the original drain fence for native proof.
-                    if (!preparation && !preserveMaintenanceControlFence) {
+                    if (backendDrain || !preparation && !preserveMaintenanceControlFence) {
                         state.setControlOperationUuid(child.getUuid());
                     }
                     // A stale apply/lease callback must not restart a later pause or exit.
@@ -1628,12 +1715,202 @@ public class MemoryRepository {
         boolean writebackDisableOnly;
         boolean confirmedKsmReconnect;
         String expectedControlOperationUuid;
+        String capacityMaintenance;
+    }
+
+    private JsonObject backendMaintenanceRequest(EntityManager em, APIUpdateMemoryPolicyMsg msg,
+            MemoryStateVO state, MemoryAgentResponse observation) {
+        MemoryBackendPreparation request = msg.getBackendPreparation();
+        long now = System.currentTimeMillis();
+        MemoryWritebackBackendInventory inventory;
+        try {
+            if (!observation.isSuccess() || !"Succeeded".equals(observation.status)) {
+                throw new IllegalArgumentException("WRITEBACK_INVENTORY_UNAVAILABLE");
+            }
+            inventory = MemoryWritebackBackendInventory.fromAgentState(
+                    state.getHostUuid(), observation.hostUuid, observation.state);
+            long sampled = java.time.OffsetDateTime.parse(inventory.getObservedAt()).toInstant().toEpochMilli();
+            if (sampled > now || now - sampled >= Math.min(90000L, MemoryOptimizationGlobalConfig.displayTtlMillis())
+                    || !Arrays.asList("AVAILABLE", "PARTIAL").contains(inventory.getStatus())
+                    || !Objects.equals(request.getExpectedHostBootId(), inventory.getBootId())
+                    || !Objects.equals(request.getExpectedPoolGeneration(), inventory.getPoolGeneration())
+                    || !Objects.equals(state.getControlOperationUuid(), inventory.getControlOperationUuid())
+                    || hasUnresolvedControl(em, state)) {
+                throw new IllegalArgumentException("WRITEBACK_INVENTORY_IDENTITY_OR_CONTROL_MISMATCH");
+            }
+            JsonObject selected = null;
+            Object candidates = observation.state.get("candidates");
+            if (candidates instanceof List) {
+                for (Object entry : (List<?>) candidates) {
+                    Map<?, ?> candidate = MemoryWritebackBackendInventory.map(entry);
+                    if (candidate == null || !Objects.equals(request.getCandidateId(), candidate.get("identity"))) { continue; }
+                    Map<?, ?> identity = MemoryWritebackBackendInventory.map(candidate.get("stableIdentity"));
+                    if (selected != null || !"block".equals(candidate.get("type"))
+                            || !Boolean.TRUE.equals(candidate.get("eligible"))
+                            || !Boolean.FALSE.equals(candidate.get("writebackReady"))
+                            || !"NEEDS_OFFLINE_PREPARATION".equals(candidate.get("state"))
+                            || candidate.get("resourceUuid") != null
+                            || !Objects.equals("candidate:" + candidate.get("fingerprint"), request.getCandidateId())
+                            || !Objects.equals(inventory.getBootId(), candidate.get("hostBootId"))
+                            || !numberEquals(candidate.get("capacityBytes"), request.getBackendCapacityBytes())
+                            || identity == null || !Objects.equals(inventory.getBootId(), identity.get("bootId"))
+                            || !Objects.equals(candidate.get("device"), identity.get("device"))
+                            || !numberEquals(identity.get("capacityBytes"), request.getBackendCapacityBytes())) {
+                        throw new IllegalArgumentException("WRITEBACK_CANDIDATE_NOT_PREPARABLE");
+                    }
+                    for (String field : Arrays.asList("device", "majorMinor", "sysfsPath", "sysfsInode", "rdev", "nodeInode")) {
+                        if (identity.get(field) == null || "".equals(identity.get(field))) {
+                            throw new IllegalArgumentException("WRITEBACK_CANDIDATE_IDENTITY_INCOMPLETE");
+                        }
+                    }
+                    selected = new JsonParser().parse(JSONObjectUtil.toJsonString(candidate)).getAsJsonObject();
+                }
+            }
+            if (selected == null) { throw new IllegalArgumentException("WRITEBACK_CANDIDATE_NOT_UNIQUE"); }
+            if (inventory.getCanPrepare() == null) {
+                throw new IllegalArgumentException("BACKEND_PREPARATION_ELIGIBILITY_UNKNOWN");
+            }
+            JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
+            if ("none".equals(inventory.getPoolGeneration())
+                    && !isFirstPoolNonZramControl(em, state, inventory.getBootId())) {
+                throw new IllegalArgumentException("FIRST_POOL_CONTROL_NOT_ELIGIBLE");
+            }
+            boolean firstUseServiceExit = Boolean.FALSE.equals(inventory.getCanPrepare())
+                    && "none".equals(inventory.getPoolGeneration())
+                    && Collections.singletonList("MEMORY_SERVICE_NOT_STOPPED").equals(inventory.getPreparationReasons());
+            if (firstUseServiceExit) {
+                String observedPool = getString(observed, "poolGeneration");
+                JsonElement efficiency = jsonPath(observed, "actual.zram.efficiencyEnabled");
+                if (standardMutationDeferReason(em, state.getHostUuid(), state, now, false) != null
+                        || !Objects.equals(inventory.getBootId(), getString(observed, "bootId"))
+                        || observedPool != null && !"none".equals(observedPool)
+                        || efficiency == null || !efficiency.isJsonPrimitive()
+                        || !efficiency.getAsJsonPrimitive().isBoolean() || efficiency.getAsBoolean()) {
+                    throw new IllegalArgumentException("FIRST_USE_SERVICE_EXIT_NOT_ELIGIBLE");
+                }
+                // The Agent revalidates the empty first-use state and exits
+                // its verified controller inside the same preparation operation.
+                // There is no pool to drain and no drain proof to manufacture.
+            }
+            boolean drain = !Boolean.TRUE.equals(inventory.getCanPrepare()) && !firstUseServiceExit;
+            if (drain && (!state.toInventory().getAllowedActions().contains("drain")
+                    || standardMutationDeferReason(em, state.getHostUuid(), state, now, false) != null
+                    || !Objects.equals(inventory.getBootId(), getString(observed, "bootId"))
+                    || !Objects.equals(inventory.getPoolGeneration(), getString(observed, "poolGeneration"))
+                    || inventory.getPreparationReasons() == null
+                    || inventory.getPreparationReasons().isEmpty()
+                    || !inventory.getPreparationReasons().stream().allMatch(reason -> Arrays.asList(
+                            "MEMORY_SERVICE_NOT_STOPPED", "DRAIN_PROOF_UNAVAILABLE").contains(reason)))) {
+                throw new IllegalArgumentException("BACKEND_MAINTENANCE_NOT_ELIGIBLE");
+            }
+            JsonObject context = new JsonObject();
+            JsonObject target = explicitlyManagedPolicy(em, state.getHostUuid(), effective(em, "Host", state.getHostUuid()));
+            context.add("target", target); context.addProperty("targetHash", digest(target.toString()));
+            context.addProperty("bootId", inventory.getBootId());
+            context.addProperty("poolGeneration", inventory.getPoolGeneration());
+            JsonElement nativeDevice = jsonPath(observed, "host_zram.device");
+            if (nativeDevice != null && nativeDevice.isJsonPrimitive()) {
+                context.add("device", nativeDevice.deepCopy());
+            }
+            context.addProperty("drainRequired", drain); context.add("selectedBackend", selected);
+            context.add("backendPreparation", new JsonParser().parse(JSONObjectUtil.toJsonString(request)));
+            return context;
+        } catch (RuntimeException invalid) {
+            throw error("MEMORY_BACKEND_PREPARATION_INVALID", "Backend maintenance admission failed: " + invalid.getMessage());
+        }
     }
 
     private HostPolicyPlan planForHost(EntityManager em, String hostUuid, String effectivePolicy,
             MemoryStateVO state) {
+        return planForHost(em, hostUuid, state, explicitlyManagedPolicy(em, hostUuid, effectivePolicy));
+    }
+
+    private boolean isFirstPoolNonZramControl(EntityManager em, MemoryStateVO state, String expectedBootId) {
+        if (state.getControlOperationUuid() == null) { return true; }
+        MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+        if (control == null || "VM".equals(control.getScope())
+                || !Objects.equals(state.getHostUuid(), control.getHostUuid())
+                || !"Succeeded".equals(control.getStatus())
+                || !Arrays.asList("apply", "clearOverride").contains(control.getAction())
+                || state.getAppliedRevision() == null || control.getDesiredRevision() != state.getAppliedRevision()) {
+            return false;
+        }
+        try {
+            JsonObject policy = new JsonParser().parse(control.getPolicy()).getAsJsonObject();
+            if (policy.has("ksm") && policy.get("ksm").isJsonObject()
+                    && policy.entrySet().stream().allMatch(field -> Arrays.asList("schemaVersion", "ksm").contains(field.getKey()))) {
+                return true;
+            }
+            // A completed disabled-only service write also precedes a pool.
+            // Unlike historical KSM-only ownership, it must still have a
+            // fresh, exact current Agent acknowledgment and disabled values.
+            // The Agent independently checks its durable CPU/tuning receipts
+            // and physical no-pool proof before and after stopping the service.
+            if (!"Host".equals(control.getScope())
+                    || !policy.entrySet().stream().allMatch(field -> Arrays.asList(
+                    "schemaVersion", "ksm", "zram", "writeback").contains(field.getKey()))
+                    || policy.has("ksm") && !policy.get("ksm").isJsonObject()
+                    || !hasFreshCapabilityObservation(state, System.currentTimeMillis())) { return false; }
+            boolean disabledTarget = false;
+            String boundBackendUuid = null;
+            Long boundBackendCapacity = null;
+            for (String section : Arrays.asList("zram", "writeback")) {
+                if (!policy.has(section)) { continue; }
+                JsonObject fields = policy.getAsJsonObject(section);
+                if (fields.entrySet().isEmpty()) { continue; }
+                JsonElement enabled = fields.get("enabled");
+                if (enabled == null || !enabled.isJsonPrimitive()
+                        || !enabled.getAsJsonPrimitive().isBoolean() || enabled.getAsBoolean()) { return false; }
+                if ("writeback".equals(section)
+                        && (fields.has("backendResourceUuid") || fields.has("backendCapacityBytes"))) {
+                    JsonElement backendUuid = fields.get("backendResourceUuid");
+                    boundBackendCapacity = exactJsonLong(fields.get("backendCapacityBytes"));
+                    if (fields.entrySet().size() != 3 || backendUuid == null || !backendUuid.isJsonPrimitive()
+                            || !backendUuid.getAsJsonPrimitive().isString()
+                            || !MemoryPolicyRules.validUuid(backendUuid.getAsString())
+                            || boundBackendCapacity == null || boundBackendCapacity <= 0) { return false; }
+                    boundBackendUuid = backendUuid.getAsString();
+                } else if (fields.entrySet().size() != 1) {
+                    return false;
+                }
+                disabledTarget = true;
+            }
+            JsonObject current = new JsonParser().parse(state.getState()).getAsJsonObject();
+            if (!disabledTarget || getString(current, "bootId") == null
+                    || getString(current, "bootId").trim().isEmpty()
+                    || !Objects.equals(expectedBootId, getString(current, "bootId"))
+                    || !Objects.equals(control.getUuid(), getString(current, "lastConfirmedOperationUuid"))
+                    || !Objects.equals(state.getAppliedRevision(), exactJsonLong(current.get("lastConfirmedAppliedRevision")))) {
+                return false;
+            }
+            for (String field : Arrays.asList("actual.zram.efficiencyEnabled", "actual.writeback.tuning.enabled")) {
+                JsonElement enabled = jsonPath(current, field);
+                if (enabled == null || !enabled.isJsonPrimitive()
+                        || !enabled.getAsJsonPrimitive().isBoolean() || enabled.getAsBoolean()) { return false; }
+            }
+            if (boundBackendUuid != null) {
+                JsonElement ksmOnly = current.get("ksmOnly");
+                if (ksmOnly == null || !ksmOnly.isJsonPrimitive()
+                        || !ksmOnly.getAsJsonPrimitive().isBoolean() || !ksmOnly.getAsBoolean()) { return false; }
+                JsonElement stateBackend = current.get("backend_resource");
+                JsonElement actualBackend = jsonPath(current, "actual.writeback.backend.backend_resource");
+                for (JsonElement backend : Arrays.asList(stateBackend, actualBackend)) {
+                    if (backend == null || !backend.isJsonObject()) { return false; }
+                    JsonObject resource = backend.getAsJsonObject();
+                    JsonElement active = resource.get("active");
+                    if (!Objects.equals(boundBackendUuid, getString(resource, "resource_uuid"))
+                            || !Objects.equals(boundBackendCapacity, exactJsonLong(resource.get("capacity_bytes")))
+                            || !"PREPARED".equals(getString(resource, "state"))
+                            || active == null || !active.isJsonPrimitive()
+                            || !active.getAsJsonPrimitive().isBoolean() || active.getAsBoolean()) { return false; }
+                }
+            }
+            return true;
+        } catch (RuntimeException invalid) { return false; }
+    }
+
+    private HostPolicyPlan planForHost(EntityManager em, String hostUuid, MemoryStateVO state, JsonObject target) {
         HostPolicyPlan plan = new HostPolicyPlan();
-        JsonObject target = explicitlyManagedPolicy(em, hostUuid, effectivePolicy);
         String targetText = target.toString();
         plan.targetHash = digest(targetText);
         String applied = state.getAppliedPolicy() == null ? "{}" : state.getAppliedPolicy();
@@ -1678,7 +1955,13 @@ public class MemoryRepository {
                 } catch (RuntimeException invalid) { activation = false; }
             }
         }
-        if (activation) { plan.changedFields.put("zram.enabled", "true"); }
+        if (activation) {
+            // Restoration can write unchanged retained settings as well.
+            // Validate those fields against the current capabilities too.
+            plan.changedFields.putAll(MemoryPolicyAdmissionRules.changedFields("{}", targetText));
+            plan.changedFields.remove("schemaVersion");
+            plan.changedFields.put("zram.enabled", "true");
+        }
         // An absent field cannot be represented by a delta: omission means
         // leave it untouched. Persist a complete sparse target for a KSM
         // clear and use the existing effective/clear Agent proof contract.
@@ -1722,7 +2005,10 @@ public class MemoryRepository {
             }
         }
         if (activation && blocked.keySet().stream().allMatch(field -> field.startsWith("writeback."))) {
-            payload.add("zram", target.getAsJsonObject("zram").deepCopy());
+            // Drain also paused KSM. Restore its retained target even when
+            // its desired values did not change relative to appliedPolicy.
+            payload = target.deepCopy();
+            payload.addProperty("schemaVersion", 1);
             JsonObject disabled = new JsonObject(); disabled.addProperty("enabled", false);
             payload.add("writeback", disabled);
             plan.maintenanceActivation = true;
@@ -1751,7 +2037,49 @@ public class MemoryRepository {
         plan.blockedFields = blockers.toString();
         plan.hasBlockers = blockers.size() > 0;
         plan.planHash = digest(plan.targetHash + "|" + String.valueOf(plan.payloadHash) + "|" + plan.blockedFields);
+        if (!plan.hasBlockers && !plan.maintenanceActivation) {
+            plan.capacityMaintenance = capacityMaintenanceRequest(state, target, plan.targetHash, plan.changedFields);
+        }
         return plan;
+    }
+
+    /** Keep the admitted target and original native identity on the drain task.
+     * The existing drain wire command remains policy={}; later preparation
+     * must prove this same device before the normal target can be restored. */
+    private static String capacityMaintenanceRequest(MemoryStateVO state, JsonObject target, String targetHash,
+            Map<String, String> changed) {
+        if (state == null || (!changed.containsKey("zram.logicalCapacityBytes")
+                && !changed.containsKey("zram.ramLimitBytes"))
+                || !Boolean.TRUE.equals(MemoryStandardConfigCodec.get(target.toString(), "zram.enabled"))
+                || !state.toInventory().getAllowedActions().contains("drain")) { return null; }
+        try {
+            JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
+            if (getBoolean(observed.getAsJsonObject("lifecycle"), "paused")) { return null; }
+            String boot = getString(observed, "bootId"), generation = getString(observed, "poolGeneration");
+            if (boot == null || !boot.matches("[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}")
+                    || generation == null || !generation.matches("[0-9a-fA-F]{64}")) { return null; }
+            JsonObject actual = observed.getAsJsonObject("actual");
+            JsonObject zram = actual.getAsJsonObject("zram"), capacity = zram.getAsJsonObject("capacity");
+            if (!getBoolean(zram, "efficiencyEnabled") || capacity == null) { return null; }
+            Long logical = exactJsonLong(capacity.get("effective_logical_bytes"));
+            Long physical = exactJsonLong(capacity.get("effective_physical_limit_bytes"));
+            if (logical == null || logical <= 0 || physical == null || physical <= 0) { return null; }
+            Long desiredLogical = exactJsonLong(jsonPath(target, "zram.logicalCapacityBytes"));
+            Long desiredPhysical = exactJsonLong(jsonPath(target, "zram.ramLimitBytes"));
+            boolean resize = changed.containsKey("zram.logicalCapacityBytes") && desiredLogical != null
+                    && !desiredLogical.equals(logical)
+                    || changed.containsKey("zram.ramLimitBytes") && desiredPhysical != null
+                    && !desiredPhysical.equals(physical);
+            if (!resize) { return null; }
+            JsonObject request = new JsonObject();
+            request.add("target", target.deepCopy());
+            request.addProperty("targetHash", targetHash);
+            request.addProperty("bootId", boot); request.addProperty("poolGeneration", generation);
+            request.addProperty("device", getString(observed.getAsJsonObject("host_zram"), "device"));
+            JsonElement backend = jsonPath(actual, "writeback.backend");
+            if (backend != null) { request.add("backend", backend.deepCopy()); }
+            return request.toString();
+        } catch (RuntimeException unavailable) { return null; }
     }
 
     /**
@@ -2035,7 +2363,38 @@ public class MemoryRepository {
                 state = new MemoryStateVO(); state.setHostUuid(hostUuid); state.setStatus("Unknown"); em.persist(state);
                 bumpQueryVersion(em, "state");
             }
-            if (state.getActiveTaskUuid() != null) { return false; }
+            if (state.getActiveTaskUuid() != null) {
+                MemoryTaskVO active = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+                // A new MN may save intent while an older Agent cannot safely
+                // perform the read-only completion query. Once observation
+                // proves support, reuse that saved request for one upgrade
+                // recheck. Other Unknown outcomes are not periodic retries.
+                if (isConfigurationReconcile(active) && "Unknown".equals(active.getStatus())
+                        && "READ_ONLY_COMPLETION_UNSUPPORTED".equals(active.getReason())
+                        && active.getParentUuid() != null
+                        && hasFreshCapabilityObservation(state, System.currentTimeMillis())) {
+                    JsonObject capabilities = new JsonParser().parse(state.getCapabilities()).getAsJsonObject();
+                    JsonElement supported = capabilities.get("readOnlyCompletedReconcile");
+                    JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
+                    if (supported != null && supported.isJsonPrimitive()
+                            && supported.getAsJsonPrimitive().isBoolean() && supported.getAsBoolean()
+                            && hostUuid.equals(getString(observed, "hostUuid")) && getString(observed, "bootId") != null
+                            && em.createQuery("select t.uuid from MemoryTaskVO t where t.parentUuid = :parent "
+                                    + "and t.hostUuid = :host and t.actorUuid = :actor and t.action = 'reconcile' "
+                                    + "and t.reconcileOperationUuid = :original", String.class)
+                                .setParameter("parent", active.getParentUuid()).setParameter("host", hostUuid)
+                                .setParameter("actor", active.getActorUuid())
+                                .setParameter("original", active.getReconcileOperationUuid())
+                                .setMaxResults(2).getResultList().size() == 1) {
+                        MemoryTaskVO parent = em.find(MemoryTaskVO.class, active.getParentUuid());
+                        if (parent != null && queueConfigurationReconcile(em, parent, state)) {
+                            bumpQueryVersion(em, "task");
+                            return true;
+                        }
+                    }
+                }
+                return false;
+            }
             if (!hasFreshCapabilityObservation(state, System.currentTimeMillis())) { return false; }
             if ("Unknown".equals(state.getStatus()) && hasUnresolvedControl(em, state)) { return false; }
             String effectivePolicy = effective(em, "Host", hostUuid);
@@ -2058,7 +2417,10 @@ public class MemoryRepository {
             // Automatic reconciliation may cross a paused lifecycle only for
             // the exact maintenance-initialization proof checked by the plan.
             // Ordinary pause and sparse/old drain observations keep their fence.
-            if (isConfirmedPausedState(state.getState()) && !plan.maintenanceActivation) { return false; }
+            if (isConfirmedPausedState(state.getState()) && !plan.maintenanceActivation) {
+                if (plan.hasBlockers) { recordPolicyPlan(state, plan, "Blocked"); }
+                return false;
+            }
             if (plan.planHash.equals(state.getPolicyPlanHash())) { return false; }
             if (plan.replacesAppliedPolicy && plan.hasBlockers && !plan.maintenanceActivation) {
                 recordPolicyPlan(state, plan, "Blocked");
@@ -2078,6 +2440,10 @@ public class MemoryRepository {
             parent.setStatus("Queued"); em.persist(parent);
             bumpQueryVersion(em, "task");
             MemoryTaskVO child = task(msg, parent.getUuid(), hostUuid, revision, plan.payload, actor);
+            if (plan.capacityMaintenance != null && !plan.hasBlockers) {
+                child.setAction("drain"); child.setPolicy(plan.capacityMaintenance);
+                child.setExpectedControlOperationUuid(state.getControlOperationUuid());
+            }
             child.setPolicyPlanHash(plan.planHash);
             if (plan.confirmedKsmReconnect) {
                 child.setExpectedControlOperationUuid(plan.expectedControlOperationUuid);
@@ -2534,7 +2900,10 @@ public class MemoryRepository {
             if (!list.isEmpty()) { bumpQueryVersion(em, "task"); }
             for (MemoryTaskVO task : list) {
                 if (!"VM".equals(task.getScope())
-                        && Arrays.asList("apply", "clearOverride").contains(task.getAction())) {
+                        && (Arrays.asList("apply", "clearOverride").contains(task.getAction())
+                        || task.getPolicyPlanHash() != null && Arrays.asList("drain",
+                                MemoryZramPoolPreparationRules.ACTION,
+                                MemoryBackendPreparationRules.ACTION).contains(task.getAction()))) {
                     String currentPolicy = effective(em, "Host", task.getHostUuid());
                     MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());
                     if (task.getPolicyPlanHash() != null && state != null && state.getPolicyTargetHash() != null) {
@@ -2658,6 +3027,66 @@ public class MemoryRepository {
             String resultReason = reason;
             MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
             MemoryStateVO host = task == null ? null : em.find(MemoryStateVO.class, task.getHostUuid());
+            MemoryTaskVO reconciledControl = task != null && "reconcile".equals(task.getAction())
+                    && task.getReconcileOperationUuid() != null
+                    ? em.find(MemoryTaskVO.class, task.getReconcileOperationUuid()) : null;
+            MemoryTaskVO maintenanceTask = reconciledControl == null ? task : reconciledControl;
+            MemoryTaskVO maintenanceRoot = maintenanceTask == null || maintenanceTask.getParentUuid() == null
+                    ? null : em.find(MemoryTaskVO.class, maintenanceTask.getParentUuid());
+            boolean selectedBackendMaintenance = isSelectedBackendMaintenance(maintenanceTask, maintenanceRoot);
+            MemoryTaskVO nextMaintenance = null;
+            Map<String, Object> preparedBackendConfig = new LinkedHashMap<>();
+            MemoryTaskVO preparationDrain = maintenanceTask != null
+                    && (isMaintenancePreparationAction(maintenanceTask.getAction())
+                        || Arrays.asList("apply", "clearOverride").contains(maintenanceTask.getAction()))
+                    && maintenanceTask.getExpectedControlOperationUuid() != null
+                    ? em.find(MemoryTaskVO.class, maintenanceTask.getExpectedControlOperationUuid()) : null;
+            boolean automaticRestore = preparationDrain != null
+                    && isAutomaticCapacityDrain(preparationDrain, preparationDrain.getParentUuid() == null ? null
+                            : em.find(MemoryTaskVO.class, preparationDrain.getParentUuid()))
+                    && Objects.equals(maintenanceTask.getHostUuid(), preparationDrain.getHostUuid())
+                    && Objects.equals(maintenanceTask.getParentUuid(), preparationDrain.getParentUuid());
+            boolean automaticPreparation = selectedBackendMaintenance
+                    && MemoryBackendPreparationRules.ACTION.equals(maintenanceTask.getAction())
+                    || automaticRestore && isMaintenancePreparationAction(maintenanceTask.getAction())
+                        && Objects.equals(maintenanceTask.getPolicyPlanHash(), preparationDrain.getPolicyPlanHash());
+            boolean selectedRestoration = selectedBackendMaintenance && preparationDrain != null
+                    && "drain".equals(preparationDrain.getAction()) && "Succeeded".equals(preparationDrain.getStatus())
+                    && Objects.equals(maintenanceTask.getHostUuid(), preparationDrain.getHostUuid());
+            boolean automaticActivation = (automaticRestore || selectedRestoration)
+                    && Arrays.asList("apply", "clearOverride").contains(maintenanceTask.getAction());
+            boolean automaticDrain = isAutomaticCapacityDrain(maintenanceTask,
+                    maintenanceTask == null || maintenanceTask.getParentUuid() == null ? null
+                            : em.find(MemoryTaskVO.class, maintenanceTask.getParentUuid()));
+            boolean automaticResult = automaticDrain || automaticPreparation || automaticActivation;
+            if (automaticDrain && "Succeeded".equals(resultStatus)
+                    && MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) {
+                try {
+                    nextMaintenance = nextCapacityPreparation(em, maintenanceTask, task, host, response, observation);
+                } catch (IllegalArgumentException unconfirmed) {
+                    resultStatus = "Unknown";
+                    resultReason = "Drain receipt requires current maintenance proof: " + unconfirmed.getMessage();
+                }
+            }
+            if (automaticPreparation && "Succeeded".equals(resultStatus)
+                    && MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) {
+                try {
+                    nextMaintenance = nextCapacityActivation(em, maintenanceTask, task, preparationDrain, host,
+                            response, observation, preparedBackendConfig);
+                } catch (IllegalArgumentException unconfirmed) {
+                    resultStatus = "Unknown";
+                    resultReason = "Pool preparation requires current activation proof: " + unconfirmed.getMessage();
+                }
+            }
+            if (automaticActivation && "Succeeded".equals(resultStatus)
+                    && MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) {
+                try {
+                    nextMaintenance = nextCapacityWriteback(em, maintenanceTask, task, preparationDrain, host, response, observation);
+                } catch (IllegalArgumentException unconfirmed) {
+                    resultStatus = "Unknown";
+                    resultReason = "Capacity restoration requires current activation proof: " + unconfirmed.getMessage();
+                }
+            }
             // Retiring the right to execute does not retrospectively decide an
             // old missing-receipt outcome. Even a late callback cannot rewrite it.
             if (task != null && Arrays.asList("apply", "clearOverride").contains(task.getAction())
@@ -2669,11 +3098,16 @@ public class MemoryRepository {
             String restoredControlFence = null;
             MemoryTaskVO restoredUncertainOwner = null;
             MemoryTaskVO appliedTask = task;
-            MemoryAgentResponse stateResponse = response;
-            MemoryTaskVO reconciledControl = task != null && "reconcile".equals(task.getAction())
-                    && task.getReconcileOperationUuid() != null
-                    ? em.find(MemoryTaskVO.class, task.getReconcileOperationUuid()) : null;
-            boolean ordinaryReconcile = reconciledControl != null && !"VM".equals(task.getScope())
+            MemoryAgentResponse stateResponse = automaticActivation || automaticPreparation
+                    ? observation : response;
+            if (automaticResult && reconciledControl != null && "Succeeded".equals(resultStatus)) {
+                // Query only acknowledges the original executor; continuation
+                // stays under its original root and uses its native fence.
+                appliedTask = reconciledControl;
+                restoredControlFence = automaticPreparation ? maintenanceTask.getExpectedControlOperationUuid()
+                        : reconciledControl.getUuid();
+            }
+            boolean ordinaryReconcile = !automaticResult && reconciledControl != null && !"VM".equals(task.getScope())
                     && !"VM".equals(reconciledControl.getScope())
                     && Arrays.asList("apply", "clearOverride", "pause", "resume", "drain").contains(reconciledControl.getAction())
                     && rejectedResume == null;
@@ -2697,7 +3131,10 @@ public class MemoryRepository {
                             && Objects.equals(reconciledControl.getUuid(), currentControl.getReconcileOperationUuid())
                             && currentControl.getDesiredRevision() == task.getDesiredRevision();
                     confirmed = Objects.equals(uuid, host.getActiveTaskUuid())
-                            && (Objects.equals(uuid, host.getControlOperationUuid()) || completedAlias)
+                            && (Objects.equals(uuid, host.getControlOperationUuid()) || completedAlias
+                                || isConfigurationReconcile(task)
+                                    && Objects.equals(task.getExpectedControlOperationUuid(), host.getControlOperationUuid())
+                                    && Objects.equals(reconciledControl.getUuid(), host.getControlOperationUuid()))
                             && Objects.equals(task.getHostUuid(), reconciledControl.getHostUuid())
                             && Objects.equals(task.getHostUuid(), current.hostUuid)
                             && (response.hostUuid == null || Objects.equals(task.getHostUuid(), response.hostUuid))
@@ -2778,6 +3215,28 @@ public class MemoryRepository {
                 }
             }
             if (task == null || !MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) { return null; }
+            if (!preparedBackendConfig.isEmpty() && "Succeeded".equals(resultStatus)) {
+                // Preparation proves the new owner, not the caller. Persist its
+                // standard values with this receipt and the next task. Keep
+                // adapter failures outside the proof-to-Unknown catch so the
+                // whole transaction rolls back instead of saving a partial bind.
+                MemoryStandardConfigAdapter.ChangeSet saved = standardConfigs.writeOverrides(
+                        em, host.getHostUuid(), HostVO.class.getSimpleName(), preparedBackendConfig);
+                if (Boolean.FALSE.equals(MemoryStandardConfigCodec.get(
+                        effective(em, "Host", host.getHostUuid()), "zram.enabled"))) {
+                    // The preparation receipt and fresh PREPARED identity
+                    // already prove these two values. Registering an offline
+                    // backend must not create a redundant Host apply or
+                    // replace a retained drain/first-use control fence.
+                    String applied = host.getAppliedPolicy() == null ? "{}" : host.getAppliedPolicy();
+                    for (Map.Entry<String, Object> field : preparedBackendConfig.entrySet()) {
+                        applied = MemoryStandardConfigCodec.put(applied, field.getKey(), field.getValue());
+                    }
+                    host.setAppliedPolicy(applied);
+                }
+                bumpScopeRevision(em, "Host", host.getHostUuid());
+                registerStandardConfigRefresh(saved.refreshAfterCommit(), saved.resourceChanges());
+            }
             bumpQueryVersion(em, "task");
             // A proof is only actionable for the currently admitted transition.
             // Duplicate or late callbacks must not mutate a newer fence.
@@ -2838,6 +3297,21 @@ public class MemoryRepository {
                     host.setActiveTaskUuid(restoredUncertainOwner.getUuid());
                     host.setStatus("Unknown"); host.setReason(restoredUncertainOwner.getReason());
                 }
+                if (nextMaintenance != null && "Succeeded".equals(resultStatus)) {
+                    // Completion and the next sibling are one durable commit.
+                    // A crash cannot expose a successful root with lost work.
+                    em.persist(nextMaintenance);
+                    host.setDesiredRevision(nextMaintenance.getDesiredRevision());
+                    host.setActiveTaskUuid(nextMaintenance.getUuid());
+                    host.setPermitAuthorized(false); host.setStatus("Queued");
+                    if (automaticPreparation || automaticActivation) {
+                        host.setControlOperationUuid(nextMaintenance.getUuid());
+                        host.setReason(automaticActivation ? "Pool activated; retained writeback restoration is queued"
+                                : "Pool preparation completed; retained target restoration is queued");
+                    } else { host.setReason("Drain completed; pool preparation is queued"); }
+                    host.setPolicyPlanStatus("Queued");
+                    bumpQueryVersion(em, "state");
+                }
             }
             MemoryTaskVO failedTask = task;
             if ("reconcile".equals(task.getAction()) && !MemoryTaskRules.blocksHost(resultStatus)
@@ -2871,6 +3345,444 @@ public class MemoryRepository {
             queueFailure(em, failureEvent);
             return null;
         });
+    }
+
+    static boolean isSelectedBackendMaintenance(MemoryTaskVO task, MemoryTaskVO parent) {
+        if (task == null || parent == null || !"Host".equals(task.getScope())
+                || !Arrays.asList(MemoryBackendPreparationRules.ACTION, "apply", "clearOverride").contains(task.getAction())
+                || task.getPolicyPlanHash() == null || parent.getParentUuid() != null || parent.getHostUuid() != null
+                || !MemoryBackendPreparationRules.ACTION.equals(parent.getAction())
+                || !"Host".equals(parent.getScope()) || !Objects.equals(task.getParentUuid(), parent.getUuid())
+                || !Objects.equals(task.getHostUuid(), parent.getResourceUuid())) { return false; }
+        try {
+            JsonObject context = new JsonParser().parse(parent.getPolicy()).getAsJsonObject();
+            return context.has("selectedBackend") && context.get("selectedBackend").isJsonObject()
+                    && context.has("target") && context.get("target").isJsonObject()
+                    && getString(context, "targetHash") != null && getString(context, "bootId") != null
+                    && getString(context, "poolGeneration") != null;
+        } catch (RuntimeException invalid) { return false; }
+    }
+
+    static boolean isAutomaticCapacityDrain(MemoryTaskVO task, MemoryTaskVO parent) {
+        if (task == null || !"Host".equals(task.getScope()) || !"drain".equals(task.getAction())
+                || task.getParentUuid() == null || task.getPolicyPlanHash() == null) { return false; }
+        if (parent == null || parent.getParentUuid() != null || parent.getHostUuid() != null
+                || !Objects.equals(task.getParentUuid(), parent.getUuid())
+                || !Arrays.asList("apply", "clearOverride", MemoryBackendPreparationRules.ACTION)
+                        .contains(parent.getAction())) { return false; }
+        try {
+            JsonObject policy = new JsonParser().parse(task.getPolicy()).getAsJsonObject();
+            return policy.has("target") && policy.get("target").isJsonObject()
+                    && getString(policy, "bootId") != null && getString(policy, "poolGeneration") != null;
+        } catch (RuntimeException invalid) { return false; }
+    }
+
+    private static boolean ownsCapacityResult(MemoryTaskVO operation, MemoryTaskVO resultTask,
+            MemoryStateVO host, String control) {
+        if (host == null || !Objects.equals(resultTask.getUuid(), host.getActiveTaskUuid())
+                || !Objects.equals(control, host.getControlOperationUuid())
+                || !Objects.equals(operation.getHostUuid(), resultTask.getHostUuid())
+                || !"Host".equals(resultTask.getScope())
+                || operation.getDesiredRevision() != host.getDesiredRevision()
+                || operation.getDesiredRevision() != resultTask.getDesiredRevision()
+                || !Objects.equals(operation.getPolicyPlanHash(), host.getPolicyPlanHash())) { return false; }
+        return Objects.equals(operation.getUuid(), resultTask.getUuid())
+                || "reconcile".equals(resultTask.getAction())
+                    && Objects.equals(operation.getUuid(), resultTask.getReconcileOperationUuid())
+                    && Arrays.asList("Unknown", "Blocked").contains(operation.getStatus());
+    }
+
+    private MemoryTaskVO nextCapacityActivation(EntityManager em, MemoryTaskVO preparation, MemoryTaskVO resultTask, MemoryTaskVO drain,
+            MemoryStateVO host, MemoryAgentResponse receipt, MemoryAgentResponse observation,
+            Map<String, Object> preparedBackendConfig) {
+        MemoryTaskVO root = preparation.getParentUuid() == null ? null
+                : em.find(MemoryTaskVO.class, preparation.getParentUuid());
+        boolean selectedBackend = isSelectedBackendMaintenance(preparation, root);
+        String control = preparation.getExpectedControlOperationUuid();
+        if (!ownsCapacityResult(preparation, resultTask, host, control)
+                || !"Succeeded".equals(MemoryResultRules.status(preparation.getUuid(), -1, receipt))) {
+            throw new IllegalArgumentException("CONTROL_OR_RESULT_MISMATCH");
+        }
+        JsonObject request = new JsonParser().parse(selectedBackend ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
+        String boot = getString(request, "bootId"), pool = getString(request, "poolGeneration");
+        boolean firstPool = selectedBackend && "none".equals(pool);
+        String resourceUuid = null;
+        Long capacityBytes = null;
+        Map<?, ?> nativeReceipt = receipt.state == null ? null
+                : MemoryWritebackBackendInventory.map(receipt.state.get("maintenance"));
+        MemoryWritebackMaintenanceInventory maintenance = MemoryWritebackMaintenanceInventory.fromMap(nativeReceipt);
+        if (maintenance == null || !"APPLIED".equals(maintenance.getStage())
+                || !Objects.equals(preparation.getUuid(), maintenance.getRequestId())
+                || !Objects.equals(boot, maintenance.getHostBootId())
+                || !(firstPool ? maintenance.getPoolGeneration() == null || maintenance.getPoolGeneration().isEmpty()
+                        : Objects.equals(pool, maintenance.getPoolGeneration()))) {
+            throw new IllegalArgumentException("POOL_PREPARATION_RECEIPT_MISMATCH");
+        }
+        if (MemoryZramPoolPreparationRules.ACTION.equals(preparation.getAction())) {
+            if (!Objects.equals(drain.getUuid(), nativeReceipt.get("expected_control_operation_uuid"))) {
+                throw new IllegalArgumentException("POOL_PREPARATION_CONTROL_MISMATCH");
+            }
+        } else {
+            JsonObject backendRequest = new JsonParser().parse(preparation.getPolicy()).getAsJsonObject();
+            JsonElement owner = jsonPath(request, "target.writeback.backendResourceUuid");
+            MemoryWritebackMaintenanceTargetIdentityInventory identity = maintenance.getTargetIdentity();
+            if ((!selectedBackend && (owner == null || !Objects.equals(owner.getAsString(), maintenance.getBackendResourceUuid())))
+                    || !Objects.equals(getString(backendRequest, "candidateId"), maintenance.getCandidateId())
+                    || identity == null || !Objects.equals(boot, identity.getBootId())
+                    || !Objects.equals(exactJsonLong(backendRequest.get("backendCapacityBytes")), identity.getCapacityBytes())) {
+                throw new IllegalArgumentException("BACKEND_PREPARATION_RECEIPT_MISMATCH");
+            }
+            if (selectedBackend) {
+                JsonObject stable = request.getAsJsonObject("selectedBackend").getAsJsonObject("stableIdentity");
+                String inode = getString(stable, "sysfsInode");
+                String stack = getString(stable, "majorMinor") + ":" + getString(stable, "sysfsPath") + ":" + inode + "\n";
+                resourceUuid = maintenance.getBackendResourceUuid();
+                capacityBytes = exactJsonLong(backendRequest.get("backendCapacityBytes"));
+                if (!MemoryPolicyRules.validUuid(resourceUuid)
+                        || !Objects.equals(getString(stable, "device"), identity.getCanonicalDevice())
+                        || !Objects.equals(exactJsonLong(stable.get("rdev")), identity.getRdev())
+                        || !Objects.equals(exactJsonLong(stable.get("nodeInode")), identity.getNodeInode())
+                        || inode == null || !inode.matches("[0-9]+")
+                        || !Objects.equals(Long.valueOf(inode), identity.getSysfsInode())
+                        || !Objects.equals(digest(stack), identity.getStackSha256())
+                        || !Boolean.FALSE.equals(identity.getDirectIo())) {
+                    throw new IllegalArgumentException("SELECTED_BACKEND_RECEIPT_IDENTITY_MISMATCH");
+                }
+            }
+        }
+        long now = System.currentTimeMillis();
+        if (observation == null || !observation.isSuccess() || !"Succeeded".equals(observation.status)
+                || !Objects.equals(preparation.getHostUuid(), observation.hostUuid)
+                || !Objects.equals(boot, observation.bootId) || observation.state == null
+                || !Objects.equals(boot, observation.state.get("bootId"))
+                || observation.sampleTime == null || observation.sampleTime > now
+                || now - observation.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                || host.getLastSampleTime() != null && observation.sampleTime < host.getLastSampleTime()) {
+            throw new IllegalArgumentException("CURRENT_POOL_PREPARATION_NOT_PROVEN");
+        }
+        Map<?, ?> proof = MemoryWritebackBackendInventory.map(observation.state.get("maintenanceProof"));
+        String state = JSONObjectUtil.toJsonString(observation.state);
+        if (firstPool) {
+            JsonObject current = new JsonParser().parse(state).getAsJsonObject();
+            String currentPool = getString(current, "poolGeneration");
+            JsonElement enabled = jsonPath(current, "actual.zram.efficiencyEnabled");
+            // The original KSM-only control (including an effective empty KSM
+            // policy) is not proof of today's native settings. Current-boot
+            // preparation receipt plus fresh inactive/no-pool observation
+            // prove this device operation; never promote an older KSM ACK.
+            boolean firstControl = isFirstPoolNonZramControl(em, host, boot);
+            if (!firstControl || currentPool != null && !"none".equals(currentPool)
+                    || enabled == null || !enabled.isJsonPrimitive()
+                    || !enabled.getAsJsonPrimitive().isBoolean() || enabled.getAsBoolean()) {
+                throw new IllegalArgumentException("FIRST_POOL_PREPARATION_NOT_PROVEN");
+            }
+        } else if (drain == null || !"drain".equals(drain.getAction()) || !"Succeeded".equals(drain.getStatus())
+                || !Objects.equals(preparation.getHostUuid(), drain.getHostUuid())
+                || proof == null || !Objects.equals(pool, proof.get("oldPoolGeneration"))
+                || !isMaintenanceRecoveryState(state, control)) {
+            throw new IllegalArgumentException("POOL_PREPARATION_ARCHIVE_NOT_PROVEN");
+        }
+        // Reuse the normal activation planner on the newly observed facts;
+        // do not rewrite the managed Host until all proof and planning pass.
+        MemoryStateVO observed = new MemoryStateVO();
+        observed.setHostUuid(host.getHostUuid()); observed.setStatus("Succeeded");
+        observed.setDesiredRevision(host.getDesiredRevision()); observed.setAppliedRevision(host.getAppliedRevision());
+        observed.setAppliedPolicy(host.getAppliedPolicy()); observed.setAppliedPolicyHash(host.getAppliedPolicyHash());
+        observed.setControlOperationUuid(control); observed.setState(state);
+        observed.setLastSampleTime(observation.sampleTime);
+        observed.setCapabilities(observation.capabilities == null ? null : JSONObjectUtil.toJsonString(observation.capabilities));
+        JsonObject target = explicitlyManagedPolicy(em, host.getHostUuid(), effective(em, "Host", host.getHostUuid()));
+        boolean savedConfiguration = firstPool && isConfigurationReconcile(resultTask);
+        if (savedConfiguration) {
+            // A newer ordinary save owns desired policy. Device selection is
+            // still the original immutable request; it cannot overwrite a
+            // separately changed backend binding while completing its receipt.
+            for (String field : Arrays.asList("writeback.backendResourceUuid", "writeback.backendCapacityBytes")) {
+                if (!Objects.equals(jsonPath(target, field), jsonPath(request, "target." + field))) {
+                    throw new IllegalArgumentException("MAINTENANCE_BACKEND_TARGET_CHANGED");
+                }
+            }
+        } else if (!Objects.equals(digest(target.toString()), getString(request, "targetHash"))) {
+            throw new IllegalArgumentException("MAINTENANCE_TARGET_CHANGED");
+        }
+        boolean retainDisabled = selectedBackend && Boolean.FALSE.equals(
+                MemoryStandardConfigCodec.get(effective(em, "Host", host.getHostUuid()), "zram.enabled"));
+        if (selectedBackend) {
+            JsonElement backend = jsonPath(new JsonParser().parse(state).getAsJsonObject(),
+                    "actual.writeback.backend.backend_resource");
+            if (backend == null || !backend.isJsonObject()
+                    || !Objects.equals(resourceUuid, getString(backend.getAsJsonObject(), "resource_uuid"))
+                    || !Objects.equals(capacityBytes, exactJsonLong(backend.getAsJsonObject().get("capacity_bytes")))
+                    || !"PREPARED".equals(getString(backend.getAsJsonObject(), "state"))
+                    || !Boolean.FALSE.equals(MemoryWritebackBackendInventory.bool(
+                            JSONObjectUtil.toObject(backend.toString(), Map.class).get("active")))) {
+                throw new IllegalArgumentException("CURRENT_SELECTED_BACKEND_NOT_PROVEN");
+            }
+            JsonObject binding = new JsonObject();
+            setJsonPath(binding, "writeback.backendResourceUuid", new com.google.gson.JsonPrimitive(resourceUuid));
+            setJsonPath(binding, "writeback.backendCapacityBytes", new com.google.gson.JsonPrimitive(capacityBytes));
+            validateConfigurationCandidate(em, "Host", host.getHostUuid(), candidateOwnPolicy(
+                    em, "Host", host.getHostUuid(), binding.toString(), "apply", null));
+            setJsonPath(target, "writeback.backendResourceUuid", jsonPath(binding, "writeback.backendResourceUuid"));
+            setJsonPath(target, "writeback.backendCapacityBytes", jsonPath(binding, "writeback.backendCapacityBytes"));
+            if (retainDisabled) {
+                observed.setAppliedPolicy(MemoryPolicyRules.merge(
+                        observed.getAppliedPolicy() == null ? "{}" : observed.getAppliedPolicy(), binding.toString(), "Host"));
+            }
+            // Match explicitlyManagedPolicy's schema-first, sorted field order.
+            // Appending a new mechanism must not give the same saved target a
+            // different hash at the next claim.
+            JsonObject sorted = new JsonParser().parse(MemoryPolicyRules.canonicalRequest(target)).getAsJsonObject();
+            target = new JsonObject(); target.addProperty("schemaVersion", 1);
+            for (Map.Entry<String, JsonElement> field : sorted.entrySet()) {
+                target.add(field.getKey(), field.getValue());
+            }
+        }
+        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), observed, target);
+        if (firstPool ? plan.hasBlockers || plan.capacityMaintenance != null
+                : retainDisabled ? plan.hasBlockers || plan.hasPayload || plan.capacityMaintenance != null
+                : !plan.maintenanceActivation || !plan.hasPayload) {
+            throw new IllegalArgumentException("MAINTENANCE_ACTIVATION_NOT_ADMITTED");
+        }
+        recordPolicyPlan(host, plan, plan.hasPayload ? "Queued" : "Applied");
+        if (selectedBackend) {
+            preparedBackendConfig.put("writeback.backendResourceUuid", resourceUuid);
+            preparedBackendConfig.put("writeback.backendCapacityBytes", capacityBytes);
+        }
+        if (!plan.hasPayload) { return null; }
+        MemoryTaskVO next = configurationTask("Host", host.getHostUuid(),
+                plan.replacesAppliedPolicy ? "clearOverride" : "apply", preparation.getParentUuid(), host.getHostUuid(),
+                Math.addExact(preparation.getDesiredRevision(), 1L), plan.payload, preparation.getActorUuid());
+        next.setExpectedControlOperationUuid(plan.maintenanceActivation ? control : plan.expectedControlOperationUuid);
+        next.setPolicyPlanHash(plan.planHash);
+        return next;
+    }
+
+    private MemoryTaskVO nextCapacityWriteback(EntityManager em, MemoryTaskVO activation, MemoryTaskVO resultTask, MemoryTaskVO drain,
+            MemoryStateVO host, MemoryAgentResponse receipt, MemoryAgentResponse observation) {
+        if (!ownsCapacityResult(activation, resultTask, host, resultTask.getUuid())
+                || !"Succeeded".equals(MemoryResultRules.status(activation.getUuid(), activation.getDesiredRevision(), receipt))) {
+            throw new IllegalArgumentException("CONTROL_OR_RESULT_MISMATCH");
+        }
+        MemoryTaskVO root = activation.getParentUuid() == null ? null
+                : em.find(MemoryTaskVO.class, activation.getParentUuid());
+        JsonObject request = new JsonParser().parse(isSelectedBackendMaintenance(activation, root)
+                ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
+        String boot = getString(request, "bootId");
+        long now = System.currentTimeMillis();
+        if (observation == null || !observation.isSuccess() || !"Succeeded".equals(observation.status)
+                || !Objects.equals(activation.getHostUuid(), observation.hostUuid)
+                || !Objects.equals(boot, observation.bootId) || observation.state == null
+                || !Objects.equals(boot, observation.state.get("bootId"))
+                || !Objects.equals(activation.getUuid(), observation.state.get("lastConfirmedOperationUuid"))
+                || !numberEquals(observation.state.get("lastConfirmedAppliedRevision"), activation.getDesiredRevision())
+                || observation.appliedRevision == null || observation.appliedRevision != activation.getDesiredRevision()
+                || observation.sampleTime == null || observation.sampleTime > now
+                || now - observation.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                || host.getLastSampleTime() != null && observation.sampleTime < host.getLastSampleTime()) {
+            throw new IllegalArgumentException("CURRENT_ACTIVATION_NOT_PROVEN");
+        }
+        JsonObject current = new JsonParser().parse(JSONObjectUtil.toJsonString(observation.state)).getAsJsonObject();
+        String generation = getString(current, "poolGeneration");
+        JsonElement efficiency = jsonPath(current, "actual.zram.efficiencyEnabled");
+        if (generation == null || !generation.matches("[a-fA-F0-9]{64}")
+                || generation.equals(getString(request, "poolGeneration"))
+                || efficiency == null || !efficiency.isJsonPrimitive()
+                || !efficiency.getAsJsonPrimitive().isBoolean() || !efficiency.getAsBoolean()) {
+            throw new IllegalArgumentException("NEW_POOL_NOT_PROVEN");
+        }
+        for (String[] field : Arrays.asList(new String[]{"logicalCapacityBytes", "effective_logical_bytes"},
+                new String[]{"ramLimitBytes", "effective_physical_limit_bytes"})) {
+            Long desired = exactJsonLong(jsonPath(request, "target.zram." + field[0]));
+            if (desired != null && !desired.equals(exactJsonLong(jsonPath(current, "actual.zram.capacity." + field[1])))) {
+                throw new IllegalArgumentException("NEW_POOL_CAPACITY_MISMATCH");
+            }
+        }
+        MemoryStateVO observed = new MemoryStateVO();
+        observed.setHostUuid(host.getHostUuid()); observed.setStatus("Succeeded");
+        observed.setDesiredRevision(activation.getDesiredRevision()); observed.setAppliedRevision(activation.getDesiredRevision());
+        observed.setAppliedPolicy("clearOverride".equals(activation.getAction()) ? activation.getPolicy()
+                : MemoryPolicyRules.merge(host.getAppliedPolicy() == null ? "{}" : host.getAppliedPolicy(), activation.getPolicy(), "Host"));
+        observed.setControlOperationUuid(activation.getUuid()); observed.setState(current.toString());
+        observed.setLastSampleTime(observation.sampleTime);
+        observed.setCapabilities(observation.capabilities == null ? null : JSONObjectUtil.toJsonString(observation.capabilities));
+        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), effective(em, "Host", host.getHostUuid()), observed);
+        String targetHash = request.has("selectedBackend") ? host.getPolicyTargetHash() : getString(request, "targetHash");
+        if (!Objects.equals(plan.targetHash, targetHash) || plan.hasBlockers
+                || plan.maintenanceActivation || plan.capacityMaintenance != null) {
+            throw new IllegalArgumentException("RETAINED_TARGET_NOT_ADMITTED");
+        }
+        recordPolicyPlan(host, plan, plan.hasPayload ? "Queued" : "Applied");
+        if (!plan.hasPayload) { return null; }
+        MemoryTaskVO next = configurationTask("Host", host.getHostUuid(),
+                plan.replacesAppliedPolicy ? "clearOverride" : "apply", activation.getParentUuid(), host.getHostUuid(),
+                Math.addExact(activation.getDesiredRevision(), 1L), plan.payload, activation.getActorUuid());
+        next.setPolicyPlanHash(plan.planHash);
+        return next;
+    }
+
+    private MemoryTaskVO nextCapacityPreparation(EntityManager em, MemoryTaskVO drain, MemoryTaskVO resultTask, MemoryStateVO host,
+            MemoryAgentResponse receipt, MemoryAgentResponse observation) {
+        if (!ownsCapacityResult(drain, resultTask, host, resultTask.getUuid())
+                || !"Succeeded".equals(MemoryResultRules.status(drain.getUuid(), -1, receipt))) {
+            throw new IllegalArgumentException("CONTROL_OR_RESULT_MISMATCH");
+        }
+        JsonObject request = new JsonParser().parse(drain.getPolicy()).getAsJsonObject();
+        String boot = getString(request, "bootId"), pool = getString(request, "poolGeneration");
+        String device = getString(request, "device");
+        for (String field : Arrays.asList("receipt", "nativeReadback")) {
+            Object value = receipt.state == null ? null : receipt.state.get(field);
+            if (!(value instanceof Map)) { throw new IllegalArgumentException("DRAIN_NATIVE_PROOF_MISSING"); }
+            Map<?, ?> nativeProof = (Map<?, ?>) value;
+            if (device == null || !device.matches("/dev/zram[0-9]+")
+                    || !Objects.equals(device, nativeProof.get("device"))
+                    || !Objects.equals(pool, nativeProof.get("pool_generation"))
+                    || !"WITHDRAWN_SWAP_INACTIVE_POOL_PRESERVED".equals(nativeProof.get("state"))
+                    || !Boolean.FALSE.equals(nativeProof.get("active"))
+                    || !Boolean.FALSE.equals(nativeProof.get("reset_performed"))) {
+                throw new IllegalArgumentException("DRAIN_NATIVE_PROOF_MISMATCH");
+            }
+        }
+        String current = explicitlyManagedPolicy(em, drain.getHostUuid(),
+                effective(em, "Host", drain.getHostUuid())).toString();
+        if (!Objects.equals(digest(current), getString(request, "targetHash"))
+                || !Objects.equals(boot, getString(new JsonParser().parse(host.getState()).getAsJsonObject(), "bootId"))) {
+            throw new IllegalArgumentException("MAINTENANCE_TARGET_OR_BOOT_CHANGED");
+        }
+        if (observation == null || !observation.isSuccess() || !"Succeeded".equals(observation.status)) {
+            throw new IllegalArgumentException("MAINTENANCE_OBSERVATION_UNAVAILABLE");
+        }
+        MemoryWritebackBackendInventory inventory = MemoryWritebackBackendInventory.fromAgentState(
+                drain.getHostUuid(), observation.hostUuid, observation.state);
+        long now = System.currentTimeMillis();
+        long observedAt;
+        try { observedAt = java.time.OffsetDateTime.parse(inventory.getObservedAt()).toInstant().toEpochMilli(); }
+        catch (RuntimeException invalid) { throw new IllegalArgumentException("MAINTENANCE_OBSERVATION_TIME_UNKNOWN"); }
+        if (!Objects.equals(boot, inventory.getBootId()) || !Objects.equals(pool, inventory.getPoolGeneration())
+                || !Objects.equals(drain.getUuid(), inventory.getControlOperationUuid())
+                || observedAt > now || now - observedAt >= MemoryOptimizationGlobalConfig.displayTtlMillis()) {
+            throw new IllegalArgumentException("CURRENT_MAINTENANCE_IDENTITY_NOT_PROVEN");
+        }
+        APIUpdateMemoryPolicyMsg validation = new APIUpdateMemoryPolicyMsg();
+        validation.setScope("Host");
+        validation.setPolicy("{}"); validation.setExpectedControlOperationUuid(drain.getUuid());
+        String preparation;
+        JsonElement backendUuid = jsonPath(request, "target.writeback.backendResourceUuid");
+        if (request.has("selectedBackend")) {
+            JsonObject selected = request.getAsJsonObject("selectedBackend");
+            JsonObject original = request.getAsJsonObject("backendPreparation");
+            Long bytes = exactJsonLong(original.get("backendCapacityBytes"));
+            String candidateId = null;
+            Object candidates = observation.state.get("candidates");
+            if (Boolean.TRUE.equals(inventory.getCanPrepare()) && candidates instanceof List) {
+                for (Object value : (List<?>) candidates) {
+                    Map<?, ?> candidate = MemoryWritebackBackendInventory.map(value);
+                    if (candidate == null || !"block".equals(candidate.get("type"))
+                            || !Boolean.TRUE.equals(candidate.get("eligible"))
+                            || !Boolean.FALSE.equals(candidate.get("writebackReady"))
+                            || !"NEEDS_OFFLINE_PREPARATION".equals(candidate.get("state"))
+                            || candidate.get("resourceUuid") != null
+                            || !Objects.equals(boot, candidate.get("hostBootId"))
+                            || !numberEquals(candidate.get("capacityBytes"), bytes)
+                            || !Objects.equals(getString(selected, "device"), candidate.get("device"))
+                            || !selected.get("stableIdentity").equals(new JsonParser().parse(
+                                    JSONObjectUtil.toJsonString(candidate.get("stableIdentity"))))) { continue; }
+                    String id = MemoryWritebackBackendInventory.string(candidate.get("identity"));
+                    if (id == null || !id.matches("candidate:[a-f0-9]{64}")
+                            || !id.equals("candidate:" + candidate.get("fingerprint"))) { continue; }
+                    if (candidateId != null) { throw new IllegalArgumentException("BACKEND_CANDIDATE_AMBIGUOUS"); }
+                    candidateId = id;
+                }
+            }
+            if (candidateId == null || !getBoolean(original, "resetConfirmed")) {
+                throw new IllegalArgumentException("SELECTED_BACKEND_CANDIDATE_NOT_PROVEN");
+            }
+            MemoryBackendPreparation selectedPreparation = new MemoryBackendPreparation();
+            selectedPreparation.setCandidateId(candidateId); selectedPreparation.setExpectedHostBootId(boot);
+            selectedPreparation.setExpectedPoolGeneration(pool); selectedPreparation.setBackendCapacityBytes(bytes);
+            selectedPreparation.setResetConfirmed(true);
+            validation.setAction(MemoryBackendPreparationRules.ACTION);
+            validation.setBackendPreparation(selectedPreparation); MemoryBackendPreparationRules.validate(validation);
+            preparation = JSONObjectUtil.toJsonString(selectedPreparation);
+        } else if (request.has("backend") || backendUuid != null) {
+            // A service-owned backend is not a blank RAM-only pool. Bind the
+            // original owner proof to the fresh local probe's exact identity;
+            // service and probe fingerprints are deliberately not interchangeable.
+            JsonObject backend = request.has("backend") && request.get("backend").isJsonObject()
+                    ? request.getAsJsonObject("backend") : null;
+            Map<?, ?> owner = MemoryWritebackBackendInventory.map(receipt.state.get("backendOwnerProof"));
+            Map<?, ?> identity = owner == null ? null : MemoryWritebackBackendInventory.map(owner.get("stableIdentity"));
+            Long bytes = exactJsonLong(jsonPath(request, "target.writeback.backendCapacityBytes"));
+            String resource = backend == null ? null : getString(backend, "resource_uuid");
+            String fingerprint = backend == null ? null : getString(backend, "fingerprint");
+            if (backendUuid == null || resource == null || !resource.equals(backendUuid.getAsString())
+                    || bytes == null || !bytes.equals(exactJsonLong(backend.get("capacity_bytes")))
+                    || fingerprint == null || !fingerprint.matches("[a-f0-9]{64}")
+                    || owner == null || identity == null || !numberEquals(owner.get("schemaVersion"), 1)
+                    || !Objects.equals(drain.getHostUuid(), owner.get("hostUuid"))
+                    || !Objects.equals(drain.getUuid(), owner.get("controlOperationUuid"))
+                    || !Objects.equals(boot, owner.get("bootId")) || !Objects.equals(pool, owner.get("poolGeneration"))
+                    || !Objects.equals(device, owner.get("zramDevice"))
+                    || !Objects.equals(resource, owner.get("resourceUuid"))
+                    || !Objects.equals(resource, owner.get("ownershipGeneration"))
+                    || !Objects.equals(fingerprint, owner.get("fingerprint"))
+                    || !Objects.equals(fingerprint, owner.get("candidateIdentity"))
+                    || !"ACTIVE".equals(owner.get("candidateState")) || !numberEquals(owner.get("capacityBytes"), bytes)
+                    || !Boolean.TRUE.equals(inventory.getCanPrepare())) {
+                throw new IllegalArgumentException("ORIGINAL_BACKEND_OWNER_NOT_PROVEN");
+            }
+            JsonElement originalIdentity = new JsonParser().parse(JSONObjectUtil.toJsonString(identity));
+            String candidateId = null;
+            Object candidates = observation.state.get("candidates");
+            if (candidates instanceof List) {
+                for (Object value : (List<?>) candidates) {
+                    Map<?, ?> candidate = MemoryWritebackBackendInventory.map(value);
+                    if (candidate == null || !"block".equals(candidate.get("type"))
+                            || !Boolean.TRUE.equals(candidate.get("eligible"))
+                            || !Boolean.FALSE.equals(candidate.get("writebackReady"))
+                            || !"NEEDS_OFFLINE_PREPARATION".equals(candidate.get("state"))
+                            || candidate.get("resourceUuid") != null
+                            || !Objects.equals(boot, candidate.get("hostBootId"))
+                            || !numberEquals(candidate.get("capacityBytes"), bytes)
+                            || !Objects.equals(identity.get("device"), candidate.get("device"))
+                            || !originalIdentity.equals(new JsonParser().parse(
+                                    JSONObjectUtil.toJsonString(candidate.get("stableIdentity"))))) { continue; }
+                    String id = MemoryWritebackBackendInventory.string(candidate.get("identity"));
+                    if (id == null || !id.matches("candidate:[a-f0-9]{64}")
+                            || !id.equals("candidate:" + candidate.get("fingerprint"))) { continue; }
+                    if (candidateId != null) { throw new IllegalArgumentException("BACKEND_CANDIDATE_AMBIGUOUS"); }
+                    candidateId = id;
+                }
+            }
+            if (candidateId == null) { throw new IllegalArgumentException("ORIGINAL_BACKEND_CANDIDATE_NOT_PROVEN"); }
+            MemoryBackendPreparation requestPreparation = new MemoryBackendPreparation();
+            requestPreparation.setCandidateId(candidateId); requestPreparation.setExpectedHostBootId(boot);
+            requestPreparation.setExpectedPoolGeneration(pool); requestPreparation.setBackendCapacityBytes(bytes);
+            requestPreparation.setResetConfirmed(true);
+            validation.setAction(MemoryBackendPreparationRules.ACTION);
+            validation.setBackendPreparation(requestPreparation); MemoryBackendPreparationRules.validate(validation);
+            preparation = JSONObjectUtil.toJsonString(requestPreparation);
+        } else {
+            Long poolObservedAt = inventory.getZramPoolPreparationObservedAt();
+            if (poolObservedAt == null || poolObservedAt > now
+                    || now - poolObservedAt >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                    || !Boolean.TRUE.equals(inventory.getCanPrepareZramPool())
+                    || !"Fresh".equals(inventory.getZramPoolPreparationQuality())) {
+                throw new IllegalArgumentException("CURRENT_POOL_PREPARATION_NOT_PROVEN");
+            }
+            MemoryZramPoolPreparation requestPreparation = new MemoryZramPoolPreparation();
+            requestPreparation.setExpectedHostBootId(boot); requestPreparation.setExpectedPoolGeneration(pool);
+            requestPreparation.setResetConfirmed(true);
+            validation.setAction(MemoryZramPoolPreparationRules.ACTION);
+            validation.setPoolPreparation(requestPreparation); MemoryZramPoolPreparationRules.validate(validation);
+            preparation = JSONObjectUtil.toJsonString(requestPreparation);
+        }
+        MemoryTaskVO next = configurationTask("Host", drain.getHostUuid(), validation.getAction(),
+                drain.getParentUuid(), drain.getHostUuid(), Math.addExact(drain.getDesiredRevision(), 1L),
+                preparation, drain.getActorUuid());
+        next.setExpectedControlOperationUuid(drain.getUuid()); next.setPolicyPlanHash(drain.getPolicyPlanHash());
+        next.setStatus("Queued");
+        return next;
     }
 
     /** Only the local pre-dispatch License branch may use this method.
@@ -3436,7 +4348,60 @@ public class MemoryRepository {
             }
             TypedQuery<MemoryStateVO> page = em.createQuery("from MemoryStateVO s" + filter + " order by s.hostUuid", MemoryStateVO.class);
             if (hosts != null && !hosts.isEmpty()) { page.setParameter("hosts", hosts); }
-            return new MemoryQueryPage<>(page.setFirstResult(start).setMaxResults(pageSize).getResultList(), total, snapshot);
+            List<MemoryStateVO> rows = page.setFirstResult(start).setMaxResults(pageSize).getResultList();
+            Set<String> activeIds = new HashSet<>();
+            for (MemoryStateVO row : rows) {
+                row.setCurrentStep(null);
+                if (row.getActiveTaskUuid() != null) { activeIds.add(row.getActiveTaskUuid()); }
+            }
+            if (!activeIds.isEmpty()) {
+                // Project only this page's bound operations in the same read
+                // transaction. Do not scan task history or query per Host.
+                Map<String, MemoryTaskVO> active = em.createQuery("from MemoryTaskVO t where t.uuid in :ids", MemoryTaskVO.class)
+                        .setParameter("ids", activeIds).getResultList().stream()
+                        .collect(Collectors.toMap(MemoryTaskVO::getUuid, task -> task));
+                Set<String> roots = active.values().stream()
+                        .filter(task -> Arrays.asList("apply", "clearOverride").contains(task.getAction()))
+                        .map(MemoryTaskVO::getParentUuid).filter(Objects::nonNull).collect(Collectors.toSet());
+                Map<String, MemoryTaskVO> drains = new HashMap<>();
+                if (!roots.isEmpty()) {
+                    List<Object[]> contexts = em.createQuery("select d, p from MemoryTaskVO d, MemoryTaskVO p "
+                            + "where d.parentUuid = p.uuid and p.uuid in :roots and d.hostUuid in :hosts "
+                            + "and d.action = 'drain' and d.status = 'Succeeded'", Object[].class)
+                            .setParameter("roots", roots)
+                            .setParameter("hosts", rows.stream().map(MemoryStateVO::getHostUuid).collect(Collectors.toList()))
+                            .getResultList();
+                    for (Object[] context : contexts) {
+                        MemoryTaskVO drain = (MemoryTaskVO) context[0];
+                        if (isAutomaticCapacityDrain(drain, (MemoryTaskVO) context[1])) {
+                            drains.put(drain.getHostUuid() + ":" + drain.getParentUuid(), drain);
+                        }
+                    }
+                }
+                for (MemoryStateVO row : rows) {
+                    MemoryTaskVO task = active.get(row.getActiveTaskUuid());
+                    if (task == null || !Objects.equals(row.getHostUuid(), task.getHostUuid())
+                            || row.getDesiredRevision() != task.getDesiredRevision()
+                            || !MemoryTaskRules.blocksHost(task.getStatus())) { continue; }
+                    String step = "clearOverride".equals(task.getAction()) ? "apply" : task.getAction();
+                    if (!Arrays.asList("apply", "drain", "pause", "resume", "reconcile", "recoverUncertain",
+                            "prepareZramPool", "prepareWritebackBackend").contains(step)) { continue; }
+                    MemoryTaskVO drain = drains.get(row.getHostUuid() + ":" + task.getParentUuid());
+                    if ("apply".equals(step) && drain != null) {
+                        if (Objects.equals(drain.getUuid(), task.getExpectedControlOperationUuid())) {
+                            step = "activateZramPool";
+                        } else {
+                            try {
+                                if (Boolean.TRUE.equals(MemoryPolicyRules.decode(task.getPolicy()).writeback.enabled)) {
+                                    step = "restoreWriteback";
+                                }
+                            } catch (RuntimeException invalid) { continue; }
+                        }
+                    }
+                    row.setCurrentStep(step);
+                }
+            }
+            return new MemoryQueryPage<>(rows, total, snapshot);
         });
     }
 
