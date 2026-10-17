@@ -84,3 +84,12 @@ ALTER TABLE `ZnsSegmentRefVO`
     MODIFY COLUMN `zoneUuid` VARCHAR(32) DEFAULT NULL,
     MODIFY COLUMN `l2NetworkUuid` VARCHAR(32) DEFAULT NULL,
     MODIFY COLUMN `accountUuid` VARCHAR(32) DEFAULT NULL;
+
+UPDATE `zstack`.`SystemTagVO`
+SET `tag` = CONCAT('flatNetwork::Dhcp6Server::',
+                   SUBSTRING(`tag`, CHAR_LENGTH('flatNetwork::DhcpServer::') + 1))
+WHERE `resourceType` = 'L3NetworkVO'
+  AND `tag` LIKE 'flatNetwork::DhcpServer::%::ipUuid::%'
+  AND IS_IPV6(REPLACE(SUBSTRING_INDEX(
+      SUBSTRING(`tag`, CHAR_LENGTH('flatNetwork::DhcpServer::') + 1),
+      '::ipUuid::', 1), '--', '::'));

@@ -15,6 +15,7 @@ import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.network.IPv6Constants
 
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP_IP
+import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP6_IP
 import static org.zstack.network.service.flat.FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_SERVICE_FLAT_10037
 
@@ -124,6 +125,7 @@ class CreateDhcpServerCase extends SubCase {
         env.create {
             testAddDhcpServerIp()
             testAddDhcpv6ServerIp()
+            testDualStackDhcpTags()
         }
     }
 
@@ -295,7 +297,7 @@ class CreateDhcpServerCase extends SubCase {
                 prefixLen = 64
                 gateway = "1000::1"
                 addressMode = IPv6Constants.Stateful_DHCP
-                systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "2000--2")]
+                systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "2000--2")]
             }
         }
 
@@ -307,7 +309,7 @@ class CreateDhcpServerCase extends SubCase {
             prefixLen = 64
             gateway = "1000::1"
             addressMode = IPv6Constants.Stateful_DHCP
-            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--2")]
+            systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--2")]
         }
 
         expect (AssertionError.class) {
@@ -319,7 +321,7 @@ class CreateDhcpServerCase extends SubCase {
                 prefixLen = 64
                 gateway = "1000::1"
                 addressMode = IPv6Constants.Stateful_DHCP
-                systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--2")]
+                systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--2")]
             }
         }
 
@@ -332,7 +334,7 @@ class CreateDhcpServerCase extends SubCase {
                 prefixLen = 64
                 gateway = "1000::1"
                 addressMode = IPv6Constants.Stateful_DHCP
-                systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--12")]
+                systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--12")]
             }
         }
 
@@ -360,7 +362,7 @@ class CreateDhcpServerCase extends SubCase {
             uuid = ipr1.uuid
         }
 
-        String dhcpServerIp = L3_NETWORK_DHCP_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
+        String dhcpServerIp = L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
         assert dhcpServerIp == "1000--2"
 
         expect (AssertionError.class) {
@@ -372,7 +374,7 @@ class CreateDhcpServerCase extends SubCase {
                 prefixLen = 64
                 gateway = "1000::1"
                 addressMode = IPv6Constants.Stateful_DHCP
-                systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--155")]
+                systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--155")]
             }
         }
 
@@ -384,7 +386,7 @@ class CreateDhcpServerCase extends SubCase {
             uuid = ipr3.uuid
         }
 
-        dhcpServerIp = L3_NETWORK_DHCP_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
+        dhcpServerIp = L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
         assert dhcpServerIp == null
 
         IpRangeInventory ipr4 = addIpv6RangeByNetworkCidr {
@@ -392,17 +394,17 @@ class CreateDhcpServerCase extends SubCase {
             name = "test-ip-range"
             networkCidr = "1000::/64"
             addressMode = IPv6Constants.Stateful_DHCP
-            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--155")]
+            systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--155")]
         }
 
-        dhcpServerIp = L3_NETWORK_DHCP_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
+        dhcpServerIp = L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
         assert dhcpServerIp == "1000--155"
 
         deleteIpRange {
             uuid = ipr4.uuid
         }
 
-        dhcpServerIp = L3_NETWORK_DHCP_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
+        dhcpServerIp = L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
         assert dhcpServerIp == null
 
         IpRangeInventory ipr5 = addIpv6Range {
@@ -422,7 +424,7 @@ class CreateDhcpServerCase extends SubCase {
             defaultL3NetworkUuid = l3.uuid
         }
 
-        dhcpServerIp = L3_NETWORK_DHCP_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
+        dhcpServerIp = L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(ipr1.getL3NetworkUuid(), L3_NETWORK_DHCP_IP_TOKEN)
         assert dhcpServerIp != null
 
         expect (AssertionError.class) {
@@ -434,7 +436,7 @@ class CreateDhcpServerCase extends SubCase {
                 prefixLen = 64
                 gateway = "1000::1"
                 addressMode = IPv6Constants.Stateful_DHCP
-                systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--12")]
+                systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--12")]
             }
         }
 
@@ -492,6 +494,57 @@ class CreateDhcpServerCase extends SubCase {
         deleteReservedIpRange {
             uuid = reservedIpRange.uuid
         }
+    }
+
+    void testDualStackDhcpTags() {
+        def l3 = createL3Network {
+            name = 'dual-stack-dhcp-tags'
+            l2NetworkUuid = env.inventoryByName('l2').uuid
+            ipVersion = IPv6Constants.IPv4
+        }
+        def v4 = addIpRange {
+            name = 'dual-v4'; l3NetworkUuid = l3.uuid
+            startIp = '192.0.2.10'; endIp = '192.0.2.30'
+            gateway = '192.0.2.1'; netmask = '255.255.255.0'
+        }
+        def v6 = addIpv6Range {
+            name = 'dual-v6'; l3NetworkUuid = l3.uuid
+            startIp = '2001:db8::10'; endIp = '2001:db8::30'
+            gateway = '2001:db8::1'; prefixLen = 64
+            addressMode = IPv6Constants.Stateful_DHCP
+        }
+        attachNetworkServiceToL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = ['Flat': ['DHCP']]
+            systemTags = ['flatNetwork::DhcpServer::192.0.2.11::ipUuid::null',
+                          'flatNetwork::Dhcp6Server::2001:db8--11::ipUuid::null']
+        }
+        def v4Tags = L3_NETWORK_DHCP_IP.getTokensOfTagsByResourceUuid(l3.uuid)
+        def v6Tags = L3_NETWORK_DHCP6_IP.getTokensOfTagsByResourceUuid(l3.uuid)
+        assert v4Tags.size() == 1 && v6Tags.size() == 1
+        assert v4Tags[0]['ip'] == '192.0.2.11'
+        assert v6Tags[0]['ip'] == '2001:db8--11'
+        assert Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == 2
+        changeL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3.uuid
+            dhcpv6ServerIp = '2001:db8::12'
+        }
+        assert L3_NETWORK_DHCP_IP.getTokensOfTagsByResourceUuid(l3.uuid) == v4Tags
+        assert L3_NETWORK_DHCP6_IP.getTags(l3.uuid).size() == 1
+        assert L3_NETWORK_DHCP6_IP.getTokenByResourceUuid(l3.uuid, L3_NETWORK_DHCP_IP_TOKEN) == '2001:db8--12'
+        assert !Q.New(UsedIpVO).eq(UsedIpVO_.uuid, v6Tags[0]['ipUuid']).isExists()
+        deleteIpRange { uuid = v6.uuid }
+        assert !L3_NETWORK_DHCP6_IP.hasTag(l3.uuid)
+        assert L3_NETWORK_DHCP_IP.getTokensOfTagsByResourceUuid(l3.uuid) == v4Tags
+        assert Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == 1
+        detachNetworkServiceFromL3Network {
+            l3NetworkUuid = l3.uuid
+            networkServices = ['Flat': ['DHCP']]
+        }
+        assert !L3_NETWORK_DHCP_IP.hasTag(l3.uuid)
+        assert !L3_NETWORK_DHCP6_IP.hasTag(l3.uuid)
+        assert Q.New(UsedIpVO).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == 0
+        deleteL3Network { uuid = l3.uuid }
     }
 
     @Override

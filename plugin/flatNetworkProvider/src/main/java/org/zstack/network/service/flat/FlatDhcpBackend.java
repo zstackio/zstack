@@ -60,6 +60,7 @@ import org.zstack.network.service.vip.VipVO;
 import org.zstack.header.network.service.SdnControllerDhcp;
 import org.zstack.sdnController.SdnControllerManager;
 import org.zstack.tag.SystemTagCreator;
+import org.zstack.tag.PatternedSystemTag;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.DebugUtils;
 import org.zstack.utils.TagUtils;
@@ -973,26 +974,19 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
     public static Map<String, String> getExistingDhcpServerIp(String l3Uuid, int ipVersion) {
         Map<String, String> ret = new HashMap<>();
-        List<String> tags = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTags(l3Uuid);
-        if (tags != null) {
-            for (String tag: tags) {
-                Map<String, String> tokens = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTokensByTag(tag);
-                String dhcpServerIp = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
-                if (dhcpServerIp == null) {
-                    continue;
-                }
-                String dhcpServerIpUuid = tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN);
-                dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
-                if (ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(dhcpServerIp)) {
-                    ret.put(dhcpServerIp, dhcpServerIpUuid);
-                } else if (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(dhcpServerIp)) {
-                    ret.put(dhcpServerIp, dhcpServerIpUuid);
-                } else if (ipVersion == IPv6Constants.DUAL_STACK) {
-                    ret.put(dhcpServerIp, dhcpServerIpUuid);
+        List<PatternedSystemTag> tagTypes = ipVersion == IPv6Constants.DUAL_STACK
+                ? Arrays.asList(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP, FlatNetworkSystemTags.L3_NETWORK_DHCP6_IP)
+                : Collections.singletonList(FlatNetworkSystemTags.getDhcpServerIpTag(ipVersion));
+        for (PatternedSystemTag tagType : tagTypes) {
+            for (Map<String, String> tokens : tagType.getTokensOfTagsByResourceUuid(l3Uuid)) {
+                String address = IPv6NetworkUtils.ipv6TagValueToAddress(tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN));
+                if (address != null && ((ipVersion == IPv6Constants.IPv4 && NetworkUtils.isIpv4Address(address))
+                        || (ipVersion == IPv6Constants.IPv6 && IPv6NetworkUtils.isIpv6Address(address))
+                        || ipVersion == IPv6Constants.DUAL_STACK)) {
+                    ret.put(address, tokens.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN));
                 }
             }
         }
-
         return ret;
     }
 
@@ -1050,7 +1044,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             dhcpServerIpUuid = ip.getUuid();
         }
 
-        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3Uuid);
+        SystemTagCreator creator = FlatNetworkSystemTags.getDhcpServerIpTag(ipVersion).newSystemTagCreator(l3Uuid);
         creator.inherent = true;
         creator.setTagByTokens(
                 map(
@@ -1176,7 +1170,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                         IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
                         UsedIpInventory ip = ias.allocateIp(msg);
 
-                        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                        SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP6_IP.newSystemTagCreator(l3vo.getUuid());
                         creator.inherent = true;
                         creator.setTagByTokens(
                                 map(
@@ -1227,7 +1221,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
                     IpAllocatorStrategy ias = l3NwMgr.getIpAllocatorStrategy(strategyType);
                     UsedIpInventory ip = ias.allocateIp(msg);
 
-                    SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.newSystemTagCreator(l3vo.getUuid());
+                    SystemTagCreator creator = FlatNetworkSystemTags.L3_NETWORK_DHCP6_IP.newSystemTagCreator(l3vo.getUuid());
                     creator.inherent = true;
                     creator.setTagByTokens(
                             map(
@@ -1673,7 +1667,8 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
     }
 
     private void deleteDhcpServerIp(String l3Uuid, String dhcpServerIp) {
-        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid);
+        FlatNetworkSystemTags.getDhcpServerIpTag(NetworkUtils.isIpv4Address(dhcpServerIp)
+                ? IPv6Constants.IPv4 : IPv6Constants.IPv6).deleteInherentTag(l3Uuid);
         for (DhcpServerExtensionPoint exp : pluginRgty.getExtensionList(DhcpServerExtensionPoint.class)) {
             exp.afterRemoveDhcpServerIP(l3Uuid, dhcpServerIp);
         }
@@ -1694,8 +1689,10 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
             throw new OperationFailureException(reply.getError());
         }
 
-        FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.deleteInherentTag(l3Uuid,
-                FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.instantiateTag(map(
+        PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(NetworkUtils.isIpv4Address(dhcpServerIp)
+                ? IPv6Constants.IPv4 : IPv6Constants.IPv6);
+        tagType.deleteInherentTag(l3Uuid,
+                tagType.instantiateTag(map(
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN, IPv6NetworkUtils.ipv6AddessToTagValue(dhcpServerIp)),
                         e(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_UUID_TOKEN, dhcpServerIpUuid))));
 
@@ -2368,11 +2365,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         }
 
         for (String systemTag : systemTags) {
-            if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(systemTag)) {
+            PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(systemTag);
+            if (tagType == null) {
                 continue;
             }
 
-            Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), systemTag);
+            Map<String, String> token = TagUtils.parse(tagType.getTagFormat(), systemTag);
             String dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
             dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
 
@@ -2475,11 +2473,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         String dhcp6Ip = null;
         if (msg.getSystemTags() != null) {
             for (String sysTag : msg.getSystemTags()) {
-                if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(sysTag)) {
+                PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(sysTag);
+                if (tagType == null) {
                     continue;
                 }
 
-                Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), sysTag);
+                Map<String, String> token = TagUtils.parse(tagType.getTagFormat(), sysTag);
                 String dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
                 dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
                 if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
@@ -2679,11 +2678,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         String dhcpServerIp = null;
         if (systemTags != null) {
             for (String sysTag : systemTags) {
-                if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(sysTag)) {
+                PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(sysTag);
+                if (tagType == null) {
                     continue;
                 }
 
-                Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), sysTag);
+                Map<String, String> token = TagUtils.parse(tagType.getTagFormat(), sysTag);
                 dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
                 if (dhcpServerIp == null) {
                     continue;
@@ -2804,11 +2804,12 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         String dhcp6Ip = null;
         if (systemTags != null && !systemTags.isEmpty()){
             for (String sysTag : systemTags) {
-                if (!FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.isMatch(sysTag)) {
+                PatternedSystemTag tagType = FlatNetworkSystemTags.getDhcpServerIpTag(sysTag);
+                if (tagType == null) {
                     continue;
                 }
 
-                Map<String, String> token = TagUtils.parse(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP.getTagFormat(), sysTag);
+                Map<String, String> token = TagUtils.parse(tagType.getTagFormat(), sysTag);
                 String dhcpServerIp = token.get(FlatNetworkSystemTags.L3_NETWORK_DHCP_IP_TOKEN);
                 dhcpServerIp = IPv6NetworkUtils.ipv6TagValueToAddress(dhcpServerIp);
                 if (NetworkUtils.isIpv4Address(dhcpServerIp)) {
