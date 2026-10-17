@@ -115,7 +115,7 @@ doc {
 				column {
 					name "action"
 					enclosedIn "updateMemoryPolicy"
-					desc "动作：apply、clearOverride、pause、drain、resume、reconcile、recoverUncertain及后端/池/分片准备或提交。"
+					desc "动作：apply、clearOverride、pause、drain、resume、reconcile、recoverUncertain及后端/池/分片准备或提交。reconcile用于核对既有结果；对证据完整的精确写前拒绝，可持久记录NOT_ISSUED并将原Unknown结案为Failed、释放活动占用，不会标记成功或重放原请求；证据不足仍为Unknown。"
 					location "body"
 					type "String"
 					optional false
