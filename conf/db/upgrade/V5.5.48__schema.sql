@@ -57,25 +57,6 @@ CALL ADD_COLUMN('ZnsSegmentRefVO', 'leaseUntil', 'TIMESTAMP NULL', 1, NULL);
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'fenceToken', 'varchar(32)', 1, NULL);
 CALL ADD_COLUMN('ZnsSegmentRefVO', 'fenceUntil', 'TIMESTAMP NULL', 1, NULL);
 
-CREATE TABLE IF NOT EXISTS `zstack`.`ZnsSegmentRemoteDeleteVO` (
-    `id` bigint unsigned NOT NULL AUTO_INCREMENT,
-    `controllerUuid` varchar(32) NOT NULL,
-    `segmentUuid` varchar(36) NOT NULL,
-    `l2NetworkUuid` varchar(32) NOT NULL,
-    `zoneUuid` varchar(32) NOT NULL,
-    `fenceToken` varchar(32) DEFAULT NULL,
-    `fenceUntil` timestamp NULL DEFAULT NULL,
-    `attempt` int NOT NULL DEFAULT 0,
-    `lastErrorCode` varchar(128) DEFAULT NULL,
-    `lastErrorDetails` text DEFAULT NULL,
-    `createDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00',
-    `lastOpDate` timestamp NOT NULL DEFAULT '2000-01-01 00:00:00' ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (`id`),
-    UNIQUE KEY `ukZnsSegmentRemoteDelete` (`controllerUuid`, `segmentUuid`),
-    CONSTRAINT `fkZnsSegmentRemoteDeleteVOSdnControllerVO`
-        FOREIGN KEY (`controllerUuid`) REFERENCES `zstack`.`SdnControllerVO` (`uuid`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 DROP TABLE IF EXISTS `zstack`.`ZnsControllerTransitionVO`;
 DROP TABLE IF EXISTS `zstack`.`ZnsControllerCapabilityVO`;
 DROP TABLE IF EXISTS `zstack`.`ZnsCloudOfferSnapshotVO`;
