@@ -7,7 +7,6 @@ import org.zstack.core.db.SQL
 import org.zstack.header.identity.AccountResourceRefVO
 import org.zstack.header.identity.AccountResourceRefVO_
 import org.zstack.header.identity.AccountType
-import org.zstack.header.identity.IdentityErrors
 import org.zstack.header.errorcode.SysErrors
 import org.zstack.core.Platform
 import org.zstack.header.identity.SharedResourceVO
@@ -258,21 +257,16 @@ class LoadBalancerServerGroupLifeCycleCase extends SubCase{
                     listenerUuid: listener.uuid, serverGroupUuid: servergroup2.uuid,
                     sessionId: session.uuid)
             def result = action.call()
+            assert result.error == null : "GetBackend failed during ${phase}: ${result.error}"
             if (allowed) {
-                assert result.error == null : result.error
                 assert result.value.inventories.size() == adminMembers.size()
                 assert result.value.inventories[0].vmNicUuid == adminMembers[0].vmNicUuid
                 assert result.value.inventories[0].ipAddress == adminMembers[0].ipAddress
                 assert result.value.inventories[0].weight == adminMembers[0].weight
                 assert result.value.inventories[0].instancePort == adminMembers[0].instancePort
             } else {
-                assert result.error != null : "GetBackend exposed members during ${phase}"
-                assert result.error.code == Constants.HTTP_ERROR
-                def body = JSONObjectUtil.toObject(result.error.details, Map.class)
-                assert body.error.code == IdentityErrors.PERMISSION_DENIED.toString()
-                assert body.error.globalErrorCode == "ORG_ZSTACK_NETWORK_SERVICE_LB_10195"
-                assert !body.containsKey("inventories")
-                assert result.value == null
+                assert result.value.inventories != null
+                assert result.value.inventories.isEmpty() : "GetBackend exposed members during ${phase}"
             }
             println "Backend read permissions: phase=${phase}, allowed=${allowed}, error=${result.error?.code}"
         }

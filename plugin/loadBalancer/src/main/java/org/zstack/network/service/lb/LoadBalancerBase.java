@@ -45,6 +45,8 @@ import org.zstack.header.tag.SystemTagVO_;
 import org.zstack.header.vm.*;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.identity.Account;
+import org.zstack.identity.AccountManager;
+import org.zstack.identity.rbac.CheckIfAccountCanAccessResource;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkManager;
 import org.zstack.network.service.vip.*;
@@ -84,6 +86,8 @@ public class LoadBalancerBase {
     private DatabaseFacade dbf;
     @Autowired
     private LoadBalancerManager lbMgr;
+    @Autowired
+    private AccountManager accountManager;
     @Autowired
     private ThreadFacade thdf;
     @Autowired
@@ -3798,6 +3802,15 @@ public class LoadBalancerBase {
     private void handle(APIGetLoadBalancerListenerBackendServersMsg msg) {
         APIGetLoadBalancerListenerBackendServersReply reply =
                 new APIGetLoadBalancerListenerBackendServersReply();
+        if (!accountManager.isAdmin(msg.getSession())
+                && !CheckIfAccountCanAccessResource.check(
+                        asList(msg.getListenerUuid(), msg.getServerGroupUuid()),
+                        msg.getSession().getAccountUuid()).isEmpty()) {
+            reply.setInventories(Collections.emptyList());
+            bus.reply(msg, reply);
+            return;
+        }
+
         LoadBalancerListenerVO listener = dbf.findByUuid(
                 msg.getListenerUuid(), LoadBalancerListenerVO.class);
 
