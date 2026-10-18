@@ -92,12 +92,19 @@ public class IpRangeHelper {
 
     public static void updateL3NetworkIpversion(IpRangeInventory ipr) {
         L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
+        if (l3VO == null) {
+            return;
+        }
+        List<Integer> versions = Q.New(IpRangeVO.class)
+                .select(IpRangeVO_.ipVersion)
+                .eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                .listValues();
         boolean ipv4 = false;
         boolean ipv6 = false;
-        for (IpRangeVO vo : l3VO.getIpRanges()) {
-            if (vo.getIpVersion() == IPv6Constants.IPv4) {
+        for (Integer ver : versions) {
+            if (ver != null && ver == IPv6Constants.IPv4) {
                 ipv4 = true;
-            } else if (vo.getIpVersion() == IPv6Constants.IPv6) {
+            } else if (ver != null && ver == IPv6Constants.IPv6) {
                 ipv6 = true;
             }
         }
@@ -142,6 +149,10 @@ public class IpRangeHelper {
     public static List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
         List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
         usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+        if (ipr instanceof NormalIpRangeVO && ipr.getGateway() != null
+                && NetworkUtils.isInRange(ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp())) {
+            usedIps.add(ipr.getGateway());
+        }
 
         List<String> spareIps = new ArrayList<>();
         if (ipr.getIpVersion() == IPv6Constants.IPv6) {

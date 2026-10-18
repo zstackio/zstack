@@ -54019,6 +54019,33 @@ abstract class ApiHelper {
     }
 
 
+    def acceptZnsSegmentOwner(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.AcceptZnsSegmentOwnerAction.class) Closure c) {
+        def a = new org.zstack.sdk.network.zns.AcceptZnsSegmentOwnerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def checkVniAvailability(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.CheckVniAvailabilityAction.class) Closure c) {
         def a = new org.zstack.sdk.network.zns.CheckVniAvailabilityAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -54073,6 +54100,33 @@ abstract class ApiHelper {
     }
 
 
+    def fullScanZnsController(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.FullScanZnsControllerAction.class) Closure c) {
+        def a = new org.zstack.sdk.network.zns.FullScanZnsControllerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
     def getCandidateZnsNicModesForAttachingL3Network(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.GetCandidateZnsNicModesForAttachingL3NetworkAction.class) Closure c) {
         def a = new org.zstack.sdk.network.zns.GetCandidateZnsNicModesForAttachingL3NetworkAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
@@ -54102,33 +54156,6 @@ abstract class ApiHelper {
 
     def getCloudApiCapabilitiesForZns(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.GetCloudApiCapabilitiesForZnsAction.class) Closure c) {
         def a = new org.zstack.sdk.network.zns.GetCloudApiCapabilitiesForZnsAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-        
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-    
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-        
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
-
-
-    def getZnsIntegrationEffectiveOffer(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferAction.class) Closure c) {
-        def a = new org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferAction()
         a.sessionId = Test.currentEnvSpec?.session?.uuid
         c.resolveStrategy = Closure.OWNER_FIRST
         c.delegate = a
@@ -54263,6 +54290,60 @@ abstract class ApiHelper {
                 Test.apiPaths[a.class.name] = path.join(" --->\n")
             }
         
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def releaseZnsSegmentOwner(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.ReleaseZnsSegmentOwnerAction.class) Closure c) {
+        def a = new org.zstack.sdk.network.zns.ReleaseZnsSegmentOwnerAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
+            return out
+        } else {
+            return errorOut(a.call())
+        }
+    }
+
+
+    def syncZnsSegment(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.SyncZnsSegmentAction.class) Closure c) {
+        def a = new org.zstack.sdk.network.zns.SyncZnsSegmentAction()
+        a.sessionId = Test.currentEnvSpec?.session?.uuid
+        c.resolveStrategy = Closure.OWNER_FIRST
+        c.delegate = a
+        c()
+
+
+        if (System.getProperty("apipath") != null) {
+            if (a.apiId == null) {
+                a.apiId = Platform.uuid
+            }
+
+            def tracker = new ApiPathTracker(a.apiId)
+            def out = errorOut(a.call())
+            def path = tracker.getApiPath()
+            if (!path.isEmpty()) {
+                Test.apiPaths[a.class.name] = path.join(" --->\n")
+            }
+
             return out
         } else {
             return errorOut(a.call())
@@ -59749,30 +59830,4 @@ abstract class ApiHelper {
     }
 
 
-
-    def releaseZnsSegmentOwner(@DelegatesTo(strategy = Closure.OWNER_FIRST, value = org.zstack.sdk.network.zns.ReleaseZnsSegmentOwnerAction.class) Closure c) {
-        def a = new org.zstack.sdk.network.zns.ReleaseZnsSegmentOwnerAction()
-        a.sessionId = Test.currentEnvSpec?.session?.uuid
-        c.resolveStrategy = Closure.OWNER_FIRST
-        c.delegate = a
-        c()
-
-
-        if (System.getProperty("apipath") != null) {
-            if (a.apiId == null) {
-                a.apiId = Platform.uuid
-            }
-
-            def tracker = new ApiPathTracker(a.apiId)
-            def out = errorOut(a.call())
-            def path = tracker.getApiPath()
-            if (!path.isEmpty()) {
-                Test.apiPaths[a.class.name] = path.join(" --->\n")
-            }
-
-            return out
-        } else {
-            return errorOut(a.call())
-        }
-    }
 }

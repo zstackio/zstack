@@ -273,7 +273,7 @@ class Env {
                             name = "ipv6-Statefull-DHCP"
                             networkCidr = "2001:2003::/64"
                             addressMode = "Stateful-DHCP"
-                            systemTags = ["flatNetwork::DhcpServer::2001:2003--fffe::ipUuid::null"]
+                            systemTags = ["flatNetwork::Dhcp6Server::2001:2003--fffe::ipUuid::null"]
                         }
 
                         service {

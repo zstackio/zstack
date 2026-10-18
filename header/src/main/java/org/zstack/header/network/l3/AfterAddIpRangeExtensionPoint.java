@@ -1,7 +1,5 @@
 package org.zstack.header.network.l3;
 
-import org.zstack.header.network.l2.NetworkCreateContext;
-
 import java.util.List;
 
 /**
@@ -9,11 +7,4 @@ import java.util.List;
  */
 public interface AfterAddIpRangeExtensionPoint {
     void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags);
-
-    default void afterAddIpRange(IpRangeInventory ipr, List<String> systemTags, NetworkCreateContext context) {
-        if (context != null && context.isProjection()) {
-            return;
-        }
-        afterAddIpRange(ipr, systemTags);
-    }
 }

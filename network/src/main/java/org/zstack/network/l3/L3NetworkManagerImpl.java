@@ -34,10 +34,6 @@ import org.zstack.header.message.Message;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l2.*;
-import org.zstack.header.network.NetworkDeleteGuardExtensionPoint;
-import org.zstack.header.network.LocalNetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChange;
-import org.zstack.header.network.NetworkConfigChangeCoordinator;
 import org.zstack.header.network.l3.*;
 import org.zstack.header.network.l3.datatypes.IpCapacityData;
 import org.zstack.header.network.service.GetSdnControllerExtensionPoint;
@@ -100,8 +96,6 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     @Autowired
     protected L3NetworkExtensionPointEmitter extpEmitter;
 
-    private Map<String, L3NetworkVendorFactory> l3NetworkVendorFactories = Collections.emptyMap();
-
     private Map<String, IpRangeFactory> ipRangeFactories = Collections.synchronizedMap(new HashMap<String, IpRangeFactory>());
     private Map<String, L3NetworkFactory> l3NetworkFactories = Collections.synchronizedMap(new HashMap<String, L3NetworkFactory>());
     private Map<String, IpAllocatorStrategy> ipAllocatorStrategies = Collections.synchronizedMap(new HashMap<String, IpAllocatorStrategy>());
@@ -134,7 +128,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(CreateL3NetworkMsg msg) {
-        createL3Network(msg, msg.getContext() == null ? NetworkCreateContext.api() : msg.getContext(),
+        createL3Network(msg,
                 resourceUuid -> tagMgr.createTags(msg.getSystemTags(), msg.getUserTags(), resourceUuid,
                         L3NetworkVO.class.getSimpleName()), new ReturnValueCompletion<L3NetworkInventory>(msg) {
                     @Override
@@ -554,8 +548,8 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
     }
 
     private void handle(APICreateL3NetworkMsg msg) {
-        CreateL3NetworkMsg create = CreateL3NetworkMsg.fromApi(msg, NetworkCreateContext.api());
-        createL3Network(create, NetworkCreateContext.api(), resourceUuid ->
+        CreateL3NetworkMsg create = CreateL3NetworkMsg.fromApi(msg);
+        createL3Network(create, resourceUuid ->
                 tagMgr.createTagsFromAPICreateMessage(msg, resourceUuid, L3NetworkVO.class.getSimpleName()),
                 new ReturnValueCompletion<L3NetworkInventory>(msg) {
             @Override
@@ -574,40 +568,9 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         });
     }
 
-    private void createL3Network(CreateL3NetworkMsg msg, NetworkCreateContext context,
+    private void createL3Network(CreateL3NetworkMsg msg,
                                  java.util.function.Consumer<String> tagCreator,
                                  ReturnValueCompletion<L3NetworkInventory> completion) {
-
-        if (context.getOrigin() == NetworkOperationOrigin.API) {
-            if (msg.getResourceUuid() == null) {
-                msg.setResourceUuid(Platform.getUuid());
-            }
-            NetworkConfigChange change = NetworkConfigChange.createL3(
-                    msg.getL2NetworkUuid(), context.getOrigin(), msg.getId(),
-                    msg.getSession() == null ? null : msg.getSession().getAccountUuid(),
-                    msg.getResourceUuid(), msg.getType(), msg.getSystemTags());
-            java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> created =
-                    new java.util.concurrent.atomic.AtomicReference<>();
-            if (coordinateNetworkConfigChange(change,
-                    localCompletion -> createL3Network(msg,
-                            NetworkCreateContext.cloudCommit(msg.getId()),
-                            tagCreator,
-                            new ReturnValueCompletion<L3NetworkInventory>(localCompletion) {
-                                @Override
-                                public void success(L3NetworkInventory inventory) {
-                                    created.set(inventory);
-                                    localCompletion.success();
-                                }
-
-                                @Override
-                                public void fail(ErrorCode errorCode) {
-                                    localCompletion.fail(errorCode);
-                                }
-                            }), created, completion)) {
-                return;
-            }
-        }
-
         L2NetworkVO l2Vo = Q.New(L2NetworkVO.class).eq(L2NetworkVO_.uuid, msg.getL2NetworkUuid()).find();
         assert l2Vo.getZoneUuid() != null;
 
@@ -649,7 +612,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return;
                 }
 
-                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(), context,
+                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(), msg.getNetworkOperation(),
                         new Completion(trigger) {
                     @Override
                     public void success() {
@@ -668,17 +631,19 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
             @Override
             public void run(FlowTrigger trigger, Map data) {
                 L3NetworkFactory factory = getL3NetworkFactory(L3NetworkType.valueOf(msg.getType()));
+                SdnControllerL3 controllerL3 = getSdnControllerL3(msg.getL2NetworkUuid());
                 L3NetworkInventory inv = new SQLBatchWithReturn<L3NetworkInventory>() {
                     @Override
                     protected L3NetworkInventory scripts() {
-                        String accountUuid = msg.getSession() == null && context.getExternalRef() != null
-                                ? context.getExternalRef().getAccountUuid()
-                                : msg.getSession() == null ? null : msg.getSession().getAccountUuid();
+                        String accountUuid = msg.getSession() == null ? msg.getAccountUuid() : msg.getSession().getAccountUuid();
                         if (accountUuid == null) {
                             throw new CloudRuntimeException("account uuid is required for l3 create");
                         }
                         vo.setAccountUuid(accountUuid);
-                        L3NetworkInventory inv = factory.createL3Network(vo, msg, context);
+                        if (controllerL3 != null) {
+                            controllerL3.beforeCommitL3NetworkInDb(L3NetworkInventory.valueOf(vo), msg.getNetworkOperation());
+                        }
+                        L3NetworkInventory inv = factory.createL3Network(vo, msg);
                         tagCreator.accept(vo.getUuid());
                         return inv;
                     }
@@ -702,49 +667,31 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
                 trigger.next();
             }
-        }).error(new FlowErrorHandler(msg) {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                finishL3NetworkCreation(vo, msg);
                 completion.fail(errCode);
             }
-        }).done(new FlowDoneHandler(msg) {
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
+                finishL3NetworkCreation(vo, msg);
                 completion.success((L3NetworkInventory) data.get("L3NetworkInventory"));
             }
         }).start();
 
     }
 
-    private boolean coordinateNetworkConfigChange(NetworkConfigChange change,
-                                        LocalNetworkConfigChange localChange,
-                                        java.util.concurrent.atomic.AtomicReference<L3NetworkInventory> result,
-                                        ReturnValueCompletion<L3NetworkInventory> completion) {
-        List<NetworkConfigChangeCoordinator> coordinators = pluginRgty
-                .getExtensionList(NetworkConfigChangeCoordinator.class).stream()
-                .filter(coordinator -> coordinator.isApplicable(change))
-                .collect(java.util.stream.Collectors.toList());
-        if (coordinators.isEmpty()) {
-            return false;
-        }
-        if (coordinators.size() != 1) {
-            completion.fail(errf.stringToInternalError(String.format(
-                    "network mutation[%s] matched[%s] providers",
-                    change.getKind(), coordinators.size())));
-            return true;
-        }
-        coordinators.get(0).coordinate(change, localChange, new Completion(completion) {
-            @Override
-            public void success() {
-                completion.success(result.get());
+    private void finishL3NetworkCreation(L3NetworkVO network, CreateL3NetworkMsg msg) {
+        try {
+            SdnControllerL3 controller = getSdnControllerL3(msg.getL2NetworkUuid());
+            if (controller != null) {
+                controller.afterL3NetworkFinally(L3NetworkInventory.valueOf(network), msg.getNetworkOperation());
             }
-
-            @Override
-            public void fail(ErrorCode errorCode) {
-                completion.fail(errorCode);
-            }
-        });
-        return true;
+        } catch (RuntimeException e) {
+            logger.warn(String.format("failed to finish L3 network creation[uuid:%s]", network.getUuid()), e);
+        }
     }
 
     @Override
@@ -768,26 +715,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         return factory.applyNetworkServiceWhenVmStateChange();
     }
 
-    @Override
-    public L3NetworkVendorFactory getL3NetworkVendorFactory(String vSwitchType) {
-        return l3NetworkVendorFactories.get(vSwitchType);
-    }
-
     private void populateExtensions() {
-        Map<String, L3NetworkVendorFactory> factories = new HashMap<>();
-        for (L3NetworkVendorFactory factory : pluginRgty.getExtensionList(L3NetworkVendorFactory.class)) {
-            String vSwitchType = factory.getVSwitchType();
-            if (vSwitchType == null || vSwitchType.isEmpty() || !vSwitchType.equals(vSwitchType.trim())) {
-                throw new CloudRuntimeException("invalid L3 vendor vSwitch type registered by " + factory.getClass().getName());
-            }
-            L3NetworkVendorFactory old = factories.put(vSwitchType, factory);
-            if (old != null) {
-                throw new CloudRuntimeException(String.format("duplicate L3 vendor factories[%s, %s] for vSwitch type[%s]",
-                        old.getClass().getName(), factory.getClass().getName(), vSwitchType));
-            }
-        }
-        l3NetworkVendorFactories = Collections.unmodifiableMap(factories);
-
         for (L3NetworkFactory f : pluginRgty.getExtensionList(L3NetworkFactory.class)) {
             L3NetworkFactory old = l3NetworkFactories.get(f.getType().toString());
             if (old != null) {
@@ -951,24 +879,13 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
 
     @Override
     public UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress) {
-        return new SQLBatchWithReturn<UsedIpInventory>() {
-            @Override
-            protected UsedIpInventory scripts() {
-                for (NetworkDeleteGuardExtensionPoint extension :
-                        pluginRgty.getExtensionList(NetworkDeleteGuardExtensionPoint.class)) {
-                    ErrorCode errorCode = extension.checkL3NetworkWithLock(ipRange.getL3NetworkUuid());
-                    if (errorCode != null) {
-                        throw new OperationFailureException(errorCode);
-                    }
-                }
-                if (NetworkUtils.isIpv4Address(ip)) {
-                    return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
-                } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
-                    return reserveIpv6(ipRange, ip, allowDuplicatedAddress);
-                }
-                return null;
-            }
-        }.execute();
+        if (NetworkUtils.isIpv4Address(ip)) {
+            return reserveIpv4(ipRange, ip, allowDuplicatedAddress);
+        } else if (IPv6NetworkUtils.isIpv6Address(ip)) {
+            return reserveIpv6(ipRange, ip, allowDuplicatedAddress);
+        }
+
+        return null;
     }
 
     @Override

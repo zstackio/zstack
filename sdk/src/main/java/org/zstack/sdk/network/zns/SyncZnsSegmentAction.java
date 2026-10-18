@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
+public class SyncZnsSegmentAction extends AbstractAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult value;
+        public org.zstack.sdk.network.zns.SyncZnsSegmentResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,17 +25,14 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String computeManagerUuid;
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String uuid;
 
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String knownOfferDigest;
+    @Param(required = true, validValues = {"CloudToZns","ZnsToCloud"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String direction;
 
-    @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
+    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String zoneUuid;
 
     @Param(required = false)
     public java.util.List systemTags;
@@ -55,6 +52,12 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
     @Param(required = false)
     public String requestIp;
 
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
 
     private Result makeResult(ApiResult res) {
         Result ret = new Result();
@@ -63,8 +66,8 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult value = res.getResult(org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult.class);
-        ret.value = value == null ? new org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult() : value; 
+        org.zstack.sdk.network.zns.SyncZnsSegmentResult value = res.getResult(org.zstack.sdk.network.zns.SyncZnsSegmentResult.class);
+        ret.value = value == null ? new org.zstack.sdk.network.zns.SyncZnsSegmentResult() : value; 
 
         return ret;
     }
@@ -93,11 +96,11 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
 
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
-        info.httpMethod = "GET";
-        info.path = "/sdn-controller/zns/integration/effective-offer";
+        info.httpMethod = "PUT";
+        info.path = "/sdn-controller/zns/segment-cloud-projections/{uuid}/actions";
         info.needSession = true;
-        info.needPoll = false;
-        info.parameterName = "";
+        info.needPoll = true;
+        info.parameterName = "syncZnsSegment";
         return info;
     }
 

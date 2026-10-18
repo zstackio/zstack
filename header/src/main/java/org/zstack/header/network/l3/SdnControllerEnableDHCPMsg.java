@@ -1,9 +1,25 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 
-public class SdnControllerEnableDHCPMsg extends NeedReplyMessage implements SdnControllerMessage {
+public class SdnControllerEnableDHCPMsg extends NeedReplyMessage implements SdnControllerMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String l3NetworkUuid;
     private String sdnControllerUuid;
 
