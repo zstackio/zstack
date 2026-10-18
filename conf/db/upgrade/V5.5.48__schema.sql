@@ -90,6 +90,6 @@ SET `tag` = CONCAT('flatNetwork::Dhcp6Server::',
                    SUBSTRING(`tag`, CHAR_LENGTH('flatNetwork::DhcpServer::') + 1))
 WHERE `resourceType` = 'L3NetworkVO'
   AND `tag` LIKE 'flatNetwork::DhcpServer::%::ipUuid::%'
-  AND IS_IPV6(REPLACE(SUBSTRING_INDEX(
+  AND LOCATE(':', REPLACE(SUBSTRING_INDEX(
       SUBSTRING(`tag`, CHAR_LENGTH('flatNetwork::DhcpServer::') + 1),
-      '::ipUuid::', 1), '--', '::'));
+      '::ipUuid::', 1), '--', '::')) > 0;
