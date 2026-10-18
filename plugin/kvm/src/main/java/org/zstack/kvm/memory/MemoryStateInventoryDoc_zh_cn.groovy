@@ -93,7 +93,7 @@ doc {
 	}
 	field {
 		name "reason"
-		desc "状态原因或失败诊断；Unknown不会被折叠为成功。"
+		desc "最近配置控制/任务的原因或失败诊断；普通Agent观测更新不会覆盖该任务结果。当前运行细节见JSON字符串state中的嵌套字段。Unknown不会被折叠为成功。"
 		type "String"
 		since "5.5.38"
 	}
@@ -105,7 +105,7 @@ doc {
 	}
 	field {
 		name "state"
-		desc "Agent报告的详细运行状态。"
+		desc "最近一次被接受的Agent只读运行状态JSON字符串。客户端可读取JSON.parse(inventories[0].state).host_zram.reason；backend_health.reason属于同一运行诊断域。NO_QUALIFIED_MANAGED_POOL: EXCLUSIVE_ZRAM_ROUTE_REQUIRED为原因值片段示例，不是完整States回包。结合对象自身原生observed_at阅读，该时间不是指标quality或lastSampleTime。Agent可保留池初始化拒绝原因直到受支持的恢复重新初始化，所以较新的observed_at仍可能对应上一次初始化拒绝，不证明磁盘swap此刻仍启用。后续观测不会把诊断改写成原任务结果、请求版本或原计划；现有路径接受可信控制回执时，实际applied revision仍可更新。此接口不触发即时采样；过期快照不能证明Host当前swap状态，平台不会自动swapoff。"
 		type "String"
 		since "5.5.38"
 	}

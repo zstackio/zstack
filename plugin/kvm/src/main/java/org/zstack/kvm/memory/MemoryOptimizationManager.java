@@ -1012,7 +1012,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     // dispatching configuration from this callback.
                     try {
                         call(task.getHostUuid(), "state", command(task.getHostUuid(), Platform.getUuid()), observation -> {
-                            if (queryBootId == null || !successfulFreshObservation(observation)
+                            if (queryBootId == null || !successfulFreshObservation(task.getHostUuid(), observation)
                                     || !queryBootId.equals(observation.bootId)) {
                                 repository.result(task.getUuid(), "Unknown",
                                         "Original result requires fresh same-boot Host observation", null);
@@ -1044,7 +1044,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 // resume an executor. Probe only the established read-only
                 // state endpoint before sending this new read-only action.
                 call(task.getHostUuid(), "state", command(task.getHostUuid(), Platform.getUuid()), support -> {
-                    if (!successfulFreshObservation(support)
+                    if (!successfulFreshObservation(task.getHostUuid(), support)
                             || !Objects.equals(task.getHostUuid(), support.hostUuid)
                             || command.get("bootId") == null
                             || !Objects.equals(command.get("bootId"), support.bootId)) {
@@ -1163,9 +1163,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     } catch (RuntimeException eventFailure) {
                         logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
                     }
-                    if (MemoryObservationRules.isKsmNativePartial(response, System.currentTimeMillis())) {
+                    if (MemoryObservationRules.isKsmNativePartial(response, host, System.currentTimeMillis())) {
                         repository.observePartialKsm(host, response);
-                    } else if (successfulFreshObservation(response)) {
+                    } else if (successfulFreshObservation(host, response)) {
                         repository.observe(host, response);
                         applyInheritedPolicyAfterObservation(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);
@@ -1182,9 +1182,21 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private static boolean successfulFreshObservation(MemoryAgentResponse response) {
+    private static boolean successfulFreshObservation(String host, MemoryAgentResponse response) {
         if (response == null || !response.isSuccess() || !"Succeeded".equals(response.status)
                 || response.state == null || response.sampleTime == null) { return false; }
+        // The Agent's outer identity and the RuntimeSnapshot boot are both
+        // optional for older Agents, but when present they must agree with
+        // the target and with each other. A new boot is valid current data;
+        // repository sample ordering below still rejects delayed old samples.
+        if (host == null || host.trim().isEmpty()
+                || response.hostUuid != null && !host.equals(response.hostUuid)) { return false; }
+        Object stateBoot = response.state.get("bootId");
+        if (stateBoot != null && (!(stateBoot instanceof String) || ((String) stateBoot).trim().isEmpty())) {
+            return false;
+        }
+        if (response.bootId != null && (response.bootId.trim().isEmpty()
+                || stateBoot instanceof String && !response.bootId.equals(stateBoot))) { return false; }
         long now = System.currentTimeMillis();
         long age = now - response.sampleTime;
         return response.sampleTime <= now + 5000 && age >= 0
