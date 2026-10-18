@@ -38,6 +38,8 @@ public interface TagManager {
 
     SystemTagInventory updateSystemTag(String tagUuid, String newTag);
 
+    SystemTagInventory findSystemTagInventory(String tagUuid);
+
     List<String> findSystemTags(String resourceUuid);
 
     List<String> findUserTags(String resourceUuid);

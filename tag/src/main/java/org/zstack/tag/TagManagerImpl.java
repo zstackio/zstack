@@ -455,6 +455,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public SystemTagInventory findSystemTagInventory(String tagUuid) {
+        SystemTagVO tag = dbf.findByUuid(tagUuid, SystemTagVO.class);
+        return tag == null ? null : SystemTagInventory.valueOf(tag);
+    }
+
+    @Override
     public SystemTagInventory updateSystemTag(String tagUuid, String newTag) {
         SystemTagVO vo = dbf.findByUuid(tagUuid, SystemTagVO.class);
         SystemTagInventory old = SystemTagInventory.valueOf(vo);
@@ -566,7 +572,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             q.add(SystemTagVO_.inherent, Op.EQ, inherit);
         }
 
-        List<SystemTagVO> vos = q.list();
+        List<SystemTagVO> vos;
+        if (currentTransaction) {
+            SQL current = SQL.New("select t from SystemTagVO t where t.tag = :tag"
+                    + " and t.resourceUuid = :resourceUuid and t.resourceType = :resourceType"
+                    + (inherit == null ? "" : " and t.inherent = :inherent"), SystemTagVO.class)
+                    .param("tag", tag).param("resourceUuid", resourceUuid).param("resourceType", resourceType);
+            if (inherit != null) {
+                current.param("inherent", inherit);
+            }
+            vos = current.list();
+        } else {
+            vos = q.list();
+        }
 
         if (!vos.isEmpty()) {
             for (SystemTagVO vo : vos) {
