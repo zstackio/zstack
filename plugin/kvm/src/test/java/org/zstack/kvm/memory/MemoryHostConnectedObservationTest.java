@@ -145,7 +145,7 @@ public class MemoryHostConnectedObservationTest {
         Map<?, ?> actual = (Map<?, ?>) partial.state.get("actual");
         Map<?, ?> nativeKsm = (Map<?, ?>) actual.get("ksm");
         assertTrue("platform decoder must preserve integral Agent metrics", nativeKsm.get("pagesToScan") instanceof Long);
-        assertTrue(MemoryObservationRules.isKsmNativePartial(partial, System.currentTimeMillis()));
+        assertTrue(MemoryObservationRules.isKsmNativePartial(partial, "host-a", System.currentTimeMillis()));
         manager.complete(partial);
 
         Repository repository = field(manager, "repository", Repository.class);

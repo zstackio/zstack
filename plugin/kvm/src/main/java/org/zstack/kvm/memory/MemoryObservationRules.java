@@ -29,6 +29,7 @@ public final class MemoryObservationRules {
                 || now < response.sampleTime || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
                 || !(response.state.get("bootId") instanceof String)
                 || ((String) response.state.get("bootId")).trim().isEmpty()
+                || response.bootId != null && !response.bootId.equals(response.state.get("bootId"))
                 || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
         boolean complete = response.isSuccess() && "Succeeded".equals(response.status);
         boolean nativeOnly = !response.isSuccess() && "Unknown".equals(response.status)
@@ -121,10 +122,11 @@ public final class MemoryObservationRules {
      * An explicit read-only native KSM sample may refresh only KSM capability
      * metadata. It never changes the envelope's Unknown control outcome.
      */
-    static boolean isKsmNativePartial(MemoryAgentResponse response, long now) {
+    static boolean isKsmNativePartial(MemoryAgentResponse response, String hostUuid, long now) {
         if (response == null || response.isSuccess() || !"Unknown".equals(response.status)
                 || !"KSM_NATIVE_PARTIAL".equals(response.observationKind)
                 || !"LOCAL_SERVICE_UNAVAILABLE".equals(response.reasonCode)
+                || (response.hostUuid != null && !response.hostUuid.equals(hostUuid))
                 || response.sampleTime == null || response.sampleTime > now + 5000
                 || now - response.sampleTime < 0
                 || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()

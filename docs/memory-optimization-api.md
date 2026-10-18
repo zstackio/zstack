@@ -74,6 +74,10 @@ For ordinary save feedback, read `GetMemoryStates` rather than depending on an A
 
 Both States routes return the same seven-value `status`. The frontend maps this one field to its label; it does not combine task, plan, reason or native-state fields to infer the configuration result.
 
+`GetMemoryStates` reads the latest Host observation already accepted through the existing Host-connected or periodic Agent state-read path; the GET itself does not trigger a new Agent sample or retry. The inventory's top-level `reason`, `status`, control UUID and plan fields describe the saved control/task outcome. Its `state` is a JSON-encoded string containing the latest accepted Agent runtime snapshot. Read the pool diagnostic as `JSON.parse(inventories[0].state).host_zram.reason`; `JSON.parse(inventories[0].state).backend_health.reason` reports related backend health in the same diagnostic domain. For example, `NO_QUALIFIED_MANAGED_POOL: EXCLUSIVE_ZRAM_ROUTE_REQUIRED` is a reason value/fragment, not a complete States response. Read either reason with its object's native `observed_at`, distinct from inventory metric `quality` and `lastSampleTime`.
+
+The Agent may retain a pool initialization error until a supported recovery reinitializes the pool. Therefore a newly observed snapshot—and its newer `observed_at`—can still contain the last initialization refusal after the underlying swap condition has changed. A timestamp is not proof that the disk swap is still active; correlate the retained error with supported Host diagnostics and the standard maintenance/recovery procedure. The platform does not run `swapoff` automatically. A later accepted diagnostic observation does not rewrite the original task result, request version or plan. Separately, the existing observe path may update the actual applied revision when it accepts a trustworthy control receipt; this does not itself rewrite the original task result or plan. Do not retry or replay an uncertain task based only on a later observation.
+
 | `status` | Display label | Meaning |
 | --- | --- | --- |
 | `Queued` | 等待执行 | The operation is queued. |

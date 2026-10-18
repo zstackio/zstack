@@ -579,6 +579,27 @@ public class MemoryRepositoryTest {
         final long sample1 = System.currentTimeMillis();
         MemoryAgentResponse partial1 = coldKsmPartial(sample1, true);
         repository.observePartialKsm("host1", partial1);
+        MemoryStateVO beforeForeign = host1State();
+        String capabilitiesBeforeForeign = beforeForeign.getCapabilities();
+        String stateBeforeForeign = beforeForeign.getState();
+        Map<String, Object> coldObservationBeforeForeign = MemoryCapabilityRules.coldKsmObservation(
+                beforeForeign, System.currentTimeMillis());
+        assertNotNull("a partial without optional Host UUID remains compatible", coldObservationBeforeForeign);
+
+        MemoryAgentResponse foreignPartial = coldKsmPartial(sample1 + 1, false);
+        foreignPartial.hostUuid = "host2";
+        foreignPartial.bootId = "boot-host2";
+        foreignPartial.state.put("bootId", foreignPartial.bootId);
+        repository.observePartialKsm("host1", foreignPartial);
+
+        MemoryStateVO afterForeign = host1State();
+        assertEquals("foreign partial must not overwrite target capability data",
+                capabilitiesBeforeForeign, afterForeign.getCapabilities());
+        assertEquals("foreign partial must not overwrite target native observation data",
+                stateBeforeForeign, afterForeign.getState());
+        assertEquals("foreign partial must not revoke or replace the target cold-admission proof",
+                coldObservationBeforeForeign,
+                MemoryCapabilityRules.coldKsmObservation(afterForeign, System.currentTimeMillis()));
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
                 "host1", "HostVO", "2048")), ConfigMutationContext.internal(), false);
 
@@ -4774,6 +4795,117 @@ public class MemoryRepositoryTest {
         assertFalse("old actual payload must not survive a newer observation", state.getState().contains("\"old\""));
         assertEquals(Long.valueOf(first + 1), state.getLastSampleTime());
         assertTrue("managed ownership is the only explicitly retained control fact", state.getState().contains("managed"));
+    }
+
+    @Test public void currentSwapBlockReasonFlowsThroughManagerAndStatesWithoutRewritingTaskOutcome() throws Exception {
+        final String control = "control-blocked-host1";
+        final String planHash = String.join("", Collections.nCopies(64, "a"));
+        long priorSample = System.currentTimeMillis() - 1000;
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Blocked"); state.setReason("NATIVE_POOL_UNQUALIFIED");
+            state.setControlOperationUuid(control); state.setActiveTaskUuid(control);
+            state.setDesiredRevision(9); state.setAppliedRevision(8L);
+            state.setPolicyPlanHash(planHash); state.setPolicyPlanStatus("Blocked");
+            state.setLastSampleTime(priorSample);
+            state.setState("{\"bootId\":\"boot-old\",\"host_zram\":{\"reason\":\"STARTUP_OBSERVATION_IN_PROGRESS\","
+                    + "\"observed_at\":\"2026-10-18T12:33:51.2697+08:00\"}}");
+            MemoryTaskVO task = taskFixture(control, null, "host1", "apply", "Blocked");
+            task.setScope("Host"); task.setResourceUuid("host1"); task.setReason("NATIVE_POOL_UNQUALIFIED");
+            task.setDesiredRevision(9); em.persist(task);
+            return null;
+        });
+
+        final List<MemoryAgentResponse> responses = new ArrayList<>();
+        long sampleTime = System.currentTimeMillis();
+        for (String status : new String[]{"Blocked", "Failed", "Unknown"}) {
+            MemoryAgentResponse observation = new MemoryAgentResponse();
+            observation.setSuccess(true); observation.status = "Succeeded";
+            observation.hostUuid = "host1"; observation.bootId = "boot-new";
+            observation.sampleTime = sampleTime++;
+            observation.state = new LinkedHashMap<>(); observation.state.put("bootId", "boot-new");
+            Map<String, Object> hostZram = new LinkedHashMap<>();
+            hostZram.put("reason", "NO_QUALIFIED_MANAGED_POOL: EXCLUSIVE_ZRAM_ROUTE_REQUIRED");
+            hostZram.put("observed_at", "2026-10-18T12:44:57.566+08:00");
+            observation.state.put("host_zram", hostZram);
+            responses.add(observation);
+        }
+        MemoryAgentResponse foreign = new MemoryAgentResponse(); foreign.setSuccess(true); foreign.status = "Succeeded";
+        foreign.hostUuid = "other-host"; foreign.bootId = "boot-new"; foreign.sampleTime = sampleTime++;
+        foreign.state = new LinkedHashMap<>(); foreign.state.put("bootId", "boot-new");
+        foreign.state.put("host_zram", Collections.singletonMap("reason", "foreign")); responses.add(foreign);
+        MemoryAgentResponse bootConflict = new MemoryAgentResponse(); bootConflict.setSuccess(true); bootConflict.status = "Succeeded";
+        bootConflict.hostUuid = "host1"; bootConflict.bootId = "boot-new"; bootConflict.sampleTime = sampleTime++;
+        bootConflict.state = new LinkedHashMap<>(); bootConflict.state.put("bootId", "boot-other");
+        bootConflict.state.put("host_zram", Collections.singletonMap("reason", "conflicting")); responses.add(bootConflict);
+        MemoryAgentResponse stale = new MemoryAgentResponse(); stale.setSuccess(true); stale.status = "Succeeded";
+        stale.hostUuid = "host1"; stale.bootId = "boot-new";
+        stale.sampleTime = System.currentTimeMillis() - MemoryOptimizationGlobalConfig.displayTtlMillis() - 1;
+        stale.state = new LinkedHashMap<>(); stale.state.put("bootId", "boot-new");
+        stale.state.put("host_zram", Collections.singletonMap("reason", "stale")); responses.add(stale);
+
+        final int[] responseIndex = {0};
+        MemoryOptimizationManager manager = new MemoryOptimizationManager() {
+            @Override void call(String host, String action, Map<String, Object> command,
+                                java.util.function.Consumer<MemoryAgentResponse> completion) {
+                assertEquals("host1", host); assertEquals("state", action);
+                completion.accept(responses.get(responseIndex[0]++));
+            }
+        };
+        setField(MemoryOptimizationManager.class, manager, "repository", repository);
+        PluginRegistry noLicense = (PluginRegistry) Proxy.newProxyInstance(PluginRegistry.class.getClassLoader(),
+                new Class<?>[]{PluginRegistry.class}, (proxy, method, args) -> Collections.emptyList());
+        setField(MemoryOptimizationManager.class, manager, "pluginRgty", noLicense);
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        setField(MemoryLifecycleHooks.class, hooks, "repository", repository);
+        setField(MemoryLifecycleHooks.class, hooks, "manager", manager);
+        setField(MemoryOptimizationManager.class, manager, "lifecycleHooks", hooks);
+
+        // Valid current observations update the nested Go diagnostic only. A
+        // subsequent new boot is accepted; task/control/plan receipts survive.
+        // Establish each task state immediately before the observation that
+        // exercises it, so DTO setup cannot mutate the repository ahead of
+        // the manager callback.
+        String[] taskStatuses = {"Blocked", "Failed", "Unknown"};
+        for (int i = 0; i < taskStatuses.length; i++) {
+            final String taskStatus = taskStatuses[i];
+            repository.transaction(em -> {
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setStatus(taskStatus); state.setReason("NATIVE_POOL_UNQUALIFIED");
+                state.setPolicyPlanStatus(taskStatus);
+                state.setActiveTaskUuid("Blocked".equals(taskStatus) ? control : null);
+                MemoryTaskVO task = em.find(MemoryTaskVO.class, control); task.setStatus(taskStatus);
+                return null;
+            });
+            manager.observeHostAfterConnect("host1");
+            MemoryStateVO row = repository.statePage(Collections.singletonList("host1"), 0, 1, null).items.get(0);
+            MemoryStateInventory projected = MemoryMetricsPresentation.inventory(row, null, System.currentTimeMillis());
+            assertEquals(new String[]{"Blocked", "Failed", "Unknown"}[i], projected.getStatus());
+            assertEquals("NATIVE_POOL_UNQUALIFIED", projected.getReason());
+            assertEquals(control, projected.getControlOperationUuid());
+            assertEquals(9L, projected.getDesiredRevision()); assertEquals(Long.valueOf(8L), projected.getAppliedRevision());
+            assertEquals(planHash, projected.getPolicyPlanHash());
+            assertEquals(new String[]{"Blocked", "Failed", "Unknown"}[i], projected.getPolicyPlanStatus());
+            Map<?, ?> state = org.zstack.utils.gson.JSONObjectUtil.toObject(projected.getState(), Map.class);
+            Map<?, ?> hostZram = (Map<?, ?>) state.get("host_zram");
+            assertEquals("NO_QUALIFIED_MANAGED_POOL: EXCLUSIVE_ZRAM_ROUTE_REQUIRED", hostZram.get("reason"));
+            assertEquals("2026-10-18T12:44:57.566+08:00", hostZram.get("observed_at"));
+            MemoryTaskVO task = repository.findTask(control);
+            assertEquals(new String[]{"Blocked", "Failed", "Unknown"}[i], task.getStatus());
+            assertEquals("NATIVE_POOL_UNQUALIFIED", task.getReason());
+        }
+
+        MemoryStateVO beforeRejected = repository.states(Collections.singletonList("host1"), 0, 1).get(0);
+        Long acceptedSampleTime = beforeRejected.getLastSampleTime();
+        String acceptedState = beforeRejected.getState();
+        for (int i = 0; i < 3; i++) { manager.observeHostAfterConnect("host1"); }
+        MemoryStateVO afterRejected = repository.states(Collections.singletonList("host1"), 0, 1).get(0);
+        assertEquals("foreign/stale/conflicting-boot samples must not replace the accepted observation",
+                acceptedSampleTime, afterRejected.getLastSampleTime());
+        assertEquals(acceptedState, afterRejected.getState());
+        assertEquals("Unknown", afterRejected.getStatus());
+        assertEquals(control, afterRejected.getControlOperationUuid());
+        assertEquals(planHash, afterRejected.getPolicyPlanHash());
     }
 
     @Test public void reconcileAckWithoutSampleTimeStillUpdatesAppliedRevision() {

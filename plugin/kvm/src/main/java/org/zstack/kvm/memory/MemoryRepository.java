@@ -4103,7 +4103,13 @@ public class MemoryRepository {
                 bumpQueryVersion(em, "state");
             }
             updateState(host, response, true);
-            if (host.getActiveTaskUuid() == null) { host.setStatus(response.status == null ? "Unknown" : response.status); }
+            // Before any control operation, the first read-only observation
+            // establishes the initial display status. Once a control UUID
+            // exists, later samples update only observation data; they are
+            // not task receipts and must not replace its terminal outcome.
+            if (host.getActiveTaskUuid() == null && host.getControlOperationUuid() == null) {
+                host.setStatus(response.status == null ? "Unknown" : response.status);
+            }
             return null;
         });
     }
@@ -4113,7 +4119,7 @@ public class MemoryRepository {
      * full monitoring timestamp or any control/task/ownership field.
      */
     public void observePartialKsm(String hostUuid, MemoryAgentResponse response) {
-        if (!MemoryObservationRules.isKsmNativePartial(response, System.currentTimeMillis())) { return; }
+        if (!MemoryObservationRules.isKsmNativePartial(response, hostUuid, System.currentTimeMillis())) { return; }
         transaction(em -> {
             lock(em);
             if (em.createQuery("select h.uuid from HostVO h where h.uuid = :uuid and h.hypervisorType = 'KVM'", String.class)

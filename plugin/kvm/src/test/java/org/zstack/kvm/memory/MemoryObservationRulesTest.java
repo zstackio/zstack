@@ -32,7 +32,7 @@ public class MemoryObservationRulesTest {
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
         response.reasonCode = "LOCAL_SERVICE_UNAVAILABLE";
         assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        org.junit.Assert.assertFalse(MemoryObservationRules.isKsmNativePartial(response, now));
+        org.junit.Assert.assertFalse(MemoryObservationRules.isKsmNativePartial(response, "host", now));
         for (Boolean enabled : new Boolean[]{false, null}) {
             policy.ksm.enabled = enabled;
             assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
@@ -57,6 +57,19 @@ public class MemoryObservationRulesTest {
         response.state.put("maintenance_blocks_activation", false);
         response.state.put("lifecycle", Collections.singletonMap("paused", true));
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+    }
+
+    @Test public void serviceEventsRejectConflictingEnvelopeAndStateBootIds() {
+        long now = System.currentTimeMillis();
+        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
+        MemoryAgentResponse response = serviceObservation(now);
+        response.hostUuid = "host";
+        response.state.put("actual", Collections.singletonMap("ksm",
+                Collections.singletonMap("serviceState", "failed")));
+        response.bootId = "other-boot";
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.bootId = "boot";
+        assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
     }
 
     @Test public void writebackFailureDoesNotTreatUnknownFenceOrHistoricalBaselineAsIoFailure() {
