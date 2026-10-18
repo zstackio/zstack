@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network.l2network
 
+import org.zstack.header.network.NetworkOperationContext
 import org.zstack.core.componentloader.PluginRegistry
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.header.core.Completion
@@ -152,7 +153,7 @@ class L2NetworkCascadeCase extends SubCase {
         }
 
         @Override
-        void beforeUpdateL2Network(L2NetworkInventory l2Inv, Map<String, Object> headers,
+        void beforeUpdateL2Network(L2NetworkInventory l2Inv, NetworkOperationContext operation,
                                    Completion completion) {
             if (l2Inv.uuid != l2Uuid) {
                 completion.success()

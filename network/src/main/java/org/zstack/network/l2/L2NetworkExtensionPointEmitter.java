@@ -1,5 +1,6 @@
 package org.zstack.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -116,11 +117,11 @@ public class L2NetworkExtensionPointEmitter implements Component {
         });
     }
 
-    public void beforeUpdateL2Network(final L2NetworkInventory inv, final Map<String, Object> headers, Completion completion) {
-        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
+    public void beforeUpdateL2Network(final L2NetworkInventory inv, final NetworkOperationContext operation, Completion completion) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
         new While<>(updateExtensions).each((extension, extensionCompletion) -> {
             try {
-                extension.beforeUpdateL2Network(inv, safeHeaders, new Completion(extensionCompletion) {
+                extension.beforeUpdateL2Network(inv, safeOperation, new Completion(extensionCompletion) {
                     @Override
                     public void success() {
                         extensionCompletion.done();
@@ -155,16 +156,16 @@ public class L2NetworkExtensionPointEmitter implements Component {
         });
     }
 
-    public void beforeCommitUpdateInDb(final L2NetworkInventory inv, final Map<String, Object> headers) {
-        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
+    public void beforeCommitUpdateInDb(final L2NetworkInventory inv, final NetworkOperationContext operation) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
         for (L2NetworkUpdateExtensionPoint ext : updateExtensions) {
-            ext.beforeCommitUpdateL2NetworkInDb(inv, safeHeaders);
+            ext.beforeCommitUpdateL2NetworkInDb(inv, safeOperation);
         }
     }
 
-    public void afterUpdateFinally(final L2NetworkInventory inv, final Map<String, Object> headers) {
-        final Map<String, Object> safeHeaders = headers == null ? Collections.emptyMap() : headers;
-        CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterUpdateL2NetworkFinally(inv, safeHeaders));
+    public void afterUpdateFinally(final L2NetworkInventory inv, final NetworkOperationContext operation) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
+        CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterUpdateL2NetworkFinally(inv, safeOperation));
     }
 
     public void afterUpdate(final L2NetworkInventory inv) {

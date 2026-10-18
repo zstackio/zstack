@@ -113,9 +113,7 @@ public class L2NetworkManagerImpl extends AbstractService implements L2NetworkMa
         apiMsg.setResourceUuid(msg.getResourceUuid());
         apiMsg.setSession(msg.getSession());
         apiMsg.setSystemTags(msg.getSystemTags());
-        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
-            apiMsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
-        }
+        apiMsg.setNetworkOperation(msg.getNetworkOperation().copyForRequest());
         handle(apiMsg, msg.getAccountUuid(), new ReturnValueCompletion<L2NetworkInventory>(msg) {
             @Override
             public void success(L2NetworkInventory returnValue) {

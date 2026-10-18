@@ -1,10 +1,26 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.message.NeedReplyMessage;
 
 /**
  */
-public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2NetworkMessage {
+public class AttachL2NetworkToClusterMsg extends NeedReplyMessage implements L2NetworkMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String l2NetworkUuid;
     private String clusterUuid;
     private String l2ProviderType;

@@ -1,5 +1,6 @@
 package org.zstack.test.integration.network
 
+import org.zstack.header.network.NetworkOperationContext
 import org.springframework.http.HttpEntity
 import org.zstack.compute.vm.VmFactoryManagerImpl
 import org.zstack.compute.vm.VmNicQosConfigBackend
@@ -87,6 +88,7 @@ class NetworkMutationFailureCase extends SubCase {
                 physicalInterface = 'eth9'
                 vlan = 99
             }
+            assert cleanup.postCreated == 2
             assert cleanup.created == 2
             for (def l2 : [plain, vlanL2]) {
                 attachL2NetworkToCluster { l2NetworkUuid = l2.uuid; clusterUuid = cluster.uuid }
@@ -113,6 +115,22 @@ class NetworkMutationFailureCase extends SubCase {
                 }
             }
             assert cleanup.created == 4
+            assert cleanup.postCreated == 2
+            cleanup.rejectCommit = false
+            cleanup.rejectPostCreate = true
+            expectMutationFailure('post-create rejected') {
+                createL2NoVlanNetwork {
+                    name = 'post-rejected-plain'; zoneUuid = zone.uuid; physicalInterface = 'eth9'
+                }
+            }
+            expectMutationFailure('post-create rejected') {
+                createL2VlanNetwork {
+                    name = 'post-rejected-vlan'; zoneUuid = zone.uuid; physicalInterface = 'eth9'; vlan = 97
+                }
+            }
+            assert cleanup.postCreated == 4
+            assert cleanup.created == 6
+            assert !Q.New(L2NetworkVO).in(L2NetworkVO_.name, ['post-rejected-plain', 'post-rejected-vlan']).isExists()
             assert !Q.New(L2NetworkVO).in(L2NetworkVO_.name, ['rejected-cleanup-plain', 'rejected-cleanup-vlan']).isExists()
         } finally {
             createExtensions.remove(cleanup)
@@ -510,23 +528,34 @@ class NetworkMutationFailureCase extends SubCase {
 
     static class CleanupFailure implements L2NetworkCreateExtensionPoint, L2NetworkPrepareClusterExtensionPoint {
         int created
+        int postCreated
+        boolean rejectPostCreate
         int attached
         boolean rejectCommit
         boolean rejectAttach
         void beforeCreateL2Network(APICreateL2NetworkMsg msg) { }
         void afterCreateL2Network(L2NetworkInventory inv) { }
-        void beforeCommitL2NetworkInDb(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Map<String, Object> headers) {
+        void postCreateL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Completion completion) {
+            assert Q.New(L2NetworkVO).eq(L2NetworkVO_.uuid, inv.uuid).isExists()
+            postCreated++
+            if (rejectPostCreate) {
+                completion.fail(new ErrorCode(code: 'TEST.POST_CREATE_REJECTED', description: 'post-create rejected', details: 'post-create rejected'))
+            } else {
+                completion.success()
+            }
+        }
+        void beforeCommitL2NetworkInDb(L2NetworkInventory inv, APICreateL2NetworkMsg msg, NetworkOperationContext operation) {
             if (rejectCommit) { throw new IllegalStateException('create commit rejected') }
         }
-        void afterL2NetworkFinally(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Map<String, Object> headers) {
+        void afterL2NetworkFinally(L2NetworkInventory inv, APICreateL2NetworkMsg msg, NetworkOperationContext operation) {
             created++
             throw new IllegalStateException('create cleanup failed')
         }
         void prepareAttach(L2NetworkInventory inv, String clusterUuid, Completion completion) { completion.success() }
-        void beforeCommitAttachInDb(L2NetworkInventory inv, String clusterUuid, Map<String, Object> headers) {
+        void beforeCommitAttachInDb(L2NetworkInventory inv, String clusterUuid, NetworkOperationContext operation) {
             if (rejectAttach) { throw new IllegalStateException('attach commit rejected') }
         }
-        void afterAttachFinally(L2NetworkInventory inv, String clusterUuid, Map<String, Object> headers) {
+        void afterAttachFinally(L2NetworkInventory inv, String clusterUuid, NetworkOperationContext operation) {
             attached++
             throw new IllegalStateException('attach cleanup failed')
         }
@@ -537,7 +566,7 @@ class NetworkMutationFailureCase extends SubCase {
         boolean reject = true
         void beforeChangeL2NetworkVlanId(L2NetworkInventory inv) { }
         void afterChangeL2NetworkVlanId(L2NetworkInventory inv) { }
-        void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory inv, Map<String, Object> headers) {
+        void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory inv, NetworkOperationContext operation) {
             if (inv.uuid == l2Uuid && reject) { throw new IllegalStateException('VLAN commit rejected') }
         }
     }
@@ -565,38 +594,38 @@ class NetworkMutationFailureCase extends SubCase {
             if (rejectL3Create) { completion.fail(new ErrorCode('TEST.L3.CREATE', 'L3 create rejected')) }
             else { completion.success() }
         }
-        void afterL3NetworkFinally(L3NetworkInventory inv, Map<String, Object> headers) {
+        void afterL3NetworkFinally(L3NetworkInventory inv, NetworkOperationContext operation) {
             l3Finalized++
             if (rejectL3Cleanup) { throw new IllegalStateException('L3 cleanup failed') }
         }
         void deleteL3Network(L3NetworkInventory inv, Completion completion) { completion.success() }
         void createIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
         void deleteIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
-        void beforeDeleteIpRange(IpRangeInventory inv, boolean last, Map<String, Object> headers, Completion completion) {
+        void beforeDeleteIpRange(IpRangeInventory inv, boolean last, NetworkOperationContext operation, Completion completion) {
             if (rejectDelete) { completion.fail(new ErrorCode('TEST.RANGE.DELETE', 'range delete rejected')) }
             else { completion.success() }
         }
-        void afterIpRangeFinally(IpRangeInventory inv, Map<String, Object> headers) {
+        void afterIpRangeFinally(IpRangeInventory inv, NetworkOperationContext operation) {
             rangeFinalized++
             if (rejectRangeCleanup) { throw new IllegalStateException('range cleanup failed') }
         }
-        void afterCommitIpRangeInDb(IpRangeInventory inv, Map<String, Object> headers, Completion completion) {
+        void afterCommitIpRangeInDb(IpRangeInventory inv, NetworkOperationContext operation, Completion completion) {
             rangeCallbacks++
             if (rejectRange) { completion.fail(new ErrorCode('TEST.RANGE.COMMIT', 'range confirmation failed')) }
             else { completion.success() }
         }
-        void beforeCommitDnsInDb(L3NetworkInventory inv, Map<String, Object> headers) {
+        void beforeCommitDnsInDb(L3NetworkInventory inv, NetworkOperationContext operation) {
             if (rejectDnsCommit) { throw new IllegalStateException('DNS commit failed') }
         }
-        void afterChangeDnsFinally(L3NetworkInventory inv, Map<String, Object> headers) {
+        void afterChangeDnsFinally(L3NetworkInventory inv, NetworkOperationContext operation) {
             dnsFinalized++
             throw new IllegalStateException('DNS cleanup failed')
         }
-        void beforeCommitNetworkServiceInDb(L3NetworkInventory inv, Map<String, Object> headers) {
+        void beforeCommitNetworkServiceInDb(L3NetworkInventory inv, NetworkOperationContext operation) {
             if (serviceCommitError != null) { throw new org.zstack.header.errorcode.OperationFailureException(serviceCommitError) }
             if (rejectService) { throw new IllegalStateException('network service commit failed') }
         }
-        void afterChangeNetworkServiceFinally(L3NetworkInventory inv, Map<String, Object> headers) {
+        void afterChangeNetworkServiceFinally(L3NetworkInventory inv, NetworkOperationContext operation) {
             serviceFinalized++
             throw new IllegalStateException('network service cleanup failed')
         }

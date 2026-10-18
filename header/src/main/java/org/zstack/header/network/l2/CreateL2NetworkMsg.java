@@ -1,12 +1,28 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.gson.JSONObjectUtil;
 
 /** Internal, typed local L2 create request used by projection/recovery flows. */
-public class CreateL2NetworkMsg extends NeedReplyMessage {
+public class CreateL2NetworkMsg extends NeedReplyMessage implements NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String name;
     private String description;
     private String zoneUuid;

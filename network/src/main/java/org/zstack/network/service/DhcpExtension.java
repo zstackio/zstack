@@ -1,5 +1,6 @@
 package org.zstack.network.service;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
@@ -432,19 +433,19 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion) {
-        enableNetworkService(l3VO, providerType, systemTags, Collections.emptyMap(), completion);
+        enableNetworkService(l3VO, providerType, systemTags, new NetworkOperationContext(), completion);
     }
 
     @Override
-    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Map<String, Object> headers, Completion completion) {
+    public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, NetworkOperationContext operation, Completion completion) {
         String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
         if (sdnControllerUuid != null) {
             SdnControllerEnableDHCPMsg msg = new SdnControllerEnableDHCPMsg();
             msg.setL3NetworkUuid(l3VO.getUuid());
             msg.setSdnControllerUuid(sdnControllerUuid);
             msg.setSystemTags(systemTags);
-            if (headers != null && !headers.isEmpty()) {
-                msg.getHeaders().putAll(headers);
+            if (operation != null) {
+                msg.setNetworkOperation(operation.copyForRequest());
             }
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
             bus.send(msg, new CloudBusCallBack(completion) {
@@ -471,18 +472,18 @@ public class DhcpExtension extends AbstractNetworkServiceExtension implements Co
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion) {
-        disableNetworkService(l3VO, providerType, Collections.emptyMap(), completion);
+        disableNetworkService(l3VO, providerType, new NetworkOperationContext(), completion);
     }
 
     @Override
-    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Map<String, Object> headers, Completion completion) {
+    public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkOperationContext operation, Completion completion) {
         String sdnControllerUuid = L3NetworkHelper.getSdnControllerUuidFromL3Uuid(l3VO.getUuid());
         if (sdnControllerUuid != null) {
             SdnControllerDisableDHCPMsg msg = new SdnControllerDisableDHCPMsg();
             msg.setL3NetworkUuid(l3VO.getUuid());
             msg.setSdnControllerUuid(sdnControllerUuid);
-            if (headers != null && !headers.isEmpty()) {
-                msg.getHeaders().putAll(headers);
+            if (operation != null) {
+                msg.setNetworkOperation(operation.copyForRequest());
             }
             bus.makeTargetServiceIdByResourceUuid(msg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
             bus.send(msg, new CloudBusCallBack(completion) {

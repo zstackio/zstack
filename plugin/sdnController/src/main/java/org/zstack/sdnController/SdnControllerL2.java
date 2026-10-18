@@ -1,5 +1,6 @@
 package org.zstack.sdnController;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.network.l2.APICreateL2NetworkMsg;
@@ -26,31 +27,31 @@ public interface SdnControllerL2 {
     void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg, Completion completion);
 
     default void createL2Network(L2NetworkInventory inv, APICreateL2NetworkMsg msg,
-                                 Map<String, Object> headers, Completion completion) {
+                                 NetworkOperationContext operation, Completion completion) {
         createL2Network(inv, msg, completion);
     }
 
-    default void beforeCommitL2NetworkInDb(L2NetworkInventory l2, Map<String, Object> headers) {
+    default void beforeCommitL2NetworkInDb(L2NetworkInventory l2, NetworkOperationContext operation) {
     }
 
     default void beforeCommitL2NetworkInDb(L2NetworkInventory inv, APICreateL2NetworkMsg msg,
-                                           Map<String, Object> headers) {
-        beforeCommitL2NetworkInDb(inv, headers);
+                                           NetworkOperationContext operation) {
+        beforeCommitL2NetworkInDb(inv, operation);
     }
 
-    default void afterL2NetworkFinally(L2NetworkInventory l2, Map<String, Object> headers) {
+    default void afterL2NetworkFinally(L2NetworkInventory l2, NetworkOperationContext operation) {
     }
 
     default void afterL2NetworkFinally(L2NetworkInventory inv, APICreateL2NetworkMsg msg,
-                                       Map<String, Object> headers) {
-        afterL2NetworkFinally(inv, headers);
+                                       NetworkOperationContext operation) {
+        afterL2NetworkFinally(inv, operation);
     }
 
-    default void updateL2Network(L2NetworkInventory l2, Map<String, Object> headers, Completion completion) {
+    default void updateL2Network(L2NetworkInventory l2, NetworkOperationContext operation, Completion completion) {
         completion.success();
     }
 
-    default void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory l2, Map<String, Object> headers) {
+    default void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory l2, NetworkOperationContext operation) {
     }
 
     void postCreateVxlanNetwork(L2VxlanNetworkInventory vxlan, List<String> systemTags, Completion completion);
@@ -79,22 +80,22 @@ public interface SdnControllerL2 {
     }
 
     default void prepareL2NetworkForCluster(L2NetworkInventory network, String clusterUuid,
-                                           Map<String, Object> headers, Completion completion) {
+                                           NetworkOperationContext operation, Completion completion) {
         prepareL2NetworkForCluster(network, clusterUuid, completion);
     }
 
     default void beforeCommitAttachClusterInDb(L2NetworkInventory l2, String clusterUuid,
-                                              Map<String, Object> headers) {
+                                              NetworkOperationContext operation) {
     }
 
     default void beforeCommitAttachL2NetworkToClusterInDb(L2NetworkInventory network, String clusterUuid,
-                                                         Map<String, Object> headers) {
-        beforeCommitAttachClusterInDb(network, clusterUuid, headers);
+                                                         NetworkOperationContext operation) {
+        beforeCommitAttachClusterInDb(network, clusterUuid, operation);
     }
 
     default void afterAttachL2NetworkToClusterFinally(L2NetworkInventory network, String clusterUuid,
-                                                      Map<String, Object> headers) {
-        afterL2NetworkFinally(network, headers);
+                                                      NetworkOperationContext operation) {
+        afterL2NetworkFinally(network, operation);
     }
 
     List<SdnVniRange> getVniRange(SdnControllerInventory controller);

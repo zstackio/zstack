@@ -150,7 +150,7 @@ public class L2NoVlanNetwork implements L2Network {
                 L2NetworkInventory target = getSelfInventory();
                 target.setName(msg.getName());
                 target.setDescription(msg.getDescription());
-                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
+                extpEmitter.beforeUpdateL2Network(target, msg.getNetworkOperation(), new Completion(chain) {
                     @Override
                     public void success() {
                         String originalName = self.getName();
@@ -159,7 +159,7 @@ public class L2NoVlanNetwork implements L2Network {
                             self = new SQLBatchWithReturn<L2NetworkVO>() {
                                 @Override
                                 protected L2NetworkVO scripts() {
-                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
+                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getNetworkOperation());
                                     self.setName(msg.getName());
                                     self.setDescription(msg.getDescription());
                                     L2NetworkVO merged = merge(self);
@@ -180,7 +180,7 @@ public class L2NoVlanNetwork implements L2Network {
                             reply.setError(errf.throwableToInternalError(e));
                             bus.reply(msg, reply);
                         } finally {
-                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                             chain.next();
                         }
                     }
@@ -191,7 +191,7 @@ public class L2NoVlanNetwork implements L2Network {
                             reply.setError(errorCode);
                             bus.reply(msg, reply);
                         } finally {
-                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                             chain.next();
                         }
                     }
@@ -542,7 +542,7 @@ public class L2NoVlanNetwork implements L2Network {
                     chain.next();
                     return;
                 }
-                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
+                extpEmitter.beforeUpdateL2Network(target, msg.getNetworkOperation(), new Completion(chain) {
                     @Override
                     public void success() {
                         changeL2NetworkVlanId(msg, new Completion(chain) {
@@ -560,7 +560,7 @@ public class L2NoVlanNetwork implements L2Network {
                                     event.setError(errf.throwableToInternalError(e));
                                     bus.publish(event);
                                 } finally {
-                                    extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                                    extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                                     chain.next();
                                 }
                             }
@@ -571,7 +571,7 @@ public class L2NoVlanNetwork implements L2Network {
                                     event.setError(errorCode);
                                     bus.publish(event);
                                 } finally {
-                                    extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                                    extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                                     chain.next();
                                 }
                             }
@@ -584,7 +584,7 @@ public class L2NoVlanNetwork implements L2Network {
                             event.setError(errorCode);
                             bus.publish(event);
                         } finally {
-                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                             chain.next();
                         }
                     }
@@ -625,7 +625,7 @@ public class L2NoVlanNetwork implements L2Network {
                 if (msg.getDescription() != null) {
                     target.setDescription(msg.getDescription());
                 }
-                extpEmitter.beforeUpdateL2Network(target, msg.getHeaders(), new Completion(chain) {
+                extpEmitter.beforeUpdateL2Network(target, msg.getNetworkOperation(), new Completion(chain) {
                     @Override
                     public void success() {
                         String originalName = self.getName();
@@ -634,7 +634,7 @@ public class L2NoVlanNetwork implements L2Network {
                             self = new SQLBatchWithReturn<L2NetworkVO>() {
                                 @Override
                                 protected L2NetworkVO scripts() {
-                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getHeaders());
+                                    extpEmitter.beforeCommitUpdateInDb(target, msg.getNetworkOperation());
                                     if (msg.getName() != null) {
                                         self.setName(msg.getName());
                                     }
@@ -660,7 +660,7 @@ public class L2NoVlanNetwork implements L2Network {
                             evt.setError(errf.throwableToInternalError(e));
                             bus.publish(evt);
                         } finally {
-                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                             chain.next();
                         }
                     }
@@ -671,7 +671,7 @@ public class L2NoVlanNetwork implements L2Network {
                             evt.setError(errorCode);
                             bus.publish(evt);
                         } finally {
-                            extpEmitter.afterUpdateFinally(target, msg.getHeaders());
+                            extpEmitter.afterUpdateFinally(target, msg.getNetworkOperation());
                             chain.next();
                         }
                     }
@@ -871,7 +871,7 @@ public class L2NoVlanNetwork implements L2Network {
                         new SQLBatch() {
                             @Override
                             protected void scripts() {
-                                extpEmitter.beforeCommitUpdateInDb(newInv, msg.getHeaders());
+                                extpEmitter.beforeCommitUpdateInDb(newInv, msg.getNetworkOperation());
                                 changeL2NetworkVlanIdInDb(msg);
                             }
                         }.execute();
@@ -1019,9 +1019,7 @@ public class L2NoVlanNetwork implements L2Network {
         amsg.setL2NetworkUuid(msg.getL2NetworkUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
         amsg.setL2ProviderType(msg.getL2ProviderType());
-        if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
-            amsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
-        }
+        amsg.setNetworkOperation(msg.getNetworkOperation().copyForRequest());
 
         bus.makeTargetServiceIdByResourceUuid(amsg, L2NetworkConstant.SERVICE_ID, amsg.getL2NetworkUuid());
         bus.send(amsg, new CloudBusCallBack(amsg) {
@@ -1268,7 +1266,7 @@ public class L2NoVlanNetwork implements L2Network {
                         @Override
                         protected void scripts() {
                             for (L2NetworkPrepareClusterExtensionPoint ext : pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class)) {
-                                ext.beforeCommitAttachInDb(inv, msg.getClusterUuid(), msg.getHeaders());
+                                ext.beforeCommitAttachInDb(inv, msg.getClusterUuid(), msg.getNetworkOperation());
                             }
                             L2NetworkClusterRefVO rvo = new L2NetworkClusterRefVO();
                             rvo.setClusterUuid(msg.getClusterUuid());
@@ -1285,7 +1283,7 @@ public class L2NoVlanNetwork implements L2Network {
                     failure = errf.throwableToInternalError(e);
                 } finally {
                     CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class),
-                            ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders()));
+                            ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getNetworkOperation()));
                 }
                 if (failure == null) {
                     completion.success();
@@ -1297,7 +1295,7 @@ public class L2NoVlanNetwork implements L2Network {
             @Override
             public void fail(ErrorCode errorCode) {
                 CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class),
-                        ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getHeaders()));
+                        ext -> ext.afterAttachFinally(inv, msg.getClusterUuid(), msg.getNetworkOperation()));
                 completion.fail(errorCode);
             }
         });
@@ -1310,7 +1308,7 @@ public class L2NoVlanNetwork implements L2Network {
             public void run(FlowTrigger trigger, Map data) {
                 new While<>(pluginRgty.getExtensionList(L2NetworkPrepareClusterExtensionPoint.class))
                         .each((extension, next) -> extension.prepareAttach(getSelfInventory(), msg.getClusterUuid(),
-                                msg.getHeaders(),
+                                msg.getNetworkOperation(),
                                 new Completion(next) {
                                     @Override
                                     public void success() { next.done(); }

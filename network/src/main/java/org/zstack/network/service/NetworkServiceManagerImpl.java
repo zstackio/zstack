@@ -1,5 +1,6 @@
 package org.zstack.network.service;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -548,16 +549,16 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
                                      NetworkServiceType nsType, List<String> systemTags, Completion completion) {
-        enableNetworkService(l3VO, providerType, nsType, systemTags, Collections.emptyMap(), completion);
+        enableNetworkService(l3VO, providerType, nsType, systemTags, new NetworkOperationContext(), completion);
     }
 
     @Override
     public void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
                                      NetworkServiceType nsType, List<String> systemTags,
-                                     Map<String, Object> headers, Completion completion) {
+                                     NetworkOperationContext operation, Completion completion) {
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceType() == nsType) {
-                ns.enableNetworkService(l3VO, providerType, systemTags, headers == null ? Collections.emptyMap() : headers, completion);
+                ns.enableNetworkService(l3VO, providerType, systemTags, operation == null ? new NetworkOperationContext() : operation, completion);
                 return;
             }
         }
@@ -567,15 +568,15 @@ public class NetworkServiceManagerImpl extends AbstractService implements Networ
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion) {
-        disableNetworkService(l3VO, providerType, nsType, Collections.emptyMap(), completion);
+        disableNetworkService(l3VO, providerType, nsType, new NetworkOperationContext(), completion);
     }
 
     @Override
     public void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
-                                      NetworkServiceType nsType, Map<String, Object> headers, Completion completion) {
+                                      NetworkServiceType nsType, NetworkOperationContext operation, Completion completion) {
         for (final NetworkServiceExtensionPoint ns : nsExts) {
             if (ns.getNetworkServiceType() == nsType) {
-                ns.disableNetworkService(l3VO, providerType, headers == null ? Collections.emptyMap() : headers, completion);
+                ns.disableNetworkService(l3VO, providerType, operation == null ? new NetworkOperationContext() : operation, completion);
                 return;
             }
         }

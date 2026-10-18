@@ -1,5 +1,6 @@
 package org.zstack.sdnController;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -293,12 +294,12 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg, Completion completion) {
-        postCreateL2Network(l2Network, msg, msg == null ? Collections.emptyMap() : msg.getHeaders(), completion);
+        postCreateL2Network(l2Network, msg, msg == null ? new NetworkOperationContext() : msg.getNetworkOperation(), completion);
     }
 
     @Override
     public void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                    Map<String, Object> headers, Completion completion) {
+                                    NetworkOperationContext operation, Completion completion) {
         VSwitchType vSwitchType = VSwitchType.valueOf(l2Network.getvSwitchType());
         if (vSwitchType.getSdnControllerType() == null) {
             completion.success();
@@ -322,7 +323,7 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
             if (sdnControllerUuid == null) {
                 SdnControllerL2 fallbackController = findSdnControllerL2(l2Network);
                 if (fallbackController != null) {
-                    fallbackController.createL2Network(l2Network, msg, headers == null ? Collections.emptyMap() : headers, completion);
+                    fallbackController.createL2Network(l2Network, msg, operation == null ? new NetworkOperationContext() : operation, completion);
                     return;
                 }
                 completion.fail(operr(ORG_ZSTACK_SDNCONTROLLER_10001, "cannot create sdn l2 network because sdn controller uuid is missing from API message"));
@@ -338,24 +339,24 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
         SdnControllerFactory factory = getSdnControllerFactory(sdnControllerVO.getVendorType());
         SdnControllerL2 controller = factory.getSdnControllerL2(sdnControllerVO);
-        controller.createL2Network(l2Network, msg, headers == null ? Collections.emptyMap() : headers, completion);
+        controller.createL2Network(l2Network, msg, operation == null ? new NetworkOperationContext() : operation, completion);
     }
 
     @Override
     public void beforeCommitL2NetworkInDb(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                          Map<String, Object> headers) {
+                                          NetworkOperationContext operation) {
         SdnControllerL2 controller = findSdnControllerL2ForCreate(l2Network, msg);
         if (controller != null) {
-            controller.beforeCommitL2NetworkInDb(l2Network, msg, headers == null ? Collections.emptyMap() : headers);
+            controller.beforeCommitL2NetworkInDb(l2Network, msg, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 
     @Override
     public void afterL2NetworkFinally(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                      Map<String, Object> headers) {
+                                      NetworkOperationContext operation) {
         SdnControllerL2 controller = findSdnControllerL2ForCreate(l2Network, msg);
         if (controller != null) {
-            controller.afterL2NetworkFinally(l2Network, msg, headers == null ? Collections.emptyMap() : headers);
+            controller.afterL2NetworkFinally(l2Network, msg, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 
@@ -373,28 +374,28 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
     }
 
     @Override
-    public void beforeUpdateL2Network(L2NetworkInventory l2Inv, Map<String, Object> headers, Completion completion) {
+    public void beforeUpdateL2Network(L2NetworkInventory l2Inv, NetworkOperationContext operation, Completion completion) {
         SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller == null) {
             completion.success();
             return;
         }
-        controller.updateL2Network(l2Inv, headers == null ? Collections.emptyMap() : headers, completion);
+        controller.updateL2Network(l2Inv, operation == null ? new NetworkOperationContext() : operation, completion);
     }
 
     @Override
-    public void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory l2Inv, Map<String, Object> headers) {
+    public void beforeCommitUpdateL2NetworkInDb(L2NetworkInventory l2Inv, NetworkOperationContext operation) {
         SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller != null) {
-            controller.beforeCommitUpdateL2NetworkInDb(l2Inv, headers == null ? Collections.emptyMap() : headers);
+            controller.beforeCommitUpdateL2NetworkInDb(l2Inv, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 
     @Override
-    public void afterUpdateL2NetworkFinally(L2NetworkInventory l2Inv, Map<String, Object> headers) {
+    public void afterUpdateL2NetworkFinally(L2NetworkInventory l2Inv, NetworkOperationContext operation) {
         SdnControllerL2 controller = findSdnControllerL2(l2Inv);
         if (controller != null) {
-            controller.afterL2NetworkFinally(l2Inv, headers == null ? Collections.emptyMap() : headers);
+            controller.afterL2NetworkFinally(l2Inv, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 
@@ -498,11 +499,11 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
 
     @Override
     public void prepareAttach(L2NetworkInventory network, String clusterUuid, Completion completion) {
-        prepareAttach(network, clusterUuid, Collections.emptyMap(), completion);
+        prepareAttach(network, clusterUuid, new NetworkOperationContext(), completion);
     }
 
     @Override
-    public void prepareAttach(L2NetworkInventory network, String clusterUuid, Map<String, Object> headers, Completion completion) {
+    public void prepareAttach(L2NetworkInventory network, String clusterUuid, NetworkOperationContext operation, Completion completion) {
         if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
             completion.success();
             return;
@@ -514,28 +515,28 @@ public class SdnControllerManagerImpl extends AbstractService implements SdnCont
                     network.getUuid(), network.getvSwitchType(), clusterUuid));
             return;
         }
-        controller.prepareL2NetworkForCluster(network, clusterUuid, headers == null ? Collections.emptyMap() : headers, completion);
+        controller.prepareL2NetworkForCluster(network, clusterUuid, operation == null ? new NetworkOperationContext() : operation, completion);
     }
 
     @Override
-    public void beforeCommitAttachInDb(L2NetworkInventory network, String clusterUuid, Map<String, Object> headers) {
+    public void beforeCommitAttachInDb(L2NetworkInventory network, String clusterUuid, NetworkOperationContext operation) {
         if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
             return;
         }
         SdnControllerL2 controller = findSdnControllerL2(network);
         if (controller != null) {
-            controller.beforeCommitAttachL2NetworkToClusterInDb(network, clusterUuid, headers == null ? Collections.emptyMap() : headers);
+            controller.beforeCommitAttachL2NetworkToClusterInDb(network, clusterUuid, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 
     @Override
-    public void afterAttachFinally(L2NetworkInventory network, String clusterUuid, Map<String, Object> headers) {
+    public void afterAttachFinally(L2NetworkInventory network, String clusterUuid, NetworkOperationContext operation) {
         if (VSwitchType.valueOf(network.getvSwitchType()).getSdnControllerType() == null) {
             return;
         }
         SdnControllerL2 controller = findSdnControllerL2(network);
         if (controller != null) {
-            controller.afterAttachL2NetworkToClusterFinally(network, clusterUuid, headers == null ? Collections.emptyMap() : headers);
+            controller.afterAttachL2NetworkToClusterFinally(network, clusterUuid, operation == null ? new NetworkOperationContext() : operation);
         }
     }
 

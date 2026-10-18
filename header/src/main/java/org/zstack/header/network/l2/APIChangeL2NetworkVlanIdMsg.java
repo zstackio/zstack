@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
@@ -18,7 +20,21 @@ import org.zstack.header.rest.RestRequest;
         isAction = true
 )
 @Action(category = L2NetworkConstant.ACTION_CATEGORY)
-public class APIChangeL2NetworkVlanIdMsg extends APIMessage implements L2NetworkMessage, APIAuditor {
+public class APIChangeL2NetworkVlanIdMsg extends APIMessage implements L2NetworkMessage, APIAuditor, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     @APIParam(resourceType = L2NetworkVO.class, checkAccount = true, operationTarget = true)
     private String uuid;
     @APIParam(required = false)

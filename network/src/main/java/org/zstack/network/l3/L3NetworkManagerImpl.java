@@ -612,7 +612,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                     return;
                 }
 
-                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(), msg.getHeaders(),
+                controllerL3.createL3Network(L3NetworkInventory.valueOf(vo), msg.getSystemTags(), msg.getNetworkOperation(),
                         new Completion(trigger) {
                     @Override
                     public void success() {
@@ -641,7 +641,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
                         }
                         vo.setAccountUuid(accountUuid);
                         if (controllerL3 != null) {
-                            controllerL3.beforeCommitL3NetworkInDb(L3NetworkInventory.valueOf(vo), msg.getHeaders());
+                            controllerL3.beforeCommitL3NetworkInDb(L3NetworkInventory.valueOf(vo), msg.getNetworkOperation());
                         }
                         L3NetworkInventory inv = factory.createL3Network(vo, msg);
                         tagCreator.accept(vo.getUuid());
@@ -687,7 +687,7 @@ public class L3NetworkManagerImpl extends AbstractService implements L3NetworkMa
         try {
             SdnControllerL3 controller = getSdnControllerL3(msg.getL2NetworkUuid());
             if (controller != null) {
-                controller.afterL3NetworkFinally(L3NetworkInventory.valueOf(network), msg.getHeaders());
+                controller.afterL3NetworkFinally(L3NetworkInventory.valueOf(network), msg.getNetworkOperation());
             }
         } catch (RuntimeException e) {
             logger.warn(String.format("failed to finish L3 network creation[uuid:%s]", network.getUuid()), e);

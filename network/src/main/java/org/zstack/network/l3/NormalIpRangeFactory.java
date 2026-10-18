@@ -1,5 +1,7 @@
 package org.zstack.network.l3;
 
+import org.zstack.header.network.l3.SdnDhcpServiceSnapshot;
+import org.zstack.header.network.NetworkOperationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -71,7 +73,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
             preparedVos.add(vo);
             preparedIprs.add(IpRangeInventory.valueOf(vo));
         }
-        msg.putHeaderEntry("znsAddingIpRanges", preparedIprs);
+        msg.getNetworkOperation().setAddingIpRanges(preparedIprs);
         IpRangeInventory primaryIpr = preparedIprs.get(0);
 
         L3NetworkVO initialL3Vo = dbf.findByUuid(primaryIpr.getL3NetworkUuid(), L3NetworkVO.class);
@@ -88,7 +90,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     return;
                 }
 
-                sdnL3.createIpRange(primaryIpr, msg.getSystemTags(), msg.getHeaders(), new Completion(trigger) {
+                sdnL3.createIpRange(primaryIpr, msg.getSystemTags(), msg.getNetworkOperation(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -107,7 +109,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                if ("ZNS_PROJECTION".equals(msg.getHeaderEntry("znsOperationOrigin"))) {
+                if ("ZNS_PROJECTION".equals(msg.getNetworkOperation().getOperationOrigin())) {
                     trigger.next();
                     return;
                 }
@@ -121,9 +123,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                 dmsg.setL3NetworkUuid(primaryIpr.getL3NetworkUuid());
                 dmsg.setIpVersion(primaryIpr.getIpVersion());
                 dmsg.setSdnControllerUuid(sdnControllerUuid);
-                if (msg.getHeaders() != null && !msg.getHeaders().isEmpty()) {
-                    dmsg.setHeaders(new LinkedHashMap<>(msg.getHeaders()));
-                }
+                dmsg.setNetworkOperation(msg.getNetworkOperation().copyForRequest());
                 bus.makeTargetServiceIdByResourceUuid(dmsg, SdnControllerConstant.SERVICE_ID, sdnControllerUuid);
                 bus.send(dmsg, new CloudBusCallBack(trigger) {
                     @Override
@@ -131,9 +131,9 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                         if (!reply.isSuccess()) {
                             trigger.fail(reply.getError());
                         } else {
-                            Object pendingDhcp = reply.getHeaderEntry("znsPendingDhcpDataJson");
+                            SdnDhcpServiceSnapshot pendingDhcp = ((SdnControllerUpdateDHCPReply) reply).getPendingDhcp();
                             if (pendingDhcp != null) {
-                                msg.putHeaderEntry("znsPendingDhcpDataJson", pendingDhcp);
+                                msg.getNetworkOperation().setPendingDhcp(pendingDhcp);
                             }
                             trigger.next();
                         }
@@ -150,7 +150,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     @Override
                     protected List<IpRangeVO> scripts() {
                         if (sdnL3 != null) {
-                            sdnL3.beforeCommitIpRangeInDb(primaryIpr, msg.getHeaders());
+                            sdnL3.beforeCommitIpRangeInDb(primaryIpr, msg.getNetworkOperation());
                         }
                         List<IpRangeVO> persisted = new ArrayList<>();
                         for (NormalIpRangeVO vo : preparedVos) {
@@ -198,7 +198,7 @@ public class NormalIpRangeFactory implements IpRangeFactory {
                     trigger.next();
                     return;
                 }
-                sdnL3.afterCommitIpRangeInDb(IpRangeInventory.valueOf(vos.get(0)), msg.getHeaders(), new Completion(trigger) {
+                sdnL3.afterCommitIpRangeInDb(IpRangeInventory.valueOf(vos.get(0)), msg.getNetworkOperation(), new Completion(trigger) {
                     @Override
                     public void success() {
                         trigger.next();
@@ -243,25 +243,25 @@ public class NormalIpRangeFactory implements IpRangeFactory {
         chain.error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                finishIpRangeCreation(sdnL3, primaryIpr, msg.getHeaders());
+                finishIpRangeCreation(sdnL3, primaryIpr, msg.getNetworkOperation());
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                finishIpRangeCreation(sdnL3, primaryIpr, msg.getHeaders());
+                finishIpRangeCreation(sdnL3, primaryIpr, msg.getNetworkOperation());
                 List<IpRangeVO> vos = (List<IpRangeVO>) data.get("IpRangeVO");
                 completion.success(IpRangeInventory.valueOf(vos));
             }
         }).start();
     }
 
-    private void finishIpRangeCreation(SdnControllerL3 controller, IpRangeInventory range, Map<String, Object> headers) {
+    private void finishIpRangeCreation(SdnControllerL3 controller, IpRangeInventory range, NetworkOperationContext operation) {
         if (controller == null) {
             return;
         }
         try {
-            controller.afterIpRangeFinally(range, headers);
+            controller.afterIpRangeFinally(range, operation);
         } catch (RuntimeException e) {
             logger.warn(String.format("failed to finish IP range creation[uuid:%s]", range.getUuid()), e);
         }

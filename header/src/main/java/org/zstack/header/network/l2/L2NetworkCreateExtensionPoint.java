@@ -1,5 +1,6 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.network.NetworkException;
 
@@ -10,14 +11,14 @@ public interface L2NetworkCreateExtensionPoint {
 
     default void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg, Completion completion) {completion.success();}
     default void postCreateL2Network(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                     Map<String, Object> headers, Completion completion) {
+                                     NetworkOperationContext operation, Completion completion) {
         postCreateL2Network(l2Network, msg, completion);
     }
     default void beforeCommitL2NetworkInDb(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                           Map<String, Object> headers) {
+                                           NetworkOperationContext operation) {
     }
     default void afterL2NetworkFinally(L2NetworkInventory l2Network, APICreateL2NetworkMsg msg,
-                                       Map<String, Object> headers) {
+                                       NetworkOperationContext operation) {
     }
     void afterCreateL2Network(L2NetworkInventory l2Network);
 }
