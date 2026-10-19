@@ -34,6 +34,15 @@ public class ListZsDatasetModelProfilesAction extends AbstractAction {
     @Param(required = false, validValues = {"ENABLED","DISABLED"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String status;
 
+    @Param(required = false, validValues = {"TEXT","VISION","PARSER"}, nonempty = true, nullElements = false, emptyString = true, noTrim = false)
+    public java.util.List capabilities;
+
+    @Param(required = false, validValues = {"createAt"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortBy;
+
+    @Param(required = false, validValues = {"asc","desc"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String sortDirection;
+
     @Param(required = false, maxLength = 32, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String projectUuid;
 
