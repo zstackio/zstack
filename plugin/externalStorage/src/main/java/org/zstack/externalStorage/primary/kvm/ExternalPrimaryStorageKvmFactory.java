@@ -37,6 +37,7 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -79,15 +80,49 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                doPrepareExternalPrimaryStorage(context, extPss, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
+                new While<>(extPss).each((extPs, compl) -> {
+                    doPrepareExternalPrimaryStorage(context, Collections.singletonList(extPs), new Completion(compl) {
+                        @Override
+                        public void success() {
+                            compl.done();
+                        }
 
+                        @Override
+                        public void fail(ErrorCode errorCode) {
+                            logger.warn(String.format("failed to prepare external primary storage[uuid:%s] on host[uuid:%s], %s",
+                                    extPs.getUuid(), context.getInventory().getUuid(), errorCode));
+                            compl.addError(errorCode);
+
+                            Map<String, PrimaryStorageHostStatus> statuses = new HashMap<>();
+                            Q.New(PrimaryStorageOutputProtocolRefVO.class)
+                                    .eq(PrimaryStorageOutputProtocolRefVO_.primaryStorageUuid, extPs.getUuid())
+                                    .select(PrimaryStorageOutputProtocolRefVO_.outputProtocol)
+                                    .listValues().forEach(protocol -> statuses.put((String) protocol, PrimaryStorageHostStatus.Disconnected));
+
+                            UpdatePrimaryStorageHostProtocolStatusMsg msg = new UpdatePrimaryStorageHostProtocolStatusMsg();
+                            msg.setPrimaryStorageUuid(extPs.getUuid());
+                            msg.setHostUuid(context.getInventory().getUuid());
+                            msg.setProtocolStatuses(statuses);
+                            msg.setReason(errorCode);
+                            bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, extPs.getUuid());
+                            bus.send(msg, new CloudBusCallBack(compl) {
+                                @Override
+                                public void run(MessageReply reply) {
+                                    if (!reply.isSuccess()) {
+                                        logger.warn(String.format("failed to update protocol status for external primary storage[uuid:%s] on host[uuid:%s], %s",
+                                                extPs.getUuid(), context.getInventory().getUuid(), reply.getError()));
+                                    }
+                                    compl.done();
+                                }
+                            });
+                        }
+                    });
+                }).run(new WhileDoneCompletion(trigger) {
                     @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
+                    public void done(ErrorCodeList errorCodeList) {
+                        ErrorCodeList errors = (ErrorCodeList) data.get(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR);
+                        errors.getCauses().addAll(errorCodeList.getCauses());
+                        trigger.next();
                     }
                 });
             }
@@ -159,8 +194,11 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
                 checkHostStatus(context.getInventory(), extPss, new WhileDoneCompletion(trigger) {
                     @Override
                     public void done(ErrorCodeList errList) {
-                        data.put(KVMConstant.CONNECT_HOST_PRIMARYSTORAGE_ERROR, errList);
-                        trigger.next();
+                        if (errList.getCauses().isEmpty()) {
+                            trigger.next();
+                        } else {
+                            trigger.fail(errList);
+                        }
                     }
                 });
             }
