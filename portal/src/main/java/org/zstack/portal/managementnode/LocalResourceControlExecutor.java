@@ -185,7 +185,7 @@ public class LocalResourceControlExecutor {
                 }
                 throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
             }
-            if (!"active".equals(properties.get("ActiveState"))) {
+            if (properties.get("ControlGroup") == null || properties.get("ControlGroup").isEmpty()) {
                 results.add(!manageCpu || backend.cpuSetProperty() != null ? Boolean.TRUE : null);
                 continue;
             }
@@ -604,13 +604,9 @@ public class LocalResourceControlExecutor {
             }
             throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
         }
-        if (!"active".equals(properties.get("ActiveState"))) {
-            return null;
-        }
         String controlGroup = properties.get("ControlGroup");
         if (controlGroup == null || controlGroup.isEmpty()) {
-            throw new ResourceControlException(String.format(
-                    "Systemd unit[%s] did not report a control group", handle.getValue()));
+            return null;
         }
         Path target = backend.controlGroupPath(controlGroup);
         if (target.equals(backend.root)) {
@@ -641,16 +637,9 @@ public class LocalResourceControlExecutor {
             }
             throw new ResourceControlException(String.format("Systemd unit[%s] does not exist", handle.getValue()));
         }
-        if (!"active".equals(properties.get("ActiveState"))) {
-            if (handle.isOptional()) {
-                return null;
-            }
-            throw new ResourceControlException(String.format("Systemd unit[%s] is not active", handle.getValue()));
-        }
         String controlGroup = properties.get("ControlGroup");
         if (controlGroup == null || controlGroup.isEmpty()) {
-            throw new ResourceControlException(String.format(
-                    "Systemd unit[%s] did not report a control group", handle.getValue()));
+            return null;
         }
         Path target = backend.controlGroupPath(controlGroup);
         if (target.equals(backend.root)) {
