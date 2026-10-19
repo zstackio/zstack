@@ -40,6 +40,16 @@ public class SystemTag {
     // TagManager must be explicitly set. use @Autowired will cause circular dependency
     protected TagManagerImpl tagMgr;
 
+    private boolean failOnListenerError;
+
+    public void setFailOnListenerError(boolean failOnListenerError) {
+        this.failOnListenerError = failOnListenerError;
+    }
+
+    public boolean isFailOnListenerError() {
+        return failOnListenerError;
+    }
+
     protected String tagFormat;
     protected Class resourceClass;
     protected List<SystemTagValidator> validators = new ArrayList<>();
@@ -296,17 +306,22 @@ public class SystemTag {
                     q.setParameter("resType", resourceClass.getSimpleName());
                     List<SystemTagVO> vos = q.getResultList();
 
-                    List<SystemTagInventory> invs = SystemTagInventory.valueOf(vos);
-                    for (SystemTagInventory inv : invs) {
-                        tagMgr.preTagDeleted(inv);
-                    }
-
+                    List<SystemTagVO> tagsToDelete = new ArrayList<>();
                     for (SystemTagVO vo : vos) {
                         if (quickRecreate && vo.getTag().equals(this.tag) && keepSameTagVO == null) {
                             keepSameTagVO = vo;
                             continue;
                         }
+                        tagsToDelete.add(vo);
+                    }
 
+                    // A retained tag is not a deletion: neither its guards nor its
+                    // listeners should run when quick recreation keeps the same value.
+                    List<SystemTagInventory> invs = SystemTagInventory.valueOf(tagsToDelete);
+                    for (SystemTagInventory inv : invs) {
+                        tagMgr.preTagDeleted(inv);
+                    }
+                    for (SystemTagVO vo : tagsToDelete) {
                         dbf.getEntityManager().remove(vo);
                     }
 

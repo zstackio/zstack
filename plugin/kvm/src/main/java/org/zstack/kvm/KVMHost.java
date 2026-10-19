@@ -3477,6 +3477,8 @@ public class KVMHost extends HostBase implements Host {
 
         List<VmNicVO> nics = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, s.vmUuid).list();
         List<NicTO> nicTos = VmNicInventory.valueOf(nics).stream().map(this::completeNicInfo).collect(Collectors.toList());
+        // Live migration preserves the running XML, including its NIC models.
+        // A pending model change in the database is applied on the next device rebuild.
 
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("migrate-vm-%s-on-kvm-host-%s", vmUuid, self.getUuid()));
@@ -3829,6 +3831,17 @@ public class KVMHost extends HostBase implements Host {
             ext.preUpdateNic(inv, cmd);
         }
 
+        try {
+            for (NicTO nic : cmd.getNics()) {
+                KVMNicDriverValidator.validate(nic, cmd.getAddons(), nicManager.getSupportNicDriverTypes());
+            }
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+
         new Http<>(updateNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
             @Override
             public void success(AttachNicResponse ret) {
@@ -3888,6 +3901,15 @@ public class KVMHost extends HostBase implements Host {
         KVMHostInventory inv = (KVMHostInventory) getSelfInventory();
         for (KvmPreAttachNicExtensionPoint ext : pluginRgty.getExtensionList(KvmPreAttachNicExtensionPoint.class)) {
             ext.preAttachNicExtensionPoint(inv, cmd);
+        }
+
+        try {
+            KVMNicDriverValidator.validate(cmd.getNic(), cmd.getAddons(), nicManager.getSupportNicDriverTypes());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+            bus.reply(msg, reply);
+            completion.done();
+            return;
         }
 
         new Http<>(attachNicPath, cmd, AttachNicResponse.class).call(new ReturnValueCompletion<AttachNicResponse>(msg, completion) {
@@ -4927,22 +4949,6 @@ public class KVMHost extends HostBase implements Host {
         }
         nics = nics.stream().sorted(Comparator.comparing(NicTO::getDeviceId)).collect(Collectors.toList());
         cmd.setNics(nics);
-        if ((platform.equals(ImagePlatform.Windows.toString()) ||
-             platform.equals(ImagePlatform.WindowsVirtio.toString()))) {
-            if (cmd.getNics() != null) {
-                for (NicTO nicTo : cmd.getNics()) {
-                    if (nicTo.getType() != null &&
-                        nicTo.getType().toLowerCase().contains(VmNicType.VmNicSubType.VHOSTUSER.toString().toLowerCase()) &&
-                        !VmNicDriverType.VIRTIO.toString().equalsIgnoreCase(nicTo.getDriverType())) {
-                        logger.warn(String.format("Force updating nic[%s] driver from [%s] to [virtio] for " +
-                                        "Windows vhostuser compatibility.",
-                                nicTo.getUuid(), nicTo.getDriverType()));
-                        nicTo.setDriverType(VmNicDriverType.VIRTIO.toString());
-                    }
-                }
-            }
-        }
-
         for (VmInstanceSpec.CdRomSpec cdRomSpec : spec.getCdRomSpecs()) {
             CdRomTO cdRomTO = new CdRomTO();
             cdRomTO.setResourceUuid(cdRomSpec.getUuid());
@@ -5029,6 +5035,18 @@ public class KVMHost extends HostBase implements Host {
         extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
 
         extEmitter.addOn(khinv, spec, cmd);
+        try {
+            for (NicTO nic : cmd.getNics()) {
+                KVMNicDriverValidator.validate(nic, cmd.getAddons(), nicManager.getSupportNicDriverTypes());
+            }
+        } catch (OperationFailureException e) {
+            StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
+            reply.setError(e.getErrorCode());
+            extEmitter.startVmOnKvmFailed(khinv, spec, e.getErrorCode());
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
         //Set account uuid for kvm agent call vrouter agent api
         cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
 

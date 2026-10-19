@@ -2435,6 +2435,8 @@ public class VmInstanceBase extends AbstractVmInstance {
                     spec.getDisableL3Networks().add(nicParams.getL3NetworkUuid());
                 }
             }
+        } else if (msg instanceof VmAttachNicMsg) {
+            nicSpec.setNicDriverType(((VmAttachNicMsg) msg).getDriverType());
         }
 
         spec.setL3Networks(list(nicSpec));
@@ -2582,41 +2584,55 @@ public class VmInstanceBase extends AbstractVmInstance {
 
                 flowChain.then(new Flow() {
                     String __name__ = "update-nic";
+                    final VmNicInventory originalNic = VmNicInventory.valueOf(vmNicVO);
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
-                        final BitSet deviceIdBitmap = new BitSet(512);
-                        for (VmNicInventory nic : spec.getVmInventory().getVmNics()) {
-                            deviceIdBitmap.set(nic.getDeviceId());
-                        }
-                        int deviceId = deviceIdBitmap.nextClearBit(0);
-                        deviceIdBitmap.set(deviceId);
-                        String internalName = VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), deviceId);
-                        String driverType = vmNicVO.getDriverType();
-                        if (StringUtils.isEmpty(driverType)) {
-                            VmNicInventory nicInv = VmNicInventory.valueOf(vmNicVO);
-                            nicManager.setNicDriverType(nicInv, VmSystemTags.VIRTIO.hasTag(self.getUuid()),
-                                    ImagePlatform.valueOf(spec.getVmInventory().getPlatform()).isParaVirtualization(),
-                                    spec.getVmInventory());
-                            driverType = nicInv.getDriverType();
-                        }
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                VmInstanceVO target = dbf.getEntityManager().find(VmInstanceVO.class, self.getUuid(), javax.persistence.LockModeType.PESSIMISTIC_WRITE);
+                                VmInstanceInventory current = VmInstanceInventory.valueOf(target);
+                                final BitSet deviceIdBitmap = new BitSet(512);
+                                for (VmNicVO nic : Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, self.getUuid()).<VmNicVO>list()) {
+                                    deviceIdBitmap.set(nic.getDeviceId());
+                                }
+                                int deviceId = deviceIdBitmap.nextClearBit(0);
+                                deviceIdBitmap.set(deviceId);
+                                String internalName = VmNicVO.generateNicInternalName(spec.getVmInventory().getInternalId(), deviceId);
+                                String driverType = vmNicVO.getDriverType();
+                                if (StringUtils.isEmpty(driverType)) {
+                                    VmNicInventory nicInv = VmNicInventory.valueOf(vmNicVO);
+                                    nicManager.setNicDriverType(nicInv, VmSystemTags.VIRTIO.hasTag(self.getUuid()),
+                                            ImagePlatform.valueOf(current.getPlatform()).isParaVirtualization(),
+                                            current);
+                                    driverType = nicInv.getDriverType();
+                                }
 
-                        UpdateQuery.New(VmNicVO.class)
-                                .eq(VmNicVO_.uuid, vmNicUuid)
-                                .set(VmNicVO_.vmInstanceUuid, self.getUuid())
-                                .set(VmNicVO_.deviceId, deviceId)
-                                .set(VmNicVO_.internalName, internalName)
-                                .set(VmNicVO_.hypervisorType, spec.getVmInventory().getHypervisorType())
-                                .set(VmNicVO_.driverType, driverType)
-                                .update();
+                                VmNicInventory candidate = VmNicInventory.valueOf(vmNicVO);
+                                candidate.setVmInstanceUuid(self.getUuid());
+                                candidate.setHypervisorType(self.getHypervisorType());
+                                candidate.setDriverType(driverType);
+                                nicManager.validateNicDriver(candidate, current, false);
 
-                        vmNicVO.setVmInstanceUuid(self.getUuid());
-                        vmNicVO.setDeviceId(deviceId);
-                        vmNicVO.setInternalName(internalName);
-                        vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
-                        vmNicVO.setDriverType(driverType);
-                        spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
+                                UpdateQuery.New(VmNicVO.class)
+                                        .eq(VmNicVO_.uuid, vmNicUuid)
+                                        .set(VmNicVO_.vmInstanceUuid, self.getUuid())
+                                        .set(VmNicVO_.deviceId, deviceId)
+                                        .set(VmNicVO_.internalName, internalName)
+                                        .set(VmNicVO_.hypervisorType, spec.getVmInventory().getHypervisorType())
+                                        .set(VmNicVO_.driverType, driverType)
+                                        .update();
 
+                                vmNicVO.setVmInstanceUuid(self.getUuid());
+                                vmNicVO.setDeviceId(deviceId);
+                                vmNicVO.setInternalName(internalName);
+                                vmNicVO.setHypervisorType(spec.getVmInventory().getHypervisorType());
+                                vmNicVO.setDriverType(driverType);
+                                spec.getDestNics().add(0, VmNicInventory.valueOf(vmNicVO));
+
+                            }
+                        }.execute();
                         trigger.next();
                     }
 
@@ -2624,7 +2640,11 @@ public class VmInstanceBase extends AbstractVmInstance {
                     public void rollback(FlowRollback trigger, Map data) {
                         UpdateQuery.New(VmNicVO.class)
                                 .eq(VmNicVO_.uuid, vmNicUuid)
-                                .set(VmNicVO_.vmInstanceUuid, null)
+                                .set(VmNicVO_.vmInstanceUuid, originalNic.getVmInstanceUuid())
+                                .set(VmNicVO_.deviceId, originalNic.getDeviceId())
+                                .set(VmNicVO_.internalName, originalNic.getInternalName())
+                                .set(VmNicVO_.hypervisorType, originalNic.getHypervisorType())
+                                .set(VmNicVO_.driverType, originalNic.getDriverType())
                                 .update();
 
                         trigger.rollback();
@@ -6003,7 +6023,22 @@ public class VmInstanceBase extends AbstractVmInstance {
                 }
 
                 if (update) {
-                    dbf.update(self);
+                    try {
+                        new SQLBatch() {
+                            @Override
+                            protected void scripts() {
+                                dbf.getEntityManager().find(VmInstanceVO.class, self.getUuid(), javax.persistence.LockModeType.PESSIMISTIC_WRITE);
+                                if (msg.getPlatform() != null && !msg.getPlatform().equals(vm.getPlatform())) {
+                                    nicManager.changeVmPlatform(VmInstanceInventory.valueOf(self));
+                                }
+                                merge(self);
+                            }
+                        }.execute();
+                    } catch (OperationFailureException e) {
+                        refreshVO();
+                        trigger.fail(e.getErrorCode());
+                        return;
+                    }
                 }
 
                 updateVmIsoFirstOrder(msg.getSystemTags());
@@ -9195,21 +9230,51 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     private void handle(final APIUpdateVmNicDriverMsg msg) {
-        APIUpdateVmNicDriverEvent event = new APIUpdateVmNicDriverEvent(msg.getId());
-        VmNicVO nicVO = dbf.findByUuid(msg.getVmNicUuid(), VmNicVO.class);
-        boolean update = false;
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
 
-        if (!msg.getDriverType().equals(nicVO.getDriverType())) {
-            nicVO.setDriverType(msg.getDriverType());
-            update = true;
-        }
+            @Override
+            public String getName() {
+                return "update-vm-nic-driver-" + msg.getVmNicUuid();
+            }
 
-        if (update) {
-            nicVO = dbf.updateAndRefresh(nicVO);
-        }
-
-        event.setInventory(VmNicInventory.valueOf(nicVO));
-        bus.publish(event);
+            @Override
+            public void run(SyncTaskChain chain) {
+                APIUpdateVmNicDriverEvent event = new APIUpdateVmNicDriverEvent(msg.getId());
+                try {
+                    event.setInventory(new SQLBatchWithReturn<VmNicInventory>() {
+                        @Override
+                        protected VmNicInventory scripts() {
+                            VmInstanceVO vm = dbf.getEntityManager().find(VmInstanceVO.class, self.getUuid(), javax.persistence.LockModeType.PESSIMISTIC_WRITE);
+                            VmNicVO nicVO = findByUuid(msg.getVmNicUuid(), VmNicVO.class);
+                            if (vm == null || nicVO == null || !Objects.equals(vm.getUuid(), nicVO.getVmInstanceUuid())) {
+                                throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10346,
+                                        "NIC[uuid:%s, type:%s] does not support driver model[%s]: %s",
+                                        msg.getVmNicUuid(), nicVO == null ? null : nicVO.getType(), msg.getDriverType(), "NIC does not belong to the target VM"));
+                            }
+                            VmNicInventory candidate = VmNicInventory.valueOf(nicVO);
+                            candidate.setDriverType(msg.getDriverType());
+                            nicManager.validateNicDriver(candidate, VmInstanceInventory.valueOf(vm), true);
+                            nicVO.setDriverType(msg.getDriverType());
+                            return VmNicInventory.valueOf(reload(merge(nicVO)));
+                        }
+                    }.execute());
+                } catch (OperationFailureException e) {
+                    event.setError(e.getErrorCode());
+                } catch (Exception e) {
+                    event.setError(errf.throwableToInternalError(e));
+                } finally {
+                    try {
+                        bus.publish(event);
+                    } finally {
+                        chain.next();
+                    }
+                }
+            }
+        });
     }
 
     private void handle(APISetVmInstanceDefaultCdRomMsg msg) {

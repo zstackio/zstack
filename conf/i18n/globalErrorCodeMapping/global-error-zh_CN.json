@@ -460,6 +460,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10334": "虚拟机网卡生命周期扩展[%s]执行从主机[uuid:%s]到主机[uuid:%s]的迁移前检查失败：%s",
   "ORG_ZSTACK_COMPUTE_VM_10343": "云主机[uuid:%s]当前状态为[%s]，仅支持已停止状态修改主板类型",
   "ORG_ZSTACK_COMPUTE_VM_10344": "不支持将云主机[uuid:%s]的主板类型从[%s]修改为[%s]",
+  "ORG_ZSTACK_COMPUTE_VM_10346": "网卡[uuid:%s, 类型:%s]不支持型号[%s]：%s",
+  "ORG_ZSTACK_COMPUTE_VM_10347": "云主机[uuid:%2$s]的网卡型号偏好存在冲突[%1$s]",
   "ORG_ZSTACK_COMPUTE_VM_10345": "云主机[uuid:%s]存在内存快照，不支持修改主板类型",
   "ORG_ZSTACK_COMPUTE_HOST_10013": "网络接口[name:%s]主机[uuid:%s]未找到",
   "ORG_ZSTACK_CRYPTO_DATACRYPTO_INTEGRITY_10008": "加密 %s[id:%s] 错误: %s",

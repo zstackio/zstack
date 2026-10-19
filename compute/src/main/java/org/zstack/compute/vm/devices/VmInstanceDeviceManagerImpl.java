@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.VmGlobalConfig;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
@@ -162,6 +163,7 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
     }
 
     @Override
+    @Transactional
     public ErrorCode deleteDeviceAddressesByVmModifyVirtIO(String vmInstanceUuid) {
         if (vmInstanceUuid == null) {
             return operr(ORG_ZSTACK_COMPUTE_VM_DEVICES_10005, "missing parameter, vmInstanceUuid: %s is requested", vmInstanceUuid);
@@ -174,8 +176,16 @@ public class VmInstanceDeviceManagerImpl implements VmInstanceDeviceManager {
         VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmInstanceUuid).find();
 
         VmInstanceInventory inventory = vo.toInventory();
-        inventory.getVmNics().forEach(vmNic -> deleteVmDeviceAddress(vmNic.getUuid(), vmInstanceUuid));
-        inventory.getAllVolumes().forEach(volume -> deleteVmDeviceAddress(volume.getUuid(), vmInstanceUuid));
+        List<String> resources = new ArrayList<>();
+        inventory.getVmNics().forEach(vmNic -> resources.add(vmNic.getUuid()));
+        inventory.getAllVolumes().forEach(volume -> resources.add(volume.getUuid()));
+        if (!resources.isEmpty()) {
+            List<Long> ids = Q.New(VmInstanceDeviceAddressVO.class)
+                    .select(VmInstanceDeviceAddressVO_.id)
+                    .eq(VmInstanceDeviceAddressVO_.vmInstanceUuid, vmInstanceUuid)
+                    .in(VmInstanceDeviceAddressVO_.resourceUuid, resources).listValues();
+            dbf.removeByPrimaryKeysInCurrentTransaction(ids, VmInstanceDeviceAddressVO.class);
+        }
         return null;
     }
 
