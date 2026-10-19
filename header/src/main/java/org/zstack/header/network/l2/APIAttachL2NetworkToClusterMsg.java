@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.message.APIEvent;
@@ -41,7 +43,21 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAttachL2NetworkToClusterEvent.class,
         parameterName = "null"
 )
-public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2NetworkMessage {
+public class APIAttachL2NetworkToClusterMsg extends APIMessage implements L2NetworkMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     /**
      * @desc l2Network uuid
      */

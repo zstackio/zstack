@@ -1,5 +1,7 @@
 package org.zstack.header.rest;
 
+import java.net.URI;
+import java.util.function.Supplier;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
@@ -24,9 +26,19 @@ public class TimeoutRestTemplate extends RestTemplate {
         this.setRequestFactory(requestFactory);
     }
 
-    // connectTimeout millisecond
-    // readTimeout millisecond
     public <T> ResponseEntity<T> exchange(String url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, String requestId, long connectTimeout, long readTimeout) throws RestClientException {
+        return exchangeWithTimeout(url, method, requestId, connectTimeout, readTimeout,
+                () -> this.exchange(url, method, requestEntity, responseType));
+    }
+
+    public <T> ResponseEntity<T> exchange(URI url, HttpMethod method, HttpEntity<?> requestEntity, Class<T> responseType, String requestId, long connectTimeout, long readTimeout) throws RestClientException {
+        return exchangeWithTimeout(url.toString(), method, requestId, connectTimeout, readTimeout,
+                () -> this.exchange(url, method, requestEntity, responseType));
+    }
+
+    private <T> ResponseEntity<T> exchangeWithTimeout(String url, HttpMethod method, String requestId,
+                                                     long connectTimeout, long readTimeout,
+                                                     Supplier<ResponseEntity<T>> exchange) {
         assert connectTimeout >= 0;
         assert readTimeout >= 0;
         assert requestId != null;
@@ -35,7 +47,7 @@ public class TimeoutRestTemplate extends RestTemplate {
 
         long startTime = System.currentTimeMillis();
         try {
-            return this.exchange(url, method, requestEntity, responseType);
+            return exchange.get();
         } catch (Throwable t){
             long endTime = System.currentTimeMillis();
             logger.warn(String.format("TimeoutRestTemplate exchange fail, requestId=%s, connectTimeout=%s, readTimeout=%s, spendTime=%s", requestId, connectTimeout, readTimeout, endTime - startTime), t);

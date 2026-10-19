@@ -1,5 +1,6 @@
 package org.zstack.network.service;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceExtensionPoint;
@@ -8,6 +9,7 @@ import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.VmInstanceSpec;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface NetworkServiceManager {
@@ -31,7 +33,18 @@ public interface NetworkServiceManager {
     void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
                               NetworkServiceType nsType, List<String> systemTags, Completion completion);
 
+    default void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                                      NetworkServiceType nsType, List<String> systemTags,
+                                      NetworkOperationContext operation, Completion completion) {
+        enableNetworkService(l3VO, providerType, nsType, systemTags, completion);
+    }
+
     void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkServiceType nsType, Completion completion);
+
+    default void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType,
+                                       NetworkServiceType nsType, NetworkOperationContext operation, Completion completion) {
+        disableNetworkService(l3VO, providerType, nsType, completion);
+    }
 
     Set<String> getSupportedVmTypes();
 }

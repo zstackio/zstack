@@ -16,6 +16,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.network.l2.*;
 import org.zstack.network.service.NetworkServiceGlobalConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.data.FieldPrinter;
 import org.zstack.utils.logging.CLogger;
@@ -43,20 +44,23 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
 
     @Override
     public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, ReturnValueCompletion<L2NetworkInventory> completion) {
-        createL2Network(vo, msg, NetworkCreateContext.api(), completion);
-    }
 
-    @Override
-    public void createL2Network(L2NetworkVO vo, APICreateL2NetworkMsg msg, NetworkCreateContext context,
-                                ReturnValueCompletion<L2NetworkInventory> completion) {
-
+        L2NetworkInventory inv = L2NetworkInventory.valueOf(vo);
         FlowChain chain = new SimpleFlowChain();
         chain.setName("create-no-vlan-network");
         chain.then(new Flow() {
             String __name__ = "write-db";
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                dbf.persist(vo);
+                new org.zstack.core.db.SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        for (L2NetworkCreateExtensionPoint exp : pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class)) {
+                            exp.beforeCommitL2NetworkInDb(inv, msg, msg == null ? null : msg.getNetworkOperation());
+                        }
+                        persist(vo);
+                    }
+                }.execute();
                 trigger.next();
             }
 
@@ -70,8 +74,9 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                L2NetworkInventory created = L2NetworkInventory.valueOf(dbf.findByUuid(vo.getUuid(), L2NetworkVO.class));
                 new While<>(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class))
-                        .each((exp, wcompl) -> exp.postCreateL2Network(L2NetworkInventory.valueOf(vo), msg, context, new Completion(trigger) {
+                        .each((exp, wcompl) -> exp.postCreateL2Network(created, msg, msg == null ? null : msg.getNetworkOperation(), new Completion(trigger) {
                             @Override
                             public void success() {
                                 wcompl.done();
@@ -96,15 +101,19 @@ public class L2NoVlanL2NetworkFactory implements L2NetworkFactory, Component, L2
         }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class),
+                        exp -> exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getNetworkOperation()));
                 completion.fail(errCode);
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                L2NetworkInventory inv = L2NetworkInventory.valueOf(
+                CollectionUtils.safeForEach(pluginRgty.getExtensionList(L2NetworkCreateExtensionPoint.class),
+                        exp -> exp.afterL2NetworkFinally(inv, msg, msg == null ? null : msg.getNetworkOperation()));
+                L2NetworkInventory persistedInv = L2NetworkInventory.valueOf(
                         dbf.findByUuid(vo.getUuid(), L2NetworkVO.class));
-                logger.debug("Successfully created NoVlanL2Network: " + printer.print(inv));
-                completion.success(inv);
+                logger.debug("Successfully created NoVlanL2Network: " + printer.print(persistedInv));
+                completion.success(persistedInv);
             }
         }).start();
     }
