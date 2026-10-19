@@ -6833,6 +6833,123 @@ public class MemoryRepositoryTest {
         assertEquals(Long.valueOf(9), host1State().getAppliedRevision());
     }
 
+    @Test public void partialServiceRecoveryAcceptsOnlyExactReadOnlyConfigurationAlias() {
+        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        msg.getRecovery().setDrainControlOperationUuid(null);
+        String originalPolicy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true},"
+                + "\"writeback\":{\"enabled\":false}}";
+        repository.transaction(em -> {
+            MemoryTaskVO old = em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD);
+            old.setDesiredRevision(9); old.setPolicy(originalPolicy);
+            MemoryTaskVO anchor = testTask(MemoryUncertainRecoveryRulesTest.ANCHOR, null, "apply", "Succeeded", null);
+            anchor.setDesiredRevision(8);
+            anchor.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"zeroPagesEnabled\":false},"
+                    + "\"writeback\":{\"enabled\":true,\"backendResourceUuid\":"
+                    + "\"33333333333333333333333333333333\",\"backendCapacityBytes\":21474836480}}");
+            em.persist(anchor);
+            MemoryTaskVO alias = testTask("read-only-query-alias", null, "reconcile", "Unknown",
+                    MemoryUncertainRecoveryRulesTest.OLD);
+            alias.setActorUuid("system:memory-config-reconcile");
+            alias.setDesiredRevision(9); alias.setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
+            em.persist(alias);
+            MemoryStateVO host = em.find(MemoryStateVO.class, "host1");
+            host.setDesiredRevision(9); host.setAppliedRevision(8L); host.setAppliedPolicy("{}");
+            host.setActiveTaskUuid(alias.getUuid()); host.setControlOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
+            return null;
+        });
+
+        // A similarly shaped task is not sufficient: it must be the exact
+        // system read-only alias for this still-current original operation.
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, "read-only-query-alias")
+                    .setReconcileOperationUuid(MemoryUncertainRecoveryRulesTest.ANCHOR);
+            return null;
+        });
+        try { repository.submit(msg); fail("alias for a different operation must not authorize recovery"); }
+        catch (MemoryOperationException expected) { assertEquals("MEMORY_UNCERTAIN_RECOVERY_FENCED", expected.getCode()); }
+        assertEquals("read-only-query-alias", host1State().getActiveTaskUuid());
+        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
+
+        repository.transaction(em -> {
+            MemoryTaskVO alias = em.find(MemoryTaskVO.class, "read-only-query-alias");
+            alias.setReconcileOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
+            alias.setActorUuid("ordinary-user");
+            return null;
+        });
+        try { repository.submit(msg); fail("user reconciliation must not authorize recovery"); }
+        catch (MemoryOperationException expected) { assertEquals("MEMORY_UNCERTAIN_RECOVERY_FENCED", expected.getCode()); }
+        assertEquals("read-only-query-alias", host1State().getActiveTaskUuid());
+        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
+
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, "read-only-query-alias")
+                    .setActorUuid("system:memory-config-reconcile");
+            return null;
+        });
+        for (String invalid : Arrays.asList("scope", "host", "resource", "expectedControl", "status",
+                "revision", "originalRevisionWithDrain", "currentControl")) {
+            if ("originalRevisionWithDrain".equals(invalid)) {
+                msg.getRecovery().setDrainControlOperationUuid(MemoryUncertainRecoveryRulesTest.DRAIN);
+            }
+            repository.transaction(em -> {
+                MemoryTaskVO alias = em.find(MemoryTaskVO.class, "read-only-query-alias");
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                MemoryTaskVO original = em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD);
+                if ("scope".equals(invalid)) alias.setScope("Cluster");
+                if ("host".equals(invalid)) alias.setHostUuid("host2");
+                if ("resource".equals(invalid)) alias.setResourceUuid("host2");
+                if ("expectedControl".equals(invalid)) alias.setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.ANCHOR);
+                if ("status".equals(invalid)) alias.setStatus("Succeeded");
+                if ("revision".equals(invalid)) alias.setDesiredRevision(8);
+                if ("originalRevisionWithDrain".equals(invalid)) original.setDesiredRevision(8);
+                if ("currentControl".equals(invalid)) state.setControlOperationUuid(MemoryUncertainRecoveryRulesTest.ANCHOR);
+                return null;
+            });
+            try { repository.submit(msg); fail(invalid); }
+            catch (MemoryOperationException expected) {
+                String expectedCode = "status".equals(invalid)
+                        ? "MEMORY_HOST_BUSY" : "MEMORY_UNCERTAIN_RECOVERY_FENCED";
+                assertEquals(invalid, expectedCode, expected.getCode());
+            }
+            assertEquals(invalid, "read-only-query-alias", host1State().getActiveTaskUuid());
+            repository.transaction(em -> {
+                MemoryTaskVO alias = em.find(MemoryTaskVO.class, "read-only-query-alias");
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                MemoryTaskVO original = em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD);
+                alias.setScope("Host"); alias.setHostUuid("host1"); alias.setResourceUuid("host1");
+                alias.setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
+                alias.setStatus("Unknown"); alias.setDesiredRevision(9);
+                original.setDesiredRevision(9);
+                state.setControlOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
+                return null;
+            });
+            msg.getRecovery().setDrainControlOperationUuid(null);
+        }
+
+        MemoryTaskVO recovery = claimChild(repository.submit(msg).getUuid());
+        assertEquals(recovery.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
+        assertEquals("Unknown", repository.findTask("read-only-query-alias").getStatus());
+
+        // A delayed terminal callback from the old read-only alias must not
+        // settle its original apply after recovery has taken the active slot.
+        repository.result("read-only-query-alias", "Failed", "late verify callback", null);
+        assertEquals(recovery.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
+        assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
+        assertEquals("Unknown", repository.findTask("read-only-query-alias").getStatus());
+
+        repository.result(recovery.getUuid(), "Succeeded", null,
+                MemoryUncertainRecoveryRulesTest.partialServicePolicyProof(recovery.getUuid(), originalPolicy));
+        repository.result("read-only-query-alias", "Failed", "late verify after recovery", null);
+        assertEquals("Succeeded", repository.findTask(recovery.getUuid()).getStatus());
+        assertEquals("Unknown", repository.findTask("read-only-query-alias").getStatus());
+        assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals(recovery.getUuid(), host1State().getControlOperationUuid());
+        assertEquals(Long.valueOf(9), host1State().getAppliedRevision());
+    }
+
     @Test public void partialPolicyRecoveryPreflightFailureKeepsOriginalOwner() {
         APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest(); msg.getRecovery().setDrainControlOperationUuid(null);
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());

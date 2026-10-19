@@ -1678,13 +1678,24 @@ public class MemoryRepository {
 
     private void validateUncertainRecovery(EntityManager em, MemoryStateVO state, APIUpdateMemoryPolicyMsg msg) {
         MemoryTaskVO original = em.find(MemoryTaskVO.class, msg.getExpectedControlOperationUuid());
+        MemoryTaskVO active = state.getActiveTaskUuid() == null ? null
+                : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+        boolean activeOriginal = Objects.equals(state.getActiveTaskUuid(), msg.getExpectedControlOperationUuid());
+        boolean activeReadOnlyAlias = isConfigurationReconcile(active)
+                && "Unknown".equals(active.getStatus())
+                && Objects.equals(active.getHostUuid(), state.getHostUuid())
+                && Objects.equals(active.getResourceUuid(), state.getHostUuid())
+                && Objects.equals(active.getReconcileOperationUuid(), msg.getExpectedControlOperationUuid())
+                && Objects.equals(active.getExpectedControlOperationUuid(), msg.getExpectedControlOperationUuid())
+                && original != null && active.getDesiredRevision() == original.getDesiredRevision()
+                && active.getDesiredRevision() == state.getDesiredRevision();
         String drainUuid = msg.getRecovery().getDrainControlOperationUuid();
         MemoryTaskVO drain = drainUuid == null ? null : em.find(MemoryTaskVO.class, drainUuid);
         String boot = null;
         try { boot = (String) JSONObjectUtil.toObject(state.getState(), Map.class).get("bootId"); }
         catch (RuntimeException ignored) { }
         long now = System.currentTimeMillis();
-        if (!Objects.equals(state.getActiveTaskUuid(), msg.getExpectedControlOperationUuid())
+        if ((!activeOriginal && !activeReadOnlyAlias)
                 || !Objects.equals(state.getControlOperationUuid(), msg.getExpectedControlOperationUuid())
                 || original == null || !"Unknown".equals(original.getStatus())
                 || !Arrays.asList("apply", "clearOverride").contains(original.getAction())
@@ -3027,6 +3038,16 @@ public class MemoryRepository {
             String resultReason = reason;
             MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
             MemoryStateVO host = task == null ? null : em.find(MemoryStateVO.class, task.getHostUuid());
+            if (isConfigurationReconcile(task)
+                    && (host == null || !Objects.equals(host.getActiveTaskUuid(), task.getUuid())
+                        || !Objects.equals(host.getControlOperationUuid(), task.getExpectedControlOperationUuid())
+                        || host.getDesiredRevision() != task.getDesiredRevision()
+                        || !Objects.equals(task.getHostUuid(), task.getResourceUuid()))) {
+                // A delayed read-only configuration query no longer owns this
+                // Host fence. Its receipt must not settle the original task or
+                // overwrite the result of the newer operation that replaced it.
+                return null;
+            }
             MemoryTaskVO reconciledControl = task != null && "reconcile".equals(task.getAction())
                     && task.getReconcileOperationUuid() != null
                     ? em.find(MemoryTaskVO.class, task.getReconcileOperationUuid()) : null;
