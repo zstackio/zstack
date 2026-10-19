@@ -3215,16 +3215,23 @@ public class MemoryRepository {
                     && response != null && !response.isSuccess() && "Failed".equals(response.status)
                     && Objects.equals(reconciledControl.getUuid(), response.operationUuid)
                     && (response.hostUuid == null || Objects.equals(task.getHostUuid(), response.hostUuid))
-                    && "FIRST_ZRAM_ADMISSION_NOT_ISSUED".equals(response.reasonCode)
+                    && ("FIRST_ZRAM_ADMISSION_NOT_ISSUED".equals(response.reasonCode)
+                        || "KSM_CLEAR_NOT_ISSUED".equals(response.reasonCode))
                     && response.appliedRevision == null && response.state != null
                     && "NOT_ISSUED".equals(response.state.get("phase"))
                     && Boolean.FALSE.equals(response.state.get("policyWritesIssued"))) {
                 try {
+                    boolean eligiblePolicy = true;
+                    if ("KSM_CLEAR_NOT_ISSUED".equals(response.reasonCode)) {
+                        Map<?, ?> target = JSONObjectUtil.toObject(reconciledControl.getPolicy(), Map.class);
+                        eligiblePolicy = target.size() == 2 && numberEquals(target.get("schemaVersion"), 1)
+                                && target.get("ksm") instanceof Map && ((Map<?, ?>) target.get("ksm")).isEmpty();
+                    }
                     Map<?, ?> current = JSONObjectUtil.toObject(host.getState(), Map.class);
                     Object boot = current.get("bootId");
                     Object proofBoot = response.state.get("bootId");
                     Object requestHash = response.state.get("requestHash");
-                    if (boot instanceof String && !((String) boot).trim().isEmpty()
+                    if (eligiblePolicy && boot instanceof String && !((String) boot).trim().isEmpty()
                             && Objects.equals(boot, proofBoot)
                             && (response.bootId == null || Objects.equals(boot, response.bootId))
                             && requestHash instanceof String
@@ -3237,6 +3244,14 @@ public class MemoryRepository {
                 } catch (RuntimeException invalidState) {
                     // Without the current boot binding, keep the plan unresolved.
                 }
+            }
+            if (ordinaryReconcile && "Failed".equals(resultStatus) && response != null
+                    && "KSM_CLEAR_NOT_ISSUED".equals(response.reasonCode)
+                    && appliedTask != reconciledControl) {
+                // An unproven receipt must not release the Host fence or settle
+                // the original task and its historical reconcile aliases.
+                resultStatus = "Unknown";
+                resultReason = "KSM clear not-issued proof is not confirmed";
             }
             MemoryTaskVO recovery = uncertainRecoveryForResult(em, task);
             if (recovery != null) {
