@@ -73,7 +73,7 @@ doc {
 				column {
 					name "limit"
 					enclosedIn ""
-					desc "数量限制，默认为100；负数或超过65535时最多返回65535条"
+					desc "数量限制，默认为100；0返回空列表；负数或超过1000时最多返回1000条"
 					location "query"
 					type "int"
 					optional true

@@ -67,4 +67,14 @@ class NetworkUtilsCase {
         uri = new MonUri("root:password@[fd00:172:24:0:0:0:0:10]:2222/?monPort=6789")
         assert uri.hostname == "fd00:172:24::10"
     }
+
+    @Test
+    void testFreeIpLegacyStartAndZeroLimit() {
+        assert NetworkUtils.getFreeIpInRange("10.0.0.10", "10.0.0.12", [], 2, "10.0.0.11") == ["10.0.0.11", "10.0.0.12"]
+        assert NetworkUtils.getFreeIpv6InRange("2001:db8::10", "2001:db8::12", [], 2, "2001:db8::11") == ["2001:db8::12"]
+        assert NetworkUtils.getFreeIpInRange("10.0.0.10", "10.0.0.12", [], 0, "0.0.0.0") == ["10.0.0.10"]
+        assert NetworkUtils.getFreeIpInRange("10.0.0.10", "10.0.0.12", ["10.0.0.10"], 0, "0.0.0.0").isEmpty()
+        assert NetworkUtils.getFreeIpv6InRange("2001:db8::10", "2001:db8::12", ["2001:db8::10"], 0, "::") == ["2001:db8::11"]
+    }
+
 }

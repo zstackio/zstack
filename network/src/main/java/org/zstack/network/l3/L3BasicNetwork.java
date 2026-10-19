@@ -1423,8 +1423,9 @@ public class L3BasicNetwork implements L3Network {
             }
         }
 
-        List<FreeIpInventory> freeIpInventorys = new ArrayList<FreeIpInventory>();
-        int limit = msg.getLimit();
+        List<FreeIpInventory> freeIpInventorys = new ArrayList<>();
+        Set<ReservedIpRangeVO> reservedIpRanges = self.getReservedIpRanges();
+        int queryLimit = msg.getLimit() + 1;
         String start = msg.getStart();
         for ( IpRangeVO ipRangeVO : ipRangeVOs) {
             if( msg.getStart() == null){
@@ -1434,18 +1435,16 @@ public class L3BasicNetwork implements L3Network {
                     start = "0.0.0.0";
                 }
             }
-            List<FreeIpInventory> tempFreeIpInventorys = IpRangeHelper.getFreeIp(ipRangeVO, limit,start);
+            List<FreeIpInventory> tempFreeIpInventorys = IpRangeHelper.getFreeIp(ipRangeVO, queryLimit - freeIpInventorys.size(), start, reservedIpRanges);
             freeIpInventorys.addAll(tempFreeIpInventorys);
-            if (freeIpInventorys.size() >= msg.getLimit()) {
+            if (freeIpInventorys.size() == queryLimit) {
                 break;
             }
-            limit -= tempFreeIpInventorys.size();
         }
 
-        Set<ReservedIpRangeVO> reservedIpRanges = self.getReservedIpRanges();
-        if (reservedIpRanges != null && !reservedIpRanges.isEmpty()) {
-            freeIpInventorys.removeIf(freeIp -> reservedIpRanges.stream().anyMatch(
-                    r -> NetworkUtils.isInRange(freeIp.getIp(), r.getStartIp(), r.getEndIp())));
+        reply.setMore(freeIpInventorys.size() == queryLimit);
+        if (reply.getMore()) {
+            freeIpInventorys.remove(freeIpInventorys.size() - 1);
         }
 
         reply.setInventories(freeIpInventorys);

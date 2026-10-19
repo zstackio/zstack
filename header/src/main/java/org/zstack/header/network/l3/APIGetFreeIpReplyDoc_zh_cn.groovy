@@ -29,4 +29,10 @@ doc {
 		since "0.6"
 		clz FreeIpInventory.class
 	}
+	field {
+		name "more"
+		desc "是否还有可用IP"
+		type "Boolean"
+		since "5.6.0"
+	}
 }
