@@ -92,6 +92,14 @@ public class ZsDatasetImageDatasetInventory  {
         return this.taskId;
     }
 
+    public java.lang.String sourceTaskAvailability;
+    public void setSourceTaskAvailability(java.lang.String sourceTaskAvailability) {
+        this.sourceTaskAvailability = sourceTaskAvailability;
+    }
+    public java.lang.String getSourceTaskAvailability() {
+        return this.sourceTaskAvailability;
+    }
+
     public boolean confirmed;
     public void setConfirmed(boolean confirmed) {
         this.confirmed = confirmed;

@@ -116,6 +116,14 @@ public class ZsDatasetConversationInventory  {
         return this.taskId;
     }
 
+    public java.lang.String sourceTaskAvailability;
+    public void setSourceTaskAvailability(java.lang.String sourceTaskAvailability) {
+        this.sourceTaskAvailability = sourceTaskAvailability;
+    }
+    public java.lang.String getSourceTaskAvailability() {
+        return this.sourceTaskAvailability;
+    }
+
     public java.lang.String questionLabel;
     public void setQuestionLabel(java.lang.String questionLabel) {
         this.questionLabel = questionLabel;
