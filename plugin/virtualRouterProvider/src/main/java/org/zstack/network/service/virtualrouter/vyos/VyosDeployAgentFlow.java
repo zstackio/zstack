@@ -12,6 +12,7 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.upgrade.UpgradeChecker;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
@@ -56,6 +57,15 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     @Autowired
     private UpgradeChecker upgradeChecker;
 
+    private final boolean upgradeOnApiStartOrRebootDuringGrayscale;
+
+    public VyosDeployAgentFlow() {
+        this(false);
+    }
+
+    public VyosDeployAgentFlow(boolean upgradeOnApiStartOrRebootDuringGrayscale) {
+        this.upgradeOnApiStartOrRebootDuringGrayscale = upgradeOnApiStartOrRebootDuringGrayscale;
+    }
 
     private final String REMOTE_USER = "REMOTE_USER";
     private final String REMOTE_PASS = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
@@ -86,10 +96,9 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         return (String) data.get(REMOTE_ZVRBOOT_BIN_PATH);
     }
 
-    static boolean isFromApi(Map data) {
-        boolean fromApi = Boolean.parseBoolean(String.valueOf(data.get(Params.fromApi.toString())));
-        if (fromApi) {
-            return true;
+    static boolean shouldUpgradeOnApiStartOrReboot(Map data, boolean enabled, boolean grayscaleUpgrade) {
+        if (!enabled || !grayscaleUpgrade) {
+            return false;
         }
 
         VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
@@ -97,20 +106,15 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             return false;
         }
 
-        if (spec.getMessage() instanceof APIStartVmInstanceMsg || spec.getMessage() instanceof APIRebootVmInstanceMsg) {
-            return true;
+        if (spec.getCurrentVmOperation() == VmOperation.Start) {
+            return spec.getMessage() instanceof APIStartVmInstanceMsg;
         }
 
-        return spec.getMessage() instanceof RebootVmInstanceMsg &&
-                ((RebootVmInstanceMsg) spec.getMessage()).isFromApi();
+        return spec.getCurrentVmOperation() == VmOperation.Reboot &&
+                (spec.getMessage() instanceof APIRebootVmInstanceMsg ||
+                        (spec.getMessage() instanceof RebootVmInstanceMsg &&
+                                ((RebootVmInstanceMsg) spec.getMessage()).isFromApi()));
     }
-
-    static boolean shouldSkipDeployOnStart(boolean isReconnect, boolean fromApi,
-                                            boolean deployAgentOnStart, boolean hasDeployAgentTag) {
-        return !isReconnect && !fromApi && !deployAgentOnStart && !hasDeployAgentTag;
-    }
-
-
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -120,10 +124,13 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             return;
         }
 
-        boolean fromApi = isFromApi(data);
+        boolean fromApi = Boolean.parseBoolean(String.valueOf(data.get(Params.fromApi.toString())));
+        boolean upgradeOnApiStartOrReboot = shouldUpgradeOnApiStartOrReboot(data,
+                upgradeOnApiStartOrRebootDuringGrayscale, UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class));
         boolean skipGrayscaleUpgradeCheck = Boolean.parseBoolean(String.valueOf(data.get(Params.skipGrayscaleUpgradeCheck.toString())));
         boolean isReconnect = Boolean.parseBoolean(String.valueOf(data.get(Params.isReconnect.toString())));
-        if (!fromApi && !skipGrayscaleUpgradeCheck && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
+        if (!fromApi && !upgradeOnApiStartOrReboot && !skipGrayscaleUpgradeCheck &&
+                upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
             trigger.next();
             return;
         }
@@ -136,9 +143,10 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         String remoteZvrBootBinPath =  storeDataToMap(data, REMOTE_ZVRBOOT_BIN_PATH, String.format("/home/%s/zvrboot.bin", remoteUser));
 
 
-        if (shouldSkipDeployOnStart(isReconnect, fromApi,
-                ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class),
-                ApplianceVmSystemTags.APPLIANCEVM_DEPLOY_AGENT_ON_START.hasTag(vrUuid))) {
+        if (!isReconnect &&
+                !upgradeOnApiStartOrReboot &&
+                !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class) &&
+                !ApplianceVmSystemTags.APPLIANCEVM_DEPLOY_AGENT_ON_START.hasTag(vrUuid)) {
             // no need to deploy agent
             trigger.next();
             return;
