@@ -1,6 +1,6 @@
 package org.zstack.sdk;
 
-
+import org.zstack.sdk.ZsDatasetSegmentationConfigSpec;
 
 public class ZsDatasetSourceInventory  {
 
@@ -90,6 +90,30 @@ public class ZsDatasetSourceInventory  {
     }
     public java.lang.Long getChunkCount() {
         return this.chunkCount;
+    }
+
+    public java.lang.String processingTaskId;
+    public void setProcessingTaskId(java.lang.String processingTaskId) {
+        this.processingTaskId = processingTaskId;
+    }
+    public java.lang.String getProcessingTaskId() {
+        return this.processingTaskId;
+    }
+
+    public ZsDatasetSegmentationConfigSpec segmentation;
+    public void setSegmentation(ZsDatasetSegmentationConfigSpec segmentation) {
+        this.segmentation = segmentation;
+    }
+    public ZsDatasetSegmentationConfigSpec getSegmentation() {
+        return this.segmentation;
+    }
+
+    public java.lang.String segmentationSource;
+    public void setSegmentationSource(java.lang.String segmentationSource) {
+        this.segmentationSource = segmentationSource;
+    }
+    public java.lang.String getSegmentationSource() {
+        return this.segmentationSource;
     }
 
     public java.util.List adminTags;
