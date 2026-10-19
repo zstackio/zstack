@@ -10,6 +10,10 @@ import org.zstack.core.db.Q
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.errorcode.OperationFailureException
 import org.zstack.header.message.MessageReply
+import org.zstack.header.host.HostStatus
+import org.zstack.header.host.HostVO
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO
+import org.zstack.header.storage.addon.primary.ExternalPrimaryStorageHostProtocolRefVO_
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageMsg
 import org.zstack.header.storage.primary.GetVolumeBackingChainFromPrimaryStorageReply
 import org.zstack.header.storage.primary.PrimaryStorageConstant
@@ -37,6 +41,9 @@ import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageSystemTags
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageCanonicalEvent
 import org.zstack.storage.primary.PrimaryStorageGlobalConfig
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.primary.local.LocalStorageHostRefVO
+import org.zstack.storage.primary.local.LocalStorageHostRefVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostStatus
 import org.zstack.storage.volume.VolumeGlobalConfig
 import org.zstack.storage.zbs.AddonInfo
@@ -200,6 +207,7 @@ class ZbsPrimaryStorageCase extends SubCase {
             testAttachPrimaryStorageFailsWhenActivatingHeartbeatVolumeFails()
             testMdsConnectFailed()
             testLifecycle()
+            testHostReconnectWithFailedStorage()
             testDataVolumeLifecycle()
             testMdsPing()
             testCheckHostStorageConnection()
@@ -864,6 +872,155 @@ class ZbsPrimaryStorageCase extends SubCase {
             primaryStorageUuid = ps.uuid
             clusterUuid = cluster.uuid
         }
+    }
+
+    void testHostReconnectWithFailedStorage() {
+        Closure initLocalStorage = env.getSimulator(LocalStorageKvmBackend.INIT_PATH)
+        Closure getLocalCapacity = env.getSimulator(LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH)
+        env.simulator(LocalStorageKvmBackend.INIT_PATH) {
+            return new LocalStorageKvmBackend.InitRsp(totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                    availableCapacity: SizeUnit.GIGABYTE.toByte(90), localStorageUsedCapacity: 0L)
+        }
+        env.simulator(LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH) {
+            return new LocalStorageKvmBackend.AgentResponse(totalCapacity: SizeUnit.GIGABYTE.toByte(100),
+                    availableCapacity: SizeUnit.GIGABYTE.toByte(90))
+        }
+        def local = addLocalPrimaryStorage {
+            name = "host-reconnect-local"
+            url = "/host-reconnect-local"
+            zoneUuid = zone.uuid
+        }
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = local.uuid
+            clusterUuid = cluster.uuid
+        }
+        attachPrimaryStorageToCluster {
+            primaryStorageUuid = ps.uuid
+            clusterUuid = cluster.uuid
+        }
+        try {
+            AtomicInteger heartbeatFailures = new AtomicInteger()
+            env.afterSimulator(ZbsStorageController.CREATE_VOLUME_PATH) { rsp, HttpEntity<String> e ->
+                def cmd = JSONObjectUtil.toObject(e.body, ZbsStorageController.CreateVolumeCmd)
+                if (cmd.volume == ZbsConstants.ZBS_HEARTBEAT_VOLUME_NAME) {
+                    heartbeatFailures.incrementAndGet()
+                    rsp.setError("heartbeat unavailable on purpose")
+                }
+                return rsp
+            }
+            assertReconnectWithFailedZbs(local.uuid)
+            assert heartbeatFailures.get() > 0 :
+                    "reconnect must exercise heartbeat failure: actualCalls=${heartbeatFailures.get()}"
+
+            env.cleanAfterSimulatorHandlers()
+            reconnectHost { uuid = kvm.uuid }
+            assertZbsHostStatus(PrimaryStorageHostStatus.Connected)
+
+            env.afterSimulator(ZbsStorageController.CHECK_HOST_STORAGE_CONNECTION_PATH) { rsp ->
+                throw new HttpError(503, "storage health check unavailable on purpose")
+            }
+            assertReconnectWithFailedZbs(local.uuid)
+
+            env.cleanAfterSimulatorHandlers()
+            AtomicInteger deployFailures = new AtomicInteger()
+            env.afterSimulator(ZbsStorageController.DEPLOY_CLIENT_PATH) { rsp ->
+                deployFailures.incrementAndGet()
+                rsp.setError("client deployment unavailable on purpose")
+                return rsp
+            }
+            assertReconnectWithFailedZbs(local.uuid)
+            assert deployFailures.get() > 0 :
+                    "disconnected protocols must be redeployed: actualCalls=${deployFailures.get()}"
+
+            env.cleanAfterSimulatorHandlers()
+            reconnectHost { uuid = kvm.uuid }
+            assertZbsHostStatus(PrimaryStorageHostStatus.Connected)
+
+            env.afterSimulator(ZbsPrimaryStorageMdsBase.PING_PATH) { rsp ->
+                rsp.setError("MDS unavailable on purpose")
+                return rsp
+            }
+            env.afterSimulator(ZbsPrimaryStorageMdsBase.SYNC_METADATA_PATH) { rsp ->
+                rsp.setError("MDS unavailable on purpose")
+                return rsp
+            }
+            PrimaryStorageGlobalConfig.PING_INTERVAL.updateValue(1)
+            retryInSecs {
+                String json = Q.New(ExternalPrimaryStorageVO.class)
+                        .select(ExternalPrimaryStorageVO_.addonInfo)
+                        .eq(ExternalPrimaryStorageVO_.uuid, ps.uuid).findValue()
+                def statuses = JSONObjectUtil.toObject(json, AddonInfo.class).mdsInfos*.status
+                assert !statuses.isEmpty() && statuses.every { it == MdsStatus.Disconnected } :
+                        "all MDS must be disconnected before reconnect: actual=${statuses}"
+            }
+            assertReconnectWithFailedZbs(local.uuid)
+
+            detachPrimaryStorageFromCluster {
+                primaryStorageUuid = local.uuid
+                clusterUuid = cluster.uuid
+            }
+            def result = new ReconnectHostAction(uuid: kvm.uuid, sessionId: adminSession()).call()
+            assert result.error != null : "host reconnect must fail when every attached storage is unavailable"
+            String error = JSONObjectUtil.toJsonString(result.error)
+            assert error.contains("all MDS of ZBS") :
+                    "all-storage failure must retain the MDS cause: actual=${error}"
+            assert dbFindByUuid(kvm.uuid, HostVO.class).status == HostStatus.Disconnected :
+                    "host must be Disconnected when all storage is unavailable"
+
+            env.cleanAfterSimulatorHandlers()
+            reconnectPrimaryStorage { uuid = ps.uuid }
+            reconnectHost { uuid = kvm.uuid }
+            assertZbsHostStatus(PrimaryStorageHostStatus.Connected)
+            assert dbFindByUuid(kvm.uuid, HostVO.class).status == HostStatus.Connected :
+                    "host must recover after MDS connectivity is restored"
+        } finally {
+            env.cleanAfterSimulatorHandlers()
+            PrimaryStorageGlobalConfig.PING_INTERVAL.resetValue()
+            detachPrimaryStorageFromCluster {
+                primaryStorageUuid = ps.uuid
+                clusterUuid = cluster.uuid
+            }
+            if (Q.New(PrimaryStorageClusterRefVO.class)
+                    .eq(PrimaryStorageClusterRefVO_.primaryStorageUuid, local.uuid)
+                    .eq(PrimaryStorageClusterRefVO_.clusterUuid, cluster.uuid).isExists()) {
+                detachPrimaryStorageFromCluster {
+                    primaryStorageUuid = local.uuid
+                    clusterUuid = cluster.uuid
+                }
+            }
+            deletePrimaryStorage { uuid = local.uuid }
+            env.simulator(LocalStorageKvmBackend.INIT_PATH, initLocalStorage)
+            env.simulator(LocalStorageKvmBackend.GET_PHYSICAL_CAPACITY_PATH, getLocalCapacity)
+        }
+    }
+
+    void assertReconnectWithFailedZbs(String healthyPsUuid) {
+        def result = new ReconnectHostAction(uuid: kvm.uuid, sessionId: adminSession()).call()
+        assert result.error == null :
+                "ZBS failure must not disconnect a host with healthy storage: actual=${JSONObjectUtil.toJsonString(result.error)}"
+        def status = dbFindByUuid(kvm.uuid, HostVO.class).status
+        assert status == HostStatus.Connected : "host must stay Connected: actual=${status}"
+        Long available = Q.New(LocalStorageHostRefVO.class)
+                .select(LocalStorageHostRefVO_.availableCapacity)
+                .eq(LocalStorageHostRefVO_.hostUuid, kvm.uuid)
+                .eq(LocalStorageHostRefVO_.primaryStorageUuid, healthyPsUuid).findValue()
+        assert available != null && available > 0 :
+                "unrelated local storage must remain available: actualCapacity=${available}"
+        assertZbsHostStatus(PrimaryStorageHostStatus.Disconnected)
+    }
+
+    void assertZbsHostStatus(PrimaryStorageHostStatus expected) {
+        def status = Q.New(PrimaryStorageHostRefVO.class)
+                .select(PrimaryStorageHostRefVO_.status)
+                .eq(PrimaryStorageHostRefVO_.hostUuid, kvm.uuid)
+                .eq(PrimaryStorageHostRefVO_.primaryStorageUuid, ps.uuid).findValue()
+        assert status == expected : "ZBS host connection must be ${expected}: actual=${status}"
+        def protocolStatus = Q.New(ExternalPrimaryStorageHostProtocolRefVO.class)
+                .select(ExternalPrimaryStorageHostProtocolRefVO_.status)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.hostUuid, kvm.uuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.primaryStorageUuid, ps.uuid)
+                .eq(ExternalPrimaryStorageHostProtocolRefVO_.protocol, "CBD").findValue()
+        assert protocolStatus == expected : "ZBS CBD connection must be ${expected}: actual=${protocolStatus}"
     }
 
     void testMdsPing() {
