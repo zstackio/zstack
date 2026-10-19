@@ -55,14 +55,46 @@ public class MemoryPolicyRulesTest {
         reject("{\"zram\":{\"enabled\":\"true\"}}", "Host");
         reject("{\"ksm\":{\"pagesToScan\":1.5}}", "Host");
         reject("{\"ksm\":{\"pagesToScan\":true}}", "Host");
+        reject("{\"ksm\":{\"sleepMillis\":null}}", "Host");
+        reject("{\"ksm\":{\"sleepMillis\":\"20\"}}", "Host");
+        reject("{\"ksm\":{\"sleepMillis\":20.5}}", "Host");
     }
 
     @Test public void capacityAndWritebackHaveBounds() throws Exception {
-        reject("{\"zram\":{\"ramLimitBytes\":4097}}", "Host");
+        merge("{}", "{\"zram\":{\"ramLimitBytes\":4096}}", "Host");
+        try {
+            merge("{}", "{\"zram\":{\"ramLimitBytes\":4097}}", "Host");
+            fail("Unaligned allocation accepted");
+        } catch (IllegalArgumentException expected) {
+            assertTrue(expected.getMessage().contains("4KiB"));
+            assertFalse(expected.getMessage().contains("out of range"));
+        }
         reject("{\"zram\":{\"logicalCapacityBytes\":-4096}}", "Host");
         merge("{}", "{\"zram\":{\"logicalCapacityBytes\":1099511631872}}", "Host");
         merge("{}", "{\"writeback\":{\"batchBytes\":67112960}}", "Host");
         reject("{\"zram\":{\"ramLimitBytes\":9223372036854775808}}", "Host");
+    }
+
+    @Test public void scanIntervalReportsItsRangeWithoutByteAlignment() throws Exception {
+        for (long value : new long[] {1, 4294967296L}) {
+            try {
+                merge("{}", "{\"ksm\":{\"sleepMillis\":" + value + "}}", "Host");
+                fail("Out-of-range scan interval accepted: " + value);
+            } catch (IllegalArgumentException expected) {
+                String message = expected.getMessage();
+                assertTrue(message.contains("MEMORY_INVALID_POLICY: sleepMillis"));
+                assertTrue(message.contains("10"));
+                assertTrue(message.contains("4294967295"));
+                assertTrue(message.contains("milliseconds"));
+                assertFalse(message.contains("4KiB"));
+            }
+        }
+        // The Host adapter checks representability separately; keep the policy bound.
+        for (long value : new long[] {10, 20, 4294967295L}) {
+            JsonObject result = new JsonParser().parse(merge("{}",
+                    "{\"ksm\":{\"sleepMillis\":" + value + "}}", "Host")).getAsJsonObject();
+            assertEquals(value, result.getAsJsonObject("ksm").get("sleepMillis").getAsLong());
+        }
     }
 
     @Test public void writebackIntentIsIndependentFromBackendAndZram() throws Exception {
