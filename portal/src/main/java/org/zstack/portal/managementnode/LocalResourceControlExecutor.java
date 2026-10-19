@@ -225,6 +225,10 @@ public class LocalResourceControlExecutor {
 
     private boolean releaseSystemdSlice(ResourceControlCommand command,
             CgroupResourceControlBackend backend, CgroupResourceControlBackend memoryBackend) {
+        Path sliceTarget = activeSliceTarget(backend, command.getSliceName());
+        if (sliceTarget != null) {
+            backend.releaseCpuSet(sliceTarget);
+        }
         boolean changed = systemd.releaseSlice(command.getSliceName());
         if (changed) {
             systemd.reload();
@@ -235,7 +239,6 @@ public class LocalResourceControlExecutor {
                 memoryBackend.applyMemory(memoryTarget, 0L, null);
             }
         }
-        Path sliceTarget = activeSliceTarget(backend, command.getSliceName());
         if (sliceTarget == null) {
             List<Boolean> results = new ArrayList<>();
             for (ResourceConsumerHandle handle : command.getHandles()) {
@@ -243,7 +246,6 @@ public class LocalResourceControlExecutor {
             }
             return summarizeRelease(results);
         }
-        backend.releaseCpuSet(sliceTarget);
         return true;
     }
 

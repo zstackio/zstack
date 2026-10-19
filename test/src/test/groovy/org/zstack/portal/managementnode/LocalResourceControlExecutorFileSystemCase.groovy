@@ -119,6 +119,10 @@ class LocalResourceControlExecutorFileSystemCase {
         assert commands.count("systemctl", "stop", "prometheus.service") == 1
         assert commands.count("systemctl", "start", "prometheus.service") == 1
 
+        commands.beforeReload = {
+            assert text(slice.resolve("cpuset.cpus")) == "0-7" :
+                    "restore CPU affinity before systemd can disable the last cpuset controller"
+        }
         boolean released = executor.release(command("1-3", memory, [systemdHandle()]))
         assert released :
                 "release must report Synced after restoring every Role boundary"
@@ -1117,6 +1121,7 @@ class LocalResourceControlExecutorFileSystemCase {
         private final Set<String> failStarts = [] as Set
         private final Map<Path, String> rootOwnedDropIns = [:]
         private String failedCommand
+        private Closure beforeReload
 
         FakeCommandExecutor(Path v2Root, Path v1Root, Path v1MemoryRoot) {
             this.v2Root = v2Root
@@ -1201,6 +1206,7 @@ class LocalResourceControlExecutorFileSystemCase {
                 }.join("\n") + "\n"
             }
             if (action == "daemon-reload") {
+                beforeReload?.call()
                 return ""
             }
             if (action == "start" || action == "stop") {
