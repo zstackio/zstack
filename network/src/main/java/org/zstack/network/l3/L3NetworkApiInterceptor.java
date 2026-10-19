@@ -52,6 +52,7 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     protected PluginRegistry pluginRgty;
 
     private final static CLogger logger = Utils.getLogger(L3NetworkApiInterceptor.class);
+    private static final int MAX_FREE_IP_COUNT = 65535;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof IpRangeMessage) {
@@ -360,8 +361,8 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
             msg.setIpVersion(ipRangeVO.getIpVersion());
         }
 
-        if (msg.getLimit() < 0) {
-            msg.setLimit(Integer.MAX_VALUE);
+        if (msg.getLimit() < 0 || msg.getLimit() > MAX_FREE_IP_COUNT) {
+            msg.setLimit(MAX_FREE_IP_COUNT);
         }
 
         if (msg.getIpVersion() == null) {
