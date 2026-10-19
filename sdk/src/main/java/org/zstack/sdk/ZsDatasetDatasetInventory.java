@@ -84,6 +84,14 @@ public class ZsDatasetDatasetInventory  {
         return this.taskType;
     }
 
+    public java.lang.String sourceTaskAvailability;
+    public void setSourceTaskAvailability(java.lang.String sourceTaskAvailability) {
+        this.sourceTaskAvailability = sourceTaskAvailability;
+    }
+    public java.lang.String getSourceTaskAvailability() {
+        return this.sourceTaskAvailability;
+    }
+
     public java.lang.String chunkName;
     public void setChunkName(java.lang.String chunkName) {
         this.chunkName = chunkName;
