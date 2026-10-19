@@ -6797,6 +6797,42 @@ public class MemoryRepositoryTest {
         assertEquals(Long.valueOf(9), host1State().getAppliedRevision());
     }
 
+    @Test public void partialServiceRecoveryLoadsBoundAnchorTaskBeforeAcceptingProof() {
+        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        msg.getRecovery().setDrainControlOperationUuid(null);
+        String originalPolicy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true},"
+                + "\"writeback\":{\"enabled\":false}}";
+        repository.transaction(em -> {
+            MemoryTaskVO old = em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD);
+            old.setDesiredRevision(9); old.setPolicy(originalPolicy);
+            MemoryTaskVO anchor = testTask(MemoryUncertainRecoveryRulesTest.ANCHOR, null, "apply", "Succeeded", null);
+            anchor.setDesiredRevision(8);
+            anchor.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"zeroPagesEnabled\":false},"
+                    + "\"writeback\":{\"enabled\":true,\"backendResourceUuid\":"
+                    + "\"33333333333333333333333333333333\",\"backendCapacityBytes\":21474836480}}");
+            em.persist(anchor);
+            MemoryStateVO host = em.find(MemoryStateVO.class, "host1");
+            host.setDesiredRevision(9); host.setAppliedRevision(8L); host.setAppliedPolicy("{}");
+            return null;
+        });
+        MemoryTaskVO recovery = claimChild(repository.submit(msg).getUuid());
+        repository.result(recovery.getUuid(), "Unknown", "response lost", null);
+
+        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
+        query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
+        MemoryTaskVO reconciliation = claimChild(repository.submit(query).getUuid());
+        MemoryAgentResponse proof = MemoryUncertainRecoveryRulesTest.partialServicePolicyProof(
+                recovery.getUuid(), originalPolicy);
+        repository.result(reconciliation.getUuid(), "Succeeded", null, proof);
+
+        assertEquals("Succeeded", repository.findTask(recovery.getUuid()).getStatus());
+        assertEquals("Succeeded", repository.findTask(reconciliation.getUuid()).getStatus());
+        assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
+        assertEquals(recovery.getUuid(), host1State().getControlOperationUuid());
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals(Long.valueOf(9), host1State().getAppliedRevision());
+    }
+
     @Test public void partialPolicyRecoveryPreflightFailureKeepsOriginalOwner() {
         APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest(); msg.getRecovery().setDrainControlOperationUuid(null);
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());

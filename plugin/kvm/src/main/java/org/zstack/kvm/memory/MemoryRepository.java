@@ -3223,13 +3223,20 @@ public class MemoryRepository {
                 MemoryTaskVO original = em.find(MemoryTaskVO.class, recovery.getExpectedControlOperationUuid());
                 MemoryTaskVO drain = request.get("drainControlOperationUuid") == null ? null
                         : em.find(MemoryTaskVO.class, request.get("drainControlOperationUuid"));
+                Map<?, ?> state = response == null ? null : response.state;
+                Object rawRecoveryProof = state == null ? null : state.get("recoveryProof");
+                Map<?, ?> recoveryProof = rawRecoveryProof instanceof Map ? (Map<?, ?>) rawRecoveryProof : null;
+                Object anchorUuid = recoveryProof == null ? null : recoveryProof.get("anchorOperationUuid");
+                MemoryTaskVO anchor = anchorUuid instanceof String
+                        && ((String) anchorUuid).matches("[a-f0-9]{32}")
+                        ? em.find(MemoryTaskVO.class, anchorUuid) : null;
                 if (host != null && Objects.equals(uuid, host.getActiveTaskUuid())
                         && MemoryUncertainRecoveryRules.confirms(recovery, original, drain, host, response)) {
                     resultStatus = "Succeeded";
                     resultReason = "Uncertain activation retired; original outcome remains Unknown";
                     restoredControlFence = drain.getUuid();
                 } else if (host != null && Objects.equals(uuid, host.getActiveTaskUuid())
-                        && MemoryUncertainRecoveryRules.confirmsPolicy(recovery, original, host, response)) {
+                        && MemoryUncertainRecoveryRules.confirmsPolicy(recovery, original, anchor, host, response)) {
                     resultStatus = "Succeeded";
                     resultReason = "Original tuning verified and final CPU gate restored; original outcome remains Unknown";
                     restoredControlFence = recovery.getUuid();
