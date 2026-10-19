@@ -6360,104 +6360,135 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void configurationReconcileNotIssuedSettlesOnlyTheCurrentPlanOutcome() {
-        for (String action : Arrays.asList("apply", "clearOverride")) {
-            for (String queryIdentity : Arrays.asList("explicitOmitted", "explicitExpected", "configuration")) {
-                ordinaryReconcileFixture(action, false);
-                if ("explicitExpected".equals(queryIdentity)) {
-                    repository.transaction(em -> {
-                        em.find(MemoryTaskVO.class, "query").setExpectedControlOperationUuid("original");
-                        return null;
-                    });
-                } else if ("configuration".equals(queryIdentity)) {
-                    repository.transaction(em -> {
-                        MemoryTaskVO query = em.find(MemoryTaskVO.class, "query");
-                        query.setActorUuid("system:memory-config-reconcile");
-                        query.setExpectedControlOperationUuid("original");
-                        em.find(MemoryStateVO.class, "host1").setControlOperationUuid("original");
-                        return null;
-                    });
+        for (String receipt : Arrays.asList("FIRST_ZRAM_ADMISSION_NOT_ISSUED", "KSM_CLEAR_NOT_ISSUED")) {
+            for (String action : Arrays.asList("apply", "clearOverride")) {
+                for (String queryIdentity : Arrays.asList("explicitOmitted", "explicitExpected", "configuration")) {
+                    ordinaryReconcileFixture(action, false);
+                    if ("explicitExpected".equals(queryIdentity)) {
+                        repository.transaction(em -> {
+                            em.find(MemoryTaskVO.class, "query").setExpectedControlOperationUuid("original");
+                            return null;
+                        });
+                    } else if ("configuration".equals(queryIdentity)) {
+                        repository.transaction(em -> {
+                            MemoryTaskVO query = em.find(MemoryTaskVO.class, "query");
+                            query.setActorUuid("system:memory-config-reconcile");
+                            query.setExpectedControlOperationUuid("original");
+                            em.find(MemoryStateVO.class, "host1").setControlOperationUuid("original");
+                            return null;
+                        });
+                    }
+                    if ("KSM_CLEAR_NOT_ISSUED".equals(receipt)) {
+                        repository.transaction(em -> {
+                            em.find(MemoryTaskVO.class, "original").setPolicy("{\"schemaVersion\":1,\"ksm\":{}}");
+                            return null;
+                        });
+                    }
+                    MemoryAgentResponse rejected = new MemoryAgentResponse();
+                    rejected.setSuccess(false); rejected.status = "Failed";
+                    rejected.operationUuid = "original";
+                    rejected.reasonCode = receipt;
+                    rejected.state = new LinkedHashMap<>();
+                    rejected.state.put("phase", "NOT_ISSUED"); rejected.state.put("bootId", "boot1");
+                    rejected.state.put("requestHash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
+                    rejected.state.put("policyWritesIssued", false);
+                    if ("KSM_CLEAR_NOT_ISSUED".equals(receipt)) {
+                        rejected = org.zstack.utils.gson.JSONObjectUtil.toObject("{\"success\":false,\"status\":\"Failed\","
+                                + "\"operationUuid\":\"original\",\"reasonCode\":\"KSM_CLEAR_NOT_ISSUED\","
+                                + "\"state\":{\"phase\":\"NOT_ISSUED\",\"bootId\":\"boot1\","
+                                + "\"requestHash\":\"988f535ac21c705d00553452e03e90ee28c5a80679e91d5d9f5f7052e9c7a1ac\","
+                                + "\"policyWritesIssued\":false}}", MemoryAgentResponse.class);
+                    }
+                    String appliedPolicy = host1State().getAppliedPolicy();
+                    String appliedPolicyHash = host1State().getAppliedPolicyHash();
+                    String nativeState = host1State().getState();
+                    Long appliedRevision = host1State().getAppliedRevision();
+                    String planHash = host1State().getPolicyPlanHash();
+
+                    repository.result("query", "Failed", rejected.reasonCode, rejected);
+
+                    MemoryStateVO state = host1State();
+                    assertEquals(queryIdentity, "Failed", repository.findTask("original").getStatus());
+                    assertEquals(queryIdentity, "Failed", state.getPolicyPlanStatus());
+                    assertEquals(queryIdentity, "Failed", MemoryMetricsPresentation.inventory(
+                            state, null, System.currentTimeMillis()).getStatus());
+                    assertEquals(queryIdentity, appliedPolicy, state.getAppliedPolicy());
+                    assertEquals(queryIdentity, appliedPolicyHash, state.getAppliedPolicyHash());
+                    assertEquals(queryIdentity, nativeState, state.getState());
+                    assertEquals(queryIdentity, appliedRevision, state.getAppliedRevision());
+                    assertEquals(queryIdentity, planHash, state.getPolicyPlanHash());
+                    assertEquals(queryIdentity, "configuration".equals(queryIdentity) ? "original" : "query",
+                            state.getControlOperationUuid());
+                    assertNull(queryIdentity, state.getActiveTaskUuid());
                 }
+            }
+        }
+    }
+
+
+    @Test public void configurationReconcileNotIssuedCannotSettleChangedOrUnprovenPlan() {
+        for (String receipt : Arrays.asList("FIRST_ZRAM_ADMISSION_NOT_ISSUED", "KSM_CLEAR_NOT_ISSUED")) {
+            for (String invalid : Arrays.asList("newPlan", "newRevision", "unknownProof", "wrongReason",
+                    "wrongExpectedControl", "wrongHost", "wrongTopBoot", "nonConfig", "badHash", "partialWrite",
+                    "mixedTarget", "nonemptyTarget", "badSchema")) {
+                if (!"KSM_CLEAR_NOT_ISSUED".equals(receipt)
+                        && Arrays.asList("mixedTarget", "nonemptyTarget", "badSchema").contains(invalid)) continue;
+                ordinaryReconcileFixture("apply", false);
+                repository.transaction(em -> {
+                    if ("KSM_CLEAR_NOT_ISSUED".equals(receipt)) {
+                        em.find(MemoryTaskVO.class, "original").setPolicy(
+                                "mixedTarget".equals(invalid) ? "{\"schemaVersion\":1,\"ksm\":{},\"zram\":{\"enabled\":true}}"
+                                : "nonemptyTarget".equals(invalid) ? "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}"
+                                : "badSchema".equals(invalid) ? "{\"schemaVersion\":2,\"ksm\":{}}"
+                                : "{\"schemaVersion\":1,\"ksm\":{}}");
+                    }
+                    if ("wrongExpectedControl".equals(invalid)) {
+                        em.find(MemoryTaskVO.class, "query").setExpectedControlOperationUuid("other");
+                    }
+                    if ("nonConfig".equals(invalid)) {
+                        em.find(MemoryTaskVO.class, "original").setAction("pause");
+                    }
+                    MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                    if ("newPlan".equals(invalid)) state.setPolicyPlanHash("newer-plan");
+                    if ("newRevision".equals(invalid)) state.setDesiredRevision(9);
+                    return null;
+                });
                 MemoryAgentResponse rejected = new MemoryAgentResponse();
                 rejected.setSuccess(false); rejected.status = "Failed";
                 rejected.operationUuid = "original";
-                rejected.reasonCode = "FIRST_ZRAM_ADMISSION_NOT_ISSUED";
+                if ("wrongHost".equals(invalid)) rejected.hostUuid = "host2";
+                if ("wrongTopBoot".equals(invalid)) rejected.bootId = "boot2";
+                rejected.reasonCode = "wrongReason".equals(invalid)
+                        ? "FIRST_ZRAM_OBSERVATION_NOT_FRESH_OR_SAFE" : receipt;
                 rejected.state = new LinkedHashMap<>();
-                rejected.state.put("phase", "NOT_ISSUED"); rejected.state.put("bootId", "boot1");
+                rejected.state.put("phase", "unknownProof".equals(invalid) ? "UNKNOWN" : "NOT_ISSUED");
+                rejected.state.put("bootId", "boot1");
                 rejected.state.put("requestHash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
                 rejected.state.put("policyWritesIssued", false);
-                String appliedPolicy = host1State().getAppliedPolicy();
-                String appliedPolicyHash = host1State().getAppliedPolicyHash();
-                String nativeState = host1State().getState();
+                if ("badHash".equals(invalid)) rejected.state.put("requestHash", "bad");
+                if ("partialWrite".equals(invalid)) rejected.state.put("policyWritesIssued", true);
                 Long appliedRevision = host1State().getAppliedRevision();
-                String planHash = host1State().getPolicyPlanHash();
+                String appliedPolicy = host1State().getAppliedPolicy();
+                String nativeState = host1State().getState();
 
-                repository.result("query", "Failed", rejected.reasonCode, rejected);
+                String resultStatus = "unknownProof".equals(invalid) ? "Unknown" : "Failed";
+                repository.result("query", resultStatus, rejected.reasonCode, rejected);
 
                 MemoryStateVO state = host1State();
-                assertEquals(queryIdentity, "Failed", repository.findTask("original").getStatus());
-                assertEquals(queryIdentity, "Failed", state.getPolicyPlanStatus());
-                assertEquals(queryIdentity, "Failed", MemoryMetricsPresentation.inventory(
+                assertEquals(invalid, "Unknown", state.getPolicyPlanStatus());
+                assertEquals(invalid, "Unknown", MemoryMetricsPresentation.inventory(
                         state, null, System.currentTimeMillis()).getStatus());
-                assertEquals(queryIdentity, appliedPolicy, state.getAppliedPolicy());
-                assertEquals(queryIdentity, appliedPolicyHash, state.getAppliedPolicyHash());
-                assertEquals(queryIdentity, nativeState, state.getState());
-                assertEquals(queryIdentity, appliedRevision, state.getAppliedRevision());
-                assertEquals(queryIdentity, planHash, state.getPolicyPlanHash());
-                assertEquals(queryIdentity, "configuration".equals(queryIdentity) ? "original" : "query",
-                        state.getControlOperationUuid());
-                assertNull(queryIdentity, state.getActiveTaskUuid());
+                assertEquals(invalid, appliedPolicy, state.getAppliedPolicy());
+                assertEquals(invalid, nativeState, state.getState());
+                assertEquals(invalid, appliedRevision, state.getAppliedRevision());
+                if ("unknownProof".equals(invalid)) {
+                    assertEquals(invalid, "Unknown", repository.findTask("original").getStatus());
+                    assertEquals(invalid, "query", state.getActiveTaskUuid());
+                }
             }
         }
     }
 
-    @Test public void configurationReconcileNotIssuedCannotSettleChangedOrUnprovenPlan() {
-        for (String invalid : Arrays.asList("newPlan", "newRevision", "unknownProof", "wrongReason",
-                "wrongExpectedControl", "wrongHost", "wrongTopBoot", "nonConfig")) {
-            ordinaryReconcileFixture("apply", false);
-            repository.transaction(em -> {
-                if ("wrongExpectedControl".equals(invalid)) {
-                    em.find(MemoryTaskVO.class, "query").setExpectedControlOperationUuid("other");
-                }
-                if ("nonConfig".equals(invalid)) {
-                    em.find(MemoryTaskVO.class, "original").setAction("pause");
-                }
-                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-                if ("newPlan".equals(invalid)) state.setPolicyPlanHash("newer-plan");
-                if ("newRevision".equals(invalid)) state.setDesiredRevision(9);
-                return null;
-            });
-            MemoryAgentResponse rejected = new MemoryAgentResponse();
-            rejected.setSuccess(false); rejected.status = "Failed";
-            rejected.operationUuid = "original";
-            if ("wrongHost".equals(invalid)) rejected.hostUuid = "host2";
-            if ("wrongTopBoot".equals(invalid)) rejected.bootId = "boot2";
-            rejected.reasonCode = "wrongReason".equals(invalid)
-                    ? "FIRST_ZRAM_OBSERVATION_NOT_FRESH_OR_SAFE" : "FIRST_ZRAM_ADMISSION_NOT_ISSUED";
-            rejected.state = new LinkedHashMap<>();
-            rejected.state.put("phase", "unknownProof".equals(invalid) ? "UNKNOWN" : "NOT_ISSUED");
-            rejected.state.put("bootId", "boot1");
-            rejected.state.put("requestHash", "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef");
-            rejected.state.put("policyWritesIssued", false);
-            Long appliedRevision = host1State().getAppliedRevision();
-            String appliedPolicy = host1State().getAppliedPolicy();
-            String nativeState = host1State().getState();
-
-            String resultStatus = "unknownProof".equals(invalid) ? "Unknown" : "Failed";
-            repository.result("query", resultStatus, rejected.reasonCode, rejected);
-
-            MemoryStateVO state = host1State();
-            assertEquals(invalid, "Unknown", state.getPolicyPlanStatus());
-            assertEquals(invalid, "Unknown", MemoryMetricsPresentation.inventory(
-                    state, null, System.currentTimeMillis()).getStatus());
-            assertEquals(invalid, appliedPolicy, state.getAppliedPolicy());
-            assertEquals(invalid, nativeState, state.getState());
-            assertEquals(invalid, appliedRevision, state.getAppliedRevision());
-            if ("unknownProof".equals(invalid)) {
-                assertEquals(invalid, "Unknown", repository.findTask("original").getStatus());
-                assertEquals(invalid, "query", state.getActiveTaskUuid());
-            }
-        }
-    }
 
     @Test public void ordinaryReconcileRejectsContradictoryProofAndNewerControl() {
         for (String invalid : Arrays.asList("operation", "host", "boot", "stateBoot", "confirmedControl",
