@@ -2,6 +2,7 @@ package org.zstack.test.integration.longjob
 
 import com.google.gson.Gson
 import org.springframework.http.HttpEntity
+import org.zstack.core.Platform
 import org.zstack.core.agent.AgentConstant
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.DatabaseFacade
@@ -11,6 +12,8 @@ import org.zstack.header.allocator.AllocateHostMsg
 import org.zstack.header.allocator.AllocateHostReply
 import org.zstack.header.allocator.HostCapacityVO
 import org.zstack.header.allocator.HostCapacityVO_
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg
+import org.zstack.header.host.CheckVmStateOnHypervisorReply
 import org.zstack.header.host.HostVO
 import org.zstack.header.host.HostVO_
 import org.zstack.header.longjob.LongJobConstants
@@ -29,6 +32,10 @@ import org.zstack.test.integration.ZStackTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Created by camile on 18-3-7.
@@ -191,6 +198,81 @@ class LiveMigrateVmJobCase extends SubCase {
             testLiveMigrateVmLongJobCancelFail()
             testLiveMigrateVmLongJobCancelBeforeMigrate()
             testLiveMigrateVmNoJobToCancel()
+            testMigrationCallbackLost(false, false)
+            testMigrationCallbackLost(true, false)
+            testMigrationCallbackLost(true, false, false)
+            testMigrationCallbackLost(true, true)
+        }
+    }
+
+    void testMigrationCallbackLost(boolean cancelFirst, boolean destinationRunning, boolean sourceReachable = true) {
+        env.cleanSimulatorAndMessageHandlers()
+        String sourceUuid = dbFindByUuid(vm1.uuid, VmInstanceVO.class).hostUuid
+        String destinationUuid = sourceUuid == host1.uuid ? host2.uuid : host1.uuid
+        CountDownLatch entered = new CountDownLatch(1)
+        CountDownLatch release = new CountDownLatch(1)
+        AtomicInteger stateChecks = new AtomicInteger()
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+            entered.countDown()
+            assert release.await(120, TimeUnit.SECONDS)
+            // A late success must not revive the failed migration.
+            return new KVMAgentCommands.MigrateVmResponse()
+        }
+        env.simulator(AgentConstant.CANCEL_JOB) {
+            def rsp = new KVMAgentCommands.CancelRsp()
+            rsp.setError(LongJobConstants.NO_JOB_TO_CANCEL)
+            return rsp
+        }
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            assert msg.hostUuid == destinationUuid || (!destinationRunning && msg.hostUuid == sourceUuid)
+            stateChecks.incrementAndGet()
+            def reply = new CheckVmStateOnHypervisorReply()
+            if (msg.hostUuid == sourceUuid && !sourceReachable) {
+                reply.setError(Platform.operr("ORG_ZSTACK_KVM_10124", "source host disconnected"))
+            } else {
+                reply.states = [(vm1.uuid): (msg.hostUuid == destinationUuid && destinationRunning ? "Running" : "Stopped")]
+            }
+            bus.reply(msg, reply)
+        }
+        // Match the existing stale-call grace period without a real 60s sleep.
+        env.afterSimulator(KVMConstant.KVM_CONNECT_PATH) { KVMAgentCommands.ConnectResponse rsp ->
+            rsp.firstConnect = true
+            rsp.agentStartTimeMillis = System.currentTimeMillis() + 70_000L
+            return rsp
+        }
+
+        def msg = new APIMigrateVmMsg(vmInstanceUuid: vm1.uuid, hostUuid: destinationUuid)
+        LongJobInventory job = submitLongJob {
+            jobName = msg.class.simpleName
+            jobData = gson.toJson(msg)
+        } as LongJobInventory
+        try {
+            assert entered.await(20, TimeUnit.SECONDS)
+            if (cancelFirst) {
+                // The request is new: restart's 60s grace period cannot drain it.
+                cancelLongJob { uuid = job.uuid }
+            } else {
+                reconnectHost { uuid = sourceUuid }
+            }
+            retryInSecs {
+                assert dbFindByUuid(job.uuid, LongJobVO.class).state.toString() == (destinationRunning ? "Succeeded" : (cancelFirst ? "Canceled" : "Failed"))
+                assert dbFindByUuid(vm1.uuid, VmInstanceVO.class).state.toString() == (destinationRunning ? "Running" : (sourceReachable ? "Stopped" : "Unknown"))
+                assert stateChecks.get() > 0
+            }
+            release.countDown()
+            env.cleanSimulatorAndMessageHandlers()
+            // A real operation on the same VM proves its migration queue was released.
+            if (destinationRunning || !sourceReachable) {
+                stopVmInstance { uuid = vm1.uuid }
+            }
+            String expectedHost = destinationRunning ? destinationUuid : sourceUuid
+            startVmInstance { uuid = vm1.uuid; hostUuid = expectedHost }
+            assert dbFindByUuid(vm1.uuid, VmInstanceVO.class).state.toString() == "Running"
+            assert dbFindByUuid(vm1.uuid, VmInstanceVO.class).hostUuid == expectedHost
+            assert dbFindByUuid(job.uuid, LongJobVO.class).state.toString() == (destinationRunning ? "Succeeded" : (cancelFirst ? "Canceled" : "Failed"))
+        } finally {
+            release.countDown()
+            env.cleanSimulatorAndMessageHandlers()
         }
     }
 
@@ -315,6 +397,10 @@ class LiveMigrateVmJobCase extends SubCase {
         env.simulator(AgentConstant.CANCEL_JOB) { HttpEntity<String> e ->
             cmd = json(e.body, KVMAgentCommands.CancelCmd.class)
             canceled = true
+            // Finish the original callback first: no pending migration should be drained.
+            retryInSecs {
+                assert dbFindByUuid(vm1.uuid, VmInstanceVO.class).hostUuid == host2.uuid
+            }
             def rsp = new KVMAgentCommands.CancelRsp()
             rsp.setError(LongJobConstants.NO_JOB_TO_CANCEL)
             return rsp

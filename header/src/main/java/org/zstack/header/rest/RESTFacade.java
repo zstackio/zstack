@@ -39,6 +39,8 @@ public interface RESTFacade {
 
     void asyncJson(final String url, final String body, Map<String, String> headers, HttpMethod method, final AsyncRESTCallback callback, final TimeUnit unit, final long timeout);
 
+    int failPendingCallsForResourceAndApi(String resourceUuid, String apiId, String path, ErrorCode err);
+
     int failPendingCallsForResourceBefore(String resourceUuid, long cutoffMillis, ErrorCode err);
 
     <T> T syncJsonPost(String url, Object body, Class<T> returnClass);
