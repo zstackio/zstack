@@ -4,6 +4,14 @@ import org.zstack.sdk.CacheTO;
 
 public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
 
+    public java.lang.String diskMode;
+    public void setDiskMode(java.lang.String diskMode) {
+        this.diskMode = diskMode;
+    }
+    public java.lang.String getDiskMode() {
+        return this.diskMode;
+    }
+
     public java.lang.String installPath;
     public void setInstallPath(java.lang.String installPath) {
         this.installPath = installPath;

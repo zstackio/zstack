@@ -52,4 +52,12 @@ public class ScsiLunVmInstanceRefInventory  {
         return this.attachMultipath;
     }
 
+    public java.lang.String diskMode;
+    public void setDiskMode(java.lang.String diskMode) {
+        this.diskMode = diskMode;
+    }
+    public java.lang.String getDiskMode() {
+        return this.diskMode;
+    }
+
 }

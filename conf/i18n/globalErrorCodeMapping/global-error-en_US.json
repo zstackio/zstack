@@ -3575,6 +3575,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10018": "State validation failed during password change operation.%s",
   "ORG_ZSTACK_COMPUTE_VM_10017": "not destination host found in database by UUID: %s, cannot send change password command to the host!",
   "ORG_ZSTACK_STORAGE_DEVICE_10036": "hba scan failed: %s",
+  "ORG_ZSTACK_STORAGE_DEVICE_10051": "only one SCSI LUN diskMode can be specified",
+  "ORG_ZSTACK_STORAGE_DEVICE_10052": "unsupported SCSI LUN diskMode[%s]",
   "ORG_ZSTACK_COMPUTE_VM_10015": "vm [%s]\u0027s host UUID is null, cannot synchronize network quality of service",
   "ORG_ZSTACK_COMPUTE_VM_10014": "vm [%s] must be in a Running or Paused state to synchronize NIC QoS settings",
   "ORG_ZSTACK_STORAGE_DEVICE_10031": "vm instance[uuid: %s] host[uuid: %s] failed to attach scsi lun[uuid: %s]",
