@@ -10,12 +10,11 @@ import java.math.BigInteger;
 import java.util.List;
 
 public interface L3NetworkManager {
-    L3NetworkVendorFactory getL3NetworkVendorFactory(String vSwitchType);
-
     IpAllocatorStrategy getIpAllocatorStrategy(IpAllocatorType type);
 
     UsedIpInventory reserveIp(IpRangeVO ipRange, String ip);
     UsedIpInventory reserveIp(IpRangeVO ipRange, String ip, boolean allowDuplicatedAddress);
+
     boolean isIpRangeFull(IpRangeVO vo);
     
     List<BigInteger> getUsedIpInRange(IpRangeVO vo);

@@ -1,5 +1,7 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
@@ -42,7 +44,21 @@ import org.zstack.header.rest.RestRequest;
         responseClass = APIAddDnsToL3NetworkEvent.class,
         parameterName = "params"
 )
-public class APIAddDnsToL3NetworkMsg extends APIMessage implements L3NetworkMessage {
+public class APIAddDnsToL3NetworkMsg extends APIMessage implements L3NetworkMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     /**
      * @desc l3Network uuid
      */

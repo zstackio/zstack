@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.zstack.sdk.*;
 
-public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
+public class QueryZnsControllerApiCompatibilityAction extends QueryAction {
 
     private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
 
@@ -12,7 +12,7 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
 
     public static class Result {
         public ErrorCode error;
-        public org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult value;
+        public org.zstack.sdk.network.zns.QueryZnsControllerApiCompatibilityResult value;
 
         public Result throwExceptionIfError() {
             if (error != null) {
@@ -25,35 +25,6 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
         }
     }
 
-    @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String computeManagerUuid;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String knownOfferDigest;
-
-    @Param(required = false)
-    public java.lang.Integer limit = 1000;
-
-    @Param(required = false)
-    public java.lang.Integer start = 0;
-
-    @Param(required = false)
-    public java.util.List systemTags;
-
-    @Param(required = false)
-    public java.util.List userTags;
-
-    @Param(required = false)
-    public String sessionId;
-
-    @Param(required = false)
-    public String accessKeyId;
-
-    @Param(required = false)
-    public String accessKeySecret;
-
-    @Param(required = false)
-    public String requestIp;
 
 
     private Result makeResult(ApiResult res) {
@@ -63,8 +34,8 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
             return ret;
         }
         
-        org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult value = res.getResult(org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult.class);
-        ret.value = value == null ? new org.zstack.sdk.network.zns.GetZnsIntegrationEffectiveOfferResult() : value; 
+        org.zstack.sdk.network.zns.QueryZnsControllerApiCompatibilityResult value = res.getResult(org.zstack.sdk.network.zns.QueryZnsControllerApiCompatibilityResult.class);
+        ret.value = value == null ? new org.zstack.sdk.network.zns.QueryZnsControllerApiCompatibilityResult() : value; 
 
         return ret;
     }
@@ -94,7 +65,7 @@ public class GetZnsIntegrationEffectiveOfferAction extends AbstractAction {
     protected RestInfo getRestInfo() {
         RestInfo info = new RestInfo();
         info.httpMethod = "GET";
-        info.path = "/sdn-controller/zns/integration/effective-offer";
+        info.path = "/sdn-controller/apiCapabilities";
         info.needSession = true;
         info.needPoll = false;
         info.parameterName = "";

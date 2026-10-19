@@ -1,14 +1,28 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.message.DeletionMessage;
-import org.zstack.header.network.l2.NetworkDeletionContext;
 
 /**
  */
-public class IpRangeDeletionMsg extends DeletionMessage implements L3NetworkMessage {
+public class IpRangeDeletionMsg extends DeletionMessage implements L3NetworkMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String l3NetworkUuid;
     private String ipRangeUuid;
-    private NetworkDeletionContext networkDeletionContext;
 
     @Override
     public String getL3NetworkUuid() {
@@ -25,13 +39,5 @@ public class IpRangeDeletionMsg extends DeletionMessage implements L3NetworkMess
 
     public void setIpRangeUuid(String ipRangeUuid) {
         this.ipRangeUuid = ipRangeUuid;
-    }
-
-    public NetworkDeletionContext getNetworkDeletionContext() {
-        return networkDeletionContext;
-    }
-
-    public void setNetworkDeletionContext(NetworkDeletionContext networkDeletionContext) {
-        this.networkDeletionContext = networkDeletionContext;
     }
 }

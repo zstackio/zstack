@@ -1,5 +1,7 @@
 package org.zstack.header.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 
 import org.zstack.header.message.APICreateMessage;
 import org.zstack.header.message.APIEvent;
@@ -43,7 +45,21 @@ import org.zstack.header.zone.ZoneVO;
  * @since 0.1.0
  */
 
-public abstract class APICreateL2NetworkMsg extends APICreateMessage implements APIAuditor {
+public abstract class APICreateL2NetworkMsg extends APICreateMessage implements APIAuditor, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     /**
      * @desc max length of 255 characters
      */
