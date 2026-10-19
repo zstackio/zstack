@@ -24,7 +24,7 @@ doc {
 				column {
 					name "recovery"
 					enclosedIn "updateMemoryPolicy"
-					desc "不确定结果恢复证据对象；只用于 recoverUncertain。对象字段：expectedHostBootId (String，当前Host启动标识，必须匹配最新观测)；expectedPoolGeneration (String，当前待恢复池代次，64位小写十六进制摘要)；drainControlOperationUuid (String，激活恢复必填，已成功排空该Host/池代次的操作UUID；仅恢复调参后的最后CPU开关时省略，不得填null)；confirmed (boolean，操作者已核实恢复前置条件，必须为true)。仅补有原回执和当前版本证明的最后一步，不重放调参、压缩或写回，原Unknown任务结果保持。"
+						desc "不确定结果恢复证据对象；只用于 recoverUncertain。对象字段：expectedHostBootId (String，当前Host启动标识，必须匹配最新观测)；expectedPoolGeneration (String，当前待恢复池代次，64位小写十六进制摘要)；drainControlOperationUuid (String，激活/退役恢复必填，已成功排空该Host/池代次的操作UUID；仅调参/CPU部分写入的受控恢复时省略，不得填null)；confirmed (boolean，操作者已核实恢复前置条件，必须为true)。后端只接受原Unknown操作及同Host/启动/控制/修订的完整证据。正常情况下不重放已确认步骤；若原操作的KSM与CPU保持步骤已有完整回执，且调参请求被执行器静止门以精确同步错误确认在写入前拒绝，则可基于原成功调参锚点，以同一请求身份和负载补齐该调参，再核读回并恢复CPU门。对于该部分恢复，缺少可信锚点或当前读回时保持恢复结果Unknown且不发剩余写入；超时或写入回执有歧义时也保持Unknown。独立的API参数校验或准入拒绝可使新恢复任务以Failed结束，原任务仍保持Unknown。恢复任务成功不改写原任务的历史Unknown结果。"
 					location "body"
 					type "MemoryUncertainRecovery"
 					optional true
