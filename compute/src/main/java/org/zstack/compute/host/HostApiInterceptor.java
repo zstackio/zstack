@@ -3,6 +3,7 @@ package org.zstack.compute.host;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.CoreGlobalProperty;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
@@ -14,12 +15,16 @@ import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.cluster.ClusterVO_;
 import org.zstack.header.host.*;
+import org.zstack.header.managementnode.ManagementNodeState;
+import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.zone.ManagementNetworkIpVersionManager;
 import org.zstack.utils.ShellResult;
 import org.zstack.utils.ShellUtils;
 import org.zstack.utils.network.IPv6NetworkUtils;
 import org.zstack.utils.network.NetworkUtils;
+
+import java.util.List;
 
 import static org.zstack.core.Platform.argerr;
 import static org.zstack.core.Platform.operr;
@@ -39,6 +44,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
 
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private ResourceDestinationMaker destinationMaker;
     @Autowired
     private ErrorFacade errf;
     @Autowired
@@ -65,6 +72,8 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
             validate((APIDeleteHostMsg) msg);
         } else if (msg instanceof APIChangeHostStateMsg){
             validate((APIChangeHostStateMsg) msg);
+        } else if (msg instanceof APIShutdownHostMsg) {
+            validate((APIShutdownHostMsg) msg);
         } else if (msg instanceof APIGetHostWebSshUrlMsg) {
             validate((APIGetHostWebSshUrlMsg) msg);
         } else if (msg instanceof APICreateHostNetworkServiceTypeMsg) {
@@ -76,6 +85,41 @@ public class HostApiInterceptor implements ApiMessageInterceptor {
         }
 
         return msg;
+    }
+
+    private void validate(APIShutdownHostMsg msg) {
+        msg.setNeedRedirect(false);
+        if (msg.isReturnEarly()) {
+            return;
+        }
+
+        List<ManagementNodeVO> managementNodes = Q.New(ManagementNodeVO.class).list();
+        if (managementNodes.size() == 1) {
+            return;
+        }
+
+        String hostManagementIp = Q.New(HostVO.class).select(HostVO_.managementIp)
+                .eq(HostVO_.uuid, msg.getUuid()).findValue();
+        if (hostManagementIp == null) {
+            return;
+        }
+
+        ManagementNodeVO hostManagementNode = managementNodes.stream()
+                .filter(mn -> hostManagementIp.equals(mn.getHostName())).findFirst().orElse(null);
+        if (hostManagementNode == null || !msg.getServiceId().equals(
+                bus.makeServiceIdByManagementNodeId(HostConstant.SERVICE_ID, hostManagementNode.getUuid()))) {
+            return;
+        }
+
+        ManagementNodeVO otherManagementNode = managementNodes.stream()
+                .filter(mn -> !mn.getUuid().equals(hostManagementNode.getUuid())
+                        && !hostManagementIp.equals(mn.getHostName()) && mn.getState() == ManagementNodeState.RUNNING
+                        && destinationMaker.getManagementNodesInHashRing().contains(mn.getUuid()))
+                .findFirst().orElse(null);
+        if (otherManagementNode != null) {
+            bus.makeServiceIdByManagementNodeId(msg, HostConstant.SERVICE_ID, otherManagementNode.getUuid());
+            msg.setNeedRedirect(true);
+        }
     }
 
     private void validate(APIDeleteHostNetworkServiceTypeMsg msg) {

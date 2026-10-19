@@ -3,6 +3,7 @@ package org.zstack.header.host;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
+import org.zstack.header.rest.APINoSee;
 import org.zstack.header.rest.RestRequest;
 
 
@@ -25,6 +26,17 @@ public class APIShutdownHostMsg extends APIMessage implements HostMessage {
     private boolean force = false;
     @APIParam(required = false, validValues = {"AUTO","AGENT","IPMI"})
     private String method = HostPowerManagementMethod.AUTO.toString();
+
+    @APINoSee
+    private boolean needRedirect;
+
+    public boolean isNeedRedirect() {
+        return needRedirect;
+    }
+
+    public void setNeedRedirect(boolean needRedirect) {
+        this.needRedirect = needRedirect;
+    }
 
     public String getUuid() {
         return uuid;
