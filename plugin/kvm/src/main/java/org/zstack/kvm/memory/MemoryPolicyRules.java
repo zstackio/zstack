@@ -250,8 +250,13 @@ public final class MemoryPolicyRules {
         }
         try {
             long number = new BigDecimal(value.getAsString()).longValueExact();
-            if (number < min || number > max || (aligned && number % 4096 != 0)) {
-                throw invalid(field, "out of range or not 4KiB aligned");
+            if (number < min || number > max) {
+                throw invalid(field, "must be between " + min + " and " + max
+                        + ("sleepMillis".equals(field)
+                        ? " milliseconds; the Host must be able to represent the value exactly" : ""));
+            }
+            if (aligned && number % 4096 != 0) {
+                throw invalid(field, "must be 4KiB aligned");
             }
         } catch (ArithmeticException | NumberFormatException e) {
             throw invalid(field, "must be a bounded int64");
