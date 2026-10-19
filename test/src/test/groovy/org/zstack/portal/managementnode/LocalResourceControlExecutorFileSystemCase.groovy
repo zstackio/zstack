@@ -399,13 +399,13 @@ class LocalResourceControlExecutorFileSystemCase {
         commands.unit("empty.service", true, "")
         commands.unit("disappeared.service", true, "/system.slice/disappeared.service")
 
-        ["empty.service", "disappeared.service"].each { String unit ->
-            Throwable failure = shouldFail(ResourceControlUtils.ResourceControlException) {
-                executor.apply(command("4-5", null, [systemdHandle(unit, unit), systemdHandle()]))
-            }
-            assert failure.message == "No control group was found for systemd unit[${unit}]" :
-                    "a missing service cgroup must fail, not wait for restart: unit=${unit} actual=${failure.message}"
+        assert executor.apply(command("4-5", null, [systemdHandle("empty", "empty.service"), systemdHandle()])) :
+                "no runtime cgroup must allow configuration-only Apply regardless of ActiveState: ${debugState()}"
+        Throwable failure = shouldFail(ResourceControlUtils.ResourceControlException) {
+            executor.apply(command("4-5", null, [systemdHandle("disappeared", "disappeared.service"), systemdHandle()]))
         }
+        assert failure.message == "No control group was found for systemd unit[disappeared.service]" :
+                "a reported but missing cgroup must retain its error: actual=${failure.message}"
         assert text(slice.resolve("cpuset.cpus")) == "4-5" :
                 "the valid service must retain the Role CPU boundary: expected=4-5 actual=${debugState()}"
     }
@@ -692,7 +692,7 @@ class LocalResourceControlExecutorFileSystemCase {
         configureV2(true)
         Path slice = configureV2SystemdRole(true)
         commands.missingUnit("optional.service")
-        commands.unit("required.service", false, "/zstack.slice/zstack-management.slice/required.service")
+        commands.unit("required.service", false, "")
 
         ResourceConsumerHandle optional = systemdHandle("optional", "optional.service", true)
         ResourceConsumerHandle required = systemdHandle("required", "required.service", false)
@@ -850,8 +850,17 @@ class LocalResourceControlExecutorFileSystemCase {
                 "v1 must retain memory config without claiming persistent AllowedCPUs: actual=${debugState()}"
         assert !Files.exists(v1Root.resolve("zstack-role-MANAGEMENT-unit-collectd.service")) :
                 "inactive service must not receive a runtime cpuset: expected=absent actual=${debugState()}"
+        inactive.optional = false
+        assert executor.release(command("1-2", memory, [inactive, active[0], active[1]])) :
+                "an inactive required service must not block releasing later services: actual=${debugState()}"
+        active.each { ResourceConsumerHandle handle ->
+            Path cpus = v1Root.resolve("zstack-role-MANAGEMENT-unit-${handle.value}/cpuset.cpus")
+            assert text(cpus) == "0-7" : "Release must clear all CPU limits: unit=${handle.value} actual=${text(cpus)}"
+        }
+        assert !Files.exists(dropIn("zstack-management.slice"))
+        assert text(dropIn("collectd.service")) == "[Service]\nSlice=zstack-management.slice"
         assert commands.invocations.every { Collections.disjoint(it, ["start", "stop", "restart"]) } :
-                "Apply must not change service lifecycle: expected=0 actual=${debugState()}"
+                "Apply and Release must not change service lifecycle: expected=0 actual=${debugState()}"
     }
 
     @Test
