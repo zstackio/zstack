@@ -2156,6 +2156,10 @@ public class CloudOperationsErrorCode {
 
     public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10060 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10060";
 
+    public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10061 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10061";
+
+    public static final String ORG_ZSTACK_NETWORK_SERVICE_SLB_10062 = "ORG_ZSTACK_NETWORK_SERVICE_SLB_10062";
+
     public static final String ORG_ZSTACK_VMWARE_10000 = "ORG_ZSTACK_VMWARE_10000";
 
     public static final String ORG_ZSTACK_VMWARE_10001 = "ORG_ZSTACK_VMWARE_10001";
