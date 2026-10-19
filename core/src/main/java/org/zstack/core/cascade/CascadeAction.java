@@ -2,9 +2,6 @@ package org.zstack.core.cascade;
 
 import org.zstack.header.exception.CloudRuntimeException;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 /**
  */
 public class CascadeAction implements Cloneable {
@@ -14,7 +11,6 @@ public class CascadeAction implements Cloneable {
     private Object rootIssuerContext;
     private String actionCode;
     private boolean fullTraverse;
-    private Map<String, Object> contexts = new ConcurrentHashMap<>();
 
     public boolean isFullTraverse() {
         return fullTraverse;
@@ -67,15 +63,6 @@ public class CascadeAction implements Cloneable {
         } catch (CloneNotSupportedException e) {
             throw new CloudRuntimeException(e);
         }
-    }
-
-    public CascadeAction putContext(String key, Object value) {
-        contexts.put(key, value);
-        return this;
-    }
-
-    public <T> T getContext(String key) {
-        return (T) contexts.get(key);
     }
 
     public String getActionCode() {

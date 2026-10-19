@@ -38,6 +38,8 @@ public interface TagManager {
 
     SystemTagInventory updateSystemTag(String tagUuid, String newTag);
 
+    SystemTagInventory findSystemTagInventory(String tagUuid);
+
     List<String> findSystemTags(String resourceUuid);
 
     List<String> findUserTags(String resourceUuid);
@@ -49,6 +51,8 @@ public interface TagManager {
     void deleteSystemTag(String uuid);
 
     void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit);
+
+    void deleteSystemTagInCurrentTransaction(String tag, String resourceUuid, String resourceType, Boolean inherent);
 
     void deleteSystemTagUseLike(String tag, String resourceUuid, String resourceType, Boolean inherit);
 

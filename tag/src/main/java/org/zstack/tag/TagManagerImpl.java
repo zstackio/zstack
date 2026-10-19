@@ -2,6 +2,7 @@ package org.zstack.tag;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.MessageSafe;
@@ -467,6 +468,12 @@ public class TagManagerImpl extends AbstractService implements TagManager,
     }
 
     @Override
+    public SystemTagInventory findSystemTagInventory(String tagUuid) {
+        SystemTagVO tag = dbf.findByUuid(tagUuid, SystemTagVO.class);
+        return tag == null ? null : SystemTagInventory.valueOf(tag);
+    }
+
+    @Override
     @Transactional
     public SystemTagInventory updateSystemTag(String tagUuid, String newTag) {
         SystemTagVO vo = dbf.findByUuid(tagUuid, SystemTagVO.class);
@@ -558,6 +565,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
     @Transactional
     private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit, boolean useLike) {
+        deleteSystemTag(tag, resourceUuid, resourceType, inherit, useLike, false);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void deleteSystemTagInCurrentTransaction(String tag, String resourceUuid, String resourceType, Boolean inherent) {
+        DebugUtils.Assert(tag != null && resourceUuid != null && resourceType != null,
+                "current transaction tag deletion requires an exact tag and resource");
+        deleteSystemTag(tag, resourceUuid, resourceType, inherent, false, true);
+    }
+
+    private void deleteSystemTag(String tag, String resourceUuid, String resourceType, Boolean inherit,
+                                 boolean useLike, boolean currentTransaction) {
         DebugUtils.Assert(tag != null || resourceUuid != null || resourceType != null,
                 "tag, resourceUuid, resourceType cannot all be null");
         SimpleQuery<SystemTagVO> q = dbf.createQuery(SystemTagVO.class);
@@ -578,7 +598,19 @@ public class TagManagerImpl extends AbstractService implements TagManager,
             q.add(SystemTagVO_.inherent, Op.EQ, inherit);
         }
 
-        List<SystemTagVO> vos = q.list();
+        List<SystemTagVO> vos;
+        if (currentTransaction) {
+            SQL current = SQL.New("select t from SystemTagVO t where t.tag = :tag"
+                    + " and t.resourceUuid = :resourceUuid and t.resourceType = :resourceType"
+                    + (inherit == null ? "" : " and t.inherent = :inherent"), SystemTagVO.class)
+                    .param("tag", tag).param("resourceUuid", resourceUuid).param("resourceType", resourceType);
+            if (inherit != null) {
+                current.param("inherent", inherit);
+            }
+            vos = current.list();
+        } else {
+            vos = q.list();
+        }
 
         if (!vos.isEmpty()) {
             for (SystemTagVO vo : vos) {
@@ -588,7 +620,7 @@ public class TagManagerImpl extends AbstractService implements TagManager,
 
         List<SystemTagVO> independentTags = new ArrayList<>();
         for (SystemTagVO vo : vos) {
-            if (mustFailOnListenerError(SystemTagInventory.valueOf(vo))) {
+            if (currentTransaction || mustFailOnListenerError(SystemTagInventory.valueOf(vo))) {
                 dbf.removeByPrimaryKeysInCurrentTransaction(Collections.singletonList(vo.getUuid()), SystemTagVO.class);
             } else {
                 independentTags.add(vo);

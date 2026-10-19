@@ -2,6 +2,8 @@ package org.zstack.tag;
 
 import org.zstack.core.Platform;
 import org.zstack.core.db.Q;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.header.tag.SystemTagInventory;
@@ -64,6 +66,24 @@ public class PatternedSystemTag extends SystemTag {
 
     public void deleteInherentTag(String resourceUuid, String tagFormat) {
         tagMgr.deleteSystemTagUseLike(tagFormat, resourceUuid, resourceClass.getSimpleName(), true);
+    }
+
+    @Transactional(readOnly = true, propagation = Propagation.MANDATORY)
+    public List<String> getTagsInCurrentTransaction(String resourceUuid) {
+        return dbf.getEntityManager().createQuery(
+                "select t.tag from SystemTagVO t where t.resourceType = :resourceType "
+                        + "and t.resourceUuid = :resourceUuid and t.tag like :pattern order by t.createDate desc",
+                String.class)
+                .setParameter("resourceType", resourceClass.getSimpleName())
+                .setParameter("resourceUuid", resourceUuid)
+                .setParameter("pattern", useTagFormat())
+                .getResultList();
+    }
+
+    public void deleteInCurrentTransaction(String resourceUuid, String tag, Boolean inherent) {
+        org.zstack.utils.DebugUtils.Assert(tag != null && isMatch(tag),
+                "exact tag must match this system tag pattern");
+        tagMgr.deleteSystemTagInCurrentTransaction(tag, resourceUuid, resourceClass.getSimpleName(), inherent);
     }
 
     @Override

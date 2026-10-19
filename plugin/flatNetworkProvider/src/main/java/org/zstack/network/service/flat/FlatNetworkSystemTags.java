@@ -1,6 +1,7 @@
 package org.zstack.network.service.flat;
 
 import org.zstack.header.network.l3.L3NetworkVO;
+import org.zstack.utils.network.IPv6Constants;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.network.service.vip.VipVO;
 import org.zstack.tag.PatternedSystemTag;
@@ -16,6 +17,22 @@ public class FlatNetworkSystemTags {
             String.format("flatNetwork::DhcpServer::{%s}::ipUuid::{%s}", L3_NETWORK_DHCP_IP_TOKEN, L3_NETWORK_DHCP_IP_UUID_TOKEN),
             L3NetworkVO.class
     );
+
+    public static PatternedSystemTag L3_NETWORK_DHCP6_IP = new PatternedSystemTag(
+            String.format("flatNetwork::Dhcp6Server::{%s}::ipUuid::{%s}", L3_NETWORK_DHCP_IP_TOKEN, L3_NETWORK_DHCP_IP_UUID_TOKEN),
+            L3NetworkVO.class
+    );
+
+    public static PatternedSystemTag getDhcpServerIpTag(int ipVersion) {
+        return ipVersion == IPv6Constants.IPv6 ? L3_NETWORK_DHCP6_IP : L3_NETWORK_DHCP_IP;
+    }
+
+    public static PatternedSystemTag getDhcpServerIpTag(String tag) {
+        if (L3_NETWORK_DHCP_IP.isMatch(tag)) {
+            return L3_NETWORK_DHCP_IP;
+        }
+        return L3_NETWORK_DHCP6_IP.isMatch(tag) ? L3_NETWORK_DHCP6_IP : null;
+    }
 
     public static final String VIP_NETWORK_GUEST_NAMESPACE_TOKEN = "namespace";
     public static final String VIP_NETWORK_GUEST_L3_TOKEN = "l3";

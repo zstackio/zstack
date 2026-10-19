@@ -1,5 +1,7 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.springframework.http.HttpMethod;
 import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIEvent;
@@ -56,7 +58,21 @@ import java.util.*;
         responseClass = APIAttachNetworkServiceToL3NetworkEvent.class,
         parameterName = "params"
 )
-public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements L3NetworkMessage {
+public class APIAttachNetworkServiceToL3NetworkMsg extends APIMessage implements L3NetworkMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     /**
      * @desc l3Network uuid
      */

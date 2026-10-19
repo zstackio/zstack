@@ -11,11 +11,11 @@ import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SimpleQuery;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.network.l3.*;
-import org.zstack.network.l2.NetworkDeletionContexts;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.function.Function;
@@ -55,17 +55,13 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
         completion.success();
     }
 
-    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, Completion completion) {
+    private void deleteIpRanges(final CascadeAction action,List<IpRangeInventory> iprs, NoErrorCompletion completion) {
         List<IpRangeDeletionMsg> msgs = new ArrayList<IpRangeDeletionMsg>();
         for (IpRangeInventory iprinv : iprs) {
             IpRangeDeletionMsg msg = new IpRangeDeletionMsg();
             msg.setForceDelete(action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE));
             msg.setL3NetworkUuid(iprinv.getL3NetworkUuid());
             msg.setIpRangeUuid(iprinv.getUuid());
-            String l2NetworkUuid = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.l2NetworkUuid)
-                    .eq(L3NetworkVO_.uuid, iprinv.getL3NetworkUuid()).findValue();
-            msg.setNetworkDeletionContext(NetworkDeletionContexts.get(action, l2NetworkUuid));
             bus.makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, iprinv.getL3NetworkUuid());
             msgs.add(msg);
         }
@@ -74,23 +70,13 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             bus.send(msg, new CloudBusCallBack(compl) {
                 @Override
                 public void run(MessageReply reply) {
-                    if (!reply.isSuccess() && reply instanceof IpRangeDeletionReply
-                            && ((IpRangeDeletionReply) reply).isCoordinatedNetworkConfigFailure()) {
-                        compl.addError(reply.getError());
-                        compl.allDone();
-                        return;
-                    }
                     compl.done();
                 }
             });
         }).run(new WhileDoneCompletion(completion) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (errorCodeList.getCauses().isEmpty()) {
-                    completion.success();
-                } else {
-                    completion.fail(errorCodeList);
-                }
+                completion.done();
             }
         });
     }
@@ -112,8 +98,35 @@ public class IpRangeCascadeExtension extends AbstractAsyncCascadeExtension {
             }
         }
 
-        addressPools.addAll(normalIpRanges);
-        deleteIpRanges(action, addressPools, completion);
+        /* delete address pool first */
+        if (!addressPools.isEmpty()) {
+            deleteIpRanges(action, addressPools, new NoErrorCompletion(completion) {
+                @Override
+                public void done() {
+                    if (normalIpRanges.isEmpty()) {
+                        completion.success();
+                    } else {
+                        deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
+                            @Override
+                            public void done() {
+                                completion.success();
+                            }
+                        });
+                    }
+                }
+            });
+        } else {
+            if (normalIpRanges.isEmpty()) {
+                completion.success();
+            } else {
+                deleteIpRanges(action, normalIpRanges, new NoErrorCompletion() {
+                    @Override
+                    public void done() {
+                        completion.success();
+                    }
+                });
+            }
+        }
     }
 
     private void handleDeletionCheck(CascadeAction action, Completion completion) {
