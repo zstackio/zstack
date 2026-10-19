@@ -26,6 +26,9 @@ public class ListZsDatasetQuestionsAction extends AbstractAction {
     }
 
     @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    public java.lang.String questionId;
+
+    @Param(required = false, validRegexValues = "^[A-Za-z0-9_-]{1,128}$", nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String chunkId;
 
     @Param(required = false, validValues = {"text","image"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
