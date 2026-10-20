@@ -294,13 +294,17 @@ public abstract class HostBase extends AbstractHost {
         shutdownHostMsg.setReturnEarly(msg.isReturnEarly());
         shutdownHostMsg.setUuid(msg.getUuid());
         shutdownHostMsg.setForce(msg.isForce());
-        bus.makeTargetServiceIdByResourceUuid(shutdownHostMsg, HostConstant.SERVICE_ID, shutdownHostMsg.getUuid());
+        if (msg.isNeedRedirect()) {
+            // Keep the shutdown task and its callback on the selected surviving management node.
+            bus.makeLocalServiceId(shutdownHostMsg, HostConstant.SERVICE_ID);
+        } else {
+            bus.makeTargetServiceIdByResourceUuid(shutdownHostMsg, HostConstant.SERVICE_ID, shutdownHostMsg.getUuid());
+        }
         bus.send(shutdownHostMsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                ShutdownHostReply shutdownHostReply = reply.castReply();
-                if (null != shutdownHostReply.getError()) {
-                    event.setError(shutdownHostReply.getError());
+                if (null != reply.getError()) {
+                    event.setError(reply.getError());
                     event.setSuccess(false);
                 } else {
                     self = dbf.findByUuid(msg.getUuid(), HostVO.class);
