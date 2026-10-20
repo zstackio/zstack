@@ -11,4 +11,12 @@ public class GetFreeIpResult {
         return this.inventories;
     }
 
+    public java.lang.Boolean more;
+    public void setMore(java.lang.Boolean more) {
+        this.more = more;
+    }
+    public java.lang.Boolean getMore() {
+        return this.more;
+    }
+
 }

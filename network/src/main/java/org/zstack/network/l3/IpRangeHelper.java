@@ -1,4 +1,9 @@
 package org.zstack.network.l3;
+import com.google.common.collect.ContiguousSet;
+import com.google.common.collect.DiscreteDomain;
+import com.google.common.collect.Range;
+import com.google.common.collect.RangeSet;
+import com.google.common.collect.TreeRangeSet;
 import org.zstack.core.Platform;
 import org.zstack.header.exception.CloudRuntimeException;
 
@@ -140,20 +145,12 @@ public class IpRangeHelper {
     }
 
     public static List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start) {
-        List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
-        usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+        return getFreeIp(ipr, limit, start, Collections.emptyList());
+    }
 
-        List<String> spareIps = new ArrayList<>();
-        if (ipr.getIpVersion() == IPv6Constants.IPv6) {
-            spareIps.addAll(NetworkUtils.getFreeIpv6InRange(ipr.getStartIp(), ipr.getEndIp(), usedIps, limit, start));
-        } else {
-            IpRangeVO cloneIpr = new IpRangeVO();
-            cloneIpr.setStartIp(ipr.getStartIp());
-            cloneIpr.setEndIp(ipr.getEndIp());
-            cloneIpr.setNetmask(ipr.getNetmask());
-            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
-            spareIps.addAll(NetworkUtils.getFreeIpInRange(cloneIpr.getStartIp(), cloneIpr.getEndIp(), usedIps, limit, start));
-        }
+    public static List<FreeIpInventory> getFreeIp(final IpRangeVO ipr, int limit, String start, Collection<ReservedIpRangeVO> reservedIpRanges) {
+        RangeSet<BigInteger> availableRanges = getAvailableIpRanges(ipr, reservedIpRanges);
+        List<String> spareIps = collectFreeIps(ipr, availableRanges, limit, start);
 
         return CollectionUtils.transformToList(spareIps, (Function<FreeIpInventory, String>) arg -> {
             FreeIpInventory f = new FreeIpInventory();
@@ -163,6 +160,73 @@ public class IpRangeHelper {
             f.setIpRangeUuid(ipr.getUuid());
             return f;
         });
+    }
+
+    private static RangeSet<BigInteger> getAvailableIpRanges(IpRangeVO ipr, Collection<ReservedIpRangeVO> reservedIpRanges) {
+        boolean ipv6 = ipr.getIpVersion() == IPv6Constants.IPv6;
+        String startIp = ipr.getStartIp();
+        String endIp = ipr.getEndIp();
+        if (!ipv6) {
+            IpRangeVO cloneIpr = new IpRangeVO();
+            cloneIpr.setStartIp(startIp);
+            cloneIpr.setEndIp(endIp);
+            cloneIpr.setNetmask(ipr.getNetmask());
+            IpRangeHelper.stripNetworkAndBroadcastAddress(cloneIpr);
+            startIp = cloneIpr.getStartIp();
+            endIp = cloneIpr.getEndIp();
+        }
+
+        BigInteger firstIp = ipToNumber(startIp, ipv6);
+        BigInteger lastIp = ipToNumber(endIp, ipv6);
+        RangeSet<BigInteger> availableRanges = TreeRangeSet.create();
+        if (firstIp.compareTo(lastIp) <= 0) {
+            availableRanges.add(Range.closed(firstIp, lastIp));
+        }
+        if (reservedIpRanges != null) {
+            for (ReservedIpRangeVO range : reservedIpRanges) {
+                if (range.getIpVersion() != ipr.getIpVersion()) {
+                    continue;
+                }
+                BigInteger reservedStart = ipToNumber(range.getStartIp(), ipv6);
+                BigInteger reservedEnd = ipToNumber(range.getEndIp(), ipv6);
+                availableRanges.remove(Range.closed(reservedStart, reservedEnd));
+            }
+        }
+        return availableRanges;
+    }
+
+    private static List<String> collectFreeIps(IpRangeVO ipr, RangeSet<BigInteger> availableRanges, int limit, String start) {
+        boolean ipv6 = ipr.getIpVersion() == IPv6Constants.IPv6;
+        BigInteger queryStart = ipToNumber(start, ipv6);
+        List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
+        usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+        List<String> spareIps = new ArrayList<>();
+        for (Range<BigInteger> range : availableRanges.asRanges()) {
+            ContiguousSet<BigInteger> addresses = ContiguousSet.create(range, DiscreteDomain.bigIntegers());
+            if (addresses.isEmpty()) {
+                continue;
+            }
+            range = addresses.range();
+            BigInteger begin = range.lowerEndpoint().max(queryStart);
+            BigInteger end = range.upperEndpoint();
+            if (begin.compareTo(end) > 0) {
+                continue;
+            }
+            if (ipv6) {
+                spareIps.addAll(NetworkUtils.getFreeIpv6InRange(IPv6NetworkUtils.IPv6AddressToString(begin), IPv6NetworkUtils.IPv6AddressToString(end), usedIps, limit - spareIps.size(), start));
+            } else {
+                spareIps.addAll(NetworkUtils.getFreeIpInRange(NetworkUtils.longToIpv4String(begin.longValue()), NetworkUtils.longToIpv4String(end.longValue()), usedIps, limit - spareIps.size(), start));
+            }
+            if (spareIps.size() >= limit) {
+                break;
+            }
+        }
+
+        return spareIps;
+    }
+
+    private static BigInteger ipToNumber(String ip, boolean ipv6) {
+        return ipv6 ? IPv6NetworkUtils.getBigIntegerFromString(ip) : BigInteger.valueOf(NetworkUtils.ipv4StringToLong(ip));
     }
 
     public static boolean stripNetworkAndBroadcastAddress(IpRangeVO ipr) {

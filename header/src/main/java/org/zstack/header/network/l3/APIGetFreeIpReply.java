@@ -9,9 +9,10 @@ import java.util.List;
 /**
  * Created by frank on 6/15/2015.
  */
-@RestResponse(allTo = "inventories")
+@RestResponse(fieldsTo = {"inventories", "more"})
 public class APIGetFreeIpReply extends APIReply {
     private List<FreeIpInventory> inventories;
+    private Boolean more = false;
 
     public List<FreeIpInventory> getInventories() {
         return inventories;
@@ -19,6 +20,14 @@ public class APIGetFreeIpReply extends APIReply {
 
     public void setInventories(List<FreeIpInventory> inventories) {
         this.inventories = inventories;
+    }
+
+    public Boolean getMore() {
+        return more;
+    }
+
+    public void setMore(Boolean more) {
+        this.more = more;
     }
 
     public static APIGetFreeIpReply __example__() {
