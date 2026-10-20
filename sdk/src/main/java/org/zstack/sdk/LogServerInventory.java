@@ -3,6 +3,7 @@ package org.zstack.sdk;
 import org.zstack.sdk.LogCategory;
 import org.zstack.sdk.LogType;
 import org.zstack.sdk.LogLevel;
+import org.zstack.sdk.LogServerConnectionStatus;
 
 public class LogServerInventory  {
 
@@ -60,6 +61,22 @@ public class LogServerInventory  {
     }
     public java.lang.String getConfiguration() {
         return this.configuration;
+    }
+
+    public LogServerConnectionStatus connectionStatus;
+    public void setConnectionStatus(LogServerConnectionStatus connectionStatus) {
+        this.connectionStatus = connectionStatus;
+    }
+    public LogServerConnectionStatus getConnectionStatus() {
+        return this.connectionStatus;
+    }
+
+    public java.sql.Timestamp lastConnectionTestDate;
+    public void setLastConnectionTestDate(java.sql.Timestamp lastConnectionTestDate) {
+        this.lastConnectionTestDate = lastConnectionTestDate;
+    }
+    public java.sql.Timestamp getLastConnectionTestDate() {
+        return this.lastConnectionTestDate;
     }
 
     public java.sql.Timestamp createDate;
