@@ -14,7 +14,7 @@ import java.util.*;
  * external action is performed here; callers refresh returned configs after commit.
  */
 public final class MemoryStandardConfigAdapter {
-    /** Stored legacy literal meaning this scope leaves native KSM unmanaged. */
+    /** Stored literal meaning this scope contributes no feature-switch override. */
     public enum OverrideMode { UNMANAGED }
 
     public static boolean isUnmanaged(Object value) { return value == OverrideMode.UNMANAGED; }
@@ -50,18 +50,12 @@ public final class MemoryStandardConfigAdapter {
         Objects.requireNonNull(em, "EntityManager");
         Objects.requireNonNull(resourceUuidsMostSpecificFirst, "resourceUuidsMostSpecificFirst");
         MemoryStandardField field = MemoryStandardField.forPath(path);
-        Object nearestDisabled = null;
         for (String uuid : resourceUuidsMostSpecificFirst) {
             if (uuid == null || uuid.trim().isEmpty()) { throw new IllegalArgumentException("resource UUID is required"); }
             Object override = readOverrideOwn(em, field.path(), uuid);
-            if (isUnmanaged(override)) { return nearestDisabled == null ? override : nearestDisabled; }
-            if (override != null) {
-                if (!field.isFeatureSwitch() || Boolean.TRUE.equals(override)) { return override; }
-                nearestDisabled = override;
-            }
+            if (override != null && !isUnmanaged(override)) { return override; }
         }
-        Object global = readGlobalOwn(em, path);
-        return nearestDisabled != null && !Boolean.TRUE.equals(global) ? nearestDisabled : global;
+        return readGlobalOwn(em, path);
     }
 
     /** Value owned at exactly this resource level; null means inherit. */
@@ -138,7 +132,7 @@ public final class MemoryStandardConfigAdapter {
     }
 
     private static Object readStored(MemoryStandardField field, String value) {
-        if (field == MemoryStandardField.KSM_ENABLED && value != null
+        if (field.isFeatureSwitch() && value != null
                 && "none".equalsIgnoreCase(value.trim())) {
             return OverrideMode.UNMANAGED;
         }
@@ -169,8 +163,7 @@ public final class MemoryStandardConfigAdapter {
         String storedValue = row.getValue();
         // A literal `none` is only the schema default when it actually equals
         // this row's declared default. If an administrator explicitly stored
-        // none over a different default, it is an unmanaged override and must
-        // be visible as such in fieldModes.
+        // none over a different default, it remains an explicit stored none rather than a reset to the default.
         return Objects.equals(storedValue, defaultValue);
     }
 

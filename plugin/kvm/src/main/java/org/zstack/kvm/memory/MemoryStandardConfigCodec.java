@@ -19,7 +19,7 @@ public final class MemoryStandardConfigCodec {
     public static Object decode(String path, String value) {
         MemoryStandardField field = MemoryStandardField.forPath(path);
         if (value == null || value.trim().isEmpty()) { return null; }
-        if (field == MemoryStandardField.KSM_ENABLED && "none".equalsIgnoreCase(value.trim())) { return null; }
+        if (field.isFeatureSwitch() && "none".equalsIgnoreCase(value.trim())) { return null; }
         try {
             switch (field.kind()) {
                 case BOOLEAN:

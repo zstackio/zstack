@@ -1452,8 +1452,8 @@ public class MemoryRepositoryTest {
             String pool = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
             state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
                     + "\"pagesToScan\":2000,\"sleepMillis\":20},\"zram\":{\"enabled\":true,"
-                    + "\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096}}");
-            state.setAppliedPolicyHash("807688c75514e917154c2e66c1b89b31fe9b0817784cafdb5d38c506b84dad6a");
+                    + "\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096},\"writeback\":{\"enabled\":false}}");
+            state.setAppliedPolicyHash(sha256(state.getAppliedPolicy()));
             state.setState("{\"bootId\":\"" + boot + "\",\"managed\":true,"
                     + "\"lastConfirmedOperationUuid\":\"" + control.getUuid() + "\","
                     + "\"lastConfirmedAppliedRevision\":0,\"ksmOnly\":" + ksmOnly + ","
@@ -2053,8 +2053,10 @@ public class MemoryRepositoryTest {
         });
     }
 
-    @Test public void standardNoneWinsAtEachScopeAndDoesNotEraseOtherKsmFields() {
+    @Test public void standardNoneInheritsWithoutResurrectingCompatibilityOrErasingOtherFields() {
         repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
             GlobalConfigVO global = em.createQuery("select g from GlobalConfigVO g where g.category=:category and g.name=:name", GlobalConfigVO.class)
                     .setParameter("category", MemoryStandardField.KSM_ENABLED.category())
                     .setParameter("name", MemoryStandardField.KSM_ENABLED.configName()).getSingleResult();
@@ -2073,16 +2075,14 @@ public class MemoryRepositoryTest {
 
         MemoryPolicyInventory global = repository.getPolicy("Global", "global");
         assertNull(MemoryStandardConfigCodec.get(global.getEffectivePolicy(), "ksm.enabled"));
-        assertTrue("schema-default none must not be reported as a user override",
-                global.getFieldModes() == null || !global.getFieldModes().containsKey("ksm.enabled"));
+        assertEquals("Unmanaged", global.getFieldModes().get("ksm.enabled"));
         assertFalse("Global KSM schema default is not an explicit field source",
                 "Global:global".equals(global.getFieldSources().get("ksm.enabled")));
-        assertFalse("all Global schema-default scalar values remain non-explicit sources",
-                "Global:global".equals(global.getFieldSources().get("zram.enabled")));
+        assertEquals("Global:global", global.getFieldSources().get("zram.enabled"));
 
         MemoryPolicyInventory host = repository.getPolicy("Host", "host1");
         assertNull(MemoryStandardConfigCodec.get(host.getEffectivePolicy(), "ksm.enabled"));
-        assertEquals("Host:host1", host.getFieldSources().get("ksm.enabled"));
+        assertNull(host.getFieldSources().get("ksm.enabled"));
         assertEquals("Unmanaged", host.getFieldModes().get("ksm.enabled"));
         assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(host.getEffectivePolicy(), "ksm.zeroPagesEnabled"));
         assertEquals(Long.valueOf(777), MemoryStandardConfigCodec.get(host.getEffectivePolicy(), "ksm.pagesToScan"));
@@ -2102,7 +2102,7 @@ public class MemoryRepositoryTest {
         });
         MemoryPolicyInventory clusterNone = repository.getPolicy("Host", "host1");
         assertNull(MemoryStandardConfigCodec.get(clusterNone.getEffectivePolicy(), "ksm.enabled"));
-        assertEquals("Cluster:cluster1", clusterNone.getFieldSources().get("ksm.enabled"));
+        assertNull(clusterNone.getFieldSources().get("ksm.enabled"));
         assertEquals("Unmanaged", clusterNone.getFieldModes().get("ksm.enabled"));
 
         repository.transaction(em -> {
@@ -2123,7 +2123,7 @@ public class MemoryRepositoryTest {
                 MemoryStandardConfigCodec.get(explicitGlobalNone.getEffectivePolicy(), "ksm.enabled"));
         assertEquals("explicit none over a non-none schema default is a real unmanaged override",
                 "Unmanaged", explicitGlobalNone.getFieldModes().get("ksm.enabled"));
-        assertEquals("Global explicit none remains the field source", "Global:global",
+        assertNull("an unmanaged field has no effective boolean source",
                 explicitGlobalNone.getFieldSources().get("ksm.enabled"));
     }
 
@@ -2198,7 +2198,7 @@ public class MemoryRepositoryTest {
         MemoryPolicyInventory inherited = repository.getPolicy("Host", "host1");
         assertNull("Global default none is unmanaged, not an implicit false",
                 MemoryStandardConfigCodec.get(inherited.getEffectivePolicy(), "ksm.enabled"));
-        assertFalse(inherited.getFieldModes().containsKey("ksm.enabled"));
+        assertEquals("Unmanaged", inherited.getFieldModes().get("ksm.enabled"));
     }
 
     private void prepareAppliedKsmForStandardClear() {
@@ -2596,6 +2596,47 @@ public class MemoryRepositoryTest {
         repository.result(clear.getUuid(), "Succeeded", "duplicate receipt", ack);
         assertEquals(tasks, repository.taskCount(new APIQueryMemoryTaskMsg()));
         assertEquals(Long.valueOf(2), host1State().getAppliedRevision());
+        for (String path : Arrays.asList("ksm.zeroPagesEnabled", "zram.enabled", "writeback.enabled")) {
+            MemoryStandardField field = MemoryStandardField.forPath(path);
+            repository.transaction(em -> {
+                standardConfigAdapter.writeGlobal(em, path, true);
+                com.google.gson.JsonObject prior = new com.google.gson.JsonObject(); prior.addProperty("schemaVersion", 1);
+                com.google.gson.JsonObject section = new com.google.gson.JsonObject(); section.addProperty(path.split("\\.")[1], true);
+                prior.add(path.split("\\.")[0], section);
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setAppliedPolicy(prior.toString());
+                state.setAppliedPolicyHash(sha256(state.getAppliedPolicy()));
+                state.setPolicyPlanHash(null);
+                return null;
+            });
+            if ("zram.enabled".equals(path)) {
+                repository.transaction(em -> {
+                    for (MemoryStandardField feature : MemoryStandardField.values()) {
+                        if (!feature.isFeatureSwitch()) { continue; }
+                        GlobalConfigVO row = em.createQuery("select g from GlobalConfigVO g where g.category=:category and g.name=:name", GlobalConfigVO.class)
+                                .setParameter("category", feature.category()).setParameter("name", feature.configName()).getSingleResult();
+                        row.setValue("none"); row.setDefaultValue("none");
+                    }
+                    return null;
+                });
+                assertTrue("reconnect must release a previously managed service-only policy",
+                        repository.applyEffectivePolicyAfterConnect("host1"));
+            } else {
+                standardCommit(Collections.singletonList(standardChange(field, null, null, "none")),
+                        ConfigMutationContext.internal(), false);
+            }
+            MemoryStateVO pending = host1State();
+            assertEquals(path, "Queued", pending.getPolicyPlanStatus());
+            assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(pending.getAppliedPolicy(), path));
+            MemoryTaskVO release = repository.claim("mn-feature-none").stream()
+                    .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+            assertEquals(path, "clearOverride", release.getAction());
+            assertNull("none must not send a disable", MemoryStandardConfigCodec.get(release.getPolicy(), path));
+            MemoryAgentResponse receipt = new MemoryAgentResponse(); receipt.appliedRevision = release.getDesiredRevision();
+            repository.result(release.getUuid(), "Succeeded", "current sparse target receipt", receipt);
+            assertNull(MemoryStandardConfigCodec.get(host1State().getAppliedPolicy(), path));
+            assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+        }
     }
 
     @Test public void standardKsmClearUnknownReceiptKeepsPriorAppliedSnapshotAndFence() {
@@ -2948,6 +2989,8 @@ public class MemoryRepositoryTest {
 
     @Test public void clearedFinalHostKsmOverrideDoesNotBlockInheritedPlanOnDefaultFalseDisappearance() {
         repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
             MemoryPolicyVO global = em.find(MemoryPolicyVO.class, "Global:global");
             global.setRevision(1);
             global.setPolicy("{\"schemaVersion\":1}");
@@ -3045,7 +3088,7 @@ public class MemoryRepositoryTest {
         assertFalse(Boolean.TRUE.equals(sent.ksm.enabled));
     }
 
-    @Test public void globalKsmTrueIntentSurvivesLowerFalseAndReconnectIsIdempotent() {
+    @Test public void nearestKsmBooleanOverridesGlobalAndReconnectIsIdempotent() {
         repository.transaction(em -> {
             GlobalConfigVO globalKsm = em.createQuery(
                     "select g from GlobalConfigVO g where g.category=:category and g.name=:name", GlobalConfigVO.class)
@@ -3067,7 +3110,7 @@ public class MemoryRepositoryTest {
 
         assertTrue("the Global KSM schema default applies when no more-specific override exists",
                 repository.applyEffectivePolicyAfterConnect("host3"));
-        assertTrue("Global true remains effective below an explicit Cluster false",
+        assertTrue("Cluster false must remain effective below Global true",
                 repository.applyEffectivePolicyAfterConnect("host1"));
         assertTrue("an explicit Host value must override its Cluster value",
                 repository.applyEffectivePolicyAfterConnect("host2"));
@@ -3084,7 +3127,7 @@ public class MemoryRepositoryTest {
             }
         }
         assertEquals(Boolean.TRUE, applied.get("host3"));
-        assertEquals(Boolean.TRUE, applied.get("host1"));
+        assertEquals(Boolean.FALSE, applied.get("host1"));
         assertEquals(Boolean.TRUE, applied.get("host2"));
         for (String hostUuid : Arrays.asList("host1", "host2", "host3")) {
             assertFalse("the applied default and overrides must be idempotent for " + hostUuid,
@@ -3092,7 +3135,7 @@ public class MemoryRepositoryTest {
         }
     }
 
-    @Test public void hostLegacyNoneCanBeReplacedAndClusterNoneStillIsolatesFalseHost() {
+    @Test public void hostNoneInheritsAndExplicitHostFalseOverridesParent() {
         registerStandardResources();
         registerPolicyReadResource("host3", "HostVO");
         registerPolicyReadResource("host4", "HostVO");
@@ -3127,15 +3170,15 @@ public class MemoryRepositoryTest {
         });
 
         MemoryPolicyInventory hostNone = repository.getPolicy("Host", "host3");
-        assertNull(MemoryStandardConfigCodec.get(hostNone.getEffectivePolicy(), "ksm.enabled"));
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(repository.preview("Host", "host3",
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(hostNone.getEffectivePolicy(), "ksm.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(repository.preview("Host", "host3",
                 "{\"ksm\":{\"enabled\":false}}").getEffectivePolicy(), "ksm.enabled"));
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
                 "host3", "HostVO", "false")), ConfigMutationContext.internal(), false);
         MemoryPolicyInventory afterExplicitFalse = repository.getPolicy("Host", "host3");
         assertEquals(Boolean.FALSE, repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
                 em, "ksm.enabled", "host3")));
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(afterExplicitFalse.getEffectivePolicy(), "ksm.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(afterExplicitFalse.getEffectivePolicy(), "ksm.enabled"));
 
         assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(repository.getPolicy("Host", "host4")
                 .getEffectivePolicy(), "ksm.enabled"));
@@ -3147,7 +3190,7 @@ public class MemoryRepositoryTest {
             payloads.put(task.getHostUuid(), MemoryPolicyRules.decode(task.getPolicy()).ksm.enabled);
         }
         assertEquals(Boolean.TRUE, payloads.get("host2"));
-        assertEquals(Boolean.TRUE, payloads.get("host3"));
+        assertEquals(Boolean.FALSE, payloads.get("host3"));
         assertFalse("Cluster none plus explicit Host false must remain outside the inherited true intent",
                 payloads.containsKey("host4"));
     }
@@ -3507,7 +3550,8 @@ public class MemoryRepositoryTest {
                     standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
                     standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
                     state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20},"
-                            + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096}}");
+                            + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096},\"writeback\":{\"enabled\":false}}");
+                    state.setAppliedPolicyHash(sha256(state.getAppliedPolicy()));
                     com.google.gson.JsonObject stateJson = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
                     com.google.gson.JsonObject actualZram = stateJson.getAsJsonObject("actual").getAsJsonObject("zram");
                     actualZram.addProperty("enabled", false); actualZram.addProperty("efficiencyEnabled", false);
@@ -5460,7 +5504,9 @@ public class MemoryRepositoryTest {
 
     private String standardDefault(MemoryStandardField field) {
         if ("ksm.enabled".equals(field.path())) { return "none"; }
-        if ("zram.enabled".equals(field.path()) || "writeback.enabled".equals(field.path())) { return "false"; }
+        // Isolated KSM tests leave service switches unmanaged; real deployment defaults
+        // are exercised through the standard initializer in the framework suite.
+        if ("zram.enabled".equals(field.path()) || "writeback.enabled".equals(field.path())) { return "none"; }
         return "";
     }
 
@@ -7324,30 +7370,49 @@ public class MemoryRepositoryTest {
         assertEquals("Global:global", inventory.getFieldSources().get("ksm.pagesToScan"));
     }
 
-    @Test public void featureIntentSwitchesAreEnabledWhenAnyGlobalClusterOrHostLevelIsTrue() {
+    @Test public void featureSwitchesUseNearestExplicitBooleanAcrossGlobalClusterAndHost() {
         registerStandardResources();
         String[] paths = {"ksm.enabled", "ksm.zeroPagesEnabled", "zram.enabled", "writeback.enabled"};
+        String[] values = {"true", "false", "none"};
         for (String path : paths) {
-            for (int levels = 0; levels < 8; levels++) {
-                final boolean global = (levels & 1) != 0;
-                final boolean cluster = (levels & 2) != 0;
-                final boolean host = (levels & 4) != 0;
-                repository.transaction(em -> {
-                    standardConfigAdapter.writeGlobal(em, path, global);
-                    standardConfigAdapter.writeOverride(em, "cluster1", "ClusterVO", path, cluster);
-                    standardConfigAdapter.writeOverride(em, "host1", "HostVO", path, host);
-                    return null;
-                });
-
-                Object effective = MemoryStandardConfigCodec.get(
-                        repository.getPolicy("Host", "host1").getEffectivePolicy(), path);
-                assertEquals(path + " at G/C/H=" + global + "/" + cluster + "/" + host,
-                        global || cluster || host, effective);
+            for (String global : values) {
+                for (String cluster : values) {
+                    for (String host : values) {
+                        repository.transaction(em -> {
+                            MemoryStandardField field = MemoryStandardField.forPath(path);
+                            em.createQuery("select g from GlobalConfigVO g where g.category=:category and g.name=:name", GlobalConfigVO.class)
+                                    .setParameter("category", field.category()).setParameter("name", field.configName())
+                                    .getSingleResult().setValue(global);
+                            standardConfigAdapter.writeOverride(em, "cluster1", "ClusterVO", path, false);
+                            standardConfigAdapter.writeOverride(em, "host1", "HostVO", path, false);
+                            for (String resource : Arrays.asList("cluster1", "host1")) {
+                                em.createQuery("select r from ResourceConfigVO r where r.resourceUuid=:uuid and r.category=:category and r.name=:name", ResourceConfigVO.class)
+                                        .setParameter("uuid", resource).setParameter("category", field.category())
+                                        .setParameter("name", field.configName()).getSingleResult()
+                                        .setValue("host1".equals(resource) ? host : cluster);
+                            }
+                            return null;
+                        });
+                        Boolean expected = !"none".equals(host) ? Boolean.valueOf(host)
+                                : !"none".equals(cluster) ? Boolean.valueOf(cluster)
+                                : !"none".equals(global) ? Boolean.valueOf(global) : null;
+                        String source = !"none".equals(host) ? "Host:host1"
+                                : !"none".equals(cluster) ? "Cluster:cluster1"
+                                : !"none".equals(global) ? "Global:global" : null;
+                        for (MemoryPolicyInventory policy : Arrays.asList(repository.getPolicy("Host", "host1"),
+                                repository.preview("Host", "host1", "{}"))) {
+                            assertEquals(path + " at G/C/H=" + global + "/" + cluster + "/" + host,
+                                    expected, MemoryStandardConfigCodec.get(policy.getEffectivePolicy(), path));
+                            assertEquals(source, policy.getFieldSources().get(path));
+                            assertEquals(expected == null, policy.getFieldModes().containsKey(path));
+                        }
+                    }
+                }
             }
         }
     }
 
-    @Test public void featureIntentPreviewReportsNearestTrueSourceInsteadOfMoreSpecificFalse() {
+    @Test public void featurePreviewReportsNearestFalseSource() {
         registerStandardResources();
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "zram.enabled", true);
@@ -7357,15 +7422,15 @@ public class MemoryRepositoryTest {
         });
 
         MemoryPolicyInventory current = repository.getPolicy("Host", "host1");
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(current.getEffectivePolicy(), "zram.enabled"));
-        assertEquals("Cluster:cluster1", current.getFieldSources().get("zram.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(current.getEffectivePolicy(), "zram.enabled"));
+        assertEquals("Host:host1", current.getFieldSources().get("zram.enabled"));
 
         MemoryPolicyInventory preview = repository.preview("Host", "host1", "{\"zram\":{\"enabled\":false}}");
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(preview.getEffectivePolicy(), "zram.enabled"));
-        assertEquals("Cluster:cluster1", preview.getFieldSources().get("zram.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(preview.getEffectivePolicy(), "zram.enabled"));
+        assertEquals("Host:host1", preview.getFieldSources().get("zram.enabled"));
     }
 
-    @Test public void standardGlobalIntentCommitFansOutAndReconnectUsesTheSameInheritedSwitch() {
+    @Test public void standardGlobalCommitPreservesLowerFalseAndReconnectUsesSameValue() {
         registerStandardResources();
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
@@ -7378,11 +7443,11 @@ public class MemoryRepositoryTest {
 
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
                 null, null, "true")), ConfigMutationContext.internal(), false);
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(
                 repository.getPolicy("Host", "host1").getEffectivePolicy(), "ksm.enabled"));
         assertEquals("Blocked", host1State().getPolicyPlanStatus());
         assertTrue(host1State().getPolicyBlockedFields().contains("HOST_NOT_CONNECTED"));
-        assertNotNull("connected Host should receive a standard-config child despite lower-level false values",
+        assertNotNull("connected Host should receive a standard-config child with the nearest explicit false",
                 repository.states(Collections.singletonList("host2"), 0, 1).get(0).getActiveTaskUuid());
 
         repository.transaction(em -> { em.find(TestHost.class, "host1").status = HostStatus.Connected; return null; });
@@ -7393,12 +7458,12 @@ public class MemoryRepositoryTest {
         for (MemoryTaskVO task : claimed) {
             if (task.getHostUuid() == null) { continue; }
             hosts.add(task.getHostUuid());
-            assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"));
+            assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"));
         }
         assertEquals(new HashSet<>(Arrays.asList("host1", "host2")), hosts);
     }
 
-    @Test public void sameScopeFalseReplacesThatValueButDoesNotMaskAnAncestorTrue() {
+    @Test public void sameScopeFalseReplacesThatValueAndOverridesAncestorTrue() {
         registerStandardResources();
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
@@ -7413,8 +7478,8 @@ public class MemoryRepositoryTest {
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
                 "host1", "HostVO", "false")), ConfigMutationContext.internal(), false);
         MemoryPolicyInventory afterHostWrite = repository.getPolicy("Host", "host1");
-        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(afterHostWrite.getEffectivePolicy(), "ksm.enabled"));
-        assertEquals("Cluster:cluster1", afterHostWrite.getFieldSources().get("ksm.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(afterHostWrite.getEffectivePolicy(), "ksm.enabled"));
+        assertEquals("Host:host1", afterHostWrite.getFieldSources().get("ksm.enabled"));
         assertEquals(Boolean.FALSE, repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
                 em, "ksm.enabled", "host1")));
 
@@ -7439,7 +7504,7 @@ public class MemoryRepositoryTest {
             em.persist(parent);
             MemoryTaskVO stale = taskFixture("stale-queued-child", parent.getUuid(), "host1", "apply", "Queued");
             stale.setScope("Host"); stale.setResourceUuid("host1"); stale.setDesiredRevision(2);
-            stale.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false}}");
+            stale.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}");
             stale.setPolicyPlanHash("old-plan-hash"); stale.setTargetSnapshotHash("old-target-hash");
             em.persist(stale);
 
@@ -7457,14 +7522,14 @@ public class MemoryRepositoryTest {
         MemoryPolicyInventory beforeClaim = repository.getPolicy("Host", "host1");
 
         // No config row or revision changes here: only the upgraded effective
-        // switch semantics make this old false payload stale.
+        // switch semantics make this old OR-enabled payload stale.
         List<MemoryTaskVO> claimed = repository.claim("stale-payload-worker");
-        assertFalse("an obsolete queued false must not be handed to the Agent after the effective intent became true",
+        assertFalse("an obsolete queued true must not be handed to the Agent after the effective intent became false",
                 claimed.stream().anyMatch(task -> "host1".equals(task.getHostUuid())
-                        && Boolean.FALSE.equals(MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"))));
+                        && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"))));
         MemoryTaskVO rejected = repository.findTask("stale-queued-child");
         assertEquals("Failed", rejected.getStatus());
-        assertEquals("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false}}", rejected.getPolicy());
+        assertEquals("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}", rejected.getPolicy());
         assertEquals("Failed", repository.findTask("stale-queued-parent").getStatus());
         MemoryTaskFailureOutboxVO outbox = repository.transaction(em ->
                 em.find(MemoryTaskFailureOutboxVO.class, "stale-queued-child"));
@@ -7494,7 +7559,7 @@ public class MemoryRepositoryTest {
             em.persist(parent);
             MemoryTaskVO stale = taskFixture("queued-stale-child", parent.getUuid(), "host1", "apply", "Queued");
             stale.setScope("Host"); stale.setResourceUuid("host1"); stale.setDesiredRevision(2);
-            stale.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false}}");
+            stale.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}");
             em.persist(stale);
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
             state.setStatus("Unknown"); state.setReason("original operation has no receipt");
@@ -7590,7 +7655,7 @@ public class MemoryRepositoryTest {
         assertEquals(0L, repository.getPolicy("Global", "global").getRevision());
     }
 
-    @Test public void globalPreviewAndAdmissionIncludeLowerFalseForFeatureIntentAndStillAllowKsmOnly() {
+    @Test public void globalPreviewHonorsLowerFalseAndStillAllowsKsmOnly() {
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "zram.enabled", false);
             standardConfigAdapter.writeOverride(em, "host1", "HostVO", "zram.enabled", false);
@@ -7603,23 +7668,13 @@ public class MemoryRepositoryTest {
                 Arrays.asList("host1", "host2"));
         Map<String, String> host1Changed = MemoryPolicyAdmissionRules.changedFields(
                 preview.get("host1").before, preview.get("host1").after);
-        assertFalse(host1Changed
+        assertTrue(host1Changed
                 .keySet().stream().noneMatch(field -> field.startsWith("zram.")));
         assertFalse(MemoryPolicyAdmissionRules.changedFields(preview.get("host2").before, preview.get("host2").after)
                 .keySet().stream().noneMatch(field -> field.startsWith("zram.")));
         Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(host1Changed,
                 preview.get("host1").state, System.currentTimeMillis(), preview.get("host1").after);
-        assertEquals("UNSUPPORTED_RECLAIM_KERNEL", blocked.get("zram.enabled"));
-
-        long taskCountBefore = repository.taskCount(new APIQueryMemoryTaskMsg());
-        long globalRevisionBefore = repository.getPolicy("Global", "global").getRevision();
-        APIUpdateMemoryPolicyMsg enableUnsupportedZram = request(globalRevisionBefore);
-        enableUnsupportedZram.setTargetHostUuids(Collections.singletonList("host1"));
-        enableUnsupportedZram.setPolicy("{\"zram\":{\"enabled\":true},\"ksm\":{\"enabled\":true}}");
-        try { repository.submit(enableUnsupportedZram); fail("cross-layer feature intent must expose unsupported ZRAM admission"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_CAPABILITY_PRECHECK", expected.getCode()); }
-        assertEquals(taskCountBefore, repository.taskCount(new APIQueryMemoryTaskMsg()));
-        assertEquals(globalRevisionBefore, repository.getPolicy("Global", "global").getRevision());
+        assertNull(blocked.get("zram.enabled"));
 
         repository.transaction(em -> {
             standardConfigAdapter.writeOverride(em, "cluster1", "ClusterVO", "zram.enabled", false);

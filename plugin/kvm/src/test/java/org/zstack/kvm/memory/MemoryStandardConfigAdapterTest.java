@@ -120,7 +120,7 @@ public class MemoryStandardConfigAdapterTest {
         inTransaction(em -> {
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
-            assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", null);
             assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", null);
@@ -135,28 +135,46 @@ public class MemoryStandardConfigAdapterTest {
         });
     }
 
-    @Test public void featureIntentSwitchesUseAnyTrueAcrossGlobalClusterAndHost() {
+    @Test public void featureSwitchesUseNearestBooleanAndNoneInheritsAcrossAllLevels() {
         seedGlobal("ksm.zeroPagesEnabled", "false", "false");
         String[] paths = {"ksm.enabled", "ksm.zeroPagesEnabled", "zram.enabled", "writeback.enabled"};
+        String[] values = {"true", "false", "none"};
         inTransaction(em -> {
             for (String path : paths) {
-                adapter.writeGlobal(em, path, true);
+                MemoryStandardField field = MemoryStandardField.forPath(path);
                 adapter.writeOverride(em, "cluster1", "ClusterVO", path, false);
                 adapter.writeOverride(em, "host1", "HostVO", path, false);
-                assertEquals(path, Boolean.TRUE, adapter.readEffective(em, path, Arrays.asList("host1", "cluster1")));
+                GlobalConfigVO global = em.createQuery("select g from GlobalConfigVO g where g.category=:category and g.name=:name", GlobalConfigVO.class)
+                        .setParameter("category", field.category()).setParameter("name", field.configName()).getSingleResult();
+                for (String globalValue : values) {
+                    for (String clusterValue : values) {
+                        for (String hostValue : values) {
+                            global.setValue(globalValue);
+                            resourceRow(em, "cluster1", field.configName()).setValue(clusterValue);
+                            resourceRow(em, "host1", field.configName()).setValue(hostValue);
+                            Object expected = !"none".equals(hostValue) ? Boolean.valueOf(hostValue)
+                                    : !"none".equals(clusterValue) ? Boolean.valueOf(clusterValue)
+                                    : !"none".equals(globalValue) ? Boolean.valueOf(globalValue)
+                                    : MemoryStandardConfigAdapter.OverrideMode.UNMANAGED;
+                            assertEquals(path + " at G/C/H=" + globalValue + "/" + clusterValue + "/" + hostValue,
+                                    expected, adapter.readEffective(em, path, Arrays.asList("host1", "cluster1")));
+                            assertEquals(hostValue, adapter.overrideStoredValue(em, path, "host1"));
+                        }
+                    }
+                }
             }
             return null;
         });
     }
 
-    @Test public void noneIsUnmanagedAndDeleteRestoresParentWhileCodecPreservesJsonTypes() {
+    @Test public void noneInheritsAndDeleteRestoresParentWhileCodecPreservesJsonTypes() {
         inTransaction(em -> {
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);
             MemoryStandardField field = MemoryStandardField.forPath("ksm.enabled");
             ResourceConfigVO unset = new ResourceConfigVO(); unset.setUuid(UUID.randomUUID().toString().replace("-", ""));
             unset.setCategory(field.category()); unset.setName(field.configName()); unset.setValue("none");
             unset.setResourceUuid("host1"); unset.setResourceType("HostVO"); em.persist(unset);
-            assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
+            assertEquals(Boolean.TRUE,
                     adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", null);
             assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
@@ -174,12 +192,18 @@ public class MemoryStandardConfigAdapterTest {
         });
     }
 
-    @Test public void typedBlankWritesRejectButLegacyNoneStillReads() {
+    @Test public void typedBlankWritesRejectButFeatureNoneIsAccepted() {
         MemoryStandardField field = MemoryStandardField.forPath("ksm.enabled");
         assertThrows(org.zstack.core.config.GlobalConfigException.class,
                 () -> MemoryStandardConfigurationCoordinator.validateScalar(field, " \t "));
         assertNull(MemoryStandardConfigCodec.decode("ksm.enabled", "   "));
-        assertNull(MemoryStandardConfigCodec.decode("ksm.enabled", "none"));
+        for (String path : Arrays.asList("ksm.enabled", "ksm.zeroPagesEnabled", "zram.enabled", "writeback.enabled")) {
+            try { MemoryStandardConfigurationCoordinator.validateScalar(MemoryStandardField.forPath(path), "none"); }
+            catch (RuntimeException invalid) { fail(path + " must accept the existing none encoding: " + invalid.getMessage()); }
+            assertNull(MemoryStandardConfigCodec.decode(path, "none"));
+        }
+        assertThrows(IllegalArgumentException.class,
+                () -> MemoryStandardConfigCodec.decode("zram.hostCpuGuardEnabled", "none"));
         assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
                 readUnmanagedStoredOverride());
     }
@@ -220,7 +244,7 @@ public class MemoryStandardConfigAdapterTest {
             assertTrue(changes.refreshAfterCommit().isEmpty());
             assertEquals(2, changes.resourceChanges().size());
             assertEquals(Boolean.FALSE, adapter.readOverrideOwn(em, "zram.enabled", "host1"));
-            assertEquals(Boolean.TRUE, adapter.readEffective(em, "zram.enabled", Collections.singletonList("host1")));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "zram.enabled", Collections.singletonList("host1")));
             assertEquals(Long.valueOf(0), adapter.readEffective(em, "zram.hostFloorBytes", Collections.singletonList("host1")));
             ResourceConfigVO zero = resourceRow(em, "host1", "memory.zram.hostFloorBytes");
             assertNotNull(zero); assertEquals("0", zero.getValue());
@@ -230,7 +254,7 @@ public class MemoryStandardConfigAdapterTest {
         });
     }
 
-    @Test public void legacyNoneHostCanBeReplacedByFalseAndClusterNoneStillIsolatesFalseHost() {
+    @Test public void hostNoneInheritsAndExplicitFalseSurvivesClusterNone() {
         inTransaction(em -> {
             adapter.writeGlobal(em, "ksm.enabled", true);
             adapter.writeOverride(em, "cluster1", "ClusterVO", "ksm.enabled", true);
@@ -239,12 +263,12 @@ public class MemoryStandardConfigAdapterTest {
             hostNone.setUuid(UUID.randomUUID().toString().replace("-", "")); hostNone.setCategory(field.category());
             hostNone.setName(field.configName()); hostNone.setValue("none");
             hostNone.setResourceUuid("host1"); hostNone.setResourceType("HostVO"); em.persist(hostNone);
-            assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
+            assertEquals(Boolean.TRUE,
                     adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
 
             adapter.writeOverride(em, "host1", "HostVO", "ksm.enabled", false);
             assertEquals(Boolean.FALSE, adapter.readOverrideOwn(em, "ksm.enabled", "host1"));
-            assertEquals(Boolean.TRUE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
+            assertEquals(Boolean.FALSE, adapter.readEffective(em, "ksm.enabled", Arrays.asList("host1", "cluster1")));
 
             ResourceConfigVO cluster = resourceRow(em, "cluster1", field.configName());
             assertNotNull(cluster); cluster.setValue("none");

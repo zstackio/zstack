@@ -23,13 +23,13 @@ doc {
 	}
 	field {
 		name "fieldSources"
-		desc "各字段合成期望值的来源；四功能开关开启时取最近贡献true的层，全部false时取最近明确false层；其它参数取Host、Cluster、Global最近明确值。不证明Host已执行，也不表示该层之外没有本级配置行。"
+		desc "各字段合成期望值的来源；四功能开关按Host、Cluster、Global取最近明确布尔值的层，none向上继承，无有效布尔值时没有来源；其它参数取Host、Cluster、Global最近明确值。不证明Host已执行，也不表示该层之外没有本级配置行。"
 		type "Map"
 		since "5.5.38"
 	}
 	field {
 		name "fieldModes"
-		desc "只读字段语义状态；ksm.enabled=Unmanaged 表示该作用域显式保留原生 KSM 管理，不下发启用/停用，也不继承父级该字段。"
+		desc "只读字段语义状态；四功能开关的Unmanaged表示三级均无有效布尔值，该开关不下发启用/停用并保留原生状态；本级none仍向上继承。"
 		type "Map"
 		since "5.5.38"
 	}
@@ -91,7 +91,7 @@ doc {
 	}
 	field {
 		name "effectivePolicy"
-		desc "合成后的期望策略JSON；KSM/零页/ZRAM/writeback四开关任一级true即开启，其它参数取最近明确值，legacy none屏障保留。writeback可能因Host后端未准备或能力/保护暂未执行，实际生效须另查Host状态。"
+		desc "合成后的期望策略JSON；KSM/零页/ZRAM/writeback四开关取Host、Cluster、Global最近明确布尔值，false覆盖上级true，none向上继承，三级无有效值不管理；其它参数取最近明确值。writeback可能因Host后端未准备或能力/保护暂未执行，实际生效须另查Host状态。"
 		type "String"
 		since "5.5.38"
 	}
