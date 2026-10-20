@@ -156,6 +156,14 @@ public class ModelService  {
         return this.clusterUuid;
     }
 
+    public java.lang.String hostUuid;
+    public void setHostUuid(java.lang.String hostUuid) {
+        this.hostUuid = hostUuid;
+    }
+    public java.lang.String getHostUuid() {
+        return this.hostUuid;
+    }
+
     public java.lang.Long memorySize;
     public void setMemorySize(java.lang.Long memorySize) {
         this.memorySize = memorySize;

@@ -195,7 +195,7 @@ ${output.join("\n")}
     }
 
     def isZStackClass(Class clz) {
-        if (clz.isArray() && clz.getComponentType() == byte.class) {
+        if (clz.isArray() && clz.getComponentType().isPrimitive()) {
             return false
         }
         if (clz.getName().startsWith("java.") || int.class == clz || long.class == clz
@@ -344,14 +344,15 @@ ${output.join("\n")}
             return null
         }
 
-        // handle byte[] type
-        if (field.type == byte[].class) {
+        // handle primitive arrays
+        if (field.type.isArray() && field.type.componentType.isPrimitive()) {
+            String type = field.type.canonicalName
             return """\
-    public byte[] ${fname};
-    public void set${StringUtils.capitalize(fname)}(byte[] ${fname}) {
+    public ${type} ${fname};
+    public void set${StringUtils.capitalize(fname)}(${type} ${fname}) {
         this.${fname} = ${fname};
     }
-    public byte[] get${StringUtils.capitalize(fname)}() {
+    public ${type} get${StringUtils.capitalize(fname)}() {
         return this.${fname};
     }
 """
