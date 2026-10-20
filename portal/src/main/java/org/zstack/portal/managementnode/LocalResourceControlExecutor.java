@@ -1,6 +1,8 @@
 package org.zstack.portal.managementnode;
 
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage;
 import org.zstack.header.physicalserver.ManagedServiceResourceUsage.State;
 import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode;
@@ -9,7 +11,11 @@ import org.zstack.header.physicalserver.ResourceControlCommand;
 import org.zstack.portal.managementnode.ResourceControlUtils.CommandExecutor;
 import org.zstack.portal.managementnode.ResourceControlUtils.ResourceControlException;
 import org.zstack.utils.data.SizeUnit;
+import org.zstack.utils.gson.JSONObjectUtil;
+import org.zstack.utils.path.PathUtil;
 
+import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -17,6 +23,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -25,12 +32,15 @@ import static org.zstack.portal.managementnode.CgroupResourceControlBackend.norm
 import static org.zstack.portal.managementnode.ResourceControlUtils.stripRoot;
 
 public class LocalResourceControlExecutor {
+    private static final long CLI_TIMEOUT_SECONDS = TimeUnit.MINUTES.toSeconds(5);
     private final AtomicInteger testCalls = new AtomicInteger();
     private volatile boolean testMode;
     private volatile ResourceControlCommand lastTestCommand;
     private final AtomicReference<List<ResourceConsumerHandle>> lastTestRestartHandles = new AtomicReference<>();
     private final SystemdResourceControlUtils systemd;
     private final CgroupResourceControlBackendFactory backendFactory;
+    private final File resourceControlCli;
+    private final ResourceControlUtils commands;
 
     public LocalResourceControlExecutor() {
         this(ExecutionEnvironment.system());
@@ -38,6 +48,8 @@ public class LocalResourceControlExecutor {
     }
 
     LocalResourceControlExecutor(ExecutionEnvironment environment) {
+        resourceControlCli = environment.resourceControlCli;
+        commands = new ResourceControlUtils(environment.commandExecutor);
         systemd = new SystemdResourceControlUtils(
                 environment.systemdUnitRoot, environment.v1SystemdRoot, environment.commandExecutor);
         backendFactory = new CgroupResourceControlBackendFactory(
@@ -48,6 +60,9 @@ public class LocalResourceControlExecutor {
     public boolean apply(ResourceControlCommand command) {
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             return fakeApply(command);
+        }
+        if (resourceControlCli != null && resourceControlCli.exists()) {
+            return callCli("apply", command).getSynced();
         }
 
         PhysicalServerResourceIsolationMode isolationMode = isolationMode(command);
@@ -85,6 +100,9 @@ public class LocalResourceControlExecutor {
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             return fakeRelease(command);
         }
+        if (resourceControlCli != null && resourceControlCli.exists()) {
+            return callCli("release", command).getSynced();
+        }
 
         CgroupResourceControlBackend backend = backendFactory.cpu();
         CgroupResourceControlBackend memoryBackend = backendFactory.findMemory();
@@ -104,13 +122,13 @@ public class LocalResourceControlExecutor {
             CgroupResourceControlBackend backend, CgroupResourceControlBackend memoryBackend,
             String desired, Long desiredMemory) {
         boolean manageCpu = !desired.isEmpty();
-        boolean memoryError = desiredMemory != null && desiredMemory > 0
-                && !prepareActiveSliceMemory(memoryBackend, command.getSliceName(), desiredMemory);
         boolean changed = systemd.pruneServices(command.getSliceName(), command.getHandles().stream()
                 .filter(handle -> ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType()))
                 .map(ResourceConsumerHandle::getValue).collect(toSet()));
-        changed = systemd.configureSlice(command.getSliceName(), backend.cpuSetProperty(), desired,
-                memoryBackend == null ? null : memoryBackend.memoryLimitProperty(), desiredMemory) || changed;
+        if (manageCpu) {
+            changed = systemd.configureSlice(command.getSliceName(), backend.cpuSetProperty(), desired,
+                    null, desiredMemory) || changed;
+        }
         for (ResourceConsumerHandle handle : command.getHandles()) {
             if (ResourceConsumerHandle.SYSTEMD_UNIT.equals(handle.getHandleType())) {
                 changed = systemd.configureService(handle.getValue(), command.getSliceName()) || changed;
@@ -149,7 +167,14 @@ public class LocalResourceControlExecutor {
             actualCpuSet = isolationMode(command) == PhysicalServerResourceIsolationMode.EXCLUSIVE
                     ? backend.applyExclusiveCpuSet(sliceTarget, desired) : backend.applyCpuSet(sliceTarget, desired);
         }
+        if (changed) {
+            systemd.reload();
+        }
         if (desiredMemory != null && memoryBackend != null) {
+            if (desiredMemory > 0 && !prepareActiveSliceMemory(memoryBackend, command.getSliceName(), desiredMemory)) {
+                throw new ResourceControlException(String.format(
+                        "Memory control group for active systemd slice[%s] does not exist", command.getSliceName()));
+            }
             memorySliceTarget = activeSliceTarget(memoryBackend, command.getSliceName());
             if (memorySliceTarget != null) {
                 if (desiredMemory > 0) {
@@ -157,13 +182,10 @@ public class LocalResourceControlExecutor {
                 }
                 actualMemory = memoryBackend.applyMemory(memorySliceTarget, desiredMemory, null);
             }
-        }
-        if (changed) {
-            systemd.reload();
-        }
-        if (memoryError) {
-            throw new ResourceControlException(String.format(
-                    "Memory control group for active systemd slice[%s] does not exist", command.getSliceName()));
+            if (systemd.configureSlice(command.getSliceName(), backend.cpuSetProperty(), desired,
+                    memoryBackend.memoryLimitProperty(), desiredMemory)) {
+                systemd.reload();
+            }
         }
 
         List<Boolean> results = new ArrayList<>();
@@ -325,6 +347,17 @@ public class LocalResourceControlExecutor {
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             return fakeInspect(handles);
         }
+        if (resourceControlCli != null && resourceControlCli.exists()) {
+            ResourceControlCommand command = new ResourceControlCommand();
+            command.setRoleType(roleType);
+            command.setSliceName(sliceName);
+            command.setHandles(handles);
+            CliResponse response = callCli("services", command);
+            if (response.services == null) {
+                throw new ResourceControlException("Resource control CLI response is missing services");
+            }
+            return response.services;
+        }
         CgroupResourceControlBackend backend = backendFactory.cpu();
         List<ManagedServiceResourceUsage> result = new ArrayList<>();
         Map<String, Path> sliceTargets = new HashMap<>();
@@ -388,6 +421,14 @@ public class LocalResourceControlExecutor {
         }
         if (CoreGlobalProperty.UNIT_TEST_ON && testMode) {
             lastTestRestartHandles.set(new ArrayList<>(handles));
+            return;
+        }
+        if (resourceControlCli != null && resourceControlCli.exists()) {
+            ResourceControlCommand command = new ResourceControlCommand();
+            command.setRoleType(ManagementNodeResourceAssignmentFactory.type.toString());
+            command.setSliceName(sliceName);
+            command.setHandles(handles);
+            callCli("restart", command);
             return;
         }
 
@@ -705,6 +746,36 @@ public class LocalResourceControlExecutor {
         return value;
     }
 
+    @Deferred
+    private CliResponse callCli(String action, ResourceControlCommand command) {
+        String input = PathUtil.createTempFileWithContent(JSONObjectUtil.toJsonString(command));
+        Defer.defer(() -> PathUtil.forceRemoveFile(input));
+        String output = PathUtil.createTempFileWithContent("");
+        Defer.defer(() -> PathUtil.forceRemoveFile(output));
+        commands.run(null, "timeout", String.valueOf(CLI_TIMEOUT_SECONDS), "sudo", "-n", "sh", "-c",
+                "exec python3 -E -S -B \"$1\" \"$2\" < \"$3\" > \"$4\"", "resource-control-cli",
+                resourceControlCli.getAbsolutePath(), action, input, output);
+        CliResponse response = JSONObjectUtil.toObject(
+                PathUtil.readFileToString(output, StandardCharsets.UTF_8), CliResponse.class);
+        if (response == null || !Boolean.TRUE.equals(response.success)) {
+            throw new ResourceControlException(String.format("Resource control CLI action[%s] failed", action));
+        }
+        return response;
+    }
+
+    private static class CliResponse {
+        private Boolean success;
+        private Boolean synced;
+        private List<ManagedServiceResourceUsage> services;
+
+        private boolean getSynced() {
+            if (synced == null) {
+                throw new ResourceControlException("Resource control CLI response is missing synced");
+            }
+            return synced;
+        }
+    }
+
     private static class ServiceTarget {
         private final State state;
         private final Path path;
@@ -724,13 +795,15 @@ public class LocalResourceControlExecutor {
         private final Path procMounts;
         private final Path systemdUnitRoot;
         private final CommandExecutor commandExecutor;
+        private final File resourceControlCli;
 
         ExecutionEnvironment(
                 Path v2Root,
                 Path v1Root,
                 Path v1MemoryRoot,
                 Path v1SystemdRoot,
-                List<Path> v1CpuacctRoots, Path procMounts, Path systemdUnitRoot, CommandExecutor commandExecutor) {
+                List<Path> v1CpuacctRoots, Path procMounts, Path systemdUnitRoot, CommandExecutor commandExecutor,
+                File resourceControlCli) {
             this.v2Root = v2Root;
             this.v1Root = v1Root;
             this.v1MemoryRoot = v1MemoryRoot;
@@ -739,6 +812,7 @@ public class LocalResourceControlExecutor {
             this.procMounts = procMounts;
             this.systemdUnitRoot = systemdUnitRoot;
             this.commandExecutor = commandExecutor;
+            this.resourceControlCli = resourceControlCli;
         }
 
         private static ExecutionEnvironment system() {
@@ -748,7 +822,8 @@ public class LocalResourceControlExecutor {
                     Paths.get("/sys/fs/cgroup/memory"),
                     Paths.get("/sys/fs/cgroup/systemd"),
                     Arrays.asList(Paths.get("/sys/fs/cgroup/cpu,cpuacct"), Paths.get("/sys/fs/cgroup/cpuacct")),
-                    Paths.get("/proc/mounts"), Paths.get("/etc/systemd/system"), null);
+                    Paths.get("/proc/mounts"), Paths.get("/etc/systemd/system"), null,
+                    PathUtil.findFileOnClassPath("tools/resource-control/resource_control_cli.py"));
         }
     }
 

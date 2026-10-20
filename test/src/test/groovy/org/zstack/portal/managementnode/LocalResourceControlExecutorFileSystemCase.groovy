@@ -10,6 +10,7 @@ import org.zstack.header.physicalserver.PhysicalServerResourceIsolationMode
 import org.zstack.header.physicalserver.ResourceConsumerHandle
 import org.zstack.header.physicalserver.ResourceControlCommand
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import java.lang.management.ManagementFactory
 import java.nio.charset.StandardCharsets
@@ -29,6 +30,7 @@ class LocalResourceControlExecutorFileSystemCase {
     private Path v1CpuacctRoot
     private Path procMounts
     private Path systemdUnitRoot
+    private Path resourceControlCli
     private FakeCommandExecutor commands
     private LocalResourceControlExecutor executor
     private boolean previousUnitTestOn
@@ -45,6 +47,7 @@ class LocalResourceControlExecutorFileSystemCase {
         v1CpuacctRoot = temporaryRoot.resolve("cpuacct")
         procMounts = temporaryRoot.resolve("mounts")
         systemdUnitRoot = temporaryRoot.resolve("units")
+        resourceControlCli = temporaryRoot.resolve("tools with ' spaces/resource_control_cli.py")
         [v2Root, v1Root, v1MemoryRoot, v1SystemdRoot,
          v1CpuacctRoot, systemdUnitRoot].each { Files.createDirectories(it) }
         put(procMounts, "")
@@ -52,13 +55,112 @@ class LocalResourceControlExecutorFileSystemCase {
         executor = new LocalResourceControlExecutor(
                 new LocalResourceControlExecutor.ExecutionEnvironment(
                         v2Root, v1Root, v1MemoryRoot, v1SystemdRoot,
-                        [v1CpuacctRoot], procMounts, systemdUnitRoot, commands))
+                        [v1CpuacctRoot], procMounts, systemdUnitRoot, commands, resourceControlCli.toFile()))
     }
 
     @After
     void cleanUp() {
         temporaryRoot?.toFile()?.deleteDir()
         CoreGlobalProperty.UNIT_TEST_ON = previousUnitTestOn
+    }
+
+    @Test
+    void testPackagedCliHandlesAllResourceOperationsWithoutJavaBackend() {
+        put(resourceControlCli, "")
+        def received = [:]
+        commands.cli = { List<String> args ->
+            String action = args[-3]
+            received[action] = JSONObjectUtil.toObject(new File(args[-2]).text, ResourceControlCommand)
+            def response = [success: true]
+            if (action == "services") {
+                response.services = [[serviceName: "prometheus", state: "RUNNING", cpuSet: "1-3",
+                                      memory: 33554432L, memoryLimit: 268435456L, cpuTime: 123000L,
+                                      restartable: true, restartRequired: true]]
+            } else if (action != "restart") {
+                response.synced = action == "release"
+            }
+            new File(args[-1]).text = JSONObjectUtil.toJsonString(response)
+            return ""
+        }
+        def request = command("1-3", 268435456L, [systemdHandle()])
+        request.isolationMode = PhysicalServerResourceIsolationMode.SHARED
+
+        assert !executor.apply(request) : "CLI Unsynced must not trigger a Java retry or become Synced"
+        def services = executor.inspect("MANAGEMENT", request.sliceName, request.handles)
+        assert services.size() == 1 && services[0] instanceof ManagedServiceResourceUsage
+        assert services[0].cpuSet == "1-3" && services[0].memory == 33554432L
+        assert services[0].memoryLimit == request.memory && services[0].cpuTime == 123000L
+        assert services[0].restartRequired && services[0].restartable
+        executor.restart(request.sliceName, request.handles)
+        assert executor.release(request)
+        assert received.keySet() == ["apply", "services", "restart", "release"] as Set
+        assert JSONObjectUtil.toJsonString(received.apply) == JSONObjectUtil.toJsonString(request)
+        assert received.values().every {
+            it.roleType == "MANAGEMENT" && it.sliceName == request.sliceName &&
+                    it.handles[0].value == "prometheus.service"
+        }
+        assert commands.invocations.size() == 4 : "CLI must be the only executor when packaged"
+        assert commands.invocations.every { !new File(it[-2]).exists() && !new File(it[-1]).exists() } :
+                "request and response files must be cleaned after CLI returns"
+    }
+
+    @Test
+    void testCliFailuresNeverFallBackToJava() {
+        configureV2(true)
+        Path slice = configureV2SystemdRole(true)
+        put(resourceControlCli, "")
+        commands.cli = { throw new ResourceControlUtils.ResourceControlException("CLI failed or timed out") }
+        def request = command("1-3", null, [systemdHandle()])
+        def failure = shouldFail { executor.apply(request) }
+        assert failure.message.contains("CLI failed or timed out")
+        assert commands.invocations.size() == 1
+        assert text(slice.resolve("cpuset.cpus")) == "0-7" :
+                "a failed CLI may have partially applied changes; Java must not retry them"
+        assert !Files.exists(dropIn("zstack-management.slice"))
+        assert commands.invocations.every { !new File(it[-2]).exists() && !new File(it[-1]).exists() }
+
+        ["not json", '{"success":false}', '{"success":true}'].each { String response ->
+            commands.cli = { List<String> args ->
+                new File(args[-1]).text = response
+                return ""
+            }
+            shouldFail { executor.apply(request) }
+        }
+        assert commands.invocations.size() == 4 : "invalid responses must not silently invoke Java either"
+        assert text(slice.resolve("cpuset.cpus")) == "0-7"
+
+        Files.delete(resourceControlCli)
+        assert executor.apply(request) : "only a missing CLI permits the original Java implementation"
+        assert text(slice.resolve("cpuset.cpus")) == "1-3"
+    }
+
+    @Test
+    void testCliSubprocessReadsJsonFromStdin() {
+        put(resourceControlCli, """import json, sys
+command = json.load(sys.stdin)
+assert sys.argv[1] == 'services'
+json.dump({'success': True, 'services': [
+    {'serviceName': command['handles'][0]['serviceName'], 'cpuSet': '1-3', 'memory': 33554432}
+]}, sys.stdout)
+""")
+        commands.cli = { List<String> args ->
+            List<String> unprivileged = new ArrayList<>(args)
+            int sudo = unprivileged.indexOf("sudo")
+            unprivileged.subList(sudo, sudo + 2).clear()
+            return new ResourceControlUtils(null).run(null, unprivileged as String[])
+        }
+        def handle = systemdHandle("monitor's service")
+
+        def services = executor.inspect("MANAGEMENT", "zstack-management.slice", [handle])
+
+        assert services[0].serviceName == handle.serviceName && services[0].memory == 33554432L :
+                "Java must exchange JSON with a real Python subprocess without shell interpolation"
+        put(resourceControlCli, "raise RuntimeError('CLI rejected the request')\n")
+        def failure = shouldFail { executor.apply(command("1-3", null, [handle])) }
+        assert failure.message.contains("CLI rejected the request") :
+                "the real subprocess exit code and stderr must reach the caller without a Java retry"
+        assert commands.invocations.size() == 2
+        assert commands.invocations.every { !new File(it[-2]).exists() && !new File(it[-1]).exists() }
     }
 
     @Test
@@ -100,11 +202,11 @@ class LocalResourceControlExecutorFileSystemCase {
         assert text(slice.resolve("memory.max")) == "${memory}"
         assert text(dropIn("zstack-management.slice")) == "[Slice]\nAllowedCPUs=1-3\nMemoryMax=${memory}"
         assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice"
-        assert commands.count("systemctl", "daemon-reload") == 1 :
-                "one transaction must reload systemd once even when two drop-ins change"
+        assert commands.count("systemctl", "daemon-reload") == 2 :
+                "CPU configuration must load independently before validating and persisting the memory limit"
 
         executor.apply(command("1-3", memory, [systemdHandle()]))
-        assert commands.count("systemctl", "daemon-reload") == 1 :
+        assert commands.count("systemctl", "daemon-reload") == 2 :
                 "an idempotent apply must not reload systemd"
 
         List<ManagedServiceResourceUsage> usage = executor.inspect("MANAGEMENT", [systemdHandle()])
@@ -132,11 +234,11 @@ class LocalResourceControlExecutorFileSystemCase {
         assert !Files.exists(dropIn("zstack-management.slice"))
         assert text(dropIn("prometheus.service")) == "[Service]\nSlice=zstack-management.slice" :
                 "release must remove limits without changing the service's Role membership"
-        assert commands.count("systemctl", "daemon-reload") == 2 :
-                "active slice release must reload deleted config once: expected=2 total actual=${debugState()}"
+        assert commands.count("systemctl", "daemon-reload") == 3 :
+                "active slice release must reload deleted config once: expected=3 total actual=${debugState()}"
         executor.release(command("1-3", memory, [systemdHandle()]))
-        assert commands.count("systemctl", "daemon-reload") == 2 :
-                "unchanged active slice release must not reload: expected=2 total actual=${debugState()}"
+        assert commands.count("systemctl", "daemon-reload") == 3 :
+                "unchanged active slice release must not reload: expected=3 total actual=${debugState()}"
     }
 
     @Test
@@ -430,18 +532,34 @@ class LocalResourceControlExecutorFileSystemCase {
     }
 
     @Test
-    void testRejectsMemoryLimitBelowCurrentSliceUsageBeforeChangingConfig() {
+    void testMemoryRejectionPreservesCpuAssignmentAndPreviousMemoryLimit() {
         configureV2(true)
         Path slice = configureV2SystemdRole(true)
-        put(slice.resolve("memory.current"), "${SizeUnit.MEGABYTE.toByte(192)}")
+        long desiredMemory = SizeUnit.GIGABYTE.toByte(2)
+        [null, SizeUnit.GIGABYTE.toByte(4)].each { Long previousMemory ->
+            put(slice.resolve("cpuset.cpus"), "0-3")
+            put(slice.resolve("memory.current"), "2149494784")
+            put(slice.resolve("memory.max"), previousMemory == null ? "max" : "${previousMemory}")
+            String memorySetting = previousMemory == null ? "" : "\nMemoryMax=${previousMemory}"
+            put(dropIn("zstack-management.slice"), "[Slice]\nAllowedCPUs=0-3${memorySetting}\n")
 
-        Throwable failure = shouldFail {
-            executor.apply(command("0-1", SizeUnit.MEGABYTE.toByte(128), [systemdHandle()]))
+            Throwable failure = shouldFail {
+                executor.apply(command("1-2", desiredMemory, [systemdHandle()]))
+            }
+
+            assert failure.message.contains("is below current usage") :
+                    "memory rejection must still fail the assignment instead of reporting Synced"
+            assert text(slice.resolve("cpuset.cpus")) == "1-2" :
+                    "rejecting an unsafe memory shrink must not block the independent CPU assignment"
+            assert text(slice.resolve("memory.max")) == (previousMemory == null ? "max" : "${previousMemory}")
+            assert text(dropIn("zstack-management.slice")) == "[Slice]\nAllowedCPUs=1-2${memorySetting}" :
+                    "persist CPU while preserving the previous memory setting, not the rejected limit"
+
+            put(slice.resolve("memory.current"), "${SizeUnit.GIGABYTE.toByte(1)}")
+            assert executor.apply(command("1-2", desiredMemory, [systemdHandle()]))
+            assert text(slice.resolve("memory.max")) == "${desiredMemory}"
+            assert text(dropIn("zstack-management.slice")).contains("MemoryMax=${desiredMemory}")
         }
-
-        assert failure?.message?.contains("is below current usage")
-        assert !Files.exists(dropIn("zstack-management.slice")) :
-                "an unsafe shrink must fail before persisting the desired systemd state"
     }
 
     @Test
@@ -1122,6 +1240,7 @@ class LocalResourceControlExecutorFileSystemCase {
         private final Map<Path, String> rootOwnedDropIns = [:]
         private String failedCommand
         private Closure beforeReload
+        private Closure cli
 
         FakeCommandExecutor(Path v2Root, Path v1Root, Path v1MemoryRoot) {
             this.v2Root = v2Root
@@ -1151,6 +1270,9 @@ class LocalResourceControlExecutorFileSystemCase {
         String run(byte[] input, String... command) {
             List<String> raw = command.toList()
             invocations.add(new ArrayList<>(raw))
+            if (raw.contains("resource-control-cli")) {
+                return cli(raw)
+            }
             List<String> args = normalize(raw)
             if (failedCommand != null && args.contains(failedCommand)) {
                 throw new ResourceControlUtils.ResourceControlException("failed ${failedCommand}")
