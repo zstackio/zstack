@@ -13,6 +13,7 @@ public class RebootVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
     private String vmInstanceUuid;
     private String type = StopVmType.grace.toString();
     private boolean debug;
+    private boolean fromApi;
 
     public void setVmInstanceUuid(String vmInstanceUuid) {
         this.vmInstanceUuid = vmInstanceUuid;
@@ -37,5 +38,13 @@ public class RebootVmInstanceMsg extends NeedReplyMessage implements VmInstanceM
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public boolean isFromApi() {
+        return fromApi;
+    }
+
+    public void setFromApi(boolean fromApi) {
+        this.fromApi = fromApi;
     }
 }

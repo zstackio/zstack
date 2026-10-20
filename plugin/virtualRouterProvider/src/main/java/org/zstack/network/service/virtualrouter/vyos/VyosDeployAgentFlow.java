@@ -6,14 +6,19 @@ import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.appliancevm.*;
 import org.zstack.appliancevm.ApplianceVmConstant.Params;
 import org.zstack.core.CoreGlobalProperty;
+import org.zstack.core.Platform;
 import org.zstack.core.ansible.AnsibleFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.upgrade.UpgradeChecker;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.header.core.workflow.FlowRollback;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
+import org.zstack.header.vm.APIRebootVmInstanceMsg;
+import org.zstack.header.vm.APIStartVmInstanceMsg;
+import org.zstack.header.vm.RebootVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.VmInstanceSpec;
@@ -52,6 +57,15 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
     @Autowired
     private UpgradeChecker upgradeChecker;
 
+    private final boolean upgradeOnApiStartOrRebootDuringGrayscale;
+
+    public VyosDeployAgentFlow() {
+        this(false);
+    }
+
+    public VyosDeployAgentFlow(boolean upgradeOnApiStartOrRebootDuringGrayscale) {
+        this.upgradeOnApiStartOrRebootDuringGrayscale = upgradeOnApiStartOrRebootDuringGrayscale;
+    }
 
     private final String REMOTE_USER = "REMOTE_USER";
     private final String REMOTE_PASS = VirtualRouterGlobalConfig.VYOS_PASSWORD.value();
@@ -82,7 +96,25 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         return (String) data.get(REMOTE_ZVRBOOT_BIN_PATH);
     }
 
+    static boolean shouldUpgradeOnApiStartOrReboot(Map data, boolean enabled, boolean grayscaleUpgrade) {
+        if (!enabled || !grayscaleUpgrade) {
+            return false;
+        }
 
+        VmInstanceSpec spec = (VmInstanceSpec) data.get(VmInstanceConstant.Params.VmInstanceSpec.toString());
+        if (spec == null) {
+            return false;
+        }
+
+        if (spec.getCurrentVmOperation() == VmOperation.Start) {
+            return spec.getMessage() instanceof APIStartVmInstanceMsg;
+        }
+
+        return spec.getCurrentVmOperation() == VmOperation.Reboot &&
+                (spec.getMessage() instanceof APIRebootVmInstanceMsg ||
+                        (spec.getMessage() instanceof RebootVmInstanceMsg &&
+                                ((RebootVmInstanceMsg) spec.getMessage()).isFromApi()));
+    }
 
     @Override
     public void run(FlowTrigger trigger, Map data) {
@@ -93,9 +125,12 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
         }
 
         boolean fromApi = Boolean.parseBoolean(String.valueOf(data.get(Params.fromApi.toString())));
+        boolean upgradeOnApiStartOrReboot = shouldUpgradeOnApiStartOrReboot(data,
+                upgradeOnApiStartOrRebootDuringGrayscale, UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class));
         boolean skipGrayscaleUpgradeCheck = Boolean.parseBoolean(String.valueOf(data.get(Params.skipGrayscaleUpgradeCheck.toString())));
         boolean isReconnect = Boolean.parseBoolean(String.valueOf(data.get(Params.isReconnect.toString())));
-        if (!fromApi && !skipGrayscaleUpgradeCheck && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
+        if (!fromApi && !upgradeOnApiStartOrReboot && !skipGrayscaleUpgradeCheck &&
+                upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(vrUuid)) {
             trigger.next();
             return;
         }
@@ -109,6 +144,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
 
         if (!isReconnect &&
+                !upgradeOnApiStartOrReboot &&
                 !ApplianceVmGlobalConfig.DEPLOY_AGENT_ON_START.value(Boolean.class) &&
                 !ApplianceVmSystemTags.APPLIANCEVM_DEPLOY_AGENT_ON_START.hasTag(vrUuid)) {
             // no need to deploy agent
@@ -179,7 +215,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
             private void deployAgent(int port) {
                 try {
-                    new Ssh().setTimeout(300).scpUpload(
+                    Platform.<Ssh>New(Ssh::new).setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             remoteZvrBinPath
                     ).scpUpload(
@@ -194,7 +230,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
-                    new Ssh().setTimeout(300).scpUpload(
+                    Platform.<Ssh>New(Ssh::new).setTimeout(300).scpUpload(
                             PathUtil.findFileOnClassPath("ansible/zvr/zvr.bin", true).getAbsolutePath(),
                             remoteZvrBinPath
                     ).scpUpload(
@@ -214,13 +250,13 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                         remoteZvrBootBinPath, remoteZvrBinPath, remoteZvrDir, forceReboot);
 
                 try {
-                    new Ssh().shell(script
+                    Platform.<Ssh>New(Ssh::new).shell(script
                     ).setTimeout(300).setPrivateKey(asf.getPrivateKey()).setUsername(remoteUser).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 } catch (SshException  e ) {
                     /*
                     ZSTAC-18352, try again with password when key fail
                      */
-                    new Ssh().shell(script
+                    Platform.<Ssh>New(Ssh::new).shell(script
                     ).setTimeout(300).setPassword(REMOTE_PASS).setUsername(remoteUser).setHostname(mgmtNicIp).setPort(port).runErrorByExceptionAndClose();
                 }
             }
@@ -245,7 +281,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
 
     private boolean isZvrMd5Changed(String ip, int port, Map data){
         int interval = 30 ;
-        Ssh ssh = new Ssh();
+        Ssh ssh = Platform.New(Ssh::new);
         ssh.setUsername(getRemoteUser(data))
                 .setPrivateKey(asf.getPrivateKey())
                 .setPort(port)
@@ -339,7 +375,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
                     REMOTE_PORT, vrMgtIp));
             return;
         }
-        Ssh ssh1 = new Ssh();
+        Ssh ssh1 = Platform.New(Ssh::new);
         ssh1.setUsername(getRemoteUser(data)).setPrivateKey(asf.getPrivateKey()).setPort(REMOTE_PORT)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret1 = ssh1.command(String.format("sudo tail -n 300 %s/zvrReboot.log", getRemoteZvrDir(data))).runAndClose();
@@ -349,7 +385,7 @@ public class VyosDeployAgentFlow extends NoRollbackFlow {
             logger.debug(String.format("get virtual router reboot log failed: %s", ret1.getStderr()));
         }
 
-        Ssh ssh2 = new Ssh();
+        Ssh ssh2 = Platform.New(Ssh::new);
         ssh2.setUsername(getRemoteUser(data)).setPrivateKey(asf.getPrivateKey()).setPort(REMOTE_PORT)
                 .setHostname(vrMgtIp).setTimeout(timeout);
         SshResult ret2 = ssh2.command("sudo tail -n 300 /tmp/agentRestart.log").runAndClose();
