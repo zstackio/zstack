@@ -389,7 +389,7 @@ public class MemoryRepository {
     }
 
     private Object storedMutationValue(MemoryStandardField field, String value, String scope) {
-        if (field == MemoryStandardField.KSM_ENABLED && value != null
+        if (field.isFeatureSwitch() && value != null
                 && "none".equalsIgnoreCase(value.trim())) {
             return MemoryStandardConfigAdapter.OverrideMode.UNMANAGED;
         }
@@ -432,40 +432,21 @@ public class MemoryRepository {
         try {
             Set<String> replacedFields = new HashSet<>(mutation.values.keySet());
             String candidate = ownPolicy(em, mutation.scope, mutation.resource, replacedFields);
-            boolean explicitUnmanagedKsm = false;
-            boolean changedKsm = false;
             for (Map.Entry<String, Object> value : mutation.values.entrySet()) {
-                if ("ksm.enabled".equals(value.getKey())) {
-                    changedKsm = true;
-                    if (MemoryStandardConfigAdapter.isUnmanaged(value.getValue())) {
-                        explicitUnmanagedKsm = true;
-                        candidate = MemoryStandardConfigCodec.put(candidate, value.getKey(), null);
-                    } else {
-                        candidate = MemoryStandardPolicy.set(candidate, value.getKey(), value.getValue());
-                    }
-                } else {
-                    candidate = MemoryStandardPolicy.set(candidate, value.getKey(), value.getValue());
-                }
+                candidate = MemoryStandardPolicy.set(candidate, value.getKey(),
+                        MemoryStandardConfigAdapter.isUnmanaged(value.getValue()) ? null : value.getValue());
             }
-            validateConfigurationCandidate(em, mutation.scope, mutation.resource, candidate,
-                    changedKsm, explicitUnmanagedKsm);
+            validateConfigurationCandidate(em, mutation.scope, mutation.resource, candidate);
         } catch (IllegalArgumentException invalid) { throw translatePolicyRuleFailure(invalid); }
     }
 
     /** Shared by standard writes and compatibility policy writes, before either persists values. */
     private void validateConfigurationCandidate(EntityManager em, String scope, String resource, String candidate) {
-        validateConfigurationCandidate(em, scope, resource, candidate, false, false);
-    }
-
-    private void validateConfigurationCandidate(EntityManager em, String scope, String resource, String candidate,
-            boolean ignoreStoredKsmOverride, boolean forceUnmanagedKsm) {
-        String effectiveCandidate = mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource,
-                candidate, ignoreStoredKsmOverride, forceUnmanagedKsm);
+        mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource, candidate);
         // A parent's final candidate must not invalidate surviving child overrides,
         // even when a compatibility client selected only a subset for immediate apply.
         for (String host : targets(em, scope, resource)) {
-            effectiveHostWithCandidate(em, host, scope, resource, candidate,
-                    ignoreStoredKsmOverride, forceUnmanagedKsm);
+            effectiveHostWithCandidate(em, host, scope, resource, candidate);
         }
     }
 
@@ -788,34 +769,14 @@ public class MemoryRepository {
         return mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource, ownPolicy(em, scope, resource));
     }
 
-    /** A stored legacy "none" masks only inherited ksm.enabled; it never means false. */
+    /** Only explicit values override a parent; a stored none contributes no boolean. */
     private String mergeEffectiveLayer(EntityManager em, String inherited, String scope,
             String resource, String candidateOwn) {
-        return mergeEffectiveLayer(em, inherited, scope, resource, candidateOwn, false, false);
-    }
-
-    private String mergeEffectiveLayer(EntityManager em, String inherited, String scope,
-            String resource, String candidateOwn, boolean ignoreStoredKsmOverride, boolean forceUnmanagedKsm) {
-        Object legacy = null;
-        if (!ignoreStoredKsmOverride) {
-            if ("Global".equals(scope)) { legacy = standardConfigs.readGlobalOwn(em, "ksm.enabled"); }
-            else if ("Host".equals(scope) || "Cluster".equals(scope)) {
-                legacy = standardConfigs.readOverrideOwn(em, "ksm.enabled", resource);
-            }
-        }
-        if (forceUnmanagedKsm || (MemoryStandardConfigAdapter.isUnmanaged(legacy)
-                && MemoryStandardConfigCodec.get(candidateOwn, "ksm.enabled") == null)) {
-            inherited = removePolicyPath(inherited, "ksm.enabled");
-        }
-        // Only cross-scope feature intent is additive. A write within one scope
-        // still replaces its stored value, and scalar/guard fields remain nearest-wins.
-        if (!"Global".equals(scope)) {
+        if ("Global".equals(scope)) {
+            // Standard GlobalConfig already supplies the installation's defaults.
+            // A real none must not acquire a synthetic disabled policy fallback.
             for (MemoryStandardField field : MemoryStandardField.values()) {
-                if (field.isFeatureSwitch()
-                        && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(inherited, field.path()))
-                        && Boolean.FALSE.equals(MemoryStandardConfigCodec.get(candidateOwn, field.path()))) {
-                    candidateOwn = MemoryStandardConfigCodec.put(candidateOwn, field.path(), true);
-                }
+                if (field.isFeatureSwitch()) { inherited = removePolicyPath(inherited, field.path()); }
             }
         }
         return MemoryPolicyRules.merge(inherited, candidateOwn, scope);
@@ -989,7 +950,7 @@ public class MemoryRepository {
             Set<String> previewClearedFields, String previewPatch) {
         Map<String, Long> revisions = new LinkedHashMap<>();
         Map<String, String> fields = new LinkedHashMap<>();
-        Map<String, String> enabledSources = new LinkedHashMap<>();
+        Map<String, String> switchSources = new LinkedHashMap<>();
         if (!"VM".equals(scope)) { MemoryPolicyRules.addFieldSources(MemoryPolicyRules.defaults(), "Default", fields); }
         for (MemoryPolicyVO source : sourceChain(em, scope, resource)) {
             revisions.put(source.getUuid(), source.getRevision());
@@ -1005,55 +966,37 @@ public class MemoryRepository {
                 boolean editedScope = source.getUuid().equals(scope + ":" + resource);
                 String layerPolicy = ownPolicy(em, source.getScope(), source.getResourceUuid());
                 for (MemoryStandardField field : MemoryStandardField.values()) {
-                    if (!field.isFeatureSwitch()) { continue; }
-                    if (editedScope && previewClearedFields.contains(field.path())) { continue; }
+                    if (!field.isFeatureSwitch() || editedScope && previewClearedFields.contains(field.path())) { continue; }
                     Object value = MemoryStandardConfigCodec.get(layerPolicy, field.path());
                     Object patched = editedScope && previewPatch != null
                             ? MemoryStandardConfigCodec.get(previewPatch, field.path()) : null;
                     if (patched != null) { value = patched; }
-                    if (value == null && field == MemoryStandardField.KSM_ENABLED
-                            && MemoryStandardConfigAdapter.isUnmanaged(standardValue(em, source, field))) {
-                        enabledSources.remove(field.path());
-                    } else if (Boolean.TRUE.equals(value)) {
-                        enabledSources.put(field.path(), source.getUuid());
-                    }
+                    if (value instanceof Boolean) { switchSources.put(field.path(), source.getUuid()); }
                 }
             }
         }
         // Preview patches belong to the edited scope, including explicit false.
         // A GET's ownPolicy includes schema defaults; they are not explicit writes.
         if (previewPatch != null) { MemoryPolicyRules.addFieldSources(previewPatch, scope + ":" + resource, fields); }
-        fields.putAll(enabledSources);
+        fields.putAll(switchSources);
         result.setSourceRevisions(revisions);
         result.setFieldSources(fields);
-        result.setFieldModes(unmanagedFieldModes(em, scope, resource, previewClearedFields,
-                previewPatch != null && MemoryStandardConfigCodec.get(previewPatch, "ksm.enabled") != null));
-        if (MemoryStandardConfigCodec.get(result.getEffectivePolicy(), "ksm.enabled") == null
-                && !result.getFieldModes().containsKey("ksm.enabled")) {
-            fields.remove("ksm.enabled");
+        result.setFieldModes("VM".equals(scope) ? Collections.emptyMap() : unmanagedFieldModes(result.getEffectivePolicy()));
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            if (field.isFeatureSwitch() && MemoryStandardConfigCodec.get(result.getEffectivePolicy(), field.path()) == null) {
+                fields.remove(field.path());
+            }
         }
         result.setSourceRevision(policy(em, "Global", "global").getRevision());
     }
 
-    private Map<String, String> unmanagedFieldModes(EntityManager em, String scope, String resource,
-            Set<String> previewClearedFields, boolean previewManagesKsm) {
+    private Map<String, String> unmanagedFieldModes(String effectivePolicy) {
         Map<String, String> modes = new LinkedHashMap<>();
-        if ("VM".equals(scope)) { return modes; }
-        for (MemoryPolicyVO source : sourceChain(em, scope, resource)) {
-            if (source.getUuid().equals(scope + ":" + resource)
-                    && previewClearedFields.contains("ksm.enabled")) { continue; }
-            boolean authoritative = standardFieldAuthoritative(em, source.getScope(), source.getResourceUuid(),
-                    MemoryStandardField.KSM_ENABLED);
-            Object value = standardValue(em, source, MemoryStandardField.KSM_ENABLED);
-            boolean schemaDefault = "Global".equals(source.getScope())
-                    && standardConfigs.globalIsSchemaDefault(em, "ksm.enabled");
-            if (authoritative && MemoryStandardConfigAdapter.isUnmanaged(value) && !schemaDefault) {
-                modes.put("ksm.enabled", "Unmanaged");
-            } else if (authoritative || MemoryStandardConfigCodec.get(source.getPolicy(), "ksm.enabled") != null) {
-                modes.remove("ksm.enabled");
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            if (field.isFeatureSwitch() && MemoryStandardConfigCodec.get(effectivePolicy, field.path()) == null) {
+                modes.put(field.path(), "Unmanaged");
             }
         }
-        if (previewManagesKsm) { modes.remove("ksm.enabled"); }
         return modes;
     }
 
@@ -1082,12 +1025,9 @@ public class MemoryRepository {
             Object value = standardValue(em, source, field);
             boolean schemaDefault = "Global".equals(source.getScope())
                     && standardConfigs.globalIsSchemaDefault(em, field.path());
-            if (schemaDefault && (field != MemoryStandardField.KSM_ENABLED
+            if (schemaDefault && (!field.isFeatureSwitch()
                     || MemoryStandardConfigAdapter.isUnmanaged(value))) { continue; }
-            if (MemoryStandardConfigAdapter.isUnmanaged(value)) {
-                fields.remove(field.path());
-                fields.put(field.path(), source.getUuid());
-            } else if (value != null) {
+            if (value != null && !MemoryStandardConfigAdapter.isUnmanaged(value)) {
                 fields.put(field.path(), source.getUuid());
             }
         }
@@ -1192,7 +1132,7 @@ public class MemoryRepository {
             result.setPolicy(previewPolicy);
             result.setEffectivePolicy("VM".equals(scope) ? result.getPolicy()
                     : mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource,
-                        result.getPolicy(), clearsKsmEnabled(effectiveAction, clearOverrideFields), false));
+                        result.getPolicy()));
             Set<String> previewClearedFields = "clearOverride".equals(effectiveAction)
                     && clearOverrideFields != null ? new HashSet<>(clearOverrideFields)
                     : Collections.<String>emptySet();
@@ -1211,8 +1151,7 @@ public class MemoryRepository {
             Map<String, MemoryHostPolicyPreviewSnapshot> result = new LinkedHashMap<>();
             for (String host : hosts) {
                 result.put(host, new MemoryHostPolicyPreviewSnapshot(
-                        effective(em, "Host", host), effectiveHostWithCandidate(em, host, scope, resource, ownCandidate,
-                                clearsKsmEnabled(action, clearOverrideFields), false),
+                        effective(em, "Host", host), effectiveHostWithCandidate(em, host, scope, resource, ownCandidate),
                         em.find(MemoryStateVO.class, host)));
             }
             return result;
@@ -1247,45 +1186,28 @@ public class MemoryRepository {
         return MemoryStandardPolicy.combine(specialized, standard);
     }
 
-    private boolean clearsKsmEnabled(String action, List<String> clearOverrideFields) {
-        return "clearOverride".equals(action) && clearOverrideFields != null
-                && clearOverrideFields.contains("ksm.enabled");
-    }
-
     private String effectiveHostWithCandidate(EntityManager em, String host, String changedScope,
             String changedResource, String candidateOwn) {
-        return effectiveHostWithCandidate(em, host, changedScope, changedResource, candidateOwn, false, false);
-    }
-
-    private String effectiveHostWithCandidate(EntityManager em, String host, String changedScope,
-            String changedResource, String candidateOwn, boolean ignoreStoredKsmOverride, boolean forceUnmanagedKsm) {
         String global = "Global".equals(changedScope) && "global".equals(changedResource)
                 ? candidateOwn : ownPolicy(em, "Global", "global");
-        String result = mergeEffectiveLayer(em, MemoryPolicyRules.defaults(), "Global", "global", global,
-                "Global".equals(changedScope) && "global".equals(changedResource) && ignoreStoredKsmOverride,
-                "Global".equals(changedScope) && "global".equals(changedResource) && forceUnmanagedKsm);
+        String result = mergeEffectiveLayer(em, MemoryPolicyRules.defaults(), "Global", "global", global);
         String cluster = em.createQuery("select h.clusterUuid from HostVO h where h.uuid = :uuid", String.class)
                 .setParameter("uuid", host).getSingleResult();
         if (cluster != null) {
             String clusterPolicy = "Cluster".equals(changedScope) && cluster.equals(changedResource)
                     ? candidateOwn : ownPolicy(em, "Cluster", cluster);
-            result = mergeEffectiveLayer(em, result, "Cluster", cluster, clusterPolicy,
-                    "Cluster".equals(changedScope) && cluster.equals(changedResource) && ignoreStoredKsmOverride,
-                    "Cluster".equals(changedScope) && cluster.equals(changedResource) && forceUnmanagedKsm);
+            result = mergeEffectiveLayer(em, result, "Cluster", cluster, clusterPolicy);
         }
         String hostPolicy = "Host".equals(changedScope) && host.equals(changedResource)
                 ? candidateOwn : ownPolicy(em, "Host", host);
-        return mergeEffectiveLayer(em, result, "Host", host, hostPolicy,
-                "Host".equals(changedScope) && host.equals(changedResource) && ignoreStoredKsmOverride,
-                "Host".equals(changedScope) && host.equals(changedResource) && forceUnmanagedKsm);
+        return mergeEffectiveLayer(em, result, "Host", host, hostPolicy);
     }
 
     private void checkCapabilityAdmission(EntityManager em, String scope, String resource,
-            String candidateOwn, List<String> hosts, boolean ignoreStoredKsmOverride, boolean forceUnmanagedKsm) {
+            String candidateOwn, List<String> hosts) {
         for (String host : hosts) {
             String before = effective(em, "Host", host);
-            String after = effectiveHostWithCandidate(em, host, scope, resource, candidateOwn,
-                    ignoreStoredKsmOverride, forceUnmanagedKsm);
+            String after = effectiveHostWithCandidate(em, host, scope, resource, candidateOwn);
             Map<String, String> changed = MemoryPolicyAdmissionRules.changedFields(before, after);
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(
@@ -1448,19 +1370,12 @@ public class MemoryRepository {
                 }
                 String candidateOwn = candidateOwnPolicy(em, msg.getScope(), msg.getResourceUuid(),
                         msg.getPolicy(), msg.getAction(), msg.getClearOverrideFields());
-                boolean replacingKsmOverride = standardChanges.containsKey("ksm.enabled")
-                        || clearsKsmEnabled(msg.getAction(), msg.getClearOverrideFields());
                 String candidateEffective = "VM".equals(msg.getScope()) ? candidateOwn
-                        : "Global".equals(msg.getScope())
-                            ? mergeEffectiveLayer(em, MemoryPolicyRules.defaults(), "Global", "global", candidateOwn,
-                                    replacingKsmOverride, false)
-                    : mergeEffectiveLayer(em, parentEffective(em, msg.getScope(), msg.getResourceUuid()),
-                            msg.getScope(), msg.getResourceUuid(), candidateOwn, replacingKsmOverride, false);
+                        : mergeEffectiveLayer(em, parentEffective(em, msg.getScope(), msg.getResourceUuid()),
+                            msg.getScope(), msg.getResourceUuid(), candidateOwn);
                 if (!"VM".equals(msg.getScope())) {
-                    validateConfigurationCandidate(em, msg.getScope(), msg.getResourceUuid(), candidateOwn,
-                            replacingKsmOverride, false);
-                    checkCapabilityAdmission(em, msg.getScope(), msg.getResourceUuid(), candidateOwn, hosts,
-                            replacingKsmOverride, false);
+                    validateConfigurationCandidate(em, msg.getScope(), msg.getResourceUuid(), candidateOwn);
+                    checkCapabilityAdmission(em, msg.getScope(), msg.getResourceUuid(), candidateOwn, hosts);
                 }
                 Set<GlobalConfig> refreshGlobal = new LinkedHashSet<>();
                 List<MemoryStandardConfigAdapter.ResourceChange> refreshResources = new ArrayList<>();
@@ -1833,7 +1748,7 @@ public class MemoryRepository {
 
     private HostPolicyPlan planForHost(EntityManager em, String hostUuid, String effectivePolicy,
             MemoryStateVO state) {
-        return planForHost(em, hostUuid, state, explicitlyManagedPolicy(em, hostUuid, effectivePolicy));
+        return planForHost(em, hostUuid, state, explicitlyManagedPolicy(em, hostUuid, effectivePolicy), effectivePolicy);
     }
 
     private boolean isFirstPoolNonZramControl(EntityManager em, MemoryStateVO state, String expectedBootId) {
@@ -1920,7 +1835,7 @@ public class MemoryRepository {
         } catch (RuntimeException invalid) { return false; }
     }
 
-    private HostPolicyPlan planForHost(EntityManager em, String hostUuid, MemoryStateVO state, JsonObject target) {
+    private HostPolicyPlan planForHost(EntityManager em, String hostUuid, MemoryStateVO state, JsonObject target, String effectivePolicy) {
         HostPolicyPlan plan = new HostPolicyPlan();
         String targetText = target.toString();
         plan.targetHash = digest(targetText);
@@ -1929,7 +1844,7 @@ public class MemoryRepository {
         // schemaVersion is wire metadata, not a Host policy field. It must not
         // make an otherwise KSM-only desired change fail capability admission.
         plan.changedFields.remove("schemaVersion");
-        ignoreAbsentDisabledMechanismDefaults(applied, target, plan.changedFields);
+        ignoreAbsentDisabledMechanismDefaults(applied, target, effectivePolicy, plan.changedFields);
         long now = System.currentTimeMillis();
         if (plan.changedFields.isEmpty()) {
             plan.confirmedKsmReconnect = addTrustedAppliedKsmReconnectDrift(
@@ -1974,10 +1889,11 @@ public class MemoryRepository {
             plan.changedFields.put("zram.enabled", "true");
         }
         // An absent field cannot be represented by a delta: omission means
-        // leave it untouched. Persist a complete sparse target for a KSM
+        // leave it untouched. Persist a complete sparse target for a feature
         // clear and use the existing effective/clear Agent proof contract.
         plan.replacesAppliedPolicy = plan.changedFields.keySet().stream()
-                .anyMatch(path -> path.startsWith("ksm.") && jsonPath(target, path) == null);
+                .anyMatch(path -> (path.startsWith("ksm.") || "zram.enabled".equals(path)
+                        || "writeback.enabled".equals(path)) && jsonPath(target, path) == null);
         if (plan.replacesAppliedPolicy && !target.has("ksm")) { target.add("ksm", new JsonObject()); }
         boolean writebackChange = plan.changedFields.keySet().stream()
                 .anyMatch(path -> path.startsWith("writeback."));
@@ -2276,10 +2192,11 @@ public class MemoryRepository {
     }
 
     private static void ignoreAbsentDisabledMechanismDefaults(String appliedPolicy, JsonObject target,
-            Map<String, String> changedFields) {
+            String effectivePolicy, Map<String, String> changedFields) {
         JsonObject applied = new JsonParser().parse(appliedPolicy).getAsJsonObject();
         for (String field : Arrays.asList("zram.enabled", "writeback.enabled")) {
-            if (!changedFields.containsKey(field) || jsonPath(target, field) != null) { continue; }
+            if (!changedFields.containsKey(field) || jsonPath(target, field) != null
+                    || !Boolean.FALSE.equals(MemoryStandardConfigCodec.get(effectivePolicy, field))) { continue; }
             JsonElement previous = jsonPath(applied, field);
             if (previous != null && previous.isJsonPrimitive() &&
                     previous.getAsJsonPrimitive().isBoolean() && !previous.getAsBoolean()) {
@@ -2409,10 +2326,10 @@ public class MemoryRepository {
             if (!hasFreshCapabilityObservation(state, System.currentTimeMillis())) { return false; }
             if ("Unknown".equals(state.getStatus()) && hasUnresolvedControl(em, state)) { return false; }
             String effectivePolicy = effective(em, "Host", hostUuid);
-            // A legacy unmanaged KSM value has no authority over native KSM.
-            // An applied default or explicit false is intent too: the Agent must own
-            // and enforce run=0 instead of silently preserving boot-enabled KSM.
-            if (!hasExplicitMechanismPolicy(em, hostUuid) && !hasAppliedKsmPolicy(state)) { return false; }
+            // An unmanaged value has no authority over native state. Managed defaults
+            // and explicit false are intent too; a previously applied mechanism
+            // must complete the existing clear path before releasing ownership.
+            if (!hasExplicitMechanismPolicy(em, hostUuid) && !hasAppliedMechanismPolicy(state)) { return false; }
             if (state.getAppliedPolicyHash() == null && hasHistoricalControl(state)) {
                 recordLegacyPolicyNeedsReview(state, effectivePolicy);
                 return false;
@@ -2598,12 +2515,15 @@ public class MemoryRepository {
         state.setReason("Legacy Host policy application cannot be reconstructed safely; explicit review is required");
     }
 
-    private static boolean hasAppliedKsmPolicy(MemoryStateVO state) {
+    private static boolean hasAppliedMechanismPolicy(MemoryStateVO state) {
         if (state.getAppliedPolicyHash() == null || state.getAppliedPolicy() == null) { return false; }
         try {
             JsonObject applied = new JsonParser().parse(state.getAppliedPolicy()).getAsJsonObject();
-            return applied.has("ksm") && applied.get("ksm").isJsonObject()
-                    && !applied.getAsJsonObject("ksm").entrySet().isEmpty();
+            for (String mechanism : Arrays.asList("ksm", "zram", "writeback")) {
+                if (applied.has(mechanism) && applied.get(mechanism).isJsonObject()
+                        && !applied.getAsJsonObject(mechanism).entrySet().isEmpty()) { return true; }
+            }
+            return false;
         } catch (RuntimeException invalid) { return false; }
     }
 
@@ -2630,10 +2550,9 @@ public class MemoryRepository {
                 if (!field.allows(level)) { continue; }
                 Object value = "Global".equals(source.getScope()) ? standardConfigs.readGlobalOwn(em, field.path())
                         : standardConfigs.readOverrideOwn(em, field.path(), source.getResourceUuid());
-                if (value == null) { continue; }
+                if (value == null || MemoryStandardConfigAdapter.isUnmanaged(value)) { continue; }
                 if ("Global".equals(source.getScope()) && standardConfigs.globalIsSchemaDefault(em, field.path())
-                        && (field != MemoryStandardField.KSM_ENABLED
-                        || MemoryStandardConfigAdapter.isUnmanaged(value))) { continue; }
+                        && !field.isFeatureSwitch()) { continue; }
                 return true;
             }
         }
@@ -2927,11 +2846,12 @@ public class MemoryRepository {
                         }
                     } else {
                         // Legacy full-policy tasks may predate target hashes. Never
-                        // dispatch their old nearest-wins false over an enabled ancestor.
+                        // dispatch a boolean that no longer matches the resolved target.
                         for (MemoryStandardField field : MemoryStandardField.values()) {
                             if (field.isFeatureSwitch()
-                                    && Boolean.FALSE.equals(MemoryStandardConfigCodec.get(task.getPolicy(), field.path()))
-                                    && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(currentPolicy, field.path()))) {
+                                    && MemoryStandardConfigCodec.get(task.getPolicy(), field.path()) instanceof Boolean
+                                    && !Objects.equals(MemoryStandardConfigCodec.get(task.getPolicy(), field.path()),
+                                            MemoryStandardConfigCodec.get(currentPolicy, field.path()))) {
                                 stale.add(task);
                                 break;
                             }
@@ -3625,7 +3545,7 @@ public class MemoryRepository {
                 target.add(field.getKey(), field.getValue());
             }
         }
-        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), observed, target);
+        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), observed, target, effective(em, "Host", host.getHostUuid()));
         if (firstPool ? plan.hasBlockers || plan.capacityMaintenance != null
                 : retainDisabled ? plan.hasBlockers || plan.hasPayload || plan.capacityMaintenance != null
                 : !plan.maintenanceActivation || !plan.hasPayload) {

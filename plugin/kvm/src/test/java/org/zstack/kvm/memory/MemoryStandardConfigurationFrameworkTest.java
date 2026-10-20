@@ -123,6 +123,8 @@ public class MemoryStandardConfigurationFrameworkTest {
         Map<String, ResourceConfig> configs = new HashMap<>();
         configs.put(identity(MemoryStandardField.KSM_ENABLED), enabled);
         configs.put(identity(MemoryStandardField.KSM_ZERO_PAGES), zeroPages);
+        configs.put(identity(MemoryStandardField.ZRAM_ENABLED), resourceConfig(MemoryStandardField.ZRAM_ENABLED, coordinator));
+        configs.put(identity(MemoryStandardField.WRITEBACK_ENABLED), resourceConfig(MemoryStandardField.WRITEBACK_ENABLED, coordinator));
         set(ResourceConfigFacadeImpl.class, facade, "resourceConfigs", configs);
         set(ResourceConfigFacadeImpl.class, facade, "bus", cloudBus());
         set(ResourceConfigFacadeImpl.class, facade, "dbf", dbf);
@@ -149,6 +151,22 @@ public class MemoryStandardConfigurationFrameworkTest {
         assertEquals("true", configValue(MemoryStandardField.KSM_ZERO_PAGES));
         assertEquals(1L, repository.getPolicy("Host", "host1").getRevision());
         assertTrue("real coordinator must create its task in the same backing EMF", taskCount() > 0);
+        events.clear();
+        APIUpdateResourceConfigsMsg none = bulk("none", "none");
+        List<APIUpdateResourceConfigsMsg.ResourceConfigAO> items = new ArrayList<>(none.getResourceConfigs());
+        items.add(ao(MemoryStandardField.ZRAM_ENABLED, "none"));
+        items.add(ao(MemoryStandardField.WRITEBACK_ENABLED, "none"));
+        none.setResourceConfigs(items);
+        facade.handleMessage(none);
+        assertNoApiError();
+        for (MemoryStandardField field : Arrays.asList(MemoryStandardField.KSM_ENABLED,
+                MemoryStandardField.KSM_ZERO_PAGES, MemoryStandardField.ZRAM_ENABLED,
+                MemoryStandardField.WRITEBACK_ENABLED)) {
+            assertBulkReplyValue(field, "none");
+            assertEquals("none", configValue(field));
+            assertNotEquals("Host:host1", repository.getPolicy("Host", "host1").getFieldSources().get(field.path()));
+        }
+        assertEquals(2L, repository.getPolicy("Host", "host1").getRevision());
     }
 
     @Test public void interceptorOnlyAndRejectedBatchHaveNoPersistentSideEffects() throws Exception {
@@ -326,7 +344,7 @@ public class MemoryStandardConfigurationFrameworkTest {
                 repository.getPolicy("Host", "host1").getEffectivePolicy());
     }
 
-    @Test public void legacyHostNoneMasksInheritedKsmWithoutSendingAToggleAndDeleteRestoresIt() throws Exception {
+    @Test public void hostNoneInheritsKsmAndDeleteKeepsParentValue() throws Exception {
         EntityManager seed = factory.createEntityManager();
         seed.getTransaction().begin();
         GlobalConfigVO globalRow = seed.createQuery("select c from GlobalConfigVO c where c.category=:category and c.name=:name", GlobalConfigVO.class)
@@ -342,15 +360,15 @@ public class MemoryStandardConfigurationFrameworkTest {
         facade.handleMessage(single("host1", "none"));
         assertNoApiError();
         MemoryPolicyInventory unmanaged = repository.getPolicy("Host", "host1");
-        assertNull("none must not be coerced to enabled=false or inherit true", MemoryStandardConfigCodec.get(unmanaged.getEffectivePolicy(), "ksm.enabled"));
-        assertEquals("Host:host1", unmanaged.getFieldSources().get("ksm.enabled"));
-        assertEquals("Unmanaged", unmanaged.getFieldModes().get("ksm.enabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(unmanaged.getEffectivePolicy(), "ksm.enabled"));
+        assertEquals("Global:global", unmanaged.getFieldSources().get("ksm.enabled"));
+        assertFalse(unmanaged.getFieldModes().containsKey("ksm.enabled"));
         assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(unmanaged.getEffectivePolicy(), "ksm.zeroPagesEnabled"));
         assertEquals(Long.valueOf(777), MemoryStandardConfigCodec.get(unmanaged.getEffectivePolicy(), "ksm.pagesToScan"));
         assertEquals(Long.valueOf(23), MemoryStandardConfigCodec.get(unmanaged.getEffectivePolicy(), "ksm.sleepMillis"));
         MemoryTaskVO task = latestTaskForHost();
         assertNotNull("a compatible live host should produce an Agent task", task);
-        assertNull("unmanaged KSM must not send true/false/null", MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"));
 
         events.clear();
         APIDeleteResourceConfigMsg delete = new APIDeleteResourceConfigMsg();
@@ -446,6 +464,37 @@ public class MemoryStandardConfigurationFrameworkTest {
             assertEquals("false", configs.get("kvm.memory.writeback.enabled").value());
             assertEquals(0L, taskCount());
         }
+        repository.transaction(em -> {
+            MemoryRepositoryTest.TestHost host = new MemoryRepositoryTest.TestHost();
+            host.uuid = "host1"; host.hypervisorType = "KVM"; host.clusterUuid = "cluster1";
+            host.status = org.zstack.header.host.HostStatus.Connected; em.persist(host);
+            return null;
+        });
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO task = repository.claim("mn-new-defaults").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.enabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(task.getPolicy(), "ksm.zeroPagesEnabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(task.getPolicy(), "zram.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(task.getPolicy(), "writeback.enabled"));
+
+        repository.transaction(em -> {
+            GlobalConfigVO ksm = em.createQuery("select g from GlobalConfigVO g where g.category='kvm' and g.name='host.ksm'", GlobalConfigVO.class).getSingleResult();
+            ksm.setValue("none"); ksm.setDefaultValue("none");
+            MemoryRepositoryTest.TestHost host = new MemoryRepositoryTest.TestHost();
+            host.uuid = "host2"; host.hypervisorType = "KVM"; host.clusterUuid = "cluster1";
+            host.status = org.zstack.header.host.HostStatus.Connected; em.persist(host);
+            return null;
+        });
+        assertTrue("KSM none must not hide the other managed Global defaults",
+                repository.applyEffectivePolicyAfterConnect("host2"));
+        MemoryTaskVO service = repository.claim("mn-defaults-without-ksm").stream()
+                .filter(t -> "host2".equals(t.getHostUuid())).findFirst().get();
+        assertNull(MemoryStandardConfigCodec.get(service.getPolicy(), "ksm.enabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(service.getPolicy(), "ksm.zeroPagesEnabled"));
+        assertEquals(Boolean.TRUE, MemoryStandardConfigCodec.get(service.getPolicy(), "zram.enabled"));
+        assertEquals(Boolean.FALSE, MemoryStandardConfigCodec.get(service.getPolicy(), "writeback.enabled"));
+
     }
 
     @Test public void oldCloudWithoutHostsPreservesEveryLegacyKsmSwitch() throws Exception {
@@ -496,6 +545,18 @@ public class MemoryStandardConfigurationFrameworkTest {
         assertStoredGlobal("memory.ksm.sleepMillis", "20", "35");
         assertEquals("none", configValue(MemoryStandardField.KSM_ENABLED));
         assertEquals(0L, taskCount());
+        for (MemoryStandardField field : Arrays.asList(MemoryStandardField.KSM_ENABLED,
+                MemoryStandardField.KSM_ZERO_PAGES, MemoryStandardField.ZRAM_ENABLED,
+                MemoryStandardField.WRITEBACK_ENABLED)) {
+            EntityManager update = factory.createEntityManager(); update.getTransaction().begin();
+            GlobalConfigVO row = update.createQuery("select c from GlobalConfigVO c where c.category=:category and c.name=:name", GlobalConfigVO.class)
+                    .setParameter("category", field.category()).setParameter("name", field.configName()).getSingleResult();
+            String defaultValue = row.getDefaultValue(); row.setValue("none");
+            update.getTransaction().commit(); update.close();
+            initializeMemoryGlobalConfigs();
+            assertStoredGlobal(field.configName(), defaultValue, "none");
+        }
+
     }
 
     private void resetInitializerRows(String... rows) {

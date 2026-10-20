@@ -18,7 +18,7 @@ public class MemoryInventoryDocTemplateTest {
     public void allTypedInventoryAndReplyTemplatesParseIncludingNestedDtos() throws Exception {
         Path sourceRoot = sourceRoot();
         String[] names = {
-                "MemoryUncertainRecovery", "MemoryBackendPreparation", "MemoryZramPoolPreparation",
+                "APIGetMemoryPolicyMsg", "MemoryPolicyInventory", "MemoryUncertainRecovery", "MemoryBackendPreparation", "MemoryZramPoolPreparation",
                 "MemoryVmAccountingInventory", "MemoryVmAccountingMetricsInventory",
                 "MemoryVmIdentityInventory", "MemoryHostOperationsInventory",
                 "MemoryHostOperationsInventory_Entry", "MemoryHostOperationsInventory_Concurrency",
