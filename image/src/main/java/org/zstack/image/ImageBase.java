@@ -3,6 +3,7 @@ package org.zstack.image;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.vm.*;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cascade.CascadeConstant;
@@ -557,7 +558,6 @@ public class ImageBase implements Image {
         AddImageMsg amsg = msg.getMsg();
         List<String> bsUuids = amsg.getBackupStorageUuids();
         ImageInventory img = ImageInventory.valueOf(dbf.findByUuid(msg.getImageUuid(), ImageVO.class));
-        ErrorCodeList err = new ErrorCodeList();
         new While<>(bsUuids).all((bsUuid, compl) -> {
             CancelDownloadImageMsg cmsg = new CancelDownloadImageMsg();
             cmsg.setImageInventory(img);
@@ -568,7 +568,12 @@ public class ImageBase implements Image {
                 @Override
                 public void run(MessageReply r) {
                     if (!r.isSuccess()) {
-                        err.getCauses().add(r.getError());
+                        compl.addError(r.getError());
+                    } else if (r instanceof CancelDownloadImageReply) {
+                        String installPath = ((CancelDownloadImageReply) r).getCompletedUploadInstallPath();
+                        if (installPath != null) {
+                            reconcileCompletedUpload(msg.getImageUuid(), bsUuid, installPath);
+                        }
                     }
                     compl.done();
                 }
@@ -576,12 +581,25 @@ public class ImageBase implements Image {
         }).run(new WhileDoneCompletion(msg) {
             @Override
             public void done(ErrorCodeList errorCodeList) {
-                if (!err.getCauses().isEmpty()) {
-                    reply.setError(err.getCauses().get(0));
+                if (!errorCodeList.getCauses().isEmpty()) {
+                    reply.setError(errorCodeList.getCauses().get(0));
                 }
                 bus.reply(msg, reply);
             }
         });
+    }
+
+    @Transactional
+    void reconcileCompletedUpload(String imageUuid, String backupStorageUuid, String installPath) {
+        // Keep ImageVO downloading: this is cancellation cleanup, not successful image completion.
+        // Update only an existing downloading ref so a concurrent deletion cannot resurrect it.
+        SQL.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, backupStorageUuid)
+                .eq(ImageBackupStorageRefVO_.status, ImageStatus.Downloading)
+                .set(ImageBackupStorageRefVO_.installPath, installPath)
+                .set(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
+                .update();
     }
 
     private void handle(OverlayMessage msg) {

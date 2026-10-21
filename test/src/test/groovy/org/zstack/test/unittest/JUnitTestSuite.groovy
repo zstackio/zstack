@@ -8,6 +8,7 @@ import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.core.ansible.AnsibleAgentRestartCase
+import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
@@ -34,6 +35,7 @@ import java.util.stream.Collectors
         SshExecutionDeadlineCase.class,
         MessageTimeoutContextCase.class,
         MigrateVmFinalizeCompletionCase.class,
+        CephUploadCancelRecoveryCase.class,
         NetworkUtilsCase.class,
         ZnsProxyAnsibleDeployerTest.class,
         ZnsProxyInstallerGroovyTest.class,
