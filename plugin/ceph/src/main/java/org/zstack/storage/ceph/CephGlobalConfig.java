@@ -4,6 +4,8 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigDef;
 import org.zstack.core.config.GlobalConfigDefinition;
 import org.zstack.core.config.GlobalConfigValidation;
+import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.resourceconfig.BindResourceConfig;
 
 /**
  * Created by frank on 8/5/2015.
@@ -11,6 +13,12 @@ import org.zstack.core.config.GlobalConfigValidation;
 @GlobalConfigDefinition
 public class CephGlobalConfig {
     public static final String CATEGORY = "ceph";
+
+    @GlobalConfigDef(type = Integer.class, defaultValue = "0",
+            description = "Maximum concurrency of RBD management operations; 0 leaves the storage setting unchanged")
+    @GlobalConfigValidation(numberGreaterThan = 0)
+    @BindResourceConfig(PrimaryStorageVO.class)
+    public static GlobalConfig RBD_CONCURRENT_MANAGEMENT_OPS = new GlobalConfig(CATEGORY, "rbd.concurrentManagementOps");
 
     @GlobalConfigValidation(numberGreaterThan = 1)
     public static GlobalConfig IMAGE_CACHE_CLEANUP_INTERVAL = new GlobalConfig(CATEGORY, "imageCache.cleanup.interval");
