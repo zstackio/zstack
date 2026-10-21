@@ -473,6 +473,25 @@ json.dump({'success': True, 'services': [
     }
 
     @Test
+    void testUnifiedManagedCpuGroupStillNeedsFiniteMemoryRoleMembership() {
+        configureV2(true)
+        Path slice = configureV2SystemdRole(false)
+        Path managed = v2Root.resolve("zstack-role-MANAGEMENT-unit-prometheus.service")
+        configureV2Group(managed, "6-7", "0", "max", 0)
+        put(managed.resolve("cgroup.procs"), currentPid())
+        commands.unit("prometheus.service", true, "/${managed.fileName}")
+        put(dropIn("prometheus.service"), "[Service]\nSlice=zstack-management.slice")
+        put(slice.resolve("memory.max"), "${SizeUnit.MEGABYTE.toByte(128)}")
+
+        assert executor.inspect("MANAGEMENT", [systemdHandle()])[0].restartRequired :
+                "a legacy CPU group outside a unified finite memory Role still requires restart"
+
+        put(slice.resolve("memory.max"), "max")
+        assert !executor.inspect("MANAGEMENT", [systemdHandle()])[0].restartRequired :
+                "a legacy CPU group needs no restart when the unified memory Role is unlimited"
+    }
+
+    @Test
     void testUnsynchronizedCpuDoesNotSkipFollowingServiceOrMemoryWrites() {
         configureV2(true)
         Path first = v2Root.resolve("system.slice/first.service")
@@ -634,6 +653,37 @@ json.dump({'success': True, 'services': [
         assert released :
                 "v1 release must report Synced after restoring the CPU boundary"
         assert text(managed.resolve("cpuset.cpus")) == "0-7"
+    }
+
+    @Test
+    void testV1ManagedCpuDoesNotHidePendingMemorySliceMembership() {
+        configureV1Cpuset()
+        configureV1MemorySystemdRole()
+        String sliceGroup = "/zstack.slice/zstack-management.slice"
+        String previousGroup = "/system.slice/prometheus.service"
+        commands.unit("zstack-management.slice", true, sliceGroup)
+        commands.unit("prometheus.service", true, previousGroup)
+        put(dropIn("prometheus.service"), "[Service]\nSlice=zstack-management.slice")
+        Path managedCpu = v1Root.resolve("zstack-role-MANAGEMENT-unit-prometheus.service")
+        configureV2Group(managedCpu, "6-7", "0", null, 0)
+        put(managedCpu.resolve("cgroup.procs"), currentPid())
+        configureV1MemoryGroup(v1MemoryRoot.resolve(previousGroup.substring(1)), SizeUnit.GIGABYTE.toByte(4), 0)
+        Path memoryLimit = v1MemoryRoot.resolve(sliceGroup.substring(1)).resolve("memory.limit_in_bytes")
+        put(memoryLimit, "${SizeUnit.MEGABYTE.toByte(128)}")
+
+        def pending = executor.inspect("MANAGEMENT", [systemdHandle()])[0]
+        assert pending.cpuSet == "6-7" && pending.memoryLimit == 0L
+        assert pending.restartRequired :
+                "finite memory Role still requires restart despite ready CPU: actual=${pending.restartRequired}"
+
+        commands.unit("prometheus.service", true, "${sliceGroup}/prometheus.service")
+        assert !executor.inspect("MANAGEMENT", [systemdHandle()])[0].restartRequired :
+                "a service already inside its memory Role must not require restart"
+
+        commands.unit("prometheus.service", true, previousGroup)
+        put(memoryLimit, "${SizeUnit.GIGABYTE.toByte(4)}")
+        assert !executor.inspect("MANAGEMENT", [systemdHandle()])[0].restartRequired :
+                "unlimited memory must not add a restart requirement when CPU is managed"
     }
 
     @Test

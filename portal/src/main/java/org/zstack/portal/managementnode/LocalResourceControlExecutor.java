@@ -389,13 +389,17 @@ public class LocalResourceControlExecutor {
         if (sliceName == null) {
             return false;
         }
+        Path sliceTarget = sliceTarget(backend, sliceName, sliceTargets);
+        boolean inSlice = sliceTarget != null && current.startsWith(sliceTarget);
         Path managed = backend.root.resolve(String.format(
                 "zstack-role-%s-unit-%s", safeRole(roleType), safeRole(handle.getValue())));
-        if (current.equals(managed) || backend.hasProcesses(managed)) {
-            return false;
-        }
-        Path sliceTarget = sliceTarget(backend, sliceName, sliceTargets);
-        return sliceTarget == null || !current.startsWith(sliceTarget);
+        boolean cpuRestartRequired = !inSlice && !current.equals(managed) && !backend.hasProcesses(managed);
+        CgroupResourceControlBackend memoryBackend = backendFactory.findMemory();
+        Path memoryTarget = memoryBackend == null ? null : activeSliceTarget(memoryBackend, sliceName);
+        Long memoryLimit = memoryTarget == null ? null : memoryBackend.readMemoryLimit(memoryTarget);
+        boolean memoryRestartRequired = memoryLimit != null && memoryLimit > 0
+                && !memoryBackend.contains(memoryTarget, systemd.properties(handle.getValue()).get("ControlGroup"));
+        return cpuRestartRequired || memoryRestartRequired;
     }
 
     private Path sliceTarget(CgroupResourceControlBackend backend, String sliceName, Map<String, Path> sliceTargets) {
