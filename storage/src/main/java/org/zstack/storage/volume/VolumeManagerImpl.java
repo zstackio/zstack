@@ -311,13 +311,16 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 q.setParameter("bsUuids", bsUuids);
                                 bsUuids = q.getResultList();
 
+                                PrimaryStorageVO ps = dbf.findByUuid(msg.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+                                bsUuids.retainAll(PrimaryStorageType.valueOf(ps.getType()).findBackupStorage(ps.getUuid()));
+
                                 return bsUuids;
                             }
                         }.execute();
 
 
                         if (bsUuids.isEmpty()) {
-                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10088, "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is",
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10088, "cannot find a backup storage on which the image[uuid:%s] is that satisfies all conditions of: 1. has state Enabled 2. has status Connected. 3 has attached to zone in which primary storage[uuid:%s] is. 4 is compatible with the primary storage",
                                     template.getUuid(), msg.getPrimaryStorageUuid()));
                             return;
                         }

@@ -2501,6 +2501,7 @@ public class ImageManagerImpl extends AbstractService implements ImageManager, M
                                 public AllocateBackupStorageMsg call(String arg) {
                                     AllocateBackupStorageMsg amsg = new AllocateBackupStorageMsg();
                                     amsg.setRequiredZoneUuid(zoneUuid);
+                                    amsg.setRequiredPrimaryStorageUuid(volumePsUuid);
                                     amsg.setSize(imageEstimateSize);
                                     amsg.setBackupStorageUuid(arg);
                                     bus.makeLocalServiceId(amsg, BackupStorageConstant.SERVICE_ID);
