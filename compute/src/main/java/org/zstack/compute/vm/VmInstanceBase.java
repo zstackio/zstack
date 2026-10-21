@@ -2812,6 +2812,8 @@ public class VmInstanceBase extends AbstractVmInstance {
     }
 
     protected void doDestroy(final VmInstanceDeletionPolicy deletionPolicy, Message msg, final Completion completion) {
+        // A preceding start may have cleared the tag created when deletion was accepted.
+        final List<CreateInhibitHASystemTagExtensionPoint> createdInhibitTags = createInhibitHaSystemTags();
         final VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         extEmitter.beforeDestroyVm(inv);
 
@@ -2858,6 +2860,7 @@ public class VmInstanceBase extends AbstractVmInstance {
 
             @Override
             public void fail(ErrorCode errorCode) {
+                rollbackInhibitHaSystemTagsIfRunning(createdInhibitTags);
                 extEmitter.failedToDestroyVm(inv, errorCode);
                 logger.debug(String.format("failed to delete vm instance[name:%s, uuid:%s], because %s",
                         self.getName(), self.getUuid(), errorCode));
@@ -8544,12 +8547,48 @@ public class VmInstanceBase extends AbstractVmInstance {
         });
     }
 
+    private List<CreateInhibitHASystemTagExtensionPoint> createInhibitHaSystemTags() {
+        List<CreateInhibitHASystemTagExtensionPoint> created = new ArrayList<>();
+        for (CreateInhibitHASystemTagExtensionPoint ext : pluginRgty.getExtensionList(CreateInhibitHASystemTagExtensionPoint.class)) {
+            if (ext.createInhibitHaSystemTag(self.getUuid())) {
+                created.add(ext);
+            }
+        }
+        return created;
+    }
+
+    private void rollbackInhibitHaSystemTagsIfRunning(List<CreateInhibitHASystemTagExtensionPoint> created) {
+        if (self.getState() == VmInstanceState.Running) {
+            for (CreateInhibitHASystemTagExtensionPoint ext : created) {
+                ext.deleteInhibitHaSystemTag(self.getUuid());
+            }
+        }
+    }
+
+    /**
+     * For extensions already holding this VM's serial task. Keep the VM type's stop overrides
+     * without sending another message that would queue behind the current task.
+     */
+    protected void stopVmInCurrentTask(StopVmInstanceMsg msg, Completion completion) {
+        VmInstanceFactory factory = vmMgr.getVmInstanceFactory(VmInstanceType.valueOf(self.getType()));
+        VmInstanceBase vm = (VmInstanceBase) factory.getVmInstance(self);
+        vm.stopVm(msg, completion);
+    }
+
     protected void stopVm(final Message msg, final Completion completion) {
         refreshVO();
         ErrorCode allowed = validateOperationByState(msg, self.getState(), null);
         if (allowed != null) {
             completion.fail(allowed);
             return;
+        }
+
+        final List<CreateInhibitHASystemTagExtensionPoint> createdInhibitTags;
+        if (msg instanceof APIStopVmInstanceMsg && "true".equals(((APIStopVmInstanceMsg) msg).getStopHA())) {
+            // Reassert the accepted stop intent after any preceding start, including an already-Stopped VM.
+            createdInhibitTags = createInhibitHaSystemTags();
+        } else {
+            createdInhibitTags = Collections.emptyList();
         }
 
         if (self.getState() == VmInstanceState.Stopped) {
@@ -8560,6 +8599,7 @@ public class VmInstanceBase extends AbstractVmInstance {
         VmInstanceInventory inv = VmInstanceInventory.valueOf(self);
         ErrorCode preStop = extEmitter.preStopVm(inv);
         if (preStop != null) {
+            rollbackInhibitHaSystemTagsIfRunning(createdInhibitTags);
             completion.fail(preStop);
             return;
         }
@@ -8634,6 +8674,10 @@ public class VmInstanceBase extends AbstractVmInstance {
                 } else {
                     self.setState(HostErrors.HOST_IS_DISCONNECTED.isEqual(errCode.getCode()) ? VmInstanceState.Unknown : originState);
                     self = dbf.updateAndRefresh(self);
+                    // Resource release can fail after the VM has already stopped on the host.
+                    if (!Boolean.TRUE.equals(data.get(VmStopOnHypervisorFlow.class.getName()))) {
+                        rollbackInhibitHaSystemTagsIfRunning(createdInhibitTags);
+                    }
                     completion.fail(errCode);
                     extEmitter.failedToStopVm(inv, errCode);
                 }
