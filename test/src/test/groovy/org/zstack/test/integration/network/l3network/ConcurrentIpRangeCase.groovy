@@ -93,24 +93,31 @@ class ConcurrentIpRangeCase extends SubCase {
         }, org.zstack.header.network.l3.APIAddIpRangeMsg, org.zstack.header.network.l3.APIAddIpv6RangeMsg,
                 org.zstack.header.network.l3.APIAddIpRangeByNetworkCidrMsg,
                 org.zstack.header.network.l3.APIAddIpv6RangeByNetworkCidrMsg)
-        def pending = actions.collect { action ->
-            def future = new java.util.concurrent.FutureTask<Object>({ action.call() } as java.util.concurrent.Callable<Object>)
-            bean(org.zstack.core.thread.ThreadFacade).chainSubmit(new org.zstack.core.thread.ChainTask(null) {
-                String getName() { 'concurrent-ip-range-' + action.resourceUuid }
-                String getSyncSignature() { getName() }
-                void run(org.zstack.core.thread.SyncTaskChain chain) {
-                    try { future.run() } finally { chain.next() }
+        List results = Collections.synchronizedList([])
+        List<Throwable> failures = Collections.synchronizedList([])
+        List<Thread> threads = actions.collect { action ->
+            Thread.start {
+                try {
+                    results.add(action.call())
+                } catch (Throwable error) {
+                    failures.add(error)
                 }
-            })
-            future
+            }
         }
         try {
-            def results = pending.collect { it.get(60, java.util.concurrent.TimeUnit.SECONDS) }
+            threads.each { it.join(60000) }
+            assert threads.every { !it.alive }: 'concurrent API requests must complete'
+            if (!failures.isEmpty()) {
+                throw failures.first()
+            }
+            assert results.size() == actions.size()
             assert ready.count == 0: 'both requests must pass API validation before either is delivered to L3'
             return results
         } finally {
             active.set(false)
+            threads.findAll { it.alive }.each { it.interrupt() }
         }
     }
+
     void clean() { env.delete() }
 }
