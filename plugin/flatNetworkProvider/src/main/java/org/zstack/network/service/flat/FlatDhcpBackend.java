@@ -2714,6 +2714,15 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             Map.Entry<String, String> entry = oldDhcpServerIpMap.entrySet().iterator().next();
             if (NetworkUtils.isInRange(entry.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
+                if (ipr.getIpVersion() == IPv6Constants.IPv4 && Q.New(UsedIpVO.class)
+                        .eq(UsedIpVO_.uuid, entry.getValue())
+                        .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                        .eq(UsedIpVO_.ipRangeUuid, ipr.getUuid())
+                        .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4)
+                        .eq(UsedIpVO_.ip, entry.getKey())
+                        .isNull(UsedIpVO_.vmNicUuid).isNull(UsedIpVO_.usedFor).isExists()) {
+                    return;
+                }
                 /* case #2.3 */
                 deleteDhcpServerIp(ipr.getL3NetworkUuid(), entry.getKey(), entry.getValue());
                 allocateDhcpIp(ipr.getL3NetworkUuid(), ipr.getIpVersion(), true, entry.getKey());
