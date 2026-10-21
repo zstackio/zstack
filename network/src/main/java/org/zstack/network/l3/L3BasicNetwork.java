@@ -189,42 +189,13 @@ public class L3BasicNetwork implements L3Network {
 
     private void addIpRange(AddIpRangeMsg msg, java.util.function.Consumer<String> tagCreator,
                             ReturnValueCompletion<IpRangeInventory> completion) {
-        thdf.chainSubmit(new ChainTask(msg) {
-            @Override
-            public void run(SyncTaskChain chain) {
-                IpRangeInventory ipr = msg.getInventory();
-                if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
-                    completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10101,
-                            "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
-                    chain.next();
-                    return;
-                }
-
-                addIpRange(ipr, msg, tagCreator, new ReturnValueCompletion<IpRangeInventory>(msg) {
-                    @Override
-                    public void success(IpRangeInventory inv) {
-                        completion.success(inv);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        completion.fail(errorCode);
-                        chain.next();
-                    }
-                });
-            }
-
-            @Override
-            public String getSyncSignature() {
-                return syncThreadName;
-            }
-
-            @Override
-            public String getName() {
-                return "add-ip-range";
-            }
-        });
+        IpRangeInventory ipr = msg.getInventory();
+        if (ipr == null || !Objects.equals(msg.getL3NetworkUuid(), ipr.getL3NetworkUuid())) {
+            completion.fail(argerr(ORG_ZSTACK_NETWORK_L3_10101,
+                    "internal IP range must belong to L3 network[uuid:%s]", msg.getL3NetworkUuid()));
+            return;
+        }
+        addIpRange(ipr, msg, tagCreator, completion);
     }
 
     private void handle(AddIpRangeMsg msg) {
@@ -269,7 +240,50 @@ public class L3BasicNetwork implements L3Network {
     private void addIpRanges(List<IpRangeInventory> iprs, AddIpRangeMsg msg,
                              java.util.function.Consumer<String> tagCreator,
                              ReturnValueCompletion<List<IpRangeInventory>> completion) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public void run(SyncTaskChain chain) {
+                createIpRanges(iprs, msg, tagCreator, new ReturnValueCompletion<List<IpRangeInventory>>(completion) {
+                    @Override
+                    public void success(List<IpRangeInventory> invs) {
+                        try {
+                            completion.success(invs);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        try {
+                            completion.fail(errorCode);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+                });
+            }
+
+            @Override
+            public String getSyncSignature() { return syncThreadName; }
+
+            @Override
+            public String getName() { return "add-ip-range"; }
+        });
+    }
+
+    private void createIpRanges(List<IpRangeInventory> iprs, AddIpRangeMsg msg,
+                                java.util.function.Consumer<String> tagCreator,
+                                ReturnValueCompletion<List<IpRangeInventory>> completion) {
         for (IpRangeInventory ipr : iprs) {
+            List<IpRangeVO> existing = Q.New(ipr.getIpVersion() == IPv6Constants.IPv6
+                            ? NormalIpRangeVO.class : IpRangeVO.class)
+                    .eq(IpRangeVO_.l3NetworkUuid, self.getUuid()).eq(IpRangeVO_.ipVersion, ipr.getIpVersion()).list();
+            ErrorCode overlap = IpRangeHelper.checkOverlap(ipr, existing);
+            if (overlap != null) {
+                completion.fail(overlap);
+                return;
+            }
             ErrorCode errorCode = validateManagementNetworkIpRangeVersionBeforeCreate(ipr);
             if (errorCode != null) {
                 completion.fail(errorCode);
