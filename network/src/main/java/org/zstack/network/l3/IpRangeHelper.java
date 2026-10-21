@@ -1,5 +1,10 @@
 package org.zstack.network.l3;
 import org.zstack.core.Platform;
+import org.zstack.header.errorcode.ErrorCode;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10037;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10060;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.persistence.Tuple;
@@ -26,6 +31,20 @@ import static org.junit.runner.Request.aClass;
 
 
 public class IpRangeHelper {
+    public static ErrorCode checkOverlap(IpRangeInventory ipr, List<? extends IpRangeVO> ranges) {
+        for (IpRangeVO r : ranges) {
+            if (ipr.getIpVersion() == IPv6Constants.IPv4) {
+                if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
+                    return argerr(ORG_ZSTACK_NETWORK_L3_10060, "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp());
+                }
+            } else if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
+                return argerr(ORG_ZSTACK_NETWORK_L3_10037, "new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
+                        ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp());
+            }
+        }
+        return null;
+    }
+
     public static List<IpRangeInventory> getNormalIpRanges(L3NetworkInventory l3inv) {
         if (l3inv.getIpRanges().isEmpty()) {
             return new ArrayList<>();

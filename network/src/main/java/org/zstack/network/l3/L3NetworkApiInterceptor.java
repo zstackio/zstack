@@ -463,12 +463,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(NormalIpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
         q.add(NormalIpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv6);
         List<NormalIpRangeVO> ranges = q.list();
+        ErrorCode overlap = IpRangeHelper.checkOverlap(ipr, ranges);
+        if (overlap != null) {
+            throw new ApiMessageInterceptionException(overlap);
+        }
         for (NormalIpRangeVO r : ranges) {
-            if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10037, "new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
-                        ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp()));
-            }
-
             if (!r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
                 continue;
             }
@@ -681,11 +680,11 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
         q.add(IpRangeVO_.l3NetworkUuid, Op.IN, l3Uuids);
         q.add(IpRangeVO_.ipVersion, Op.EQ, IPv6Constants.IPv4);
         List<IpRangeVO> ranges = q.list();
+        ErrorCode overlap = IpRangeHelper.checkOverlap(ipr, ranges);
+        if (overlap != null) {
+            throw new ApiMessageInterceptionException(overlap);
+        }
         for (IpRangeVO r : ranges) {
-            if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10060, "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp()));
-            }
-
             if (!r.getL3NetworkUuid().equals(ipr.getL3NetworkUuid())) {
                 continue;
             }
