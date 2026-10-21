@@ -66,6 +66,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.*;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmCancelSelfFencerParam;
 import org.zstack.kvm.KvmSetupSelfFencerExtensionPoint.KvmSetupSelfFencerParam;
+import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialMsg;
 import org.zstack.storage.backup.sftp.GetSftpBackupStorageDownloadCredentialReply;
 import org.zstack.storage.backup.sftp.SftpBackupStorageConstant;
@@ -129,6 +130,8 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     protected PrimaryStoragePhysicalCapacityManager psPhysicalCapacityMgr;
     @Autowired
     private TagManager tagMgr;
+    @Autowired
+    private ResourceConfigFacade rcf;
 
 
     public CephPrimaryStorageBase() {
@@ -864,6 +867,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
     }
 
     public static class CpCmd extends AgentCommand implements HasThreadContext {
+        Integer rbdConcurrentManagementOps;
         String sendCommandUrl;
         String resourceUuid;
         String srcPath;
@@ -3704,6 +3708,10 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
         }
 
         private void prepareCmd() {
+            if (cmd instanceof CpCmd) {
+                ((CpCmd) cmd).rbdConcurrentManagementOps = rcf.getResourceConfigValue(
+                        CephGlobalConfig.RBD_CONCURRENT_MANAGEMENT_OPS, self.getUuid(), Integer.class);
+            }
             if (cmd instanceof DeleteCmd) {
                 ((DeleteCmd) cmd).setExpirationTime(CephGlobalConfig.IMAGE_EXPIRATION_TIME.value(Long.class));
             }
