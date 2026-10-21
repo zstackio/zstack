@@ -1,13 +1,16 @@
 package org.zstack.test.unittest
 
+import com.jcraft.jsch.SshExecutionTimeoutCase
 import org.junit.runner.JUnitCore
 import org.junit.runner.Result
 import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.core.ansible.AnsibleAgentRestartCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
+import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyInstallerGroovyTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyKvmReconnectExtensionTest
@@ -15,6 +18,7 @@ import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
 import org.zstack.test.unittest.utils.SystemTagUtilsCase
+import org.zstack.utils.ssh.SshExecutionDeadlineCase
 
 import java.util.stream.Collectors
 
@@ -24,6 +28,10 @@ import java.util.stream.Collectors
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
+        AnsibleAgentRestartCase.class,
+        KvmAgentRestartGlobalConfigCase.class,
+        SshExecutionTimeoutCase.class,
+        SshExecutionDeadlineCase.class,
         MessageTimeoutContextCase.class,
         MigrateVmFinalizeCompletionCase.class,
         NetworkUtilsCase.class,

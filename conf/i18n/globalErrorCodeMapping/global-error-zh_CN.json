@@ -4525,6 +4525,7 @@
   "ORG_ZSTACK_CORE_ANSIBLE_10002": "无法计算文件夹[%s]中文件的md5sum。\\nstdout:%s\\nstderr:%s",
   "ORG_ZSTACK_CORE_ANSIBLE_10003": "无法在主机[ip:%s]的文件夹[%s]中检查文件的md5sum。\\nstdout:%s\\nstderr:%s",
   "ORG_ZSTACK_CORE_ANSIBLE_10000": "用户名或密码或端口号码可能存在问题",
+  "ORG_ZSTACK_CORE_ANSIBLE_10008": "物理机[%2$s]上的Agent[%1$s]重启失败：%3$s",
   "ORG_ZSTACK_COMPUTE_HOST_10065": "失败更新主机网络标签 [uuid:%s]",
   "ORG_ZSTACK_SNS_PLATFORM_EMAIL_10000": "问题可能是由错误的用户名或密码，或者邮箱权限被拒绝引起的。[error\u003d%s]",
   "ORG_ZSTACK_COMPUTE_HOST_10064": "删除主机网络标签 [uuid:%s] 失败",
