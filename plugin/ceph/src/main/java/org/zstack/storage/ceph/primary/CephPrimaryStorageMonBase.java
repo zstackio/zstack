@@ -117,6 +117,10 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
     @Override
     public void connect(final Completion completion) {
+        connect(false, completion);
+    }
+
+    public void connect(final boolean newAdded, final Completion completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
@@ -125,7 +129,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
             @Override
             public void run(final SyncTaskChain chain) {
-                doConnect(new Completion(completion, chain) {
+                doConnect(newAdded, new Completion(completion, chain) {
                     @Override
                     public void success() {
                         completion.success();
@@ -147,7 +151,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
         });
     }
 
-    private void doConnect(final Completion completion) {
+    private void doConnect(final boolean newAdded, final Completion completion) {
         changeStatus(MonStatus.Connecting);
 
         final FlowChain chain = FlowChainBuilder.newShareFlowChain();
@@ -203,6 +207,7 @@ public class CephPrimaryStorageMonBase extends CephMonBase {
 
                             AnsibleRunner runner = new AnsibleRunner();
                             runner.installChecker(checker);
+                            runner.setForceRun(newAdded);
                             runner.installChecker(chronyChecker);
                             runner.installChecker(repoChecker);
                             runner.installChecker(callbackChecker);

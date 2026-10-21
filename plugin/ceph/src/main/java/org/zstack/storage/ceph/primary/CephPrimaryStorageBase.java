@@ -3825,7 +3825,7 @@ public class CephPrimaryStorageBase extends PrimaryStorageBase {
                 }
 
                 final CephPrimaryStorageMonBase base = it.next();
-                base.connect(new Completion(trigger) {
+                base.connect(newAdded, new Completion(trigger) {
                     @Override
                     public void success() {
                         connect(trigger);
