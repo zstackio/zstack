@@ -2855,6 +2855,8 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_KVM_10161 = "ORG_ZSTACK_KVM_10161";
 
     public static final String ORG_ZSTACK_KVM_10162 = "ORG_ZSTACK_KVM_10162";
+    /** SSH credential check timed out. */
+    public static final String ORG_ZSTACK_KVM_10163 = "ORG_ZSTACK_KVM_10163";
 
     public static final String ORG_ZSTACK_ZSV_10000 = "ORG_ZSTACK_ZSV_10000";
 
