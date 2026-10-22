@@ -22,6 +22,7 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.ConfigMutation;
 import org.zstack.core.config.ConfigMutationContext;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.ComponentLoader;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigVO;
@@ -1729,6 +1730,154 @@ public class MemoryRepositoryTest {
         try { repository.submit(stale); fail("compatibility CAS must observe standard-entry revision"); }
         catch (MemoryOperationException expected) { assertEquals("MEMORY_REVISION_CONFLICT", expected.getCode()); }
         assertEquals(2L, repository.getPolicy("Global", "global").getRevision());
+    }
+
+    private void seedCompatibilityDeltaBaseline(boolean zramEnabled) {
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.zeroPagesEnabled", false);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2000L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            standardConfigAdapter.writeGlobal(em, "zram.enabled", zramEnabled);
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", false);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setDesiredRevision(1L);
+            state.setAppliedRevision(1L);
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":false,"
+                    + "\"pagesToScan\":2000,\"sleepMillis\":20},\"zram\":{\"enabled\":"
+                    + zramEnabled + "},\"writeback\":{\"enabled\":false}}");
+            state.setAppliedPolicyHash("compatibility-delta-baseline");
+            return null;
+        });
+    }
+
+    private Map<String, Object> dispatchCompatibilityTask(MemoryTaskVO task) throws Exception {
+        MemoryOptimizationManager manager = new MemoryOptimizationManager();
+        Field repositoryField = MemoryOptimizationManager.class.getDeclaredField("repository");
+        repositoryField.setAccessible(true); repositoryField.set(manager, repository);
+        MemoryLicenseExtensionPoint license = () -> System.currentTimeMillis() + 3600000L;
+        PluginRegistry licensedRegistry = (PluginRegistry) Proxy.newProxyInstance(
+                PluginRegistry.class.getClassLoader(), new Class<?>[]{PluginRegistry.class},
+                (proxy, method, args) -> "getExtensionList".equals(method.getName())
+                        && args != null && args.length == 1 && args[0] == MemoryLicenseExtensionPoint.class
+                        ? Collections.singletonList(license) : Collections.emptyList());
+        Field registryField = MemoryOptimizationManager.class.getDeclaredField("pluginRgty");
+        registryField.setAccessible(true); registryField.set(manager, licensedRegistry);
+        List<org.zstack.kvm.KVMHostAsyncHttpCallMsg> requests = new ArrayList<>();
+        CloudBus bus = (CloudBus) Proxy.newProxyInstance(CloudBus.class.getClassLoader(),
+                new Class<?>[]{CloudBus.class}, (proxy, method, args) -> {
+                    if ("send".equals(method.getName()) && args != null && args.length == 2
+                            && args[0] instanceof org.zstack.kvm.KVMHostAsyncHttpCallMsg) {
+                        requests.add((org.zstack.kvm.KVMHostAsyncHttpCallMsg) args[0]);
+                    }
+                    if (method.getReturnType() == boolean.class) { return false; }
+                    if (method.getReturnType() == int.class) { return 0; }
+                    if (method.getReturnType() == long.class) { return 0L; }
+                    return null;
+                });
+        Field busField = MemoryOptimizationManager.class.getDeclaredField("bus");
+        busField.setAccessible(true); busField.set(manager, bus);
+        java.lang.reflect.Method dispatch = MemoryOptimizationManager.class
+                .getDeclaredMethod("dispatch", MemoryTaskVO.class, boolean.class);
+        dispatch.setAccessible(true); dispatch.invoke(manager, task, false);
+        assertEquals(1, requests.size());
+        assertEquals("host1", requests.get(0).getHostUuid());
+        return org.zstack.utils.gson.JSONObjectUtil.toObject(requests.get(0).getCommand(), Map.class);
+    }
+
+    @Test public void compatibilityZramOnlyWriteDoesNotDispatchUnchangedKsm() throws Exception {
+        seedCompatibilityDeltaBaseline(false);
+        APIUpdateMemoryPolicyMsg msg = request(0);
+        msg.setTargetHostUuids(Collections.singletonList("host1"));
+        msg.setPolicy("{\"zram\":{\"enabled\":true}}");
+        repository.submit(msg);
+
+        MemoryTaskVO task = repository.claim("compatibility-zram-delta").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(task.getPolicy(), Map.class);
+        assertTrue(payload.containsKey("zram"));
+        assertFalse("a ZRAM-only setting must leave unchanged KSM outside the host command", payload.containsKey("ksm"));
+        assertFalse(payload.containsKey("writeback"));
+        assertNotNull("the compatibility task must carry the persisted Host plan", task.getPolicyPlanHash());
+        Map<String, Object> command = dispatchCompatibilityTask(task);
+        assertEquals("delta", command.get("policyMode"));
+        Map<String, Object> wirePolicy = (Map<String, Object>) command.get("policy");
+        assertFalse("the actual Agent command must not replay KSM", wirePolicy.containsKey("ksm"));
+
+        MemoryAgentResponse ack = new MemoryAgentResponse();
+        ack.appliedRevision = task.getDesiredRevision();
+        repository.result(task.getUuid(), "Succeeded", "zram-only delta applied", ack);
+        Map<String, Object> applied = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                host1State().getAppliedPolicy(), Map.class);
+        assertTrue("the confirmed full KSM snapshot must survive merging a ZRAM-only delta", applied.containsKey("ksm"));
+        assertEquals(Boolean.TRUE, ((Map<String, Object>) applied.get("zram")).get("enabled"));
+        String control = host1State().getControlOperationUuid();
+        repository.result(task.getUuid(), "Succeeded", "duplicate callback", ack);
+        assertEquals("a duplicate callback must not change the completed control operation", control,
+                host1State().getControlOperationUuid());
+    }
+
+    @Test public void compatibilityKsmOnlyWriteDoesNotDispatchUnchangedZram() throws Exception {
+        seedCompatibilityDeltaBaseline(true);
+        APIUpdateMemoryPolicyMsg msg = request(0);
+        msg.setTargetHostUuids(Collections.singletonList("host1"));
+        msg.setPolicy("{\"ksm\":{\"pagesToScan\":3000}}");
+        repository.submit(msg);
+
+        MemoryTaskVO task = repository.claim("compatibility-ksm-delta").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(task.getPolicy(), Map.class);
+        assertTrue(payload.containsKey("ksm"));
+        assertFalse("a KSM-only setting must leave unchanged ZRAM outside the host command", payload.containsKey("zram"));
+        assertFalse(payload.containsKey("writeback"));
+        Map<String, Object> ksm = (Map<String, Object>) payload.get("ksm");
+        assertEquals("the requested KSM scan setting remains available to the native operation", 3000L,
+                ((Number) ksm.get("pagesToScan")).longValue());
+        assertEquals(20L, ((Number) ksm.get("sleepMillis")).longValue());
+        assertNotNull(task.getPolicyPlanHash());
+        Map<String, Object> command = dispatchCompatibilityTask(task);
+        assertEquals("delta", command.get("policyMode"));
+        Map<String, Object> wirePolicy = (Map<String, Object>) command.get("policy");
+        assertFalse("the actual Agent command must not replay ZRAM", wirePolicy.containsKey("zram"));
+    }
+
+    @Test public void compatibilityMixedKsmAndZramWriteDispatchesBothChangedSubsystems() throws Exception {
+        seedCompatibilityDeltaBaseline(false);
+        APIUpdateMemoryPolicyMsg msg = request(0);
+        msg.setTargetHostUuids(Collections.singletonList("host1"));
+        msg.setPolicy("{\"ksm\":{\"pagesToScan\":3000},\"zram\":{\"enabled\":true}}");
+        repository.submit(msg);
+
+        MemoryTaskVO task = repository.claim("compatibility-mixed-delta").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(task.getPolicy(), Map.class);
+        assertTrue(payload.containsKey("ksm"));
+        assertTrue(payload.containsKey("zram"));
+        assertFalse(payload.containsKey("writeback"));
+        Map<String, Object> command = dispatchCompatibilityTask(task);
+        assertEquals("delta", command.get("policyMode"));
+        Map<String, Object> wirePolicy = (Map<String, Object>) command.get("policy");
+        assertTrue(wirePolicy.containsKey("ksm"));
+        assertTrue(wirePolicy.containsKey("zram"));
+        assertFalse(wirePolicy.containsKey("writeback"));
+    }
+
+    @Test public void compatibilityNoOpDoesNotCreateHostApplyAndKeepsRequestIdempotent() {
+        seedCompatibilityDeltaBaseline(true);
+        APIUpdateMemoryPolicyMsg msg = request(0);
+        msg.setTargetHostUuids(Collections.singletonList("host1"));
+        msg.setPolicy("{\"zram\":{\"enabled\":true}}");
+        MemoryTaskInventory first = repository.submit(msg);
+        MemoryTaskInventory duplicate = repository.submit(msg);
+
+        assertEquals(first.getUuid(), duplicate.getUuid());
+        assertEquals("a target already applied on this Host must not create an empty native operation",
+                1L, host1State().getDesiredRevision());
+        assertNull(host1State().getActiveTaskUuid());
+        assertTrue(repository.claim("compatibility-noop").isEmpty());
+        assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.parentUuid = :parent", Long.class)
+                .setParameter("parent", first.getUuid()).getSingleResult()));
     }
 
     @Test public void compatibilityParentWriteValidatesUnselectedInheritedChild() {
@@ -4955,7 +5104,7 @@ public class MemoryRepositoryTest {
     @Test public void reconcileAckWithoutSampleTimeStillUpdatesAppliedRevision() {
         APIUpdateMemoryPolicyMsg update = request(0);
         update.setTargetHostUuids(Collections.singletonList("host1"));
-        update.setPolicy("{}"); // This case exercises readback merge behavior, not policy capability admission.
+        update.setPolicy("{\"ksm\":{\"enabled\":true}}"); // Keep a real operation while exercising readback merge behavior.
         repository.submit(update);
         repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setLastSampleTime(null); return null; });
         MemoryTaskVO task = repository.claim("mn").get(0);
@@ -4972,13 +5121,16 @@ public class MemoryRepositoryTest {
         long sample = System.currentTimeMillis();
         MemoryAgentResponse initial = new MemoryAgentResponse();
         initial.status = "Succeeded"; initial.sampleTime = sample;
-        initial.capabilities = Collections.<String, Object>singletonMap("zram", true);
+        initial.capabilities = new HashMap<>();
+        initial.capabilities.put("supported", true); initial.capabilities.put("ksm", true);
+        initial.capabilities.put("ksmZeroPages", true); initial.capabilities.put("zram", true);
+        initial.capabilities.put("writeback", true);
         initial.state = completeState(11L, "old");
         repository.observe("host1", initial);
 
         APIUpdateMemoryPolicyMsg update = request(0);
         update.setTargetHostUuids(Collections.singletonList("host1"));
-        update.setPolicy("{}"); // Keep the test focused on monitoring-envelope preservation.
+        update.setPolicy("{\"ksm\":{\"enabled\":true}}"); // Keep a real operation while focusing on the monitoring envelope.
         repository.submit(update);
         MemoryTaskVO task = repository.claim("mn").get(0);
         MemoryAgentResponse next = new MemoryAgentResponse();
@@ -5000,10 +5152,15 @@ public class MemoryRepositoryTest {
         initial.status = "Succeeded"; initial.sampleTime = sample;
         initial.state = completeState(11L, "old");
         repository.observe("host1", initial);
+        repository.transaction(em -> {
+            em.find(MemoryStateVO.class, "host1").setCapabilities(
+                    "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true,\"writeback\":true}");
+            return null;
+        }); // The subsequent Unknown envelope, not the policy gate, is under test.
 
         APIUpdateMemoryPolicyMsg update = request(0);
         update.setTargetHostUuids(Collections.singletonList("host1"));
-        update.setPolicy("{}"); // Monitoring-envelope behavior is independent from feature admission.
+        update.setPolicy("{\"ksm\":{\"enabled\":true}}"); // Keep a real operation while testing monitoring-envelope behavior.
         repository.submit(update);
         MemoryTaskVO task = repository.claim("mn").get(0);
         MemoryAgentResponse unknown = new MemoryAgentResponse();
@@ -5042,8 +5199,13 @@ public class MemoryRepositoryTest {
         MemoryAgentResponse initial = new MemoryAgentResponse();
         initial.status = "Succeeded"; initial.sampleTime = sample;
         initial.state = completeState(11L, "old"); repository.observe("host1", initial);
+        repository.transaction(em -> {
+            em.find(MemoryStateVO.class, "host1").setCapabilities(
+                    "{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true,\"writeback\":true}");
+            return null;
+        }); // Keep capability admission valid so this test isolates the later partial monitoring envelope.
         APIUpdateMemoryPolicyMsg update = request(0); update.setTargetHostUuids(Collections.singletonList("host1"));
-        update.setPolicy("{}"); // Keep this old-kernel monitoring test independent from feature admission.
+        update.setPolicy("{\"ksm\":{\"enabled\":true}}"); // Keep a real operation on the old-kernel observation fixture.
         repository.submit(update); MemoryTaskVO task = repository.claim("mn").get(0);
         MemoryAgentResponse partial = new MemoryAgentResponse(); partial.status = "Succeeded"; partial.sampleTime = sample + 1;
         partial.state = new HashMap<>();
@@ -5073,7 +5235,7 @@ public class MemoryRepositoryTest {
         long sample = System.currentTimeMillis();
         APIUpdateMemoryPolicyMsg update = request(0);
         update.setTargetHostUuids(Collections.singletonList("host1"));
-        update.setPolicy("{}"); // The test validates unknown samples, not enabling KSM.
+        update.setPolicy("{\"ksm\":{\"enabled\":true}}"); // Keep a real operation while validating unknown samples.
         repository.submit(update);
         MemoryTaskVO task = repository.claim("mn").get(0);
         MemoryAgentResponse observation = new MemoryAgentResponse();
@@ -6227,11 +6389,45 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void rejectedMaintenanceActivationAllowsCompatibilityApplyWithoutRewritingOldTasks() {
-        rejectedMaintenanceActivationFixture();
+        registerStandardResources(); rejectedMaintenanceActivationFixture();
+        repository.transaction(em -> {
+            standardConfigAdapter.writeGlobal(em, "writeback.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.enabled", true);
+            standardConfigAdapter.writeGlobal(em, "ksm.pagesToScan", 2500L);
+            standardConfigAdapter.writeGlobal(em, "ksm.sleepMillis", 20L);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendResourceUuid",
+                    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+            standardConfigAdapter.writeOverride(em, "host1", "HostVO", "writeback.backendCapacityBytes", 4096L);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"pagesToScan\":2500,\"sleepMillis\":20},"
+                    + "\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":false}}");
+            state.setAppliedPolicyHash("previous-policy-before-maintenance");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true,\"writeback\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"managed\":true,\"bootId\":\"boot-a\","
+                    + "\"lastConfirmedOperationUuid\":\"completed-drain\","
+                    + "\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"},"
+                    + "\"maintenanceProof\":{\"maintenanceReady\":true,\"maintenanceArchived\":true,"
+                    + "\"drainOperationUuid\":\"completed-drain\",\"oldPoolGeneration\":\"old-pool\","
+                    + "\"activeOperations\":0,\"poolOwnedByService\":false,\"readyForInitialization\":true,"
+                    + "\"originalDeviceInactive\":true,\"oldPoolOwnershipAbsent\":true,\"executorExited\":true},"
+                    + "\"actual\":{\"writeback\":{\"backend\":{\"resource_uuid\":"
+                    + "\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"state\":\"PREPARED\","
+                    + "\"fingerprint\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\","
+                    + "\"capacity_bytes\":4096,\"observed_at\":\"" + Instant.now() + "\"}}}}");
+            return null;
+        });
         APIUpdateMemoryPolicyMsg apply = request(0);
         apply.setScope("Host"); apply.setResourceUuid("host1"); apply.setTargetHostUuids(null);
         apply.setExpectedGlobalRevision(0L);
         assertEquals("Queued", repository.submit(apply).getStatus());
+        MemoryTaskVO activation = repository.claim("compatibility-maintenance").stream()
+                .filter(task -> "host1".equals(task.getHostUuid())).findFirst().get();
+        assertNotNull("maintenance activation must retain its Host plan fence", activation.getPolicyPlanHash());
+        MemoryPolicyConfig payload = MemoryPolicyRules.decode(activation.getPolicy());
+        assertNotNull(payload.ksm); assertNotNull(payload.zram); assertNotNull(payload.writeback);
+        assertEquals(Boolean.FALSE, payload.writeback.enabled);
         assertEquals("Failed", repository.findTask("rejected-activation").getStatus());
         assertEquals("Succeeded", repository.findTask("completed-drain").getStatus());
     }
@@ -7741,7 +7937,7 @@ public class MemoryRepositoryTest {
         assertEquals(accepted.getUuid(), repository.submit(msg).getUuid());
     }
 
-    @Test public void clearOneOverridePreservesOtherHostFieldsAndInheritsFalse() {
+    @Test public void clearOneOverridePreservesOtherHostFieldsAndInheritsFalse() throws Exception {
         repository.transaction(em -> {
             standardConfigAdapter.writeGlobal(em, "ksm.enabled", false);
             standardConfigAdapter.writeGlobal(em, "ksm.zeroPagesEnabled", false);
@@ -7759,6 +7955,13 @@ public class MemoryRepositoryTest {
         host.setAction("clearOverride"); host.setPolicy("{}");
         host.setClearOverrideFields(Collections.singletonList("ksm.enabled"));
         repository.submit(host);
+        MemoryTaskVO clearTask = repository.claim("clear-inherited-policy").stream()
+                .filter(task -> "host1".equals(task.getHostUuid())).findFirst().get();
+        assertEquals("clearOverride", clearTask.getAction());
+        MemoryPolicyConfig clearPayload = MemoryPolicyRules.decode(clearTask.getPolicy());
+        assertNotNull(clearPayload.ksm);
+        assertEquals(Boolean.TRUE, clearPayload.ksm.zeroPagesEnabled);
+        assertEquals("effective", dispatchCompatibilityTask(clearTask).get("policyMode"));
         MemoryPolicyConfig config = MemoryPolicyRules.decode(repository.getPolicy("Host", "host1").getEffectivePolicy());
         assertEquals(Boolean.FALSE, config.ksm.enabled);
         assertEquals(Boolean.TRUE, config.ksm.zeroPagesEnabled);

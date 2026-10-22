@@ -500,11 +500,14 @@ public class MemoryRepository {
             }
             String effectivePolicy = effective(em, "Host", host);
             HostPolicyPlan plan = planForHost(em, host, effectivePolicy, state);
+            boolean legacyReview = "NeedsReview".equals(state.getPolicyPlanStatus());
+            boolean compatibilityDelta = compatibility && "apply".equals(action) && !plan.replacesAppliedPolicy
+                    && !plan.maintenanceActivation && !legacyReview;
             if (!compatibility && queueConfigurationReconcile(em, parent, state)) {
                 queued = true;
                 continue;
             }
-            if (!compatibility && plan.changedFields.isEmpty()) {
+            if ((!compatibility || compatibilityDelta) && plan.changedFields.isEmpty()) {
                 // Reverting to the confirmed applied target must not retain
                 // the previous target's blocker. Use the existing admission
                 // fences; a no-op save is not a recovery or a new execution.
@@ -531,12 +534,15 @@ public class MemoryRepository {
             if (defer != null) { plan = deferredPlan(plan, defer); }
             // The standard batch is one candidate. Do not partially dispatch a
             // writeback/reclaim configuration when any field lacks admission.
-            boolean canIssue = compatibility || (defer == null && plan.hasPayload
-                    && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly));
+            boolean canIssue = (compatibility && !compatibilityDelta)
+                    || (compatibilityDelta && plan.hasPayload
+                            && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly))
+                    || (!compatibility && defer == null && plan.hasPayload
+                            && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly));
             String status = canIssue ? "Queued" : "Blocked";
             // An accepted request is not evidence that a legacy operation was
             // applied. Keep NeedsReview until the matching fresh Agent result.
-            if (!compatibility && !"NeedsReview".equals(state.getPolicyPlanStatus())
+            if ((compatibilityDelta || !compatibility || plan.maintenanceActivation) && !legacyReview
                     && !isConfigurationReconcile(state.getActiveTaskUuid() == null ? null
                             : em.find(MemoryTaskVO.class, state.getActiveTaskUuid()))) {
                 recordPolicyPlan(state, plan, status);
@@ -547,9 +553,10 @@ public class MemoryRepository {
             MemoryTaskVO child = configurationTask(automaticMaintenance ? "Host" : scope,
                     automaticMaintenance ? host : resource, automaticMaintenance ? "drain" : childAction,
                     parent.getUuid(), host, revision, automaticMaintenance ? plan.capacityMaintenance
-                            : compatibility && !plan.maintenanceActivation ? effectivePolicy : canIssue ? plan.payload : "{}", actor);
+                            : compatibility && !compatibilityDelta && !plan.maintenanceActivation
+                                    ? effectivePolicy : canIssue ? plan.payload : "{}", actor);
             if (automaticMaintenance) { child.setExpectedControlOperationUuid(state.getControlOperationUuid()); }
-            if (!compatibility || plan.maintenanceActivation) { child.setPolicyPlanHash(plan.planHash); }
+            if (!compatibility || compatibilityDelta || plan.maintenanceActivation) { child.setPolicyPlanHash(plan.planHash); }
             if (canIssue && coldKsm != null) {
                 child.setRequiresKsmNativePartialFence(true);
                 child.setKsmNativeObservationBootId((String) coldKsm.get("bootId"));
