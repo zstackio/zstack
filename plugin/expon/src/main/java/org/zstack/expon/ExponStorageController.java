@@ -475,6 +475,19 @@ public class ExponStorageController implements PrimaryStorageControllerSvc, Prim
 
     @Override
     public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
+        if (activePath.startsWith(getIdentity() + "://")) {
+            VolumeModule vol = apiHelper.getVolumeOrElseNull(getVolIdFromPath(activePath));
+            if (vol == null) {
+                return null;
+            }
+
+            BaseVolumeInfo info = getVolumeInfo(vol.getName());
+            info.setInstallPath(activePath);
+            info.setProtocol(VolumeProtocol.Vhost.toString());
+            info.setShareable(shareable);
+            return info;
+        }
+
         BaseVolumeInfo info = new BaseVolumeInfo();
         String volUuid = null;
         if (activePath.startsWith(vhostSocketDir)) {
