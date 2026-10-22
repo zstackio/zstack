@@ -164,6 +164,39 @@ class Ipv6DeleteRangeCase extends SubCase {
 
         assert vm1.getVmNics().size() == 1
         assert vm2.getVmNics().size() == 1
+
+        IpRangeInventory dualIp4Range = addIpRange {
+            name = "dual-ip4-1"
+            l3NetworkUuid = l3_statefull.uuid
+            startIp = "192.168.102.10"
+            endIp = "192.168.102.50"
+            gateway = "192.168.102.1"
+            netmask = "255.255.255.0"
+        }
+        VmInstanceInventory dualVm = createVmInstance {
+            name = "test-dual-vm"
+            instanceOfferingUuid = offering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3_statefull.uuid]
+        }
+        assert dualVm.vmNics.size() == 1
+        assert dualVm.vmNics[0].usedIps.size() == 2
+        UsedIpInventory survivingIpv6 = dualVm.vmNics[0].usedIps.find { it.ipVersion == 6 }
+        assert survivingIpv6 != null
+
+        deleteIpRange {
+            uuid = dualIp4Range.uuid
+        }
+
+        dualVm = queryVmInstance { conditions = ["uuid=${dualVm.uuid}".toString()] }[0]
+        assert dualVm.vmNics.size() == 1
+        assert dualVm.vmNics[0].usedIps.size() == 1
+        assert dualVm.vmNics[0].ip == survivingIpv6.ip
+        assert dualVm.vmNics[0].gateway == survivingIpv6.gateway
+        assert dualVm.vmNics[0].netmask == survivingIpv6.netmask
+        org.zstack.header.vm.VmNicVO dualNicVo = dbFindByUuid(dualVm.vmNics[0].uuid, org.zstack.header.vm.VmNicVO.class)
+        assert dualNicVo.usedIpUuid == survivingIpv6.uuid
+        assert dualNicVo.ipVersion == 6
     }
 }
 

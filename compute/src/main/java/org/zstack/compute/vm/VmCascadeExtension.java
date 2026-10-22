@@ -307,20 +307,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     msg.setVmNicUuid(nic.getUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
                     msgs.add(msg);
-                } else {
-                    boolean deleteIp4 = false, hasIp6 = false;
-                    if (ip4 != null && ip4.getIpRangeUuid() != null && uuids.contains(ip4.getIpRangeUuid())) {
-                        deleteIp4 = true;
-                    }
-                    if (ip6 != null && (ip6.getIpRangeUuid() == null || !uuids.contains(ip6.getIpRangeUuid()))) {
-                        hasIp6 = true;
-                    }
-
-                    /* ipv4 is deleted and ipv6 is not deleted, move ipv6 address to nic ip */
-                    if (deleteIp4 && hasIp6) {
-                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid())
-                                .set(VmNicVO_.ip, ip6.getIp()).set(VmNicVO_.gateway, ip6.getGateway()).update();
-                    }
                 }
             }
         }
