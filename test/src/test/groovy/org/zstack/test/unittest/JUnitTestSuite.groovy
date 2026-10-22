@@ -15,6 +15,7 @@ import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
 import org.zstack.test.unittest.utils.SystemTagUtilsCase
+import org.zstack.test.unittest.vfs.VFSMetadataReadWriteTest
 
 import java.util.stream.Collectors
 
@@ -32,7 +33,8 @@ import java.util.stream.Collectors
         ZnsProxyKvmReconnectExtensionTest.class,
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
-        SystemTagUtilsCase.class
+        SystemTagUtilsCase.class,
+        VFSMetadataReadWriteTest.class
     ])
 class JUnitTestSuite {
 
