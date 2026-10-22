@@ -6,6 +6,7 @@ import org.zstack.header.message.GsonTransient;
 import org.zstack.header.message.Message;
 import org.zstack.utils.gson.GsonTypeCoder;
 import org.zstack.utils.gson.GsonUtil;
+import org.zstack.utils.gson.MemorySafeObjectNumberStrategy;
 import org.zstack.utils.gson.OffsetDateTimeGsonTypeCoder;
 
 import java.lang.reflect.Type;
@@ -47,7 +48,8 @@ public class CloudBusGson {
                     return false;
                 }
             }
-    }).enableComplexMapKeySerialization().create();
+    }).enableComplexMapKeySerialization().create().newBuilder()
+            .setObjectToNumberStrategy(MemorySafeObjectNumberStrategy.doubleWithSafeIntegers()).create();
 
     private static Gson logSafeGson = new GsonUtil().setCoder(Message.class, new GsonTypeCoder<Message>() {
 

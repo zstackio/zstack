@@ -7,6 +7,11 @@ import java.util.*;
 import static org.junit.Assert.*;
 
 public class MemoryReadApisTest {
+    public static class TypedNumberFixture {
+        public Long whole;
+        public Double fraction;
+    }
+
     @Test public void currentStateHostFilterUsesPlatformResourceValidation() throws Exception {
         org.zstack.header.message.APIParam parameter = APIQueryMemoryStateMsg.class.getDeclaredField("hostUuids")
                 .getAnnotation(org.zstack.header.message.APIParam.class);
@@ -34,6 +39,158 @@ public class MemoryReadApisTest {
         StringBuilder hex = new StringBuilder();
         for (byte value : digest) { hex.append(String.format("%02x", value & 0xff)); }
         assertEquals(hex.toString(), example.getAppliedPolicyHash());
+    }
+
+    @Test public void httpResponseMapPreservesFullUint64() {
+        Map<String, Object> httpResponse = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"pool_generation\":18446744073709551615}", LinkedHashMap.class);
+        assertEquals(java.math.BigInteger.class, httpResponse.get("pool_generation").getClass());
+        assertExactUnsignedInteger("18446744073709551615", httpResponse.get("pool_generation"));
+    }
+
+    @Test public void cloudBusReplyPreservesAgentStateNumbers() {
+        Map<String, Object> agentState = new LinkedHashMap<>();
+        agentState.put("pool_generation", 7473813575907645399L);
+        agentState.put("uint64_max", new java.math.BigInteger("18446744073709551615"));
+        agentState.put("fraction", 1.25d);
+        agentState.put("exponent", 1e3d);
+        Map<String, Object> agentResponse = new LinkedHashMap<>();
+        agentResponse.put("success", true);
+        agentResponse.put("state", agentState);
+        org.zstack.kvm.KVMHostAsyncHttpCallReply reply = new org.zstack.kvm.KVMHostAsyncHttpCallReply();
+        reply.setResponse((LinkedHashMap) agentResponse);
+        org.zstack.kvm.KVMHostAsyncHttpCallReply received = (org.zstack.kvm.KVMHostAsyncHttpCallReply)
+                org.zstack.core.cloudbus.CloudBusGson.fromJson(
+                        org.zstack.core.cloudbus.CloudBusGson.toJson(reply));
+        org.zstack.kvm.memory.MemoryAgentResponse response = received.toResponse(
+                org.zstack.kvm.memory.MemoryAgentResponse.class);
+        Map<?, ?> returnedState = response.state;
+        assertEquals(Long.class, returnedState.get("pool_generation").getClass());
+        assertExactUnsignedInteger("7473813575907645399", returnedState.get("pool_generation"));
+        assertEquals(java.math.BigInteger.class, returnedState.get("uint64_max").getClass());
+        assertExactUnsignedInteger("18446744073709551615", returnedState.get("uint64_max"));
+        assertEquals(Double.class, returnedState.get("fraction").getClass());
+        assertEquals(Double.class, returnedState.get("exponent").getClass());
+        assertEquals(0, new java.math.BigDecimal("1.25").compareTo(
+                new java.math.BigDecimal(returnedState.get("fraction").toString())));
+        assertEquals(0, new java.math.BigDecimal("1000").compareTo(
+                new java.math.BigDecimal(returnedState.get("exponent").toString())));
+        assertTrue(org.zstack.utils.gson.JSONObjectUtil.toJsonString(returnedState)
+                .contains("\"pool_generation\":7473813575907645399"));
+
+        TypedNumberFixture typed = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"fraction\":1.25}", TypedNumberFixture.class);
+        assertEquals(Double.class, typed.fraction.getClass());
+    }
+
+    @Test public void httpResponseMapKeepsExistingSignedAndDecimalNumberTypes() {
+        Map<String, Object> httpResponse = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"zero\":0,\"one\":1,\"negative\":-1,\"belowSafe\":9007199254740991,"
+                        + "\"atSafe\":9007199254740992,\"aboveSafe\":9007199254740993,"
+                        + "\"longMax\":9223372036854775807,"
+                        + "\"longMin\":-9223372036854775808,\"fraction\":1.25,\"exponent\":1e3}",
+                LinkedHashMap.class);
+        for (String key : Arrays.asList("zero", "one", "negative", "belowSafe", "atSafe", "aboveSafe", "longMax", "longMin")) {
+            assertEquals(key, Long.class, httpResponse.get(key).getClass());
+        }
+        assertEquals(Long.valueOf(9007199254740991L), httpResponse.get("belowSafe"));
+        assertEquals(Long.valueOf(9007199254740992L), httpResponse.get("atSafe"));
+        assertEquals(Long.valueOf(9007199254740993L), httpResponse.get("aboveSafe"));
+        assertEquals(Long.valueOf(Long.MAX_VALUE), httpResponse.get("longMax"));
+        assertEquals(Long.valueOf(Long.MIN_VALUE), httpResponse.get("longMin"));
+        assertEquals(Double.class, httpResponse.get("fraction").getClass());
+        assertEquals(Double.class, httpResponse.get("exponent").getClass());
+        Map<String, Object> uint64 = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"max\":18446744073709551615,\"overflow\":18446744073709551616,"
+                        + "\"negativeOverflow\":-9223372036854775809,\"negativeZero\":-0}",
+                LinkedHashMap.class);
+        assertEquals(java.math.BigInteger.class, uint64.get("max").getClass());
+        assertExactUnsignedInteger("18446744073709551615", uint64.get("max"));
+        assertEquals(Double.class, uint64.get("overflow").getClass());
+        assertEquals(Double.class, uint64.get("negativeOverflow").getClass());
+        assertEquals(Long.class, uint64.get("negativeZero").getClass());
+        assertEquals(Long.valueOf(0), uint64.get("negativeZero"));
+        assertEquals(0, new java.math.BigDecimal("1.25").compareTo(
+                new java.math.BigDecimal(httpResponse.get("fraction").toString())));
+        assertEquals(0, new java.math.BigDecimal("1000").compareTo(
+                new java.math.BigDecimal(httpResponse.get("exponent").toString())));
+
+        TypedNumberFixture typed = org.zstack.utils.gson.JSONObjectUtil.toObject(
+                "{\"whole\":9223372036854775807,\"fraction\":1.25}", TypedNumberFixture.class);
+        assertEquals(Long.valueOf(Long.MAX_VALUE), typed.whole);
+        assertEquals(Double.class, typed.fraction.getClass());
+    }
+
+    @Test public void cloudBusReplyKeepsExistingSafeMapNumbersAndTypedFields() {
+        String rawMessage = "{\"org.zstack.kvm.KVMHostAsyncHttpCallReply\":{" +
+                "\"response\":{\"success\":true,\"appliedRevision\":7,\"sampleTime\":11," +
+                "\"state\":{\"zero\":0,\"one\":1,\"negative\":-1," +
+                "\"safeMax\":9007199254740991," +
+                "\"fraction\":1.25,\"exponent\":1e3}}}}";
+        org.zstack.kvm.KVMHostAsyncHttpCallReply reply = (org.zstack.kvm.KVMHostAsyncHttpCallReply)
+                org.zstack.core.cloudbus.CloudBusGson.fromJson(rawMessage);
+        org.zstack.kvm.memory.MemoryAgentResponse response = reply.toResponse(
+                org.zstack.kvm.memory.MemoryAgentResponse.class);
+        Map<?, ?> state = response.state;
+        for (String key : Arrays.asList("zero", "one", "negative", "safeMax")) {
+            assertEquals(key, Double.class, state.get(key).getClass());
+        }
+        Map<String, Object> expectedSafeValues = new LinkedHashMap<>();
+        expectedSafeValues.put("zero", 0.0d); expectedSafeValues.put("one", 1.0d);
+        expectedSafeValues.put("negative", -1.0d); expectedSafeValues.put("safeMax", 9007199254740991d);
+        Map<String, Object> returnedSafeValues = new LinkedHashMap<>();
+        for (String key : expectedSafeValues.keySet()) { returnedSafeValues.put(key, state.get(key)); }
+        assertEquals(expectedSafeValues, returnedSafeValues);
+        assertEquals(Long.valueOf(7L), response.appliedRevision);
+        assertEquals(Long.valueOf(11L), response.sampleTime);
+        assertEquals(Double.class, state.get("fraction").getClass());
+        assertEquals(Double.class, state.get("exponent").getClass());
+        assertEquals(0, new java.math.BigDecimal("1000").compareTo(
+                new java.math.BigDecimal(state.get("exponent").toString())));
+
+        String boundaryMessage = "{\"org.zstack.kvm.KVMHostAsyncHttpCallReply\":{" +
+                "\"response\":{\"success\":true,\"state\":{" +
+                "\"safeMax\":9007199254740991,\"safeMin\":-9007199254740991," +
+                "\"twoTo53\":9007199254740992,\"twoTo53PlusTwo\":9007199254740994," +
+                "\"aboveSafe\":9007199254740993,\"belowSafe\":-9007199254740992," +
+                "\"longMax\":9223372036854775807,\"longMin\":-9223372036854775808," +
+                "\"uint64\":9223372036854775808,\"uint64Max\":18446744073709551615," +
+                "\"uint64Overflow\":18446744073709551616," +
+                "\"negativeOverflow\":-9223372036854775809,\"negativeZero\":-0," +
+                "\"fraction\":1.25,\"exponent\":1e3}}}}";
+        org.zstack.kvm.KVMHostAsyncHttpCallReply boundaryReply =
+                (org.zstack.kvm.KVMHostAsyncHttpCallReply)
+                        org.zstack.core.cloudbus.CloudBusGson.fromJson(boundaryMessage);
+        Map<?, ?> boundaryState = boundaryReply.toResponse(
+                org.zstack.kvm.memory.MemoryAgentResponse.class).state;
+        for (String key : Arrays.asList("safeMax", "safeMin", "negativeZero")) {
+            assertEquals(key, Double.class, boundaryState.get(key).getClass());
+        }
+        for (String key : Arrays.asList("twoTo53", "twoTo53PlusTwo", "aboveSafe", "belowSafe",
+                "longMax", "longMin")) {
+            assertEquals(key, Long.class, boundaryState.get(key).getClass());
+        }
+        assertEquals(java.math.BigInteger.class, boundaryState.get("uint64").getClass());
+        assertEquals(java.math.BigInteger.class, boundaryState.get("uint64Max").getClass());
+        assertExactUnsignedInteger("9223372036854775808", boundaryState.get("uint64"));
+        assertExactUnsignedInteger("18446744073709551615", boundaryState.get("uint64Max"));
+        assertEquals(Double.class, boundaryState.get("uint64Overflow").getClass());
+        assertEquals(Double.class, boundaryState.get("negativeOverflow").getClass());
+        assertEquals(0, Double.compare(-0.0d, (Double) boundaryState.get("negativeZero")));
+
+        TypedNumberFixture typed = org.zstack.core.cloudbus.CloudBusGson.fromJson(
+                "{\"whole\":9223372036854775807,\"fraction\":1.25,\"exponent\":1e3}",
+                TypedNumberFixture.class);
+        assertEquals(Long.valueOf(Long.MAX_VALUE), typed.whole);
+        assertEquals(Double.class, typed.fraction.getClass());
+    }
+
+    private static void assertExactUnsignedInteger(String expected, Object value) {
+        assertTrue(value instanceof Number);
+        assertFalse(value instanceof Double);
+        assertFalse(value instanceof Float);
+        assertEquals(new java.math.BigInteger(expected),
+                new java.math.BigDecimal(value.toString()).toBigIntegerExact());
     }
     @Test public void allThreePolicyEntriesAllowScopeOmissionButRetainExplicitCompatibilityValues() throws Exception {
         for (Class<?> type : Arrays.asList(APIGetMemoryPolicyMsg.class, APIPreviewMemoryPolicyMsg.class,
