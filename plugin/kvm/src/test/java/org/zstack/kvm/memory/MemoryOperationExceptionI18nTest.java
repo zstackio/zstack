@@ -118,6 +118,14 @@ public class MemoryOperationExceptionI18nTest {
     }
 
     @Test
+    public void nonCancellableTaskUsesDeclaredMetadataAndLocalizes() {
+        assertLocalized("MEMORY_TASK_NOT_CANCELLABLE", 11028,
+                "Only Queued tasks can be cancelled",
+                "Not Cancellable in memory optimization",
+                "该内存优化任务不可取消：Only Queued tasks can be cancelled");
+    }
+
+    @Test
     public void everyMemoryErrorHasChineseCategoryWithoutEmbeddedEnglishLabels() throws Exception {
         Path mapping = productRoot.resolve("conf/i18n/globalErrorCodeMapping/global-error-zh_CN.json");
         assertTrue("Chinese global error mapping not found", Files.isRegularFile(mapping));
@@ -303,6 +311,7 @@ public class MemoryOperationExceptionI18nTest {
         if (metadataId == 11026) {
             return "Invalid Policy in memory optimization";
         }
+        if (metadataId == 11028) { return "Not Cancellable in memory optimization"; }
         if (metadataId == 11042) { return "Memory Task Delete Requires Root Task"; }
         if (metadataId == 11043) { return "Memory Task Is Still Referenced"; }
         if (metadataId == 11044) { return "Memory Task Result Has Been Purged"; }
