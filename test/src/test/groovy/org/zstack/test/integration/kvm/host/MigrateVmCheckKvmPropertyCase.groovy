@@ -165,6 +165,7 @@ class MigrateVmCheckKvmPropertyCase extends SubCase {
             vm2 = env.inventoryByName("vm2") as VmInstanceInventory
             host2 = env.inventoryByName("host2") as HostInventory
             testHostTokenMismatch()
+            testKvmPropertyCheckSwitch()
             testHostTokenNotExists()
         }
     }
@@ -183,10 +184,10 @@ class MigrateVmCheckKvmPropertyCase extends SubCase {
         } as List<HostInventory>
 
         if (expectedAvailable) {
-            assert list.size() == 1
-            assert list.get(0).uuid != vm.hostUuid
+            assert list.size() == 1 : "Expected one migration candidate for vm=${vm.uuid}, actual=${list*.uuid}"
+            assert list.get(0).uuid != vm.hostUuid : "Migration candidate must differ from source host=${vm.hostUuid}"
         } else {
-            assert list.size() == 0
+            assert list.size() == 0 : "Mismatched KVM properties must exclude migration candidates: actual=${list*.uuid}"
         }
     }
 
@@ -264,6 +265,63 @@ class MigrateVmCheckKvmPropertyCase extends SubCase {
         confirmMigrateAvailable(vm2)
     }
 
+    void testKvmPropertyCheckSwitch() {
+        def config = queryGlobalConfig {
+            conditions = ["category=kvm", "name=checkMigrationRuntimeCompatibility"]
+        }[0]
+        def cpuConfig = queryGlobalConfig {
+            conditions = ["category=kvm", "name=checkHostCpuModelName"]
+        }[0]
+        assert config.defaultValue == "true" && config.value == "true" :
+                "KVM property checks must default to enabled: default=${config.defaultValue}, value=${config.value}"
+
+        def cpuTag = (querySystemTag {
+            conditions = ["resourceUuid=${host2.uuid}"]
+        }).find { it.tag.startsWith("cpuModelName::") }
+        assert cpuTag != null : "Destination must have a CPU model tag: host=${host2.uuid}"
+        deleteTag { uuid = cpuTag.uuid }
+        def mismatchTag = createSystemTag {
+            resourceUuid = host2.uuid
+            resourceType = HostVO.simpleName
+            tag = "cpuModelName::different-model"
+        }
+        try {
+            [false, true].each { checkProperties ->
+                [false, true].each { checkCpu ->
+                    updateGlobalConfig {
+                        category = KVMGlobalConfig.CATEGORY
+                        name = KVMGlobalConfig.CHECK_MIGRATION_RUNTIME_COMPATIBILITY.name
+                        value = checkProperties.toString()
+                    }
+                    updateGlobalConfig {
+                        category = KVMGlobalConfig.CATEGORY
+                        name = KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.name
+                        value = checkCpu.toString()
+                    }
+                    confirmMigrationAvailability(vm1, !(checkProperties && checkCpu))
+                    confirmMigrationAvailability(vm2, !(checkProperties && checkCpu))
+                }
+            }
+        } finally {
+            updateGlobalConfig {
+                category = KVMGlobalConfig.CATEGORY
+                name = KVMGlobalConfig.CHECK_MIGRATION_RUNTIME_COMPATIBILITY.name
+                value = config.value
+            }
+            updateGlobalConfig {
+                category = KVMGlobalConfig.CATEGORY
+                name = KVMGlobalConfig.CHECK_HOST_CPU_MODEL_NAME.name
+                value = cpuConfig.value
+            }
+            deleteTag { uuid = mismatchTag.uuid }
+            createSystemTag {
+                resourceUuid = host2.uuid
+                resourceType = HostVO.simpleName
+                tag = cpuTag.tag
+            }
+        }
+    }
+
     void testHostTokenNotExists() {
         confirmMigrateAvailable(vm1)
         confirmMigrateAvailable(vm2)
@@ -332,4 +390,3 @@ class MigrateVmCheckKvmPropertyCase extends SubCase {
         confirmMigrateAvailable(vm2)
     }
 }
-
