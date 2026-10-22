@@ -26,7 +26,7 @@ public class JSONObjectUtil {
                     return l.intValue();
                 }
             }
-        }).setObjectToNumberStrategy(ToNumberPolicy.LONG_OR_DOUBLE)
+        }).setObjectToNumberStrategy(MemorySafeObjectNumberStrategy.longOrDoubleWithUint64())
                 .disableHtmlEscaping()
                 .create();
         prettyGson = new GsonBuilder().setPrettyPrinting().create();
