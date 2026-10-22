@@ -6041,7 +6041,34 @@ public class MemoryRepositoryTest {
         MemoryTaskInventory next = repository.submit(request(1));
         assertEquals(2, repository.claim("mn").size());
         try { repository.cancel(next.getUuid()); fail("must not cancel started work"); }
-        catch (MemoryOperationException expected) { assertTrue(expected.getMessage().contains("Queued")); }
+        catch (MemoryOperationException expected) {
+            assertEquals("MEMORY_TASK_NOT_CANCELLABLE", expected.getCode());
+            assertEquals(11028, MemoryErrors.fromBusinessCode(expected.getCode()).getId());
+            assertTrue(expected.getMessage().contains("Queued"));
+        }
+
+    }
+
+    @Test public void cancellingQueuedParentRejectsStartedChildWithoutChangingEitherStatus() {
+        MemoryTaskInventory parent = repository.submit(request(0));
+        MemoryTaskVO startedChild = repository.claim("mn").stream()
+                .filter(child -> parent.getUuid().equals(child.getParentUuid())).findFirst().get();
+        assertEquals("Applying", repository.findTask(startedChild.getUuid()).getStatus());
+        assertEquals("Applying", repository.findTask(parent.getUuid()).getStatus());
+        // claim() updates the root and its child atomically. Restore the queued
+        // root fixture to exercise the child-level rejection guard directly.
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, parent.getUuid()).setStatus("Queued");
+            return null;
+        });
+        assertEquals("Queued", repository.findTask(parent.getUuid()).getStatus());
+        try { repository.cancel(parent.getUuid()); fail("must not cancel a parent with started work"); }
+        catch (MemoryOperationException expected) {
+            assertEquals("MEMORY_TASK_NOT_CANCELLABLE", expected.getCode());
+            assertEquals(11028, MemoryErrors.fromBusinessCode(expected.getCode()).getId());
+        }
+        assertEquals("Queued", repository.findTask(parent.getUuid()).getStatus());
+        assertEquals("Applying", repository.findTask(startedChild.getUuid()).getStatus());
     }
 
     @Test public void clearOverrideCannotSilentlyDiscardSuppliedPolicy() {

@@ -4723,14 +4723,14 @@ public class MemoryRepository {
             lock(em);
             MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
             if (task == null || !MemoryTaskRules.canCancel(task.getStatus())) {
-                throw error("MEMORY_NOT_CANCELLABLE", "Only Queued tasks can be cancelled");
+                throw error("MEMORY_TASK_NOT_CANCELLABLE", "Only Queued tasks can be cancelled");
             }
             bumpQueryVersion(em, "task");
             List<MemoryTaskVO> children = task.getHostUuid() == null
                     ? em.createQuery("from MemoryTaskVO t where t.parentUuid = :parent", MemoryTaskVO.class)
                     .setParameter("parent", uuid).getResultList() : Collections.singletonList(task);
             for (MemoryTaskVO child : children) {
-                if (!MemoryTaskRules.canCancel(child.getStatus())) { throw error("MEMORY_NOT_CANCELLABLE", "A child already started"); }
+                if (!MemoryTaskRules.canCancel(child.getStatus())) { throw error("MEMORY_TASK_NOT_CANCELLABLE", "A child already started"); }
                 child.setStatus("Cancelled");
                 MemoryStateVO state = em.find(MemoryStateVO.class, child.getHostUuid());
                 if (state != null && child.getUuid().equals(state.getActiveTaskUuid())) {
