@@ -14,6 +14,7 @@ class NetworkServiceProviderTest extends Test {
         virtualRouter()
         flatNetwork()
         securityGroup()
+        networkSecurityPolicySchedule()
         eip()
         lb()
         vyos()

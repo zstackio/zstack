@@ -75,4 +75,19 @@
             <zstack:extension interface="org.zstack.header.Component"/>
         </zstack:plugin>
     </bean>
+    <bean id="SecurityGroupPermissionChecker" class="org.zstack.network.securitygroup.SecurityGroupPermissionChecker" />
+
+    <bean id="SecurityGroupIdentityQueryExtension" class="org.zstack.network.securitygroup.SecurityGroupIdentityQueryExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.zql.RestrictByExprExtensionPoint" order="100" />
+        </zstack:plugin>
+    </bean>
+
+    <bean id="SecurityGroupVmInstanceExtension" class="org.zstack.network.securitygroup.SecurityGroupVmInstanceExtension">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.vm.VmInstanceCreateExtensionPoint" />
+            <zstack:extension interface="org.zstack.header.identity.ResourceOwnerPreChangeExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
 </beans>

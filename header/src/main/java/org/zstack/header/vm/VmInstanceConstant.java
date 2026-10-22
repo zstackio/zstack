@@ -51,6 +51,8 @@ public interface VmInstanceConstant {
         AllocatedUrlForAttachingVolume,
 
         VmInstanceUuid,
+        RequestedSecurityGroupUuids,
+        InheritedSecurityGroupUuids,
     }
 
     enum VmOperation {

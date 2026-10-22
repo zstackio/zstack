@@ -1,0 +1,32 @@
+[
+  {
+    "id": "Custom",
+    "name": "Custom",
+    "description": "Create a security group with custom rules",
+    "defaultSelected": true,
+    "rules": []
+  },
+  {
+    "id": "CommonPorts",
+    "name": "Common ports",
+    "description": "Allow remote login, web access and ping over IPv4",
+    "defaultSelected": false,
+    "rules": [
+      {"type": "Ingress", "ipVersion": 4, "protocol": "TCP", "dstPortRange": "22", "action": "ACCEPT", "state": "Enabled", "priority": 1},
+      {"type": "Ingress", "ipVersion": 4, "protocol": "TCP", "dstPortRange": "80", "action": "ACCEPT", "state": "Enabled", "priority": 2},
+      {"type": "Ingress", "ipVersion": 4, "protocol": "TCP", "dstPortRange": "443", "action": "ACCEPT", "state": "Enabled", "priority": 3},
+      {"type": "Ingress", "ipVersion": 4, "protocol": "TCP", "dstPortRange": "3389", "action": "ACCEPT", "state": "Enabled", "priority": 4},
+      {"type": "Ingress", "ipVersion": 4, "protocol": "ICMP", "action": "ACCEPT", "state": "Enabled", "priority": 5}
+    ]
+  },
+  {
+    "id": "AllowAllIpv4",
+    "name": "Allow all IPv4 traffic",
+    "description": "Allow all inbound and outbound IPv4 traffic",
+    "defaultSelected": false,
+    "rules": [
+      {"type": "Ingress", "ipVersion": 4, "protocol": "ALL", "action": "ACCEPT", "state": "Enabled", "priority": 1},
+      {"type": "Egress", "ipVersion": 4, "protocol": "ALL", "action": "ACCEPT", "state": "Enabled", "priority": 1}
+    ]
+  }
+]

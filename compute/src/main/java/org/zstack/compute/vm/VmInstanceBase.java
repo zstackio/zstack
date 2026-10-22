@@ -7743,6 +7743,12 @@ public class VmInstanceBase extends AbstractVmInstance {
         spec.setDataVolumeSystemTagsOnIndex(struct.getDataVolumeSystemTagsOnIndex());
         spec.setDisableL3Networks(struct.getDisableL3Networks());
         spec.setStrategy(struct.getStrategy());
+        if (struct.getRequestedSecurityGroupUuids() != null) {
+            spec.putExtensionData(VmInstanceConstant.Params.RequestedSecurityGroupUuids.toString(), struct.getRequestedSecurityGroupUuids());
+        }
+        if (struct.getInheritedSecurityGroupUuids() != null) {
+            spec.putExtensionData(VmInstanceConstant.Params.InheritedSecurityGroupUuids.toString(), struct.getInheritedSecurityGroupUuids());
+        }
 
         spec.setVmInventory(getSelfInventory());
         if (struct.getL3NetworkUuids() != null && !struct.getL3NetworkUuids().isEmpty()) {

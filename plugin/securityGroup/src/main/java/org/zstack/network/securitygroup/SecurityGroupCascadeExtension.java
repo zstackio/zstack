@@ -66,6 +66,11 @@ public class SecurityGroupCascadeExtension extends AbstractAsyncCascadeExtension
     }
 
     private void handleDeletion(CascadeAction action, final Completion completion) {
+        if (NAME.equals(action.getRootIssuer())) {
+            // The API already holds this SG queue and deletes the root after its children.
+            completion.success();
+            return;
+        }
         List<SecurityGroupInventory> sgInv = securityGroupUuidsFromAction(action);
         if (sgInv == null || sgInv.isEmpty()) {
             completion.success();

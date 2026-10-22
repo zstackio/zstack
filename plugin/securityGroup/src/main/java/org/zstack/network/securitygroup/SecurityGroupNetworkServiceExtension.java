@@ -23,6 +23,7 @@ import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.network.service.NetworkServiceProviderType;
 import org.zstack.header.network.service.NetworkServiceType;
 import org.zstack.header.vm.*;
+import org.zstack.identity.AccountManager;
 import org.zstack.network.service.AbstractNetworkServiceExtension;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -40,6 +41,10 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Autowired
     private CloudBus bus;
+    @Autowired
+    private SecurityGroupPermissionChecker permissionChecker;
+    @Autowired
+    private AccountManager acntMgr;
 
     @Override
     public NetworkServiceExtensionPosition getNetworkServiceExtensionPosition() {
@@ -51,14 +56,15 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         return SecurityGroupProviderFactory.networkServiceType;
     }
 
-    private List<String> syncSystemTagToVmNicSecurityGroup(String vmUuid) {
+    private List<String> syncSystemTagToVmNicSecurityGroup(VmInstanceInventory vm, Map<String, List<String>> groups, Set<String> hiddenGroupUuids) {
+        String vmUuid = vm.getUuid();
         final List<String> sgUuids = new ArrayList<>();
-        List<String> tags = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmUuid);
-
-        for (String tag : tags) {
-            Map<String, String> tokens = VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTokensByTag(tag);
-            String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
-            List<String> securityGroupUuids = Arrays.asList(tokens.get(VmSystemTags.SECURITY_GROUP_UUIDS_TOKEN).split(","));
+        for (Map.Entry<String, List<String>> entry : groups.entrySet()) {
+            String l3Uuid = entry.getKey();
+            List<String> securityGroupUuids = entry.getValue();
+            if (!hiddenGroupUuids.isEmpty()) {
+                securityGroupUuids.sort(Comparator.comparingInt(uuid -> hiddenGroupUuids.contains(uuid) ? 0 : 1));
+            }
 
             sgUuids.addAll(securityGroupUuids);
             String vmNicUuid = Q.New(VmNicVO.class)
@@ -98,7 +104,7 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         }
         VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.delete(vmUuid);
 
-        tags = VmSystemTags.SECURITY_GROUP_POLICY.getTags(vmUuid);
+        List<String> tags = VmSystemTags.SECURITY_GROUP_POLICY.getTags(vmUuid);
         for (String tag : tags) {
             Map<String, String> tokens = VmSystemTags.SECURITY_GROUP_POLICY.getTokensByTag(tag);
             String l3Uuid = tokens.get(VmSystemTags.L3_UUID_TOKEN);
@@ -124,7 +130,27 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void applyNetworkService(VmInstanceSpec servedVm, Map<String, Object> data, final Completion completion) {
-        syncSystemTagToVmNicSecurityGroup(servedVm.getVmInventory().getUuid());
+        VmInstanceInventory vm = servedVm.getVmInventory();
+        String hypervisorType = servedVm.getDestHost() != null ? servedVm.getDestHost().getHypervisorType() : vm.getHypervisorType();
+        boolean kvmUserVm = VmInstanceConstant.USER_VM_TYPE.equals(vm.getType()) && VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(hypervisorType);
+        Map<String, List<String>> groups = SecurityGroupVmInstanceExtension.getSecurityGroupsByL3(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.getUuid()));
+        Set<String> hiddenGroupUuids = Collections.emptySet();
+        if (kvmUserVm) {
+            Map<String, List<String>> requested = servedVm.getExtensionData(VmInstanceConstant.Params.RequestedSecurityGroupUuids.toString(), Map.class);
+            Map<String, List<String>> inherited = servedVm.getExtensionData(VmInstanceConstant.Params.InheritedSecurityGroupUuids.toString(), Map.class);
+            if (!groups.isEmpty() || requested != null || inherited != null) {
+                String accountUuid = acntMgr.getOwnerAccountUuidOfResource(vm.getUuid());
+                // Old JustCreate parameters have neither field and retain their original bindings.
+                if (requested != null || inherited != null) {
+                    permissionChecker.validateCreateSecurityGroupSelection(accountUuid, groups, requested, inherited);
+                }
+                if (!groups.isEmpty()) {
+                    List<String> candidates = groups.values().stream().flatMap(Collection::stream).distinct().collect(Collectors.toList());
+                    hiddenGroupUuids = permissionChecker.getHiddenAdminSecurityGroupUuids(accountUuid, candidates);
+                }
+            }
+        }
+        syncSystemTagToVmNicSecurityGroup(vm, groups, hiddenGroupUuids);
 
         Map<NetworkServiceProviderType, List<L3NetworkInventory>> map = getNetworkServiceProviderMap(
                 SecurityGroupProviderFactory.networkServiceType,
@@ -332,7 +358,14 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
 
     @Override
     public void afterAttachNic(String nicUuid, VmInstanceInventory vmInstanceInventory, Completion completion) {
-        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory.getUuid());
+        Map<String, List<String>> groups = SecurityGroupVmInstanceExtension.getSecurityGroupsByL3(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vmInstanceInventory.getUuid()));
+        Set<String> hiddenGroupUuids = Collections.emptySet();
+        if (!groups.isEmpty() && VmInstanceConstant.USER_VM_TYPE.equals(vmInstanceInventory.getType()) && VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(vmInstanceInventory.getHypervisorType())) {
+            String accountUuid = acntMgr.getOwnerAccountUuidOfResource(vmInstanceInventory.getUuid());
+            List<String> candidates = groups.values().stream().flatMap(Collection::stream).distinct().collect(Collectors.toList());
+            hiddenGroupUuids = permissionChecker.getHiddenAdminSecurityGroupUuids(accountUuid, candidates);
+        }
+        List<String> sgUuids = syncSystemTagToVmNicSecurityGroup(vmInstanceInventory, groups, hiddenGroupUuids);
         if (StringUtils.isEmpty(vmInstanceInventory.getHostUuid())) {
             completion.success();
             return;

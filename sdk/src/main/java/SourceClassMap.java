@@ -602,9 +602,12 @@ public class SourceClassMap {
 			put("org.zstack.network.ovn.OvnControllerInventory", "org.zstack.sdk.OvnControllerInventory");
 			put("org.zstack.network.ovn.OvnControllerVmInstanceInventory", "org.zstack.sdk.OvnControllerVmInstanceInventory");
 			put("org.zstack.network.ovn.OvnControllerVmOfferingInventory", "org.zstack.sdk.OvnControllerVmOfferingInventory");
+			put("org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg$SecurityGroupRuleAO", "org.zstack.sdk.SecurityGroupRuleAO");
 			put("org.zstack.network.securitygroup.SecurityGroupIngressRuleTO", "org.zstack.sdk.SecurityGroupIngressRuleTO");
 			put("org.zstack.network.securitygroup.SecurityGroupInventory", "org.zstack.sdk.SecurityGroupInventory");
 			put("org.zstack.network.securitygroup.SecurityGroupRuleInventory", "org.zstack.sdk.SecurityGroupRuleInventory");
+			put("org.zstack.network.securitygroup.SecurityGroupTemplateInventory", "org.zstack.sdk.SecurityGroupTemplateInventory");
+			put("org.zstack.network.securitygroup.SecurityGroupTemplateRule", "org.zstack.sdk.SecurityGroupTemplateRule");
 			put("org.zstack.network.securitygroup.VmNicSecurityGroupRefInventory", "org.zstack.sdk.VmNicSecurityGroupRefInventory");
 			put("org.zstack.network.securitygroup.VmNicSecurityPolicyInventory", "org.zstack.sdk.VmNicSecurityPolicyInventory");
 			put("org.zstack.network.service.eip.EipInventory", "org.zstack.sdk.EipInventory");
@@ -1564,7 +1567,10 @@ public class SourceClassMap {
 			put("org.zstack.sdk.SecretResourcePoolInventory", "org.zstack.header.securitymachine.SecretResourcePoolInventory");
 			put("org.zstack.sdk.SecurityGroupIngressRuleTO", "org.zstack.network.securitygroup.SecurityGroupIngressRuleTO");
 			put("org.zstack.sdk.SecurityGroupInventory", "org.zstack.network.securitygroup.SecurityGroupInventory");
+			put("org.zstack.sdk.SecurityGroupRuleAO", "org.zstack.network.securitygroup.APIAddSecurityGroupRuleMsg$SecurityGroupRuleAO");
 			put("org.zstack.sdk.SecurityGroupRuleInventory", "org.zstack.network.securitygroup.SecurityGroupRuleInventory");
+			put("org.zstack.sdk.SecurityGroupTemplateInventory", "org.zstack.network.securitygroup.SecurityGroupTemplateInventory");
+			put("org.zstack.sdk.SecurityGroupTemplateRule", "org.zstack.network.securitygroup.SecurityGroupTemplateRule");
 			put("org.zstack.sdk.SecurityMachineInventory", "org.zstack.header.securitymachine.SecurityMachineInventory");
 			put("org.zstack.sdk.ServiceStatus", "org.zstack.ai.message.ModelCenterServiceInventory$ServiceStatus");
 			put("org.zstack.sdk.ServiceTypeStatisticData", "org.zstack.header.host.ServiceTypeStatisticData");

@@ -13,6 +13,9 @@ public interface SecurityGroupConstant {
     public static String CIDR_SPLIT = "/";
     public static String RANGE_SPLIT = "-";
     public static String DEFAULT_RULE_DESCRIPTION = "default rule";
+    public static String SHARING_MODE_NONE = "None";
+    public static String SHARING_MODE_SPECIFIED = "Specified";
+    public static String SHARING_MODE_PUBLIC = "Public";
     
     public static int DEFAULT_RULE_PRIORITY = 0;
     public static int LOWEST_RULE_PRIORITY = -1;

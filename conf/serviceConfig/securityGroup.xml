@@ -90,4 +90,12 @@
     <message>
         <name>org.zstack.network.securitygroup.APIValidateSecurityGroupRuleMsg</name>
     </message>
+    <message>
+        <name>org.zstack.network.securitygroup.APIGetSecurityGroupTemplatesMsg</name>
+    </message>
+
+    <message>
+        <name>org.zstack.network.securitygroup.APISetSecurityGroupSharingMsg</name>
+    </message>
+
 </service>

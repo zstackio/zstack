@@ -346,7 +346,7 @@ public class APIAddSecurityGroupRuleMsg extends APIMessage implements AddSecurit
     @APIParam(nonempty = true, required = true)
     private List<SecurityGroupRuleAO> rules;
 
-    @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true)
+    @APIParam(resourceType = SecurityGroupVO.class, required = false, nonempty = true, noOwnerCheck = true)
     private List<String> remoteSecurityGroupUuids;
 
     /**
