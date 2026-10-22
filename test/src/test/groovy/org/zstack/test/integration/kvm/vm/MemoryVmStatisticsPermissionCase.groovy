@@ -1,7 +1,6 @@
 package org.zstack.test.integration.kvm.vm
 
 import org.zstack.sdk.AccountInventory
-import org.zstack.sdk.GetVmMemoryOptimizationAction
 import org.zstack.sdk.GetVmMemoryOptimizationsAction
 import org.zstack.sdk.VmInstanceInventory
 import org.zstack.test.integration.kvm.Env
@@ -58,33 +57,19 @@ class MemoryVmStatisticsPermissionCase extends SubCase {
         shareResource { resourceUuids = [privateVm.uuid]; accountUuids = [receiver.uuid]; sessionId = adminSession() }
         shareResource { resourceUuids = [publicVm.uuid]; toPublic = true; sessionId = adminSession() }
 
-        assertVmRead(privateVm.uuid, ownerSession(owner))
-        assertVmRead(privateVm.uuid, ownerSession(receiver))
-        assertVmRead(publicVm.uuid, ownerSession(outsider))
+        assertVmBatch([privateVm.uuid], ownerSession(owner))
+        assertVmBatch([privateVm.uuid], ownerSession(receiver))
+        assertVmBatch([publicVm.uuid], ownerSession(outsider))
         assertVmBatch([privateVm.uuid, publicVm.uuid], ownerSession(owner))
         assertVmBatch([privateVm.uuid], ownerSession(receiver))
 
-        assertVmReadDenied(privateVm.uuid, ownerSession(outsider))
-        assertVmReadDenied(foreignVm.uuid, ownerSession(owner))
+        assertVmBatchDenied([privateVm.uuid], ownerSession(outsider))
+        assertVmBatchDenied([foreignVm.uuid], ownerSession(owner))
         assertVmBatchDenied([publicVm.uuid, privateVm.uuid], ownerSession(outsider))
     }
 
     private String ownerSession(AccountInventory account) {
         return (logInByAccount { accountName = account.name; password = "password" }).uuid
-    }
-
-    private void assertVmRead(String vmUuid, String sessionId) {
-        GetVmMemoryOptimizationAction action = new GetVmMemoryOptimizationAction()
-        action.vmUuid = vmUuid
-        action.sessionId = sessionId
-        assert action.call().error == null
-    }
-
-    private void assertVmReadDenied(String vmUuid, String sessionId) {
-        GetVmMemoryOptimizationAction action = new GetVmMemoryOptimizationAction()
-        action.vmUuid = vmUuid
-        action.sessionId = sessionId
-        assert action.call().error != null
     }
 
     private void assertVmBatch(List<String> vmUuids, String sessionId) {
