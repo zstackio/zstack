@@ -44,22 +44,6 @@ public class MemoryPolicyInventory  {
         return this.sourceRevision;
     }
 
-    public java.util.List allowedActions;
-    public void setAllowedActions(java.util.List allowedActions) {
-        this.allowedActions = allowedActions;
-    }
-    public java.util.List getAllowedActions() {
-        return this.allowedActions;
-    }
-
-    public java.util.List preflightRequiredActions;
-    public void setPreflightRequiredActions(java.util.List preflightRequiredActions) {
-        this.preflightRequiredActions = preflightRequiredActions;
-    }
-    public java.util.List getPreflightRequiredActions() {
-        return this.preflightRequiredActions;
-    }
-
     public java.util.Map fieldCapabilities;
     public void setFieldCapabilities(java.util.Map fieldCapabilities) {
         this.fieldCapabilities = fieldCapabilities;

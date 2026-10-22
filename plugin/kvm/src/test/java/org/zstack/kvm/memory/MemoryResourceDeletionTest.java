@@ -1,7 +1,6 @@
 package org.zstack.kvm.memory;
 
 import org.junit.Test;
-import org.zstack.header.host.HostException;
 import org.zstack.header.host.HostInventory;
 import java.lang.reflect.Field;
 import java.util.Collections;
@@ -24,26 +23,11 @@ public class MemoryResourceDeletionTest {
         MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host1"); state.setStatus("Succeeded");
         state.setLastSampleTime(System.currentTimeMillis()); state.setState(raw); return state;
     }
-    @Test public void unresolvedOperationBlocksDeletionEvenBeforeManagedAck() throws Exception {
-        MemoryStateVO state = sample("{\"managed\":false}");
-        state.setStatus("Unknown"); state.setActiveTaskUuid("unknown-operation");
-        try { hooks(state).preDeleteHost(host()); fail("Missing managed ACK is not proof no operation ran"); }
-        catch (HostException expected) { assertTrue(expected.getMessage().contains("MEMORY_DRAIN_REQUIRED")); }
-    }
-    @Test public void futureSafeSampleIsNotValidRemovalProof() throws Exception {
-        MemoryStateVO state = sample("{\"managed\":true,\"safeToRemove\":true}");
-        state.setLastSampleTime(System.currentTimeMillis() + 60000);
-        try { hooks(state).preDeleteHost(host()); fail("Future-dated data is not fresh proof"); }
-        catch (HostException expected) { assertTrue(expected.getMessage().contains("MEMORY_DRAIN_REQUIRED")); }
-    }
-    @Test public void knownUnmanagedOrFreshDrainedHostsKeepExistingDeletionPath() throws Exception {
+    @Test public void hostDeletionIsNeverBlockedByMemoryState() throws Exception {
         hooks(null).preDeleteHost(host());
         hooks(sample("{\"managed\":false}")).preDeleteHost(host());
-        hooks(sample("{\"managed\":true,\"safeToRemove\":true}")).preDeleteHost(host());
-    }
-    @Test public void corruptedOwnedStateCannotBypassDrain() throws Exception {
-        MemoryStateVO state = sample("not json"); state.setDesiredRevision(1); state.setControlOperationUuid("last-operation");
-        try { hooks(state).preDeleteHost(host()); fail("Owned state must fail closed"); }
-        catch (HostException expected) { assertTrue(expected.getMessage().contains("MEMORY_DRAIN_REQUIRED")); }
+        MemoryStateVO busy = sample("{\"managed\":true,\"poolGeneration\":\"g1\"}");
+        busy.setActiveTaskUuid("unknown-task"); busy.setLastSampleTime(null);
+        hooks(busy).preDeleteHost(host());
     }
 }

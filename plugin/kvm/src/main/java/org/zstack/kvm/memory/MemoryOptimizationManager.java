@@ -81,7 +81,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /**
      * Supplies memory defaults during GlobalConfig initialization on management
      * node startup. The legacy host.ksm row identifies an existing cloud even
-     * without KVM Hosts. GlobalConfigFacade owns persistence and upgrade merging.
+     * without KVM Hosts; an existing cloud keeps its stored values and code defaults.
      */
     @Override
     public List<GlobalConfig> getGenerationGlobalConfig() {
@@ -90,14 +90,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 .eq(GlobalConfigVO_.name, KVMGlobalConfig.HOST_KSM.getName()).find();
         if (hostKsm != null) {
             List<GlobalConfig> existing = new ArrayList<>();
-            existing.add(config(KVMGlobalConfig.HOST_KSM, "enable host ksm",
-                    hostKsm.getDefaultValue(), hostKsm.getValue()));
+            preserveExisting(existing, KVMGlobalConfig.HOST_KSM);
             preserveExisting(existing, MemoryStandardGlobalConfig.KSM_ZERO_PAGES);
             preserveExisting(existing, MemoryStandardGlobalConfig.ZRAM_ENABLED);
             return existing;
         }
 
+        // A new cloud enables KSM; an upgraded cloud keeps the legacy host.ksm default (none).
         List<GlobalConfig> configs = new ArrayList<>();
+        configs.add(config(KVMGlobalConfig.HOST_KSM, "enable host ksm", "true"));
         configs.add(config(MemoryStandardGlobalConfig.KSM_ZERO_PAGES,
                 "KSM zero-page scanning", "true"));
         configs.add(config(MemoryStandardGlobalConfig.ZRAM_ENABLED,
@@ -134,6 +135,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             return;
         }
         final String hostUuid = host.getUuid();
+        observationBackoff.remove(hostUuid);
         try {
             // Host connection callbacks run in the connection flow. Only enqueue work here;
             // Agent observation and policy admission happen after the flow has returned.
@@ -166,19 +168,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (message instanceof APIMessage) {
                 checkReadAuthorization((APIMessage) message);
             }
-            if (message instanceof APIUpdateMemoryPolicyMsg) {
-                MemoryApiRequestBudget.validateUpdate((APIUpdateMemoryPolicyMsg) message);
-            } else if (message instanceof APIPreviewMemoryPolicyMsg) {
-                MemoryApiRequestBudget.validatePreview((APIPreviewMemoryPolicyMsg) message);
-            }
             if (message instanceof APIUpdateMemoryPolicyMsg) { update((APIUpdateMemoryPolicyMsg) message); }
             else if (message instanceof APIGetMemoryPolicyMsg) { policy((APIGetMemoryPolicyMsg) message); }
-            else if (message instanceof APIPreviewMemoryPolicyMsg) { preview((APIPreviewMemoryPolicyMsg) message); }
-            else if (message instanceof APIQueryMemoryStateMsg) { states((APIQueryMemoryStateMsg) message); }
-            else if (message instanceof APIQueryMemoryTaskMsg) { tasks((APIQueryMemoryTaskMsg) message); }
-            else if (message instanceof APIGetVmMemoryOptimizationMsg) { vmAccounting((APIGetVmMemoryOptimizationMsg) message); }
+            else if (message instanceof APIGetMemoryStatesMsg) { states((APIGetMemoryStatesMsg) message); }
+            else if (message instanceof APIGetMemoryTasksMsg) { tasks((APIGetMemoryTasksMsg) message); }
             else if (message instanceof APIGetVmMemoryOptimizationsMsg) { vmAccountings((APIGetVmMemoryOptimizationsMsg) message); }
-            else if (message instanceof APIQueryHostMemoryOperationsMsg) { operations((APIQueryHostMemoryOperationsMsg) message); }
             else if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
             else if (message instanceof APICancelMemoryTaskMsg) { cancel((APICancelMemoryTaskMsg) message); }
             else if (message instanceof APIDeleteMemoryTaskMsg) { deleteTask((APIDeleteMemoryTaskMsg) message); }
@@ -203,7 +197,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "An authenticated account session is required");
         }
 
-        if (api instanceof APIGetVmMemoryOptimizationMsg || api instanceof APIGetVmMemoryOptimizationsMsg) {
+        if (api instanceof APIGetVmMemoryOptimizationsMsg) {
             List<String> accessible;
             try {
                 // Reuse owner/public/private sharing semantics without running
@@ -213,9 +207,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             } catch (RuntimeException e) {
                 throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "The account cannot access the requested VM memory statistics");
             }
-            List<String> requested = api instanceof APIGetVmMemoryOptimizationMsg
-                    ? Collections.singletonList(((APIGetVmMemoryOptimizationMsg) api).getVmUuid())
-                    : ((APIGetVmMemoryOptimizationsMsg) api).getVmUuids();
+            List<String> requested = ((APIGetVmMemoryOptimizationsMsg) api).getVmUuids();
             if (accessible != null && (requested == null || requested.isEmpty()
                     || !new HashSet<>(accessible).containsAll(requested))) {
                 throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "The account cannot access the requested VM memory statistics");
@@ -313,70 +305,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         bus.reply(msg, reply);
     }
 
-    private void preview(APIPreviewMemoryPolicyMsg msg) {
-        APIPreviewMemoryPolicyReply reply = new APIPreviewMemoryPolicyReply();
-        reply.setInventory(repository.preview(msg.getScope(), msg.getResourceUuid(), msg.getPolicy(), msg.getAction(), msg.getClearOverrideFields()));
-        msg.setScope(reply.getInventory().getScope());
-        describe(reply.getInventory());
-        List<String> targets = repository.targets(msg.getScope(), msg.getResourceUuid());
-        List<String> hostUuids = MemoryTargetRules.select(msg.getScope(), targets, msg.getTargetHostUuids());
-        reply.setHostUuids(hostUuids);
-        List<MemoryHostPolicyPreviewInventory> hostResults = new ArrayList<>();
-        if (!"VM".equals(msg.getScope())) {
-            Map<String, MemoryHostPolicyPreviewSnapshot> hostPolicies = repository.previewHostPolicies(
-                    msg.getScope(), msg.getResourceUuid(), msg.getPolicy(), msg.getAction(),
-                    msg.getClearOverrideFields(), hostUuids);
-            for (String host : hostUuids) {
-                MemoryHostPolicyPreviewSnapshot snapshot = hostPolicies.get(host);
-                Map<String, String> changed = MemoryPolicyAdmissionRules.changedFields(
-                        snapshot == null ? null : snapshot.before, snapshot == null ? null : snapshot.after);
-                Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(
-                        changed, snapshot == null ? null : snapshot.state, System.currentTimeMillis(),
-                        snapshot == null ? null : snapshot.after);
-                MemoryHostPolicyPreviewInventory hostResult = new MemoryHostPolicyPreviewInventory();
-                hostResult.setHostUuid(host);
-                List<MemoryBlockedPolicyFieldInventory> blockedFields = new ArrayList<>();
-                blocked.forEach((field, reason) -> blockedFields.add(new MemoryBlockedPolicyFieldInventory(field, reason)));
-                hostResult.setBlockedFields(blockedFields);
-                hostResult.setEligible(blockedFields.isEmpty());
-                hostResults.add(hostResult);
-            }
-        }
-        reply.setHostResults(hostResults);
-        List<String> warnings = new ArrayList<>();
-        List<MemoryPreviewWarningInventory> warningDetails = new ArrayList<>();
-        addPreviewWarning(warnings, warningDetails, "VM_EXCLUSION_GLOBAL_SWAP");
-        addPreviewWarning(warnings, warningDetails, "HOST_REVALIDATED_BEFORE_APPLY");
-        if (licenseDeadline() <= System.currentTimeMillis()) {
-            addPreviewWarning(warnings, warningDetails, "CLOUD_LICENSE_REQUIRED");
-        }
-        reply.setWarnings(warnings);
-        reply.setWarningDetails(warningDetails);
-        if (MemoryPreviewRules.needsCapacity(reply.getInventory())) {
-            String operation = Platform.getUuid();
-            call(msg.getResourceUuid(), "preview", command(msg.getResourceUuid(), operation), response -> {
-                try {
-                    if (response == null || !operation.equals(response.operationUuid)) {
-                        throw new IllegalArgumentException("CAPACITY_DEFAULT_UNKNOWN");
-                    }
-                    MemoryPreviewRules.resolveCapacity(reply.getInventory(), response);
-                } catch (IllegalArgumentException error) {
-                    addPreviewWarning(warnings, warningDetails, "ZRAM_CAPACITY_UNVERIFIED");
-                }
-                bus.reply(msg, reply);
-            });
-        } else {
-            bus.reply(msg, reply);
-        }
-    }
-
-    private void addPreviewWarning(List<String> legacyWarnings,
-                                   List<MemoryPreviewWarningInventory> warningDetails,
-                                   String code) {
-        legacyWarnings.add(MemoryPreviewWarnings.legacyMessage(code));
-        warningDetails.add(MemoryPreviewWarnings.create(code));
-    }
-
     private void describe(MemoryPolicyInventory inventory) {
         boolean licensed = licenseDeadline() > System.currentTimeMillis();
         inventory.setSource(policySource(inventory));
@@ -390,22 +318,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             fields.put("ksm.sleepMillis", new MemoryFieldCapability(licensed, false, "int64", "milliseconds", "NextPolicyCycle"));
             addPolicyCapabilities(fields, licensed, inventory.getScope());
         }
-        MemoryStateVO hostState = null;
-        MemoryStateInventory hostStateView = null;
         if ("Host".equals(inventory.getScope())) {
             List<MemoryStateVO> states = repository.states(Collections.singletonList(inventory.getResourceUuid()), 0, 1);
-            hostState = states.isEmpty() ? null : states.get(0);
-            if (hostState != null) {
-                long now = System.currentTimeMillis();
-                hostStateView = MemoryMetricsPresentation.inventory(hostState, null, now,
-                        repository.canResumeControl(hostState.getHostUuid(), hostState.getControlOperationUuid()),
-                        repository.canReconcileRejectedResume(hostState.getHostUuid(), hostState.getControlOperationUuid()));
-            }
+            MemoryCapabilityRules.restrict(fields, states.isEmpty() ? null : states.get(0), System.currentTimeMillis());
         }
-        MemoryAllowedActionRules.Decision actions = MemoryAllowedActionRules.evaluate(
-                licensed, inventory.getScope(), fields, hostState, hostStateView, System.currentTimeMillis());
-        inventory.setAllowedActions(actions.getAllowedActions());
-        inventory.setPreflightRequiredActions(actions.getPreflightRequiredActions());
         inventory.setFieldCapabilities(fields);
     }
 
@@ -484,7 +400,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return new MemoryFieldCapability(writable, basicUi, type, unit, effect);
     }
 
-    private void states(APIQueryMemoryStateMsg msg) {
+    private void states(APIGetMemoryStatesMsg msg) {
         APIQueryMemoryStateReply reply = new APIQueryMemoryStateReply();
         MemoryQueryPage<MemoryStateVO> page = repository.statePage(msg.getHostUuids(), msg.getStart(), msg.getLimit(), msg.getSnapshotId());
         long now = System.currentTimeMillis();
@@ -500,7 +416,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         reply.setNextPage(nextPage(msg.getStart(), inventories.size(), reply.getTotal())); bus.reply(msg, reply);
     }
 
-    private void tasks(APIQueryMemoryTaskMsg msg) {
+    private void tasks(APIGetMemoryTasksMsg msg) {
         APIQueryMemoryTaskReply reply = new APIQueryMemoryTaskReply();
         MemoryQueryPage<MemoryTaskInventory> page = repository.taskPage(msg);
         reply.setInventories(page.items); reply.setTotal(page.total); reply.setSnapshotId(page.snapshotId);
@@ -510,29 +426,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     static Integer nextPage(int start, int size, long total) {
         long next = (long) start + size;
         return size > 0 && next < total && next <= Integer.MAX_VALUE ? (int) next : null;
-    }
-
-    private void vmAccounting(APIGetVmMemoryOptimizationMsg msg) {
-        List<String> hosts = repository.targets("VM", msg.getVmUuid());
-        APIGetVmMemoryOptimizationReply reply = new APIGetVmMemoryOptimizationReply();
-        if (hosts.isEmpty()) {
-            MemoryVmAccountingInventory unavailable = new MemoryVmAccountingInventory();
-            unavailable.setVmUuid(msg.getVmUuid()); unavailable.setQuality("unavailable");
-            unavailable.setReason("VM_HAS_NO_CURRENT_HOST");
-            reply.setInventory(unavailable); bus.reply(msg, reply); return;
-        }
-        String host = hosts.get(0);
-        callVmMetrics(host, Collections.singletonList(msg.getVmUuid()), response -> {
-            if (!hosts.equals(repository.targets("VM", msg.getVmUuid()))) {
-                bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_INSTANCE_CHANGED", "VM migrated; refresh the observation").toErrorCode());
-                return;
-            }
-            if (response == null || !response.isSuccess() || response.state == null) {
-                bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_OBSERVATION_UNAVAILABLE", "Host accounting observation unavailable").toErrorCode());
-                return;
-            }
-            reply.setInventory(vmObservation(host, msg.getVmUuid(), response)); bus.reply(msg, reply);
-        });
     }
 
     /** One read-only Prometheus snapshot per Host, then expose only requested VMs. */
@@ -638,25 +531,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Prometheus callback response is scoped by callVmMetrics(host), not an Agent hostUuid envelope. */
     static MemoryVmAccountingInventory vmObservation(String host, String vm, MemoryAgentResponse response) {
         return MemoryObservationRules.vm(host, vm, response.state);
-    }
-
-    private void operations(APIQueryHostMemoryOperationsMsg msg) {
-        repository.targets("Host", msg.getHostUuid());
-        Map<String, Object> request = command(msg.getHostUuid(), Platform.getUuid());
-        request.put("operationId", msg.getOperationId()); request.put("vmUuid", msg.getVmUuid());
-        request.put("status", msg.getStatus()); request.put("start", msg.getStart()); request.put("limit", msg.getLimit());
-        call(msg.getHostUuid(), "operations", request, response -> {
-            if (response == null || !response.isSuccess() || response.state == null || !msg.getHostUuid().equals(response.hostUuid)) {
-                bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_OPERATION_QUERY_UNAVAILABLE", "Host execution records unavailable; no operation was replayed").toErrorCode());
-                return;
-            }
-            try {
-                APIQueryHostMemoryOperationsReply reply = new APIQueryHostMemoryOperationsReply();
-                reply.setInventory(MemoryHostOperationsInventory.fromAgentState(msg.getHostUuid(), response.hostUuid, response.state)); bus.reply(msg, reply);
-            } catch (MemoryOperationException malformed) {
-                bus.replyErrorByMessageType(msg, malformed.toErrorCode());
-            }
-        });
     }
 
     private void writebackBackends(APIGetHostMemoryWritebackBackendsMsg msg) {
@@ -1138,7 +1012,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     private void observeRuntime() {
-        List<String> hosts = repository.targets("Global", "global");
+        long now = System.currentTimeMillis();
+        List<String> hosts = repository.connectedHosts().stream()
+                .filter(host -> observationBackoff.getOrDefault(host, 0L) <= now).collect(Collectors.toList());
         for (String host : observationCursor.next("global", hosts,
                 MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.HOST_BATCH_SIZE, 100))) {
             observeHostAfterConnect(host);
@@ -1162,6 +1038,12 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         }
                     } catch (RuntimeException eventFailure) {
                         logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
+                    }
+                    // An unreachable or older Agent is retried slowly; a reconnect clears the backoff.
+                    if (response == null || !response.isSuccess()) {
+                        observationBackoff.put(host, System.currentTimeMillis() + OBSERVATION_FAILURE_BACKOFF_MS);
+                    } else {
+                        observationBackoff.remove(host);
                     }
                     if (MemoryObservationRules.isKsmNativePartial(response, host, System.currentTimeMillis())) {
                         repository.observePartialKsm(host, response);
@@ -1224,6 +1106,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     private final MemoryBatchCursor observationCursor = new MemoryBatchCursor();
+    private static final long OBSERVATION_FAILURE_BACKOFF_MS = TimeUnit.MINUTES.toMillis(10);
+    private final Map<String, Long> observationBackoff = new ConcurrentHashMap<>();
 
     void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> completion) {
         Map<String, Integer> communication = new LinkedHashMap<>();
@@ -1264,8 +1148,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     static boolean readOnlyAgentQuery(String action) {
         return "state".equals(action) || "capabilities".equals(action)
-                || "preview".equals(action) || "accounting".equals(action)
-                || "operations".equals(action) || "reconcile".equals(action);
+                || "accounting".equals(action) || "reconcile".equals(action);
     }
 
     private static MemoryAgentResponse transportFailure(Map<String, Object> command, String reason) {

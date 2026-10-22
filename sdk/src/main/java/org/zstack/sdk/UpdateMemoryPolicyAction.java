@@ -37,9 +37,6 @@ public class UpdateMemoryPolicyAction extends AbstractAction {
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map expectedSourceRevisions;
 
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List clearOverrideFields;
-
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
     public java.lang.Long expectedGlobalRevision;
 
@@ -55,7 +52,7 @@ public class UpdateMemoryPolicyAction extends AbstractAction {
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
 
-    @Param(required = true, validValues = {"apply","clearOverride","pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool","stageTargetShard","commitTargetShards","cancelTargetShards"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String action;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
@@ -69,24 +66,6 @@ public class UpdateMemoryPolicyAction extends AbstractAction {
 
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String clientRequestUuid;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String targetSnapshotGeneration;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,2147483647L}, noTrim = false)
-    public java.lang.Integer targetShardIndex;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {1L,2147483647L}, noTrim = false)
-    public java.lang.Integer targetShardCount;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
-    public java.lang.Long targetTotalCount;
-
-    @Param(required = false, maxLength = 128, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.lang.String targetDigest;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public java.util.List targetVmUuids;
 
     @Param(required = false)
     public java.util.List systemTags;

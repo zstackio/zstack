@@ -22,6 +22,4 @@ public @interface RestRequest {
     Class responseClass();
     String category() default "";
     String morphTransform() default "";
-    /** Reject undeclared query parameters instead of silently ignoring them. */
-    boolean strictQueryParameters() default false;
 }

@@ -1,6 +1,5 @@
 package org.zstack.kvm.memory;
 
-import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.resourceconfig.ResourceConfigVO;
 
@@ -9,55 +8,14 @@ import javax.persistence.NoResultException;
 import java.util.*;
 
 /**
- * Same-transaction persistence adapter for standard memory config values.
- * Transaction ownership belongs to the caller. No cache refresh, event, or
- * external action is performed here; callers refresh returned configs after commit.
+ * Same-transaction reader/writer for standard memory config values.
+ * Transaction ownership belongs to the caller.
  */
 public final class MemoryStandardConfigAdapter {
     /** Stored literal meaning this scope contributes no feature-switch override. */
     public enum OverrideMode { UNMANAGED }
 
     public static boolean isUnmanaged(Object value) { return value == OverrideMode.UNMANAGED; }
-    public static final class ChangeSet {
-        private final Set<GlobalConfig> refreshAfterCommit;
-        private final List<ResourceChange> resourceChanges;
-        private ChangeSet(Set<GlobalConfig> configs, List<ResourceChange> resourceChanges) {
-            this.refreshAfterCommit = Collections.unmodifiableSet(new LinkedHashSet<>(configs));
-            this.resourceChanges = Collections.unmodifiableList(new ArrayList<>(resourceChanges));
-        }
-        public Set<GlobalConfig> refreshAfterCommit() { return refreshAfterCommit; }
-        public List<ResourceChange> resourceChanges() { return resourceChanges; }
-    }
-
-    public static final class ResourceChange {
-        private final GlobalConfig config;
-        private final String resourceUuid, resourceType, oldValue, newValue;
-        private final boolean deleted;
-        private ResourceChange(GlobalConfig config, String resourceUuid, String resourceType,
-                               String oldValue, String newValue, boolean deleted) {
-            this.config = config; this.resourceUuid = resourceUuid; this.resourceType = resourceType;
-            this.oldValue = oldValue; this.newValue = newValue; this.deleted = deleted;
-        }
-        public GlobalConfig config() { return config; }
-        public String resourceUuid() { return resourceUuid; }
-        public String resourceType() { return resourceType; }
-        public String oldValue() { return oldValue; }
-        public String newValue() { return newValue; }
-        public boolean deleted() { return deleted; }
-    }
-
-    public Object readEffective(EntityManager em, String path, List<String> resourceUuidsMostSpecificFirst) {
-        Objects.requireNonNull(em, "EntityManager");
-        Objects.requireNonNull(resourceUuidsMostSpecificFirst, "resourceUuidsMostSpecificFirst");
-        MemoryStandardField field = MemoryStandardField.forPath(path);
-        for (String uuid : resourceUuidsMostSpecificFirst) {
-            if (uuid == null || uuid.trim().isEmpty()) { throw new IllegalArgumentException("resource UUID is required"); }
-            Object override = readOverrideOwn(em, field.path(), uuid);
-            if (override != null && !isUnmanaged(override)) { return override; }
-        }
-        return readGlobalOwn(em, path);
-    }
-
     /** Value owned at exactly this resource level; null means inherit. */
     public Object readOverrideOwn(EntityManager em, String path, String resourceUuid) {
         MemoryStandardField field = MemoryStandardField.forPath(path);
@@ -66,13 +24,9 @@ public final class MemoryStandardConfigAdapter {
     }
 
     private static Object readResourceStored(MemoryStandardField field, ResourceConfigVO row, String resourceUuid) {
-        if (row == null) { return null; }
-        String value = row.getValue();
-        if (value == null || value.trim().isEmpty()) {
-            throw new IllegalArgumentException("stored resource memory config is empty for " + field.path()
-                    + " at " + resourceUuid + "; refusing to inherit until the invalid row is repaired or deleted");
-        }
-        return readStored(field, value);
+        // An empty legacy row contributes no override; it must not block policy evaluation.
+        if (row == null || row.getValue() == null || row.getValue().trim().isEmpty()) { return null; }
+        return readStored(field, row.getValue());
     }
 
     /** Value owned by the GlobalConfig row, including its schema default. */
@@ -141,16 +95,6 @@ public final class MemoryStandardConfigAdapter {
         return MemoryStandardConfigCodec.decode(field.path(), value);
     }
 
-    public String globalStoredValue(EntityManager em, String path) {
-        GlobalConfigVO row = globalRow(em, MemoryStandardField.forPath(path));
-        return row == null ? null : row.getValue();
-    }
-
-    public String overrideStoredValue(EntityManager em, String path, String resourceUuid) {
-        ResourceConfigVO row = resourceRow(em, MemoryStandardField.forPath(path), resourceUuid);
-        return row == null ? null : row.getValue();
-    }
-
     public boolean hasOverrideRow(EntityManager em, String path, String resourceUuid) {
         return resourceRow(em, MemoryStandardField.forPath(path), resourceUuid) != null;
     }
@@ -167,38 +111,19 @@ public final class MemoryStandardConfigAdapter {
         return Objects.equals(storedValue, defaultValue);
     }
 
-    /** Set/delete one Host or Cluster override. Null removes the row to reveal the parent. */
-    public ChangeSet writeOverride(EntityManager em, String resourceUuid, String resourceType, String path, Object value) {
-        Map<String, Object> one = new LinkedHashMap<>(); one.put(path, value);
-        return writeOverrides(em, resourceUuid, resourceType, one);
-    }
-
     /** Set/delete same-scope rows; caller owns cross-field validation and the enclosing transaction. */
-    public ChangeSet writeOverrides(EntityManager em, String resourceUuid, String resourceType, Map<String, ?> values) {
+    public void writeOverrides(EntityManager em, String resourceUuid, String resourceType, Map<String, ?> values) {
         Objects.requireNonNull(em, "EntityManager");
         if (resourceUuid == null || resourceUuid.trim().isEmpty()) { throw new IllegalArgumentException("resource UUID is required"); }
         MemoryStandardField.Scope scope = MemoryStandardField.scope(resourceType);
         if (scope == MemoryStandardField.Scope.GLOBAL) { throw new IllegalArgumentException("resource override requires Host or Cluster"); }
-        LinkedHashSet<GlobalConfig> refresh = new LinkedHashSet<>();
-        List<ResourceChange> resourceChanges = new ArrayList<>();
         for (Map.Entry<String, ?> entry : values.entrySet()) {
             MemoryStandardField field = MemoryStandardField.forPath(entry.getKey());
             requireScope(field, scope);
             String encoded = MemoryStandardConfigCodec.encode(field.path(), entry.getValue());
             ResourceConfigVO row = resourceRow(em, field, resourceUuid);
-            Object previous;
-            try { previous = readEffective(em, field.path(), Collections.singletonList(resourceUuid)); }
-            catch (IllegalArgumentException invalidStoredValue) {
-                if (encoded != null) { throw invalidStoredValue; }
-                previous = null; // Explicit delete is the supported repair path for an invalid row.
-            }
-            String oldValue = previous == null ? field.config().getDefaultValue() : String.valueOf(previous);
             if (encoded == null) {
-                if (row != null) {
-                    em.remove(row);
-                    resourceChanges.add(new ResourceChange(field.config(), resourceUuid, resourceType, oldValue,
-                            field.config().value(), true));
-                }
+                if (row != null) { em.remove(row); }
             } else if (row == null) {
                 row = new ResourceConfigVO();
                 row.setUuid(UUID.randomUUID().toString().replace("-", ""));
@@ -206,31 +131,12 @@ public final class MemoryStandardConfigAdapter {
                 row.setDescription(field.config().getDescription());
                 row.setResourceUuid(resourceUuid); row.setResourceType(resourceType);
                 em.persist(row);
-                resourceChanges.add(new ResourceChange(field.config(), resourceUuid, resourceType, oldValue, encoded, false));
             } else {
-                String original = row.getValue();
                 row.setValue(encoded);
                 row.setResourceType(resourceType);
                 em.merge(row);
-                if (!Objects.equals(original, encoded)) {
-                    resourceChanges.add(new ResourceChange(field.config(), resourceUuid, resourceType, oldValue, encoded, false));
-                }
             }
         }
-        return new ChangeSet(refresh, resourceChanges);
-    }
-
-    /** Global-level changes require the ordinary GlobalConfig row to have been initialized. */
-    public ChangeSet writeGlobal(EntityManager em, String path, Object value) {
-        Objects.requireNonNull(em, "EntityManager");
-        MemoryStandardField field = MemoryStandardField.forPath(path);
-        requireScope(field, MemoryStandardField.Scope.GLOBAL);
-        GlobalConfigVO row = globalRow(em, field);
-        if (row == null) { throw new IllegalStateException("standard GlobalConfig row is not initialized for " + path); }
-        String encoded = MemoryStandardConfigCodec.encode(path, value);
-        row.setValue(encoded == null ? row.getDefaultValue() : encoded);
-        em.merge(row);
-        return new ChangeSet(Collections.singleton(field.config()), Collections.<ResourceChange>emptyList());
     }
 
     private static void requireScope(MemoryStandardField field, MemoryStandardField.Scope scope) {

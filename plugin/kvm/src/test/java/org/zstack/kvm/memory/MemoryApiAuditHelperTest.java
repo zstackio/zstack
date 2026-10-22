@@ -89,25 +89,6 @@ public class MemoryApiAuditHelperTest {
         assertEquals(ResourceVO.class, rejected.get(0).getResourceType());
     }
 
-    @Test public void globalShardTargetsAreNotTrustedResourceAssociations() {
-        APIUpdateMemoryPolicyMsg msg = update("Global", "global");
-        msg.setAction("stageTargetShard");
-        msg.setTargetHostUuids(Arrays.asList(RESOURCE));
-        msg.setTargetVmUuids(Arrays.asList(TASK));
-        List<APIAuditor.Result> mixed = MemoryApiAuditHelper.update(msg,
-                acceptedTask("Global", "global", "stageTargetShard", "Staged"));
-        assertEquals(1, mixed.size());
-        assertEquals(ResourceVO.class, mixed.get(0).getResourceType());
-
-        msg.setTargetVmUuids(null);
-        msg.setAction("apply");
-        msg.setTargetHostUuids(Arrays.asList(RESOURCE, "not-a-uuid"));
-        List<APIAuditor.Result> malformed = MemoryApiAuditHelper.update(msg,
-                acceptedTask("Global", "global", "apply", "Draining"));
-        assertEquals(1, malformed.size());
-        assertEquals(ResourceVO.class, malformed.get(0).getResourceType());
-    }
-
     @Test public void cancellationAssociatesUnderlyingScopeButNeverTreatsTaskAsHost() {
         APICancelMemoryTaskMsg msg = new APICancelMemoryTaskMsg(); msg.setUuid(TASK);
         APICancelMemoryTaskEvent response = new APICancelMemoryTaskEvent("api-id");

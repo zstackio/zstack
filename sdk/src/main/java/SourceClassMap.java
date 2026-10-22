@@ -6,15 +6,8 @@ public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
 			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
-			put("org.zstack.kvm.memory.MemoryBlockedPolicyFieldInventory", "org.zstack.sdk.MemoryBlockedPolicyFieldInventory");
 			put("org.zstack.kvm.memory.MemoryFieldCapability", "org.zstack.sdk.MemoryFieldCapability");
-			put("org.zstack.kvm.memory.MemoryHostOperationsInventory", "org.zstack.sdk.MemoryHostOperationsInventory");
-			put("org.zstack.kvm.memory.MemoryHostOperationsInventory$Concurrency", "org.zstack.sdk.Concurrency");
-			put("org.zstack.kvm.memory.MemoryHostOperationsInventory$Entry", "org.zstack.sdk.Entry");
-			put("org.zstack.kvm.memory.MemoryHostOperationsInventory$RecordBudget", "org.zstack.sdk.RecordBudget");
-			put("org.zstack.kvm.memory.MemoryHostPolicyPreviewInventory", "org.zstack.sdk.MemoryHostPolicyPreviewInventory");
 			put("org.zstack.kvm.memory.MemoryPolicyInventory", "org.zstack.sdk.MemoryPolicyInventory");
-			put("org.zstack.kvm.memory.MemoryPreviewWarningInventory", "org.zstack.sdk.MemoryPreviewWarningInventory");
 			put("org.zstack.kvm.memory.MemoryStateInventory", "org.zstack.sdk.MemoryStateInventory");
 			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
 			put("org.zstack.kvm.memory.MemoryTaskInventory", "org.zstack.sdk.MemoryTaskInventory");
@@ -1008,15 +1001,9 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
-			put("org.zstack.sdk.Concurrency", "org.zstack.kvm.memory.MemoryHostOperationsInventory$Concurrency");
-			put("org.zstack.sdk.Entry", "org.zstack.kvm.memory.MemoryHostOperationsInventory$Entry");
 			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
-			put("org.zstack.sdk.MemoryBlockedPolicyFieldInventory", "org.zstack.kvm.memory.MemoryBlockedPolicyFieldInventory");
 			put("org.zstack.sdk.MemoryFieldCapability", "org.zstack.kvm.memory.MemoryFieldCapability");
-			put("org.zstack.sdk.MemoryHostOperationsInventory", "org.zstack.kvm.memory.MemoryHostOperationsInventory");
-			put("org.zstack.sdk.MemoryHostPolicyPreviewInventory", "org.zstack.kvm.memory.MemoryHostPolicyPreviewInventory");
 			put("org.zstack.sdk.MemoryPolicyInventory", "org.zstack.kvm.memory.MemoryPolicyInventory");
-			put("org.zstack.sdk.MemoryPreviewWarningInventory", "org.zstack.kvm.memory.MemoryPreviewWarningInventory");
 			put("org.zstack.sdk.MemoryStateInventory", "org.zstack.kvm.memory.MemoryStateInventory");
 			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
 			put("org.zstack.sdk.MemoryTaskInventory", "org.zstack.kvm.memory.MemoryTaskInventory");
@@ -1031,7 +1018,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory");
 			put("org.zstack.sdk.MemoryWritebackStableIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory");
 			put("org.zstack.sdk.MemoryZramPoolPreparation", "org.zstack.kvm.memory.MemoryZramPoolPreparation");
-			put("org.zstack.sdk.RecordBudget", "org.zstack.kvm.memory.MemoryHostOperationsInventory$RecordBudget");
 
 
 

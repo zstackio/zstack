@@ -186,8 +186,7 @@ public class GlobalConfigFacadeImpl extends AbstractService implements GlobalCon
         }
 
         try {
-            globalConfig.updateValue(msg.getValue(), globalConfig.hasConfigMutationExtensions()
-                    ? ConfigMutationContext.fromApiMessage(msg) : null);
+            globalConfig.updateValue(msg.getValue());
 
             GlobalConfigInventory inv = GlobalConfigInventory.valueOf(globalConfig.reload());
             pluginRgty.getExtensionList(AfterUpdateClobalConfigExtensionPoint.class).forEach(point -> point.saveSaveEncryptAfterUpdateClobalConfig(inv));

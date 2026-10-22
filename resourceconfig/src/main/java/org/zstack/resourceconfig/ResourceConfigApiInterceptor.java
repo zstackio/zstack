@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
 import org.zstack.core.config.GlobalConfig;
-import org.zstack.core.config.GlobalConfigException;
 import org.zstack.core.config.GlobalConfigFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
@@ -64,11 +63,7 @@ public class ResourceConfigApiInterceptor implements ApiMessageInterceptor {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10005, "global config[category:%s, name:%s] cannot bind resource",
                         resourceConfigAO.getCategory(), identity));
             }
-            try {
-                rc.validateNewValue(msg.getResourceUuid(), resourceConfigAO.getValue());
-            } catch (GlobalConfigException e) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_RESOURCECONFIG_10003, e.getMessage()));
-            }
+            rc.validateNewValue(msg.getResourceUuid(), resourceConfigAO.getValue());
         }
     }
 

@@ -234,8 +234,6 @@
         <class>org.zstack.kvm.memory.MemoryStateVO</class>
         <class>org.zstack.kvm.memory.MemoryMigrationVO</class>
         <class>org.zstack.kvm.memory.MemoryVmExclusionVO</class>
-        <class>org.zstack.kvm.memory.MemoryTargetShardVO</class>
-        <class>org.zstack.kvm.memory.MemoryStandardConfigMigrationVO</class>
         <class>org.zstack.kvm.xmlhook.XmlHookVmInstanceRefVO</class>
         <class>org.zstack.log.server.LogServerVO</class>
         <class>org.zstack.header.network.l3.L3NetworkSequenceNumberVO</class>

@@ -66,7 +66,7 @@ public class MemorySummaryRulesTest {
         assertFalse(counts.containsKey("conditionsUnmet"));
     }
     @Test public void observationQueriesBypassOnlyHostStatusGate() {
-        for (String action : Arrays.asList("state", "capabilities", "preview", "accounting", "operations", "reconcile")) {
+        for (String action : Arrays.asList("state", "capabilities", "accounting", "reconcile")) {
             assertTrue(action, MemoryOptimizationManager.readOnlyAgentQuery(action));
         }
         for (String action : Arrays.asList("apply", "migration-hold", "drain-start",
