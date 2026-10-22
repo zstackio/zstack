@@ -4,7 +4,9 @@ import org.apache.commons.collections.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowire;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Configurable;
+import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.componentloader.PluginRegistry;
+import org.zstack.core.componentloader.PluginExtension;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -28,7 +30,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.network.IPv6Constants;
 
-import javax.persistence.Tuple;
+import javax.persistence.LockModeType;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -36,7 +38,7 @@ import static org.zstack.core.Platform.argerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
-public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, VmPlatformChangedExtensionPoint, Component {
+public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, PrepareDbInitialValueExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(VmNicManagerImpl.class);
 
     @Autowired
@@ -127,101 +129,133 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public void prepareDbInitialValue() {
-        List<VmNicVO> nics = Q.New(VmNicVO.class)
-                .isNull(VmNicVO_.driverType)
+        // Do not rewrite non-null historical models or prevent management-node startup.
+        List<VmNicVO> nics = Q.New(VmNicVO.class).isNull(VmNicVO_.driverType)
                 .eq(VmNicVO_.type, VmInstanceConstant.VIRTUAL_NIC_TYPE)
-                .notNull(VmNicVO_.vmInstanceUuid)
-                .list();
-
-        if (CollectionUtils.isEmpty(nics)) {
-            return;
-        }
-
-        List<String> vmUuids = nics.stream()
-                .map(VmNicVO::getVmInstanceUuid)
-                .distinct()
-                .collect(Collectors.toList());
-        Set<String> virtioVmUuids = new HashSet<>(VmSystemTags.VIRTIO.filterResourceHasTag(vmUuids));
-
-        List<Tuple> tupleList = Q.New(VmInstanceVO.class)
-                .select(VmInstanceVO_.uuid, VmInstanceVO_.platform)
-                .in(VmInstanceVO_.uuid, vmUuids)
-                .listTuple();
-
-        Map<String, String> vmDrivers = new HashMap<>();
-        for (Tuple vmTuple : tupleList) {
-            String vmUuid = vmTuple.get(0, String.class);
-            String vmPlatform = vmTuple.get(1, String.class);
-            vmDrivers.put(vmUuid, virtioVmUuids.contains(vmUuid) || ImagePlatform.valueOf(vmPlatform).isParaVirtualization() ?
-                    defaultPVNicDriver : defaultNicDriver);
-        }
-
-        Map<Boolean, List<String>> nicGroups = nics.stream()
-                .filter(v -> vmDrivers.containsKey(v.getVmInstanceUuid()))
-                .collect(
-                        Collectors.groupingBy(
-                                v -> vmDrivers.get(v.getVmInstanceUuid()).equals(defaultPVNicDriver),
-                                Collectors.mapping(VmNicVO::getUuid, Collectors.toList()))
-                );
-
-        List<String> pvNics = nicGroups.get(true);
-        List<String> defaultNics = nicGroups.get(false);
-
-        if (CollectionUtils.isNotEmpty(pvNics)) {
-            SQL.New(VmNicVO.class)
-                    .in(VmNicVO_.uuid, pvNics)
-                    .set(VmNicVO_.driverType, defaultPVNicDriver)
-                    .update();
-        }
-
-        if (CollectionUtils.isNotEmpty(defaultNics)) {
-            SQL.New(VmNicVO.class)
-                    .in(VmNicVO_.uuid, defaultNics)
-                    .set(VmNicVO_.driverType, defaultNicDriver)
-                    .update();
-        }
-    }
-
-    @Override
-    public boolean skipPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
-        return false;
-    }
-
-    @Override
-    public void vmPlatformChange(VmInstanceInventory vm, String previousPlatform, String nowPlatform) {
-        String driver = null;
-        for (VmNicSetDriverExtensionPoint ext : pluginRegistry.getExtensionList(VmNicSetDriverExtensionPoint.class)) {
-            driver = ext.getPreferredVmNicDriver(vm);
-            if (driver != null) {
-                break;
+                .notNull(VmNicVO_.vmInstanceUuid).list();
+        Map<String, VmInstanceInventory> vms = new HashMap<>();
+        for (VmNicVO vo : nics) {
+            VmInstanceInventory vm = vms.computeIfAbsent(vo.getVmInstanceUuid(), uuid -> {
+                VmInstanceVO vmVO = dbf.findByUuid(uuid, VmInstanceVO.class);
+                return vmVO == null ? null : VmInstanceInventory.valueOf(vmVO);
+            });
+            if (vm == null) {
+                continue;
+            }
+            VmNicInventory nic = VmNicInventory.valueOf(vo);
+            try {
+                nic.setDriverType(getDefaultNicDriver(vm, VmSystemTags.VIRTIO.hasTag(vm.getUuid())));
+                validateNicDriver(nic, vm, false);
+                SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid()).isNull(VmNicVO_.driverType)
+                        .set(VmNicVO_.driverType, nic.getDriverType()).update();
+            } catch (OperationFailureException | IllegalArgumentException e) {
+                logger.warn(String.format("Cannot initialize NIC[%s] model; keep the historical value for explicit repair: %s",
+                        nic.getUuid(), e.getMessage()));
             }
         }
-
-        if (driver != null) {
-            resetVmNicDriverType(vm.getUuid(), driver);
-            return;
-        }
-
-        if (ImagePlatform.valueOf(nowPlatform).isParaVirtualization() || VmSystemTags.VIRTIO.hasTag(vm.getUuid())) {
-            resetVmNicDriverType(vm.getUuid(), defaultPVNicDriver);
-            return;
-        }
-
-        resetVmNicDriverType(vm.getUuid(), defaultNicDriver);
     }
 
-    private void resetVmNicDriverType(String vmUuid, String driverType) {
-        VmInstanceVO vo = Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vmUuid).find();
-        List<String> needUpdateNics = vo.getVmNics().stream()
-                .filter(nic -> nic.getDriverType() == null || !nic.getDriverType().equals(driverType))
-                .map(VmNicVO::getUuid)
-                .collect(Collectors.toList());
-
-        if (CollectionUtils.isEmpty(needUpdateNics)) {
+    @Override
+    public void validateNicDriver(VmNicInventory nic, VmInstanceInventory vm, boolean explicitModel) {
+        VmNicDriverModel model;
+        try {
+            model = VmNicType.valueOf(nic.getType()).getDriverModel();
+        } catch (IllegalArgumentException e) {
+            rejectNicDriver(nic, "the backend type is not registered");
             return;
         }
+        if (model == null) {
+            rejectNicDriver(nic, "the backend has not declared its driver model capability");
+        }
+        if (model == VmNicDriverModel.Passthrough) {
+            if (explicitModel) {
+                rejectNicDriver(nic, "PCI passthrough does not expose an emulated NIC model");
+            }
+            return;
+        }
+        // Shared allocation is also used by ESX cloning, whose models are validated
+        // by VMwareVmNicManager (E1000/E1000E/Vmxnet3/Sriov), not this KVM list.
+        String hypervisor = nic.getHypervisorType() == null ? vm.getHypervisorType() : nic.getHypervisorType();
+        if ((hypervisor == null || VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(hypervisor)
+                || VmInstanceConstant.XDRAGON_HYPERVISOR_TYPE.equals(hypervisor))
+                && !supportNicDriverTypes.contains(nic.getDriverType())) {
+            rejectNicDriver(nic, "supported models are " + supportNicDriverTypes);
+        }
+        if (model == VmNicDriverModel.Virtio && !VmNicDriverType.VIRTIO.toString().equals(nic.getDriverType())) {
+            rejectNicDriver(nic, "the backend requires virtio");
+        }
+        for (VmNicDriverValidationExtensionPoint ext : pluginRegistry.getExtensionList(VmNicDriverValidationExtensionPoint.class)) {
+            ext.validateNicDriver(vm, nic);
+        }
+    }
 
-        SQL.New(VmNicVO.class).in(VmNicVO_.uuid, needUpdateNics).set(VmNicVO_.driverType, driverType).update();
+    private void rejectNicDriver(VmNicInventory nic, String reason) {
+        throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10346,
+                "NIC[uuid:%s, type:%s] does not support driver model[%s]: %s",
+                nic.getUuid(), nic.getType(), nic.getDriverType(), reason));
+    }
+
+    @Override
+    public String getDefaultNicDriver(VmInstanceInventory vm, boolean virtioEnabled) {
+        Map<Object, Integer> orders = new IdentityHashMap<>();
+        for (PluginExtension extension : pluginRegistry.getExtensionByInterfaceName(VmNicSetDriverExtensionPoint.class.getName())) {
+            orders.merge(extension.getInstance(), extension.getOrder(), Math::max);
+        }
+        Set<String> preferences = new TreeSet<>();
+        int highestOrder = Integer.MIN_VALUE;
+        for (VmNicSetDriverExtensionPoint ext : pluginRegistry.getExtensionList(VmNicSetDriverExtensionPoint.class)) {
+            String preferred = ext.getPreferredVmNicDriver(vm);
+            if (preferred == null) {
+                continue;
+            }
+            int order = orders.getOrDefault(ext, 0);
+            if (order > highestOrder) {
+                highestOrder = order;
+                preferences.clear();
+            }
+            if (order == highestOrder) {
+                preferences.add(preferred);
+            }
+        }
+        if (preferences.size() > 1) {
+            throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10347,
+                    "Conflicting NIC driver preferences[%s] for VM[uuid:%s]", preferences, vm.getUuid()));
+        }
+        return preferences.isEmpty() ? (virtioEnabled || ImagePlatform.valueOf(vm.getPlatform()).isParaVirtualization()
+                ? defaultPVNicDriver : defaultNicDriver) : preferences.iterator().next();
+    }
+
+    @Override
+    @Transactional
+    public void changeVmPlatform(VmInstanceInventory target) {
+        lockVm(target.getUuid());
+        resetVmNicDriverType(target, getDefaultNicDriver(target, VmSystemTags.VIRTIO.hasTag(target.getUuid())));
+    }
+
+    private VmInstanceVO lockVm(String uuid) {
+        return dbf.getEntityManager().find(VmInstanceVO.class, uuid, LockModeType.PESSIMISTIC_WRITE);
+    }
+
+    private void validateReset(VmInstanceInventory vm, String driverType) {
+        for (VmNicVO vo : Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.getUuid()).<VmNicVO>list()) {
+            if (VmNicType.valueOf(vo.getType()).getDriverModel() == VmNicDriverModel.Passthrough) {
+                continue;
+            }
+            VmNicInventory nic = VmNicInventory.valueOf(vo);
+            nic.setDriverType(driverType);
+            validateNicDriver(nic, vm, false);
+        }
+    }
+
+    private void resetVmNicDriverType(VmInstanceInventory vm, String driverType) {
+        validateReset(vm, driverType);
+        List<String> uuids = Q.New(VmNicVO.class).eq(VmNicVO_.vmInstanceUuid, vm.getUuid()).<VmNicVO>list().stream()
+                .filter(n -> VmNicType.valueOf(n.getType()).getDriverModel() != VmNicDriverModel.Passthrough)
+                .filter(n -> !Objects.equals(driverType, n.getDriverType()))
+                .map(VmNicVO::getUuid).collect(Collectors.toList());
+        if (!uuids.isEmpty()) {
+            SQL.New(VmNicVO.class).in(VmNicVO_.uuid, uuids).set(VmNicVO_.driverType, driverType).update();
+        }
     }
 
     public void setSupportNicDriverTypes(List<String> supportNicDriverTypes) {
@@ -262,24 +296,8 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization, VmInstanceInventory vm) {
-        String driver = null;
-        for (VmNicSetDriverExtensionPoint ext : pluginRegistry.getExtensionList(VmNicSetDriverExtensionPoint.class)) {
-            driver = ext.getPreferredVmNicDriver(vm);
-            if (driver != null) {
-                break;
-            }
-        }
-
-        if (driver != null) {
-            nic.setDriverType(driver);
-            return;
-        }
-
-        if (isImageSupportVirtIo || isParaVirtualization || VmSystemTags.VIRTIO.hasTag(vm.getUuid())) {
-            nic.setDriverType(getDefaultPVNicDriver());
-        } else {
-            nic.setDriverType(getDefaultNicDriver());
-        }
+        nic.setDriverType(getDefaultNicDriver(vm, isImageSupportVirtIo || isParaVirtualization
+                || VmSystemTags.VIRTIO.hasTag(vm.getUuid())));
     }
 
     @Override
@@ -361,16 +379,43 @@ public class VmNicManagerImpl implements VmNicManager, VmNicExtensionPoint, Prep
 
     @Override
     public boolean start() {
+        VmSystemTags.VIRTIO.setFailOnListenerError(true);
+        VmSystemTags.VIRTIO.installJudger(new AbstractSystemTagOperationJudger() {
+            private void validate(SystemTagInventory tag, String driver) {
+                VmInstanceVO vo = lockVm(tag.getResourceUuid());
+                if (vo == null || vo.getState() == VmInstanceState.Destroyed) {
+                    return;
+                }
+                // Keep state restrictions in the existing creation validator. Internal
+                // GuestTools flows also create this tag while stopping/rebooting;
+                // deleting it while running changes the next-start configuration.
+                validateReset(VmInstanceInventory.valueOf(vo), driver);
+            }
+
+            @Override
+            public void tagPreCreated(SystemTagInventory tag) {
+                validate(tag, defaultPVNicDriver);
+            }
+
+            @Override
+            public void tagPreDeleted(SystemTagInventory tag) {
+                validate(tag, defaultNicDriver);
+            }
+        });
         VmSystemTags.VIRTIO.installLifeCycleListener(new SystemTagLifeCycleListener() {
             @Override
             public void tagCreated(SystemTagInventory tag) {
-                resetVmNicDriverType(tag.getResourceUuid(), defaultPVNicDriver);
+                VmInstanceVO vo = lockVm(tag.getResourceUuid());
+                if (vo == null || vo.getState() == VmInstanceState.Destroyed) { return; }
+                resetVmNicDriverType(VmInstanceInventory.valueOf(vo), defaultPVNicDriver);
                 vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }
 
             @Override
             public void tagDeleted(SystemTagInventory tag) {
-                resetVmNicDriverType(tag.getResourceUuid(), defaultNicDriver);
+                VmInstanceVO vo = lockVm(tag.getResourceUuid());
+                if (vo == null || vo.getState() == VmInstanceState.Destroyed) { return; }
+                resetVmNicDriverType(VmInstanceInventory.valueOf(vo), defaultNicDriver);
                 vidm.deleteDeviceAddressesByVmModifyVirtIO(tag.getResourceUuid());
             }
 

@@ -17,6 +17,12 @@ public interface VmNicManager {
 
     String getPcNetNicDriver();
 
+    void validateNicDriver(VmNicInventory nic, VmInstanceInventory vm, boolean explicitModel);
+
+    String getDefaultNicDriver(VmInstanceInventory vm, boolean virtioEnabled);
+
+    void changeVmPlatform(VmInstanceInventory target);
+
     void setNicDriverType(VmNicInventory nic, boolean isImageSupportVirtIo, boolean isParaVirtualization, VmInstanceInventory vm);
 
     VmNicType getVmNicType(String vmUuid, L3NetworkInventory l3nw);

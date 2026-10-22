@@ -13,6 +13,15 @@ public class VmNicType {
     private final String typeName;
     private boolean hasAddon = false;
     private boolean useSRIOV = false;
+    private VmNicDriverModel driverModel;
+
+    public VmNicDriverModel getDriverModel() {
+        return driverModel;
+    }
+
+    public void setDriverModel(VmNicDriverModel driverModel) {
+        this.driverModel = driverModel;
+    }
 
     public VmNicType(String typeName) {
         this.typeName = typeName;

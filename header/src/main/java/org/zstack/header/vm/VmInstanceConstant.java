@@ -16,6 +16,7 @@ public interface VmInstanceConstant {
     int MAXIMUM_NIC_DNS_NUMBER = 3;
 
     String KVM_HYPERVISOR_TYPE = "KVM";
+    String XDRAGON_HYPERVISOR_TYPE = "xdragon";
 
     String VIRTUAL_NIC_TYPE = "VNIC";
     String ZNS_NIC_MODE_DPDK = "dpdk";

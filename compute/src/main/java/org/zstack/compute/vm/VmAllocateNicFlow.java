@@ -116,7 +116,19 @@ public class VmAllocateNicFlow implements Flow {
             }
             VmInstanceNicFactory vnicFactory = vmMgr.getVmInstanceNicFactory(type);
 
-            VmNicInventory nic = buildNicInventory(spec, nicSpec, nw, mac, customNicUuid, deviceId, disableL3Networks);
+            VmNicInventory nic;
+            try {
+                nic = buildNicInventory(spec, nicSpec, nw, mac, customNicUuid, deviceId, disableL3Networks);
+                nic.setType(type.toString());
+                if (type.getDriverModel() == VmNicDriverModel.Passthrough && StringUtils.isEmpty(nicSpec.getNicDriverType())) {
+                    nic.setDriverType(null);
+                }
+                nicManager.validateNicDriver(nic, spec.getVmInventory(), !StringUtils.isEmpty(nicSpec.getNicDriverType()));
+            } catch (OperationFailureException e) {
+                errs.add(e.getErrorCode());
+                wcomp.allDone();
+                return;
+            }
             int tries = VmMacAddressSchemaType.Ip.name().equals(VmGlobalProperty.vmMacAddressSchema) ? 5 : 1;
             while (mo.checkDuplicateMac(nic.getHypervisorType(), nic.getL3NetworkUuid(), nic.getMac())) {
                 if (customMac != null || --tries == 0) {
@@ -134,6 +146,13 @@ public class VmAllocateNicFlow implements Flow {
                 nicVO = new SQLBatchWithReturn<VmNicVO>() {
                     @Override
                     protected VmNicVO scripts() {
+                        VmInstanceVO vmVO = dbf.getEntityManager().find(VmInstanceVO.class,
+                                spec.getVmInventory().getUuid());
+                        VmInstanceInventory current = VmInstanceInventory.valueOf(vmVO);
+                        if (StringUtils.isEmpty(nicSpec.getNicDriverType()) && type.getDriverModel() != VmNicDriverModel.Passthrough) {
+                            nic.setDriverType(nicManager.getDefaultNicDriver(current, VmSystemTags.VIRTIO.hasTag(vmVO.getUuid())));
+                        }
+                        nicManager.validateNicDriver(nic, current, !StringUtils.isEmpty(nicSpec.getNicDriverType()));
                         ErrorCode guardError = checkNetworkDeleteGuards(nw.getUuid(), true);
                         if (guardError != null) {
                             throw new OperationFailureException(guardError);

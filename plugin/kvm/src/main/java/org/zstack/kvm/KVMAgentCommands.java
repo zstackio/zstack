@@ -1577,6 +1577,7 @@ public class KVMAgentCommands {
             to.setDeviceId(nic.getDeviceId());
             to.setNicInternalName(nic.getInternalName());
             to.setType(nic.getType());
+            to.setDriverType(nic.getDriverType());
 
             return to;
         }

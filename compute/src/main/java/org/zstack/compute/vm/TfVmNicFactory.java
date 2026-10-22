@@ -28,6 +28,7 @@ public class TfVmNicFactory extends VmNicFactory {
 
     @Override
     public VmNicType getType() {
+        type.setDriverModel(VmNicDriverModel.Emulated);
         type.setHasAddon(true);
         vSwitchType.addVmNicType(VmNicType.VmNicSubType.NONE, type);
 

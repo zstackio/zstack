@@ -97,6 +97,10 @@ public class ApplianceVmAllocateNicFlow implements Flow {
         VmNicType vmNicType = nicManager.getVmNicType(vmSpec.getVmInventory().getUuid(),
                 L3NetworkInventory.valueOf(l3NetworkVO));
         inv.setType(vmNicType.toString());
+        if (vmNicType.getDriverModel() == VmNicDriverModel.Passthrough) {
+            inv.setDriverType(null);
+        }
+        nicManager.validateNicDriver(inv, vmSpec.getVmInventory(), false);
         inv.setUsedIps(new ArrayList<>());
 
         if (nicSpec.getIp() == null) {

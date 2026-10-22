@@ -28,6 +28,7 @@ public class VmNicFactory implements VmInstanceNicFactory {
 
     @Override
     public VmNicType getType() {
+        type.setDriverModel(VmNicDriverModel.Emulated);
         type.setHasAddon(true);
         vSwitchType.addVmNicType(VmNicType.VmNicSubType.NONE, type);
 
