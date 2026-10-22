@@ -17,7 +17,7 @@ doc {
 
             clz APIUpdateMemoryPolicyMsg.class
 
-            desc """请求体使用 `updateMemoryPolicy` action wrapper。普通配置使用 GlobalConfig/ResourceConfig；本接口的 apply/clearOverride 仅为后端/CLI兼容操作，兼容调用应先读取当前 revision/sourceRevisions，policy 为JSON字符串。选盘使用 prepareWritebackBackend 一次提交，省略可选兼容 scope 和无配置用途的 policy；后端自动维护，前端仅从 States.status 展示结果。"""
+            desc """请求体使用 `updateMemoryPolicy` action wrapper。普通配置使用 GlobalConfig/ResourceConfig；本接口只提交受控动作。选盘使用 prepareWritebackBackend 一次提交，省略可选兼容 scope 和无配置用途的 policy；后端自动维护，前端仅从 States.status 展示结果。"""
 
 			params {
 
@@ -51,25 +51,16 @@ doc {
 				column {
 					name "expectedSourceRevisions"
 					enclosedIn "updateMemoryPolicy"
-					desc "apply、clearOverride及准备动作回传最近Get/Preview返回的完整sourceRevisions映射；其他受控动作传入时也校验，stageTargetShard/cancelTargetShards禁止传入。键包含各实际来源层级及资源UUID，不得自行截取或补版本。"
+					desc "准备动作回传最近Get返回的完整sourceRevisions映射；其他受控动作传入时也校验。键包含各实际来源层级及资源UUID，不得自行截取或补版本。"
 					location "body"
 					type "Map"
 					optional true
 					since "5.5.38"
 				}
 				column {
-					name "clearOverrideFields"
-					enclosedIn "updateMemoryPolicy"
-					desc "清除的字段覆盖名列表；仅用于 clearOverride。"
-					location "body"
-					type "List"
-					optional true
-					since "5.5.38"
-				}
-				column {
 					name "expectedGlobalRevision"
 					enclosedIn "updateMemoryPolicy"
-					desc "旧Host/Cluster客户端的兼容全局来源检查；同时提供完整expectedSourceRevisions时两者都须匹配。stageTargetShard/cancelTargetShards禁止传入。新调用应回传完整sourceRevisions。"
+					desc "旧Host/Cluster客户端的兼容全局来源检查；同时提供完整expectedSourceRevisions时两者都须匹配。新调用应回传完整sourceRevisions。"
 					location "body"
 					type "Long"
 					optional true
@@ -87,7 +78,7 @@ doc {
 				column {
 					name "targetHostUuids"
 					enclosedIn "updateMemoryPolicy"
-					desc "本专用入口中Global/Cluster执行动作须显式选择非空且属于该层级的KVM Host；Host/VM执行动作禁止传入。stageTargetShard仅为旧客户端兼容时允许此字段代替targetVmUuids承载VM分片，二者不能同时提供；新调用须用targetVmUuids。cancelTargetShards禁止传入。标准配置API不使用该参数。"
+					desc "本专用入口中Global/Cluster执行动作须显式选择非空且属于该层级的KVM Host；Host/VM执行动作禁止传入。标准配置API不使用该参数。"
 					location "body"
 					type "List"
 					optional true
@@ -115,12 +106,12 @@ doc {
 				column {
 					name "action"
 					enclosedIn "updateMemoryPolicy"
-					desc "动作：apply、clearOverride、pause、drain、resume、reconcile、recoverUncertain及后端/池/分片准备或提交。reconcile用于核对既有结果；对证据完整的精确写前拒绝，可持久记录NOT_ISSUED并将原Unknown结案为Failed、释放活动占用，不会标记成功或重放原请求。原配置仍对应当前计划及期望修订时，该计划及States.status同步为Failed；旧结果不覆盖更新的计划。实际已应用修订、原生观测及安全准入不变，功能状态和监控质量独立判断；证据不足仍为Unknown。纯KSM的none目标在Host重启后重新核验本次Host/启动身份、受管配置和完整原生读数，保持当前开关，不复用旧启动ACK；其精确写前拒绝仅封存本次失败，不要求ZRAM服务，也不修改历史成功记录。"
+					desc "动作：pause、drain、resume、reconcile、recoverUncertain及后端/池准备。reconcile用于核对既有结果；对证据完整的精确写前拒绝，可持久记录NOT_ISSUED并将原Unknown结案为Failed、释放活动占用，不会标记成功或重放原请求。原配置仍对应当前计划及期望修订时，该计划及States.status同步为Failed；旧结果不覆盖更新的计划。实际已应用修订、原生观测及安全准入不变，功能状态和监控质量独立判断；证据不足仍为Unknown。纯KSM的none目标在Host重启后重新核验本次Host/启动身份、受管配置和完整原生读数，保持当前开关，不复用旧启动ACK；其精确写前拒绝仅封存本次失败，不要求ZRAM服务，也不修改历史成功记录。"
 					location "body"
 					type "String"
 					optional false
 					since "5.5.38"
-					values ("apply","clearOverride","pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool","stageTargetShard","commitTargetShards","cancelTargetShards")
+					values ("pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool")
 				}
 				column {
 					name "expectedRevision"
@@ -156,60 +147,6 @@ doc {
 					location "body"
 					type "String"
 					optional false
-					since "5.5.38"
-				}
-				column {
-					name "targetSnapshotGeneration"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard/commitTargetShards的目标VM快照代次；其他动作禁止传入。"
-					location "body"
-					type "String"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "targetShardIndex"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard的当前分片索引，从0开始；commit读取已暂存分片，禁止再次传索引。"
-					location "body"
-					type "Integer"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "targetShardCount"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard/commitTargetShards的分片总数。"
-					location "body"
-					type "Integer"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "targetTotalCount"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard/commitTargetShards的完整目标VM总数。"
-					location "body"
-					type "Long"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "targetDigest"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard/commitTargetShards的完整目标VM集合摘要；commit按已暂存内容重新核对。"
-					location "body"
-					type "String"
-					optional true
-					since "5.5.38"
-				}
-				column {
-					name "targetVmUuids"
-					enclosedIn "updateMemoryPolicy"
-					desc "仅用于stageTargetShard的VM UUID分片列表；不能与旧兼容targetHostUuids同时提供。commit只消费暂存内容，其他动作禁止传此字段。"
-					location "body"
-					type "List"
-					optional true
 					since "5.5.38"
 				}
 				column {

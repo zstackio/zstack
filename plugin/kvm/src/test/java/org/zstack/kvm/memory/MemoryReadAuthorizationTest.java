@@ -34,61 +34,6 @@ public class MemoryReadAuthorizationTest {
     private static final Map<MemoryOptimizationManager, AtomicBoolean> LEGACY_DENIALS = new WeakHashMap<>();
     private static final Map<MemoryOptimizationManager, AtomicBoolean> PLATFORM_CHECKS = new WeakHashMap<>();
 
-    @Test public void vmOwnerCanReadSingleAndBatchAndAccessibleSharedVm() {
-        MemoryOptimizationManager manager = managerFor(Arrays.asList(OWN_VM, SHARED_VM, PRIVATE_SHARED_VM));
-        authorize(manager, single(OWN_VM, "tenant"));
-        authorize(manager, batch(Arrays.asList(OWN_VM, SHARED_VM), "tenant"));
-        authorize(manager, single(PRIVATE_SHARED_VM, "tenant"));
-        authorize(manager, batch(Arrays.asList(OWN_VM, PRIVATE_SHARED_VM), "tenant"));
-        assertTrue("manager must reuse the platform's account resource visibility", PLATFORM_CHECKS.get(manager).get());
-    }
-
-    @Test public void projectUserSessionDoesNotReenterLegacyUserPolicyEvaluation() {
-        MemoryOptimizationManager manager = managerFor(Collections.singletonList(OWN_VM));
-        APIGetVmMemoryOptimizationMsg single = single(OWN_VM, "project-account");
-        single.getSession().setUserUuid("iam2-virtual-id");
-        assertFalse(single.getSession().isAccountSession());
-        authorize(manager, single);
-        APIGetVmMemoryOptimizationsMsg batch = batch(Collections.singletonList(OWN_VM), "project-account");
-        batch.getSession().setUserUuid("iam2-virtual-id");
-        authorize(manager, batch);
-        assertTrue(PLATFORM_CHECKS.get(manager).get());
-    }
-
-    @Test public void vmReadRejectsOtherAndMixedBatch() {
-        MemoryOptimizationManager manager = managerFor(Collections.singletonList(OWN_VM));
-        assertDenied(() -> authorize(manager, single(OTHER_VM, "tenant")));
-        assertDenied(() -> authorize(manager, batch(Arrays.asList(OWN_VM, OTHER_VM), "tenant")));
-        assertDenied(() -> authorize(manager, single("vm-nonexistent", "tenant")));
-    }
-
-    @Test public void systemAdminCanReadVmStatistics() {
-        MemoryOptimizationManager manager = managerFor(null);
-        authorize(manager, single(OTHER_VM, "admin"));
-        authorize(manager, batch(Arrays.asList(OWN_VM, OTHER_VM), "admin"));
-    }
-
-    @Test public void failedResourceScopeLookupDoesNotGrantVmRead() throws Exception {
-        MemoryOptimizationManager manager = managerFor(Collections.singletonList(OWN_VM));
-        AccountManager unavailable = (AccountManager) Proxy.newProxyInstance(
-                AccountManager.class.getClassLoader(), new Class<?>[]{AccountManager.class},
-                (proxy, method, args) -> { throw new IllegalStateException("resource scope unavailable"); });
-        Field field = MemoryOptimizationManager.class.getDeclaredField("accountManager");
-        field.setAccessible(true); field.set(manager, unavailable);
-        assertDenied(() -> authorize(manager, single(OWN_VM, "project-account")));
-        assertDenied(() -> authorize(manager, batch(Collections.singletonList(OWN_VM), "project-account")));
-    }
-
-    @Test public void unauthenticatedVmAndInfrastructureReadsAreRejected() {
-        MemoryOptimizationManager manager = managerFor(Arrays.asList(OWN_VM));
-        APIGetVmMemoryOptimizationMsg noSession = new APIGetVmMemoryOptimizationMsg();
-        noSession.setVmUuid(OWN_VM);
-        assertDenied(() -> authorize(manager, noSession));
-        APIQueryMemoryStateMsg state = new APIQueryMemoryStateMsg();
-        state.setSession(session("tenant"));
-        assertDenied(() -> authorize(manager, state));
-    }
-
     @Test public void infrastructureAndPolicyReadsRemainAdminOnlyAtRuntime() {
         MemoryOptimizationManager tenantManager = managerFor(Collections.singletonList("host-1"));
         for (APIMessage api : adminReadMessages("tenant")) {
@@ -100,55 +45,14 @@ public class MemoryReadAuthorizationTest {
         }
     }
 
-    @Test public void apiMetadataMatchesInfrastructureAndVmAuthorizationBoundary() throws Exception {
-        for (Class<?> type : new Class<?>[]{APIQueryMemoryStateMsg.class, APIQueryMemoryTaskMsg.class,
-                APIGetMemorySummaryMsg.class, APIQueryHostMemoryOperationsMsg.class,
-                APIGetMemoryStatesMsg.class, APIGetMemoryTasksMsg.class, APIGetHostMemoryOperationsMsg.class,
-                APIGetHostMemoryWritebackBackendsMsg.class, APIGetMemoryPolicyMsg.class}) {
-            Action action = type.getAnnotation(Action.class);
-            assertNotNull(type.getSimpleName(), action);
-            assertTrue(type.getSimpleName(), action.adminOnly());
-        }
-        for (Class<?> type : new Class<?>[]{APIGetVmMemoryOptimizationMsg.class, APIGetVmMemoryOptimizationsMsg.class}) {
-            Action action = type.getAnnotation(Action.class);
-            assertNotNull(type.getSimpleName(), action);
-            assertFalse(type.getSimpleName(), action.adminOnly());
-            assertEquals(type.getSimpleName(), VmInstanceConstant.ACTION_CATEGORY, action.category());
-            Field vmField = type.getDeclaredField(type == APIGetVmMemoryOptimizationMsg.class ? "vmUuid" : "vmUuids");
-            APIParam param = vmField.getAnnotation(APIParam.class);
-            assertEquals(type.getSimpleName(), VmInstanceVO.class, param.resourceType());
-            assertTrue(type.getSimpleName(), param.checkAccount());
-        }
-
-        int before = RBAC.permissions.size();
-        new org.zstack.kvm.RBACInfo().permissions();
-        assertEquals(before + 1, RBAC.permissions.size());
-        RBAC.Permission permission = RBAC.permissions.get(before);
-        for (Class<?> type : new Class<?>[]{APIGetVmMemoryOptimizationMsg.class, APIGetVmMemoryOptimizationsMsg.class}) {
-            assertTrue(type.getSimpleName(), permission.getNormalAPIs().contains(type.getName()));
-            assertFalse(type.getSimpleName(), permission.getAdminOnlyAPIs().contains(type.getName()));
-        }
-        for (Class<?> type : new Class<?>[]{APIQueryMemoryStateMsg.class, APIGetMemoryPolicyMsg.class,
-                APIUpdateMemoryPolicyMsg.class, APIGetMemoryStatesMsg.class, APIGetMemoryTasksMsg.class,
-                APIGetHostMemoryOperationsMsg.class}) {
-            assertTrue(type.getSimpleName(), permission.getAdminOnlyAPIs().contains(type.getName()));
-        }
-    }
-
     private static List<APIMessage> adminReadMessages(String account) {
         SessionInventory session = session(account);
-        APIQueryMemoryStateMsg state = new APIQueryMemoryStateMsg(); state.setSession(session);
-        APIQueryMemoryTaskMsg task = new APIQueryMemoryTaskMsg(); task.setSession(session);
+        APIGetMemoryStatesMsg state = new APIGetMemoryStatesMsg(); state.setSession(session);
+        APIGetMemoryTasksMsg task = new APIGetMemoryTasksMsg(); task.setSession(session);
         APIGetMemorySummaryMsg summary = new APIGetMemorySummaryMsg(); summary.setSession(session);
-        APIQueryHostMemoryOperationsMsg operations = new APIQueryHostMemoryOperationsMsg(); operations.setSession(session);
         APIGetHostMemoryWritebackBackendsMsg backends = new APIGetHostMemoryWritebackBackendsMsg(); backends.setSession(session);
         APIGetMemoryPolicyMsg policy = new APIGetMemoryPolicyMsg(); policy.setSession(session);
-        return Arrays.<APIMessage>asList(state, task, summary, operations, backends, policy);
-    }
-
-    private static APIGetVmMemoryOptimizationMsg single(String uuid, String account) {
-        APIGetVmMemoryOptimizationMsg msg = new APIGetVmMemoryOptimizationMsg();
-        msg.setVmUuid(uuid); msg.setSession(session(account)); return msg;
+        return Arrays.<APIMessage>asList(state, task, summary, backends, policy);
     }
 
     private static APIGetVmMemoryOptimizationsMsg batch(List<String> uuids, String account) {

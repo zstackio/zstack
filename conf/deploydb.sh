@@ -2,6 +2,7 @@
 set -e
 #If some arguments are "", the script will be called failed, since shell can't 
 #recognize "", when sending it through arguments. 
+echo "$0 $*"
 user="$1"
 password="$2"
 host="$3"
@@ -41,7 +42,6 @@ fi
 mysql_run() {
     $MYSQL --user=$user --password=$password --host=$mysql_host --port=$port "$@"
 }
-
 
 if command -v greatdb &> /dev/null; then
   mysql_run << EOF

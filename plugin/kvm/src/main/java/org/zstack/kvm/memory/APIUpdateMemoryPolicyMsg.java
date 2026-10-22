@@ -6,13 +6,11 @@ import org.zstack.header.message.*;
 import org.zstack.header.other.APIAuditor;
 import org.zstack.header.other.APIMultiAuditor;
 import org.zstack.header.rest.RestRequest;
-import org.zstack.header.rest.StrictRestRequestJson;
 
 import java.util.List;
 
 @Action(category = "memoryOptimization", adminOnly = true)
 @RestRequest(path = "/memory-policies/{resourceUuid}/actions", method = HttpMethod.PUT, responseClass = APIUpdateMemoryPolicyEvent.class, isAction = true)
-@StrictRestRequestJson
 public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAuditor {
     @APIParam(required = false)
     private MemoryUncertainRecovery recovery;
@@ -30,10 +28,6 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     private java.util.Map<String, Long> expectedSourceRevisions;
     public java.util.Map<String, Long> getExpectedSourceRevisions() { return expectedSourceRevisions; }
     public void setExpectedSourceRevisions(java.util.Map<String, Long> value) { expectedSourceRevisions = value; }
-    @APIParam(required = false)
-    private java.util.List<String> clearOverrideFields;
-    public java.util.List<String> getClearOverrideFields() { return clearOverrideFields; }
-    public void setClearOverrideFields(java.util.List<String> value) { clearOverrideFields = value; }
     @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
     private Long expectedGlobalRevision;
     public Long getExpectedGlobalRevision() { return expectedGlobalRevision; }
@@ -57,7 +51,7 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public String getResourceUuid() { return resourceUuid; }
     public void setResourceUuid(String value) { resourceUuid = value; }
 
-    @APIParam(validValues = {"apply", "clearOverride", "pause", "drain", "resume", "reconcile", "recoverUncertain", "prepareWritebackBackend", "prepareZramPool", "stageTargetShard", "commitTargetShards", "cancelTargetShards"})
+    @APIParam(validValues = {"pause", "drain", "resume", "reconcile", "recoverUncertain", "prepareWritebackBackend", "prepareZramPool"})
     private String action;
     public String getAction() { return action; }
     public void setAction(String value) { action = value; }
@@ -72,8 +66,6 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public String getExpectedControlOperationUuid() { return expectedControlOperationUuid; }
     public void setExpectedControlOperationUuid(String value) { expectedControlOperationUuid = value; }
 
-    // Policy size is admitted by MemoryApiRequestBudget in the MN entrypoint;
-    // the framework's character limit would reject valid UTF-8 payloads first.
     @APIParam(required = false)
     private String policy = "{}";
     public String getPolicy() { return policy; }
@@ -84,36 +76,6 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public String getClientRequestUuid() { return clientRequestUuid; }
     public void setClientRequestUuid(String value) { clientRequestUuid = value; }
 
-    @APIParam(required = false, maxLength = 128)
-    private String targetSnapshotGeneration;
-    public String getTargetSnapshotGeneration() { return targetSnapshotGeneration; }
-    public void setTargetSnapshotGeneration(String value) { targetSnapshotGeneration = value; }
-
-    @APIParam(required = false, numberRange = {0, Integer.MAX_VALUE})
-    private Integer targetShardIndex;
-    public Integer getTargetShardIndex() { return targetShardIndex; }
-    public void setTargetShardIndex(Integer value) { targetShardIndex = value; }
-
-    @APIParam(required = false, numberRange = {1, Integer.MAX_VALUE})
-    private Integer targetShardCount;
-    public Integer getTargetShardCount() { return targetShardCount; }
-    public void setTargetShardCount(Integer value) { targetShardCount = value; }
-
-    @APIParam(required = false, numberRange = {0, Long.MAX_VALUE})
-    private Long targetTotalCount;
-    public Long getTargetTotalCount() { return targetTotalCount; }
-    public void setTargetTotalCount(Long value) { targetTotalCount = value; }
-
-    @APIParam(required = false, maxLength = 128)
-    private String targetDigest;
-    public String getTargetDigest() { return targetDigest; }
-    public void setTargetDigest(String value) { targetDigest = value; }
-
-    @APIParam(required = false)
-    private java.util.List<String> targetVmUuids;
-    public java.util.List<String> getTargetVmUuids() { return targetVmUuids; }
-    public void setTargetVmUuids(java.util.List<String> value) { targetVmUuids = value; }
-
     @Override
     public List<APIAuditor.Result> multiAudit(APIMessage msg, APIEvent rsp) {
         return MemoryApiAuditHelper.update((APIUpdateMemoryPolicyMsg) msg, rsp);
@@ -122,15 +84,10 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public static APIUpdateMemoryPolicyMsg __example__() {
         APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
         msg.setResourceUuid("1234567890abcdef1234567890abcdef");
-        msg.setAction("apply");
+        msg.setScope("Host");
+        msg.setAction("pause");
         msg.setExpectedRevision(0L);
-        java.util.Map<String, Long> sources = new java.util.LinkedHashMap<>();
-        sources.put("Global:global", 0L);
-        sources.put("Cluster:234567890abcdef1234567890abcdef1", 0L);
-        sources.put("Host:" + msg.getResourceUuid(), 0L);
-        msg.setExpectedSourceRevisions(sources);
         msg.setClientRequestUuid("abcdef1234567890abcdef1234567890");
-        msg.setPolicy("{\"ksm\":{\"enabled\":true}}");
         return msg;
     }
 }

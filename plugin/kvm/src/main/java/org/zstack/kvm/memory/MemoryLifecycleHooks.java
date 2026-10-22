@@ -10,6 +10,8 @@ import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.host.*;
 import org.zstack.header.vm.*;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 import javax.persistence.LockModeType;
 import java.util.*;
 import java.util.function.BiConsumer;
@@ -20,6 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, HostDeleteExtensionPoint,
         VmInstanceStartExtensionPoint, VmInstanceStopExtensionPoint, VmInstanceDestroyExtensionPoint,
         VmJustAfterDeleteFromDbExtensionPoint {
+    private static final CLogger logger = Utils.getLogger(MemoryLifecycleHooks.class);
     @Autowired private MemoryRepository repository;
     @Autowired private MemoryOptimizationManager manager;
     private final Map<String, String> lifecycleGenerations = new ConcurrentHashMap<>();
@@ -34,18 +37,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     private boolean managedZram(String host) {
         MemoryStateVO state = state(host);
         return state != null && hasPoolGeneration(state.getState());
-    }
-
-    /** Host deletion must drain any owned service, including KSM-only mode. */
-    private boolean managedForDelete(MemoryStateVO state) {
-        if (state == null) { return false; }
-        if (state.getControlOperationUuid() != null || state.getDesiredRevision() > 0
-                || hasPoolGeneration(state.getState())) { return true; }
-        if (state.getState() == null) { return false; }
-        try {
-            com.google.gson.JsonObject json = new JsonParser().parse(state.getState()).getAsJsonObject();
-            return json.has("managed") && json.get("managed").getAsBoolean();
-        } catch (RuntimeException ignored) { return false; }
     }
 
     private void record(MemoryMigrationVO hold) {
@@ -391,22 +382,13 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 || "ABI_INCOMPLETE".equals(reason);
     }
 
+    /** Host removal is never blocked: an offline or old-Agent Host cannot prove a drain. */
     @Override public void preDeleteHost(HostInventory host) throws HostException {
         MemoryStateVO state = state(host.getUuid());
-        if (state != null && state.getActiveTaskUuid() != null) {
-            throw new HostException("MEMORY_DRAIN_REQUIRED: resolve the outstanding memory operation before deleting this Host");
+        if (state != null && (state.getActiveTaskUuid() != null || hasPoolGeneration(state.getState()))) {
+            logger.warn(String.format("deleting Host[%s] with memory optimization state %s; its local ZRAM pool and"
+                    + " service state remain on the Host until it is drained or reinstalled", host.getUuid(), state.getStatus()));
         }
-        if (!managedForDelete(state)) { return; }
-        try {
-            JsonObject json = new JsonParser().parse(state.getState()).getAsJsonObject();
-            long now = System.currentTimeMillis();
-            if (state.getActiveTaskUuid() == null && state.getLastSampleTime() != null
-                    && !MemoryTaskRules.blocksHost(state.getStatus())
-                    && state.getLastSampleTime() <= now + 5000
-                    && now - state.getLastSampleTime() < MemoryOptimizationGlobalConfig.displayTtlMillis()
-                    && json.has("safeToRemove") && json.get("safeToRemove").getAsBoolean()) { return; }
-        } catch (RuntimeException ignored) { }
-        throw new HostException("MEMORY_DRAIN_REQUIRED: drain and verify owned memory resources before deleting this Host");
     }
     @Override public void beforeDeleteHost(HostInventory host) { }
     // HostBase calls this before HostCascadeExtension removes HostVO. Cleanup

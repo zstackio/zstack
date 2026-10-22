@@ -30,11 +30,6 @@ public class MemoryPolicyVO {
     public String getPolicy() { return policy; }
     public void setPolicy(String value) { policy = value; }
 
-    @Column(columnDefinition = "LONGTEXT")
-    private String legacyPolicy;
-    public String getLegacyPolicy() { return legacyPolicy; }
-    public void setLegacyPolicy(String value) { legacyPolicy = value; }
-
     @Column(nullable = false)
     private java.sql.Timestamp createDate;
     public java.sql.Timestamp getCreateDate() { return createDate; }

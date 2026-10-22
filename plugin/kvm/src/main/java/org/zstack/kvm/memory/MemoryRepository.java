@@ -8,8 +8,6 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigCanonicalEvents;
-import org.zstack.core.config.ConfigMutation;
-import org.zstack.core.config.ConfigMutationContext;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceVO;
@@ -43,7 +41,6 @@ public class MemoryRepository {
             "lastConfirmedOperationUuid", "bootId", "knownBlocked", "blockers", "sections",
             "sectionComplete", "applyEvidence", "recoveryProof", "maintenanceProof"));
     private static final String GLOBAL = "Global:global";
-    private static final long TARGET_SHARD_TTL_MS = 30 * 60 * 1000L;
     @Autowired private DatabaseFacade dbf;
     @Autowired private EventFacade evtf;
     @Autowired private PlatformTransactionManager transactionManager;
@@ -57,141 +54,15 @@ public class MemoryRepository {
     }
 
     public void initialize() {
-        String blocked = transaction(em -> {
+        transaction(em -> {
             em.createNativeQuery("INSERT IGNORE INTO MemoryPolicyVO " +
                     "(uuid, scope, resourceUuid, revision, policy, createDate, lastOpDate) " +
                     "VALUES ('Global:global', 'Global', 'global', 0, '{\"schemaVersion\":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
                     .executeUpdate();
-            lock(em);
             em.createNativeQuery("INSERT IGNORE INTO MemoryQueryVersionVO (name, revision) VALUES ('state', 0), ('task', 0)")
                     .executeUpdate();
-            for (MemoryPolicyVO row : em.createQuery("from MemoryPolicyVO order by uuid", MemoryPolicyVO.class).getResultList()) {
-                String migrated = MemoryPolicyRules.migrateLegacy(row.getPolicy(), row.getScope());
-                if (!migrated.equals(row.getPolicy())) {
-                    if (row.getLegacyPolicy() == null) { row.setLegacyPolicy(row.getPolicy()); }
-                    row.setPolicy(migrated);
-                }
-            }
-            return migrateOrdinaryFields(em);
+            return null;
         });
-        if (blocked != null) {
-            throw error("MEMORY_NOT_READY", "Standard memory policy migration is blocked: " + blocked);
-        }
-    }
-
-    private static final class StandardMigrationValue {
-        MemoryPolicyVO policyRow;
-        MemoryStandardField field;
-        Object value;
-    }
-
-    private String migrateOrdinaryFields(EntityManager em) {
-        MemoryStandardConfigMigrationVO marker = em.find(MemoryStandardConfigMigrationVO.class,
-                MemoryStandardConfigMigrationVO.ORDINARY_FIELDS_V1, LockModeType.PESSIMISTIC_WRITE);
-        if (marker != null && "DONE".equals(marker.getStatus())) { return null; }
-        if (marker == null) {
-            marker = new MemoryStandardConfigMigrationVO();
-            marker.setUuid(MemoryStandardConfigMigrationVO.ORDINARY_FIELDS_V1);
-            marker.setStatus("RUNNING"); em.persist(marker);
-        } else {
-            // BLOCKED is durable evidence, not a permanent latch. On every
-            // startup retry the full preflight; remediation can then complete
-            // the same migration without manual marker surgery.
-            marker.setStatus("RUNNING"); marker.setReason(null);
-        }
-
-        List<StandardMigrationValue> planned = new ArrayList<>();
-        Map<MemoryPolicyVO, JsonObject> strippedPolicy = new LinkedHashMap<>();
-        String conflict = null;
-        for (MemoryPolicyVO row : em.createQuery("from MemoryPolicyVO p where p.scope in ('Global','Cluster','Host') order by p.uuid", MemoryPolicyVO.class).getResultList()) {
-            JsonObject original;
-            try {
-                JsonElement parsed = new JsonParser().parse(row.getPolicy());
-                if (parsed == null || !parsed.isJsonObject()) { throw new IllegalArgumentException("not a JSON object"); }
-                original = parsed.getAsJsonObject();
-            } catch (RuntimeException malformed) {
-                conflict = "policy row " + row.getUuid() + " is unreadable"; break;
-            }
-            JsonObject remaining = original.deepCopy();
-            boolean hasStandard = false;
-            for (MemoryStandardField field : MemoryStandardField.values()) {
-                String[] path = field.path().split("\\.", -1);
-                JsonElement section = original.get(path[0]);
-                if (section == null || !section.isJsonObject() || !section.getAsJsonObject().has(path[1])) { continue; }
-                MemoryStandardField.Scope sourceScope = scopeOf(row.getScope());
-                if (sourceScope == null || !field.allows(sourceScope)) {
-                    conflict = "legacy field " + field.path() + " is not supported at " + row.getScope() + " scope";
-                    break;
-                }
-                JsonElement rawValue = section.getAsJsonObject().get(path[1]);
-                if (rawValue == null || rawValue.isJsonNull()) {
-                    conflict = "null legacy value " + field.path() + " at " + row.getUuid(); break;
-                }
-                Object value;
-                try { value = MemoryStandardConfigCodec.get(original.toString(), field.path()); }
-                catch (RuntimeException invalid) { conflict = "invalid legacy value " + field.path() + " at " + row.getUuid(); break; }
-                if (value == null) { conflict = "unset legacy value " + field.path() + " at " + row.getUuid(); break; }
-                if ("Global".equals(row.getScope())) {
-                    String stored = standardConfigs.globalStoredValue(em, field.path());
-                    if (stored == null) { conflict = "GlobalConfig row is missing for " + field.path(); break; }
-                    if (!standardConfigs.globalIsSchemaDefault(em, field.path())) {
-                        Object existing;
-                        try { existing = standardConfigs.readGlobalOwn(em, field.path()); }
-                        catch (RuntimeException invalid) { conflict = "invalid standard value for " + field.path() + " at " + row.getUuid(); break; }
-                        if (!Objects.equals(existing, value)) { conflict = "conflicting standard and legacy values for " + field.path() + " at " + row.getUuid(); break; }
-                    }
-                } else {
-                    if (standardConfigs.hasOverrideRow(em, field.path(), row.getResourceUuid())) {
-                        Object existing;
-                        try { existing = standardConfigs.readOverrideOwn(em, field.path(), row.getResourceUuid()); }
-                        catch (RuntimeException malformed) { conflict = "invalid standard value for " + field.path() + " at " + row.getUuid(); break; }
-                        if (!Objects.equals(existing, value)) {
-                            conflict = "conflicting standard and legacy values for " + field.path() + " at " + row.getUuid(); break;
-                        }
-                    }
-                }
-                StandardMigrationValue item = new StandardMigrationValue();
-                item.policyRow = row; item.field = field; item.value = value; planned.add(item); hasStandard = true;
-                remaining.getAsJsonObject(path[0]).remove(path[1]);
-            }
-            if (conflict != null) { break; }
-            if (hasStandard) {
-                List<String> emptySections = new ArrayList<>();
-                for (Map.Entry<String, JsonElement> section : remaining.entrySet()) {
-                    if (section.getValue().isJsonObject() && section.getValue().getAsJsonObject().size() == 0) {
-                        emptySections.add(section.getKey());
-                    }
-                }
-                emptySections.forEach(remaining::remove);
-                strippedPolicy.put(row, remaining);
-            }
-        }
-        if (conflict != null) {
-            marker.setStatus("BLOCKED"); marker.setReason(conflict.substring(0, Math.min(2048, conflict.length())));
-            return marker.getReason();
-        }
-
-        List<MemoryStandardConfigAdapter.ResourceChange> resourceEvents = new ArrayList<>();
-        LinkedHashSet<GlobalConfig> globalRefresh = new LinkedHashSet<>();
-        for (StandardMigrationValue item : planned) {
-            MemoryPolicyVO row = item.policyRow;
-            MemoryStandardConfigAdapter.ChangeSet changes;
-            if ("Global".equals(row.getScope())) {
-                changes = standardConfigs.writeGlobal(em, item.field.path(), item.value);
-            } else {
-                String resourceType = "Host".equals(row.getScope()) ? HostVO.class.getSimpleName() : org.zstack.header.cluster.ClusterVO.class.getSimpleName();
-                changes = standardConfigs.writeOverride(em, row.getResourceUuid(), resourceType, item.field.path(), item.value);
-            }
-            globalRefresh.addAll(changes.refreshAfterCommit()); resourceEvents.addAll(changes.resourceChanges());
-        }
-        for (Map.Entry<MemoryPolicyVO, JsonObject> entry : strippedPolicy.entrySet()) {
-            MemoryPolicyVO row = entry.getKey();
-            if (row.getLegacyPolicy() == null) { row.setLegacyPolicy(row.getPolicy()); }
-            row.setPolicy(entry.getValue().toString());
-        }
-        marker.setStatus("DONE"); marker.setReason(null);
-        registerStandardConfigRefresh(globalRefresh, resourceEvents);
-        return null;
     }
 
     private static MemoryStandardField.Scope scopeOf(String scope) {
@@ -199,53 +70,6 @@ public class MemoryRepository {
         if ("Cluster".equals(scope)) { return MemoryStandardField.Scope.CLUSTER; }
         if ("Host".equals(scope)) { return MemoryStandardField.Scope.HOST; }
         return null;
-    }
-
-    private void registerStandardConfigRefresh(Set<GlobalConfig> globals,
-            List<MemoryStandardConfigAdapter.ResourceChange> resources) {
-        if ((globals == null || globals.isEmpty()) && (resources == null || resources.isEmpty())) { return; }
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-                new org.springframework.transaction.support.TransactionSynchronizationAdapter() {
-                    @Override public void afterCommit() {
-                        if (globals != null) {
-                            for (GlobalConfig config : globals) {
-                                try { org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager,
-                                        config::reloadAndPublishCanonicalUpdateAfterCommit); }
-                                catch (Throwable failure) {
-                                    logger.warn(String.format("committed memory policy update could not refresh global config %s.%s",
-                                            config.getCategory(), config.getName()), failure);
-                                }
-                            }
-                        }
-                        if (resources != null) {
-                            for (MemoryStandardConfigAdapter.ResourceChange change : resources) {
-                                String category = change.config().getCategory();
-                                String name = change.config().getName();
-                                String path;
-                                Object event;
-                                if (change.deleted()) {
-                                    path = s(ResourceConfigCanonicalEvents.DELETE_EVENT_PATH).formatByMap(map(
-                                            e("nodeUuid", Platform.getManagementServerId()), e("category", category), e("name", name)));
-                                    ResourceConfigCanonicalEvents.DeleteEvent deleted = new ResourceConfigCanonicalEvents.DeleteEvent();
-                                    deleted.setOldValue(change.oldValue()); deleted.setResourceUuid(change.resourceUuid());
-                                    deleted.setResourceType(change.resourceType()); event = deleted;
-                                } else {
-                                    path = s(ResourceConfigCanonicalEvents.UPDATE_EVENT_PATH).formatByMap(map(
-                                            e("nodeUuid", Platform.getManagementServerId()), e("category", category), e("name", name)));
-                                    ResourceConfigCanonicalEvents.UpdateEvent updated = new ResourceConfigCanonicalEvents.UpdateEvent();
-                                    updated.setOldValue(change.oldValue()); updated.setResourceUuid(change.resourceUuid());
-                                    updated.setResourceType(change.resourceType()); event = updated;
-                                }
-                                try { org.zstack.core.db.AfterCommitTransactionExecutor.run(transactionManager,
-                                        () -> evtf.fire(path, event)); }
-                                catch (Throwable failure) {
-                                    logger.warn(String.format("committed memory policy update could not publish resource config event %s.%s for %s",
-                                            category, name, change.resourceUuid()), failure);
-                                }
-                            }
-                        }
-                    }
-                });
     }
 
     private MemoryPolicyVO lock(EntityManager em) {
@@ -307,6 +131,12 @@ public class MemoryRepository {
         return host == null ? Collections.emptyList() : Collections.singletonList(host);
     }
 
+    public List<String> connectedHosts() {
+        return transaction(em -> em.createQuery("select h.uuid from HostVO h where h.hypervisorType = :type"
+                        + " and h.status = :status order by h.uuid", String.class)
+                .setParameter("type", "KVM").setParameter("status", HostStatus.Connected).getResultList());
+    }
+
     public List<String> targets(String scope, String resource) {
         return transaction(em -> targets(em, scope, resource));
     }
@@ -339,130 +169,58 @@ public class MemoryRepository {
         return result;
     }
 
-    private static final class StandardMutation {
-        String scope;
-        String resource;
-        final Map<String, Object> values = new LinkedHashMap<>();
-        final List<Object> identity = new ArrayList<>();
+    /** Standard memory configuration is stored by GlobalConfig (no resource) or a Host/Cluster ResourceConfig. */
+    private String standardScope(EntityManager em, String resourceUuid) {
+        if (resourceUuid == null) { return "Global"; }
+        // Only the registry discriminator is needed here. Materializing
+        // JOINED ResourceVO loads every registered resource subtype and
+        // exceeds MariaDB's 61-table join limit in the full product.
+        String resourceType = em.createQuery("select r.resourceType from ResourceVO r where r.uuid = :uuid", String.class)
+                .setParameter("uuid", resourceUuid).setMaxResults(1).getResultList().stream()
+                .filter(Objects::nonNull).findFirst().orElse(null);
+        if (HostVO.class.getSimpleName().equals(resourceType)) { return "Host"; }
+        if (org.zstack.header.cluster.ClusterVO.class.getSimpleName().equals(resourceType)) { return "Cluster"; }
+        throw error("MEMORY_INVALID_SCOPE", "Memory configuration requires a KVM Host or Cluster");
     }
 
-    private StandardMutation standardMutation(EntityManager em, List<ConfigMutation> changes) {
-        StandardMutation result = new StandardMutation();
-        for (ConfigMutation change : changes) {
-            MemoryStandardField field = MemoryStandardField.forConfig(change.getCategory(), change.getName());
-            if (field == null) { continue; }
-            String resource = change.getResourceUuid() == null ? "global" : change.getResourceUuid();
-            String scope = "Global";
-            if (change.getResourceUuid() != null) {
-                // Only the registry discriminator is needed here. Materializing
-                // JOINED ResourceVO loads every registered resource subtype and
-                // exceeds MariaDB's 61-table join limit in the full product.
-                String resourceType = em.createQuery(
-                                "select r.resourceType from ResourceVO r where r.uuid = :uuid", String.class)
-                        .setParameter("uuid", change.getResourceUuid())
-                        .setMaxResults(1).getResultList().stream().filter(Objects::nonNull).findFirst().orElse(null);
-                if (resourceType == null || !Objects.equals(resourceType, change.getResourceType())) {
-                    throw error("MEMORY_INVALID_SCOPE", "The configuration resource no longer exists or changed type");
-                }
-                if (HostVO.class.getSimpleName().equals(resourceType)) { scope = "Host"; }
-                else if (org.zstack.header.cluster.ClusterVO.class.getSimpleName().equals(resourceType)) { scope = "Cluster"; }
-                else { throw error("MEMORY_INVALID_SCOPE", "Memory configuration requires a KVM Host or Cluster"); }
-            }
+    /** Read-only cross-field validation of one standard value before GlobalConfig/ResourceConfig persists it. */
+    public void validateStandardChange(MemoryStandardField field, String resourceUuid, String newValue) {
+        transaction(em -> {
+            String scope = standardScope(em, resourceUuid);
+            String resource = resourceUuid == null ? "global" : resourceUuid;
             if (!field.allows(scopeOf(scope))) {
                 throw error("MEMORY_INVALID_SCOPE", field.path() + " does not support " + scope);
             }
-            if (result.scope != null && (!result.scope.equals(scope) || !result.resource.equals(resource))) {
-                throw error("MEMORY_INVALID_REQUEST", "A standard configuration transaction must address one resource");
-            }
-            if (result.values.containsKey(field.path())) {
-                throw error("MEMORY_INVALID_REQUEST", "Duplicate configuration field " + field.path());
-            }
-            result.scope = scope; result.resource = resource;
-            Object value = change.isDelete() ? null : storedMutationValue(field, change.getNewValue(), scope);
-            if ("Global".equals(scope) && value == null) {
-                value = storedMutationValue(field, field.config().getDefaultValue(), scope);
-            }
-            result.values.put(field.path(), value);
-            result.identity.add(Arrays.asList(field.path(), change.isDelete(), change.getNewValue()));
-        }
-        return result;
+            validateResource(em, scope, resource);
+            Object value = field.isFeatureSwitch() && newValue != null && "none".equalsIgnoreCase(newValue.trim())
+                    ? null : MemoryStandardConfigCodec.decode(field.path(), newValue);
+            try {
+                String candidate = ownPolicy(em, scope, resource, Collections.singleton(field.path()));
+                candidate = MemoryStandardPolicy.set(candidate, field.path(), value);
+                validateConfigurationCandidate(em, scope, resource, candidate);
+            } catch (IllegalArgumentException invalid) { throw translatePolicyRuleFailure(invalid); }
+            return null;
+        });
     }
 
-    private Object storedMutationValue(MemoryStandardField field, String value, String scope) {
-        if (field.isFeatureSwitch() && value != null
-                && "none".equalsIgnoreCase(value.trim())) {
-            return MemoryStandardConfigAdapter.OverrideMode.UNMANAGED;
-        }
-        if (!"Global".equals(scope) && value != null && value.trim().isEmpty()) {
-            throw error("MEMORY_INVALID_POLICY", "Stored memory configuration is empty; refusing to inherit");
-        }
-        return MemoryStandardConfigCodec.decode(field.path(), value);
-    }
-
-    /** A standard write/delete consumes the compatibility value so deletion cannot resurrect it. */
-    private String scrubCompatibilityFields(EntityManager em, String scope, String resource,
-            List<ConfigMutation> changes) {
-        MemoryPolicyVO row = em.find(MemoryPolicyVO.class, scope + ":" + resource, LockModeType.PESSIMISTIC_WRITE);
-        String compatibility = row == null ? policy(em, scope, resource).getPolicy() : row.getPolicy();
-        for (ConfigMutation change : changes) {
-            MemoryStandardField field = MemoryStandardField.forConfig(change.getCategory(), change.getName());
-            if (field != null) { compatibility = MemoryStandardConfigCodec.put(compatibility, field.path(), null); }
-        }
-        return compatibility;
-    }
-
-    /** Actual-commit hook only: all scalar validators/preview remain free of DB writes. */
-    public void prepareStandardMutations(EntityManager em, List<ConfigMutation> changes, ConfigMutationContext context) {
-        StandardMutation mutation = standardMutation(em, changes);
-        if (mutation.scope == null) { return; }
-        lock(em);
-        validateResource(em, mutation.scope, mutation.resource);
-        if (context == null || context.getRequestId() == null || context.getActor() == null) {
-            throw error("MEMORY_INVALID_REQUEST", "Configuration mutation identity is required");
-        }
-        String key = standardRequestKey(context);
-        if (!em.createQuery("select t.uuid from MemoryTaskVO t where t.requestKey = :key", String.class)
-                .setParameter("key", key).setMaxResults(1).getResultList().isEmpty()
-                || !em.createQuery("select r.taskUuid from MemoryTaskIdempotencyReceiptVO r where r.requestKey = :key", String.class)
-                .setParameter("key", key).setMaxResults(1).getResultList().isEmpty()) {
-            // A replay must not overwrite a later configuration, even if the old
-            // operation was already compacted to an idempotency receipt.
-            throw error("MEMORY_IDEMPOTENCY_CONFLICT", "This configuration request was already accepted; query its task instead of replaying it");
-        }
-        try {
-            Set<String> replacedFields = new HashSet<>(mutation.values.keySet());
-            String candidate = ownPolicy(em, mutation.scope, mutation.resource, replacedFields);
-            for (Map.Entry<String, Object> value : mutation.values.entrySet()) {
-                candidate = MemoryStandardPolicy.set(candidate, value.getKey(),
-                        MemoryStandardConfigAdapter.isUnmanaged(value.getValue()) ? null : value.getValue());
-            }
-            validateConfigurationCandidate(em, mutation.scope, mutation.resource, candidate);
-        } catch (IllegalArgumentException invalid) { throw translatePolicyRuleFailure(invalid); }
-    }
-
-    /** Shared by standard writes and compatibility policy writes, before either persists values. */
+    /** Shared by standard writes and backend preparation, before either persists values. */
     private void validateConfigurationCandidate(EntityManager em, String scope, String resource, String candidate) {
         mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource, candidate);
-        // A parent's final candidate must not invalidate surviving child overrides,
-        // even when a compatibility client selected only a subset for immediate apply.
+        // A parent's final candidate must not invalidate surviving child overrides.
         for (String host : targets(em, scope, resource)) {
             effectiveHostWithCandidate(em, host, scope, resource, candidate);
         }
     }
 
-    private static String standardRequestKey(ConfigMutationContext context) {
-        return context.getActor() + ":standard-config:" + context.getRequestId();
-    }
-
-    /** Same EntityManager/transaction as the standard rows; no network dispatch here. */
-    public void completeStandardMutations(EntityManager em, List<ConfigMutation> changes, ConfigMutationContext context) {
-        StandardMutation mutation = standardMutation(em, changes);
-        if (mutation.scope == null) { return; }
-        String compatibility = scrubCompatibilityFields(em, mutation.scope, mutation.resource, changes);
-        commitConfiguration(em, mutation.scope, mutation.resource, compatibility,
-                targets(em, mutation.scope, mutation.resource), context.getActor(),
-                standardRequestKey(context), digest(MemoryPolicyRules.canonicalRequest(Arrays.asList(
-                        mutation.scope, mutation.resource, mutation.identity))), null, "apply", false);
+    /** Runs after a standard GlobalConfig/ResourceConfig change was committed; queues per-Host application. */
+    public void standardConfigurationChanged(String resourceUuid) {
+        transaction(em -> {
+            String scope = standardScope(em, resourceUuid);
+            String resource = resourceUuid == null ? "global" : resourceUuid;
+            commitConfiguration(em, scope, resource, null, targets(em, scope, resource),
+                    "system:standard-config", null, null, "apply", false);
+            return null;
+        });
     }
 
     /**
@@ -473,7 +231,7 @@ public class MemoryRepository {
      */
     private MemoryTaskInventory commitConfiguration(EntityManager em, String scope, String resource,
             String specializedPolicy, List<String> hosts, String actor, String requestKey,
-            String requestHash, String targetSnapshotHash, String action, boolean compatibility) {
+            String requestHash, String action, boolean compatibility) {
         lock(em);
         em.flush();
         bumpScopeRevision(em, scope, resource);
@@ -482,7 +240,6 @@ public class MemoryRepository {
         MemoryTaskVO parent = configurationTask(scope, resource, action, null, null,
                 desired.getRevision(), "{}", actor);
         parent.setRequestKey(requestKey); parent.setRequestHash(requestHash);
-        parent.setTargetSnapshotHash(targetSnapshotHash);
         parent.setStatus("Succeeded");
         if (!compatibility) {
             parent.setReason("Standard configuration committed; inspect per-Host policy application status");
@@ -741,19 +498,6 @@ public class MemoryRepository {
         task.setStatus("Queued"); return task;
     }
 
-    public void rejectGenericStandardGlobalWrite(String category, String name, String newValue) {
-        transaction(em -> {
-            List<String> persisted = em.createQuery("select g.value from GlobalConfigVO g where g.category = :category and g.name = :name", String.class)
-                    .setParameter("category", category).setParameter("name", name).getResultList();
-            if (!persisted.isEmpty() && Objects.equals(persisted.get(0), newValue)) { return null; }
-            throw error("MEMORY_INVALID_ACTION", "Memory scalar settings must be changed through the atomic memory policy API");
-        });
-    }
-
-    public void rejectGenericStandardResourceWrite() {
-        throw error("MEMORY_INVALID_ACTION", "Memory scalar settings must be changed through the atomic memory policy API");
-    }
-
     private void bumpScopeRevision(EntityManager em, String scope, String resource) {
         String uuid = scope + ":" + resource;
         MemoryPolicyVO row = em.find(MemoryPolicyVO.class, uuid, LockModeType.PESSIMISTIC_WRITE);
@@ -859,7 +603,7 @@ public class MemoryRepository {
     /** Capture policy intent before migration; transient qualification never becomes a sticky exclusion. */
     public void captureMigrationParticipation(String vm, String source, String target) {
         transaction(em -> {
-            lock(em); validateResource(em, "VM", vm);
+            validateResource(em, "VM", vm);
             if (retainedExclusion(em, vm) != null) { return null; }
             MemoryPolicyConfig own = MemoryPolicyRules.decode(policy(em, "VM", vm).getPolicy());
             MemoryPolicyConfig host = MemoryPolicyRules.decode(effective(em, "Host", source));
@@ -908,7 +652,6 @@ public class MemoryRepository {
 
     public void abortMigrationParticipation(String vm) {
         transaction(em -> {
-            lock(em);
             MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, vm);
             if (exclusion != null && !exclusion.retained) { em.remove(exclusion); }
             return null;
@@ -917,7 +660,6 @@ public class MemoryRepository {
 
     public String vmParticipation(String vm) {
         return transaction(em -> {
-            lock(em);
             if (retainedExclusion(em, vm) != null) { return "deny"; }
             String participation = MemoryPolicyRules.decode(policy(em, "VM", vm).getPolicy()).participation;
             return participation == null ? "inherit" : participation;
@@ -1106,7 +848,6 @@ public class MemoryRepository {
     public MemoryPolicyInventory getPolicy(String requestedScope, String resource) {
         return transaction(em -> {
             String scope = resolvePolicyScope(em, requestedScope, resource);
-            if ("VM".equals(scope)) { lock(em); }
             MemoryPolicyInventory result = policy(em, scope, resource).toInventory();
             result.setPolicy(ownPolicy(em, scope, resource));
             result.setEffectivePolicy(effective(em, scope, resource));
@@ -1119,70 +860,8 @@ public class MemoryRepository {
         });
     }
 
-    public MemoryPolicyInventory preview(String scope, String resource, String patch) {
-        return preview(scope, resource, patch, "apply", null);
-    }
-
-    public MemoryPolicyInventory preview(String requestedScope, String resource, String patch, String action, List<String> clearOverrideFields) {
-        return transaction(em -> {
-            String scope = resolvePolicyScope(em, requestedScope, resource);
-            String effectiveAction = action == null ? "apply" : action;
-            if (!"apply".equals(effectiveAction) && !"clearOverride".equals(effectiveAction)) {
-                throw new IllegalArgumentException("action must be apply or clearOverride");
-            }
-            if ("clearOverride".equals(effectiveAction) && "Global".equals(scope)) {
-                throw new IllegalArgumentException("Global policy has no parent override to clear");
-            }
-            MemoryPolicyVO current = policy(em, scope, resource);
-            MemoryPolicyInventory result = current.toInventory();
-            String previewPolicy = candidateOwnPolicy(em, scope, resource, patch, effectiveAction, clearOverrideFields);
-            result.setPolicy(previewPolicy);
-            result.setEffectivePolicy("VM".equals(scope) ? result.getPolicy()
-                    : mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource,
-                        result.getPolicy()));
-            Set<String> previewClearedFields = "clearOverride".equals(effectiveAction)
-                    && clearOverrideFields != null ? new HashSet<>(clearOverrideFields)
-                    : Collections.<String>emptySet();
-            describeSources(em, scope, resource, result, previewClearedFields,
-                    "apply".equals(effectiveAction) ? patch : null);
-            return result;
-        });
-    }
-
-    /** Preview parent-scope changes after applying each Host's explicit overrides. */
-    Map<String, MemoryHostPolicyPreviewSnapshot> previewHostPolicies(String scope, String resource,
-            String patch, String action, List<String> clearOverrideFields, List<String> hosts) {
-        return transaction(em -> {
-            validateResource(em, scope, resource);
-            String ownCandidate = candidateOwnPolicy(em, scope, resource, patch, action, clearOverrideFields);
-            Map<String, MemoryHostPolicyPreviewSnapshot> result = new LinkedHashMap<>();
-            for (String host : hosts) {
-                result.put(host, new MemoryHostPolicyPreviewSnapshot(
-                        effective(em, "Host", host), effectiveHostWithCandidate(em, host, scope, resource, ownCandidate),
-                        em.find(MemoryStateVO.class, host)));
-            }
-            return result;
-        });
-    }
-
-    private String candidateOwnPolicy(EntityManager em, String scope, String resource,
-            String patch, String action, List<String> clearOverrideFields) {
-        String effectiveAction = action == null ? "apply" : action;
-        MemoryPolicyVO current = policy(em, scope, resource);
-        String specialized = current.getPolicy();
-        if ("clearOverride".equals(effectiveAction)) {
-            if ("Global".equals(scope)) { throw new IllegalArgumentException("Global policy has no parent override to clear"); }
-            MemoryStandardPolicy.ClearParts clear = MemoryStandardPolicy.splitClearPaths(clearOverrideFields, scope);
-            String standard = standardOwnPolicy(em, scope, resource, new HashSet<>(clear.standardPaths));
-            if (!clear.specializedPaths.isEmpty()) {
-                specialized = MemoryPolicyRules.clearFields(specialized, clear.specializedPaths, scope);
-            }
-            for (String path : clear.standardPaths) {
-                standard = MemoryStandardPolicy.set(standard, path, null);
-                specialized = MemoryStandardConfigCodec.put(specialized, path, null);
-            }
-            return MemoryStandardPolicy.combine(specialized, standard);
-        }
+    private String candidateOwnPolicy(EntityManager em, String scope, String resource, String patch) {
+        String specialized = policy(em, scope, resource).getPolicy();
         String standard = standardOwnPolicy(em, scope, resource);
         MemoryStandardPolicy.Parts parts = MemoryStandardPolicy.split(patch, scope);
         specialized = MemoryPolicyRules.mergeOverridesOnly(specialized, parts.specialized, scope);
@@ -1210,23 +889,6 @@ public class MemoryRepository {
         return mergeEffectiveLayer(em, result, "Host", host, hostPolicy);
     }
 
-    private void checkCapabilityAdmission(EntityManager em, String scope, String resource,
-            String candidateOwn, List<String> hosts) {
-        for (String host : hosts) {
-            String before = effective(em, "Host", host);
-            String after = effectiveHostWithCandidate(em, host, scope, resource, candidateOwn);
-            Map<String, String> changed = MemoryPolicyAdmissionRules.changedFields(before, after);
-            MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
-            Map<String, String> blocked = MemoryPolicyAdmissionRules.blockedFields(
-                    changed, state, System.currentTimeMillis(), after);
-            if (!blocked.isEmpty()) {
-                Map.Entry<String, String> first = blocked.entrySet().iterator().next();
-                throw error("MEMORY_CAPABILITY_PRECHECK",
-                        "Host " + host + " cannot apply " + first.getKey() + ": " + first.getValue());
-            }
-        }
-    }
-
     public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
         return submit(msg, (MemoryAgentResponse) null);
     }
@@ -1235,21 +897,15 @@ public class MemoryRepository {
         // Normalize before action validation and request hashing so omission and
         // the equivalent old explicit scope share one idempotency identity.
         msg.setScope(transaction(em -> resolvePolicyScope(em, msg.getScope(), msg.getResourceUuid())));
-        return submit(msg, null, null, backendObservation);
+        return submit(msg, null, backendObservation);
     }
 
-    private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, String targetSnapshotHash) {
-        return submit(msg, targetSnapshotHash, null, null);
-    }
-
-    private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, String targetSnapshotHash,
+    private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg,
                                        String internalActor, MemoryAgentResponse backendObservation) {
         MemoryBackendPreparationRules.validate(msg);
         MemoryZramPoolPreparationRules.validate(msg);
         MemoryUncertainRecoveryRules.validate(msg);
-        // The internal assembled-commit call has already validated the public
-        // shard envelope and intentionally carries its metadata into apply.
-        if (targetSnapshotHash == null) { MemoryPolicyActionParameters.validate(msg); }
+        MemoryPolicyActionParameters.validate(msg);
         boolean recovery = MemoryUncertainRecoveryRules.ACTION.equals(msg.getAction());
         boolean preparation = MemoryBackendPreparationRules.ACTION.equals(msg.getAction()) ||
                 MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction());
@@ -1260,12 +916,9 @@ public class MemoryRepository {
                 ? msg.getSession().getAccountUuid() + ":" + String.valueOf(msg.getSession().getUserUuid())
                 : internalActor;
         String key = actor + ":" + msg.getClientRequestUuid();
-        if ("stageTargetShard".equals(msg.getAction())) { return stageTargetShard(msg, actor); }
-        if ("cancelTargetShards".equals(msg.getAction())) { return cancelTargetShards(msg, actor); }
-        if ("commitTargetShards".equals(msg.getAction())) { return commitTargetShards(msg, actor); }
         List<Object> requestIdentity = new ArrayList<>(Arrays.asList(msg.getScope(), msg.getResourceUuid(),
                 msg.getAction(), msg.getExpectedRevision(), msg.getExpectedGlobalRevision(), msg.getExpectedSourceRevisions(),
-                msg.getClearOverrideFields(), msg.getExpectedInstanceGeneration(), msg.getTargetHostUuids(),
+                msg.getExpectedInstanceGeneration(), msg.getTargetHostUuids(),
                 JSONObjectUtil.toObject(msg.getPolicy(), Map.class)));
         if (preparation) {
             requestIdentity.add(msg.getBackendPreparation()); requestIdentity.add(msg.getPoolPreparation());
@@ -1319,28 +972,13 @@ public class MemoryRepository {
             if ("resume".equals(msg.getAction()) && msg.getExpectedControlOperationUuid() == null) {
                 throw error("MEMORY_CONTROL_OPERATION_REQUIRED", "Resume requires the active control operation UUID");
             }
-            if (!"VM".equals(msg.getScope())
-                    && ("apply".equals(msg.getAction()) || "clearOverride".equals(msg.getAction()))) {
-                for (String host : hosts) {
-                    MemoryStateVO paused = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
-                    if (paused == null) { continue; }
-                    String defer = configurationControlDeferReason(em, paused);
-                    if (defer != null) {
-                        throw error("MEMORY_CONTROL_PAUSED_RESUME_REQUIRED",
-                                ("HOST_DRAIN_MAINTENANCE_REQUIRED".equals(defer)
-                                        ? "Complete explicit drained-pool maintenance before changing policy: "
-                                        : "Resume the Host control operation before changing policy: ") + host);
-                    }
-                }
-            }
             MemoryPolicyVO desired = policy(em, msg.getScope(), msg.getResourceUuid());
             if (desired.getRevision() != msg.getExpectedRevision()) {
                 throw error("MEMORY_REVISION_CONFLICT", "Policy has changed; refresh before applying");
             }
-            boolean update = "apply".equals(msg.getAction()) || "clearOverride".equals(msg.getAction());
-            if (update || preparation || msg.getExpectedSourceRevisions() != null
+            if (preparation || msg.getExpectedSourceRevisions() != null
                     || msg.getExpectedGlobalRevision() != null) { checkSources(em, msg); }
-            if (Arrays.asList("apply", "clearOverride", "pause", "drain").contains(msg.getAction())
+            if (Arrays.asList("pause", "drain").contains(msg.getAction())
                     && msg.getExpectedControlOperationUuid() != null) {
                 for (String host : hosts) {
                     MemoryStateVO control = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
@@ -1349,83 +987,12 @@ public class MemoryRepository {
                     }
                 }
             }
-            if ("clearOverride".equals(msg.getAction()) && !MemoryTaskRules.isSafetyAction("pause", msg.getPolicy())) {
-                throw error("MEMORY_INVALID_ACTION", "clearOverride cannot contain configuration");
-            }
-            if (!update && !preparation && !recovery && !MemoryTaskRules.isSafetyAction(msg.getAction(), msg.getPolicy())) {
+            if (!preparation && !recovery && !MemoryTaskRules.isSafetyAction(msg.getAction(), msg.getPolicy())) {
                 throw error("MEMORY_INVALID_ACTION", "Safety actions cannot contain configuration");
-            }
-            if (update) {
-                String next = desired.getPolicy();
-                Map<String, Object> standardChanges = new LinkedHashMap<>();
-                if ("clearOverride".equals(msg.getAction())) {
-                    MemoryStandardPolicy.ClearParts clear = MemoryStandardPolicy.splitClearPaths(msg.getClearOverrideFields(), msg.getScope());
-                    if (!clear.specializedPaths.isEmpty()) {
-                        next = MemoryPolicyRules.clearFields(next, clear.specializedPaths, msg.getScope());
-                    }
-                    for (String path : clear.standardPaths) {
-                        standardChanges.put(path, null);
-                        next = MemoryStandardConfigCodec.put(next, path, null);
-                    }
-                } else {
-                    MemoryStandardPolicy.Parts parts = MemoryStandardPolicy.split(msg.getPolicy(), msg.getScope());
-                    next = MemoryPolicyRules.mergeOverridesOnly(next, parts.specialized, msg.getScope());
-                    standardChanges.putAll(parts.standardValues);
-                    for (String path : parts.standardValues.keySet()) {
-                        next = MemoryStandardConfigCodec.put(next, path, null);
-                    }
-                }
-                String candidateOwn = candidateOwnPolicy(em, msg.getScope(), msg.getResourceUuid(),
-                        msg.getPolicy(), msg.getAction(), msg.getClearOverrideFields());
-                String candidateEffective = "VM".equals(msg.getScope()) ? candidateOwn
-                        : mergeEffectiveLayer(em, parentEffective(em, msg.getScope(), msg.getResourceUuid()),
-                            msg.getScope(), msg.getResourceUuid(), candidateOwn);
-                if (!"VM".equals(msg.getScope())) {
-                    validateConfigurationCandidate(em, msg.getScope(), msg.getResourceUuid(), candidateOwn);
-                    checkCapabilityAdmission(em, msg.getScope(), msg.getResourceUuid(), candidateOwn, hosts);
-                }
-                Set<GlobalConfig> refreshGlobal = new LinkedHashSet<>();
-                List<MemoryStandardConfigAdapter.ResourceChange> refreshResources = new ArrayList<>();
-                if (!standardChanges.isEmpty()) {
-                    if ("Global".equals(msg.getScope())) {
-                        for (Map.Entry<String, Object> change : standardChanges.entrySet()) {
-                            MemoryStandardConfigAdapter.ChangeSet result = standardConfigs.writeGlobal(em, change.getKey(), change.getValue());
-                            refreshGlobal.addAll(result.refreshAfterCommit());
-                        }
-                    } else {
-                        String resourceType = "Host".equals(msg.getScope()) ? HostVO.class.getSimpleName()
-                                : org.zstack.header.cluster.ClusterVO.class.getSimpleName();
-                        MemoryStandardConfigAdapter.ChangeSet result = standardConfigs.writeOverrides(
-                                em, msg.getResourceUuid(), resourceType, standardChanges);
-                        refreshGlobal.addAll(result.refreshAfterCommit()); refreshResources.addAll(result.resourceChanges());
-                    }
-                }
-                if (!"VM".equals(msg.getScope())) {
-                    registerStandardConfigRefresh(refreshGlobal, refreshResources);
-                    return commitConfiguration(em, msg.getScope(), msg.getResourceUuid(), next, hosts,
-                            actor, key, hash, targetSnapshotHash, msg.getAction(), true);
-                }
-                desired.setPolicy(next);
-                desired.setRevision(desired.getRevision() + 1);
-                boolean explicitParticipation = "clearOverride".equals(msg.getAction())
-                        ? msg.getClearOverrideFields() == null || msg.getClearOverrideFields().isEmpty()
-                            || msg.getClearOverrideFields().contains("participation")
-                        : MemoryPolicyRules.decode(msg.getPolicy()).participation != null;
-                if ("VM".equals(msg.getScope()) && explicitParticipation) {
-                    MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, msg.getResourceUuid());
-                    if (exclusion != null) { em.remove(exclusion); }
-                } else if ("VM".equals(msg.getScope())) {
-                    MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, msg.getResourceUuid());
-                    if (exclusion != null) { exclusion.vmPolicyRevision = desired.getRevision(); }
-                }
-                em.merge(desired);
-                em.flush();
-                registerStandardConfigRefresh(refreshGlobal, refreshResources);
             }
             MemoryTaskVO parent = task(msg, null, null, desired.getRevision(), "{}", actor);
             parent.setRequestKey(key);
             parent.setRequestHash(hash);
-            parent.setTargetSnapshotHash(targetSnapshotHash);
             parent.setStatus(hosts.isEmpty() ? "Succeeded" : "Queued");
             parent.setReason(null);
             bumpQueryVersion(em, "task");
@@ -1472,7 +1039,7 @@ public class MemoryRepository {
                 }
                 boolean vmOnly = "VM".equals(msg.getScope());
                 long revision = vmOnly ? desired.getRevision()
-                        : update ? state.getDesiredRevision() + 1 : state.getDesiredRevision();
+                        : state.getDesiredRevision();
                 MemoryTaskVO child = task(msg, parent.getUuid(), host, revision,
                         recovery ? JSONObjectUtil.toJsonString(msg.getRecovery())
                                 : preparation ? JSONObjectUtil.toJsonString(MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction())
@@ -2558,8 +2125,10 @@ public class MemoryRepository {
                 Object value = "Global".equals(source.getScope()) ? standardConfigs.readGlobalOwn(em, field.path())
                         : standardConfigs.readOverrideOwn(em, field.path(), source.getResourceUuid());
                 if (value == null || MemoryStandardConfigAdapter.isUnmanaged(value)) { continue; }
+                // A default-off feature switch is not intent to take over a Host;
+                // a default-on switch (new cloud) is.
                 if ("Global".equals(source.getScope()) && standardConfigs.globalIsSchemaDefault(em, field.path())
-                        && !field.isFeatureSwitch()) { continue; }
+                        && (!field.isFeatureSwitch() || Boolean.FALSE.equals(value))) { continue; }
                 return true;
             }
         }
@@ -2568,140 +2137,6 @@ public class MemoryRepository {
 
     private static boolean isMaintenancePreparationAction(String action) {
         return "prepareWritebackBackend".equals(action) || "prepareZramPool".equals(action);
-    }
-
-    private List<String> shardTargets(APIUpdateMemoryPolicyMsg msg) {
-        List<String> targets = msg.getTargetVmUuids() != null ? msg.getTargetVmUuids() : msg.getTargetHostUuids();
-        if (targets == null) { throw error("MEMORY_TARGET_SNAPSHOT_INCOMPLETE", "Target shard is missing"); }
-        return new ArrayList<>(targets);
-    }
-
-    private String shardKey(APIUpdateMemoryPolicyMsg msg, String actor) {
-        return actor + ":" + msg.getClientRequestUuid() + ":" + msg.getScope() + ":" + msg.getResourceUuid();
-    }
-
-    private MemoryTaskInventory stagedInventory(APIUpdateMemoryPolicyMsg msg, String status, String reason) {
-        MemoryTaskInventory result = new MemoryTaskInventory();
-        result.setUuid(msg.getClientRequestUuid()); result.setScope(msg.getScope());
-        result.setResourceUuid(msg.getResourceUuid()); result.setAction(msg.getAction());
-        result.setStatus(status); result.setReason(reason); return result;
-    }
-
-    private MemoryTaskInventory stageTargetShard(APIUpdateMemoryPolicyMsg msg, String actor) {
-        if (msg.getTargetShardIndex() == null || msg.getTargetShardCount() == null ||
-                msg.getTargetTotalCount() == null || msg.getTargetDigest() == null ||
-                msg.getTargetSnapshotGeneration() == null || msg.getExpectedRevision() < 0 ||
-                msg.getTargetShardCount() <= 0 || msg.getTargetShardIndex() < 0 ||
-                msg.getTargetShardIndex() >= msg.getTargetShardCount()) {
-            throw error("MEMORY_TARGET_SNAPSHOT_INCOMPLETE", "Shard metadata is required");
-        }
-        List<String> targets = shardTargets(msg);
-        if (targets.isEmpty()) {
-            throw error("MEMORY_TARGET_SNAPSHOT_INCOMPLETE", "Target shard must not be empty");
-        }
-        if (new HashSet<>(targets).size() != targets.size()) {
-            throw error("MEMORY_TARGET_SNAPSHOT_CONFLICT", "Target shard contains duplicates");
-        }
-        String key = shardKey(msg, actor);
-        String hash = digest(MemoryPolicyRules.canonicalRequest(Arrays.asList(
-                msg.getScope(), msg.getResourceUuid(), msg.getExpectedRevision(),
-                msg.getTargetSnapshotGeneration(), msg.getTargetShardIndex(),
-                msg.getTargetShardCount(), msg.getTargetTotalCount(), msg.getTargetDigest(), targets)));
-        return transaction(em -> {
-            lock(em); validateResource(em, msg.getScope(), msg.getResourceUuid());
-            expireTargetShards(em, System.currentTimeMillis());
-            List<MemoryTargetShardVO> same = em.createQuery("from MemoryTargetShardVO s where s.requestKey = :key and s.shardIndex = :idx", MemoryTargetShardVO.class)
-                    .setParameter("key", key).setParameter("idx", msg.getTargetShardIndex()).getResultList();
-            if (!same.isEmpty()) {
-                if (!hash.equals(same.get(0).getRequestHash())) {
-                    throw error("MEMORY_TARGET_SNAPSHOT_CONFLICT", "Shard replay differs from the staged request");
-                }
-                return stagedInventory(msg, "Staged", "idempotent shard replay");
-            }
-            MemoryTargetShardVO row = new MemoryTargetShardVO();
-            row.setUuid(UUID.randomUUID().toString().replace("-", "")); row.setRequestKey(key);
-            row.setScope(msg.getScope()); row.setResourceUuid(msg.getResourceUuid());
-            row.setShardIndex(msg.getTargetShardIndex()); row.setShardCount(msg.getTargetShardCount());
-            row.setTotalCount(msg.getTargetTotalCount()); row.setDigest(msg.getTargetDigest());
-            row.setSnapshotGeneration(msg.getTargetSnapshotGeneration()); row.setExpectedRevision(msg.getExpectedRevision());
-            row.setTargets(JSONObjectUtil.toJsonString(targets)); row.setRequestHash(hash);
-            row.setExpiresAt(System.currentTimeMillis() + TARGET_SHARD_TTL_MS); em.persist(row); em.flush();
-            return stagedInventory(msg, "Staged", "target shard accepted");
-        });
-    }
-
-    private MemoryTaskInventory cancelTargetShards(APIUpdateMemoryPolicyMsg msg, String actor) {
-        String key = shardKey(msg, actor);
-        return transaction(em -> {
-            lock(em); List<MemoryTargetShardVO> rows = em.createQuery("from MemoryTargetShardVO s where s.requestKey = :key", MemoryTargetShardVO.class)
-                    .setParameter("key", key).getResultList();
-            validateResource(em, msg.getScope(), msg.getResourceUuid());
-            if (rows.stream().anyMatch(row -> row.getExpectedRevision() != msg.getExpectedRevision())) {
-                throw error("MEMORY_TARGET_SNAPSHOT_CONFLICT", "Cancel differs from staged revision");
-            }
-            rows.forEach(em::remove); em.flush();
-            return stagedInventory(msg, "Cancelled", "target staging cancelled");
-        });
-    }
-
-    private MemoryTaskInventory commitTargetShards(APIUpdateMemoryPolicyMsg msg, String actor) {
-        if (msg.getTargetSnapshotGeneration() == null || msg.getTargetDigest() == null
-                || msg.getTargetTotalCount() == null || msg.getTargetShardCount() == null) {
-            throw error("MEMORY_TARGET_SNAPSHOT_INCOMPLETE", "Complete snapshot metadata is required at commit");
-        }
-        String commitHash = digest(MemoryPolicyRules.canonicalRequest(Arrays.asList(
-                msg.getScope(), msg.getResourceUuid(), msg.getExpectedRevision(), msg.getExpectedGlobalRevision(),
-                msg.getExpectedSourceRevisions(), msg.getTargetSnapshotGeneration(), msg.getTargetDigest(),
-                msg.getTargetTotalCount(), msg.getTargetShardCount(), msg.getTargetHostUuids(),
-                JSONObjectUtil.toObject(msg.getPolicy(), Map.class))));
-        MemoryTaskInventory previous = transaction(em -> {
-            lock(em);
-            validateResource(em, msg.getScope(), msg.getResourceUuid());
-            List<MemoryTaskVO> rows = em.createQuery("from MemoryTaskVO t where t.requestKey = :key", MemoryTaskVO.class)
-                    .setParameter("key", actor + ":" + msg.getClientRequestUuid()).getResultList();
-            if (rows.isEmpty()) { return null; }
-            if (!commitHash.equals(rows.get(0).getTargetSnapshotHash())) {
-                throw error("MEMORY_IDEMPOTENCY_CONFLICT", "Target commit UUID was already used with different parameters");
-            }
-            return rows.get(0).toInventory();
-        });
-        if (previous != null) { return previous; }
-        String key = shardKey(msg, actor);
-        List<String> complete = transaction(em -> {
-            lock(em); validateResource(em, msg.getScope(), msg.getResourceUuid());
-            expireTargetShards(em, System.currentTimeMillis());
-            List<MemoryTargetShardVO> rows = em.createQuery("from MemoryTargetShardVO s where s.requestKey = :key order by s.shardIndex", MemoryTargetShardVO.class)
-                    .setParameter("key", key).getResultList();
-            if (rows.isEmpty()) { throw error("MEMORY_TARGET_SNAPSHOT_INCOMPLETE", "No target shards staged"); }
-            Map<Integer, List<String>> parts = new LinkedHashMap<>(); MemoryTargetShardVO first = rows.get(0);
-            if (msg.getExpectedRevision() != first.getExpectedRevision()
-                    || !msg.getTargetDigest().equals(first.getDigest())
-                    || msg.getTargetTotalCount() != first.getTotalCount()
-                    || msg.getTargetShardCount() != first.getShardCount()) {
-                throw error("MEMORY_TARGET_SNAPSHOT_CONFLICT", "Commit differs from staged revision, count, or digest");
-            }
-            for (MemoryTargetShardVO row : rows) {
-                if (row.getExpectedRevision() != first.getExpectedRevision() || row.getShardCount() != first.getShardCount()
-                        || row.getTotalCount() != first.getTotalCount() || !row.getDigest().equals(first.getDigest())
-                        || !row.getSnapshotGeneration().equals(first.getSnapshotGeneration())) {
-                    throw error("MEMORY_TARGET_SNAPSHOT_CONFLICT", "Target shard metadata differs");
-                }
-                parts.put(row.getShardIndex(), JSONObjectUtil.toObject(row.getTargets(), List.class));
-            }
-            return MemoryTargetShardAssembler.assemble(first.getSnapshotGeneration(), msg.getTargetSnapshotGeneration(),
-                    (int) first.getExpectedRevision(), first.getTotalCount(), first.getDigest(), parts, first.getShardCount());
-        });
-        String nextPolicy = policyWithSelectedVms(msg.getPolicy(), complete);
-        String originalPolicy = msg.getPolicy(); List<String> originalTargets = msg.getTargetVmUuids();
-        MemoryTaskInventory result;
-        try {
-            msg.setPolicy(nextPolicy); msg.setTargetVmUuids(null); msg.setAction("apply");
-            result = submit(msg, commitHash);
-        } finally {
-            msg.setPolicy(originalPolicy); msg.setTargetVmUuids(originalTargets); msg.setAction("commitTargetShards");
-        }
-        transaction(em -> { em.createQuery("delete from MemoryTargetShardVO s where s.requestKey = :key").setParameter("key", key).executeUpdate(); return null; });
-        return result;
     }
 
     /** Accept both the immediate Agent acknowledgement and the periodic
@@ -2797,17 +2232,6 @@ public class MemoryRepository {
             }
         }
         return null;
-    }
-
-    private static String policyWithSelectedVms(String policy, List<String> targets) {
-        JsonObject root = new JsonParser().parse(policy == null ? "{}" : policy).getAsJsonObject();
-        JsonObject zram = root.has("zram") && root.get("zram").isJsonObject() ? root.getAsJsonObject("zram") : new JsonObject();
-        JsonArray selected = new JsonArray(); targets.forEach(selected::add); zram.add("selectedVmUuids", selected); zram.addProperty("selectionMode", "list"); root.add("zram", zram);
-        return root.toString();
-    }
-
-    private void expireTargetShards(EntityManager em, long now) {
-        em.createQuery("delete from MemoryTargetShardVO s where s.expiresAt < :now").setParameter("now", now).executeUpdate();
     }
 
     private MemoryTaskVO task(APIUpdateMemoryPolicyMsg msg, String parent, String host, long revision,
@@ -3234,7 +2658,7 @@ public class MemoryRepository {
                 // standard values with this receipt and the next task. Keep
                 // adapter failures outside the proof-to-Unknown catch so the
                 // whole transaction rolls back instead of saving a partial bind.
-                MemoryStandardConfigAdapter.ChangeSet saved = standardConfigs.writeOverrides(
+                standardConfigs.writeOverrides(
                         em, host.getHostUuid(), HostVO.class.getSimpleName(), preparedBackendConfig);
                 if (Boolean.FALSE.equals(MemoryStandardConfigCodec.get(
                         effective(em, "Host", host.getHostUuid()), "zram.enabled"))) {
@@ -3249,7 +2673,6 @@ public class MemoryRepository {
                     host.setAppliedPolicy(applied);
                 }
                 bumpScopeRevision(em, "Host", host.getHostUuid());
-                registerStandardConfigRefresh(saved.refreshAfterCommit(), saved.resourceChanges());
             }
             bumpQueryVersion(em, "task");
             // A proof is only actionable for the currently admitted transition.
@@ -3536,7 +2959,7 @@ public class MemoryRepository {
             setJsonPath(binding, "writeback.backendResourceUuid", new com.google.gson.JsonPrimitive(resourceUuid));
             setJsonPath(binding, "writeback.backendCapacityBytes", new com.google.gson.JsonPrimitive(capacityBytes));
             validateConfigurationCandidate(em, "Host", host.getHostUuid(), candidateOwnPolicy(
-                    em, "Host", host.getHostUuid(), binding.toString(), "apply", null));
+                    em, "Host", host.getHostUuid(), binding.toString()));
             setJsonPath(target, "writeback.backendResourceUuid", jsonPath(binding, "writeback.backendResourceUuid"));
             setJsonPath(target, "writeback.backendCapacityBytes", jsonPath(binding, "writeback.backendCapacityBytes"));
             if (retainDisabled) {
@@ -4496,13 +3919,6 @@ public class MemoryRepository {
                 throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid + " is not a root with a closed child set");
             }
 
-            // Snapshot commits have a separate replay contract keyed by targetSnapshotHash.
-            // Until that receipt is modeled in the tombstone, retain these roots.
-            if (root.getTargetSnapshotHash() != null) {
-                throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid
-                        + " retains target snapshot commit replay evidence");
-            }
-
             Long stateReferences = em.createQuery("select count(s) from MemoryStateVO s where "
                             + "s.activeTaskUuid in :ids or s.controlOperationUuid in :ids", Long.class)
                     .setParameter("ids", ids).getSingleResult();
@@ -4528,13 +3944,7 @@ public class MemoryRepository {
                         + " is still referenced by Host state, another task, or migration");
             }
 
-            // A staging row with the same request key is still part of an in-flight target commit.
             if (root.getRequestKey() != null) {
-                Long shardReferences = em.createQuery("select count(s) from MemoryTargetShardVO s where s.requestKey = :key", Long.class)
-                        .setParameter("key", root.getRequestKey()).getSingleResult();
-                if (shardReferences != 0) {
-                    throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid + " still has target snapshot staging rows");
-                }
                 List<MemoryTaskIdempotencyReceiptVO> duplicateReceipts = em.createQuery(
                                 "from MemoryTaskIdempotencyReceiptVO r where r.requestKey = :key", MemoryTaskIdempotencyReceiptVO.class)
                         .setParameter("key", root.getRequestKey()).getResultList();
@@ -4658,7 +4068,7 @@ public class MemoryRepository {
         }
     }
 
-    public long taskCount(APIQueryMemoryTaskMsg msg) {
+    public long taskCount(APIGetMemoryTasksMsg msg) {
         return transaction(em -> {
             String query = "select count(t) from MemoryTaskVO t where 1=1";
             if (msg.getUuid() != null) { query += " and (t.uuid = :uuid or t.parentUuid = :uuid)"; }
@@ -4672,7 +4082,7 @@ public class MemoryRepository {
         });
     }
 
-    public List<MemoryTaskInventory> tasks(APIQueryMemoryTaskMsg msg) {
+    public List<MemoryTaskInventory> tasks(APIGetMemoryTasksMsg msg) {
         if (msg.getStart() < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
         return transaction(em -> {
             String query = "from MemoryTaskVO t where 1=1";
@@ -4688,7 +4098,7 @@ public class MemoryRepository {
         });
     }
 
-    MemoryQueryPage<MemoryTaskInventory> taskPage(APIQueryMemoryTaskMsg msg) {
+    MemoryQueryPage<MemoryTaskInventory> taskPage(APIGetMemoryTasksMsg msg) {
         if (msg.getStart() < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
         return this.<MemoryQueryPage<MemoryTaskInventory>>transaction(em -> {
             lock(em);
@@ -4712,7 +4122,7 @@ public class MemoryRepository {
         });
     }
 
-    private static void bindTaskFilter(TypedQuery<?> query, APIQueryMemoryTaskMsg msg) {
+    private static void bindTaskFilter(TypedQuery<?> query, APIGetMemoryTasksMsg msg) {
         if (msg.getUuid() != null) { query.setParameter("uuid", msg.getUuid()); }
         if (msg.getHostUuid() != null) { query.setParameter("host", msg.getHostUuid()); }
         if (msg.getStatus() != null) { query.setParameter("status", msg.getStatus()); }

@@ -79,11 +79,6 @@ public class MemoryTaskVO {
     public String getRequestHash() { return requestHash; }
     public void setRequestHash(String value) { requestHash = value; }
 
-    /** Receipt for a target snapshot commit, independent of expiring staged rows. */
-    @Column(length = 64)
-    private String targetSnapshotHash;
-    public String getTargetSnapshotHash() { return targetSnapshotHash; }
-    public void setTargetSnapshotHash(String value) { targetSnapshotHash = value; }
 
     @Column(length = 64)
     private String policyPlanHash;

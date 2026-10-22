@@ -67,22 +67,6 @@ public final class MemoryPolicyRules {
         return GSON.fromJson(value, MemoryPolicyConfig.class);
     }
 
-    /** Only for durable pre-upgrade records, never for incoming API requests. */
-    static String migrateLegacy(String current, String scope) {
-        JsonObject result = object(current, "current");
-        if (!result.has("ksm") || !result.get("ksm").isJsonObject()) { return current; }
-        JsonObject ksm = result.getAsJsonObject("ksm");
-        boolean changed = false;
-        for (String field : Arrays.asList("mode", "profileVersion", "cpuBudgetPercent")) {
-            changed |= ksm.remove(field) != null;
-        }
-        if (!changed) { return current; }
-        // No enabled/default is synthesized. In particular Legacy/untaken
-        // ownership cannot turn into a request to enable optimization.
-        validate(result, scope);
-        return canonical(result).toString();
-    }
-
     public static String clearFields(String current, List<String> paths, String scope) {
         if (paths == null || paths.isEmpty()) {
             throw invalid("clearOverrideFields", "must explicitly identify fields to inherit");

@@ -82,7 +82,6 @@ import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.kvm.memory.MemoryRepository;
-import org.zstack.kvm.memory.MemoryStandardField;
 import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.IpRangeSet;
@@ -627,7 +626,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
             }
         });
-        installStandardMemoryConfiguration();
+        new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty, thdf).install(rcf);
 
         resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {
@@ -976,19 +975,6 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         });
 
         return true;
-    }
-
-    /** One participant owns the complete standard configuration batch, including legacy host.ksm. */
-    void installStandardMemoryConfiguration() {
-        MemoryStandardConfigurationCoordinator coordinator =
-                new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty);
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            GlobalConfig global = field.config();
-            global.installValidateExtension((category, name, oldValue, newValue) ->
-                    MemoryStandardConfigurationCoordinator.validateScalar(field, newValue));
-            global.installConfigMutationExtension(coordinator);
-            rcf.getResourceConfig(global.getIdentity()).installConfigMutationExtension(coordinator);
-        }
     }
 
     private void cleanDeviceAddress(SystemTagInventory tag) {

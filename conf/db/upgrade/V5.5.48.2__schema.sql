@@ -7,7 +7,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryPolicyVO` (
     `resourceUuid` VARCHAR(64) NOT NULL,
     `revision` BIGINT NOT NULL DEFAULT 0,
     `policy` LONGTEXT NOT NULL,
-    `legacyPolicy` LONGTEXT DEFAULT NULL,
     `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
@@ -33,9 +32,11 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskVO` (
     `desiredRevision` BIGINT NOT NULL,
     `policy` LONGTEXT NOT NULL,
     `ownerManagementNodeUuid` VARCHAR(32) DEFAULT NULL,
-    `targetSnapshotHash` VARCHAR(64) DEFAULT NULL,
     `expectedControlOperationUuid` VARCHAR(32) DEFAULT NULL,
     `policyPlanHash` VARCHAR(64) DEFAULT NULL,
+    `requiresKsmNativePartialFence` TINYINT(1) DEFAULT NULL,
+    `ksmNativeObservationBootId` VARCHAR(128) DEFAULT NULL,
+    `ksmNativeObservationSampleTime` BIGINT DEFAULT NULL,
     `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
     `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (`uuid`),
@@ -93,24 +94,6 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryVmExclusionVO` (
     `retained` BOOLEAN NOT NULL DEFAULT FALSE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTargetShardVO` (
-    `uuid` VARCHAR(32) NOT NULL PRIMARY KEY,
-    `requestKey` VARCHAR(160) NOT NULL,
-    `scope` VARCHAR(16) NOT NULL,
-    `resourceUuid` VARCHAR(64) NOT NULL,
-    `shardIndex` INT NOT NULL,
-    `shardCount` INT NOT NULL,
-    `totalCount` BIGINT NOT NULL,
-    `digest` VARCHAR(128) NOT NULL,
-    `snapshotGeneration` VARCHAR(128) NOT NULL,
-    `expectedRevision` BIGINT NOT NULL,
-    `targets` MEDIUMTEXT NOT NULL,
-    `requestHash` VARCHAR(128) NOT NULL,
-    `expiresAt` BIGINT NOT NULL,
-    UNIQUE KEY `memory_target_shard_request_index` (`requestKey`, `shardIndex`),
-    KEY `memory_target_shard_expiry` (`expiresAt`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskFailureOutboxVO` (
     `taskUuid` VARCHAR(32) NOT NULL,
     `hostUuid` VARCHAR(32) NOT NULL,
@@ -137,32 +120,10 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskFailureReceiptVO` (
     UNIQUE KEY `ukMemoryTaskFailureReceiptDataUuid` (`dataUuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-CREATE TABLE IF NOT EXISTS `zstack`.`MemoryCloudBootstrapVO` (
-    `uuid` VARCHAR(32) NOT NULL,
-    `status` VARCHAR(32) NOT NULL,
-    `requestUuid` VARCHAR(32) NOT NULL,
-    `taskUuid` VARCHAR(32) DEFAULT NULL,
-    `targetPolicyHash` VARCHAR(64) DEFAULT NULL,
-    `reason` VARCHAR(2048) DEFAULT NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
-    `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`uuid`),
-    UNIQUE KEY `memory_cloud_bootstrap_request` (`requestUuid`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
 CREATE TABLE IF NOT EXISTS `zstack`.`MemoryQueryVersionVO` (
     `name` VARCHAR(16) NOT NULL,
     `revision` BIGINT NOT NULL DEFAULT 0,
     PRIMARY KEY (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-CREATE TABLE IF NOT EXISTS `zstack`.`MemoryStandardConfigMigrationVO` (
-    `uuid` VARCHAR(64) NOT NULL,
-    `status` VARCHAR(16) NOT NULL,
-    `reason` VARCHAR(2048) NULL,
-    `createDate` TIMESTAMP NOT NULL DEFAULT '2000-01-01 00:00:00',
-    `lastOpDate` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (`uuid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskIdempotencyReceiptVO` (
@@ -175,8 +136,7 @@ CREATE TABLE IF NOT EXISTS `zstack`.`MemoryTaskIdempotencyReceiptVO` (
     UNIQUE KEY `memory_task_receipt_request` (`requestKey`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
--- Seed only stable system/query rows. Bootstrap, exclusion, task, state,
--- migration and receipt tables intentionally start empty.
+-- Seed only stable system/query rows.
 INSERT IGNORE INTO `zstack`.`MemoryPolicyVO`
     (`uuid`, `scope`, `resourceUuid`, `revision`, `policy`, `createDate`, `lastOpDate`)
     VALUES ('Global:global', 'Global', 'global', 0, '{"schemaVersion":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);

@@ -11,7 +11,6 @@ public class MemoryPolicyInventory {
         inventory.setPolicy("{\"ksm\":{\"enabled\":true}}");
         inventory.setEffectivePolicy("{\"ksm\":{\"enabled\":true}}");
         inventory.setSource("Host");
-        inventory.setAllowedActions(java.util.Arrays.asList("query", "apply", "pause"));
         java.util.Map<String, Long> revisions = new java.util.LinkedHashMap<>();
         revisions.put("Global:global", 3L);
         revisions.put("Cluster:234567890abcdef1234567890abcdef1", 4L);
@@ -40,16 +39,8 @@ public class MemoryPolicyInventory {
     private long sourceRevision;
     public long getSourceRevision() { return sourceRevision; }
     public void setSourceRevision(long value) { sourceRevision = value; }
-    private java.util.List<String> allowedActions;
-    private java.util.List<String> preflightRequiredActions = new java.util.ArrayList<>();
     private java.util.Map<String, MemoryFieldCapability> fieldCapabilities;
     private String source;
-    public java.util.List<String> getAllowedActions() { return allowedActions; }
-    public void setAllowedActions(java.util.List<String> value) { allowedActions = value; }
-    public java.util.List<String> getPreflightRequiredActions() { return preflightRequiredActions; }
-    public void setPreflightRequiredActions(java.util.List<String> value) {
-        preflightRequiredActions = value == null ? new java.util.ArrayList<>() : value;
-    }
     public java.util.Map<String, MemoryFieldCapability> getFieldCapabilities() { return fieldCapabilities; }
     public void setFieldCapabilities(java.util.Map<String, MemoryFieldCapability> value) { fieldCapabilities = value; }
     public String getSource() { return source; }

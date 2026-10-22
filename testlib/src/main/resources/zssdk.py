@@ -18,20 +18,6 @@ import base64
 import hmac
 from hashlib import sha1
 import datetime
-try:
-    from urllib.parse import quote_plus
-except ImportError:
-    from urllib import quote_plus
-
-try:
-    text_type = unicode
-except NameError:
-    text_type = str
-
-def _query_text(value):
-    if isinstance(value, text_type):
-        return value.encode('utf-8') if sys.version_info[0] < 3 else value
-    return str(value)
 
 try:
     int_types = (int, long)
@@ -232,20 +218,14 @@ class AbstractAction(object):
         return ret
 
     def _query_string(self, params):
-        queryParams = []
+        queryParams = {}
         for k, v in params.items():
-            if k == "sessionId":
-                continue
             if k == "accessKeySecret":
                 continue
             if k == "accessKeyId":
                 continue
-            if isinstance(v, (list, tuple)):
-                queryParams.extend((k, item) for item in v)
-            else:
-                queryParams.append((k, v))
-        return '&'.join('%s=%s' % (quote_plus(_query_text(k), safe=''), quote_plus(_query_text(v), safe=''))
-                        for k, v in queryParams)
+            queryParams[k] = v
+        return '&'.join(['%s=%s' % (k, v) for k, v in queryParams.items()])
 
     def _url(self):
         elements = ['http://', __config__[CONFIG_HOSTNAME], ':', str(__config__[CONFIG_PORT])]
@@ -483,9 +463,6 @@ class QueryAction(AbstractAction):
             if v is None:
                 continue
 
-            if k == 'sessionId':
-                continue
-
             if k == 'accessKeySecret':
                 continue
 
@@ -494,24 +471,20 @@ class QueryAction(AbstractAction):
 
             if k == 'sortBy' and v is not None:
                 if self.sortDirection is None:
-                    m.append(self._encoded_query('sort', v))
+                    m.append('sort=%s' % v)
                 else:
                     op = '+' if self.sortDirection == 'asc' else '-'
-                    m.append(self._encoded_query('sort', '%s%s' % (op, v)))
+                    m.append('sort=%s%s' % (op, v))
             elif k == 'sortDirection':
                 continue
             elif k == 'fields':
-                m.append(self._encoded_query('fields', ','.join(v)))
+                m.append('fields=%s' % ','.join(v))
             elif k == 'conditions':
-                m.extend([self._encoded_query('q', q) for q in v])
+                m.extend(['q=%s' % q for q in v])
             else:
-                m.append(self._encoded_query(k, v))
+                m.append('%s=%s' % (k, v))
 
         return '&'.join(m)
-
-    @staticmethod
-    def _encoded_query(key, value):
-        return '%s=%s' % (quote_plus(_query_text(key), safe=''), quote_plus(_query_text(value), safe=''))
 
 
 def _uuid():

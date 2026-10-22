@@ -11,7 +11,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import com.google.gson.JsonParseException;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -627,31 +626,6 @@ public class RestServer implements Component, CloudBusEventListener {
             }
         }
 
-        private void validateStrictQueryParameters(Map<String, String[]> queryParameters) throws RestException {
-            if (!requestAnnotation.strictQueryParameters()) {
-                return;
-            }
-
-            for (String name : queryParameters.keySet()) {
-                String fieldName = name;
-                if (name.contains(".")) {
-                    fieldName = name.substring(0, name.indexOf('.'));
-                    Field field = allApiClassFields.get(fieldName);
-                    if (field == null || !Map.class.isAssignableFrom(field.getType())
-                            || !field.isAnnotationPresent(MapField.class)) {
-                        throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format(
-                                "Unsupported query parameter[%s] for API[%s]", name, apiClass.getSimpleName()));
-                    }
-                    continue;
-                }
-
-                if (!allApiClassFields.containsKey(fieldName)) {
-                    throw new RestException(HttpStatus.BAD_REQUEST.value(), String.format(
-                            "Unsupported query parameter[%s] for API[%s]", name, apiClass.getSimpleName()));
-                }
-            }
-        }
-
         Object queryParameterToApiFieldValue(String name, String[] vals) throws RestException {
             Field f = allApiClassFields.get(name);
             if (f == null) {
@@ -661,12 +635,8 @@ public class RestServer implements Component, CloudBusEventListener {
             if (Collection.class.isAssignableFrom(f.getType())) {
                 Class gtype = FieldUtils.getGenericType(f);
                 List lst = new ArrayList();
-                try {
-                    for (String v : vals) {
-                        lst.add(TypeUtils.stringToValue(v, gtype));
-                    }
-                } catch (NumberFormatException e) {
-                    throw invalidQueryParameter(name, gtype);
+                for (String v : vals) {
+                    lst.add(TypeUtils.stringToValue(v, gtype));
                 }
 
                 return lst;
@@ -677,21 +647,8 @@ public class RestServer implements Component, CloudBusEventListener {
                                     " multiple values found", name));
                 }
 
-                try {
-                    return TypeUtils.stringToValue(vals[0], f.getType());
-                } catch (NumberFormatException e) {
-                    throw invalidQueryParameter(name, f.getType());
-                }
+                return TypeUtils.stringToValue(vals[0], f.getType());
             }
-        }
-
-        private RestException invalidQueryParameter(String name, Class type) {
-            if (Integer.TYPE.equals(type) || Integer.class.equals(type)) {
-                return new RestException(HttpStatus.BAD_REQUEST.value(),
-                        String.format("Invalid query parameter. '%s' must be an integer", name));
-            }
-            return new RestException(HttpStatus.BAD_REQUEST.value(),
-                    String.format("Invalid query parameter[%s]", name));
         }
     }
 
@@ -1228,7 +1185,6 @@ public class RestServer implements Component, CloudBusEventListener {
 
             Map<String, String[]> queryParameters = new HashMap<>(req.getParameterMap());
             normalizeCollectionParameters(queryParameters);
-            api.validateStrictQueryParameters(queryParameters);
 
             for (Map.Entry<String,  String[]> e : queryParameters.entrySet()) {
                 String k = e.getKey();
@@ -1251,15 +1207,6 @@ public class RestServer implements Component, CloudBusEventListener {
             parameter = m;
         } else {
             parameter = body.get(parameterName);
-        }
-
-        if (!req.getMethod().equals(HttpMethod.GET.toString())
-                && !req.getMethod().equals(HttpMethod.DELETE.toString())) {
-            try {
-                StrictRestRequestJsonValidator.validateIfOptedIn(entity.getBody(), parameterName, api.apiClass);
-            } catch (JsonParseException e) {
-                throw new RestException(HttpStatus.BAD_REQUEST.value(), "Invalid request JSON");
-            }
         }
 
         APIMessage msg;

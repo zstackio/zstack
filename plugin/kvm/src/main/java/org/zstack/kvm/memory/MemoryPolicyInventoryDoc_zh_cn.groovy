@@ -39,18 +39,6 @@ doc {
 		type "long"
 		since "5.5.38"
 	}
-	field {
-		name "allowedActions"
-		desc "当前状态下可提交的动作提示；不是后续请求的授权保证。"
-		type "List"
-		since "5.5.38"
-	}
-	field {
-		name "preflightRequiredActions"
-		desc "执行某些动作前须先完成的预检动作。"
-		type "List"
-		since "5.5.38"
-	}
 	ref {
 		name "fieldCapabilities"
 		path "org.zstack.kvm.memory.MemoryPolicyInventory.fieldCapabilities"

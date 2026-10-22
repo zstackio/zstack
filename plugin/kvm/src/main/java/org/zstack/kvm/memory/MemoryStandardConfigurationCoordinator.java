@@ -1,25 +1,44 @@
 package org.zstack.kvm.memory;
 
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.config.ConfigMutation;
-import org.zstack.core.config.ConfigMutationContext;
-import org.zstack.core.config.ConfigTransactionalMutationExtensionPoint;
+import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigException;
-import org.zstack.header.errorcode.OperationFailureException;
+import org.zstack.core.thread.Task;
+import org.zstack.core.thread.ThreadFacade;
+import org.zstack.kvm.KVMGlobalConfig;
+import org.zstack.resourceconfig.ResourceConfig;
+import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
-import javax.persistence.EntityManager;
 import java.util.List;
 
-/** One shared transaction participant for all ordinary memory configuration fields. */
-public final class MemoryStandardConfigurationCoordinator implements ConfigTransactionalMutationExtensionPoint {
+/** Hooks standard memory configuration into the existing GlobalConfig/ResourceConfig extension points. */
+public final class MemoryStandardConfigurationCoordinator {
+    private static final CLogger logger = Utils.getLogger(MemoryStandardConfigurationCoordinator.class);
     private final MemoryRepository repository;
     private final PluginRegistry registry;
+    private final ThreadFacade thdf;
 
-    public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry) {
-        this.repository = repository; this.registry = registry;
+    public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry, ThreadFacade thdf) {
+        this.repository = repository; this.registry = registry; this.thdf = thdf;
     }
 
-    /** Pure scalar validation. Cross-field rules belong to the final candidate in the write transaction. */
+    public void install(ResourceConfigFacade rcf) {
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            GlobalConfig global = field.config();
+            // ResourceConfig also runs the GlobalConfig validators, so keep them scope-free.
+            global.installValidateExtension((category, name, oldValue, newValue) -> validateScalar(field, newValue));
+            global.installLocalBeforeUpdateExtension((oldConfig, newValue) -> validateChange(field, null, newValue));
+            global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null));
+            ResourceConfig resource = rcf.getResourceConfig(global.getIdentity());
+            resource.installValidatorExtension((resourceUuid, oldValue, newValue) -> validateChange(field, resourceUuid, newValue));
+            resource.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) -> changed(resourceUuid));
+            resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid));
+        }
+    }
+
+    /** Pure scalar validation. Cross-field rules are checked against the stored candidate in validateChange. */
     public static void validateScalar(MemoryStandardField field, String value) {
         try {
             if (value == null || value.trim().isEmpty()) {
@@ -32,23 +51,35 @@ public final class MemoryStandardConfigurationCoordinator implements ConfigTrans
         } catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
     }
 
-    @Override
-    public void beforeMutations(EntityManager em, List<ConfigMutation> changes, ConfigMutationContext context) {
-        try {
+    private void validateChange(MemoryStandardField field, String resourceUuid, String newValue) {
+        validateScalar(field, newValue);
+        // The legacy host.ksm switch predates memory optimization and stays license-free.
+        if (field.config() != KVMGlobalConfig.HOST_KSM) {
             List<MemoryLicenseExtensionPoint> providers = registry.getExtensionList(MemoryLicenseExtensionPoint.class);
             if (providers.size() != 1 || providers.get(0).licenseDeadlineMillis() <= System.currentTimeMillis()) {
-                throw new MemoryOperationException("MEMORY_LICENSE_UNAVAILABLE",
-                        "A valid Cloud License is required for memory configuration changes");
+                throw new GlobalConfigException("A valid Cloud License is required for memory configuration changes");
             }
-            repository.prepareStandardMutations(em, changes, context);
-        } catch (MemoryOperationException rejected) { throw new OperationFailureException(rejected.toErrorCode()); }
-        catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
+        }
+        try {
+            repository.validateStandardChange(field, resourceUuid, newValue);
+        } catch (IllegalArgumentException invalid) {
+            throw new GlobalConfigException(invalid.getMessage(), invalid);
+        }
     }
 
-    @Override
-    public void afterMutations(EntityManager em, List<ConfigMutation> changes, ConfigMutationContext context) {
-        try { repository.completeStandardMutations(em, changes, context); }
-        catch (MemoryOperationException rejected) { throw new OperationFailureException(rejected.toErrorCode()); }
-        catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
+    /** The value is already committed; per-Host application is queued off the API thread. */
+    private void changed(String resourceUuid) {
+        thdf.submit(new Task<Void>() {
+            @Override public String getName() { return "memory-standard-config-changed"; }
+            @Override public Void call() {
+                try {
+                    repository.standardConfigurationChanged(resourceUuid);
+                } catch (RuntimeException e) {
+                    logger.warn(String.format("unable to queue memory policy application for resource[%s]; "
+                            + "the next Host connect re-applies the effective policy", resourceUuid), e);
+                }
+                return null;
+            }
+        });
     }
 }

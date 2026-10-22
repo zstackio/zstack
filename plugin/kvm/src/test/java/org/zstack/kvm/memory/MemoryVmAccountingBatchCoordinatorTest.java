@@ -40,7 +40,6 @@ public class MemoryVmAccountingBatchCoordinatorTest {
         final List<Task<?>> calls = new ArrayList<>();
         final AtomicInteger replies = new AtomicInteger();
         final AtomicReference<APIGetVmMemoryOptimizationsReply> response = new AtomicReference<>();
-        final AtomicReference<APIGetVmMemoryOptimizationReply> singleResponse = new AtomicReference<>();
         final List<String> requested = new ArrayList<>();
         Runnable deadline;
 
@@ -61,9 +60,7 @@ public class MemoryVmAccountingBatchCoordinatorTest {
                     (proxy, method, args) -> {
                         if ("reply".equals(method.getName())) {
                             replies.incrementAndGet();
-                            if (args[1] instanceof APIGetVmMemoryOptimizationReply) {
-                                singleResponse.set((APIGetVmMemoryOptimizationReply) args[1]);
-                            } else { response.set((APIGetVmMemoryOptimizationsReply) args[1]); }
+                            response.set((APIGetVmMemoryOptimizationsReply) args[1]);
                         } else if ("replyErrorByMessageType".equals(method.getName())) {
                             throw new AssertionError("unexpected observation rejection: " + args[1]);
                         }
@@ -174,23 +171,6 @@ public class MemoryVmAccountingBatchCoordinatorTest {
             Object quality = f.entry("vm-0-0").getQuality();
             assertTrue("fresh".equals(quality) || "unavailable".equals(quality));
         }
-    }
-
-    @Test public void singleVmPrometheusCallbackDoesNotRequireAgentEnvelope() throws Exception {
-        Fixture f = new Fixture(1, 1, false, false);
-        APIGetVmMemoryOptimizationMsg msg = new APIGetVmMemoryOptimizationMsg();
-        msg.setVmUuid("vm-0-0");
-        Method query = MemoryOptimizationManager.class.getDeclaredMethod("vmAccounting", APIGetVmMemoryOptimizationMsg.class);
-        query.setAccessible(true); query.invoke(f.manager, msg);
-        assertEquals(1, f.calls.size());
-        f.complete(0); // Executes the real callVmMetrics task and its real single-VM callback.
-        assertEquals(1, f.replies.get());
-        assertNotNull(f.singleResponse.get());
-        MemoryVmAccountingInventory inventory = f.singleResponse.get().getInventory();
-        assertEquals("host-0", inventory.getHostUuid());
-        assertEquals("vm-0-0", inventory.getVmUuid());
-        assertEquals("fresh", inventory.getQuality());
-        assertEquals(Long.valueOf(123L), inventory.getMetrics().getRam_payload_bytes());
     }
 
     private static Thread contender(CountDownLatch ready, CountDownLatch go, AtomicReference<Throwable> failure, Runnable work) {

@@ -43,18 +43,7 @@ final class MemoryApiAuditHelper {
         // target Hosts after a matching accepted task; response dumps retain
         // task UUID/action/status without inventing a resource type for tasks.
         MemoryTaskInventory task = updateTask(response);
-        if ("stageTargetShard".equals(msg.getAction()) ||
-                "cancelTargetShards".equals(msg.getAction())) {
-            return unassociated();
-        }
         if (!matchesAcceptedGlobalTask(msg, response, task)) {
-            return unassociated();
-        }
-        if ("commitTargetShards".equals(msg.getAction()) ||
-                msg.getTargetVmUuids() != null) {
-            // Staging/commit payloads are snapshots rather than a server-echoed
-            // resource set. Do not turn caller-supplied shard members into audit
-            // resource associations here.
             return unassociated();
         }
         List<String> targets = msg.getTargetHostUuids();
@@ -116,8 +105,7 @@ final class MemoryApiAuditHelper {
                 && "Global".equals(task.getScope())
                 && "global".equals(task.getResourceUuid())
                 && "global".equals(msg.getResourceUuid())
-                && (msg.getAction() != null && msg.getAction().equals(task.getAction()) ||
-                    "commitTargetShards".equals(msg.getAction()) && "apply".equals(task.getAction()))
+                && msg.getAction() != null && msg.getAction().equals(task.getAction())
                 && validUuid(task.getUuid());
     }
 
