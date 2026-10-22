@@ -49,6 +49,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -508,10 +509,16 @@ public class L3BasicNetwork implements L3Network {
                                 if (sdnL3 != null) {
                                     sdnL3.beforeCommitDeleteIpRangeInDb(inv, msg.getNetworkOperation());
                                 }
+                                List<String> affectedNicUuids = q(UsedIpVO.class)
+                                        .select(UsedIpVO_.vmNicUuid)
+                                        .eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid())
+                                        .notNull(UsedIpVO_.vmNicUuid)
+                                        .listValues();
                                 SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).hardDelete();
                                 dbf.removeByPrimaryKeysInCurrentTransaction(
                                         Collections.singletonList(iprvo.getUuid()), IpRangeVO.class);
                                 IpRangeHelper.updateL3NetworkIpversion(iprvo);
+                                updateAffectedVmNicsPrimaryIp(affectedNicUuids, iprvo.getUuid());
 
                             }
                         }.execute();
@@ -570,6 +577,35 @@ public class L3BasicNetwork implements L3Network {
                 return "delete-ip-range";
             }
         });
+    }
+
+    private void updateAffectedVmNicsPrimaryIp(List<String> affectedNicUuids, String deletedIpRangeUuid) {
+        if (affectedNicUuids == null || affectedNicUuids.isEmpty()) {
+            return;
+        }
+        for (String vmNicUuid : new LinkedHashSet<>(affectedNicUuids)) {
+            if (vmNicUuid == null) {
+                continue;
+            }
+            List<UsedIpVO> remainingIps = Q.New(UsedIpVO.class)
+                    .eq(UsedIpVO_.vmNicUuid, vmNicUuid)
+                    .notEq(UsedIpVO_.ipRangeUuid, deletedIpRangeUuid)
+                    .orderBy(UsedIpVO_.ipVersion, SimpleQuery.Od.ASC)
+                    .orderBy(UsedIpVO_.createDate, SimpleQuery.Od.ASC)
+                    .list();
+            if (remainingIps == null || remainingIps.isEmpty()) {
+                continue;
+            }
+            UsedIpVO primaryIp = remainingIps.get(0);
+            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUuid)
+                    .set(VmNicVO_.ip, primaryIp.getIp())
+                    .set(VmNicVO_.netmask, primaryIp.getNetmask())
+                    .set(VmNicVO_.gateway, primaryIp.getGateway())
+                    .set(VmNicVO_.usedIpUuid, primaryIp.getUuid())
+                    .set(VmNicVO_.ipVersion, primaryIp.getIpVersion())
+                    .set(VmNicVO_.l3NetworkUuid, primaryIp.getL3NetworkUuid())
+                    .update();
+        }
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
