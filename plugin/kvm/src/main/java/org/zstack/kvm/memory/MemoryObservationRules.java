@@ -146,7 +146,13 @@ public final class MemoryObservationRules {
     }
 
     private static boolean nonNegativeInteger(Object value) {
-        if (!(value instanceof Number) || value instanceof Float || value instanceof Double) { return false; }
+        if (!(value instanceof Number)) { return false; }
+        // Agent JSON maps decode numbers as Double; accept only exact integral values.
+        if (value instanceof Float || value instanceof Double) {
+            double number = ((Number) value).doubleValue();
+            return Double.isFinite(number) && number == Math.rint(number)
+                    && number >= 0 && number <= MAX_SAFE_DOUBLE_INTEGER;
+        }
         try { return new BigDecimal(value.toString()).longValueExact() >= 0; }
         catch (ArithmeticException | NumberFormatException invalid) { return false; }
     }

@@ -146,10 +146,20 @@ public class MemoryHostConnectedObservationTest {
         Map<?, ?> nativeKsm = (Map<?, ?>) actual.get("ksm");
         assertTrue("platform decoder must preserve integral Agent metrics", nativeKsm.get("pagesToScan") instanceof Long);
         assertTrue(MemoryObservationRules.isKsmNativePartial(partial, "host-a", System.currentTimeMillis()));
+        // KVMHostAsyncHttpCallReply rehashes the CloudBus map, which carries Double values.
+        Map<String, Object> rehashedKsm = new java.util.LinkedHashMap<>();
+        rehashedKsm.put("enabled", true); rehashedKsm.put("pagesToScan", 1000.0); rehashedKsm.put("sleepMillis", 10.0);
+        partial.state.put("actual", java.util.Collections.singletonMap("ksm", rehashedKsm));
+        assertTrue(MemoryObservationRules.isKsmNativePartial(partial, "host-a", System.currentTimeMillis()));
+        rehashedKsm.put("pagesToScan", 1000.5);
+        assertFalse(MemoryObservationRules.isKsmNativePartial(partial, "host-a", System.currentTimeMillis()));
+        rehashedKsm.put("pagesToScan", 1000.0);
         manager.complete(partial);
 
         Repository repository = field(manager, "repository", Repository.class);
         Hooks hooks = field(manager, "lifecycleHooks", Hooks.class);
+        assertFalse("a KSM-only reply before ZRAM activation is not a failed observation",
+                field(manager, "observationBackoff", Map.class).containsKey("host-a"));
         assertEquals("partial native data must not overwrite full observation state", 0, repository.observations);
         assertEquals(1, repository.partialKsmObservations);
         assertEquals("partial capability is not proof that desired control applied", 0, repository.policyAdmissions);

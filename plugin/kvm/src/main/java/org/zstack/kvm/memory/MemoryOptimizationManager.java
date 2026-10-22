@@ -1040,12 +1040,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
                     }
                     // An unreachable or older Agent is retried slowly; a reconnect clears the backoff.
-                    if (response == null || !response.isSuccess()) {
+                    // A native KSM partial result is the normal reply before ZRAM is first enabled.
+                    boolean ksmPartial = MemoryObservationRules.isKsmNativePartial(response, host, System.currentTimeMillis());
+                    if (!ksmPartial && (response == null || !response.isSuccess())) {
                         observationBackoff.put(host, System.currentTimeMillis() + OBSERVATION_FAILURE_BACKOFF_MS);
                     } else {
                         observationBackoff.remove(host);
                     }
-                    if (MemoryObservationRules.isKsmNativePartial(response, host, System.currentTimeMillis())) {
+                    if (ksmPartial) {
                         repository.observePartialKsm(host, response);
                     } else if (successfulFreshObservation(host, response)) {
                         repository.observe(host, response);
