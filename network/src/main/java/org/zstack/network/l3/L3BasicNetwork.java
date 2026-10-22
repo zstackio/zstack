@@ -583,27 +583,40 @@ public class L3BasicNetwork implements L3Network {
         if (affectedNicUuids == null || affectedNicUuids.isEmpty()) {
             return;
         }
-        for (String vmNicUuid : new LinkedHashSet<>(affectedNicUuids)) {
-            if (vmNicUuid == null) {
+        Set<String> nicUuids = affectedNicUuids.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (nicUuids.isEmpty()) {
+            return;
+        }
+        List<Tuple> remainingIpTuples = Q.New(UsedIpVO.class)
+                .select(UsedIpVO_.vmNicUuid, UsedIpVO_.ipRangeUuid, UsedIpVO_.uuid, UsedIpVO_.ip,
+                        UsedIpVO_.netmask, UsedIpVO_.gateway, UsedIpVO_.ipVersion, UsedIpVO_.l3NetworkUuid)
+                .in(UsedIpVO_.vmNicUuid, nicUuids)
+                .orderBy(UsedIpVO_.ipVersion, SimpleQuery.Od.ASC)
+                .orderBy(UsedIpVO_.createDate, SimpleQuery.Od.ASC)
+                .listTuple();
+        if (remainingIpTuples.isEmpty()) {
+            return;
+        }
+        Map<String, Tuple> primaryIpByNicUuid = new LinkedHashMap<>();
+        for (Tuple tuple : remainingIpTuples) {
+            String vmNicUuid = tuple.get(0, String.class);
+            String ipRangeUuid = tuple.get(1, String.class);
+            if (vmNicUuid == null || Objects.equals(deletedIpRangeUuid, ipRangeUuid)) {
                 continue;
             }
-            List<UsedIpVO> remainingIps = Q.New(UsedIpVO.class)
-                    .eq(UsedIpVO_.vmNicUuid, vmNicUuid)
-                    .notEq(UsedIpVO_.ipRangeUuid, deletedIpRangeUuid)
-                    .orderBy(UsedIpVO_.ipVersion, SimpleQuery.Od.ASC)
-                    .orderBy(UsedIpVO_.createDate, SimpleQuery.Od.ASC)
-                    .list();
-            if (remainingIps == null || remainingIps.isEmpty()) {
-                continue;
-            }
-            UsedIpVO primaryIp = remainingIps.get(0);
-            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, vmNicUuid)
-                    .set(VmNicVO_.ip, primaryIp.getIp())
-                    .set(VmNicVO_.netmask, primaryIp.getNetmask())
-                    .set(VmNicVO_.gateway, primaryIp.getGateway())
-                    .set(VmNicVO_.usedIpUuid, primaryIp.getUuid())
-                    .set(VmNicVO_.ipVersion, primaryIp.getIpVersion())
-                    .set(VmNicVO_.l3NetworkUuid, primaryIp.getL3NetworkUuid())
+            primaryIpByNicUuid.putIfAbsent(vmNicUuid, tuple);
+        }
+        for (Map.Entry<String, Tuple> entry : primaryIpByNicUuid.entrySet()) {
+            Tuple primaryIp = entry.getValue();
+            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, entry.getKey())
+                    .set(VmNicVO_.usedIpUuid, primaryIp.get(2, String.class))
+                    .set(VmNicVO_.ip, primaryIp.get(3, String.class))
+                    .set(VmNicVO_.netmask, primaryIp.get(4, String.class))
+                    .set(VmNicVO_.gateway, primaryIp.get(5, String.class))
+                    .set(VmNicVO_.ipVersion, primaryIp.get(6, Integer.class))
+                    .set(VmNicVO_.l3NetworkUuid, primaryIp.get(7, String.class))
                     .update();
         }
     }
