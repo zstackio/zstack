@@ -383,6 +383,36 @@ public class MemoryRepository {
         return true;
     }
 
+    /**
+     * The first ZRAM pool is created after the apply returns, so that apply ends
+     * Blocked/NATIVE_POOL_UNQUALIFIED. Once a fresh observation verifies the pool
+     * capacity, queue the same reconcile an operator would submit for that task.
+     */
+    public boolean reconcileVerifiedPoolBlock(String hostUuid, MemoryAgentResponse response) {
+        Map<String, Object> actual = response == null || !response.isSuccess() || response.state == null
+                ? null : objectMap(response.state.get("actual"));
+        Map<String, Object> zram = actual == null ? null : objectMap(actual.get("zram"));
+        Map<String, Object> capacity = zram == null ? null : objectMap(zram.get("capacity"));
+        if (capacity == null || !"APPLIED".equals(capacity.get("apply_state"))) { return false; }
+        APIUpdateMemoryPolicyMsg msg = transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            MemoryTaskVO active = state == null || state.getActiveTaskUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+            if (active == null || !"apply".equals(active.getAction()) || !"Blocked".equals(active.getStatus())
+                    || !"NATIVE_POOL_UNQUALIFIED".equals(active.getReason())) { return null; }
+            APIUpdateMemoryPolicyMsg reconcile = new APIUpdateMemoryPolicyMsg();
+            reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
+            reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
+            reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
+            // One reconcile per blocked task; a repeated observation reuses the same request.
+            reconcile.setClientRequestUuid(digest(active.getUuid()).substring(0, 32));
+            return reconcile;
+        });
+        if (msg == null) { return false; }
+        submit(msg, "system:memory-pool-ready-reconcile", null);
+        return true;
+    }
+
     private String standardMutationDeferReason(EntityManager em, String host, MemoryStateVO state,
             long now, boolean coldKsmAdmission) {
         HostStatus status = em.createQuery("select h.status from HostVO h where h.uuid = :uuid", HostStatus.class)
