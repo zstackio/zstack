@@ -1543,6 +1543,19 @@ public class MemoryRepository {
                 setJsonPath(payload, field, value.deepCopy());
             }
         }
+        JsonObject desiredKsm = target.getAsJsonObject("ksm");
+        if (!plan.replacesAppliedPolicy && !payload.has("ksm") && payload.entrySet().size() > 1
+                && !(payload.size() == 2 && payload.has("writeback")
+                    && payload.getAsJsonObject("writeback").size() == 1
+                    && !jsonPath(payload, "writeback.enabled").getAsBoolean())
+                && desiredKsm != null && !desiredKsm.entrySet().isEmpty()
+                && desiredKsm.equals(new JsonParser().parse(applied).getAsJsonObject().get("ksm"))
+                && blocked.keySet().stream().noneMatch(field -> field.startsWith("ksm."))) {
+            // Agent pause/drain stops KSM only through the latest applied
+            // operation's KSM section. Carry the unchanged applied KSM target
+            // so a ZRAM-only update keeps KSM under that control.
+            payload.add("ksm", desiredKsm.deepCopy());
+        }
         if (!plan.replacesAppliedPolicy && payload.has("ksm")) {
             // Applying any KSM field also writes its scan settings on the
             // Agent. Carry their effective values, as for writeback below,
