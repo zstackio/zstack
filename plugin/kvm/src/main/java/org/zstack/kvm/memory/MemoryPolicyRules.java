@@ -21,8 +21,9 @@ public final class MemoryPolicyRules {
 
     public static String defaults() {
         // Optional mechanisms remain off until explicitly configured. KSM scan
-        // defaults are supplied by the standard GlobalConfig layer.
-        return "{\"schemaVersion\":1,\"ksm\":{},\"zram\":{\"enabled\":false},\"writeback\":{\"enabled\":false}}";
+        // rates are internal defaults, not user-facing configuration.
+        return "{\"schemaVersion\":1,\"ksm\":{\"pagesToScan\":2000,\"sleepMillis\":20},"
+                + "\"zram\":{\"enabled\":false},\"writeback\":{\"enabled\":false}}";
     }
 
     private static Set<String> keys(String names) {
