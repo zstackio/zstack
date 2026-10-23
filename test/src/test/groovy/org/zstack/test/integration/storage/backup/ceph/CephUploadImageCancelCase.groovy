@@ -231,7 +231,7 @@ class CephUploadImageCancelCase extends SubCase {
             CancelDownloadImageReply reply = cancelDownload(inventory, job.apiId)
             assert !reply.success
             assert reply.completedUploadInstallPath == null
-            assert reply.error.details.contains("all monitors cannot execute http call")
+            assert reply.error.globalErrorCode == "ORG_ZSTACK_STORAGE_CEPH_BACKUP_10001"
             assert progressCalls.get() == beforeProgress + 1
             assert findRef().status == ImageStatus.Downloading
             assert findRef().installPath == UPLOAD_URL
