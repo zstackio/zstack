@@ -567,7 +567,7 @@ public class MemoryRepository {
         return mergeEffectiveLayer(em, parentEffective(em, scope, resource), scope, resource, ownPolicy(em, scope, resource));
     }
 
-    /** Only explicit values override a parent; a stored none contributes no boolean. */
+    /** Only explicit values override a parent; a stored none leaves its switch unmanaged, as host.ksm always did. */
     private String mergeEffectiveLayer(EntityManager em, String inherited, String scope,
             String resource, String candidateOwn) {
         if ("Global".equals(scope)) {
@@ -575,6 +575,17 @@ public class MemoryRepository {
             // A real none must not acquire a synthetic disabled policy fallback.
             for (MemoryStandardField field : MemoryStandardField.values()) {
                 if (field.isFeatureSwitch()) { inherited = removePolicyPath(inherited, field.path()); }
+            }
+        } else {
+            MemoryStandardField.Scope level = scopeOf(scope);
+            if (level != null) {
+                for (Map.Entry<MemoryStandardField, Object> own
+                        : standardConfigs.readOwn(em, level, resource, Collections.<String>emptySet()).entrySet()) {
+                    if (MemoryStandardConfigAdapter.isUnmanaged(own.getValue())
+                            && MemoryStandardConfigCodec.get(candidateOwn, own.getKey().path()) == null) {
+                        inherited = removePolicyPath(inherited, own.getKey().path());
+                    }
+                }
             }
         }
         return MemoryPolicyRules.merge(inherited, candidateOwn, scope);
