@@ -489,17 +489,34 @@ public class MemoryRepository {
     /** A typed pre-activation rejection leaves the Agent's successful drain
      * fence intact. Recognize that fresh proof without rewriting either task
      * or treating arbitrary Failed/Unknown operations as safe to retry. */
+    private static final String MAINTENANCE_ACTIVATION_NATIVE_NOT_READY = "MAINTENANCE_ACTIVATION_NATIVE_NOT_READY";
+    /** Typed pre-activation rejections: the Agent never started the activation. */
+    private static final List<String> REJECTED_ACTIVATION_RETRY_REASONS = Arrays.asList(
+            "MAINTENANCE_ACTIVATION_WRITEBACK_MUST_REMAIN_DISABLED", MAINTENANCE_ACTIVATION_NATIVE_NOT_READY);
+    private static final long REJECTED_ACTIVATION_RETRY_DELAY_MS = 60_000L;
+
     private static boolean rejectedMaintenanceActivationReady(EntityManager em, MemoryStateVO state,
                                                                MemoryTaskVO rejected) {
-        if (state.getActiveTaskUuid() != null || !"Succeeded".equals(state.getStatus())
-                || rejected == null || !"Host".equals(rejected.getScope())
+        if (state.getActiveTaskUuid() != null || rejected == null || !"Host".equals(rejected.getScope())
                 || !"apply".equals(rejected.getAction()) || !"Failed".equals(rejected.getStatus())
                 || !Objects.equals(state.getHostUuid(), rejected.getHostUuid())
-                || !"MAINTENANCE_ACTIVATION_WRITEBACK_MUST_REMAIN_DISABLED".equals(rejected.getReason())
+                || !REJECTED_ACTIVATION_RETRY_REASONS.contains(rejected.getReason())
                 || rejected.getLastOpDate() == null || state.getLastSampleTime() == null
                 || state.getLastSampleTime() < rejected.getLastOpDate().getTime()) { return false; }
+        // The rejected activation itself may be the Host's latest failed result.
+        if (!"Succeeded".equals(state.getStatus()) && !("Failed".equals(state.getStatus())
+                && rejected.getUuid().equals(state.getControlOperationUuid()))) { return false; }
         try {
             JsonObject root = new JsonParser().parse(state.getState()).getAsJsonObject();
+            // A service restart can reject activation before its first safe Host
+            // sample. Retry only after a fresh safe sample and a short delay.
+            if (MAINTENANCE_ACTIVATION_NATIVE_NOT_READY.equals(rejected.getReason())) {
+                JsonObject host = root.getAsJsonObject("host");
+                if (host == null || !getBoolean(host, "qualified") || !getBoolean(host, "safe")
+                        || System.currentTimeMillis() - rejected.getLastOpDate().getTime() < REJECTED_ACTIVATION_RETRY_DELAY_MS) {
+                    return false;
+                }
+            }
             JsonObject proof = root.getAsJsonObject("maintenanceProof");
             String drainUuid = getString(proof, "drainOperationUuid");
             MemoryTaskVO drain = drainUuid == null ? null : em.find(MemoryTaskVO.class, drainUuid);
@@ -1988,7 +2005,9 @@ public class MemoryRepository {
                 if (plan.hasBlockers) { recordPolicyPlan(state, plan, "Blocked"); }
                 return false;
             }
-            if (plan.planHash.equals(state.getPolicyPlanHash())) { return false; }
+            // A rejected maintenance activation re-issues the same plan once its proof is ready again.
+            if (plan.planHash.equals(state.getPolicyPlanHash())
+                    && !(plan.maintenanceActivation && "Failed".equals(state.getPolicyPlanStatus()))) { return false; }
             if (plan.replacesAppliedPolicy && plan.hasBlockers && !plan.maintenanceActivation) {
                 recordPolicyPlan(state, plan, "Blocked");
                 return false;
