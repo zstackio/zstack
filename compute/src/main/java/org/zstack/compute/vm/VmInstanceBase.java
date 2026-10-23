@@ -6668,6 +6668,32 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             @Deferred
             public void run(final SyncTaskChain chain) {
+                VmInstanceInventory vm = getSelfInventory();
+                for (VmChangeNicNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmChangeNicNetworkExtensionPoint.class)) {
+                    if (!extension.accepts(vm, nic, destL3)) {
+                        continue;
+                    }
+                    VmInstanceSpec changeSpec = buildSpecFromInventory(vm, VmOperation.ChangeNicNetwork);
+                    changeSpec.setDestNics(Collections.singletonList(nic));
+                    changeSpec.setL3Networks(Collections.singletonList(new VmNicSpec(L3NetworkInventory.valueOf(
+                            dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class)))));
+                    extension.changeNetwork(msg, changeSpec, nic, destL3, new ReturnValueCompletion<VmNicInventory>(chain) {
+                        @Override
+                        public void success(VmNicInventory result) {
+                            self = dbf.reload(self);
+                            completion.success(result);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode error) {
+                            completion.fail(error);
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
                 class SetStaticIp {
                     private boolean isSet = false;
                     private boolean isDnsSet = false;
