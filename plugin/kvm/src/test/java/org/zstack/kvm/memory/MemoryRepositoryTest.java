@@ -1612,6 +1612,50 @@ public class MemoryRepositoryTest {
         }
     }
 
+    @Test public void rebootReissuesUnchangedAppliedZramOnceForSameBootConfirmation() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"zram\":{\"enabled\":true}}";
+        repository.transaction(em -> {
+            writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setDesiredRevision(2); state.setAppliedRevision(2L);
+            state.setActiveTaskUuid(null); state.setPolicyPlanHash(null);
+            state.setAppliedPolicy(policy); state.setAppliedPolicyHash(sha256(policy));
+            state.setControlOperationUuid("zram-applied-r2");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"zram\":true,\"writeback\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            // A new boot: the service rebuilt the pool but the Agent has no same-boot confirmation.
+            state.setState("{\"bootId\":\"boot-new\",\"managed\":true,\"actual\":{\"zram\":{\"efficiencyEnabled\":true}}}");
+            MemoryTaskVO control = testTask("zram-applied-r2", null, "apply", "Succeeded", null);
+            control.setDesiredRevision(2); control.setPolicy(policy); em.persist(control);
+            return null;
+        });
+        long tasksBefore = repository.taskCount(new APIGetMemoryTasksMsg());
+
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO reconfirm = repository.claim("mn-zram-reboot").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        assertEquals("apply", reconfirm.getAction());
+        assertEquals("system:memory-host-connect-policy", reconfirm.getActorUuid());
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(reconfirm.getPolicy(), Map.class);
+        assertEquals(Boolean.TRUE, ((Map<String, Object>) payload.get("zram")).get("enabled"));
+        assertFalse(payload.containsKey("ksm"));
+        assertFalse("the same boot never re-issues again", repository.applyEffectivePolicyAfterConnect("host1"));
+        assertEquals(tasksBefore + 2, repository.taskCount(new APIGetMemoryTasksMsg()));
+
+        // A same-boot confirmation means there is nothing to re-issue.
+        repository.transaction(em -> {
+            em.createQuery("delete from MemoryTaskVO where actorUuid = 'system:memory-host-connect-policy'").executeUpdate();
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setDesiredRevision(2); state.setActiveTaskUuid(null);
+            state.setControlOperationUuid("zram-applied-r2"); state.setPolicyPlanHash(null);
+            state.setState("{\"bootId\":\"boot-new\",\"managed\":true,\"lastConfirmedOperationUuid\":\"zram-applied-r2\","
+                    + "\"lastConfirmedAppliedRevision\":2,\"actual\":{\"zram\":{\"efficiencyEnabled\":true}}}");
+            return null;
+        });
+        assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
+    }
+
     private void seedConfirmedKsmReconnect(String policy) {
         repository.transaction(em -> {
             Map<String, Object> ksm = (Map<String, Object>) org.zstack.utils.gson.JSONObjectUtil.toObject(policy, Map.class).get("ksm");
