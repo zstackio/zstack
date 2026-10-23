@@ -48,10 +48,14 @@ public class PhysicalServerApiInterceptor implements ApiMessageInterceptor {
         }
         Set<String> unique = new HashSet<>();
         for (String serviceName : serviceNames) {
-            if (serviceName == null
-                    || !serviceName.matches(RoleServiceManifest.SERVICE_NAME_PATTERN) || !unique.add(serviceName)) {
+            if (serviceName == null || !serviceName.matches(RoleServiceManifest.SERVICE_NAME_PATTERN)) {
                 throw new ApiMessageInterceptionException(argerr(
-                        PhysicalServerConstant.ERROR_CODE, "Service names must be non-empty and unique"));
+                        PhysicalServerConstant.ERROR_CODE, "Service name[%s] must match pattern[%s]",
+                        serviceName, RoleServiceManifest.SERVICE_NAME_PATTERN));
+            }
+            if (!unique.add(serviceName)) {
+                throw new ApiMessageInterceptionException(argerr(
+                        PhysicalServerConstant.ERROR_CODE, "Service name[%s] is duplicated", serviceName));
             }
         }
     }

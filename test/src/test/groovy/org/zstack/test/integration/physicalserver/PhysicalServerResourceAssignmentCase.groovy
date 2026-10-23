@@ -585,7 +585,7 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                         sessionId: adminSession(), serverUuid: physicalServerUuid,
                         roleType: "COMPUTE", serviceNames: ["node-exporter", "node-exporter"])
         def duplicateServicesResult = duplicateServices.call()
-        assert duplicateServicesResult.error?.details?.contains("Service names must be non-empty and unique") :
+        assert duplicateServicesResult.error?.details?.contains("Service name[node-exporter] is duplicated") :
                 "duplicate serviceNames must be rejected before restart: " + "actual=${duplicateServicesResult.error}"
     }
 
@@ -886,9 +886,10 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
 
         RestartPhysicalServerManagedServicesAction invalidServiceName = new RestartPhysicalServerManagedServicesAction(
                         sessionId: adminSession(),
-                        serverUuid: physicalServerUuid, roleType: "COMPUTE", serviceNames: ["bad service name"])
-        assert invalidServiceName.call().error?.details?.contains("Service names must be non-empty and unique") :
-                "service restart accepts stable service identities only"
+                        serverUuid: physicalServerUuid, roleType: "COMPUTE", serviceNames: ["bad/name"])
+        def invalidServiceNameResult = invalidServiceName.call()
+        assert invalidServiceNameResult.error?.details?.contains("Service name[bad/name] must match pattern[") :
+                "invalid name must report its syntax error: actual=${invalidServiceNameResult.error?.details}"
 
         RestartPhysicalServerManagedServicesAction tooManyServices = new RestartPhysicalServerManagedServicesAction(
                         sessionId: adminSession(),
