@@ -348,10 +348,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                                               String scope) {
         fields.put("schemaVersion", capability(writable, false, "int32", "version", "PersistedSchema"));
         fields.put("zram.enabled", capability(writable, true, "boolean", null, "EnableOrDrain"));
-        // VM selection is a CLI/advanced policy control; the basic UI only
-        // exposes enablement, capacity, inheritance and status per FS 14.2.
-        fields.put("zram.selectionMode", capability(writable, false, "enum", null, "NextPolicyCycle"));
-        fields.put("zram.selectedVmUuids", capability(writable, false, "uuid[]", null, "InstanceFenced"));
         fields.put("zram.logicalCapacityBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
         fields.put("zram.ramLimitBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
         fields.put("writeback.enabled", capability(writable, false, "boolean", null, "OfflinePreparationMayBeRequired"));
