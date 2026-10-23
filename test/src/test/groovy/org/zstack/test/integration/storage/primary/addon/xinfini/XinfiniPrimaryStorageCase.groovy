@@ -30,6 +30,7 @@ import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO
 import org.zstack.header.vm.VmBootDevice
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
@@ -124,6 +125,18 @@ class XinfiniPrimaryStorageCase extends SubCase {
                 }
             }
 
+            cephBackupStorage {
+                name = "ceph-bs"
+                fsid = "ceph-template-cluster"
+                monUrls = ["root:password@127.0.0.4/?monPort=7777"]
+
+                image {
+                    name = "ceph-data-template"
+                    url = "http://zstack.org/download/test-volume.qcow2"
+                    mediaType = "DataVolumeTemplate"
+                }
+            }
+
             zone {
                 name = "zone"
                 description = "test"
@@ -165,6 +178,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
                 }
 
                 attachBackupStorage("sftp")
+                attachBackupStorage("ceph-bs")
             }
         }
     }
@@ -193,6 +207,7 @@ class XinfiniPrimaryStorageCase extends SubCase {
             testCreateVolumeRollback()
             testAttachIso()
             testCreateDataVolume()
+            testRejectCephBackupStorage()
             testCreateSnapshot()
             testCreateTemplate()
             testClean()
@@ -605,6 +620,35 @@ class XinfiniPrimaryStorageCase extends SubCase {
             vmInstanceUuid = vm.uuid
             volumeUuid = vol2.uuid
         }
+    }
+
+    void testRejectCephBackupStorage() {
+        BackupStorageInventory cephBs = env.inventoryByName("ceph-bs")
+        ImageInventory cephImage = env.inventoryByName("ceph-data-template")
+        long volumeCount = Q.New(VolumeVO.class).count()
+        long snapshotCount = Q.New(VolumeSnapshotVO.class).count()
+
+        def restore = new CreateDataVolumeFromVolumeTemplateAction()
+        restore.name = "ceph-template-to-vhost"
+        restore.imageUuid = cephImage.uuid
+        restore.primaryStorageUuid = ps.uuid
+        restore.sessionId = env.session.uuid
+        def restoreResult = restore.call()
+        assert restoreResult.error?.globalErrorCode == "ORG_ZSTACK_STORAGE_VOLUME_10088" :
+                "Ceph template must be rejected before downloading to Addon PS: actual=${JSONObjectUtil.toJsonString(restoreResult.error)}"
+        assert Q.New(VolumeVO.class).count() == volumeCount :
+                "Rejected template restore must not leave a volume: expected=${volumeCount}, actual=${Q.New(VolumeVO.class).count()}"
+
+        def backup = new CreateDataVolumeTemplateFromVolumeAction()
+        backup.name = "vhost-template-to-ceph"
+        backup.volumeUuid = vol.uuid
+        backup.backupStorageUuids = [cephBs.uuid]
+        backup.sessionId = env.session.uuid
+        def backupResult = backup.call()
+        assert backupResult.error?.details?.contains("ORG_ZSTACK_STORAGE_BACKUP_10013") :
+                "Explicit Ceph BS must be rejected by the allocator for Addon PS: actual=${JSONObjectUtil.toJsonString(backupResult.error)}"
+        assert Q.New(VolumeSnapshotVO.class).count() == snapshotCount :
+                "Rejected template creation must not leave a snapshot: expected=${snapshotCount}, actual=${Q.New(VolumeSnapshotVO.class).count()}"
     }
 
     void testCreateSnapshot() {
