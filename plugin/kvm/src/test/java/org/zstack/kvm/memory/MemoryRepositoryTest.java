@@ -4282,6 +4282,53 @@ public class MemoryRepositoryTest {
         });
     }
 
+    @Test public void notReadyMaintenanceActivationRetriesOnlyAfterSafeSampleAndDelay() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"zram\":{\"enabled\":true}}";
+        repository.transaction(em -> {
+            writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            em.persist(testTask("completed-drain", null, "drain", "Succeeded", null));
+            MemoryTaskVO rejected = testTask("not-ready-activation", null, "apply", "Failed", null);
+            rejected.setReason("MAINTENANCE_ACTIVATION_NATIVE_NOT_READY");
+            em.persist(rejected); em.flush();
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Failed"); state.setActiveTaskUuid(null);
+            state.setControlOperationUuid(rejected.getUuid());
+            state.setAppliedPolicy(policy); state.setAppliedPolicyHash(sha256(policy));
+            state.setDesiredRevision(3); state.setAppliedRevision(3L);
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"zram\":true,\"writeback\":true}");
+            state.setLastSampleTime(System.currentTimeMillis());
+            return null;
+        });
+        java.util.function.Consumer<String> observe = host -> repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setLastSampleTime(System.currentTimeMillis());
+            state.setState("{\"managed\":true,\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"completed-drain\","
+                    + "\"host\":" + host + ",\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"},"
+                    + "\"maintenanceProof\":{\"maintenanceReady\":true,\"maintenanceArchived\":true,"
+                    + "\"drainOperationUuid\":\"completed-drain\",\"oldPoolGeneration\":\"old-pool\","
+                    + "\"activeOperations\":0,\"poolOwnedByService\":false,"
+                    + "\"readyForInitialization\":true,\"originalDeviceInactive\":true,"
+                    + "\"oldPoolOwnershipAbsent\":true,\"executorExited\":true}}");
+            return null;
+        });
+        String safe = "{\"qualified\":true,\"safe\":true}";
+
+        observe.accept(safe);
+        assertFalse("a just rejected activation waits before retrying", repository.applyEffectivePolicyAfterConnect("host1"));
+        repository.transaction(em -> em.createQuery("update MemoryTaskVO t set t.lastOpDate = :old where t.uuid = 'not-ready-activation'")
+                .setParameter("old", new java.sql.Timestamp(System.currentTimeMillis() - 120_000L)).executeUpdate());
+        observe.accept("{\"qualified\":false,\"safe\":false}");
+        assertFalse("an unsafe Host sample is not ready for activation", repository.applyEffectivePolicyAfterConnect("host1"));
+
+        observe.accept(safe);
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO retry = repository.claim("mn-activation-retry").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        assertEquals("apply", retry.getAction());
+        assertNotEquals("not-ready-activation", retry.getUuid());
+    }
+
     @Test public void rejectedMaintenanceActivationAllowsCorrectedStandardConfiguration() {
         registerStandardResources(); rejectedMaintenanceActivationFixture();
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.ZRAM_ENABLED,
@@ -5350,5 +5397,4 @@ public class MemoryRepositoryTest {
                 em.createQuery("delete from ResourceConfigVO").executeUpdate(); return null; });
         }
     }
-
 }
