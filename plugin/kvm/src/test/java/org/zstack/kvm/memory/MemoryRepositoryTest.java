@@ -3441,6 +3441,39 @@ public class MemoryRepositoryTest {
         assertTrue("managed ownership is the only explicitly retained control fact", state.getState().contains("managed"));
     }
 
+    @Test public void verifiedPoolCapacityQueuesOneReconcileForBlockedFirstZramApply() {
+        final String control = "control-pool-ready-host1";
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Blocked"); state.setReason("NATIVE_POOL_UNQUALIFIED");
+            state.setControlOperationUuid(control); state.setActiveTaskUuid(control); state.setDesiredRevision(1);
+            MemoryTaskVO task = taskFixture(control, null, "host1", "apply", "Blocked");
+            task.setScope("Host"); task.setResourceUuid("host1"); task.setReason("NATIVE_POOL_UNQUALIFIED");
+            em.persist(task);
+            return null;
+        });
+
+        assertFalse("pool not verified yet", repository.reconcileVerifiedPoolBlock("host1", poolObservation("BLOCKED")));
+        assertTrue(repository.reconcileVerifiedPoolBlock("host1", poolObservation("APPLIED")));
+        assertFalse("the queued reconcile now owns the Host", repository.reconcileVerifiedPoolBlock("host1", poolObservation("APPLIED")));
+
+        MemoryTaskVO reconcile = repository.claim("pool-ready").stream()
+                .filter(task -> "reconcile".equals(task.getAction())).findFirst().get();
+        assertEquals(control, reconcile.getReconcileOperationUuid());
+        assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
+                "select count(t) from MemoryTaskVO t where t.action = 'reconcile' and t.parentUuid is not null", Long.class)
+                .getSingleResult()));
+    }
+
+    private static MemoryAgentResponse poolObservation(String applyState) {
+        MemoryAgentResponse response = new MemoryAgentResponse();
+        response.setSuccess(true); response.status = "Succeeded"; response.hostUuid = "host1";
+        response.state = new LinkedHashMap<>();
+        response.state.put("actual", Collections.singletonMap("zram",
+                Collections.singletonMap("capacity", Collections.singletonMap("apply_state", applyState))));
+        return response;
+    }
+
     @Test public void currentSwapBlockReasonFlowsThroughManagerAndStatesWithoutRewritingTaskOutcome() throws Exception {
         final String control = "control-blocked-host1";
         final String planHash = String.join("", Collections.nCopies(64, "a"));

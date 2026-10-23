@@ -1052,6 +1052,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     } else if (successfulFreshObservation(host, response)) {
                         repository.observe(host, response);
                         applyInheritedPolicyAfterObservation(host);
+                        reconcileVerifiedPoolBlock(host, response);
                         lifecycleHooks.reconcileObservedBindings(host, response);
                     }
                 } catch (RuntimeException e) {
@@ -1099,6 +1100,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             logger.debug(String.format("Host[%s] memory policy remains unapplied: %s", host, e.getCode()));
         } catch (RuntimeException e) {
             logger.warn(String.format("Host[%s] memory policy reconciliation was not accepted", host), e);
+        }
+    }
+
+    private void reconcileVerifiedPoolBlock(String host, MemoryAgentResponse response) {
+        try { repository.reconcileVerifiedPoolBlock(host, response); }
+        catch (MemoryOperationException e) {
+            logger.debug(String.format("Host[%s] verified ZRAM pool reconcile was not queued: %s", host, e.getCode()));
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] verified ZRAM pool reconcile was not accepted", host), e);
         }
     }
 
