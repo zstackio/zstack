@@ -41,10 +41,8 @@ public class MemoryStandardConfigAdapterTest {
         adapter = new MemoryStandardConfigAdapter();
         seedGlobal("ksm.enabled", "none", "none");
         seedGlobal("zram.enabled", "true", "false");
-        seedGlobal("zram.hostFloorBytes", "123", "");
         seedGlobal("writeback.enabled", "false", "false");
         seedGlobal("writeback.backendResourceUuid", "", "");
-        seedGlobal("zram.algorithm", "", "");
     }
 
     @After public void cleanup() throws Exception {
@@ -81,7 +79,7 @@ public class MemoryStandardConfigAdapterTest {
             assertNull(MemoryStandardConfigCodec.decode(path, "none"));
         }
         assertThrows(IllegalArgumentException.class,
-                () -> MemoryStandardConfigCodec.decode("zram.hostCpuGuardEnabled", "none"));
+                () -> MemoryStandardConfigCodec.decode("zram.logicalCapacityBytes", "none"));
         assertEquals(MemoryStandardConfigAdapter.OverrideMode.UNMANAGED,
                 readUnmanagedStoredOverride());
     }

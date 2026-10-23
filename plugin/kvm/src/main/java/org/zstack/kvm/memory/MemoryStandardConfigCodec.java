@@ -26,10 +26,6 @@ public final class MemoryStandardConfigCodec {
                     if (!"true".equalsIgnoreCase(value) && !"false".equalsIgnoreCase(value)) { throw malformed(path, value); }
                     return Boolean.parseBoolean(value);
                 case LONG: return new BigDecimal(value).longValueExact();
-                case DECIMAL:
-                    double number = Double.parseDouble(value);
-                    if (Double.isNaN(number) || Double.isInfinite(number)) { throw malformed(path, value); }
-                    return number;
                 case STRING:
                     Object checked = field.normalize(value);
                     return checked;
@@ -58,9 +54,6 @@ public final class MemoryStandardConfigCodec {
                 try { value = new BigDecimal(primitive.getAsString()).longValueExact(); }
                 catch (ArithmeticException | NumberFormatException e) { throw malformed(path, element.toString()); }
                 break;
-            case DECIMAL:
-                if (!primitive.isNumber()) { throw malformed(path, element.toString()); }
-                value = decode(path, primitive.getAsString()); break;
             case STRING:
                 if (!primitive.isString()) { throw malformed(path, element.toString()); }
                 value = field.normalize(primitive.getAsString()); break;

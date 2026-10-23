@@ -314,8 +314,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         } else {
             fields.put("ksm.enabled", new MemoryFieldCapability(licensed, true, "boolean", null, "NextPolicyCycle"));
             fields.put("ksm.zeroPagesEnabled", new MemoryFieldCapability(licensed, true, "boolean", null, "NextPolicyCycle"));
-            fields.put("ksm.pagesToScan", new MemoryFieldCapability(licensed, false, "int64", "pages", "NextPolicyCycle"));
-            fields.put("ksm.sleepMillis", new MemoryFieldCapability(licensed, false, "int64", "milliseconds", "NextPolicyCycle"));
             addPolicyCapabilities(fields, licensed, inventory.getScope());
         }
         if ("Host".equals(inventory.getScope())) {
@@ -354,46 +352,12 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         // exposes enablement, capacity, inheritance and status per FS 14.2.
         fields.put("zram.selectionMode", capability(writable, false, "enum", null, "NextPolicyCycle"));
         fields.put("zram.selectedVmUuids", capability(writable, false, "uuid[]", null, "InstanceFenced"));
-        for (String field : Arrays.asList("discoveryIntervalSeconds", "discoveryTimeoutSeconds", "discoveryTtlSeconds",
-                "hostSampleIntervalSeconds", "hostSampleTtlSeconds", "vmSampleIntervalSeconds", "vmSampleTtlSeconds",
-                "startupObservationSeconds")) {
-            fields.put("zram." + field, capability(writable, false, "int64", "seconds", "ObservationWindow"));
-        }
-        fields.put("zram.hostCpuGuardEnabled", capability(writable, false, "boolean", null, "NextPolicyCycle"));
-        fields.put("zram.hostMemoryPsiGuardEnabled", capability(writable, false, "boolean", null, "NextPolicyCycle"));
-        fields.put("zram.hostIoPsiGuardEnabled", capability(writable, false, "boolean", null, "NextPolicyCycle"));
-        for (String field : Arrays.asList("hostCpuThresholdPercent", "hostMemoryPsiThresholdPercent", "hostIoPsiThresholdPercent")) {
-            fields.put("zram." + field, capability(writable, false, "float64", "percent", "NextPolicyCycle"));
-        }
-        fields.put("zram.reclaimBatchBytes", capability(writable, false, "int64", "bytes", "NextPolicyCycle"));
-        fields.put("zram.concurrency", capability(writable, false, "int64", "count", "NextPolicyCycle"));
-        fields.put("zram.timeoutIsolationSlots", capability(writable, false, "int64", "count", "NextPolicyCycle"));
-        fields.put("zram.reclaimSlowOperationSeconds", capability(writable, false, "int64", "seconds", "NextPolicyCycle"));
-        fields.put("zram.operationRecordBudgetBytes", capability(writable, false, "int64", "bytes", "RecordRetention"));
-        fields.put("zram.algorithm", capability(writable, false, "enum", null, "NextPolicyCycle"));
-        for (String field : Arrays.asList("logicalCapacityBytes", "ramLimitBytes", "requiredAvailableBytes", "hostFloorBytes",
-                "metadataReserveBytes", "transientReserveBytes")) {
-            fields.put("zram." + field, capability(writable, "logicalCapacityBytes".equals(field) || "ramLimitBytes".equals(field),
-                    "int64", "bytes", "CapacityChecked"));
-        }
-        for (String field : Arrays.asList("cpuThresholdPercent")) {
-            fields.put("zram." + field, capability(writable, false, "int64", "percent", "NextPolicyCycle"));
-        }
-        for (String field : Arrays.asList("cpuHoldSeconds", "operationIntervalSeconds")) {
-            fields.put("zram." + field, capability(writable, false, "int64", "seconds", "NextPolicyCycle"));
-        }
+        fields.put("zram.logicalCapacityBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
+        fields.put("zram.ramLimitBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
         fields.put("writeback.enabled", capability(writable, false, "boolean", null, "OfflinePreparationMayBeRequired"));
         boolean hostBackend = "Host".equals(scope);
         fields.put("writeback.backendResourceUuid", capability(writable && hostBackend, false, "uuid", null, "DrainAndOfflinePreparation"));
-        for (String field : Arrays.asList("backendCapacityBytes", "batchBytes", "metadataBudgetBytes", "filesystemReserveBytes")) {
-            fields.put("writeback." + field, capability(writable && (hostBackend || !"backendCapacityBytes".equals(field)), false,
-                    "int64", "bytes", "DrainAndOfflinePreparation"));
-        }
-        for (String field : Arrays.asList("idleObservationSeconds", "operationIntervalSeconds", "slowOperationSeconds",
-                "backoffSeconds", "ioErrorBackoffSeconds")) {
-            fields.put("writeback." + field, capability(writable, false, "int64", "seconds", "DrainAndOfflinePreparation"));
-        }
-        fields.put("writeback.noProgressLimit", capability(writable, false, "int64", "count", "DrainAndOfflinePreparation"));
+        fields.put("writeback.backendCapacityBytes", capability(writable && hostBackend, false, "int64", "bytes", "DrainAndOfflinePreparation"));
     }
 
     private static MemoryFieldCapability capability(boolean writable, boolean basicUi, String type, String unit, String effect) {

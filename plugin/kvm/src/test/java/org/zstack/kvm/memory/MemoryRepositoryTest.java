@@ -517,8 +517,8 @@ public class MemoryRepositoryTest {
         assertEquals("foreign partial must not revoke or replace the target cold-admission proof",
                 coldObservationBeforeForeign,
                 MemoryCapabilityRules.coldKsmObservation(afterForeign, System.currentTimeMillis()));
-        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                "host1", "HostVO", "2048")), null, false);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                "host1", "HostVO", "true")), null, false);
 
         MemoryStateVO queued = host1State();
         assertNotNull("only a pure KSM first dispatch may consume independently observed KSM capability; status="
@@ -535,8 +535,8 @@ public class MemoryRepositoryTest {
                 "LOCAL_CONTROL_FENCE_UNKNOWN", MemoryCapabilityRules.coldKsmAdmissionReason(
                         repository.states(Collections.singletonList("host2"), 0, 1).get(0),
                         System.currentTimeMillis()));
-        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                "host2", "HostVO", "2048")), null, false);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                "host2", "HostVO", "true")), null, false);
         MemoryStateVO blocked = repository.states(Collections.singletonList("host2"), 0, 1).get(0);
         assertNull("Agent-local Unknown must not be bypassed because DB activeTask is empty",
                 blocked.getActiveTaskUuid());
@@ -1321,8 +1321,6 @@ public class MemoryRepositoryTest {
         prepareCapacityObservation("Succeeded", false, false, false);
         repository.transaction(em -> {
             writeGlobal(em, "ksm.enabled", false);
-            writeGlobal(em, "ksm.pagesToScan", 2000L);
-            writeGlobal(em, "ksm.sleepMillis", 20L);
             em.find(MemoryStateVO.class, "host1").setPolicyPlanStatus("Blocked");
             return null;
         });
@@ -1373,7 +1371,7 @@ public class MemoryRepositoryTest {
     @Test public void ksmOnlyChangeDoesNotDrainZramPool() {
         prepareCapacityObservation("Succeeded", false, false, true);
         standardCommit(Collections.singletonList(standardChange(
-                MemoryStandardField.KSM_PAGES_TO_SCAN, null, null, "3000")),
+                MemoryStandardField.KSM_ZERO_PAGES, null, null, "true")),
                 null, false);
         assertEquals(0L, (long) repository.transaction(em -> em.createQuery(
                 "select count(t) from MemoryTaskVO t where t.action = :action", Long.class)
@@ -1384,8 +1382,6 @@ public class MemoryRepositoryTest {
         repository.transaction(em -> {
             writeGlobal(em, "ksm.enabled", true);
             writeGlobal(em, "ksm.zeroPagesEnabled", false);
-            writeGlobal(em, "ksm.pagesToScan", 2000L);
-            writeGlobal(em, "ksm.sleepMillis", 20L);
             writeGlobal(em, "zram.enabled", zramEnabled);
             writeGlobal(em, "writeback.enabled", false);
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
@@ -1713,8 +1709,11 @@ public class MemoryRepositoryTest {
             Map<String, Object> ksm = (Map<String, Object>) org.zstack.utils.gson.JSONObjectUtil.toObject(policy, Map.class).get("ksm");
             writeOverride(em, "host1", "HostVO", "ksm.enabled", ksm.get("enabled"));
             writeOverride(em, "host1", "HostVO", "ksm.zeroPagesEnabled", ksm.get("zeroPagesEnabled"));
-            writeOverride(em, "host1", "HostVO", "ksm.pagesToScan", ((Number) ksm.get("pagesToScan")).longValue());
-            writeOverride(em, "host1", "HostVO", "ksm.sleepMillis", ((Number) ksm.get("sleepMillis")).longValue());
+            // Scan rates are no longer configurable; an upgraded Host policy row may still carry them.
+            MemoryPolicyVO own = em.find(MemoryPolicyVO.class, "Host:host1");
+            if (own == null) { persistPolicy(em, "Host", "host1"); own = em.find(MemoryPolicyVO.class, "Host:host1"); }
+            own.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"pagesToScan\":" + ksm.get("pagesToScan")
+                    + ",\"sleepMillis\":" + ksm.get("sleepMillis") + "}}");
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
             state.setStatus("Succeeded"); state.setDesiredRevision(8); state.setAppliedRevision(8L);
             state.setActiveTaskUuid(null);
@@ -1802,14 +1801,14 @@ public class MemoryRepositoryTest {
             em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown");
             return null;
         });
-        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                "host1", "HostVO", "2500")), null, false);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ZERO_PAGES,
+                "host1", "HostVO", "true")), null, false);
         MemoryTaskVO query = repository.claim("automatic-completion").stream().findFirst().get();
         assertTrue(MemoryRepository.isConfigurationReconcile(query));
         assertEquals("previous-ksm-apply", query.getExpectedControlOperationUuid());
         assertEquals(1L, query.getDesiredRevision());
-        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                "host1", "HostVO", "3000")), null, false);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ZERO_PAGES,
+                "host1", "HostVO", "false")), null, false);
         assertEquals(query.getUuid(), host1State().getActiveTaskUuid());
         assertEquals(1L, host1State().getDesiredRevision());
         assertTrue(repository.claim("other-mn").isEmpty());
@@ -1832,12 +1831,12 @@ public class MemoryRepositoryTest {
         assertEquals("Succeeded", repository.findTask("previous-ksm-apply").getStatus());
         assertNull(host1State().getActiveTaskUuid());
         assertEquals("previous-ksm-apply", host1State().getControlOperationUuid());
-        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
-                .getEffectivePolicy()).ksm.pagesToScan);
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
+                .getEffectivePolicy()).ksm.zeroPagesEnabled);
         assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
         assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
         MemoryTaskVO next = repository.claim("automatic-completion").stream().findFirst().get();
-        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(next.getPolicy()).ksm.pagesToScan);
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(next.getPolicy()).ksm.zeroPagesEnabled);
         assertEquals(2L, next.getDesiredRevision());
         repository.result(query.getUuid(), "Succeeded", "late duplicate", receipt, current);
         assertEquals(next.getUuid(), host1State().getActiveTaskUuid());
@@ -1846,7 +1845,7 @@ public class MemoryRepositoryTest {
         repository.result(next.getUuid(), "Succeeded", "latest desired applied", applied);
         assertEquals("Succeeded", host1State().getStatus());
         assertEquals("Applied", host1State().getPolicyPlanStatus());
-        assertEquals(Long.valueOf(3000), MemoryPolicyRules.decode(host1State().getAppliedPolicy()).ksm.pagesToScan);
+        assertEquals(Boolean.FALSE, MemoryPolicyRules.decode(host1State().getAppliedPolicy()).ksm.zeroPagesEnabled);
         assertNull(host1State().getActiveTaskUuid());
         // A formerly blocked attempt remains truthful history. It must not
         // override the current States projection after the latest apply.
@@ -1878,8 +1877,8 @@ public class MemoryRepositoryTest {
             state.setStatus("Unknown"); state.setActiveTaskUuid("previous-ksm-apply");
             em.find(MemoryTaskVO.class, "previous-ksm-apply").setStatus("Unknown"); return null;
         });
-        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                "host1", "HostVO", "2500")), null, false);
+        standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ZERO_PAGES,
+                "host1", "HostVO", "true")), null, false);
         MemoryTaskVO query = repository.claim("mn-before-agent-upgrade").get(0);
         repository.result(query.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null);
         assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
@@ -2242,10 +2241,8 @@ public class MemoryRepositoryTest {
                 writeGlobal(em, "writeback.enabled", !zramDisabled);
                 if (zramDisabled) {
                     writeGlobal(em, "ksm.enabled", false);
-                    writeGlobal(em, "ksm.pagesToScan", 2000L);
-                    writeGlobal(em, "ksm.sleepMillis", 20L);
                     writeGlobal(em, "zram.enabled", false);
-                    state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20},"
+                    state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false},"
                             + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096},\"writeback\":{\"enabled\":false}}");
                     state.setAppliedPolicyHash(sha256(state.getAppliedPolicy()));
                     com.google.gson.JsonObject stateJson = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
@@ -2807,11 +2804,9 @@ public class MemoryRepositoryTest {
             writeGlobal(em, "zram.enabled", false);
             writeGlobal(em, "writeback.enabled", false);
             writeGlobal(em, "ksm.enabled", false);
-            writeGlobal(em, "ksm.pagesToScan", 2000L);
-            writeGlobal(em, "ksm.sleepMillis", 20L);
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
             state.setStatus("Succeeded"); state.setControlOperationUuid(control); state.setActiveTaskUuid(null);
-            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,\"pagesToScan\":2000,\"sleepMillis\":20},"
+            state.setAppliedPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false},"
                     + "\"zram\":{\"enabled\":false,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096},"
                     + "\"writeback\":{\"enabled\":false}}");
             state.setState("{\"bootId\":\"" + boot + "\",\"managed\":true,\"poolGeneration\":null,"
@@ -2843,8 +2838,7 @@ public class MemoryRepositoryTest {
             state.setLastSampleTime(System.currentTimeMillis());
             if (priorKsmControl) {
                 MemoryTaskVO controlTask = em.find(MemoryTaskVO.class, control);
-                controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false,"
-                        + "\"pagesToScan\":2000,\"sleepMillis\":20}"
+                controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":false}"
                         + (priorControlIncludesZram ? ",\"zram\":{\"enabled\":false}" : "") + "}");
                 if (emptyKsm) { controlTask.setPolicy("{\"schemaVersion\":1,\"ksm\":{}}"); }
                 if (serviceDisableControl) {
@@ -3143,8 +3137,8 @@ public class MemoryRepositoryTest {
         MemoryTaskVO resultTask = preparation;
         if (automaticCompletion) {
             repository.result(preparation.getUuid(), "Unknown", "earlier completion proof unavailable", null);
-            standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                    "host1", "HostVO", "2500")), null, false);
+            standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ZERO_PAGES,
+                    "host1", "HostVO", "true")), null, false);
             resultTask = repository.claim("saved-configuration-query").stream().findFirst().get();
             assertTrue(MemoryRepository.isConfigurationReconcile(resultTask));
             assertEquals(preparation.getUuid(), resultTask.getReconcileOperationUuid());
@@ -3173,11 +3167,11 @@ public class MemoryRepositoryTest {
         assertEquals("8192", savedCapacity == null ? null : savedCapacity.toString());
         if (automaticCompletion) {
             assertEquals("Succeeded", persistedPreparation.getStatus());
-            assertEquals(Long.valueOf(2500), MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
-                    .getEffectivePolicy()).ksm.pagesToScan);
+            assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(repository.getPolicy("Host", "host1")
+                    .getEffectivePolicy()).ksm.zeroPagesEnabled);
             MemoryTaskVO next = repository.claim("continue-latest-target").stream().findFirst().get();
             assertTrue(Arrays.asList("apply", "clearOverride").contains(next.getAction()));
-            assertEquals(Long.valueOf(2500), MemoryPolicyRules.decode(next.getPolicy()).ksm.pagesToScan);
+            assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(next.getPolicy()).ksm.zeroPagesEnabled);
             assertEquals(1L, (long) repository.transaction(em -> em.createQuery(
                     "select count(t) from MemoryTaskVO t where t.hostUuid='host1' and t.action='prepareWritebackBackend'",
                     Long.class).getSingleResult()));
@@ -5420,8 +5414,8 @@ public class MemoryRepositoryTest {
                 repository.observePartialKsm(host, observation);
             }
             String resource = "Host".equals(scope) ? "host1" : "Cluster".equals(scope) ? "cluster1" : null;
-            standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_PAGES_TO_SCAN,
-                    resource, resource == null ? null : scope + "VO", "2048")), null, false);
+            standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
+                    resource, resource == null ? null : scope + "VO", "true")), null, false);
             List<MemoryTaskVO> tasks = repository.claim("new-worker");
             assertEquals(scope, "Host".equals(scope) ? 1 : 2, tasks.size());
             for (MemoryTaskVO task : tasks) {
