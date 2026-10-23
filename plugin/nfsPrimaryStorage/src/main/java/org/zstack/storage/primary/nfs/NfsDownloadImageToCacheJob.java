@@ -203,10 +203,12 @@ public class NfsDownloadImageToCacheJob implements Job {
                     }
                 });
 
-                done(new FlowDoneHandler(completion) {
+                flow(new Flow() {
+                    String __name__ = "persist-and-sign-image-cache";
+                    ImageCacheVO cvo = new ImageCacheVO();
+
                     @Override
-                    public void handle(Map data) {
-                        ImageCacheVO cvo = new ImageCacheVO();
+                    public void run(final FlowTrigger trigger, Map data) {
                         cvo.setImageUuid(image.getInventory().getUuid());
                         cvo.setInstallUrl(cacheInstallPath);
                         cvo.setMd5sum("no md5");
@@ -218,6 +220,8 @@ public class NfsDownloadImageToCacheJob implements Job {
                                 image.getInventory().getUuid(), cvo.getId(), cvo.getInstallUrl()));
 
                         ImageCacheVO finalCvo = cvo;
+
+                        data.put(ImageCacheInventory.class.getSimpleName(), ImageCacheInventory.valueOf(cvo));
 
                         new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
                             ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(finalCvo), new Completion(whileCompletion) {
@@ -232,15 +236,43 @@ public class NfsDownloadImageToCacheJob implements Job {
                                     whileCompletion.allDone();
                                 }
                             });
-                        }).run(new WhileDoneCompletion(completion) {
+                        }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 if (!errorCodeList.getCauses().isEmpty()) {
-                                    logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                    trigger.fail(errorCodeList.getCauses().get(0));
+                                    return;
                                 }
-                                completion.success(ImageCacheInventory.valueOf(finalCvo));
+                                trigger.next();
                             }
                         });
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        if (cvo.getId() != 0) {
+                            dbf.remove(cvo);
+                        }
+                        DeleteBitsOnPrimaryStorageMsg msg = new DeleteBitsOnPrimaryStorageMsg();
+                        msg.setPrimaryStorageUuid(primaryStorage.getUuid());
+                        msg.setInstallPath(cacheInstallPath);
+                        bus.makeTargetServiceIdByResourceUuid(msg, PrimaryStorageConstant.SERVICE_ID, primaryStorage.getUuid());
+                        bus.send(msg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (!reply.isSuccess()) {
+                                    logger.warn(String.format("failed to delete unsigned image cache: %s", reply.getError()));
+                                }
+                                trigger.rollback();
+                            }
+                        });
+                    }
+                });
+
+                done(new FlowDoneHandler(completion) {
+                    @Override
+                    public void handle(Map data) {
+                        completion.success((ImageCacheInventory) data.get(ImageCacheInventory.class.getSimpleName()));
                     }
                 });
 

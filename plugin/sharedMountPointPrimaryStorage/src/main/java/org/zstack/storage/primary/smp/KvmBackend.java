@@ -879,10 +879,12 @@ public class KvmBackend extends HypervisorBackend {
                                 }
                             });
 
-                            done(new FlowDoneHandler(completion, chain) {
+                            flow(new Flow() {
+                                String __name__ = "persist-and-sign-image-cache";
+                                ImageCacheVO vo = new ImageCacheVO();
+
                                 @Override
-                                public void handle(Map data) {
-                                    ImageCacheVO vo = new ImageCacheVO();
+                                public void run(final FlowTrigger trigger, Map data) {
                                     vo.setState(ImageCacheState.ready);
                                     vo.setMediaType(ImageMediaType.valueOf(image.getMediaType()));
                                     vo.setImageUuid(image.getUuid());
@@ -894,6 +896,8 @@ public class KvmBackend extends HypervisorBackend {
 
                                     logger.debug(String.format("downloaded image[uuid:%s, name:%s] to the image cache of local shared mount point storage[uuid: %s, installPath: %s]",
                                             image.getUuid(), image.getName(), self.getUuid(), primaryStorageInstallPath));
+
+                                    data.put(ImageCacheInventory.class.getSimpleName(), ImageCacheInventory.valueOf(vo));
 
                                     new While<>(pluginRgty.getExtensionList(AfterCreateImageCacheExtensionPoint.class)).each((ext, whileCompletion) -> {
                                         ext.saveEncryptAfterCreateImageCache(null, ImageCacheInventory.valueOf(vo), new Completion(whileCompletion) {
@@ -908,16 +912,43 @@ public class KvmBackend extends HypervisorBackend {
                                                 whileCompletion.allDone();
                                             }
                                         });
-                                    }).run(new WhileDoneCompletion(completion) {
+                                    }).run(new WhileDoneCompletion(trigger) {
                                         @Override
                                         public void done(ErrorCodeList errorCodeList) {
                                             if (!errorCodeList.getCauses().isEmpty()) {
-                                                logger.warn(String.format("failed to saveEncryptAfterCreateImageCache: %s", errorCodeList.getCauses().get(0)));
+                                                trigger.fail(errorCodeList.getCauses().get(0));
+                                                return;
                                             }
-                                            completion.success(ImageCacheInventory.valueOf(vo));
-                                            chain.next();
+                                            trigger.next();
                                         }
                                     });
+                                }
+
+                                @Override
+                                public void rollback(FlowRollback trigger, Map data) {
+                                    if (vo.getId() != 0) {
+                                        dbf.remove(vo);
+                                    }
+                                    deleteBits(primaryStorageInstallPath, new Completion(trigger) {
+                                        @Override
+                                        public void success() {
+                                            trigger.rollback();
+                                        }
+
+                                        @Override
+                                        public void fail(ErrorCode errorCode) {
+                                            logger.warn(String.format("failed to delete unsigned image cache: %s", errorCode));
+                                            trigger.rollback();
+                                        }
+                                    });
+                                }
+                            });
+
+                            done(new FlowDoneHandler(completion, chain) {
+                                @Override
+                                public void handle(Map data) {
+                                    completion.success((ImageCacheInventory) data.get(ImageCacheInventory.class.getSimpleName()));
+                                    chain.next();
                                 }
                             });
 
