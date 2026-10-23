@@ -1975,6 +1975,36 @@ public class MemoryRepositoryTest {
         row.setResourceUuid(resource); row.setResourceType(type); em.persist(row);
     }
 
+    @Test public void lowerLevelNoneStopsManagingInsteadOfInheriting() {
+        registerStandardResources();
+        for (MemoryStandardField field : Arrays.asList(MemoryStandardField.KSM_ENABLED, MemoryStandardField.ZRAM_ENABLED)) {
+            repository.transaction(em -> {
+                em.createQuery("delete from ResourceConfigVO").executeUpdate();
+                writeOverride(em, "cluster1", "ClusterVO", field.path(), true);
+                return null;
+            });
+            assertEquals(field.path(), Boolean.TRUE,
+                    MemoryStandardConfigCodec.get(repository.getPolicy("Host", "host1").getEffectivePolicy(), field.path()));
+
+            for (String[] layer : new String[][]{{"cluster1", "ClusterVO"}, {"host1", "HostVO"}}) {
+                repository.transaction(em -> {
+                    em.createQuery("delete from ResourceConfigVO").executeUpdate();
+                    if ("host1".equals(layer[0])) { writeOverride(em, "cluster1", "ClusterVO", field.path(), true); }
+                    else { writeGlobal(em, field.path(), true); }
+                    ResourceConfigVO row = new ResourceConfigVO(); row.setUuid(UUID.randomUUID().toString().replace("-", ""));
+                    row.setCategory(field.category()); row.setName(field.configName()); row.setValue("none");
+                    row.setResourceUuid(layer[0]); row.setResourceType(layer[1]); em.persist(row);
+                    return null;
+                });
+                MemoryPolicyInventory host = repository.getPolicy("Host", "host1");
+                assertNull(field.path() + " none on " + layer[1] + " must not inherit the upper value",
+                        MemoryStandardConfigCodec.get(host.getEffectivePolicy(), field.path()));
+                assertEquals("Unmanaged", host.getFieldModes().get(field.path()));
+            }
+            repository.transaction(em -> { writeGlobal(em, field.path(), null); return null; });
+        }
+    }
+
     @Test public void policyRuleErrorTranslationPreservesMemoryCodesAndPassesThroughOtherFailures() {
         RuntimeException memory = MemoryRepository.translatePolicyRuleFailure(
                 new IllegalArgumentException("MEMORY_INVALID_POLICY: capacity limits conflict"));
