@@ -49,6 +49,7 @@ import org.zstack.header.network.l3.*;
 import org.zstack.header.network.sdncontroller.SdnControllerConstant;
 import org.zstack.header.network.service.*;
 import org.zstack.header.vm.VmNicVO;
+import org.zstack.header.vm.VmNicVO_;
 import org.zstack.identity.AccountManager;
 import org.zstack.network.service.NetworkServiceManager;
 import org.zstack.resourceconfig.ResourceConfigFacade;
@@ -508,10 +509,16 @@ public class L3BasicNetwork implements L3Network {
                                 if (sdnL3 != null) {
                                     sdnL3.beforeCommitDeleteIpRangeInDb(inv, msg.getNetworkOperation());
                                 }
+                                List<String> affectedNicUuids = q(UsedIpVO.class)
+                                        .select(UsedIpVO_.vmNicUuid)
+                                        .eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid())
+                                        .notNull(UsedIpVO_.vmNicUuid)
+                                        .listValues();
                                 SQL.New(UsedIpVO.class).eq(UsedIpVO_.ipRangeUuid, iprvo.getUuid()).hardDelete();
                                 dbf.removeByPrimaryKeysInCurrentTransaction(
                                         Collections.singletonList(iprvo.getUuid()), IpRangeVO.class);
                                 IpRangeHelper.updateL3NetworkIpversion(iprvo);
+                                updateAffectedVmNicsPrimaryIp(affectedNicUuids, iprvo.getUuid());
 
                             }
                         }.execute();
@@ -570,6 +577,48 @@ public class L3BasicNetwork implements L3Network {
                 return "delete-ip-range";
             }
         });
+    }
+
+    private void updateAffectedVmNicsPrimaryIp(List<String> affectedNicUuids, String deletedIpRangeUuid) {
+        if (affectedNicUuids == null || affectedNicUuids.isEmpty()) {
+            return;
+        }
+        Set<String> nicUuids = affectedNicUuids.stream()
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (nicUuids.isEmpty()) {
+            return;
+        }
+        List<Tuple> remainingIpTuples = Q.New(UsedIpVO.class)
+                .select(UsedIpVO_.vmNicUuid, UsedIpVO_.ipRangeUuid, UsedIpVO_.uuid, UsedIpVO_.ip,
+                        UsedIpVO_.netmask, UsedIpVO_.gateway, UsedIpVO_.ipVersion, UsedIpVO_.l3NetworkUuid)
+                .in(UsedIpVO_.vmNicUuid, nicUuids)
+                .orderBy(UsedIpVO_.ipVersion, SimpleQuery.Od.ASC)
+                .orderBy(UsedIpVO_.createDate, SimpleQuery.Od.ASC)
+                .listTuple();
+        if (remainingIpTuples.isEmpty()) {
+            return;
+        }
+        Map<String, Tuple> primaryIpByNicUuid = new LinkedHashMap<>();
+        for (Tuple tuple : remainingIpTuples) {
+            String vmNicUuid = tuple.get(0, String.class);
+            String ipRangeUuid = tuple.get(1, String.class);
+            if (vmNicUuid == null || Objects.equals(deletedIpRangeUuid, ipRangeUuid)) {
+                continue;
+            }
+            primaryIpByNicUuid.putIfAbsent(vmNicUuid, tuple);
+        }
+        for (Map.Entry<String, Tuple> entry : primaryIpByNicUuid.entrySet()) {
+            Tuple primaryIp = entry.getValue();
+            SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, entry.getKey())
+                    .set(VmNicVO_.usedIpUuid, primaryIp.get(2, String.class))
+                    .set(VmNicVO_.ip, primaryIp.get(3, String.class))
+                    .set(VmNicVO_.netmask, primaryIp.get(4, String.class))
+                    .set(VmNicVO_.gateway, primaryIp.get(5, String.class))
+                    .set(VmNicVO_.ipVersion, primaryIp.get(6, Integer.class))
+                    .set(VmNicVO_.l3NetworkUuid, primaryIp.get(7, String.class))
+                    .update();
+        }
     }
 
     private void handle(L3NetworkDeletionMsg msg) {
