@@ -21,7 +21,7 @@ import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.LongJobInventory
 import org.zstack.storage.ceph.backup.CephBackupStorageBase
 import org.zstack.storage.ceph.backup.CephBackupStorageVO
-import org.zstack.test.integration.ZStackTest
+import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
@@ -58,7 +58,7 @@ class CephUploadImageCancelCase extends SubCase {
 
     @Override
     void setup() {
-        useSpring(ZStackTest.springSpec)
+        useSpring(StorageTest.springSpec)
     }
 
     @Override
