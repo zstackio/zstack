@@ -132,6 +132,14 @@
 
     <config>
         <category>kvm</category>
+        <name>checkMigrationRuntimeCompatibility</name>
+        <description>whether to check KVM runtime compatibility when migrating VMs</description>
+        <type>java.lang.Boolean</type>
+        <defaultValue>true</defaultValue>
+    </config>
+
+    <config>
+        <category>kvm</category>
         <name>ignoreMsrs</name>
         <description>whether set ignore_msrs for kvm module</description>
         <type>java.lang.Boolean</type>

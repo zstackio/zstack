@@ -168,6 +168,10 @@ public class KVMHostAllocatorFilterExtensionPoint implements HostAllocatorFilter
 
     @Override
     public List<HostVO> filterHostCandidates(List<HostVO> candidates, HostAllocatorSpec spec) {
+        if (!KVMGlobalConfig.CHECK_MIGRATION_RUNTIME_COMPATIBILITY.value(Boolean.class)) {
+            return candidates;
+        }
+
         if (spec.getHypervisorType() == null || !spec.getHypervisorType().equals(KVMConstant.KVM_HYPERVISOR_TYPE)) {
             return candidates;
         }
