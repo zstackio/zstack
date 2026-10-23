@@ -1261,7 +1261,7 @@ public class MemoryRepository {
         boolean maintenanceActivation;
         boolean writebackDisableOnly;
         boolean confirmedKsmReconnect;
-        boolean zramRebootReconfirmation;
+        boolean rebootReconfirmation;
         String expectedControlOperationUuid;
         String capacityMaintenance;
     }
@@ -1478,7 +1478,7 @@ public class MemoryRepository {
             }
         }
         if (plan.changedFields.isEmpty()) {
-            plan.zramRebootReconfirmation = addZramRebootReconfirmation(state, target, now, plan.changedFields);
+            plan.rebootReconfirmation = addRebootReconfirmation(state, target, now, plan.changedFields);
         }
         // A successful, same-boot offline drain permits only the existing
         // initialization contract. Its first activation must keep writeback
@@ -1706,21 +1706,16 @@ public class MemoryRepository {
     }
 
     /**
-     * A reconnect restores the applied KSM target only when the last confirmed
-     * Host delta agrees. The Agent independently proves the complete target
-     * from that operation's native readback while holding the Host writer lock.
+     * After a Host reboot the Agent reports no same-boot confirmation. Re-issue
+     * the unchanged applied ZRAM settings (the service rebuilt the pool) and the
+     * applied KSM settings the kernel reset, so the Agent confirms them for this
+     * boot; the recorded plan hash keeps it to once.
      */
-    /**
-     * After a Host reboot the service rebuilds the pool, but the Agent reports
-     * no same-boot confirmation. Re-issue the unchanged applied ZRAM settings so
-     * the Agent confirms them for this boot; the recorded plan hash keeps it to once.
-     */
-    private static boolean addZramRebootReconfirmation(MemoryStateVO state, JsonObject target, long now,
+    private static boolean addRebootReconfirmation(MemoryStateVO state, JsonObject target, long now,
             Map<String, String> changedFields) {
         if (!"Succeeded".equals(state.getStatus()) || state.getActiveTaskUuid() != null
                 || state.getAppliedRevision() == null || state.getAppliedRevision() != state.getDesiredRevision()
-                || state.getAppliedPolicy() == null || !hasFreshCapabilityObservation(state, now)
-                || MemoryPolicyAdmissionRules.capabilityReason(state, "zram", now) != null) { return false; }
+                || state.getAppliedPolicy() == null || !hasFreshCapabilityObservation(state, now)) { return false; }
         try {
             JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
             JsonElement bootId = observed.get("bootId");
@@ -1728,19 +1723,42 @@ public class MemoryRepository {
                     || bootId.getAsString().trim().isEmpty()
                     || observed.has("lastConfirmedOperationUuid")
                     || observed.has("lastConfirmedAppliedRevision")) { return false; }
-            JsonObject appliedZram = new JsonParser().parse(state.getAppliedPolicy()).getAsJsonObject().getAsJsonObject("zram");
+            JsonObject applied = new JsonParser().parse(state.getAppliedPolicy()).getAsJsonObject();
+            JsonObject reissue = new JsonObject();
+            JsonObject appliedZram = applied.getAsJsonObject("zram");
             JsonObject desiredZram = target.getAsJsonObject("zram");
             JsonElement enabled = appliedZram == null ? null : appliedZram.get("enabled");
-            if (desiredZram == null || !desiredZram.equals(appliedZram) || enabled == null
-                    || !enabled.isJsonPrimitive() || !enabled.getAsJsonPrimitive().isBoolean()
-                    || !enabled.getAsBoolean()) { return false; }
-            JsonObject zramOnly = new JsonObject();
-            zramOnly.add("zram", desiredZram);
-            changedFields.putAll(MemoryPolicyAdmissionRules.changedFields("{}", zramOnly.toString()));
+            if (desiredZram != null && desiredZram.equals(appliedZram) && enabled != null
+                    && enabled.isJsonPrimitive() && enabled.getAsJsonPrimitive().isBoolean() && enabled.getAsBoolean()
+                    && MemoryPolicyAdmissionRules.capabilityReason(state, "zram", now) == null) {
+                reissue.add("zram", desiredZram);
+            }
+            JsonObject appliedKsm = applied.getAsJsonObject("ksm");
+            JsonObject desiredKsm = target.getAsJsonObject("ksm");
+            JsonObject actualRoot = observed.getAsJsonObject("actual");
+            JsonObject actualKsm = actualRoot == null ? null : actualRoot.getAsJsonObject("ksm");
+            if (desiredKsm != null && !desiredKsm.entrySet().isEmpty() && desiredKsm.equals(appliedKsm)
+                    && actualKsm != null && MemoryPolicyAdmissionRules.capabilityReason(state, "ksm", now) == null
+                    && (!desiredKsm.has("zeroPagesEnabled")
+                        || MemoryPolicyAdmissionRules.capabilityReason(state, "ksmZeroPages", now) == null)) {
+                for (Map.Entry<String, JsonElement> entry : desiredKsm.entrySet()) {
+                    JsonElement actual = actualKsm.get(entry.getKey());
+                    if (actual != null && !actual.equals(entry.getValue())) {
+                        reissue.add("ksm", desiredKsm);
+                        break;
+                    }
+                }
+            }
+            changedFields.putAll(MemoryPolicyAdmissionRules.changedFields("{}", reissue.toString()));
             return !changedFields.isEmpty();
         } catch (RuntimeException invalid) { return false; }
     }
 
+    /**
+     * A reconnect restores the applied KSM target only when the last confirmed
+     * Host delta agrees. The Agent independently proves the complete target
+     * from that operation's native readback while holding the Host writer lock.
+     */
     private static boolean addTrustedAppliedKsmReconnectDrift(EntityManager em, String hostUuid,
             MemoryStateVO state, JsonObject target, long now, Map<String, String> changedFields) {
         if (state == null || state.getStatus() == null || !"Succeeded".equals(state.getStatus())
@@ -2012,7 +2030,7 @@ public class MemoryRepository {
                 recordPolicyPlan(state, plan, "Blocked");
                 return false;
             }
-            if (!plan.hasPayload || (!plan.zramRebootReconfirmation
+            if (!plan.hasPayload || (!plan.rebootReconfirmation
                     && Objects.equals(plan.payloadHash, state.getAppliedPolicyHash()))) {
                 recordPolicyPlan(state, plan, plan.hasBlockers ? "Blocked" : "Applied");
                 return false;

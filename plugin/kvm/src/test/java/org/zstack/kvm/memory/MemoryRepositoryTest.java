@@ -1656,6 +1656,33 @@ public class MemoryRepositoryTest {
         assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
     }
 
+    @Test public void rebootReissuesAppliedKsmTheKernelReset() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true,"
+                + "\"pagesToScan\":100,\"sleepMillis\":20}}";
+        seedConfirmedKsmReconnect(policy);
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            // The last control operation is an older apply, so the confirmed-reconnect path does not apply.
+            state.setControlOperationUuid("older-apply-r7");
+            MemoryTaskVO older = testTask("older-apply-r7", null, "apply", "Succeeded", null);
+            older.setDesiredRevision(7); older.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}");
+            em.persist(older);
+            state.setState("{\"bootId\":\"boot-new\",\"actual\":{\"ksm\":{\"enabled\":true,"
+                    + "\"zeroPagesEnabled\":false,\"pagesToScan\":100,\"sleepMillis\":20}}}");
+            return null;
+        });
+
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO reissue = repository.claim("mn-ksm-reboot").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(reissue.getPolicy(), Map.class);
+        Map<String, Object> ksm = (Map<String, Object>) payload.get("ksm");
+        assertEquals(Boolean.TRUE, ksm.get("zeroPagesEnabled"));
+        assertEquals(100, ((Number) ksm.get("pagesToScan")).intValue());
+        assertFalse("the same boot never re-issues again", repository.applyEffectivePolicyAfterConnect("host1"));
+    }
+
     private void seedConfirmedKsmReconnect(String policy) {
         repository.transaction(em -> {
             Map<String, Object> ksm = (Map<String, Object>) org.zstack.utils.gson.JSONObjectUtil.toObject(policy, Map.class).get("ksm");
