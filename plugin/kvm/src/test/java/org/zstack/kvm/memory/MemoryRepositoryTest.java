@@ -1683,6 +1683,31 @@ public class MemoryRepositoryTest {
         assertFalse("the same boot never re-issues again", repository.applyEffectivePolicyAfterConnect("host1"));
     }
 
+    @Test public void zramOnlyUpdateCarriesAppliedKsmForLaterPause() {
+        registerStandardResources();
+        String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true,"
+                + "\"pagesToScan\":100,\"sleepMillis\":20}}";
+        seedConfirmedKsmReconnect(policy);
+        repository.transaction(em -> {
+            writeOverride(em, "host1", "HostVO", "zram.enabled", true);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true}");
+            state.setState("{\"bootId\":\"boot-b\",\"lastConfirmedOperationUuid\":\"confirmed-ksm-r8\","
+                    + "\"lastConfirmedAppliedRevision\":8,\"actual\":{\"ksm\":{\"enabled\":true,"
+                    + "\"zeroPagesEnabled\":true,\"pagesToScan\":100,\"sleepMillis\":20}}}");
+            return null;
+        });
+
+        assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
+        MemoryTaskVO apply = repository.claim("mn-zram-carry-ksm").stream()
+                .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
+        Map<String, Object> payload = org.zstack.utils.gson.JSONObjectUtil.toObject(apply.getPolicy(), Map.class);
+        assertEquals(Boolean.TRUE, ((Map<String, Object>) payload.get("zram")).get("enabled"));
+        Map<String, Object> ksm = (Map<String, Object>) payload.get("ksm");
+        assertEquals(Boolean.TRUE, ksm.get("enabled"));
+        assertEquals(Boolean.TRUE, ksm.get("zeroPagesEnabled"));
+    }
+
     private void seedConfirmedKsmReconnect(String policy) {
         repository.transaction(em -> {
             Map<String, Object> ksm = (Map<String, Object>) org.zstack.utils.gson.JSONObjectUtil.toObject(policy, Map.class).get("ksm");
