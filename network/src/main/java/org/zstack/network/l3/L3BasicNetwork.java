@@ -1637,46 +1637,28 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        msg.setDns(normalizeDns(msg.getDns()));
+        final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
+        if (findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
+            self = dbf.reload(self);
+            evt.setInventory(L3NetworkInventory.valueOf(self));
+            bus.publish(evt);
+            return;
+        }
+        ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
             @Override
-            public String getSyncSignature() {
-                return getSyncId();
+            public void success(L3NetworkInventory inventory) {
+                evt.setInventory(inventory);
+                bus.publish(evt);
             }
 
             @Override
-            public void run(final SyncTaskChain chain) {
-                msg.setDns(normalizeDns(msg.getDns()));
-                final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-                if (findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
-                    self = dbf.reload(self);
-                    evt.setInventory(L3NetworkInventory.valueOf(self));
-                    bus.publish(evt);
-                    chain.next();
-                    return;
-                }
-                ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg, chain) {
-                    @Override
-                    public void success(L3NetworkInventory inventory) {
-                        evt.setInventory(inventory);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                };
-                removeDns(msg, completion);
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
-
-            @Override
-            public String getName() {
-                return String.format("remove-dns-%s-from-l3-%s", msg.getDns(), msg.getL3NetworkUuid());
-            }
-        });
+        };
+        removeDns(msg, completion);
     }
 
     private void removeDns(final APIRemoveDnsFromL3NetworkMsg msg,
@@ -1829,47 +1811,29 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(final APIAddDnsToL3NetworkMsg msg) {
-        thdf.chainSubmit(new ChainTask(msg) {
+        msg.setDns(normalizeDns(msg.getDns()));
+        final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
+        if (!findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
+            evt.setError(Platform.operr(
+                    NetworkUtils.isIpv4Address(msg.getDns()) ? ORG_ZSTACK_NETWORK_L3_10067 : ORG_ZSTACK_NETWORK_L3_10068,
+                    "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+            bus.publish(evt);
+            return;
+        }
+        ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
             @Override
-            public String getSyncSignature() {
-                return getSyncId();
+            public void success(L3NetworkInventory inventory) {
+                evt.setInventory(inventory);
+                bus.publish(evt);
             }
 
             @Override
-            public void run(final SyncTaskChain chain) {
-                msg.setDns(normalizeDns(msg.getDns()));
-                final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
-                if (!findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
-                    evt.setError(Platform.operr(
-                            NetworkUtils.isIpv4Address(msg.getDns()) ? ORG_ZSTACK_NETWORK_L3_10067 : ORG_ZSTACK_NETWORK_L3_10068,
-                            "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
-                    bus.publish(evt);
-                    chain.next();
-                    return;
-                }
-                ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg, chain) {
-                    @Override
-                    public void success(L3NetworkInventory inventory) {
-                        evt.setInventory(inventory);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        evt.setError(errorCode);
-                        bus.publish(evt);
-                        chain.next();
-                    }
-                };
-                addDns(msg, completion);
+            public void fail(ErrorCode errorCode) {
+                evt.setError(errorCode);
+                bus.publish(evt);
             }
-
-            @Override
-            public String getName() {
-                return String.format("add-dns-%s-to-l3-%s", msg.getDns(), msg.getL3NetworkUuid());
-            }
-        });
+        };
+        addDns(msg, completion);
     }
 
     private void addDns(final APIAddDnsToL3NetworkMsg msg,
