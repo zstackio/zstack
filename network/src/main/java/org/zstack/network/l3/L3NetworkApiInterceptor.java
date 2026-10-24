@@ -581,13 +581,8 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(APIRemoveDnsFromL3NetworkMsg msg) {
-        SimpleQuery<L3NetworkDnsVO> q = dbf.createQuery(L3NetworkDnsVO.class);
-        q.add(L3NetworkDnsVO_.dns, Op.EQ, msg.getDns());
-        q.add(L3NetworkDnsVO_.l3NetworkUuid, Op.EQ, msg.getL3NetworkUuid());
-        if (!q.isExists()) {
-            APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-            bus.publish(evt);
-            throw new StopRoutingException();
+        if (msg.getDns() != null && IPv6NetworkUtils.isIpv6Address(msg.getDns())) {
+            msg.setDns(IPv6Address.fromString(msg.getDns()).toString());
         }
     }
 
@@ -816,6 +811,9 @@ public class L3NetworkApiInterceptor implements ApiMessageInterceptor {
     private void validate(APIAddDnsToL3NetworkMsg msg) {
         if (!NetworkUtils.isIpAddress(msg.getDns())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_L3_10066, "dns[%s] is not a IP address", msg.getDns()));
+        }
+        if (IPv6NetworkUtils.isIpv6Address(msg.getDns())) {
+            msg.setDns(IPv6Address.fromString(msg.getDns()).toString());
         }
 
         List<L3NetworkDnsVO> l3NetworkDnsVOS = Q.New(L3NetworkDnsVO.class).eq(L3NetworkDnsVO_.l3NetworkUuid, msg.getL3NetworkUuid()).list();
