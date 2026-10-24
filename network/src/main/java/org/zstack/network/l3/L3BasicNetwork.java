@@ -1639,12 +1639,6 @@ public class L3BasicNetwork implements L3Network {
     private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
         msg.setDns(normalizeDns(msg.getDns()));
         final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-        if (findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
-            self = dbf.reload(self);
-            evt.setInventory(L3NetworkInventory.valueOf(self));
-            bus.publish(evt);
-            return;
-        }
         ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
             @Override
             public void success(L3NetworkInventory inventory) {
