@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS `zstack`.`FineTuneRunDeletionVO` (
+    `uuid` VARCHAR(32) NOT NULL,
+    `createDate` TIMESTAMP NULL DEFAULT NULL,
+    PRIMARY KEY (`uuid`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

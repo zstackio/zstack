@@ -13,6 +13,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck", "org.zstack.sdk.FineTuneExportCheck");
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem", "org.zstack.sdk.FineTuneExportItem");
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult", "org.zstack.sdk.FineTuneExportPreflightResult");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneRunLog", "org.zstack.sdk.FineTuneRunLog");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.AIBusinessGatewayInventory", "org.zstack.sdk.AIBusinessGatewayInventory");
 			put("org.zstack.ai.entity.AIBusinessGatewayOfferingInventory", "org.zstack.sdk.AIBusinessGatewayOfferingInventory");
@@ -26,6 +27,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.entity.ApplicationDevelopmentServiceInventory", "org.zstack.sdk.ApplicationDevelopmentServiceInventory");
 			put("org.zstack.ai.entity.CdnModelServiceTemplateInventory", "org.zstack.sdk.CdnModelServiceTemplateInventory");
 			put("org.zstack.ai.entity.DatasetInventory", "org.zstack.sdk.DatasetInventory");
+			put("org.zstack.ai.entity.FineTuneRunInventory", "org.zstack.sdk.FineTuneRunInventory");
+			put("org.zstack.ai.entity.FineTuneWorkerRegistrationInventory", "org.zstack.sdk.FineTuneWorkerRegistrationInventory");
 			put("org.zstack.ai.entity.ModelCenterBusinessNetworkProfileInventory", "org.zstack.sdk.ModelCenterBusinessNetworkProfileInventory");
 			put("org.zstack.ai.entity.ModelCenterCapacityInventory", "org.zstack.sdk.ModelCenterCapacityInventory");
 			put("org.zstack.ai.entity.ModelCenterInventory", "org.zstack.sdk.ModelCenterInventory");
@@ -55,6 +58,7 @@ public class SourceClassMap {
 			put("org.zstack.ai.message.ModelServiceMatchEntry", "org.zstack.sdk.ModelServiceMatchEntry");
 			put("org.zstack.ai.message.ModelServiceMatchEntryName", "org.zstack.sdk.ModelServiceMatchEntryName");
 			put("org.zstack.ai.message.ModelServiceMatchStatus", "org.zstack.sdk.ModelServiceMatchStatus");
+			put("org.zstack.ai.service.training.DistributedTraining$GpuCapacity", "org.zstack.sdk.GpuCapacity");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessGroupInventory", "org.zstack.sdk.AliyunNasAccessGroupInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasAccessRuleInventory", "org.zstack.sdk.AliyunNasAccessRuleInventory");
 			put("org.zstack.aliyun.nas.filesystem.AliyunNasFileSystemInventory", "org.zstack.sdk.AliyunNasFileSystemInventory");
@@ -1180,6 +1184,9 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FineTuneExportCheck", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck");
 			put("org.zstack.sdk.FineTuneExportItem", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem");
 			put("org.zstack.sdk.FineTuneExportPreflightResult", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult");
+			put("org.zstack.sdk.FineTuneRunInventory", "org.zstack.ai.entity.FineTuneRunInventory");
+			put("org.zstack.sdk.FineTuneRunLog", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneRunLog");
+			put("org.zstack.sdk.FineTuneWorkerRegistrationInventory", "org.zstack.ai.entity.FineTuneWorkerRegistrationInventory");
 			put("org.zstack.sdk.FirewallRuleState", "org.zstack.vpcfirewall.entity.FirewallRuleState");
 			put("org.zstack.sdk.FlkSecSecretResourcePoolInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecretResourcePoolInventory");
 			put("org.zstack.sdk.FlkSecSecurityMachineInventory", "org.zstack.crypto.securitymachine.thirdparty.flkSec.FlkSecSecurityMachineInventory");
@@ -1193,6 +1200,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.GlobalConfigOptions", "org.zstack.core.config.GlobalConfigOptions");
 			put("org.zstack.sdk.GlobalConfigTemplateInventory", "org.zstack.templateConfig.GlobalConfigTemplateInventory");
 			put("org.zstack.sdk.GpuAllocateStatus", "org.zstack.pciDevice.gpu.GpuAllocateStatus");
+			put("org.zstack.sdk.GpuCapacity", "org.zstack.ai.service.training.DistributedTraining$GpuCapacity");
 			put("org.zstack.sdk.GpuDeviceInventory", "org.zstack.pciDevice.gpu.GpuDeviceInventory");
 			put("org.zstack.sdk.GpuDeviceSpecCandidateInventory", "org.zstack.pciDevice.gpu.GpuDeviceSpecCandidateInventory");
 			put("org.zstack.sdk.GpuDeviceSpecInventory", "org.zstack.pciDevice.gpu.GpuDeviceSpecInventory");
