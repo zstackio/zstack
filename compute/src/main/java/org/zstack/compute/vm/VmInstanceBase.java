@@ -3709,6 +3709,33 @@ public class VmInstanceBase extends AbstractVmInstance {
             public void run(final SyncTaskChain chain) {
 
                 L3NetworkVO l3NetworkVO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, msg.getL3NetworkUuid()).find();
+                VmInstanceInventory vmInv = getSelfInventory();
+                VmNicInventory targetNic = vmInv.findNic(msg.getL3NetworkUuid());
+                if (targetNic != null && l3NetworkVO != null) {
+                    L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3NetworkVO);
+                    for (VmSetStaticIpExtensionPoint ext : pluginRgty.getExtensionList(VmSetStaticIpExtensionPoint.class)) {
+                        if (!ext.accepts(vmInv, targetNic, l3Inv)) {
+                            continue;
+                        }
+                        VmInstanceSpec spec = buildSpecFromInventory(vmInv, VmOperation.ChangeNicIp);
+                        ext.setStaticIp(msg, spec, targetNic, l3Inv, new Completion(reply, chain) {
+                            @Override
+                            public void success() {
+                                self = dbf.reload(self);
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                reply.setError(errorCode);
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+                        });
+                        return;
+                    }
+                }
 
                 List<String> staticIpList = new ArrayList<>();
                 if (msg.getIp() != null) {
@@ -3894,6 +3921,21 @@ public class VmInstanceBase extends AbstractVmInstance {
 
 
     private void setIpamStaticIp(final SetVmStaticIpMsg msg, final Completion completion) {
+        VmInstanceInventory vmInv = getSelfInventory();
+        VmNicInventory targetNic = vmInv.findNic(msg.getL3NetworkUuid());
+        L3NetworkVO l3Vo = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+        if (targetNic != null && l3Vo != null) {
+            L3NetworkInventory l3Inv = L3NetworkInventory.valueOf(l3Vo);
+            for (VmSetStaticIpExtensionPoint ext : pluginRgty.getExtensionList(VmSetStaticIpExtensionPoint.class)) {
+                if (!ext.accepts(vmInv, targetNic, l3Inv)) {
+                    continue;
+                }
+                VmInstanceSpec spec = buildSpecFromInventory(vmInv, VmOperation.ChangeNicIp);
+                ext.setStaticIp(msg, spec, targetNic, l3Inv, completion);
+                return;
+            }
+        }
+
         Map<Integer, String> staticIpMap = new HashMap<>();
         if (msg.getIp() != null) {
             if (NetworkUtils.isIpv4Address(msg.getIp())) {
@@ -6668,6 +6710,32 @@ public class VmInstanceBase extends AbstractVmInstance {
             @Override
             @Deferred
             public void run(final SyncTaskChain chain) {
+                VmInstanceInventory vm = getSelfInventory();
+                for (VmChangeNicNetworkExtensionPoint extension : pluginRgty.getExtensionList(VmChangeNicNetworkExtensionPoint.class)) {
+                    if (!extension.accepts(vm, nic, destL3)) {
+                        continue;
+                    }
+                    VmInstanceSpec changeSpec = buildSpecFromInventory(vm, VmOperation.ChangeNicNetwork);
+                    changeSpec.setDestNics(Collections.singletonList(nic));
+                    changeSpec.setL3Networks(Collections.singletonList(new VmNicSpec(L3NetworkInventory.valueOf(
+                            dbf.findByUuid(nic.getL3NetworkUuid(), L3NetworkVO.class)))));
+                    extension.changeNetwork(msg, changeSpec, nic, destL3, new ReturnValueCompletion<VmNicInventory>(chain) {
+                        @Override
+                        public void success(VmNicInventory result) {
+                            self = dbf.reload(self);
+                            completion.success(result);
+                            chain.next();
+                        }
+
+                        @Override
+                        public void fail(ErrorCode error) {
+                            completion.fail(error);
+                            chain.next();
+                        }
+                    });
+                    return;
+                }
+
                 class SetStaticIp {
                     private boolean isSet = false;
                     private boolean isDnsSet = false;
