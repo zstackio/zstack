@@ -1103,6 +1103,11 @@ public class MemoryRepository {
                                 : preparation ? JSONObjectUtil.toJsonString(MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction())
                                 ? msg.getPoolPreparation() : msg.getBackendPreparation())
                                 : "VM".equals(msg.getScope()) ? desired.getPolicy() : effective(em, "Host", host), actor);
+                if (Arrays.asList("pause", "drain").contains(child.getAction())
+                        && child.getExpectedControlOperationUuid() == null) {
+                    // The Agent fences pause/drain on its active control; callers need not echo it.
+                    child.setExpectedControlOperationUuid(state.getControlOperationUuid());
+                }
                 boolean backendDrain = backendMaintenance != null && getBoolean(backendMaintenance, "drainRequired");
                 if (backendMaintenance != null) {
                     HostPolicyPlan plan = planForHost(em, host, effective(em, "Host", host), state);
@@ -2778,6 +2783,15 @@ public class MemoryRepository {
                     resultStatus = "Unknown";
                     resultReason = "Agent did not provide the exact rejected-resume not-issued control proof";
                 }
+            }
+            if (task != null && host != null && Arrays.asList("pause", "drain").contains(task.getAction())
+                    && "Failed".equals(resultStatus) && response != null
+                    && "KSM_CONTROL_OPERATION_FENCED".equals(response.reason)
+                    && "INVALID_CONTROL_ACTION".equals(response.reasonCode)
+                    && task.getExpectedControlOperationUuid() != null
+                    && uuid.equals(host.getControlOperationUuid())) {
+                // The Agent fenced the request before any effect; its active control is unchanged.
+                restoredControlFence = task.getExpectedControlOperationUuid();
             }
             if (task == null || !MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) { return null; }
             if (!preparedBackendConfig.isEmpty() && "Succeeded".equals(resultStatus)) {
