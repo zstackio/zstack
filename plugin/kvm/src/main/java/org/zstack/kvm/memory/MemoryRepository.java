@@ -2038,7 +2038,7 @@ public class MemoryRepository {
             // and explicit false are intent too; a previously applied mechanism
             // must complete the existing clear path before releasing ownership.
             if (!hasExplicitMechanismPolicy(em, hostUuid) && !hasAppliedMechanismPolicy(state)) { return false; }
-            if (state.getAppliedPolicyHash() == null && hasHistoricalControl(state)) {
+            if (state.getAppliedPolicyHash() == null && hasHistoricalControl(em, state)) {
                 recordLegacyPolicyNeedsReview(state, effectivePolicy);
                 return false;
             }
@@ -2209,9 +2209,12 @@ public class MemoryRepository {
         return control == null || MemoryTaskRules.blocksHost(control.getStatus());
     }
 
-    private static boolean hasHistoricalControl(MemoryStateVO state) {
-        return state.getDesiredRevision() > 0 || state.getAppliedRevision() != null
-                || state.getControlOperationUuid() != null || state.getAppliedPolicy() != null;
+    /** Legacy history is a confirmed application whose policy is unknown, not rejected attempts. */
+    private static boolean hasHistoricalControl(EntityManager em, MemoryStateVO state) {
+        if (state.getAppliedRevision() != null || state.getAppliedPolicy() != null) { return true; }
+        if (state.getControlOperationUuid() == null) { return false; }
+        MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+        return control == null || !"Failed".equals(control.getStatus());
     }
 
     private static void recordLegacyPolicyNeedsReview(MemoryStateVO state, String effectivePolicy) {
