@@ -4619,6 +4619,33 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void agentFencedDrainKeepsTheHostControlItWasFencedOn() {
+        for (String reason : Arrays.asList("KSM_CONTROL_OPERATION_FENCED", "KSM_CONTROL_OPERATION_UNKNOWN",
+                "CONTROL_OPERATION_FENCED")) {
+            assertDrainRejectedBeforeEffectsKeepsControl(reason);
+        }
+    }
+
+    @Test public void secondPauseRejectedBeforeEffectsStillAllowsResume() {
+        repository.transaction(em -> {
+            MemoryTaskVO paused = testTask("successful-pause", null, "pause", "Succeeded", null);
+            em.persist(paused);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setControlOperationUuid(paused.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
+            return null;
+        });
+        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("pause");
+        msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
+        repository.submit(msg);
+        MemoryTaskVO second = repository.claim("mn").get(0);
+        MemoryAgentResponse rejected = new MemoryAgentResponse(); rejected.setSuccess(false);
+        rejected.status = "Failed"; rejected.reason = "KSM_CONTROL_OPERATION_UNKNOWN"; rejected.reasonCode = "INVALID_CONTROL_ACTION";
+        repository.result(second.getUuid(), "Failed", rejected.reason, rejected);
+        assertEquals("successful-pause", host1State().getControlOperationUuid());
+        // canResumeControl and submit require a Succeeded Host besides a fresh confirmation.
+        assertEquals("the Host is still under the successful pause", "Succeeded", host1State().getStatus());
+    }
+
+    private void assertDrainRejectedBeforeEffectsKeepsControl(String reason) {
         repository.transaction(em -> {
             MemoryTaskVO applied = testTask("applied-control", null, "apply", "Succeeded", null);
             em.persist(applied);
@@ -4631,11 +4658,15 @@ public class MemoryRepositoryTest {
         repository.submit(msg);
         MemoryTaskVO drain = repository.claim("mn").get(0);
         MemoryAgentResponse fenced = new MemoryAgentResponse(); fenced.setSuccess(false);
-        fenced.status = "Failed"; fenced.reason = "KSM_CONTROL_OPERATION_FENCED"; fenced.reasonCode = "INVALID_CONTROL_ACTION";
-        repository.result(drain.getUuid(), "Failed", "KSM_CONTROL_OPERATION_FENCED", fenced);
+        fenced.status = "Failed"; fenced.reason = reason; fenced.reasonCode = "INVALID_CONTROL_ACTION";
+        repository.result(drain.getUuid(), "Failed", reason, fenced);
         assertEquals("Failed", repository.findTask(drain.getUuid()).getStatus());
-        assertEquals("a drain the Agent fenced before any effect must not replace its control",
+        assertEquals("a drain the Agent rejected before any effect must not replace its control: " + reason,
                 "applied-control", host1State().getControlOperationUuid());
+        repository.transaction(em -> {
+            em.remove(em.find(MemoryTaskVO.class, "applied-control"));
+            return null;
+        });
     }
 
     @Test public void successfulResumeFenceWinsOverOneStalePausedSample() {
