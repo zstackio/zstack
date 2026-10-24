@@ -2062,6 +2062,29 @@ public class MemoryRepositoryTest {
                 Long.class).getSingleResult()));
     }
 
+    @Test public void firstUseRejectedBeforeDispatchIsNotTreatedAsLegacyHistory() {
+        repository.transaction(em -> {
+            MemoryPolicyVO global = em.find(MemoryPolicyVO.class, "Global:global");
+            global.setRevision(1); global.setPolicy("{\"schemaVersion\":1,\"ksm\":{\"enabled\":true}}");
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Failed"); state.setAppliedPolicyHash(null); state.setAppliedPolicy(null);
+            state.setDesiredRevision(3); state.setAppliedRevision(null); state.setControlOperationUuid("never-issued");
+            state.setState("{\"phase\":\"RUNNING\",\"lifecycle\":{\"paused\":false,\"activeState\":\"running\"}}");
+            em.persist(testTask("never-issued", null, "apply", "Failed", null));
+            return null;
+        });
+        MemoryAgentResponse observation = new MemoryAgentResponse();
+        observation.status = "Succeeded"; observation.sampleTime = System.currentTimeMillis();
+        observation.capabilities = new HashMap<>(); observation.capabilities.put("supported", true);
+        observation.capabilities.put("ksm", true); observation.capabilities.put("ksmZeroPages", true);
+        observation.capabilities.put("zram", true); observation.capabilities.put("writeback", true);
+        observation.state = Collections.<String, Object>singletonMap("phase", "RUNNING");
+        repository.observe("host1", observation);
+        repository.applyEffectivePolicyAfterConnect("host1");
+        MemoryStateVO state = repository.states(Collections.singletonList("host1"), 0, 1).get(0);
+        assertNotEquals("nothing was ever applied, so a retry is a first use", "NeedsReview", state.getPolicyPlanStatus());
+    }
+
     @Test public void historicalDrainWithoutAppliedPolicyHashIsNotAdoptedByReconnect() {
         repository.transaction(em -> {
             MemoryPolicyVO global = em.find(MemoryPolicyVO.class, "Global:global");
