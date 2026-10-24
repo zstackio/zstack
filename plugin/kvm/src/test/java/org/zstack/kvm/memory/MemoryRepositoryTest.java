@@ -796,6 +796,10 @@ public class MemoryRepositoryTest {
         assertWritebackCapacityChange("drain");
     }
 
+    @Test public void automaticCapacityDrainPersistedWithTheWholeBackendViewStillContinues() {
+        assertWritebackCapacityChange("drain-persisted-view");
+    }
+
     @Test public void automaticCapacityPreparationQueryContinuesOriginalRootWithoutReplayingPreparation() {
         assertWritebackCapacityChange("preparation");
     }
@@ -833,6 +837,8 @@ public class MemoryRepositoryTest {
     }
 
     private void assertWritebackCapacityChange(String queryStage) {
+        boolean persistedView = "drain-persisted-view".equals(queryStage);
+        if (persistedView) { queryStage = "drain"; }
         prepareCapacityObservation("Succeeded", false, false, false);
         String resource = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         String fingerprint = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
@@ -851,7 +857,9 @@ public class MemoryRepositoryTest {
             backend.addProperty("resource_uuid", resource); backend.addProperty("state", "ACTIVE");
             backend.addProperty("active", true); backend.addProperty("fingerprint", fingerprint);
             backend.addProperty("capacity_bytes", 8192L); backend.addProperty("observed_at", Instant.now().toString());
-            com.google.gson.JsonObject writeback = new com.google.gson.JsonObject(); writeback.add("backend", backend);
+            // The Agent reports the service backend view, which wraps the resource.
+            com.google.gson.JsonObject view = new com.google.gson.JsonObject(); view.add("backend_resource", backend);
+            com.google.gson.JsonObject writeback = new com.google.gson.JsonObject(); writeback.add("backend", view);
             current.getAsJsonObject("actual").add("writeback", writeback); state.setState(current.toString());
             state.setAppliedPolicy(MemoryPolicyRules.merge(state.getAppliedPolicy(),
                     "{\"schemaVersion\":1,\"writeback\":{\"enabled\":true,\"backendResourceUuid\":\""
@@ -866,6 +874,17 @@ public class MemoryRepositoryTest {
                 .filter(task -> "drain".equals(task.getAction())).findFirst().orElse(null);
         assertNotNull("capacity change with an existing backend must drain first: "
                 + host1State().getPolicyBlockedFields(), drain);
+        if (persistedView) {
+            repository.transaction(em -> {
+                MemoryTaskVO stored = em.find(MemoryTaskVO.class, drain.getUuid());
+                com.google.gson.JsonObject request = new com.google.gson.JsonParser().parse(stored.getPolicy()).getAsJsonObject();
+                com.google.gson.JsonObject view = new com.google.gson.JsonObject();
+                view.add("backend_resource", request.get("backend"));
+                request.add("backend", view);
+                stored.setPolicy(request.toString());
+                return null;
+            });
+        }
         assertStateCurrentStep("drain");
         Map<String, Object> stableIdentity = new LinkedHashMap<>();
         stableIdentity.put("bootId", boot); stableIdentity.put("device", "/dev/vdb");
@@ -959,7 +978,8 @@ public class MemoryRepositoryTest {
         backend.put("fingerprint", fingerprint); backend.put("capacity_bytes", 8192L);
         backend.put("observed_at", Instant.now().toString());
         Map<String, Object> actual = (Map<String, Object>) activated.state.get("actual");
-        actual.put("zram", zram); actual.put("writeback", Collections.singletonMap("backend", backend));
+        actual.put("zram", zram);
+        actual.put("writeback", Collections.singletonMap("backend", Collections.singletonMap("backend_resource", backend)));
         if ("activation-boot-mismatch".equals(queryStage)) { activated.bootId = "different-boot"; }
         if ("activation-capacity-mismatch".equals(queryStage)) { capacity.put("effective_logical_bytes", 8192L); }
         if ("activation-backend-mismatch".equals(queryStage)) { backend.put("resource_uuid", "different-owner"); }

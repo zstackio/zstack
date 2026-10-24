@@ -1662,7 +1662,9 @@ public class MemoryRepository {
             request.addProperty("targetHash", targetHash);
             request.addProperty("bootId", boot); request.addProperty("poolGeneration", generation);
             request.addProperty("device", getString(observed.getAsJsonObject("host_zram"), "device"));
-            JsonElement backend = jsonPath(actual, "writeback.backend");
+            // The Agent reports the service backend view; keep its resource, as admission does.
+            JsonElement backend = jsonPath(actual, "writeback.backend.backend_resource");
+            if (backend == null) { backend = jsonPath(actual, "writeback.backend"); }
             if (backend != null) { request.add("backend", backend.deepCopy()); }
             return request.toString();
         } catch (RuntimeException unavailable) { return null; }
@@ -3458,6 +3460,10 @@ public class MemoryRepository {
             // service and probe fingerprints are deliberately not interchangeable.
             JsonObject backend = request.has("backend") && request.get("backend").isJsonObject()
                     ? request.getAsJsonObject("backend") : null;
+            if (backend != null && backend.has("backend_resource") && backend.get("backend_resource").isJsonObject()) {
+                // Drain requests persisted by earlier versions carry the whole backend view.
+                backend = backend.getAsJsonObject("backend_resource");
+            }
             Map<?, ?> owner = MemoryWritebackBackendInventory.map(receipt.state.get("backendOwnerProof"));
             Map<?, ?> identity = owner == null ? null : MemoryWritebackBackendInventory.map(owner.get("stableIdentity"));
             Long bytes = exactJsonLong(jsonPath(request, "target.writeback.backendCapacityBytes"));
