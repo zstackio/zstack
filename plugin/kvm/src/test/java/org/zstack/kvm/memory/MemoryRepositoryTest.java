@@ -4439,6 +4439,50 @@ public class MemoryRepositoryTest {
         assertTrue(repository.claim("mn-a").isEmpty());
     }
 
+    @Test public void pauseAndDrainWithoutExplicitFenceUseTheCurrentHostControl() {
+        for (String action : Arrays.asList("pause", "drain")) {
+            repository.transaction(em -> {
+                em.createQuery("delete from MemoryTaskVO").executeUpdate();
+                MemoryTaskVO applied = testTask("applied-control", null, "apply", "Succeeded", null);
+                em.persist(applied);
+                MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+                state.setControlOperationUuid(applied.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
+                MemoryStateVO other = em.find(MemoryStateVO.class, "host2");
+                other.setControlOperationUuid(null); other.setActiveTaskUuid(null); other.setStatus("Succeeded");
+                return null;
+            });
+            APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction(action);
+            repository.submit(msg);
+            Map<String, String> fences = new HashMap<>();
+            for (MemoryTaskVO task : repository.claim("mn-" + action)) {
+                fences.put(task.getHostUuid(), task.getExpectedControlOperationUuid());
+            }
+            assertEquals(action, "applied-control", fences.get("host1"));
+            assertTrue(action, fences.containsKey("host2"));
+            assertNull(action, fences.get("host2"));
+        }
+    }
+
+    @Test public void agentFencedDrainKeepsTheHostControlItWasFencedOn() {
+        repository.transaction(em -> {
+            MemoryTaskVO applied = testTask("applied-control", null, "apply", "Succeeded", null);
+            em.persist(applied);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setControlOperationUuid(applied.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
+            return null;
+        });
+        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("drain");
+        msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
+        repository.submit(msg);
+        MemoryTaskVO drain = repository.claim("mn").get(0);
+        MemoryAgentResponse fenced = new MemoryAgentResponse(); fenced.setSuccess(false);
+        fenced.status = "Failed"; fenced.reason = "KSM_CONTROL_OPERATION_FENCED"; fenced.reasonCode = "INVALID_CONTROL_ACTION";
+        repository.result(drain.getUuid(), "Failed", "KSM_CONTROL_OPERATION_FENCED", fenced);
+        assertEquals("Failed", repository.findTask(drain.getUuid()).getStatus());
+        assertEquals("a drain the Agent fenced before any effect must not replace its control",
+                "applied-control", host1State().getControlOperationUuid());
+    }
+
     @Test public void successfulResumeFenceWinsOverOneStalePausedSample() {
         APIUpdateMemoryPolicyMsg pause = request(0); pause.setAction("pause"); pause.setPolicy("{}");
         repository.submit(pause);
