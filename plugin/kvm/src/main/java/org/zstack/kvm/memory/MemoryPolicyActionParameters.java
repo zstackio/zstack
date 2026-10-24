@@ -9,7 +9,7 @@ final class MemoryPolicyActionParameters {
     static void validate(APIUpdateMemoryPolicyMsg msg) {
         String action = msg.getAction();
         if (!Arrays.asList("pause", "drain", "resume", "reconcile",
-                "recoverUncertain", "prepareWritebackBackend", "prepareZramPool").contains(action)) {
+                "recoverUncertain", "prepareWritebackBackend").contains(action)) {
             invalid("action");
         }
         if (!"VM".equals(msg.getScope()) && msg.getExpectedInstanceGeneration() != null) {

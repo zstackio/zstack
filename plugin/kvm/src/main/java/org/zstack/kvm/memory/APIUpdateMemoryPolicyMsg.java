@@ -21,10 +21,6 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public MemoryBackendPreparation getBackendPreparation() { return backendPreparation; }
     public void setBackendPreparation(MemoryBackendPreparation value) { backendPreparation = value; }
     @APIParam(required = false)
-    private MemoryZramPoolPreparation poolPreparation;
-    public MemoryZramPoolPreparation getPoolPreparation() { return poolPreparation; }
-    public void setPoolPreparation(MemoryZramPoolPreparation value) { poolPreparation = value; }
-    @APIParam(required = false)
     private java.util.Map<String, Long> expectedSourceRevisions;
     public java.util.Map<String, Long> getExpectedSourceRevisions() { return expectedSourceRevisions; }
     public void setExpectedSourceRevisions(java.util.Map<String, Long> value) { expectedSourceRevisions = value; }
@@ -51,7 +47,7 @@ public class APIUpdateMemoryPolicyMsg extends APIMessage implements APIMultiAudi
     public String getResourceUuid() { return resourceUuid; }
     public void setResourceUuid(String value) { resourceUuid = value; }
 
-    @APIParam(validValues = {"pause", "drain", "resume", "reconcile", "recoverUncertain", "prepareWritebackBackend", "prepareZramPool"})
+    @APIParam(validValues = {"pause", "drain", "resume", "reconcile", "recoverUncertain", "prepareWritebackBackend"})
     private String action;
     public String getAction() { return action; }
     public void setAction(String value) { action = value; }

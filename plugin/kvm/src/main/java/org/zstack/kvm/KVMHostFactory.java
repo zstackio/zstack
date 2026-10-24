@@ -81,6 +81,7 @@ import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.network.l3.ServiceTypeExtensionPoint;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
+import org.zstack.kvm.memory.MemoryOptimizationManager;
 import org.zstack.kvm.memory.MemoryRepository;
 import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator;
 import org.zstack.utils.CollectionUtils;
@@ -180,6 +181,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     private ResourceConfigFacade rcf;
     @Autowired
     private MemoryRepository memoryRepository;
+    @Autowired
+    private MemoryOptimizationManager memoryOptimizationManager;
     @Autowired
     private VmInstanceDeviceManager vidm;
     @Autowired
@@ -626,7 +629,8 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
                 throw new GlobalConfigException("Can not disable cpu hypervisor feature with vm.cpuMode none");
             }
         });
-        new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty, thdf).install(rcf);
+        new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty, thdf,
+                memoryOptimizationManager::recoverDrainedHosts).install(rcf);
 
         resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {

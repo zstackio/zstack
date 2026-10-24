@@ -2861,6 +2861,7 @@
   "ORG_ZSTACK_MEMORY_11043": "内存任务仍被运行状态或历史操作引用，不能清理：%s",
   "ORG_ZSTACK_MEMORY_11044": "该内存任务结果已清理且不会重放：%s",
   "ORG_ZSTACK_MEMORY_11045": "内存优化服务尚未停止：%s",
+  "ORG_ZSTACK_MEMORY_11046": "已排空的物理机暂时无法恢复：%s",
   "ORG_ZSTACK_MEMORY_11999": "未知的内存优化错误：%s",
   "ORG_ZSTACK_PCIDEVICE_10036": "无法在主机[uuid:%s]中为附加到VM的PCI设备进行SR-IOV虚拟化",
   "ORG_ZSTACK_PCIDEVICE_10035": "主机[uuid:%s]中的PCI设备已SRIOV虚拟化",

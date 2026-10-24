@@ -16,6 +16,12 @@ public class MemoryLifecycleHooksTest {
     }
 
     @Test
+    public void vmAccountingCounterIsNotAPoolIdentity() {
+        assertFalse(MemoryLifecycleHooks.hasPoolGeneration(
+                "{\"host_zram\":{\"pool_generation\":\"\"},\"vm_accounting\":{\"inventory\":{\"pool_generation\":0}}}"));
+    }
+
+    @Test
     public void nestedZramPoolGenerationIsRecognized() {
         assertTrue(MemoryLifecycleHooks.hasPoolGeneration(
                 "{\"host_zram\":{\"pool_generation\":\"pool-1\"}}"));

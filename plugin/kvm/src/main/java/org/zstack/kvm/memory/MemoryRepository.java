@@ -961,12 +961,10 @@ public class MemoryRepository {
     private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg,
                                        String internalActor, MemoryAgentResponse backendObservation) {
         MemoryBackendPreparationRules.validate(msg);
-        MemoryZramPoolPreparationRules.validate(msg);
         MemoryUncertainRecoveryRules.validate(msg);
         MemoryPolicyActionParameters.validate(msg);
         boolean recovery = MemoryUncertainRecoveryRules.ACTION.equals(msg.getAction());
-        boolean preparation = MemoryBackendPreparationRules.ACTION.equals(msg.getAction()) ||
-                MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction());
+        boolean preparation = MemoryBackendPreparationRules.ACTION.equals(msg.getAction());
         if (!MemoryPolicyRules.validUuid(msg.getClientRequestUuid())) {
             throw error("MEMORY_INVALID_REQUEST", "clientRequestUuid must be a UUID");
         }
@@ -979,7 +977,7 @@ public class MemoryRepository {
                 msg.getExpectedInstanceGeneration(), msg.getTargetHostUuids(),
                 JSONObjectUtil.toObject(msg.getPolicy(), Map.class)));
         if (preparation) {
-            requestIdentity.add(msg.getBackendPreparation()); requestIdentity.add(msg.getPoolPreparation());
+            requestIdentity.add(msg.getBackendPreparation());
             requestIdentity.add(msg.getExpectedControlOperationUuid());
         }
         if (recovery) {
@@ -1100,8 +1098,7 @@ public class MemoryRepository {
                         : state.getDesiredRevision();
                 MemoryTaskVO child = task(msg, parent.getUuid(), host, revision,
                         recovery ? JSONObjectUtil.toJsonString(msg.getRecovery())
-                                : preparation ? JSONObjectUtil.toJsonString(MemoryZramPoolPreparationRules.ACTION.equals(msg.getAction())
-                                ? msg.getPoolPreparation() : msg.getBackendPreparation())
+                                : preparation ? JSONObjectUtil.toJsonString(msg.getBackendPreparation())
                                 : "VM".equals(msg.getScope()) ? desired.getPolicy() : effective(em, "Host", host), actor);
                 if (Arrays.asList("pause", "drain").contains(child.getAction())
                         && child.getExpectedControlOperationUuid() == null) {
@@ -1474,6 +1471,12 @@ public class MemoryRepository {
     }
 
     private HostPolicyPlan planForHost(EntityManager em, String hostUuid, MemoryStateVO state, JsonObject target, String effectivePolicy) {
+        return planForHost(em, hostUuid, state, target, effectivePolicy, false);
+    }
+
+    /** A drained Host is reactivated only by an explicit recovery, which passes allowDrainActivation. */
+    private HostPolicyPlan planForHost(EntityManager em, String hostUuid, MemoryStateVO state, JsonObject target,
+            String effectivePolicy, boolean allowDrainActivation) {
         HostPolicyPlan plan = new HostPolicyPlan();
         String targetText = target.toString();
         plan.targetHash = digest(targetText);
@@ -1506,8 +1509,10 @@ public class MemoryRepository {
                 && hasFreshCapabilityObservation(state, now)
                 && MemoryPolicyAdmissionRules.capabilityReason(state, "zram", now) == null) {
             MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
-            boolean drainReady = isPauseOrDrain(control, hostUuid) && "drain".equals(control.getAction())
-                    && isFreshAgentControl(state, control.getUuid(), now)
+            // After a reboot the Agent no longer confirms the previous boot's drain
+            // journal; its maintenance proof is bound to the drain instead.
+            boolean drainReady = allowDrainActivation && isPauseOrDrain(control, hostUuid) && "drain".equals(control.getAction())
+                    && isFreshPausedSample(state, now)
                     && isMaintenanceRecoveryState(state.getState(), control.getUuid());
             if (drainReady || rejectedMaintenanceActivationReady(em, state, control)) {
                 try {
@@ -2538,6 +2543,7 @@ public class MemoryRepository {
             MemoryTaskVO maintenanceRoot = maintenanceTask == null || maintenanceTask.getParentUuid() == null
                     ? null : em.find(MemoryTaskVO.class, maintenanceTask.getParentUuid());
             boolean selectedBackendMaintenance = isSelectedBackendMaintenance(maintenanceTask, maintenanceRoot);
+            boolean drainRecovery = isDrainRecoveryMaintenance(maintenanceTask, maintenanceRoot);
             MemoryTaskVO nextMaintenance = null;
             Map<String, Object> preparedBackendConfig = new LinkedHashMap<>();
             MemoryTaskVO preparationDrain = maintenanceTask != null
@@ -2550,10 +2556,15 @@ public class MemoryRepository {
                             : em.find(MemoryTaskVO.class, preparationDrain.getParentUuid()))
                     && Objects.equals(maintenanceTask.getHostUuid(), preparationDrain.getHostUuid())
                     && Objects.equals(maintenanceTask.getParentUuid(), preparationDrain.getParentUuid());
+            boolean recoveredDrain = drainRecovery && preparationDrain != null
+                    && "drain".equals(preparationDrain.getAction()) && "Succeeded".equals(preparationDrain.getStatus())
+                    && Objects.equals(maintenanceTask.getHostUuid(), preparationDrain.getHostUuid());
             boolean automaticPreparation = selectedBackendMaintenance
                     && MemoryBackendPreparationRules.ACTION.equals(maintenanceTask.getAction())
                     || automaticRestore && isMaintenancePreparationAction(maintenanceTask.getAction())
-                        && Objects.equals(maintenanceTask.getPolicyPlanHash(), preparationDrain.getPolicyPlanHash());
+                        && Objects.equals(maintenanceTask.getPolicyPlanHash(), preparationDrain.getPolicyPlanHash())
+                    || recoveredDrain && MemoryZramPoolPreparationRules.ACTION.equals(maintenanceTask.getAction());
+            automaticRestore = automaticRestore || recoveredDrain;
             boolean selectedRestoration = selectedBackendMaintenance && preparationDrain != null
                     && "drain".equals(preparationDrain.getAction()) && "Succeeded".equals(preparationDrain.getStatus())
                     && Objects.equals(maintenanceTask.getHostUuid(), preparationDrain.getHostUuid());
@@ -2793,6 +2804,17 @@ public class MemoryRepository {
                 // The Agent fenced the request before any effect; its active control is unchanged.
                 restoredControlFence = task.getExpectedControlOperationUuid();
             }
+            MemoryTaskVO activation = task != null && "reconcile".equals(task.getAction())
+                    && task.getReconcileOperationUuid() != null
+                    ? em.find(MemoryTaskVO.class, task.getReconcileOperationUuid()) : task;
+            if (host != null && activation != null && Arrays.asList("apply", "clearOverride").contains(activation.getAction())
+                    && "Failed".equals(resultStatus) && response != null && response.state != null
+                    && Boolean.TRUE.equals(response.state.get("activationRejected"))
+                    && uuid.equals(host.getControlOperationUuid()) && activation.getExpectedControlOperationUuid() != null
+                    && drainControl(em, host, em.find(MemoryTaskVO.class, activation.getExpectedControlOperationUuid()))) {
+                // The service rejected the activation before its intent; the Agent stays under the drain.
+                restoredControlFence = activation.getExpectedControlOperationUuid();
+            }
             if (task == null || !MemoryTaskRules.canTransition(task.getStatus(), resultStatus)) { return null; }
             if (!preparedBackendConfig.isEmpty() && "Succeeded".equals(resultStatus)) {
                 // Preparation proves the new owner, not the caller. Persist its
@@ -2941,6 +2963,23 @@ public class MemoryRepository {
         } catch (RuntimeException invalid) { return false; }
     }
 
+    /** A user resume of a drained Host: its root records the drain-time pool and target like a capacity drain. */
+    static boolean isDrainRecoveryMaintenance(MemoryTaskVO task, MemoryTaskVO parent) {
+        if (task == null || parent == null || !"Host".equals(task.getScope())
+                || !Arrays.asList(MemoryZramPoolPreparationRules.ACTION, "apply", "clearOverride").contains(task.getAction())
+                || task.getPolicyPlanHash() == null || parent.getParentUuid() != null || parent.getHostUuid() != null
+                || !"resume".equals(parent.getAction()) || !"Host".equals(parent.getScope())
+                || !Objects.equals(task.getParentUuid(), parent.getUuid())
+                || !Objects.equals(task.getHostUuid(), parent.getResourceUuid())) { return false; }
+        try {
+            JsonObject context = new JsonParser().parse(parent.getPolicy()).getAsJsonObject();
+            return getBoolean(context, "drainRecovery")
+                    && context.has("target") && context.get("target").isJsonObject()
+                    && getString(context, "targetHash") != null && getString(context, "bootId") != null
+                    && getString(context, "poolGeneration") != null;
+        } catch (RuntimeException invalid) { return false; }
+    }
+
     static boolean isAutomaticCapacityDrain(MemoryTaskVO task, MemoryTaskVO parent) {
         if (task == null || !"Host".equals(task.getScope()) || !"drain".equals(task.getAction())
                 || task.getParentUuid() == null || task.getPolicyPlanHash() == null) { return false; }
@@ -2981,7 +3020,8 @@ public class MemoryRepository {
                 || !"Succeeded".equals(MemoryResultRules.status(preparation.getUuid(), -1, receipt))) {
             throw new IllegalArgumentException("CONTROL_OR_RESULT_MISMATCH");
         }
-        JsonObject request = new JsonParser().parse(selectedBackend ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
+        JsonObject request = new JsonParser().parse(selectedBackend || isDrainRecoveryMaintenance(preparation, root)
+                ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
         String boot = getString(request, "bootId"), pool = getString(request, "poolGeneration");
         boolean firstPool = selectedBackend && "none".equals(pool);
         String resourceUuid = null;
@@ -3116,7 +3156,8 @@ public class MemoryRepository {
                 target.add(field.getKey(), field.getValue());
             }
         }
-        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), observed, target, effective(em, "Host", host.getHostUuid()));
+        HostPolicyPlan plan = planForHost(em, host.getHostUuid(), observed, target,
+                effective(em, "Host", host.getHostUuid()), true);
         if (firstPool ? plan.hasBlockers || plan.capacityMaintenance != null
                 : retainDisabled ? plan.hasBlockers || plan.hasPayload || plan.capacityMaintenance != null
                 : !plan.maintenanceActivation || !plan.hasPayload) {
@@ -3145,7 +3186,7 @@ public class MemoryRepository {
         MemoryTaskVO root = activation.getParentUuid() == null ? null
                 : em.find(MemoryTaskVO.class, activation.getParentUuid());
         JsonObject request = new JsonParser().parse(isSelectedBackendMaintenance(activation, root)
-                ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
+                || isDrainRecoveryMaintenance(activation, root) ? root.getPolicy() : drain.getPolicy()).getAsJsonObject();
         String boot = getString(request, "bootId");
         long now = System.currentTimeMillis();
         if (observation == null || !observation.isSuccess() || !"Succeeded".equals(observation.status)
@@ -3197,6 +3238,132 @@ public class MemoryRepository {
                 Math.addExact(activation.getDesiredRevision(), 1L), plan.payload, activation.getActorUuid());
         next.setPolicyPlanHash(plan.planHash);
         return next;
+    }
+
+    /** The Host's current control is a completed drain and nothing is in flight: only a recovery can move it on. */
+    public boolean isDrainedHost(String hostUuid) {
+        return transaction(em -> drainControl(em, em.find(MemoryStateVO.class, hostUuid)) != null);
+    }
+
+    /** Drained Hosts under the changed resource whose effective target enables ZRAM again. */
+    public List<String> drainedHostsWithZramEnabled(String resourceUuid) {
+        return transaction(em -> {
+            List<String> hosts = new ArrayList<>();
+            for (String host : resourceUuid == null ? targets(em, "Global", "global")
+                    : targets(em, resourceScope(em, resourceUuid), resourceUuid)) {
+                if (drainControl(em, em.find(MemoryStateVO.class, host)) != null
+                        && Boolean.TRUE.equals(MemoryStandardConfigCodec.get(effective(em, "Host", host), "zram.enabled"))) {
+                    hosts.add(host);
+                }
+            }
+            return hosts;
+        });
+    }
+
+    private static MemoryTaskVO drainControl(EntityManager em, MemoryStateVO state) {
+        if (state == null || state.getActiveTaskUuid() != null || state.getControlOperationUuid() == null) { return null; }
+        MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+        return drainControl(em, state, control) ? control : null;
+    }
+
+    private static boolean drainControl(EntityManager em, MemoryStateVO state, MemoryTaskVO control) {
+        return control != null && "drain".equals(control.getAction()) && "Succeeded".equals(control.getStatus())
+                && Objects.equals(state.getHostUuid(), control.getHostUuid());
+    }
+
+    private String resourceScope(EntityManager em, String resourceUuid) {
+        String type = em.createQuery("select r.resourceType from ResourceVO r where r.uuid = :uuid", String.class)
+                .setParameter("uuid", resourceUuid).getResultList().stream().findFirst().orElse(null);
+        return "ClusterVO".equals(type) ? "Cluster" : "Host";
+    }
+
+    /**
+     * Resume a drained Host from a fresh Agent inventory. A device the Agent proves
+     * blank (including after a reboot) is activated directly; a withdrawn pool still
+     * held in the drain's boot is reset through the existing preparation chain first.
+     */
+    public MemoryTaskInventory recoverDrain(String hostUuid, String actor, String requestKey,
+            MemoryAgentResponse observation) {
+        return transaction(em -> {
+            lock(em);
+            if (requestKey != null) {
+                List<MemoryTaskVO> previous = em.createQuery("from MemoryTaskVO t where t.requestKey = :key",
+                        MemoryTaskVO.class).setParameter("key", requestKey).getResultList();
+                if (!previous.isEmpty()) { return previous.get(0).toInventory(); }
+            }
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
+            MemoryTaskVO drain = drainControl(em, state);
+            if (drain == null) {
+                throw error("MEMORY_CONTROL_OPERATION_FENCED", "Host is not in a completed drain: " + hostUuid);
+            }
+            if (observation == null || !observation.isSuccess() || !"Succeeded".equals(observation.status)) {
+                throw error("MEMORY_DRAIN_RECOVERY_UNAVAILABLE", "Host maintenance inventory is unavailable: " + hostUuid);
+            }
+            MemoryWritebackBackendInventory inventory = MemoryWritebackBackendInventory.fromAgentState(
+                    hostUuid, observation.hostUuid, observation.state);
+            long now = System.currentTimeMillis(), observedAt;
+            try { observedAt = java.time.OffsetDateTime.parse(inventory.getObservedAt()).toInstant().toEpochMilli(); }
+            catch (RuntimeException invalid) { observedAt = -1; }
+            String boot = getString(new JsonParser().parse(state.getState()).getAsJsonObject(), "bootId");
+            if (observedAt < 0 || observedAt > now || now - observedAt >= MemoryOptimizationGlobalConfig.displayTtlMillis()
+                    || boot == null || !boot.equals(inventory.getBootId())
+                    || !Objects.equals(drain.getUuid(), inventory.getControlOperationUuid())) {
+                throw error("MEMORY_DRAIN_RECOVERY_UNAVAILABLE", "Host maintenance inventory is not current: " + hostUuid);
+            }
+            String effective = effective(em, "Host", hostUuid);
+            JsonObject target = explicitlyManagedPolicy(em, hostUuid, effective);
+            String pool = inventory.getPoolGeneration();
+            boolean zram = Boolean.TRUE.equals(MemoryStandardConfigCodec.get(effective, "zram.enabled"));
+            boolean preservedPool = zram && pool != null && pool.matches("[a-f0-9]{64}")
+                    && Boolean.TRUE.equals(inventory.getCanPrepareZramPool())
+                    && "Fresh".equals(inventory.getZramPoolPreparationQuality());
+            boolean readyForActivation = zram && isMaintenanceRecoveryState(state.getState(), drain.getUuid());
+            if (!readyForActivation && !preservedPool) {
+                throw error("MEMORY_DRAIN_RECOVERY_UNAVAILABLE", "Drained Host cannot be recovered now: "
+                        + inventory.getZramPoolPreparationReasons());
+            }
+            JsonObject context = new JsonObject();
+            if (preservedPool) {
+                context.addProperty("drainRecovery", true);
+                context.add("target", target.deepCopy());
+                context.addProperty("targetHash", digest(target.toString()));
+                context.addProperty("bootId", boot); context.addProperty("poolGeneration", pool);
+            }
+            MemoryTaskVO root = configurationTask("Host", hostUuid, "resume", null, null,
+                    state.getDesiredRevision(), context.toString(), actor);
+            root.setRequestKey(requestKey); root.setRequestHash(requestKey == null ? null : digest(requestKey));
+            em.persist(root);
+            long revision = Math.addExact(state.getDesiredRevision(), 1L);
+            MemoryTaskVO child;
+            if (readyForActivation) {
+                HostPolicyPlan plan = planForHost(em, hostUuid, state, target, effective, true);
+                if (!plan.maintenanceActivation || !plan.hasPayload) {
+                    throw error("MEMORY_DRAIN_RECOVERY_UNAVAILABLE", "Host activation is not admitted: " + plan.blockedFields);
+                }
+                child = configurationTask("Host", hostUuid, plan.replacesAppliedPolicy ? "clearOverride" : "apply",
+                        root.getUuid(), hostUuid, revision, plan.payload, actor);
+                child.setPolicyPlanHash(plan.planHash);
+                recordPolicyPlan(state, plan, "Queued");
+                state.setControlOperationUuid(child.getUuid());
+            } else {
+                HostPolicyPlan plan = planForHost(em, hostUuid, effective, state);
+                MemoryZramPoolPreparation preparation = new MemoryZramPoolPreparation();
+                preparation.setExpectedHostBootId(boot); preparation.setExpectedPoolGeneration(pool);
+                preparation.setResetConfirmed(true);
+                MemoryZramPoolPreparationRules.validate(preparation, drain.getUuid());
+                child = configurationTask("Host", hostUuid, MemoryZramPoolPreparationRules.ACTION, root.getUuid(),
+                        hostUuid, revision, JSONObjectUtil.toJsonString(preparation), actor);
+                child.setPolicyPlanHash(plan.planHash);
+                recordPolicyPlan(state, plan, "Queued");
+            }
+            child.setExpectedControlOperationUuid(drain.getUuid());
+            em.persist(child);
+            state.setActiveTaskUuid(child.getUuid()); state.setStatus("Queued"); state.setReason(null);
+            state.setDesiredRevision(revision); state.setPermitAuthorized(false);
+            bumpQueryVersion(em, "task"); bumpQueryVersion(em, "state");
+            em.flush();
+            return root.toInventory();
+        });
     }
 
     private MemoryTaskVO nextCapacityPreparation(EntityManager em, MemoryTaskVO drain, MemoryTaskVO resultTask, MemoryStateVO host,
@@ -3352,7 +3519,7 @@ public class MemoryRepository {
             requestPreparation.setExpectedHostBootId(boot); requestPreparation.setExpectedPoolGeneration(pool);
             requestPreparation.setResetConfirmed(true);
             validation.setAction(MemoryZramPoolPreparationRules.ACTION);
-            validation.setPoolPreparation(requestPreparation); MemoryZramPoolPreparationRules.validate(validation);
+            MemoryZramPoolPreparationRules.validate(requestPreparation, drain.getUuid());
             preparation = JSONObjectUtil.toJsonString(requestPreparation);
         }
         MemoryTaskVO next = configurationTask("Host", drain.getHostUuid(), validation.getAction(),
@@ -3855,16 +4022,20 @@ public class MemoryRepository {
     }
 
     private static boolean isFreshAgentControl(MemoryStateVO state, String controlUuid, long now) {
+        return isFreshPausedSample(state, now) && Objects.equals(controlUuid,
+                JSONObjectUtil.toObject(state.getState(), Map.class).get("lastConfirmedOperationUuid"));
+    }
+
+    private static boolean isFreshPausedSample(MemoryStateVO state, long now) {
         if (state == null || state.getLastSampleTime() == null || state.getLastSampleTime() > now + 5000
                 || now - state.getLastSampleTime() >= MemoryOptimizationGlobalConfig.displayTtlMillis()) {
             return false;
         }
         try {
             Map<?, ?> root = JSONObjectUtil.toObject(state.getState(), Map.class);
-            Object lastConfirmed = root.get("lastConfirmedOperationUuid");
             Object bootId = root.get("bootId");
             Object lifecycleValue = root.get("lifecycle");
-            if (!Objects.equals(controlUuid, lastConfirmed) || !(bootId instanceof String)
+            if (!(bootId instanceof String)
                     || ((String) bootId).trim().isEmpty() || !(lifecycleValue instanceof Map)) { return false; }
             Map<?, ?> lifecycle = (Map<?, ?>) lifecycleValue;
             return Boolean.TRUE.equals(lifecycle.get("paused"))

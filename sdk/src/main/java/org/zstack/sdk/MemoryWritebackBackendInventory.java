@@ -100,36 +100,4 @@ public class MemoryWritebackBackendInventory  {
         return this.preparationReasons;
     }
 
-    public java.lang.Boolean canPrepareZramPool;
-    public void setCanPrepareZramPool(java.lang.Boolean canPrepareZramPool) {
-        this.canPrepareZramPool = canPrepareZramPool;
-    }
-    public java.lang.Boolean getCanPrepareZramPool() {
-        return this.canPrepareZramPool;
-    }
-
-    public java.util.List zramPoolPreparationReasons;
-    public void setZramPoolPreparationReasons(java.util.List zramPoolPreparationReasons) {
-        this.zramPoolPreparationReasons = zramPoolPreparationReasons;
-    }
-    public java.util.List getZramPoolPreparationReasons() {
-        return this.zramPoolPreparationReasons;
-    }
-
-    public java.lang.String zramPoolPreparationQuality;
-    public void setZramPoolPreparationQuality(java.lang.String zramPoolPreparationQuality) {
-        this.zramPoolPreparationQuality = zramPoolPreparationQuality;
-    }
-    public java.lang.String getZramPoolPreparationQuality() {
-        return this.zramPoolPreparationQuality;
-    }
-
-    public java.lang.Long zramPoolPreparationObservedAt;
-    public void setZramPoolPreparationObservedAt(java.lang.Long zramPoolPreparationObservedAt) {
-        this.zramPoolPreparationObservedAt = zramPoolPreparationObservedAt;
-    }
-    public java.lang.Long getZramPoolPreparationObservedAt() {
-        return this.zramPoolPreparationObservedAt;
-    }
-
 }

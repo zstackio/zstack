@@ -1024,7 +1024,12 @@ public class MemoryRepositoryTest {
 
     private MemoryTaskVO assertCapacityPreparationQueuesRestore(MemoryTaskVO drain, MemoryTaskVO preparation,
             String queryStage) {
-        com.google.gson.JsonObject context = new com.google.gson.JsonParser().parse(drain.getPolicy()).getAsJsonObject();
+        return assertCapacityPreparationQueuesRestore(drain, preparation, queryStage, drain.getPolicy(), drain.getParentUuid());
+    }
+
+    private MemoryTaskVO assertCapacityPreparationQueuesRestore(MemoryTaskVO drain, MemoryTaskVO preparation,
+            String queryStage, String contextPolicy, String rootUuid) {
+        com.google.gson.JsonObject context = new com.google.gson.JsonParser().parse(contextPolicy).getAsJsonObject();
         String boot = context.get("bootId").getAsString(), pool = context.get("poolGeneration").getAsString();
         Map<String, Object> proof = new LinkedHashMap<>();
         proof.put("drainOperationUuid", drain.getUuid()); proof.put("oldPoolGeneration", pool);
@@ -1093,7 +1098,7 @@ public class MemoryRepositoryTest {
             List<MemoryTaskVO> rows = em.createQuery(
                 "from MemoryTaskVO t where t.parentUuid = :parent and t.action in ('apply', 'clearOverride') "
                         + "and t.expectedControlOperationUuid = :expected",
-                    MemoryTaskVO.class).setParameter("parent", drain.getParentUuid())
+                    MemoryTaskVO.class).setParameter("parent", rootUuid)
                 .setParameter("expected", drain.getUuid())
                 .setMaxResults(1).getResultList();
             return rows.isEmpty() ? null : rows.get(0);
@@ -1109,7 +1114,7 @@ public class MemoryRepositoryTest {
         assertEquals("restore=" + restore.getUuid() + ", action=" + restore.getAction()
                 + ", parent=" + restore.getParentUuid() + ", expected=" + restore.getExpectedControlOperationUuid(),
                 "Queued", restore.getStatus());
-        assertEquals(drain.getParentUuid(), restore.getParentUuid());
+        assertEquals(rootUuid, restore.getParentUuid());
         assertEquals(drain.getUuid(), restore.getExpectedControlOperationUuid());
         return restore;
     }
@@ -1488,7 +1493,7 @@ public class MemoryRepositoryTest {
         assertEquals("standard-pause", host1State().getControlOperationUuid());
     }
 
-    @Test public void standardWriteAfterCompletedDrainWaitsForEnabledZramActivation() {
+    @Test public void completedDrainWithReadyDeviceActivatesOnlyThroughRecovery() {
         registerStandardResources();
         repository.transaction(em -> {
             em.persist(testTask("completed-drain", null, "drain", "Succeeded", null));
@@ -1512,9 +1517,15 @@ public class MemoryRepositoryTest {
         assertEquals("Blocked", host1State().getPolicyPlanStatus());
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.ZRAM_ENABLED,
                 "host1", "HostVO", "true")), null, false);
+        assertNull("planning alone does not undo a drain", host1State().getActiveTaskUuid());
+        MemoryAgentResponse inventory = drainInventory(null, false, Collections.singletonList("DRAIN_PROOF_UNAVAILABLE"));
+        inventory.state.put("bootId", "boot-a"); inventory.state.put("controlOperationUuid", "completed-drain");
+        repository.recoverDrain("host1", "system:memory-zram-reenabled", null, inventory);
         assertNotNull(host1State().getActiveTaskUuid());
         assertNotEquals("completed-drain", host1State().getControlOperationUuid());
-        assertEquals(1, repository.claim("mn").size());
+        MemoryTaskVO activation = repository.claim("mn").get(0);
+        assertEquals("completed-drain", activation.getExpectedControlOperationUuid());
+        assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(activation.getPolicy()).zram.enabled);
     }
 
     private void prepareAppliedKsmForStandardClear() {
@@ -3237,30 +3248,125 @@ public class MemoryRepositoryTest {
         } catch (MemoryOperationException expected) { }
     }
 
-    @Test public void zramPoolPreparationKeepsDrainFenceAndDoesNotChangePolicy() {
-        repository.transaction(em -> {
+    private static final String DRAIN_BOOT = "01234567-89ab-cdef-0123-456789abcdef";
+    private static final String DRAIN_POOL = "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789";
+
+    private MemoryTaskVO prepareDrainedHost(boolean poolReadyProof) {
+        prepareCapacityObservation("Succeeded", true, false, false);
+        return repository.transaction(em -> {
+            MemoryTaskVO drain = testTask("user-drain", null, "drain", "Succeeded", null);
+            em.persist(drain);
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setStatus("Succeeded"); state.setControlOperationUuid("completed-drain"); return null;
+            state.setControlOperationUuid(drain.getUuid());
+            if (poolReadyProof) {
+                com.google.gson.JsonObject observed = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+                observed.addProperty("lastConfirmedOperationUuid", drain.getUuid());
+                com.google.gson.JsonObject proof = new com.google.gson.JsonObject();
+                proof.addProperty("drainOperationUuid", drain.getUuid()); proof.addProperty("oldPoolGeneration", DRAIN_POOL);
+                proof.addProperty("maintenanceReady", true); proof.addProperty("maintenanceArchived", true);
+                proof.addProperty("executorExited", true); proof.addProperty("activeOperations", 0);
+                proof.addProperty("readyForInitialization", true); proof.addProperty("originalDeviceInactive", true);
+                proof.addProperty("oldPoolOwnershipAbsent", true); proof.addProperty("poolOwnedByService", false);
+                observed.add("maintenanceProof", proof);
+                state.setState(observed.toString());
+            }
+            return drain;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0);
-        msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
-        msg.setAction(MemoryZramPoolPreparationRules.ACTION); msg.setPolicy("{}");
-        msg.setExpectedGlobalRevision(0L); msg.setExpectedControlOperationUuid("completed-drain");
-        msg.setPoolPreparation(MemoryZramPoolPreparationRulesTest.preparation());
-        MemoryTaskInventory parent = repository.submit(msg);
-        assertEquals(parent.getUuid(), repository.submit(msg).getUuid());
-        assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
-        MemoryStateVO state = repository.states(Collections.singletonList("host1"), 0, 10).get(0);
-        assertEquals("completed-drain", state.getControlOperationUuid());
-        assertNotNull(state.getActiveTaskUuid());
-        MemoryTaskVO child = repository.claim("mn-a").get(0);
-        assertEquals(MemoryZramPoolPreparationRules.ACTION, child.getAction());
-        assertTrue(child.getPolicy().contains("expectedPoolGeneration"));
-        repository.result(child.getUuid(), "Succeeded", "pool prepared; optimization remains disabled", null);
-        msg.setExpectedControlOperationUuid("stale-drain");
-        msg.setClientRequestUuid(UUID.randomUUID().toString());
-        try { repository.submit(msg); fail("stale drain anchor must fail"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_CONTROL_OPERATION_FENCED", expected.getCode()); }
+    }
+
+    private MemoryAgentResponse drainInventory(String pool, boolean canPrepare, List<String> reasons) {
+        Map<String, Object> state = new LinkedHashMap<>();
+        state.put("hostUuid", "host1"); state.put("bootId", DRAIN_BOOT);
+        state.put("observedAt", Instant.now().toString()); state.put("status", "AVAILABLE");
+        state.put("poolGeneration", pool); state.put("controlOperationUuid", "user-drain");
+        state.put("canPrepareZramPool", canPrepare);
+        state.put("zramPoolPreparationQuality", canPrepare ? "Fresh" : "Ineligible");
+        state.put("zramPoolPreparationObservedAt", System.currentTimeMillis());
+        state.put("zramPoolPreparationReasons", reasons);
+        state.put("reasons", Collections.emptyList()); state.put("candidates", Collections.emptyList());
+        MemoryAgentResponse observation = new MemoryAgentResponse();
+        observation.setSuccess(true); observation.status = "Succeeded"; observation.hostUuid = "host1";
+        observation.state = state;
+        return observation;
+    }
+
+    @Test public void resumeOfDrainedHostResetsThePreservedPoolAndActivatesIt() {
+        MemoryTaskVO drain = prepareDrainedHost(false);
+        assertTrue(repository.isDrainedHost("host1"));
+        MemoryTaskInventory root = repository.recoverDrain("host1", "admin:actor", "admin:actor:resume-1",
+                drainInventory(DRAIN_POOL, true, Collections.emptyList()));
+        assertEquals("the same resume request is idempotent", root.getUuid(), repository.recoverDrain("host1",
+                "admin:actor", "admin:actor:resume-1", drainInventory(DRAIN_POOL, true, Collections.emptyList())).getUuid());
+        assertEquals("resume", root.getAction());
+        assertEquals("the drain stays the Host fence until the reset is proven", "user-drain",
+                host1State().getControlOperationUuid());
+        MemoryTaskVO preparation = repository.claim("mn-recover").get(0);
+        assertEquals(MemoryZramPoolPreparationRules.ACTION, preparation.getAction());
+        assertEquals("user-drain", preparation.getExpectedControlOperationUuid());
+        assertTrue(preparation.getPolicy().contains(DRAIN_POOL));
+        MemoryTaskVO restore = assertCapacityPreparationQueuesRestore(drain, preparation, null,
+                repository.findTask(root.getUuid()).getPolicy(), root.getUuid());
+        assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(restore.getPolicy()).zram.enabled);
+    }
+
+    @Test public void resumeAfterRebootActivatesTheDeviceTheAgentProvesBlank() {
+        prepareDrainedHost(true);
+        repository.transaction(em -> {
+            // The drain journal belongs to the previous boot, so the Agent no longer confirms it.
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            com.google.gson.JsonObject observed = new com.google.gson.JsonParser().parse(state.getState()).getAsJsonObject();
+            observed.remove("lastConfirmedOperationUuid");
+            state.setState(observed.toString());
+            return null;
+        });
+        MemoryTaskInventory root = repository.recoverDrain("host1", "admin:actor", null,
+                drainInventory(null, false, Arrays.asList("DRAIN_PROOF_UNAVAILABLE", "MEMORY_SERVICE_NOT_STOPPED")));
+        MemoryTaskVO activation = repository.claim("mn-recover").get(0);
+        assertEquals(root.getUuid(), activation.getParentUuid());
+        assertEquals("user-drain", activation.getExpectedControlOperationUuid());
+        assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(activation.getPolicy()).zram.enabled);
+        assertEquals(activation.getUuid(), host1State().getControlOperationUuid());
+    }
+
+    @Test public void rejectedRecoveryActivationKeepsTheHostRecoverable() {
+        prepareDrainedHost(true);
+        repository.recoverDrain("host1", "admin:actor", null,
+                drainInventory(null, false, Arrays.asList("DRAIN_PROOF_UNAVAILABLE", "MEMORY_SERVICE_NOT_STOPPED")));
+        MemoryTaskVO activation = repository.claim("mn-recover").get(0);
+        MemoryAgentResponse rejected = new MemoryAgentResponse();
+        rejected.setSuccess(false); rejected.status = "Failed"; rejected.hostUuid = "host1";
+        rejected.reasonCode = "MAINTENANCE_ACTIVATION_VM_INVENTORY_NOT_READY";
+        rejected.state = Collections.singletonMap("activationRejected", true);
+        repository.result(activation.getUuid(), "Failed", rejected.reasonCode, rejected, null);
+        assertEquals("user-drain", host1State().getControlOperationUuid());
+        assertTrue("a rejected activation leaves the Agent under the drain", repository.isDrainedHost("host1"));
+    }
+
+    @Test public void drainRecoveryRefusesHostsItCannotProve() {
+        prepareDrainedHost(false);
+        try {
+            repository.recoverDrain("host1", "admin:actor", null,
+                    drainInventory(DRAIN_POOL, false, Collections.singletonList("OPERATION_JOURNAL_UNRESOLVED")));
+            fail("an ineligible drained Host must not be recovered");
+        } catch (MemoryOperationException expected) {
+            assertEquals("MEMORY_DRAIN_RECOVERY_UNAVAILABLE", expected.getCode());
+        }
+        assertNull(host1State().getActiveTaskUuid());
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setControlOperationUuid(null); return null; });
+        assertFalse(repository.isDrainedHost("host1"));
+        try {
+            repository.recoverDrain("host1", "admin:actor", null, drainInventory(DRAIN_POOL, true, Collections.emptyList()));
+            fail("only a completed drain can be recovered");
+        } catch (MemoryOperationException expected) {
+            assertEquals("MEMORY_CONTROL_OPERATION_FENCED", expected.getCode());
+        }
+    }
+
+    @Test public void ordinaryPlanningDoesNotReactivateADrainedHost() {
+        prepareDrainedHost(true);
+        assertFalse("a reconnect must not undo a drain", repository.applyEffectivePolicyAfterConnect("host1"));
+        assertNull(host1State().getActiveTaskUuid());
+        assertEquals("user-drain", host1State().getControlOperationUuid());
     }
 
     @Test public void resumeRejectsDrainFenceAndOnlyOffersResumeForSuccessfulPause() {

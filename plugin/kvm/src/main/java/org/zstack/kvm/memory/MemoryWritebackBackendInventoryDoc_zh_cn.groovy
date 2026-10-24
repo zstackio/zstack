@@ -14,8 +14,4 @@ doc {
     field { name "poolGeneration"; desc "当前ZRAM池代次或显式none；它是opaque token，不是设备UUID。"; type "String"; since "5.5.38" }
     field { name "canPrepare"; desc "是否已具备直接离线准备候选后端的资格；未提供观测时为空，不代表false。已有池仅因服务未停或缺排空证明而为false时，自动维护仍须核完整排空条件。首次无池且唯一阻碍为服务未停时，后端核无数据、无未决及服务身份后自动正常退出、准备及恢复，超时不强杀；不要求前端先drain或手动停服务。"; type "Boolean"; since "5.5.38" }
     field { name "preparationReasons"; desc "直接离线准备的资格原因代码；自动维护不得忽略其他拒绝原因，false却没有原因属于未知资格。"; type "List"; since "5.5.38" }
-    field { name "canPrepareZramPool"; desc "是否允许重新准备ZRAM池；未提供资格观测时为空，不代表false。"; type "Boolean"; since "5.5.38" }
-    field { name "zramPoolPreparationReasons"; desc "ZRAM池准备资格原因代码。"; type "List"; since "5.5.38" }
-    field { name "zramPoolPreparationQuality"; desc "ZRAM池准备资格观测质量。"; type "String"; since "5.5.38" }
-    field { name "zramPoolPreparationObservedAt"; desc "ZRAM池准备资格采样时间，单位毫秒；未提供采样时为空。"; type "Long"; since "5.5.38" }
 }
