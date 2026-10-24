@@ -2616,6 +2616,7 @@ public class MemoryRepository {
                         .setParameter("original", uuid).setMaxResults(1).getResultList().isEmpty()) { return null; }
             MemoryTaskVO rejectedResume = rejectedResumeForReconcile(em, task);
             String restoredControlFence = null;
+            boolean keptSucceededControl = false;
             MemoryTaskVO restoredUncertainOwner = null;
             MemoryTaskVO appliedTask = task;
             MemoryAgentResponse stateResponse = automaticActivation || automaticPreparation
@@ -2802,12 +2803,14 @@ public class MemoryRepository {
             }
             if (task != null && host != null && Arrays.asList("pause", "drain").contains(task.getAction())
                     && "Failed".equals(resultStatus) && response != null
-                    && "KSM_CONTROL_OPERATION_FENCED".equals(response.reason)
                     && "INVALID_CONTROL_ACTION".equals(response.reasonCode)
                     && task.getExpectedControlOperationUuid() != null
                     && uuid.equals(host.getControlOperationUuid())) {
-                // The Agent fenced the request before any effect; its active control is unchanged.
+                // The Agent rejects control actions with this code only before any
+                // effect (it journals them REJECTED); its active control is unchanged.
                 restoredControlFence = task.getExpectedControlOperationUuid();
+                MemoryTaskVO kept = em.find(MemoryTaskVO.class, restoredControlFence);
+                keptSucceededControl = kept != null && "Succeeded".equals(kept.getStatus());
             }
             MemoryTaskVO activation = task != null && "reconcile".equals(task.getAction())
                     && task.getReconcileOperationUuid() != null
@@ -2885,6 +2888,8 @@ public class MemoryRepository {
                     host.setPolicyPlanStatus(planStatus);
                 }
                 host.setStatus(resultStatus); host.setReason(trim(resultReason));
+                // A rejected request leaves the Host under its succeeded control.
+                if (keptSucceededControl) { host.setStatus("Succeeded"); }
                 if (!MemoryTaskRules.blocksHost(resultStatus)) { host.setActiveTaskUuid(null); }
                 if (ordinaryReconcile && "Succeeded".equals(resultStatus)
                         && Arrays.asList("apply", "clearOverride").contains(appliedTask.getAction())) {
