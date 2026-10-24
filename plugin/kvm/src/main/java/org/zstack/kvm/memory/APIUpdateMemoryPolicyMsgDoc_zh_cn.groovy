@@ -40,15 +40,6 @@ doc {
 					since "5.5.38"
 				}
 				column {
-					name "poolPreparation"
-					enclosedIn "updateMemoryPolicy"
-					desc "ZRAM池准备证据对象；仅用于 prepareZramPool。对象字段：expectedHostBootId (String，读取池状态时的Host启动标识，提交时须仍匹配)；expectedPoolGeneration (String，已排空且准备重置的旧池代次，64位小写十六进制摘要)；resetConfirmed (boolean，仅在池状态及代次校验通过后确认重置，必须为true)。"
-					location "body"
-					type "MemoryZramPoolPreparation"
-					optional true
-					since "5.5.38"
-				}
-				column {
 					name "expectedSourceRevisions"
 					enclosedIn "updateMemoryPolicy"
 					desc "准备动作回传最近Get返回的完整sourceRevisions映射；其他受控动作传入时也校验。键包含各实际来源层级及资源UUID，不得自行截取或补版本。"
@@ -106,12 +97,12 @@ doc {
 				column {
 					name "action"
 					enclosedIn "updateMemoryPolicy"
-					desc "动作：pause、drain、resume、reconcile、recoverUncertain及后端/池准备。reconcile用于核对既有结果；对证据完整的精确写前拒绝，可持久记录NOT_ISSUED并将原Unknown结案为Failed、释放活动占用，不会标记成功或重放原请求。原配置仍对应当前计划及期望修订时，该计划及States.status同步为Failed；旧结果不覆盖更新的计划。实际已应用修订、原生观测及安全准入不变，功能状态和监控质量独立判断；证据不足仍为Unknown。纯KSM的none目标在Host重启后重新核验本次Host/启动身份、受管配置和完整原生读数，保持当前开关，不复用旧启动ACK；其精确写前拒绝仅封存本次失败，不要求ZRAM服务，也不修改历史成功记录。"
+					desc "动作：pause、drain、resume、reconcile、recoverUncertain及后端准备。resume 也用于排空后的恢复：同一启动周期内由后端自动重置已排空的ZRAM池再激活；Host重启后设备已为空，直接按当前配置重新下发。reconcile用于核对既有结果；对证据完整的精确写前拒绝，可持久记录NOT_ISSUED并将原Unknown结案为Failed、释放活动占用，不会标记成功或重放原请求。原配置仍对应当前计划及期望修订时，该计划及States.status同步为Failed；旧结果不覆盖更新的计划。实际已应用修订、原生观测及安全准入不变，功能状态和监控质量独立判断；证据不足仍为Unknown。纯KSM的none目标在Host重启后重新核验本次Host/启动身份、受管配置和完整原生读数，保持当前开关，不复用旧启动ACK；其精确写前拒绝仅封存本次失败，不要求ZRAM服务，也不修改历史成功记录。"
 					location "body"
 					type "String"
 					optional false
 					since "5.5.38"
-					values ("pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool")
+					values ("pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend")
 				}
 				column {
 					name "expectedRevision"

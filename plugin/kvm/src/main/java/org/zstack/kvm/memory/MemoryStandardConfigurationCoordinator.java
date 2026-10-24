@@ -12,6 +12,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 /** Hooks standard memory configuration into the existing GlobalConfig/ResourceConfig extension points. */
 public final class MemoryStandardConfigurationCoordinator {
@@ -19,9 +20,11 @@ public final class MemoryStandardConfigurationCoordinator {
     private final MemoryRepository repository;
     private final PluginRegistry registry;
     private final ThreadFacade thdf;
+    private final Consumer<String> zramReenabled;
 
-    public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry, ThreadFacade thdf) {
-        this.repository = repository; this.registry = registry; this.thdf = thdf;
+    public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry, ThreadFacade thdf,
+                                                  Consumer<String> zramReenabled) {
+        this.repository = repository; this.registry = registry; this.thdf = thdf; this.zramReenabled = zramReenabled;
     }
 
     public void install(ResourceConfigFacade rcf) {
@@ -30,11 +33,12 @@ public final class MemoryStandardConfigurationCoordinator {
             // ResourceConfig also runs the GlobalConfig validators, so keep them scope-free.
             global.installValidateExtension((category, name, oldValue, newValue) -> validateScalar(field, newValue));
             global.installLocalBeforeUpdateExtension((oldConfig, newValue) -> validateChange(field, null, newValue));
-            global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null));
+            global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null, reenablesZram(field, newConfig.value())));
             ResourceConfig resource = rcf.getResourceConfig(global.getIdentity());
             resource.installValidatorExtension((resourceUuid, oldValue, newValue) -> validateChange(field, resourceUuid, newValue));
-            resource.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) -> changed(resourceUuid));
-            resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid));
+            resource.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->
+                    changed(resourceUuid, reenablesZram(field, newValue)));
+            resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid, false));
         }
     }
 
@@ -67,13 +71,18 @@ public final class MemoryStandardConfigurationCoordinator {
         }
     }
 
+    private static boolean reenablesZram(MemoryStandardField field, String value) {
+        return field == MemoryStandardField.ZRAM_ENABLED && "true".equalsIgnoreCase(value == null ? null : value.trim());
+    }
+
     /** The value is already committed; per-Host application is queued off the API thread. */
-    private void changed(String resourceUuid) {
+    private void changed(String resourceUuid, boolean zramEnabled) {
         thdf.submit(new Task<Void>() {
             @Override public String getName() { return "memory-standard-config-changed"; }
             @Override public Void call() {
                 try {
                     repository.standardConfigurationChanged(resourceUuid);
+                    if (zramEnabled) { zramReenabled.accept(resourceUuid); }
                 } catch (RuntimeException e) {
                     logger.warn(String.format("unable to queue memory policy application for resource[%s]; "
                             + "the next Host connect re-applies the effective policy", resourceUuid), e);

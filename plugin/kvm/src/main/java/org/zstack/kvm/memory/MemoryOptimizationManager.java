@@ -293,8 +293,39 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             });
             return;
         }
+        if ("resume".equals(msg.getAction()) && "Host".equals(msg.getScope())
+                && repository.isDrainedHost(msg.getResourceUuid())) {
+            String actor = msg.getSession().getAccountUuid() + ":" + msg.getSession().getUserUuid();
+            recoverDrain(msg.getResourceUuid(), actor, actor + ":" + msg.getClientRequestUuid(), inventory -> {
+                event.setInventory(inventory);
+                bus.publish(event);
+            }, error -> bus.replyErrorByMessageType(msg, error.toErrorCode()));
+            return;
+        }
         event.setInventory(repository.submit(msg));
         bus.publish(event);
+    }
+
+    /** Re-enabling ZRAM is the configuration form of resuming a drained Host. */
+    public void recoverDrainedHosts(String resourceUuid) {
+        for (String host : repository.drainedHostsWithZramEnabled(resourceUuid)) {
+            recoverDrain(host, "system:memory-zram-reenabled", null, inventory -> { },
+                    error -> logger.warn(String.format("drained Host[%s] was not recovered after ZRAM was re-enabled: %s",
+                            host, error.getMessage())));
+        }
+    }
+
+    private void recoverDrain(String host, String actor, String requestKey, Consumer<MemoryTaskInventory> done,
+                              Consumer<MemoryOperationException> failed) {
+        call(host, "writeback-backends", command(host, Platform.getUuid()), response -> {
+            try {
+                done.accept(repository.recoverDrain(host, actor, requestKey, response));
+            } catch (MemoryOperationException invalid) {
+                failed.accept(invalid);
+            } catch (IllegalArgumentException invalid) {
+                failed.accept(new MemoryOperationException("MEMORY_INVALID_REQUEST", invalid.getMessage()));
+            }
+        });
     }
 
     private void policy(APIGetMemoryPolicyMsg msg) {
@@ -793,6 +824,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         MemoryTaskVO selectedRoot = maintenanceTask.getParentUuid() == null ? null
                 : repository.findTask(maintenanceTask.getParentUuid());
         final boolean automaticMaintenance = MemoryRepository.isSelectedBackendMaintenance(maintenanceTask, selectedRoot)
+                || MemoryRepository.isDrainRecoveryMaintenance(maintenanceTask, selectedRoot)
                 || MemoryRepository.isAutomaticCapacityDrain(maintenanceDrain, maintenanceRoot)
                 && Objects.equals(maintenanceTask.getHostUuid(), maintenanceDrain.getHostUuid())
                 && Objects.equals(maintenanceTask.getParentUuid(), maintenanceDrain.getParentUuid())

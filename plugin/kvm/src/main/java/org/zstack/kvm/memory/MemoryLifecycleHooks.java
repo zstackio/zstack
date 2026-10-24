@@ -72,7 +72,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             for (Map.Entry<String, com.google.gson.JsonElement> entry : element.getAsJsonObject().entrySet()) {
                 String key = entry.getKey();
                 if (("poolGeneration".equals(key) || "pool_generation".equals(key))
-                        && entry.getValue().isJsonPrimitive() && !entry.getValue().getAsString().trim().isEmpty()) {
+                        && entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()
+                        && !entry.getValue().getAsString().trim().isEmpty()) {
                     return true;
                 }
                 if (hasPoolGeneration(entry.getValue())) { return true; }

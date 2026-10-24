@@ -21,7 +21,6 @@ public class SourceClassMap {
 			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory", "org.zstack.sdk.MemoryWritebackMaintenanceInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory", "org.zstack.sdk.MemoryWritebackStableIdentityInventory");
-			put("org.zstack.kvm.memory.MemoryZramPoolPreparation", "org.zstack.sdk.MemoryZramPoolPreparation");
 
 
 
@@ -1017,7 +1016,6 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MemoryWritebackMaintenanceInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory");
 			put("org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory");
 			put("org.zstack.sdk.MemoryWritebackStableIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory");
-			put("org.zstack.sdk.MemoryZramPoolPreparation", "org.zstack.kvm.memory.MemoryZramPoolPreparation");
 
 
 

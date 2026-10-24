@@ -32,9 +32,6 @@ public class UpdateMemoryPolicyAction extends AbstractAction {
     public org.zstack.sdk.MemoryBackendPreparation backendPreparation;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public org.zstack.sdk.MemoryZramPoolPreparation poolPreparation;
-
-    @Param(required = false, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.util.Map expectedSourceRevisions;
 
     @Param(required = false, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
@@ -52,7 +49,7 @@ public class UpdateMemoryPolicyAction extends AbstractAction {
     @Param(required = true, maxLength = 64, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String resourceUuid;
 
-    @Param(required = true, validValues = {"pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend","prepareZramPool"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
+    @Param(required = true, validValues = {"pause","drain","resume","reconcile","recoverUncertain","prepareWritebackBackend"}, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
     public java.lang.String action;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)

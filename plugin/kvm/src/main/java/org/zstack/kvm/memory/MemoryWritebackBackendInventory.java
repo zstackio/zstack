@@ -1,5 +1,7 @@
 package org.zstack.kvm.memory;
 
+import org.zstack.header.rest.APINoSee;
+
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +22,14 @@ public class MemoryWritebackBackendInventory {
     private String poolGeneration;
     private Boolean canPrepare;
     private List<String> preparationReasons;
+    // Internal eligibility for the automatic drain recovery; not an API contract.
+    @APINoSee
     private Boolean canPrepareZramPool;
+    @APINoSee
     private List<String> zramPoolPreparationReasons;
+    @APINoSee
     private String zramPoolPreparationQuality;
+    @APINoSee
     private Long zramPoolPreparationObservedAt;
 
     public static MemoryWritebackBackendInventory __example__() {

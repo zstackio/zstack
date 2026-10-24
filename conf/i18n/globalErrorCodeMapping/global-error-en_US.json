@@ -2861,6 +2861,7 @@
   "ORG_ZSTACK_MEMORY_11043": "Memory task is still referenced by runtime state or historical operations and cannot be purged: %s",
   "ORG_ZSTACK_MEMORY_11044": "Memory task result was purged and the request will not be replayed: %s",
   "ORG_ZSTACK_MEMORY_11045": "Memory optimization service has not stopped: %s",
+  "ORG_ZSTACK_MEMORY_11046": "Drained Host cannot be recovered now: %s",
   "ORG_ZSTACK_MEMORY_11999": "Unknown memory optimization error: %s",
   "ORG_ZSTACK_PCIDEVICE_10036": "cannot SR-IOV virtualize PCI devices on host [UUID:%s] that are attached to a VM",
   "ORG_ZSTACK_PCIDEVICE_10035": "PCI devices in the host [UUID:%s] are already SRIOV virtualized.",
