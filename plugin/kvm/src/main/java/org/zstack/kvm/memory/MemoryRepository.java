@@ -2745,6 +2745,7 @@ public class MemoryRepository {
                         .setParameter("original", uuid).setMaxResults(1).getResultList().isEmpty()) { return null; }
             MemoryTaskVO rejectedResume = rejectedResumeForReconcile(em, task);
             String restoredControlFence = null;
+            boolean notIssuedControlRestored = false;
             boolean keptSucceededControl = false;
             MemoryTaskVO restoredUncertainOwner = null;
             MemoryTaskVO appliedTask = task;
@@ -2869,6 +2870,14 @@ public class MemoryRepository {
                         // this still-current plan. It does not prove application
                         // or replace the Host's last applied/native observation.
                         appliedTask = reconciledControl;
+                        // Nothing was written; the Agent reports the control it
+                        // still holds ("" on a first-use Host).
+                        Object agentControl = response.state.get("controlOperationUuid");
+                        if (agentControl instanceof String
+                                && ((String) agentControl).matches("|[0-9a-f]{32}")) {
+                            restoredControlFence = ((String) agentControl).isEmpty() ? null : (String) agentControl;
+                            notIssuedControlRestored = true;
+                        }
                     }
                 } catch (RuntimeException invalidState) {
                     // Without the current boot binding, keep the plan unresolved.
@@ -2980,7 +2989,7 @@ public class MemoryRepository {
             bumpQueryVersion(em, "task");
             // A proof is only actionable for the currently admitted transition.
             // Duplicate or late callbacks must not mutate a newer fence.
-            if (restoredControlFence != null) { host.setControlOperationUuid(restoredControlFence); }
+            if (restoredControlFence != null || notIssuedControlRestored) { host.setControlOperationUuid(restoredControlFence); }
             task.setStatus(resultStatus); task.setReason(trim(resultReason));
             if (host != null && uuid.equals(host.getActiveTaskUuid())) {
                 if (response != null && Arrays.asList("Succeeded", "Blocked").contains(resultStatus)

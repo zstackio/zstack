@@ -4922,6 +4922,7 @@ public class MemoryRepositoryTest {
         for (String receipt : Arrays.asList("FIRST_ZRAM_ADMISSION_NOT_ISSUED", "KSM_CLEAR_NOT_ISSUED")) {
             for (String action : Arrays.asList("apply", "clearOverride")) {
                 for (String queryIdentity : Arrays.asList("explicitOmitted", "explicitExpected", "configuration")) {
+                  for (String agentControl : Arrays.asList("omitted", "", "0123456789abcdef0123456789abcdef")) {
                     ordinaryReconcileFixture(action, false);
                     repository.transaction(em -> {
                         em.persist(testTask("old-query", null, "reconcile", "Unknown", "original"));
@@ -4962,6 +4963,8 @@ public class MemoryRepositoryTest {
                                 + "\"requestHash\":\"988f535ac21c705d00553452e03e90ee28c5a80679e91d5d9f5f7052e9c7a1ac\","
                                 + "\"policyWritesIssued\":false}}", MemoryAgentResponse.class);
                     }
+                    if (!"omitted".equals(agentControl)) rejected.state.put("controlOperationUuid", agentControl);
+                    String control = host1State().getControlOperationUuid();
                     String appliedPolicy = host1State().getAppliedPolicy();
                     String appliedPolicyHash = host1State().getAppliedPolicyHash();
                     String nativeState = host1State().getState();
@@ -4982,9 +4985,11 @@ public class MemoryRepositoryTest {
                     assertEquals(queryIdentity, nativeState, state.getState());
                     assertEquals(queryIdentity, appliedRevision, state.getAppliedRevision());
                     assertEquals(queryIdentity, planHash, state.getPolicyPlanHash());
-                    assertEquals(queryIdentity, "configuration".equals(queryIdentity) ? "original" : "query",
+                    assertEquals("nothing was issued; the fence follows the control the Agent reports",
+                            "omitted".equals(agentControl) ? control : agentControl.isEmpty() ? null : agentControl,
                             state.getControlOperationUuid());
                     assertNull(queryIdentity, state.getActiveTaskUuid());
+                  }
                 }
             }
         }
