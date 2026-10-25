@@ -716,6 +716,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             command.put("reconnectObservationBootId", reconnectObservationBootId);
         }
         command.put("policy", active ? MemoryPolicyRules.decode(task.getPolicy()) : Collections.emptyMap());
+        // Command serialization drops null fields, so name the capacity sides left to the service default.
+        List<String> defaultCapacitySides = active ? MemoryPolicyRules.defaultCapacitySides(task.getPolicy())
+                : Collections.emptyList();
+        if (!defaultCapacitySides.isEmpty()) { command.put("defaultCapacitySides", defaultCapacitySides); }
         if (active && Boolean.TRUE.equals(task.getRequiresKsmNativePartialFence())) {
             command.put("requiresKsmNativePartialFence", true);
             command.put("ksmNativeObservationBootId", task.getKsmNativeObservationBootId());

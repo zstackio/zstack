@@ -200,6 +200,22 @@ public class MemoryManagerReconcileTest {
         verify(false, "Succeeded", "Succeeded", 0, 1);
     }
 
+    @Test public void serviceDefaultCapacitySideSurvivesCommandSerialization() throws Exception {
+        Manager manager = new Manager(); manager.expectedOperation = "default-capacity";
+        inject(manager, "repository", new Repository());
+        MemoryTaskVO task = new MemoryTaskVO(); task.setUuid("default-capacity"); task.setHostUuid("host");
+        task.setResourceUuid("host"); task.setScope("Host"); task.setAction("apply"); task.setDesiredRevision(2L);
+        task.setPolicy("{\"schemaVersion\":1,\"zram\":{\"enabled\":true,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":null}}");
+        dispatch(manager, task, true);
+        String wire = org.zstack.utils.gson.JSONObjectUtil.toJsonString(manager.command);
+        assertTrue("the null side is dropped by serialization and must be named: " + wire,
+                wire.contains("\"defaultCapacitySides\":[\"ramLimitBytes\"]"));
+
+        task.setPolicy("{\"schemaVersion\":1,\"zram\":{\"enabled\":true,\"logicalCapacityBytes\":8192,\"ramLimitBytes\":4096}}");
+        dispatch(manager, task, true);
+        assertFalse(manager.command.containsKey("defaultCapacitySides"));
+    }
+
     @Test public void unknownHostReconcileCarriesSealEvidenceWithoutInventingNotSent() throws Exception {
         Manager manager = new Manager(); Repository repository = new Repository();
         MemoryTaskVO original = new MemoryTaskVO(); original.setUuid("original-operation");

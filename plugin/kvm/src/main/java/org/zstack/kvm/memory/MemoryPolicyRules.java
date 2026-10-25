@@ -64,6 +64,18 @@ public final class MemoryPolicyRules {
         return canonical(result).toString();
     }
 
+    /** ZRAM capacity sides a task policy leaves to the service default with null. */
+    public static List<String> defaultCapacitySides(String policy) {
+        List<String> sides = new ArrayList<>();
+        if (policy == null) { return sides; }
+        JsonElement zram = object(policy, "policy").get("zram");
+        for (String side : Arrays.asList("logicalCapacityBytes", "ramLimitBytes")) {
+            if (zram != null && zram.isJsonObject() && zram.getAsJsonObject().has(side)
+                    && zram.getAsJsonObject().get(side).isJsonNull()) { sides.add(side); }
+        }
+        return sides;
+    }
+
     public static MemoryPolicyConfig decode(String value) {
         return GSON.fromJson(value, MemoryPolicyConfig.class);
     }
