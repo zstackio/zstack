@@ -657,6 +657,65 @@ public class MemoryRepositoryTest {
                 tasks.get(tasks.size() - 1).getAction());
     }
 
+    @Test public void restoringDefaultCapacityQueuesDrain() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_RAM_LIMIT, null, null, "")),
+                null, false);
+        List<MemoryTaskVO> tasks = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.hostUuid = :host order by t.createDate", MemoryTaskVO.class)
+                .setParameter("host", "host1").getResultList());
+        assertEquals("restoring the default capacity must rebuild the pool", "drain",
+                tasks.get(tasks.size() - 1).getAction());
+    }
+
+    @Test public void restoringDefaultCapacitySendsServiceDefaultAndKeepsAppliedPolicyConcrete() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        standardCommit(Arrays.asList(
+                standardChange(MemoryStandardField.ZRAM_ENABLED, null, null, "false"),
+                standardChange(MemoryStandardField.ZRAM_RAM_LIMIT, null, null, "")),
+                null, false);
+        MemoryTaskVO apply = repository.claim("capacity-default").stream()
+                .filter(task -> Arrays.asList("apply", "clearOverride").contains(task.getAction()))
+                .findFirst().orElse(null);
+        assertNotNull("the disabled pool takes the capacity change without a drain", apply);
+        com.google.gson.JsonObject zram = new com.google.gson.JsonParser().parse(apply.getPolicy())
+                .getAsJsonObject().getAsJsonObject("zram");
+        assertEquals(8192L, zram.get("logicalCapacityBytes").getAsLong());
+        assertTrue("the default side asks the service default: " + zram,
+                zram.has("ramLimitBytes") && zram.get("ramLimitBytes").isJsonNull());
+
+        MemoryAgentResponse applied = new MemoryAgentResponse(); applied.appliedRevision = apply.getDesiredRevision();
+        repository.result(apply.getUuid(), "Succeeded", "default capacity applied", applied);
+        com.google.gson.JsonObject appliedZram = new com.google.gson.JsonParser()
+                .parse(host1State().getAppliedPolicy()).getAsJsonObject().getAsJsonObject("zram");
+        assertFalse("a default side is not an applied override: " + appliedZram, appliedZram.has("ramLimitBytes"));
+        assertEquals(8192L, appliedZram.get("logicalCapacityBytes").getAsLong());
+        assertEquals("Applied", host1State().getPolicyPlanStatus());
+    }
+
+    @Test public void unchangedCapacityInAFeatureClearSnapshotDoesNotRestoreItsDefaultSide() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        repository.transaction(em -> {
+            writeGlobal(em, "zram.ramLimitBytes", null);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setAppliedPolicy(state.getAppliedPolicy().replace(",\"ramLimitBytes\":4096", ""));
+            state.setAppliedPolicyHash(sha256(state.getAppliedPolicy()));
+            return null;
+        });
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.KSM_ZERO_PAGES, null, null, "true")),
+                null, false);
+        List<MemoryTaskVO> tasks = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.hostUuid = :host and t.action in ('apply', 'clearOverride') order by t.createDate",
+                MemoryTaskVO.class).setParameter("host", "host1").getResultList());
+        assertFalse(tasks.isEmpty());
+        com.google.gson.JsonObject zram = new com.google.gson.JsonParser().parse(tasks.get(tasks.size() - 1).getPolicy())
+                .getAsJsonObject().getAsJsonObject("zram");
+        assertTrue("an unchanged capacity must not write its default side: " + zram,
+                zram == null || !zram.has("ramLimitBytes"));
+    }
+
     @Test public void desiredCapacityMatchingEffectiveReadbackDoesNotDrainDespiteStaleAppliedPolicy() {
         prepareCapacityObservation("Succeeded", false, false, false, 16384L, 4096L);
         standardCommit(Collections.singletonList(standardChange(

@@ -1613,6 +1613,7 @@ public class MemoryRepository {
                 payload.add("writeback", target.getAsJsonObject("writeback").deepCopy());
             }
         }
+        addDefaultCapacitySides(payload, target, plan.changedFields, blocked);
         plan.hasPayload = payload.entrySet().size() > 1;
         JsonObject writebackPayload = payload.has("writeback") ? payload.getAsJsonObject("writeback") : null;
         plan.writebackDisableOnly = payload.size() == 2 && writebackPayload != null
@@ -1627,6 +1628,36 @@ public class MemoryRepository {
             plan.capacityMaintenance = capacityMaintenanceRequest(state, target, plan.targetHash, plan.changedFields);
         }
         return plan;
+    }
+
+    private static final List<String> CAPACITY_SIDES = Arrays.asList("zram.logicalCapacityBytes", "zram.ramLimitBytes");
+
+    /** The native capacity write needs both sides; a side without a value asks the service default. */
+    private static void addDefaultCapacitySides(JsonObject payload, JsonObject target,
+            Map<String, String> changed, Map<String, String> blocked) {
+        if (CAPACITY_SIDES.stream().anyMatch(blocked::containsKey)
+                || CAPACITY_SIDES.stream().noneMatch(changed::containsKey)) { return; }
+        for (String side : CAPACITY_SIDES) {
+            if (jsonPath(payload, side) == null) {
+                JsonElement value = jsonPath(target, side);
+                setJsonPath(payload, side, value == null ? JsonNull.INSTANCE : value.deepCopy());
+            }
+        }
+    }
+
+    /** A service-default capacity side is not an applied value, so it removes the previous one. */
+    private static String appliedPolicyAfter(String previousApplied, MemoryTaskVO task) {
+        JsonObject policy = new JsonParser().parse(task.getPolicy()).getAsJsonObject();
+        JsonObject previous = new JsonParser().parse(previousApplied).getAsJsonObject();
+        for (String side : CAPACITY_SIDES) {
+            JsonElement value = jsonPath(policy, side);
+            if (value != null && value.isJsonNull()) {
+                policy.getAsJsonObject("zram").remove(side.substring("zram.".length()));
+                if (jsonPath(previous, side) != null) { previous.getAsJsonObject("zram").remove(side.substring("zram.".length())); }
+            }
+        }
+        return "clearOverride".equals(task.getAction()) ? policy.toString()
+                : MemoryPolicyRules.merge(previous.toString(), policy.toString(), "Host");
     }
 
     /** Keep the admitted target and original native identity on the drain task.
@@ -1652,10 +1683,10 @@ public class MemoryRepository {
             if (logical == null || logical <= 0 || physical == null || physical <= 0) { return null; }
             Long desiredLogical = exactJsonLong(jsonPath(target, "zram.logicalCapacityBytes"));
             Long desiredPhysical = exactJsonLong(jsonPath(target, "zram.ramLimitBytes"));
-            boolean resize = changed.containsKey("zram.logicalCapacityBytes") && desiredLogical != null
-                    && !desiredLogical.equals(logical)
-                    || changed.containsKey("zram.ramLimitBytes") && desiredPhysical != null
-                    && !desiredPhysical.equals(physical);
+            // Restoring a service-default side cannot be compared before the
+            // service resolves it, so it always rebuilds the pool.
+            boolean resize = changed.containsKey("zram.logicalCapacityBytes") && !logical.equals(desiredLogical)
+                    || changed.containsKey("zram.ramLimitBytes") && !physical.equals(desiredPhysical);
             if (!resize) { return null; }
             JsonObject request = new JsonObject();
             request.add("target", target.deepCopy());
@@ -2875,8 +2906,7 @@ public class MemoryRepository {
                     // A clear carries the complete desired snapshot. Merging
                     // its empty/omitted fields resurrects the removed intent
                     // and causes every later observation to plan another clear.
-                    host.setAppliedPolicy("clearOverride".equals(appliedTask.getAction())
-                            ? appliedTask.getPolicy() : MemoryPolicyRules.merge(previousApplied, appliedTask.getPolicy(), "Host"));
+                    host.setAppliedPolicy(appliedPolicyAfter(previousApplied, appliedTask));
                     resolveLegacyPolicyReviewAfterApply(em, appliedTask, host);
                 }
                 if (appliedTask.getPolicyPlanHash() != null
@@ -3230,8 +3260,7 @@ public class MemoryRepository {
         MemoryStateVO observed = new MemoryStateVO();
         observed.setHostUuid(host.getHostUuid()); observed.setStatus("Succeeded");
         observed.setDesiredRevision(activation.getDesiredRevision()); observed.setAppliedRevision(activation.getDesiredRevision());
-        observed.setAppliedPolicy("clearOverride".equals(activation.getAction()) ? activation.getPolicy()
-                : MemoryPolicyRules.merge(host.getAppliedPolicy() == null ? "{}" : host.getAppliedPolicy(), activation.getPolicy(), "Host"));
+        observed.setAppliedPolicy(appliedPolicyAfter(host.getAppliedPolicy() == null ? "{}" : host.getAppliedPolicy(), activation));
         observed.setControlOperationUuid(activation.getUuid()); observed.setState(current.toString());
         observed.setLastSampleTime(observation.sampleTime);
         observed.setCapabilities(observation.capabilities == null ? null : JSONObjectUtil.toJsonString(observation.capabilities));
