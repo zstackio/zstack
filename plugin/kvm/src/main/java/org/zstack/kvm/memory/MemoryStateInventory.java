@@ -71,6 +71,10 @@ public class MemoryStateInventory {
     public void setMetrics(java.util.Map<String, Object> value) { metrics = value; }
     public java.util.List<String> getAllowedActions() { return allowedActions; }
     public void setAllowedActions(java.util.List<String> value) { allowedActions = value; }
+    /** The exact request recoverUncertain accepts now; present only with that allowed action. */
+    private java.util.Map<String, String> uncertainRecovery;
+    public java.util.Map<String, String> getUncertainRecovery() { return uncertainRecovery; }
+    public void setUncertainRecovery(java.util.Map<String, String> value) { uncertainRecovery = value; }
     private String controlOperationUuid;
     public String getControlOperationUuid() { return controlOperationUuid; }
     public void setControlOperationUuid(String value) { controlOperationUuid = value; }

@@ -118,6 +118,16 @@ public class MemoryMetricsPresentationTest {
         assertEquals(nativeState, blocked.getState());
     }
 
+    @Test public void uncertainRecoveryIsOfferedOnlyWithItsConfirmationRequest() {
+        java.util.Map<String, String> request = java.util.Collections.singletonMap("expectedHostBootId", "boot");
+        MemoryStateInventory offered = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, false, request);
+        MemoryStateInventory plain = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, false, null);
+        assertTrue(offered.getAllowedActions().contains("recoverUncertain"));
+        assertEquals(request, offered.getUncertainRecovery());
+        assertFalse(plain.getAllowedActions().contains("recoverUncertain"));
+        assertNull(plain.getUncertainRecovery());
+    }
+
     private void assertProjectedStatus(String raw, String plan, String active, String expected) {
         MemoryStateVO source = state();
         source.setStatus(raw); source.setPolicyPlanStatus(plan); source.setActiveTaskUuid(active);

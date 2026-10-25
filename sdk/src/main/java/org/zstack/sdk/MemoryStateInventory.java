@@ -156,6 +156,14 @@ public class MemoryStateInventory  {
         return this.activeTaskUuid;
     }
 
+    public java.util.Map uncertainRecovery;
+    public void setUncertainRecovery(java.util.Map uncertainRecovery) {
+        this.uncertainRecovery = uncertainRecovery;
+    }
+    public java.util.Map getUncertainRecovery() {
+        return this.uncertainRecovery;
+    }
+
     public java.lang.String currentStep;
     public void setCurrentStep(java.lang.String currentStep) {
         this.currentStep = currentStep;

@@ -5705,6 +5705,56 @@ public class MemoryRepositoryTest {
         assertEquals(before, host1State().getState()); assertNull(host1State().getAppliedRevision());
     }
 
+    @Test public void unresolvedDrainedActivationOffersTheExactUncertainRecoveryRequest() {
+        uncertainRecoveryRequest();
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD)
+                    .setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.DRAIN);
+            em.find(MemoryStateVO.class, "host1").setState("{\"bootId\":\"" + MemoryUncertainRecoveryRulesTest.BOOT
+                    + "\",\"maintenanceProof\":{\"oldPoolGeneration\":\"" + MemoryUncertainRecoveryRulesTest.POOL + "\"}}");
+            return null;
+        });
+
+        Map<String, String> offered = repository.uncertainRecoveryRequest("host1");
+
+        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, offered.get("expectedControlOperationUuid"));
+        assertEquals(MemoryUncertainRecoveryRulesTest.BOOT, offered.get("expectedHostBootId"));
+        assertEquals(MemoryUncertainRecoveryRulesTest.POOL, offered.get("expectedPoolGeneration"));
+        assertEquals(MemoryUncertainRecoveryRulesTest.DRAIN, offered.get("drainControlOperationUuid"));
+        repository.transaction(em -> {
+            em.find(MemoryStateVO.class, "host1").setLastSampleTime(1L);
+            return null;
+        });
+        assertNull("a stale sample cannot be confirmed", repository.uncertainRecoveryRequest("host1"));
+    }
+
+    @Test public void uncertainRecoveryRequestReadsTheLegacyMaintenanceProofLayout() {
+        uncertainRecoveryRequest();
+        repository.transaction(em -> {
+            em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD)
+                    .setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.DRAIN);
+            em.find(MemoryStateVO.class, "host1").setState("{\"bootId\":\"" + MemoryUncertainRecoveryRulesTest.BOOT
+                    + "\",\"old_pool_generation\":\"" + MemoryUncertainRecoveryRulesTest.POOL + "\"}");
+            return null;
+        });
+        assertEquals(MemoryUncertainRecoveryRulesTest.POOL,
+                repository.uncertainRecoveryRequest("host1").get("expectedPoolGeneration"));
+    }
+
+    @Test public void uncertainApplyWithoutDrainOffersTheCurrentPoolRequest() {
+        uncertainRecoveryRequest();
+        repository.transaction(em -> {
+            em.find(MemoryStateVO.class, "host1").setState("{\"bootId\":\"" + MemoryUncertainRecoveryRulesTest.BOOT
+                    + "\",\"poolGeneration\":\"" + MemoryUncertainRecoveryRulesTest.POOL + "\"}");
+            return null;
+        });
+
+        Map<String, String> offered = repository.uncertainRecoveryRequest("host1");
+
+        assertEquals(MemoryUncertainRecoveryRulesTest.POOL, offered.get("expectedPoolGeneration"));
+        assertFalse("an apply that followed no drain has none to name", offered.containsKey("drainControlOperationUuid"));
+    }
+
     private APIUpdateMemoryPolicyMsg uncertainRecoveryRequest() {
         repository.transaction(em -> {
             em.persist(testTask("old-uncertain-parent", null, "apply", "Unknown", null));
