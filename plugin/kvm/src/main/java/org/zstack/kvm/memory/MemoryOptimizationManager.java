@@ -1049,6 +1049,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         repository.observe(host, response);
                         applyInheritedPolicyAfterObservation(host);
                         reconcileVerifiedPoolBlock(host, response);
+                        reconcileUnknownControl(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);
                     }
                 } catch (RuntimeException e) {
@@ -1096,6 +1097,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             logger.debug(String.format("Host[%s] memory policy remains unapplied: %s", host, e.getCode()));
         } catch (RuntimeException e) {
             logger.warn(String.format("Host[%s] memory policy reconciliation was not accepted", host), e);
+        }
+    }
+
+    private void reconcileUnknownControl(String host) {
+        try { repository.reconcileUnknownControl(host); }
+        catch (MemoryOperationException e) {
+            logger.debug(String.format("Host[%s] unknown control reconcile was not queued: %s", host, e.getCode()));
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] unknown control reconcile was not accepted", host), e);
         }
     }
 
