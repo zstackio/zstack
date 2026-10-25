@@ -3775,6 +3775,71 @@ public class MemoryRepositoryTest {
         assertTrue("managed ownership is the only explicitly retained control fact", state.getState().contains("managed"));
     }
 
+    @Test public void drainInterruptedByRebootReturnsThePriorControl() {
+        assertReconciledDrainWithoutEffectKeepsControl("DRAIN_INTERRUPTED_BY_REBOOT");
+    }
+
+    @Test public void drainNeverIssuedReturnsThePriorControl() {
+        assertReconciledDrainWithoutEffectKeepsControl("OPERATION_NEVER_ISSUED");
+    }
+
+    private MemoryTaskVO unknownDrainOnAppliedControl() {
+        repository.transaction(em -> {
+            MemoryTaskVO applied = testTask("applied-control", null, "apply", "Succeeded", null);
+            em.persist(applied);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setControlOperationUuid(applied.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
+            return null;
+        });
+        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("drain");
+        msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
+        repository.submit(msg);
+        MemoryTaskVO drain = repository.claim("mn").get(0);
+        repository.result(drain.getUuid(), "Unknown", "cannot do the operation on the KVM host", null);
+        return drain;
+    }
+
+    private void assertReconciledDrainWithoutEffectKeepsControl(String reason) {
+        MemoryTaskVO drain = unknownDrainOnAppliedControl();
+        APIUpdateMemoryPolicyMsg reconcile = request(repository.getPolicy("Host", "host1").getRevision());
+        reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
+        reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
+        repository.submit(reconcile);
+        MemoryTaskVO query = repository.claim("mn-reconcile").stream()
+                .filter(task -> drain.getUuid().equals(task.getReconcileOperationUuid())).findFirst().get();
+        MemoryAgentResponse ended = new MemoryAgentResponse(); ended.setSuccess(false);
+        ended.status = "Failed"; ended.reason = reason; ended.reasonCode = reason;
+        repository.result(query.getUuid(), "Failed", reason, ended);
+        assertEquals("Failed", repository.findTask(drain.getUuid()).getStatus());
+        assertEquals("a drain that never took effect must return the Host to its prior control: " + reason,
+                "applied-control", host1State().getControlOperationUuid());
+        assertEquals("Succeeded", host1State().getStatus());
+    }
+
+    @Test public void freshObservationQueuesOneReconcileForAnUnknownDrain() {
+        MemoryTaskVO drain = unknownDrainOnAppliedControl();
+
+        assertTrue(repository.reconcileUnknownControl("host1"));
+        assertFalse("the queued reconcile now owns the Host", repository.reconcileUnknownControl("host1"));
+
+        MemoryTaskVO reconcile = repository.claim("unknown-control").stream()
+                .filter(task -> "reconcile".equals(task.getAction())).findFirst().get();
+        assertEquals(drain.getUuid(), reconcile.getReconcileOperationUuid());
+    }
+
+    @Test public void cancellingAQueuedReconcileReturnsTheHostToTheUnknownDrain() {
+        MemoryTaskVO drain = unknownDrainOnAppliedControl();
+        assertTrue(repository.reconcileUnknownControl("host1"));
+        MemoryTaskVO reconcile = repository.transaction(em -> em.createQuery(
+                "from MemoryTaskVO t where t.action = 'reconcile' and t.reconcileOperationUuid = :drain", MemoryTaskVO.class)
+                .setParameter("drain", drain.getUuid()).getResultList().get(0));
+        repository.cancel(reconcile.getParentUuid() == null ? reconcile.getUuid() : reconcile.getParentUuid());
+        assertEquals(drain.getUuid(), host1State().getActiveTaskUuid());
+        assertEquals("the Agent still holds the control the drain was fenced on",
+                drain.getUuid(), host1State().getControlOperationUuid());
+        assertEquals("Unknown", host1State().getStatus());
+    }
+
     @Test public void verifiedPoolCapacityQueuesOneReconcileForBlockedFirstZramApply() {
         final String control = "control-pool-ready-host1";
         repository.transaction(em -> {

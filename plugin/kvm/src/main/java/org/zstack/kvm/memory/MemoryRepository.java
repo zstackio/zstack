@@ -388,6 +388,38 @@ public class MemoryRepository {
      * Blocked/NATIVE_POOL_UNQUALIFIED. Once a fresh observation verifies the pool
      * capacity, queue the same reconcile an operator would submit for that task.
      */
+    private static final List<String> CONTROL_WITHOUT_EFFECT_REASONS = Arrays.asList(
+            "INVALID_CONTROL_ACTION", "OPERATION_NEVER_ISSUED", "DRAIN_INTERRUPTED_BY_REBOOT");
+
+    /**
+     * A pause, drain or drained activation ends Unknown when its reply is lost,
+     * for example across a Host reboot. Once the Host answers a fresh
+     * observation, queue the same reconcile an operator would submit, once per task.
+     */
+    public boolean reconcileUnknownControl(String hostUuid) {
+        APIUpdateMemoryPolicyMsg msg = transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            MemoryTaskVO active = state == null || state.getActiveTaskUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+            if (active == null || !"Unknown".equals(active.getStatus()) || !"Host".equals(active.getScope())
+                    || !(Arrays.asList("pause", "drain").contains(active.getAction())
+                        || Arrays.asList("apply", "clearOverride").contains(active.getAction())
+                        && active.getExpectedControlOperationUuid() != null
+                        && drainControl(em, state, em.find(MemoryTaskVO.class, active.getExpectedControlOperationUuid())))) {
+                return null;
+            }
+            APIUpdateMemoryPolicyMsg reconcile = new APIUpdateMemoryPolicyMsg();
+            reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
+            reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
+            reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
+            reconcile.setClientRequestUuid(digest("unknown-control:" + active.getUuid()).substring(0, 32));
+            return reconcile;
+        });
+        if (msg == null) { return false; }
+        submit(msg, "system:memory-unknown-control-reconcile", null);
+        return true;
+    }
+
     public boolean reconcileVerifiedPoolBlock(String hostUuid, MemoryAgentResponse response) {
         Map<String, Object> actual = response == null || !response.isSuccess() || response.state == null
                 ? null : objectMap(response.state.get("actual"));
@@ -2832,14 +2864,17 @@ public class MemoryRepository {
                     resultReason = "Agent did not provide the exact rejected-resume not-issued control proof";
                 }
             }
-            if (task != null && host != null && Arrays.asList("pause", "drain").contains(task.getAction())
+            MemoryTaskVO controlTask = task != null && "reconcile".equals(task.getAction())
+                    && task.getReconcileOperationUuid() != null
+                    ? em.find(MemoryTaskVO.class, task.getReconcileOperationUuid()) : task;
+            if (controlTask != null && host != null && Arrays.asList("pause", "drain").contains(controlTask.getAction())
                     && "Failed".equals(resultStatus) && response != null
-                    && "INVALID_CONTROL_ACTION".equals(response.reasonCode)
-                    && task.getExpectedControlOperationUuid() != null
+                    && CONTROL_WITHOUT_EFFECT_REASONS.contains(response.reasonCode)
+                    && controlTask.getExpectedControlOperationUuid() != null
                     && uuid.equals(host.getControlOperationUuid())) {
-                // The Agent rejects control actions with this code only before any
-                // effect (it journals them REJECTED); its active control is unchanged.
-                restoredControlFence = task.getExpectedControlOperationUuid();
+                // The Agent proves the control took no effect: rejected before it,
+                // never issued, or ended by a reboot. Its prior control owns the Host.
+                restoredControlFence = controlTask.getExpectedControlOperationUuid();
                 MemoryTaskVO kept = em.find(MemoryTaskVO.class, restoredControlFence);
                 keptSucceededControl = kept != null && "Succeeded".equals(kept.getStatus());
             }
@@ -4511,6 +4546,12 @@ public class MemoryRepository {
                         }
                         state.setActiveTaskUuid(previous.getUuid()); state.setStatus(previous.getStatus());
                         state.setReason(previous.getReason());
+                    } else if (unresolvedReconcileOriginal(em, child) != null) {
+                        // A queued reconcile never reached the Agent; its original
+                        // Unknown operation and the control it was fenced on remain.
+                        MemoryTaskVO original = unresolvedReconcileOriginal(em, child);
+                        state.setActiveTaskUuid(original.getUuid()); state.setControlOperationUuid(original.getUuid());
+                        state.setStatus(original.getStatus()); state.setReason(original.getReason());
                     } else { state.setActiveTaskUuid(null); }
                 }
             }
@@ -4518,6 +4559,16 @@ public class MemoryRepository {
             em.flush(); aggregateParent(em, task.getParentUuid());
             return task.toInventory();
         });
+    }
+
+    private static MemoryTaskVO unresolvedReconcileOriginal(EntityManager em, MemoryTaskVO reconcile) {
+        if (!"reconcile".equals(reconcile.getAction()) || reconcile.getReconcileOperationUuid() == null
+                || !Objects.equals(reconcile.getReconcileOperationUuid(), reconcile.getExpectedControlOperationUuid())) {
+            return null;
+        }
+        MemoryTaskVO original = em.find(MemoryTaskVO.class, reconcile.getReconcileOperationUuid());
+        return original != null && "Unknown".equals(original.getStatus())
+                && Objects.equals(original.getHostUuid(), reconcile.getHostUuid()) ? original : null;
     }
 
     public void expireUnconfirmed(String owner) {
