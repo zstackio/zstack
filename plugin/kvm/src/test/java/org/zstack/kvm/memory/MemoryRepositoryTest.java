@@ -3840,6 +3840,49 @@ public class MemoryRepositoryTest {
         assertEquals("Unknown", host1State().getStatus());
     }
 
+    @Test public void newerConfigurationSupersedesAnApplyOnlyWaitingForItsPool() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        final String waiting = "first-zram-waiting-for-pool";
+        repository.transaction(em -> {
+            MemoryTaskVO task = testTask(waiting, null, "apply", "Blocked", null);
+            task.setReason("NATIVE_POOL_UNQUALIFIED"); em.persist(task);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Blocked"); state.setReason("NATIVE_POOL_UNQUALIFIED");
+            state.setActiveTaskUuid(waiting); state.setControlOperationUuid(waiting);
+            return null;
+        });
+
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_ENABLED, null, null, "false")), null, false);
+
+        MemoryTaskVO superseded = repository.findTask(waiting);
+        assertEquals("Failed", superseded.getStatus());
+        assertEquals("SUPERSEDED_BY_NEWER_CONFIGURATION", superseded.getReason());
+        MemoryTaskVO next = repository.findTask(host1State().getActiveTaskUuid());
+        assertNotEquals(waiting, next.getUuid());
+        assertEquals("the newer configuration is dispatched, not deferred", "Queued", next.getStatus());
+    }
+
+    @Test public void supersededPoolWaitingApplyIsReflectedWhenTheNewerConfigurationDefers() {
+        prepareCapacityObservation("Succeeded", false, false, false);
+        final String waiting = "first-zram-waiting-for-pool";
+        repository.transaction(em -> {
+            MemoryTaskVO task = testTask(waiting, null, "apply", "Blocked", null);
+            task.setReason("NATIVE_POOL_UNQUALIFIED"); em.persist(task);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Blocked"); state.setReason("NATIVE_POOL_UNQUALIFIED");
+            state.setActiveTaskUuid(waiting); state.setControlOperationUuid(waiting);
+            em.find(TestHost.class, "host1").status = HostStatus.Disconnected;
+            return null;
+        });
+
+        standardCommit(Collections.singletonList(standardChange(
+                MemoryStandardField.ZRAM_ENABLED, null, null, "false")), null, false);
+
+        assertEquals("Failed", repository.findTask(waiting).getStatus());
+        assertNotEquals("the Host no longer shows the superseded wait", "NATIVE_POOL_UNQUALIFIED", host1State().getReason());
+    }
+
     @Test public void verifiedPoolCapacityQueuesOneReconcileForBlockedFirstZramApply() {
         final String control = "control-pool-ready-host1";
         repository.transaction(em -> {

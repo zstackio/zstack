@@ -255,6 +255,7 @@ public class MemoryRepository {
             if (compatibility && state.getActiveTaskUuid() != null) {
                 throw error("MEMORY_HOST_BUSY", "Host has an unresolved memory operation: " + host);
             }
+            if (!compatibility) { supersedePoolWaitingApply(em, state); }
             String effectivePolicy = effective(em, "Host", host);
             HostPolicyPlan plan = planForHost(em, host, effectivePolicy, state);
             boolean legacyReview = "NeedsReview".equals(state.getPolicyPlanStatus());
@@ -443,6 +444,21 @@ public class MemoryRepository {
         if (msg == null) { return false; }
         submit(msg, "system:memory-pool-ready-reconcile", null);
         return true;
+    }
+
+    /**
+     * A first ZRAM apply that only waits for its pool cannot finish while no VM
+     * runs. A newer configuration replaces it instead of waiting behind it.
+     */
+    private void supersedePoolWaitingApply(EntityManager em, MemoryStateVO state) {
+        MemoryTaskVO active = state.getActiveTaskUuid() == null ? null
+                : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+        if (active == null || !"apply".equals(active.getAction()) || !"Blocked".equals(active.getStatus())
+                || !"NATIVE_POOL_UNQUALIFIED".equals(active.getReason())) { return; }
+        active.setStatus("Failed"); active.setReason("SUPERSEDED_BY_NEWER_CONFIGURATION");
+        // A deferred newer plan leaves the Host here until it is dispatched.
+        state.setActiveTaskUuid(null); state.setStatus(active.getStatus()); state.setReason(active.getReason());
+        em.flush(); aggregateParent(em, active.getParentUuid()); bumpQueryVersion(em, "task");
     }
 
     private String standardMutationDeferReason(EntityManager em, String host, MemoryStateVO state,
