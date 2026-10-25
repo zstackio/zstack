@@ -30,6 +30,12 @@ final class MemoryMetricsPresentation {
 
     static MemoryStateInventory inventory(MemoryStateVO source, Map<String, Object> savings, long now,
                                           boolean canResume, boolean canReconcile) {
+        return inventory(source, savings, now, canResume, canReconcile, null);
+    }
+
+    static MemoryStateInventory inventory(MemoryStateVO source, Map<String, Object> savings, long now,
+                                          boolean canResume, boolean canReconcile,
+                                          Map<String, String> uncertainRecovery) {
         MemoryStateInventory out = withSavings(source, savings).toInventory();
         // lastSampleTime remains the control-observation time. The metric
         // timestamp is independent and must not be renewed by a control poll.
@@ -37,6 +43,11 @@ final class MemoryMetricsPresentation {
         Object quality = savings == null ? null : savings.get("quality");
         Long sampled = time instanceof Number ? ((Number) time).longValue() : null;
         MemoryStatePresentation.populate(out, now, canResume, canReconcile);
+        if (uncertainRecovery != null) {
+            java.util.List<String> actions = new java.util.ArrayList<>(out.getAllowedActions());
+            actions.add(MemoryUncertainRecoveryRules.ACTION);
+            out.setAllowedActions(actions); out.setUncertainRecovery(uncertainRecovery);
+        }
         // This inventory's quality and age describe the metric sample, which
         // may be older than the control observation in MemoryStateVO.
         out.setDataAgeSeconds(sampled == null || sampled > now + 5000 ? null : Math.max(0, (now - sampled) / 1000));

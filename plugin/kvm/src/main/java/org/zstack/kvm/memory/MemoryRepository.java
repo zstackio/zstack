@@ -1257,6 +1257,56 @@ public class MemoryRepository {
         return invalid;
     }
 
+    /**
+     * The request recoverUncertain would accept now for the Host's unresolved
+     * apply, built from the same admission check; null otherwise. A drained
+     * activation names its drain and old pool, any other apply the live pool.
+     */
+    Map<String, String> uncertainRecoveryRequest(String hostUuid) {
+        return transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            MemoryTaskVO original = state == null || state.getControlOperationUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+            if (original == null || state.getState() == null) { return null; }
+            MemoryTaskVO drain = original.getExpectedControlOperationUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, original.getExpectedControlOperationUuid());
+            String drainUuid = drain != null && "drain".equals(drain.getAction()) ? drain.getUuid() : null;
+            String boot, pool;
+            try {
+                JsonObject observed = new JsonParser().parse(state.getState()).getAsJsonObject();
+                boot = getString(observed, "bootId");
+                if (drainUuid != null) {
+                    // Same proof layouts isMaintenanceRecoveryState accepts.
+                    JsonObject proof = observed.has("maintenanceProof") && observed.get("maintenanceProof").isJsonObject()
+                            ? observed.getAsJsonObject("maintenanceProof") : observed;
+                    pool = getString(proof, "oldPoolGeneration", "old_pool_generation");
+                } else {
+                    JsonElement hostZram = observed.get("host_zram");
+                    pool = getString(observed, "poolGeneration", "pool_generation");
+                    if (pool == null && hostZram != null && hostZram.isJsonObject()) {
+                        pool = getString(hostZram.getAsJsonObject(), "pool_generation");
+                    }
+                }
+            } catch (RuntimeException invalid) { return null; }
+            MemoryUncertainRecovery recovery = new MemoryUncertainRecovery();
+            recovery.setExpectedHostBootId(boot); recovery.setExpectedPoolGeneration(pool);
+            recovery.setDrainControlOperationUuid(drainUuid); recovery.setConfirmed(true);
+            APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+            msg.setScope("Host"); msg.setResourceUuid(hostUuid); msg.setAction(MemoryUncertainRecoveryRules.ACTION);
+            msg.setPolicy("{}"); msg.setExpectedControlOperationUuid(original.getUuid()); msg.setRecovery(recovery);
+            try {
+                MemoryUncertainRecoveryRules.validate(msg);
+                validateUncertainRecovery(em, state, msg);
+            } catch (RuntimeException fenced) { return null; }
+            Map<String, String> request = new LinkedHashMap<>();
+            request.put("expectedControlOperationUuid", original.getUuid());
+            request.put("expectedHostBootId", boot);
+            request.put("expectedPoolGeneration", pool);
+            if (drainUuid != null) { request.put("drainControlOperationUuid", drainUuid); }
+            return request;
+        });
+    }
+
     private void validateUncertainRecovery(EntityManager em, MemoryStateVO state, APIUpdateMemoryPolicyMsg msg) {
         MemoryTaskVO original = em.find(MemoryTaskVO.class, msg.getExpectedControlOperationUuid());
         MemoryTaskVO active = state.getActiveTaskUuid() == null ? null

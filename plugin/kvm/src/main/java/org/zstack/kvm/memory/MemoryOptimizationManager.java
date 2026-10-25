@@ -401,7 +401,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 .stream().map(state -> MemoryMetricsPresentation.inventory(state,
                         samples.get(state.getHostUuid()), now,
                         repository.canResumeControl(state.getHostUuid(), state.getControlOperationUuid()),
-                        repository.canReconcileRejectedResume(state.getHostUuid(), state.getControlOperationUuid())))
+                        repository.canReconcileRejectedResume(state.getHostUuid(), state.getControlOperationUuid()),
+                        repository.uncertainRecoveryRequest(state.getHostUuid())))
                 .collect(Collectors.toList());
         reply.setInventories(inventories); reply.setTotal(page.total); reply.setSnapshotId(page.snapshotId);
         reply.setNextPage(nextPage(msg.getStart(), inventories.size(), reply.getTotal())); bus.reply(msg, reply);
