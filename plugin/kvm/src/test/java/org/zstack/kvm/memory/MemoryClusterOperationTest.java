@@ -22,12 +22,14 @@ public class MemoryClusterOperationTest {
         final Set<String> crashed = new HashSet<>();
         final Set<String> unreadable = new HashSet<>();
         @Override public List<String> targets(String scope, String resource) {
+            if ("Host".equals(scope)) { return Collections.singletonList(resource); }
             assertEquals("Cluster", scope); assertEquals("cluster", resource);
             return Arrays.asList("host1", "host2");
         }
         @Override public MemoryPolicyInventory getPolicy(String scope, String resource) {
             MemoryPolicyInventory policy = new MemoryPolicyInventory();
             policy.setRevision("host1".equals(resource) ? 7 : 9);
+            policy.setSourceRevisions(Collections.singletonMap("Host:" + resource, 7L));
             return policy;
         }
         @Override public List<MemoryStateVO> allStates(List<String> hosts) {
@@ -35,7 +37,16 @@ public class MemoryClusterOperationTest {
             state.setControlOperationUuid("control-" + hosts.get(0));
             return Collections.singletonList(state);
         }
-        @Override public boolean isDrainedHost(String host) { return false; }
+        final Set<String> drained = new HashSet<>();
+        @Override public boolean isDrainedHost(String host) { return drained.contains(host); }
+        @Override public MemoryTaskInventory recoverDrain(String host, String actor, String requestKey, MemoryAgentResponse observation) {
+            throw new IllegalStateException("database unavailable");
+        }
+        MemoryAgentResponse preparationObservation;
+        @Override MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, MemoryAgentResponse observation) {
+            preparationObservation = observation;
+            return submit(msg);
+        }
         @Override public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
             submitted.add(msg);
             if (crashed.contains(msg.getResourceUuid())) { throw new IllegalStateException("database unavailable"); }
@@ -57,7 +68,50 @@ public class MemoryClusterOperationTest {
 
     static class Manager extends MemoryOptimizationManager {
         final List<Integer> progress = new ArrayList<>();
+        final List<String> probes = new ArrayList<>();
+        final List<String> preparationOutcomes = new ArrayList<>();
+        @Override void replyHostOperation(MemoryHostOperationMsg msg, String outcome) { preparationOutcomes.add(outcome); }
         @Override void reportClusterProgress(int done, int total) { progress.add(100 * done / total); }
+        @Override void call(String host, String action, Map<String, Object> command, java.util.function.Consumer<MemoryAgentResponse> completion) {
+            probes.add(host + ":" + action);
+            MemoryAgentResponse response = new MemoryAgentResponse(); response.setSuccess(true);
+            completion.accept(response);
+        }
+    }
+
+    @Test public void hostPreparationFillsCurrentFencesAndFailsTheJobUnlessPrepared() throws Exception {
+        for (String finalStatus : Arrays.asList("Succeeded", "Failed")) {
+            Manager manager = new Manager(); Repository repository = new Repository();
+            repository.statuses.put("task-host1", new ArrayDeque<>(Arrays.asList("Applying", finalStatus)));
+            repository.reasons.put("task-host1", "Failed".equals(finalStatus) ? "WRITEBACK_INVENTORY_IDENTITY_OR_CONTROL_MISMATCH" : null);
+            List<MessageReply> replies = new ArrayList<>();
+            inject(manager, "repository", repository);
+            inject(manager, "bus", bus(replies));
+            inject(manager, "thdf", synchronousThreads());
+            inject(manager, "pluginRgty", licensedRegistry());
+
+            MemoryBackendPreparation preparation = new MemoryBackendPreparation();
+            preparation.setCandidateId("candidate:" + String.join("", Collections.nCopies(64, "a")));
+            preparation.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
+            preparation.setExpectedPoolGeneration("none");
+            preparation.setBackendCapacityBytes(10737418240L); preparation.setResetConfirmed(true);
+            MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+            msg.setHostUuid("host1"); msg.setAction("prepareWritebackBackend"); msg.setPreparation(preparation);
+            msg.setAccountUuid("account"); msg.setUserUuid("user");
+            invokeHostOperation(manager, msg);
+
+            APIUpdateMemoryPolicyMsg request = repository.submitted.get(0);
+            assertEquals("prepareWritebackBackend", request.getAction());
+            assertEquals("host1", request.getResourceUuid()); assertEquals("{}", request.getPolicy());
+            assertEquals(7, request.getExpectedRevision());
+            assertEquals(Collections.singletonMap("Host:host1", 7L), request.getExpectedSourceRevisions());
+            assertEquals("control-host1", request.getExpectedControlOperationUuid());
+            assertSame(preparation, request.getBackendPreparation());
+            assertEquals(Collections.singletonList("host1:writeback-backends"), manager.probes);
+            assertNotNull("the fresh probe is the submission evidence", repository.preparationObservation);
+            assertEquals(Collections.singletonList("Succeeded".equals(finalStatus) ? "success"
+                    : "Failed: WRITEBACK_INVENTORY_IDENTITY_OR_CONTROL_MISMATCH"), manager.preparationOutcomes);
+        }
     }
 
     @Test public void clusterPauseRunsHostByHostWithCurrentFencesAndReportsEachOutcome() throws Exception {
@@ -112,6 +166,62 @@ public class MemoryClusterOperationTest {
         Map<String, String> results = ((MemoryClusterOperationReply) replies.get(0)).getResults();
         assertEquals("MEMORY_HOST_NOT_CONNECTED: Host is not connected", results.get("host1"));
         assertEquals("success", results.get("host2"));
+    }
+
+    @Test public void hostRecoveryUsesTheConfirmedUncertainControlNotTheCurrentOne() throws Exception {
+        Manager manager = new Manager(); Repository repository = new Repository();
+        repository.statuses.put("task-host1", new ArrayDeque<>(Collections.singletonList("Succeeded")));
+        inject(manager, "repository", repository);
+        inject(manager, "bus", bus(new ArrayList<>()));
+        inject(manager, "thdf", synchronousThreads());
+        inject(manager, "pluginRgty", licensedRegistry());
+
+        APIRecoverHostMemoryOptimizationMsg api = new APIRecoverHostMemoryOptimizationMsg();
+        api.setUuid("host1"); api.setExpectedControlOperationUuid("uncertain-activation");
+        api.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
+        api.setExpectedPoolGeneration("none"); api.setDrainControlOperationUuid("drain");
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("recoverUncertain");
+        msg.setExpectedControlOperationUuid(api.getExpectedControlOperationUuid()); msg.setRecovery(api.toRecovery());
+        msg.setAccountUuid("account"); msg.setUserUuid("user");
+        invokeHostOperation(manager, msg);
+
+        APIUpdateMemoryPolicyMsg request = repository.submitted.get(0);
+        assertEquals("recoverUncertain", request.getAction()); assertEquals("{}", request.getPolicy());
+        assertEquals("uncertain-activation", request.getExpectedControlOperationUuid());
+        assertEquals(7, request.getExpectedRevision());
+        assertTrue(request.getRecovery().isConfirmed());
+        assertEquals("drain", request.getRecovery().getDrainControlOperationUuid());
+        assertEquals("none", request.getRecovery().getExpectedPoolGeneration());
+        assertTrue("recovery takes no Agent probe", manager.probes.isEmpty());
+        assertEquals(Collections.singletonList("success"), manager.preparationOutcomes);
+    }
+
+    @Test public void anAgentCallbackFailureStillFinishesTheHostStep() throws Exception {
+        Manager manager = new Manager(); Repository repository = new Repository();
+        repository.crashed.add("host1"); repository.drained.add("host2");
+        List<MessageReply> replies = new ArrayList<>();
+        inject(manager, "repository", repository);
+        inject(manager, "bus", bus(replies));
+        inject(manager, "thdf", synchronousThreads());
+        inject(manager, "pluginRgty", licensedRegistry());
+
+        MemoryHostOperationMsg prepare = new MemoryHostOperationMsg();
+        prepare.setHostUuid("host1"); prepare.setAction("prepareWritebackBackend");
+        prepare.setPreparation(new MemoryBackendPreparation());
+        invokeHostOperation(manager, prepare);
+        assertEquals(Collections.singletonList("MEMORY_RESULT_UNKNOWN: database unavailable"), manager.preparationOutcomes);
+
+        MemoryClusterOperationMsg resume = new MemoryClusterOperationMsg();
+        resume.setClusterUuid("cluster"); resume.setHostUuid("host2"); resume.setAction("resume");
+        invoke(manager, resume);
+        assertEquals("MEMORY_RESULT_UNKNOWN: database unavailable",
+                ((MemoryClusterOperationReply) replies.get(0)).getResults().get("host2"));
+    }
+
+    private static void invokeHostOperation(MemoryOptimizationManager manager, MemoryHostOperationMsg msg) throws Exception {
+        Method method = MemoryOptimizationManager.class.getDeclaredMethod("singleHostOperation", MemoryHostOperationMsg.class);
+        method.setAccessible(true); method.invoke(manager, msg);
     }
 
     @Test public void anUnexpectedFailureStillFinishesTheHostAndTheJob() throws Exception {

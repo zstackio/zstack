@@ -47,5 +47,6 @@
     <code><id>11044</id><description>Memory Task Result Has Been Purged</description></code>
     <code><id>11045</id><description>Memory Optimization Service Has Not Stopped</description></code>
     <code><id>11046</id><description>Drained Host Cannot Be Recovered</description></code>
+    <code><id>11047</id><description>Host Operation Failed in memory optimization</description></code>
     <code><id>11999</id><description>Unknown memory optimization error</description></code>
 </error>

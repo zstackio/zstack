@@ -13,4 +13,6 @@
     <message><name>org.zstack.kvm.memory.APIPauseMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIResumeMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIDrainMemoryOptimizationMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIPrepareHostMemoryWritebackBackendMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIRecoverHostMemoryOptimizationMsg</name></message>
 </service>
