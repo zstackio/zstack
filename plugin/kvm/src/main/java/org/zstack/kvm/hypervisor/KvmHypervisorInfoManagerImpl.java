@@ -4,8 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.GLock;
+import org.zstack.core.db.SQLBatch;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
+import org.zstack.core.defer.Defer;
+import org.zstack.core.defer.Deferred;
 import org.zstack.header.Component;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceVO;
@@ -18,6 +22,7 @@ import org.zstack.utils.logging.CLogger;
 
 import javax.persistence.Tuple;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -31,6 +36,9 @@ import static org.zstack.kvm.hypervisor.HypervisorMetadataCollector.HypervisorMe
  */
 public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, Component {
     private static final CLogger logger = Utils.getLogger(KvmHypervisorInfoManagerImpl.class);
+
+    private static final String HYPERVISOR_INFO_LOCK = "save-kvm-hypervisor-info";
+    private static final long HYPERVISOR_INFO_LOCK_TIMEOUT = TimeUnit.MINUTES.toSeconds(30);
 
     @Autowired
     private DatabaseFacade db;
@@ -62,36 +70,44 @@ public class KvmHypervisorInfoManagerImpl implements KvmHypervisorInfoManager, C
         logger.debug(String.format("save VirtualizerInfoTO for vm[uuid:%s] successfully", info.getUuid()));
     }
 
-    @Transactional
+    @Deferred
     private void save(List<ResourceHypervisorInfo> list) {
-        Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
-                .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
+        GLock lock = new GLock(HYPERVISOR_INFO_LOCK, HYPERVISOR_INFO_LOCK_TIMEOUT);
+        lock.lock();
+        Defer.defer(lock::unlock);
 
-        collectVmMatchTargetUuid(uuidInfoMap);
-        collectVmMatchTargetVersion(uuidInfoMap);
-        collectHostMatchTargetInfo(uuidInfoMap);
-        collectHypervisorInfoVo(uuidInfoMap);
+        new SQLBatch() {
+            @Override
+            protected void scripts() {
+                Map<String, ResourceHypervisorInfo> uuidInfoMap = list.stream()
+                        .collect(Collectors.toMap(info -> info.uuid, Function.identity()));
 
-        // Save
-        List<ResourceHypervisorInfo> toUpdateList = new ArrayList<>();
-        List<ResourceHypervisorInfo> toPersistList = new ArrayList<>();
+                collectVmMatchTargetUuid(uuidInfoMap);
+                collectVmMatchTargetVersion(uuidInfoMap);
+                collectHostMatchTargetInfo(uuidInfoMap);
+                collectHypervisorInfoVo(uuidInfoMap);
 
-        uuidInfoMap.forEach((uuid, info) -> {
-            List<ResourceHypervisorInfo> targets = (info.vo == null) ? toPersistList : toUpdateList;
-            targets.add(info);
-        });
+                List<ResourceHypervisorInfo> toUpdateList = new ArrayList<>();
+                List<ResourceHypervisorInfo> toPersistList = new ArrayList<>();
 
-        if (!toUpdateList.isEmpty()) {
-            db.updateCollection(toUpdateList.stream()
-                    .map(ResourceHypervisorInfo::generate)
-                    .collect(Collectors.toList()));
-        }
+                uuidInfoMap.forEach((uuid, info) -> {
+                    List<ResourceHypervisorInfo> targets = (info.vo == null) ? toPersistList : toUpdateList;
+                    targets.add(info);
+                });
 
-        if (!toPersistList.isEmpty()) {
-            db.persistCollection(toPersistList.stream()
-                    .map(ResourceHypervisorInfo::generate)
-                    .collect(Collectors.toList()));
-        }
+                if (!toUpdateList.isEmpty()) {
+                    db.updateCollection(toUpdateList.stream()
+                            .map(ResourceHypervisorInfo::generate)
+                            .collect(Collectors.toList()));
+                }
+
+                if (!toPersistList.isEmpty()) {
+                    db.persistCollection(toPersistList.stream()
+                            .map(ResourceHypervisorInfo::generate)
+                            .collect(Collectors.toList()));
+                }
+            }
+        }.execute();
     }
 
     private void collectVmMatchTargetUuid(Map<String, ResourceHypervisorInfo> uuidInfoMap) {
