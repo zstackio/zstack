@@ -10,4 +10,7 @@
     <message><name>org.zstack.kvm.memory.APIGetMemorySummaryMsg</name></message>
     <message><name>org.zstack.kvm.memory.APICancelMemoryTaskMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIDeleteMemoryTaskMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIPauseMemoryOptimizationMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIResumeMemoryOptimizationMsg</name></message>
+    <message><name>org.zstack.kvm.memory.APIDrainMemoryOptimizationMsg</name></message>
 </service>

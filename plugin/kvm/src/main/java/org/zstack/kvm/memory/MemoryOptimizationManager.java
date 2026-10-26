@@ -11,7 +11,18 @@ import org.zstack.core.config.GlobalConfigInitExtensionPoint;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.Q;
+import org.zstack.core.progress.ProgressReportService;
+import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.SyncTaskChain;
+import org.zstack.header.longjob.LongJobConstants;
+import org.zstack.header.longjob.LongJobInventory;
+import org.zstack.header.longjob.SubmitLongJobMsg;
+import org.zstack.header.longjob.SubmitLongJobReply;
+import org.zstack.core.asyncbatch.While;
+import org.zstack.header.core.WhileDoneCompletion;
+import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.identity.SessionInventory;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
@@ -67,7 +78,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private Future<?> poller;
     private long lastObservation;
 
-    @Override public String getId() { return bus.makeLocalServiceId("memoryOptimization"); }
+    static final String SERVICE_ID = "memoryOptimization";
+
+    @Override public String getId() { return bus.makeLocalServiceId(SERVICE_ID); }
     @Override public boolean start() { return true; }
     @Override public boolean stop() { if (poller != null) { poller.cancel(false); } return true; }
     @Override public void nodeJoin(ManagementNodeInventory node) { }
@@ -177,6 +190,17 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             else if (message instanceof APICancelMemoryTaskMsg) { cancel((APICancelMemoryTaskMsg) message); }
             else if (message instanceof APIDeleteMemoryTaskMsg) { deleteTask((APIDeleteMemoryTaskMsg) message); }
             else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
+            else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
+            else if (message instanceof APIPauseMemoryOptimizationMsg) {
+                APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
+                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+            } else if (message instanceof APIResumeMemoryOptimizationMsg) {
+                APIResumeMemoryOptimizationEvent event = new APIResumeMemoryOptimizationEvent(message.getId());
+                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+            } else if (message instanceof APIDrainMemoryOptimizationMsg) {
+                APIDrainMemoryOptimizationEvent event = new APIDrainMemoryOptimizationEvent(message.getId());
+                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+            }
             else { bus.dealWithUnknownMessage(message); }
         } catch (MemoryOperationException e) {
             bus.replyErrorByMessageType(message, e.toErrorCode());
@@ -293,17 +317,124 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             });
             return;
         }
+        submitHostAction(msg, inventory -> {
+            event.setInventory(inventory);
+            bus.publish(event);
+        }, error -> bus.replyErrorByMessageType(msg, error.toErrorCode()));
+    }
+
+    private void submitHostAction(APIUpdateMemoryPolicyMsg msg, Consumer<MemoryTaskInventory> done,
+                                  Consumer<MemoryOperationException> failed) {
         if ("resume".equals(msg.getAction()) && "Host".equals(msg.getScope())
                 && repository.isDrainedHost(msg.getResourceUuid())) {
             String actor = msg.getSession().getAccountUuid() + ":" + msg.getSession().getUserUuid();
-            recoverDrain(msg.getResourceUuid(), actor, actor + ":" + msg.getClientRequestUuid(), inventory -> {
-                event.setInventory(inventory);
-                bus.publish(event);
-            }, error -> bus.replyErrorByMessageType(msg, error.toErrorCode()));
+            recoverDrain(msg.getResourceUuid(), actor, actor + ":" + msg.getClientRequestUuid(), done, failed);
             return;
         }
-        event.setInventory(repository.submit(msg));
-        bus.publish(event);
+        done.accept(repository.submit(msg));
+    }
+
+    /** The API path submits the same LongJob that SubmitLongJob creates from this request. */
+    private void submitClusterOperation(APIMemoryClusterOperationMsg msg, APIEvent event,
+                                        Consumer<LongJobInventory> inventory) {
+        SubmitLongJobMsg submit = new SubmitLongJobMsg();
+        submit.setJobName(msg.getClass().getSimpleName());
+        submit.setJobData(JSONObjectUtil.toJsonString(msg));
+        submit.setResourceUuid(msg.getResourceUuid());
+        submit.setSystemTags(msg.getSystemTags());
+        submit.setUserTags(msg.getUserTags());
+        submit.setAccountUuid(msg.getSession().getAccountUuid());
+        bus.makeLocalServiceId(submit, LongJobConstants.SERVICE_ID);
+        bus.send(submit, new CloudBusCallBack(msg) {
+            @Override public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    bus.replyErrorByMessageType(msg, reply.getError());
+                    return;
+                }
+                inventory.accept(((SubmitLongJobReply) reply).getInventory());
+                bus.publish(event);
+            }
+        });
+    }
+
+    /** Hosts run one at a time; each request carries the Host's current revision and control. */
+    private void clusterOperation(MemoryClusterOperationMsg msg) {
+        requireLicense();
+        List<String> members = repository.targets("Cluster", msg.getClusterUuid());
+        if (msg.getHostUuid() != null && !members.contains(msg.getHostUuid())) {
+            throw new MemoryOperationException("MEMORY_INVALID_REQUEST",
+                    "Host[" + msg.getHostUuid() + "] is not a KVM Host of Cluster[" + msg.getClusterUuid() + "]");
+        }
+        MemoryClusterOperationReply reply = new MemoryClusterOperationReply();
+        List<String> hosts = msg.getHostUuid() != null ? Collections.singletonList(msg.getHostUuid()) : members;
+        Map<String, String> results = new LinkedHashMap<>();
+        reply.setResults(results);
+        new While<>(hosts).each((host, next) -> hostOperation(host, msg, outcome -> {
+            results.put(host, outcome);
+            reportClusterProgress(results.size(), hosts.size());
+            next.done();
+        })).run(new WhileDoneCompletion(msg) {
+            @Override public void done(ErrorCodeList errors) { bus.reply(msg, reply); }
+        });
+    }
+
+    void reportClusterProgress(int done, int total) {
+        ProgressReportService.reportProgress(String.valueOf(100 * done / total));
+    }
+
+    private void hostOperation(String host, MemoryClusterOperationMsg operation, Consumer<String> outcome) {
+        thdf.chainSubmit(new ChainTask(operation) {
+            @Override public String getSyncSignature() { return "memory-host-operation-" + host; }
+            @Override public String getName() { return getSyncSignature(); }
+            @Override public void run(SyncTaskChain chain) {
+                AtomicBoolean finished = new AtomicBoolean();
+                Consumer<String> finish = result -> {
+                    if (finished.compareAndSet(false, true)) { outcome.accept(result); chain.next(); }
+                };
+                Consumer<MemoryOperationException> failed = error -> finish.accept(error.getCode() + ": " + error.getMessage());
+                try {
+                    submitHostAction(hostActionRequest(host, operation), task -> awaitTask(task.getUuid(), finish), failed);
+                } catch (MemoryOperationException error) {
+                    failed.accept(error);
+                } catch (IllegalArgumentException error) {
+                    failed.accept(new MemoryOperationException("MEMORY_INVALID_REQUEST", error.getMessage()));
+                } catch (RuntimeException error) {
+                    // The request may have been recorded; never leave the Host queue or the job waiting.
+                    finish.accept("Unknown: " + error.getMessage());
+                }
+            }
+        });
+    }
+
+    private APIUpdateMemoryPolicyMsg hostActionRequest(String host, MemoryClusterOperationMsg operation) {
+        APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+        msg.setScope("Host"); msg.setResourceUuid(host); msg.setAction(operation.getAction()); msg.setPolicy("{}");
+        msg.setExpectedRevision(repository.getPolicy("Host", host).getRevision());
+        List<MemoryStateVO> states = repository.allStates(Collections.singletonList(host));
+        msg.setExpectedControlOperationUuid(states.isEmpty() ? null : states.get(0).getControlOperationUuid());
+        msg.setClientRequestUuid(Platform.getUuid());
+        SessionInventory session = new SessionInventory();
+        session.setAccountUuid(operation.getAccountUuid()); session.setUserUuid(operation.getUserUuid());
+        msg.setSession(session);
+        return msg;
+    }
+
+    private static final List<String> IN_FLIGHT = Arrays.asList("Queued", "Applying", "Draining");
+
+    private void awaitTask(String taskUuid, Consumer<String> outcome) {
+        MemoryTaskVO task;
+        try {
+            task = repository.findTask(taskUuid);
+        } catch (RuntimeException error) {
+            outcome.accept("Unknown: task status unavailable: " + error.getMessage());
+            return;
+        }
+        if (task != null && IN_FLIGHT.contains(task.getStatus())) {
+            thdf.submitTimeoutTask(() -> awaitTask(taskUuid, outcome), TimeUnit.SECONDS, 2);
+            return;
+        }
+        outcome.accept(task == null ? "Unknown: task not found" : "Succeeded".equals(task.getStatus()) ? "success"
+                : task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason()));
     }
 
     /** Re-enabling ZRAM is the configuration form of resuming a drained Host. */
