@@ -11,6 +11,7 @@ import org.springframework.beans.factory.support.DefaultListableBeanFactory
 import org.springframework.beans.factory.wiring.BeanConfigurerSupport
 import org.springframework.beans.factory.wiring.BeanWiringInfo
 import org.zstack.core.Platform
+import org.zstack.core.aspect.ExceptionSafeAspect
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.cloudbus.CloudBusCallBack
 import org.zstack.core.componentloader.ComponentLoader
@@ -52,16 +53,27 @@ class CephUploadCancelRecoveryCase {
     private int succeedOnCancel = Integer.MAX_VALUE
     private AnnotationBeanConfigurerAspect previousAspect
     private Object previousLoader
+    private ErrorFacade previousExceptionErrorFacade
 
     @Before
     @SuppressWarnings(["unchecked", "rawtypes"])
     void setUp() throws Exception {
         previousAspect = AnnotationBeanConfigurerAspect.aspectOf()
         previousLoader = field(Platform.class, "loader").get(null)
+        previousExceptionErrorFacade = (ErrorFacade) field(ExceptionSafeAspect.class, "errf").get(ExceptionSafeAspect.aspectOf())
         CloudBus bus = mock(CloudBus.class)
         RESTFacade rest = mock(RESTFacade.class)
         Thread testThread = Thread.currentThread()
-        ErrorFacade errors = mock(ErrorFacade.class)
+        ErrorFacade errors = mock(ErrorFacade.class, { call ->
+            if (Thread.currentThread() == testThread || previousExceptionErrorFacade == null) {
+                return RETURNS_DEFAULTS.answer(call)
+            }
+            try {
+                return call.getMethod().invoke(previousExceptionErrorFacade, call.getArguments())
+            } catch (InvocationTargetException e) {
+                throw e.getCause()
+            }
+        } as Answer)
         ComponentLoader loader = mock(ComponentLoader.class, { call ->
             if (Thread.currentThread() == testThread && "getComponent".equals(call.getMethod().getName()) &&
                     call.getArguments().length == 1 && call.getArgument(0) == ErrorFacade.class) {
@@ -79,7 +91,15 @@ class CephUploadCancelRecoveryCase {
         when(errors.instantiateErrorCode((Enum) any(Enum.class), (String) nullable(String.class),
                 (ErrorCode) nullable(ErrorCode.class)))
                 .thenAnswer({ call -> error(call.getArgument(0).toString(), call.getArgument(1)) } as Answer)
+        when(errors.throwableToInternalError(any(Throwable.class)))
+                .thenAnswer({ call ->
+                    if (Thread.currentThread() != testThread && previousExceptionErrorFacade != null) {
+                        return previousExceptionErrorFacade.throwableToInternalError(call.getArgument(0))
+                    }
+                    return error(SysErrors.INTERNAL.toString(), call.getArgument(0).getMessage())
+                } as Answer)
         field(Platform.class, "loader").set(null, loader)
+        field(ExceptionSafeAspect.class, "errf").set(ExceptionSafeAspect.aspectOf(), errors)
 
         // Wire this test's real mons; retain existing wiring and service lookup for other threads.
         DefaultListableBeanFactory factory = new DefaultListableBeanFactory()
@@ -160,6 +180,7 @@ class CephUploadCancelRecoveryCase {
     void tearDown() throws Exception {
         field(AnnotationBeanConfigurerAspect.class, 'ajc$perSingletonInstance').set(null, previousAspect)
         field(Platform.class, "loader").set(null, previousLoader)
+        field(ExceptionSafeAspect.class, "errf").set(ExceptionSafeAspect.aspectOf(), previousExceptionErrorFacade)
     }
 
     @Test
@@ -229,8 +250,24 @@ class CephUploadCancelRecoveryCase {
 
     @Test
     void invalidUploadAddressDoesNotGuessAMonitor() {
-        request.getImageInventory().setBackupStorageRefs(Collections.singletonList(ref(BS, "http://invalid host/upload")))
-        assertFailedWithoutProgress()
+        for (String address : ["http://invalid host/upload", "http://[2001:db8::2/upload",
+                               "http://192.0.2.2/%xx", "http:///upload"]) {
+            cancelUrls.clear()
+            replies.clear()
+            request.getImageInventory().setBackupStorageRefs(Collections.singletonList(ref(BS, address)))
+            assertFailedWithoutProgress()
+        }
+    }
+
+    @Test
+    void httpsIpv6UploadUsesOriginalMonitor() {
+        request.getImageInventory().setBackupStorageRefs(Collections.singletonList(
+                ref(BS, "https://[2001:db8::2]:7761/ceph/backupstorage/image/upload")))
+        storage.handle(request)
+        assertEquals(1, progressRequests.size())
+        assertEquals("2001:db8::2", progressRequests.get(0).getHostname())
+        assertTrue(reply().isSuccess())
+        assertEquals(PATH, reply().getCompletedUploadInstallPath())
     }
 
     @Test

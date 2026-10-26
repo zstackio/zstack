@@ -28,6 +28,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -1128,8 +1129,8 @@ public class CephBackupStorageBase extends BackupStorageBase {
             return;
         }
 
-        String hostname = getUploadHostname(ref);
-        if (hostname == null) {
+        ErrorableValue<String> hostname = getUploadHostname(ref);
+        if (!hostname.isSuccess() || hostname.result == null) {
             reply.setError(cancelError);
             bus.reply(msg, reply);
             return;
@@ -1140,7 +1141,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         GetImageDownloadProgressMsg pmsg = new GetImageDownloadProgressMsg();
         pmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
         pmsg.setImageUuid(msg.getImageInventory().getUuid());
-        pmsg.setHostname(hostname);
+        pmsg.setHostname(hostname.result);
         bus.makeTargetServiceIdByResourceUuid(pmsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
         bus.send(pmsg, new CloudBusCallBack(msg) {
             @Override
@@ -1172,21 +1173,18 @@ public class CephBackupStorageBase extends BackupStorageBase {
         return null;
     }
 
-    private static String getUploadHostname(ImageBackupStorageRefInventory ref) {
+    @ExceptionSafe
+    private static ErrorableValue<String> getUploadHostname(ImageBackupStorageRefInventory ref) {
         if (ref == null || ref.getInstallPath() == null) {
-            return null;
+            return ErrorableValue.of(null);
         }
 
-        try {
-            URI uri = new URI(ref.getInstallPath());
-            if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) ||
-                    uri.getHost() == null) {
-                return null;
-            }
-            return IPv6NetworkUtils.normalizeHost(uri.getHost());
-        } catch (URISyntaxException e) {
-            return null;
+        URI uri = URI.create(ref.getInstallPath());
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) ||
+                uri.getHost() == null) {
+            return ErrorableValue.of(null);
         }
+        return ErrorableValue.of(IPv6NetworkUtils.normalizeHost(uri.getHost()));
     }
 
     @Override
