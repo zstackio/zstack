@@ -191,15 +191,23 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             else if (message instanceof APIDeleteMemoryTaskMsg) { deleteTask((APIDeleteMemoryTaskMsg) message); }
             else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
             else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
+            else if (message instanceof MemoryHostOperationMsg) { singleHostOperation((MemoryHostOperationMsg) message); }
+            else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
+                APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
+            } else if (message instanceof APIRecoverHostMemoryOptimizationMsg) {
+                APIRecoverHostMemoryOptimizationEvent event = new APIRecoverHostMemoryOptimizationEvent(message.getId());
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
+            }
             else if (message instanceof APIPauseMemoryOptimizationMsg) {
                 APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
-                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
             } else if (message instanceof APIResumeMemoryOptimizationMsg) {
                 APIResumeMemoryOptimizationEvent event = new APIResumeMemoryOptimizationEvent(message.getId());
-                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
             } else if (message instanceof APIDrainMemoryOptimizationMsg) {
                 APIDrainMemoryOptimizationEvent event = new APIDrainMemoryOptimizationEvent(message.getId());
-                submitClusterOperation((APIMemoryClusterOperationMsg) message, event, event::setInventory);
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
             }
             else { bus.dealWithUnknownMessage(message); }
         } catch (MemoryOperationException e) {
@@ -298,25 +306,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void update(APIUpdateMemoryPolicyMsg msg) {
         if (MemoryTaskRules.requiresLicenseForConfiguration(msg.getAction(), msg.getPolicy())) { requireLicense(); }
         APIUpdateMemoryPolicyEvent event = new APIUpdateMemoryPolicyEvent(msg.getId());
-        if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
-            // Device selection is authorized by the existing preparation DTO;
-            // the physical identity comes only from this fresh Agent probe.
-            repository.targets("Host", msg.getResourceUuid());
-            call(msg.getResourceUuid(), "writeback-backends", command(msg.getResourceUuid(), Platform.getUuid()), response -> {
-                try {
-                    MemoryAgentResponse observed = response;
-                    if (observed == null) { observed = new MemoryAgentResponse(); observed.setSuccess(false); }
-                    event.setInventory(repository.submit(msg, observed));
-                    bus.publish(event);
-                } catch (MemoryOperationException invalid) {
-                    bus.replyErrorByMessageType(msg, invalid.toErrorCode());
-                } catch (IllegalArgumentException invalid) {
-                    bus.replyErrorByMessageType(msg, new MemoryOperationException(
-                            "MEMORY_INVALID_REQUEST", invalid.getMessage()).toErrorCode());
-                }
-            });
-            return;
-        }
         submitHostAction(msg, inventory -> {
             event.setInventory(inventory);
             bus.publish(event);
@@ -325,6 +314,31 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private void submitHostAction(APIUpdateMemoryPolicyMsg msg, Consumer<MemoryTaskInventory> done,
                                   Consumer<MemoryOperationException> failed) {
+        if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
+            // Device selection is authorized by the existing preparation DTO;
+            // the physical identity comes only from this fresh Agent probe.
+            repository.targets("Host", msg.getResourceUuid());
+            call(msg.getResourceUuid(), "writeback-backends", command(msg.getResourceUuid(), Platform.getUuid()), response -> {
+                MemoryTaskInventory submitted;
+                try {
+                    MemoryAgentResponse observed = response;
+                    if (observed == null) { observed = new MemoryAgentResponse(); observed.setSuccess(false); }
+                    submitted = repository.submit(msg, observed);
+                } catch (MemoryOperationException invalid) {
+                    failed.accept(invalid);
+                    return;
+                } catch (IllegalArgumentException invalid) {
+                    failed.accept(new MemoryOperationException("MEMORY_INVALID_REQUEST", invalid.getMessage()));
+                    return;
+                } catch (RuntimeException unknown) {
+                    // This Agent callback is outside the caller's try; never strand the Host queue.
+                    failed.accept(new MemoryOperationException("MEMORY_RESULT_UNKNOWN", unknown.getMessage()));
+                    return;
+                }
+                done.accept(submitted);
+            });
+            return;
+        }
         if ("resume".equals(msg.getAction()) && "Host".equals(msg.getScope())
                 && repository.isDrainedHost(msg.getResourceUuid())) {
             String actor = msg.getSession().getAccountUuid() + ":" + msg.getSession().getUserUuid();
@@ -335,7 +349,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** The API path submits the same LongJob that SubmitLongJob creates from this request. */
-    private void submitClusterOperation(APIMemoryClusterOperationMsg msg, APIEvent event,
+    private void submitLongJob(APICreateMessage msg, APIEvent event,
                                         Consumer<LongJobInventory> inventory) {
         SubmitLongJobMsg submit = new SubmitLongJobMsg();
         submit.setJobName(msg.getClass().getSimpleName());
@@ -369,7 +383,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         List<String> hosts = msg.getHostUuid() != null ? Collections.singletonList(msg.getHostUuid()) : members;
         Map<String, String> results = new LinkedHashMap<>();
         reply.setResults(results);
-        new While<>(hosts).each((host, next) -> hostOperation(host, msg, outcome -> {
+        new While<>(hosts).each((host, next) -> hostOperation(host, msg,
+                () -> hostActionRequest(host, msg.getAction(), msg.getAccountUuid(), msg.getUserUuid()), outcome -> {
             results.put(host, outcome);
             reportClusterProgress(results.size(), hosts.size());
             next.done();
@@ -382,18 +397,49 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         ProgressReportService.reportProgress(String.valueOf(100 * done / total));
     }
 
-    private void hostOperation(String host, MemoryClusterOperationMsg operation, Consumer<String> outcome) {
-        thdf.chainSubmit(new ChainTask(operation) {
+    /** Writeback preparation or uncertain recovery on the same per-Host queue as pause, resume and drain. */
+    private void singleHostOperation(MemoryHostOperationMsg msg) {
+        requireLicense();
+        String host = msg.getHostUuid();
+        repository.targets("Host", host);
+        hostOperation(host, msg, () -> {
+            APIUpdateMemoryPolicyMsg request = hostActionRequest(host, msg.getAction(),
+                    msg.getAccountUuid(), msg.getUserUuid());
+            if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
+                request.setExpectedSourceRevisions(repository.getPolicy("Host", host).getSourceRevisions());
+                request.setBackendPreparation(msg.getPreparation());
+            } else {
+                // The uncertain control is the caller's confirmation, not the Host's current fence.
+                request.setExpectedControlOperationUuid(msg.getExpectedControlOperationUuid());
+                request.setRecovery(msg.getRecovery());
+            }
+            return request;
+        }, outcome -> replyHostOperation(msg, outcome));
+    }
+
+    void replyHostOperation(MemoryHostOperationMsg msg, String outcome) {
+        MessageReply reply = new MessageReply();
+        if (!"success".equals(outcome)) {
+            reply.setError(new MemoryOperationException("MEMORY_HOST_OPERATION_FAILED",
+                    "Host[" + msg.getHostUuid() + "] " + msg.getAction() + ": " + outcome).toErrorCode());
+        }
+        bus.reply(msg, reply);
+    }
+
+    private void hostOperation(String host, Message context, java.util.function.Supplier<APIUpdateMemoryPolicyMsg> request,
+                               Consumer<String> outcome) {
+        thdf.chainSubmit(new ChainTask(context) {
             @Override public String getSyncSignature() { return "memory-host-operation-" + host; }
             @Override public String getName() { return getSyncSignature(); }
             @Override public void run(SyncTaskChain chain) {
                 AtomicBoolean finished = new AtomicBoolean();
                 Consumer<String> finish = result -> {
-                    if (finished.compareAndSet(false, true)) { outcome.accept(result); chain.next(); }
+                    if (!finished.compareAndSet(false, true)) { return; }
+                    try { outcome.accept(result); } finally { chain.next(); }
                 };
                 Consumer<MemoryOperationException> failed = error -> finish.accept(error.getCode() + ": " + error.getMessage());
                 try {
-                    submitHostAction(hostActionRequest(host, operation), task -> awaitTask(task.getUuid(), finish), failed);
+                    submitHostAction(request.get(), task -> awaitTask(task.getUuid(), finish), failed);
                 } catch (MemoryOperationException error) {
                     failed.accept(error);
                 } catch (IllegalArgumentException error) {
@@ -406,15 +452,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    private APIUpdateMemoryPolicyMsg hostActionRequest(String host, MemoryClusterOperationMsg operation) {
+    private APIUpdateMemoryPolicyMsg hostActionRequest(String host, String action, String accountUuid, String userUuid) {
         APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
-        msg.setScope("Host"); msg.setResourceUuid(host); msg.setAction(operation.getAction()); msg.setPolicy("{}");
+        msg.setScope("Host"); msg.setResourceUuid(host); msg.setAction(action); msg.setPolicy("{}");
         msg.setExpectedRevision(repository.getPolicy("Host", host).getRevision());
         List<MemoryStateVO> states = repository.allStates(Collections.singletonList(host));
         msg.setExpectedControlOperationUuid(states.isEmpty() ? null : states.get(0).getControlOperationUuid());
         msg.setClientRequestUuid(Platform.getUuid());
         SessionInventory session = new SessionInventory();
-        session.setAccountUuid(operation.getAccountUuid()); session.setUserUuid(operation.getUserUuid());
+        session.setAccountUuid(accountUuid); session.setUserUuid(userUuid);
         msg.setSession(session);
         return msg;
     }
@@ -449,13 +495,20 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void recoverDrain(String host, String actor, String requestKey, Consumer<MemoryTaskInventory> done,
                               Consumer<MemoryOperationException> failed) {
         call(host, "writeback-backends", command(host, Platform.getUuid()), response -> {
+            MemoryTaskInventory recovered;
             try {
-                done.accept(repository.recoverDrain(host, actor, requestKey, response));
+                recovered = repository.recoverDrain(host, actor, requestKey, response);
             } catch (MemoryOperationException invalid) {
                 failed.accept(invalid);
+                return;
             } catch (IllegalArgumentException invalid) {
                 failed.accept(new MemoryOperationException("MEMORY_INVALID_REQUEST", invalid.getMessage()));
+                return;
+            } catch (RuntimeException unknown) {
+                failed.accept(new MemoryOperationException("MEMORY_RESULT_UNKNOWN", unknown.getMessage()));
+                return;
             }
+            done.accept(recovered);
         });
     }
 
