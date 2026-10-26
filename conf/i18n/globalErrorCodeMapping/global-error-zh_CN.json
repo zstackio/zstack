@@ -4725,6 +4725,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10013": "参数 [%s] 没有找到值或默认值！",
   "ORG_ZSTACK_VPCFIREWALL_10060": "创建防火墙规则集[%s]失败，因为%s",
   "ORG_ZSTACK_IMAGE_10046": "镜像[uuid:%s, 名称:%s]在备份存储[uuid:%s]中未被删除",
+  "ORG_ZSTACK_IMAGE_10048": "无法校正镜像[uuid:%s]在备份存储[uuid:%s]上的已完成上传：引用不存在，或其状态和路径[%s]不符合预期。",
   "ORG_ZSTACK_IMAGE_10045": "该镜像[uuid:%s, 名称:%s]不在备份存储[uuid:%s]中",
   "ORG_ZSTACK_IMAGE_10044": "该镜像[uuid:%s, name:%s]在任何备份存储中未被删除",
   "ORG_ZSTACK_IMAGE_10043": "镜像[uuid:%s, 名称:%s]\u0027的状态[%s]在备份存储[uuid:%s]上不是Deleted状态",

@@ -593,13 +593,25 @@ public class ImageBase implements Image {
     void reconcileCompletedUpload(String imageUuid, String backupStorageUuid, String installPath) {
         // Keep ImageVO downloading: this is cancellation cleanup, not successful image completion.
         // Update only an existing downloading ref so a concurrent deletion cannot resurrect it.
-        SQL.New(ImageBackupStorageRefVO.class)
+        int updated = SQL.New(ImageBackupStorageRefVO.class)
                 .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
                 .eq(ImageBackupStorageRefVO_.backupStorageUuid, backupStorageUuid)
                 .eq(ImageBackupStorageRefVO_.status, ImageStatus.Downloading)
                 .set(ImageBackupStorageRefVO_.installPath, installPath)
                 .set(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
                 .update();
+        if (updated == 1 || Q.New(ImageBackupStorageRefVO.class)
+                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
+                .eq(ImageBackupStorageRefVO_.backupStorageUuid, backupStorageUuid)
+                .eq(ImageBackupStorageRefVO_.status, ImageStatus.Ready)
+                .eq(ImageBackupStorageRefVO_.installPath, installPath).isExists()) {
+            return;
+        }
+
+        throw new OperationFailureException(operr(ORG_ZSTACK_IMAGE_10048,
+                "cannot reconcile completed upload for image[uuid:%s] on backup storage[uuid:%s]: " +
+                        "reference is missing or does not match the expected status and path[%s]",
+                imageUuid, backupStorageUuid, installPath));
     }
 
     private void handle(OverlayMessage msg) {

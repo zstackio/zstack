@@ -46,6 +46,7 @@ class CephUploadImageCancelCase extends SubCase {
     volatile String installPath
     volatile String progressMode = "incomplete"
     volatile boolean secondMonCancels
+    volatile Closure beforeCompletedProgress
     AtomicInteger cancelCalls = new AtomicInteger()
     AtomicInteger progressCalls = new AtomicInteger()
     AtomicInteger allocations = new AtomicInteger()
@@ -158,6 +159,9 @@ class CephUploadImageCancelCase extends SubCase {
                 rsp.success = false
                 rsp.error = "upload progress unavailable"
             } else if (progressMode == "completed" || progressMode == "invalid-path") {
+                Closure changeRef = beforeCompletedProgress
+                beforeCompletedProgress = null
+                changeRef?.call()
                 rsp.completed = true
                 rsp.downloadSize = RESERVED_SIZE
                 // Completion metadata must not change the capacity previously reserved by the tracker.
@@ -249,6 +253,7 @@ class CephUploadImageCancelCase extends SubCase {
         progressMode = "completed"
         if (rejectReconciliation) {
             assertFailedReconciliationRetainsImage(job)
+            assertChangedReferencesRejectCancellation(job)
         }
         if (retryCanceling) {
             // Persist the reconciliation without completing the long job, as when its reply is lost.
@@ -336,6 +341,68 @@ END
         }.execute()
     }
 
+    void assertChangedReferencesRejectCancellation(LongJobInventory job) {
+        ["missing", "creating", "wrong-ready-path"].each { String change ->
+            beforeCompletedProgress = {
+                // ImageBase has already captured its inventory before this progress request.
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        def query = sql(ImageBackupStorageRefVO.class)
+                                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
+                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid)
+                        if (change == "missing") {
+                            query.hardDelete()
+                        } else {
+                            query.set(ImageBackupStorageRefVO_.status,
+                                    change == "creating" ? ImageStatus.Creating : ImageStatus.Ready)
+                                    .set(ImageBackupStorageRefVO_.installPath,
+                                            change == "creating" ? UPLOAD_URL : "ceph://wrong-pool/${imageUuid}".toString())
+                                    .update()
+                        }
+                    }
+                }.execute()
+            }
+            try {
+                expectApiFailure({
+                    cancelLongJob { uuid = job.uuid }
+                }, {
+                    assert globalErrorCode == "ORG_ZSTACK_IMAGE_10048"
+                })
+                assert beforeCompletedProgress == null
+                assert dbFindByUuid(job.uuid, LongJobVO.class).state == LongJobState.Canceling
+                assert dbFindByUuid(imageUuid, ImageVO.class).status == ImageStatus.Downloading
+                assert dbFindByUuid(imageUuid, ImageVO.class).actualSize == RESERVED_SIZE
+                assert cleanupSnapshots.empty
+                assert deletedPaths.empty
+                assert returnedSizes.empty
+                if (change == "missing") {
+                    assert findRef() == null
+                } else {
+                    assert findRef().status == (change == "creating" ? ImageStatus.Creating : ImageStatus.Ready)
+                    assert findRef().installPath == (change == "creating" ? UPLOAD_URL : "ceph://wrong-pool/${imageUuid}")
+                }
+            } finally {
+                beforeCompletedProgress = null
+                // Restore only the test fixture so the same long job can retry and clean its bits.
+                new SQLBatch() {
+                    @Override
+                    protected void scripts() {
+                        sql(ImageBackupStorageRefVO.class)
+                                .eq(ImageBackupStorageRefVO_.imageUuid, imageUuid)
+                                .eq(ImageBackupStorageRefVO_.backupStorageUuid, bs.uuid).hardDelete()
+                        ImageBackupStorageRefVO restored = new ImageBackupStorageRefVO()
+                        restored.imageUuid = imageUuid
+                        restored.backupStorageUuid = bs.uuid
+                        restored.status = ImageStatus.Downloading
+                        restored.installPath = UPLOAD_URL
+                        databaseFacade.persist(restored)
+                    }
+                }.execute()
+            }
+        }
+    }
+
     void testNormalMultiMonCancellation() {
         cancelCalls.set(0)
         cancelHosts.clear()
@@ -383,6 +450,7 @@ END
         returnedSizes.clear()
         cleanupSnapshots.clear()
         secondMonCancels = false
+        beforeCompletedProgress = null
     }
 
     @Override
