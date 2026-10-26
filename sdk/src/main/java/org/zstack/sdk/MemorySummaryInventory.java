@@ -4,6 +4,14 @@ package org.zstack.sdk;
 
 public class MemorySummaryInventory  {
 
+    public java.util.List hosts;
+    public void setHosts(java.util.List hosts) {
+        this.hosts = hosts;
+    }
+    public java.util.List getHosts() {
+        return this.hosts;
+    }
+
     public java.lang.String formulaVersion;
     public void setFormulaVersion(java.lang.String formulaVersion) {
         this.formulaVersion = formulaVersion;

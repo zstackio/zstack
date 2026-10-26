@@ -566,10 +566,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         List<String> hosts = repository.summaryTargets(msg.getHostUuids(), msg.getZoneUuid());
         long now = System.currentTimeMillis();
         Map<String, Map<String, Object>> samples = hostMetricSamples(hosts, now);
-        List<MemoryStateVO> states = repository.allStates(hosts).stream()
+        List<MemoryStateVO> current = repository.allStates(hosts);
+        List<MemoryStateVO> states = current.stream()
                 .map(state -> MemoryMetricsPresentation.withSavings(state, samples.get(state.getHostUuid())))
                 .collect(Collectors.toList());
         reply.setSummary(MemorySummaryRules.summarize(hosts, states, now));
+        if (msg.getHostUuids() != null) {
+            reply.getSummary().setHosts(MemorySummaryRules.hostDetails(hosts, current, samples, now));
+        }
         bus.reply(msg, reply);
     }
 

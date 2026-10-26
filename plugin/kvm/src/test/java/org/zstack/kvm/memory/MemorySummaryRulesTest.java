@@ -15,6 +15,32 @@ public class MemorySummaryRulesTest {
     private Map<String, Integer> reasons(MemoryStateVO... rows) {
         return MemorySummaryRules.summarize(Collections.singletonList("a"), Arrays.asList(rows), now).getCurrentStatus();
     }
+    @Test public void requestedHostsGetTheSameMetricsAndQualityAsHostStates() {
+        Map<String, Object> fresh = new LinkedHashMap<>();
+        fresh.put("formulaVersion", "mechanism-estimate-v1"); fresh.put("quality", "Fresh");
+        fresh.put("sampleTime", now - 1000); fresh.put("totalSavedEstimateBytes", 120L); fresh.put("zramBytes", 20L);
+        Map<String, Object> old = new LinkedHashMap<>(fresh);
+        old.put("sampleTime", now - MemoryOptimizationGlobalConfig.displayTtlMillis() - 1000);
+        MemoryStateVO a = current("a", now, "{}"), b = current("b", now, "{}");
+        Map<String, Map<String, Object>> samples = new HashMap<>();
+        samples.put("a", fresh); samples.put("b", old);
+
+        List<MemoryHostSavingsInventory> hosts = MemorySummaryRules.hostDetails(
+                Arrays.asList("a", "b", "missing"), Arrays.asList(b, a), samples, now);
+
+        assertEquals(3, hosts.size());
+        assertEquals("a", hosts.get(0).getHostUuid());
+        MemoryStateInventory state = MemoryMetricsPresentation.inventory(a, fresh, now);
+        assertEquals(state.getMetrics(), hosts.get(0).getMetrics());
+        assertEquals(state.getQuality(), hosts.get(0).getQuality());
+        assertEquals(Long.valueOf(now - 1000), hosts.get(0).getSampleTime());
+        assertEquals("b", hosts.get(1).getHostUuid());
+        assertEquals("Stale", hosts.get(1).getQuality());
+        assertEquals("missing", hosts.get(2).getHostUuid());
+        assertEquals("Unknown", hosts.get(2).getQuality());
+        assertTrue(hosts.get(2).getMetrics().isEmpty());
+        assertNull(hosts.get(2).getSampleTime());
+    }
     @Test public void currentReasonsUseActualSwitchesNotZeroOrDesiredConfiguration() {
         String zero = "\"savings\":{\"quality\":\"Fresh\",\"sampleTime\":300000,\"totalSavedEstimateBytes\":0}";
         Map<String, Integer> unknown = reasons(current("a", now, "{" + zero + "}"));

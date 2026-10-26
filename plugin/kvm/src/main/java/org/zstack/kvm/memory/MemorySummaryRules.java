@@ -9,6 +9,29 @@ import java.util.*;
 /** Aggregate complete same-window Host samples; never join independent metric peaks. */
 public final class MemorySummaryRules {
     private MemorySummaryRules() { }
+    /** Per-Host savings use the GetMemoryStates projection; a Host without state stays Unknown. */
+    public static List<MemoryHostSavingsInventory> hostDetails(List<String> hosts, List<MemoryStateVO> states,
+            Map<String, Map<String, Object>> samples, long now) {
+        Map<String, MemoryStateVO> byHost = new HashMap<>();
+        for (MemoryStateVO state : states) { byHost.put(state.getHostUuid(), state); }
+        List<MemoryHostSavingsInventory> details = new java.util.ArrayList<>();
+        for (String host : new java.util.LinkedHashSet<>(hosts)) {
+            MemoryHostSavingsInventory detail = new MemoryHostSavingsInventory();
+            detail.setHostUuid(host);
+            MemoryStateVO state = byHost.get(host);
+            if (state == null) {
+                detail.setMetrics(new LinkedHashMap<>()); detail.setQuality("Unknown");
+            } else {
+                MemoryStateInventory projected = MemoryMetricsPresentation.inventory(state, samples.get(host), now);
+                detail.setMetrics(projected.getMetrics()); detail.setQuality(projected.getQuality());
+                Object sampled = projected.getMetrics().get("sampleTime");
+                detail.setSampleTime(sampled instanceof Number ? ((Number) sampled).longValue() : null);
+            }
+            details.add(detail);
+        }
+        return details;
+    }
+
     public static MemorySummaryInventory summarize(List<String> hosts, List<MemoryStateVO> states, long now) {
         Set<String> expected = new HashSet<>(hosts);
         Map<String, HostMetrics> samples = new HashMap<>();

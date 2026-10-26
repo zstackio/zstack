@@ -24,6 +24,11 @@ public class MemorySummaryInventory {
         return inventory;
     }
 
+    /** Present only when the request names hostUuids. */
+    private java.util.List<MemoryHostSavingsInventory> hosts;
+    public java.util.List<MemoryHostSavingsInventory> getHosts() { return hosts; }
+    public void setHosts(java.util.List<MemoryHostSavingsInventory> value) { hosts = value; }
+
     private String formulaVersion = "mechanism-estimate-v1";
     public String getFormulaVersion() { return formulaVersion; }
     public void setFormulaVersion(String value) { formulaVersion = value; }
