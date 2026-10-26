@@ -427,7 +427,7 @@ public class VolumeSnapshotGroupBase implements VolumeSnapshotGroup {
                     addTpmMsg.setResourceUuidKeyFrom(msg.getUuid());
                     addTpmMsg.setVmInstanceUuid(vmUuid);
                     addTpmMsg.setTpmUuid(context.newCreateTpmUuid = Platform.getUuid());
-                    bus.makeTargetServiceIdByResourceUuid(addTpmMsg, SERVICE_ID, addTpmMsg.getTpmUuid());
+                    bus.makeTargetServiceIdByResourceUuid(addTpmMsg, SERVICE_ID, addTpmMsg.getVmInstanceUuid());
                     bus.send(addTpmMsg, new CloudBusCallBack(msg) {
                         @Override
                         public void run(MessageReply reply) {
