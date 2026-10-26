@@ -17,10 +17,10 @@ public class DeleteZsDatasetQuestionAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -68,9 +68,9 @@ public class DeleteZsDatasetQuestionAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.DeleteZsDatasetQuestionResult value = res.getResult(org.zstack.sdk.DeleteZsDatasetQuestionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.DeleteZsDatasetQuestionResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.DeleteZsDatasetQuestionResult() : value; 
 
         return ret;
     }

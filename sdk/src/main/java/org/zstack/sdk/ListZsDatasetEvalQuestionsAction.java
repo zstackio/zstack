@@ -17,10 +17,10 @@ public class ListZsDatasetEvalQuestionsAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -71,9 +71,9 @@ public class ListZsDatasetEvalQuestionsAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.ListZsDatasetEvalQuestionsResult value = res.getResult(org.zstack.sdk.ListZsDatasetEvalQuestionsResult.class);
-        ret.value = value == null ? new org.zstack.sdk.ListZsDatasetEvalQuestionsResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.ListZsDatasetEvalQuestionsResult() : value; 
 
         return ret;
     }

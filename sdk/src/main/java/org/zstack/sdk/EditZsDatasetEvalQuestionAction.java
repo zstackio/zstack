@@ -17,10 +17,10 @@ public class EditZsDatasetEvalQuestionAction extends AbstractAction {
         public Result throwExceptionIfError() {
             if (error != null) {
                 throw new ApiException(
-                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
                 );
             }
-
+            
             return this;
         }
     }
@@ -86,9 +86,9 @@ public class EditZsDatasetEvalQuestionAction extends AbstractAction {
             ret.error = res.error;
             return ret;
         }
-
+        
         org.zstack.sdk.EditZsDatasetEvalQuestionResult value = res.getResult(org.zstack.sdk.EditZsDatasetEvalQuestionResult.class);
-        ret.value = value == null ? new org.zstack.sdk.EditZsDatasetEvalQuestionResult() : value;
+        ret.value = value == null ? new org.zstack.sdk.EditZsDatasetEvalQuestionResult() : value; 
 
         return ret;
     }
