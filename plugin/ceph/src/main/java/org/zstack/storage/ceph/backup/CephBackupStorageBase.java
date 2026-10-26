@@ -28,6 +28,7 @@ import org.zstack.header.core.progress.TaskProgressRange;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.ErrorableValue;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.exception.CloudRuntimeException;
@@ -54,6 +55,7 @@ import org.zstack.utils.network.IPv6NetworkUtils;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
 import java.io.Serializable;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -1107,8 +1109,7 @@ public class CephBackupStorageBase extends BackupStorageBase {
         new HttpCaller<>(AgentConstant.CANCEL_JOB, cmd, AgentResponse.class, new ReturnValueCompletion<AgentResponse>(msg) {
             @Override
             public void fail(ErrorCode err) {
-                reply.setError(err);
-                bus.reply(msg, reply);
+                recoverCompletedUpload(msg, err, reply);
             }
 
             @Override
@@ -1116,6 +1117,74 @@ public class CephBackupStorageBase extends BackupStorageBase {
                 bus.reply(msg, reply);
             }
         }).specifyOrder(msg.getCancellationApiId()).tryNext().call();
+    }
+
+    private void recoverCompletedUpload(CancelDownloadImageMsg msg, ErrorCode cancelError, CancelDownloadImageReply reply) {
+        ImageBackupStorageRefInventory ref = getUploadRef(msg.getImageInventory(), msg.getBackupStorageUuid());
+        if (ref != null && ImageStatus.Ready.toString().equals(ref.getStatus()) &&
+                makeImageInstallPath(msg.getImageInventory().getUuid()).equals(ref.getInstallPath())) {
+            // A previous attempt may have reconciled this ref before another storage failed or its reply was lost.
+            reply.setCompletedUploadInstallPath(ref.getInstallPath());
+            bus.reply(msg, reply);
+            return;
+        }
+
+        ErrorableValue<String> hostname = getUploadHostname(ref);
+        if (!hostname.isSuccess() || hostname.result == null) {
+            reply.setError(cancelError);
+            bus.reply(msg, reply);
+            return;
+        }
+
+        // A suspended upload can finish after its tracker stops and its agent task disappears.
+        // Only the mon that accepted the upload can confirm that its bits now need deletion.
+        GetImageDownloadProgressMsg pmsg = new GetImageDownloadProgressMsg();
+        pmsg.setBackupStorageUuid(msg.getBackupStorageUuid());
+        pmsg.setImageUuid(msg.getImageInventory().getUuid());
+        pmsg.setHostname(hostname.result);
+        bus.makeTargetServiceIdByResourceUuid(pmsg, BackupStorageConstant.SERVICE_ID, msg.getBackupStorageUuid());
+        bus.send(pmsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply r) {
+                GetImageDownloadProgressReply progress = r instanceof GetImageDownloadProgressReply
+                        ? (GetImageDownloadProgressReply) r : null;
+                if (progress != null && progress.isSuccess() && progress.isCompleted() &&
+                        makeImageInstallPath(pmsg.getImageUuid()).equals(progress.getInstallPath())) {
+                    reply.setCompletedUploadInstallPath(progress.getInstallPath());
+                } else {
+                    reply.setError(cancelError);
+                }
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private static ImageBackupStorageRefInventory getUploadRef(ImageInventory image, String backupStorageUuid) {
+        if (image == null || image.getUrl() == null || !image.getUrl().startsWith("upload://") ||
+                backupStorageUuid == null || image.getBackupStorageRefs() == null) {
+            return null;
+        }
+
+        for (ImageBackupStorageRefInventory ref : image.getBackupStorageRefs()) {
+            if (backupStorageUuid.equals(ref.getBackupStorageUuid())) {
+                return ref;
+            }
+        }
+        return null;
+    }
+
+    @ExceptionSafe
+    private static ErrorableValue<String> getUploadHostname(ImageBackupStorageRefInventory ref) {
+        if (ref == null || ref.getInstallPath() == null) {
+            return ErrorableValue.of(null);
+        }
+
+        URI uri = URI.create(ref.getInstallPath());
+        if (!("http".equalsIgnoreCase(uri.getScheme()) || "https".equalsIgnoreCase(uri.getScheme())) ||
+                uri.getHost() == null) {
+            return ErrorableValue.of(null);
+        }
+        return ErrorableValue.of(IPv6NetworkUtils.normalizeHost(uri.getHost()));
     }
 
     @Override

@@ -25,6 +25,7 @@ class StorageTest extends Test {
         expon()
         xinfini()
         zbs()
+        include("LongJobManager.xml")
     }
 
     @Override

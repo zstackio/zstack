@@ -4725,6 +4725,7 @@
   "ORG_ZSTACK_CLOUDFORMATION_TEMPLATE_FUNCTION_10013": "Parameter [%s] has no specified value or default value found!",
   "ORG_ZSTACK_VPCFIREWALL_10060": "create firewall rule set[%s] failed because %s",
   "ORG_ZSTACK_IMAGE_10046": "The image with UUID [uuid:%s] and name [name:%s] has not been deleted from the backup storage with UUID [uuid:%s].",
+  "ORG_ZSTACK_IMAGE_10048": "Cannot reconcile completed upload for image [uuid:%s] on backup storage [uuid:%s]: the reference is missing or does not match the expected status and path [%s].",
   "ORG_ZSTACK_IMAGE_10045": "The image with UUID [uuid:%s] and name [name:%s] is not available on the backup storage with UUID [uuid:%s].",
   "ORG_ZSTACK_IMAGE_10044": "The image with UUID [uuid:%s] and name [name:%s] has not been deleted from any backup storage.",
   "ORG_ZSTACK_IMAGE_10043": "The image with UUID [uuid:%s] and name [name:%s] has a status [status:%s] on the backup storage with UUID [backup storage uuid:%s], which is not Deleted.",
