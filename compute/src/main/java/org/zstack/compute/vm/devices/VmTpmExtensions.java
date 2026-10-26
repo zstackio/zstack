@@ -5,6 +5,8 @@ import org.zstack.compute.vm.BuildVmSpecExtensionPoint;
 import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.header.identity.AccountResourceRefInventory;
+import org.zstack.header.identity.ResourceOwnerAfterChangeExtensionPoint;
 import org.zstack.header.tpm.entity.TpmSpec;
 import org.zstack.header.tpm.entity.TpmVO;
 import org.zstack.header.tpm.entity.TpmVO_;
@@ -15,6 +17,7 @@ import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmMachineType;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.vm.devices.VmDevicesSpec;
+import org.zstack.identity.AccountManager;
 import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.utils.Utils;
@@ -23,7 +26,8 @@ import org.zstack.utils.logging.CLogger;
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 
 public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
-        BuildVmSpecExtensionPoint {
+        BuildVmSpecExtensionPoint,
+        ResourceOwnerAfterChangeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(VmTpmExtensions.class);
 
     @Autowired
@@ -32,6 +36,8 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
     private ResourceConfigFacade resourceConfigFacade;
     @Autowired
     private TpmEncryptedResourceKeyBackend resourceKeyBackend;
+    @Autowired
+    private AccountManager accountManager;
 
     @Override
     public void preCreateVmInstance(CreateVmInstanceMsg msg) {
@@ -127,6 +133,18 @@ public class VmTpmExtensions implements VmInstanceCreateExtensionPoint,
             spec.getOsSpec().setMachineType(VmMachineType.q35.toString());
             logger.debug(String.format(
                     "auto-set machineType to q35 for VM[uuid:%s] because NvRam/TPM registration is needed", vmUuid));
+        }
+    }
+
+    @Override
+    public void resourceOwnerAfterChange(AccountResourceRefInventory ref, String newOwnerUuid) {
+        if (!VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
+            return;
+        }
+
+        String tpmUuid = VmTpmManager.findTpmUuidForVmOrNull(ref.getResourceUuid());
+        if (tpmUuid != null) {
+            accountManager.changeResourceOwner(tpmUuid, newOwnerUuid);
         }
     }
 }
