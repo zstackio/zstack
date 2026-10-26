@@ -124,6 +124,24 @@ public class MemoryHostConnectedObservationTest {
         assertEquals(0, repository.policyAdmissions);
     }
 
+    @Test public void onlyRepeatedObservationFailuresBackOffTheHost() throws Exception {
+        Manager manager = configuredManager();
+        Map<?, ?> backoff = field(manager, "observationBackoff", Map.class);
+        MemoryAgentResponse failed = successfulObservation(System.currentTimeMillis());
+        failed.setSuccess(false); failed.status = "Unknown";
+        for (int i = 0; i < 2; i++) {
+            manager.observeHostAfterConnect("host-a"); manager.complete(failed);
+            assertFalse("a transient failure is retried on the next scan", backoff.containsKey("host-a"));
+        }
+        manager.observeHostAfterConnect("host-a"); manager.complete(successfulObservation(System.currentTimeMillis()));
+        for (int i = 0; i < 2; i++) {
+            manager.observeHostAfterConnect("host-a"); manager.complete(failed);
+            assertFalse("a success resets the failure count", backoff.containsKey("host-a"));
+        }
+        manager.observeHostAfterConnect("host-a"); manager.complete(failed);
+        assertTrue("repeated failures slow the host down", backoff.containsKey("host-a"));
+    }
+
     @Test public void coldNativeKsmObservationIsStoredSeparatelyWithoutControlReconciliation() throws Exception {
         Manager manager = configuredManager();
         manager.afterHostConnected(connectedHost());
