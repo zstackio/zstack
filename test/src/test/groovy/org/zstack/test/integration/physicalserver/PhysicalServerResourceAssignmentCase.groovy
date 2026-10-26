@@ -11,6 +11,7 @@ import org.zstack.core.cloudbus.CloudBusEventListener
 import org.zstack.core.cloudbus.EventSubscriberReceipt
 import org.zstack.core.db.SQL
 import org.zstack.header.core.Completion
+import org.zstack.header.Constants
 import org.zstack.header.errorcode.ErrorCode
 import org.zstack.header.host.HostAfterConnectedExtensionPoint
 import org.zstack.header.host.HostNUMANode
@@ -240,8 +241,10 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             })
             def result = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
                     sessionId: adminSession(), serverUuids: [physicalServerUuid]).call()
-            assert result.error?.details?.contains("Profile SHA-256 mismatch") :
-                    "Different receiver YAML must reject Refresh: actual=${result.error}"
+            assert result.error == null && result.value.results.size() == 1
+            assert !result.value.results[0].success &&
+                    result.value.results[0].error.details.contains("Profile SHA-256 mismatch") :
+                    "Different receiver YAML must reject only that server's Refresh: actual=${result.value.results}"
             def after = assignment(physicalServerUuid, "COMPUTE")
             assert [after.cpuSet, after.memory, after.state, after.lastOpDate] ==
                     [before.cpuSet, before.memory, before.state, before.lastOpDate] :
@@ -312,7 +315,10 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         assert visited == servers.toSet() && pages.get() == 22 :
                 "Cursor paging must cover all 10001 servers exactly once"
         assert hashes.size() == 1 : "All pages must carry the same request-scoped Profile SHA"
-        assert result.get()?.error?.code == failure.code : "The final event must retain an earlier page's failure"
+        assert result.get()?.success : "A target timeout must not hide other servers' results"
+        assert result.get().results.size() == servers.size() : "Every target must have one result"
+        assert result.get().results.find { it.serverUuid == servers.first() }.error.code == failure.code
+        assert result.get().results.count { it.success } == servers.size() - 1
     }
 
     private void verifyAssociationPaging() {
@@ -778,6 +784,11 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
         retryInSecs {
             assert updateEvents[failingApiId]?.get() == 1 : "Controller exception must publish exactly one error Event"
         }
+        def failedRefresh = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                sessionId: adminSession(), serverUuids: [physicalServerUuid]).call()
+        assert failedRefresh.error == null && !failedRefresh.value.results[0].success
+        assert failedRefresh.value.results[0].error.details.contains("test Controller Apply failed before callback") :
+                "Controller exceptions must also reach the batch Refresh result"
         throwApply.set(false)
         refreshResourceAssignment(physicalServerUuid, imageStoreRoleType)
         assert assignment(imageStoreRoleType).state == "Synced" :
@@ -785,6 +796,21 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
                         "actual=${assignment(imageStoreRoleType).state}"
 
         defaultCpuCount.set(4)
+        int callsBeforeEmptyCpuSet = applyCalls.get()
+        env.simulator(KVMConstant.KVM_HOST_NUMA_PATH) {
+            def response = validTopologyResponse()
+            response.topology["0"].onlineCpus = ["0"]
+            response.topology["0"].coreGroups = [["0"]]
+            return response
+        }
+        def emptyCpuSet = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                sessionId: adminSession(), serverUuids: [physicalServerUuid]).call()
+        installCpuTopologySimulator()
+        assert emptyCpuSet.error == null && emptyCpuSet.value.results.size() == 1
+        assert !emptyCpuSet.value.results[0].success && emptyCpuSet.value.results[0].error != null :
+                "Planning failure must be returned for the target server"
+        assert applyCalls.get() == callsBeforeEmptyCpuSet && assignment(imageStoreRoleType).state == "Unsynced" :
+                "An empty planned CPU set must not be applied or marked Synced"
         refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [physicalServerUuid]
         }
@@ -970,6 +996,49 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             assert updateEvents[delayedApiId]?.get() == 1 : "successful Apply must publish exactly one Event"
         }
 
+        CountDownLatch refreshEntered = new CountDownLatch(1)
+        CountDownLatch finishRefresh = new CountDownLatch(1)
+        env.simulator(KvmResourceAssignmentFactory.APPLY_RESOURCE_CONTROL_PATH) { HttpEntity<String> entity ->
+            refreshEntered.countDown()
+            assert finishRefresh.await(30, TimeUnit.SECONDS)
+            return applyResourceControlResponse(entity)
+        }
+        String refreshApiId = Platform.getUuid()
+        def pendingRefresh = CompletableFuture.supplyAsync {
+            new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                    sessionId: sessionUuid, apiId: refreshApiId, serverUuids: [physicalServerUuid]).call()
+        }
+        boolean refreshAgentEntered = refreshEntered.await(30, TimeUnit.SECONDS)
+        Thread.sleep(200)
+        boolean refreshPublishedEarly = updateEvents.containsKey(refreshApiId)
+        finishRefresh.countDown()
+        def completedRefresh = pendingRefresh.get(30, TimeUnit.SECONDS)
+        installResourceControlSimulator()
+        assert refreshAgentEntered && !refreshPublishedEarly : "Refresh must wait for Apply before publishing results"
+        assert completedRefresh.error == null && completedRefresh.value.results[0].success
+        retryInSecs {
+            assert updateEvents[refreshApiId]?.get() == 1 : "Refresh must publish exactly one Event"
+        }
+
+        env.simulator(KvmResourceAssignmentFactory.APPLY_RESOURCE_CONTROL_PATH) { HttpEntity<String> entity ->
+            def response = applyResourceControlResponse(entity)
+            if (entity.headers.getFirst(Constants.AGENT_HTTP_HEADER_RESOURCE_UUID) == host.uuid) {
+                response.error = "simulated single-server failure"
+            }
+            return response
+        }
+        def partialRefresh = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                sessionId: sessionUuid,
+                serverUuids: [physicalServerUuid, forceDeletePhysicalServerUuid, physicalServerUuid]).call()
+        installResourceControlSimulator()
+        assert partialRefresh.error == null && partialRefresh.value.results.size() == 2 :
+                "SDK must retain both servers' results when one Apply fails"
+        def failedServer = partialRefresh.value.results.find { it.serverUuid == physicalServerUuid }
+        assert !failedServer.success && failedServer.error.details.contains("simulated single-server failure")
+        assert partialRefresh.value.results.find { it.serverUuid == forceDeletePhysicalServerUuid }.success
+        assert assignment().state == "Unsynced" &&
+                assignment(forceDeletePhysicalServerUuid, "COMPUTE").state == "Synced"
+
         failResourceControl = true
         int callsBeforeFailure = resourceControlCalls.get()
         String failedApiId = Platform.getUuid()
@@ -1024,6 +1093,10 @@ class PhysicalServerResourceAssignmentCase extends SubCase {
             memory = SizeUnit.MEGABYTE.toByte(80)
         }
         assert pendingRestart.state == "Unsynced" : "a staged restart is a successful Update, not an execution error"
+        def stagedRefresh = new RefreshPhysicalServerResourceAssignmentsFromProfileAction(
+                sessionId: sessionUuid, serverUuids: [physicalServerUuid]).call()
+        assert stagedRefresh.error == null && stagedRefresh.value.results[0].success :
+                "Refresh success means execution completed, not that all services have restarted"
         retryInSecs {
             assert assignment().state == "Unsynced" :
                     "an HTTP-success response with synced=false must keep the Assignment Unsynced"

@@ -460,7 +460,7 @@ public class PhysicalServerResourceAssignmentBase {
             return;
         }
         profiles.putAll(localProfiles);
-        thdf.chainSubmit(new ChainTask(null) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
             public String getSyncSignature() {
                 return serverOperationSignature();
@@ -470,9 +470,8 @@ public class PhysicalServerResourceAssignmentBase {
             public void run(SyncTaskChain chain) {
                 assignments.markUnsyncedByServerUuids(Collections.singleton(serverUuid));
                 Map<String, PhysicalServerResourceAssignmentVO> current = assignments.mapByRole(serverUuid);
-                observeAssignments(current, current.keySet(), new Completion(chain) {
-                    @Override
-                    public void success() {
+                observeAssignments(current, current.keySet(), new Completion(msg, chain) {
+                    private void applyFromProfile() {
                         Map<String, Integer> cpuCounts = new LinkedHashMap<>();
                         for (String role : current.keySet()) {
                             PhysicalServerResourceAssignmentController controller = controller(role);
@@ -488,9 +487,10 @@ public class PhysicalServerResourceAssignmentBase {
                             }
                             cpuCounts.put(role, roleServices(role).getDefaultCpuCount());
                         }
-                        applyAssignments(current, cpuCounts, new Completion(chain) {
+                        applyAssignments(current, cpuCounts, new Completion(msg, chain) {
                             @Override
                             public void success() {
+                                bus.reply(msg, reply);
                                 chain.next();
                             }
 
@@ -498,16 +498,26 @@ public class PhysicalServerResourceAssignmentBase {
                             public void fail(ErrorCode errorCode) {
                                 logger.warn(String.format("failed to apply resource assignments from Profile for " +
                                         "physical server[uuid:%s]: %s", serverUuid, errorCode));
+                                if (reply.isSuccess()) {
+                                    reply.setError(errorCode);
+                                }
+                                bus.reply(msg, reply);
                                 chain.next();
                             }
                         });
                     }
 
                     @Override
+                    public void success() {
+                        applyFromProfile();
+                    }
+
+                    @Override
                     public void fail(ErrorCode errorCode) {
                         logger.warn(String.format("failed to observe resource assignments from Profile for " +
                                 "physical server[uuid:%s]: %s", serverUuid, errorCode));
-                        success();
+                        reply.setError(errorCode);
+                        applyFromProfile();
                     }
                 });
             }
@@ -517,7 +527,6 @@ public class PhysicalServerResourceAssignmentBase {
                 return "refresh-physical-server-resource-assignments-from-profile-" + serverUuid;
             }
         });
-        bus.reply(msg, reply);
     }
 
     private void applyAssignments(Map<String, PhysicalServerResourceAssignmentVO> current,
