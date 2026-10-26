@@ -19,7 +19,6 @@ import org.zstack.header.vm.VmInstanceDeletionPolicyManager.VmInstanceDeletionPo
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
-import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.VmHostFileDeletionMsg;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
@@ -27,9 +26,7 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.zstack.core.Platform.operr;
@@ -157,22 +154,11 @@ public class VmHostFileCascadeExtension extends AbstractAsyncCascadeExtension {
             return;
         }
 
-        Set<String> createdVmUuids = findVmUuidsInCreatedState(
-                voList.stream().map(VmHostFileVO::getVmInstanceUuid).collect(Collectors.toSet()));
-        if (!createdVmUuids.isEmpty()) {
-            logger.info(String.format(
-                    "VmHostFileCascadeExtension: deleting VmHostFile row(s) for Created VM(s) %s with forceDelete=true "
-                            + "(same as expunge path; avoids leftovers when VM row is hard-deleted)",
-                    String.join(", ", createdVmUuids)));
-        }
-
         new While<>(voList).each((vo, whileCompletion) -> {
             VmHostFileDeletionMsg msg = new VmHostFileDeletionMsg();
             msg.setUuid(vo.getUuid());
-            boolean force = action.isActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE)
-                    || CascadeConstant.VM_INSTANCE_EXPUNGE_CODE.equals(action.getActionCode())
-                    || createdVmUuids.contains(vo.getVmInstanceUuid());
-            msg.setForceDelete(force);
+            // the VM row is removed right after this cascade, so the record cannot be kept for retry
+            msg.setForceDelete(true);
             bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
             bus.send(msg, new CloudBusCallBack(whileCompletion) {
                 @Override
@@ -199,17 +185,6 @@ public class VmHostFileCascadeExtension extends AbstractAsyncCascadeExtension {
                 completion.success();
             }
         });
-    }
-
-    private Set<String> findVmUuidsInCreatedState(Set<String> vmUuids) {
-        if (vmUuids.isEmpty()) {
-            return new HashSet<>();
-        }
-        return new HashSet<>(Q.New(VmInstanceVO.class)
-                .in(VmInstanceVO_.uuid, vmUuids)
-                .eq(VmInstanceVO_.state, VmInstanceState.Created)
-                .select(VmInstanceVO_.uuid)
-                .listValues());
     }
 
     private void handleDeletionCleanup(CascadeAction action, Completion completion) {
