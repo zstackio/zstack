@@ -7,6 +7,7 @@ public class SourceClassMap {
         {
 			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
 			put("org.zstack.kvm.memory.MemoryFieldCapability", "org.zstack.sdk.MemoryFieldCapability");
+			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
 			put("org.zstack.kvm.memory.MemoryPolicyInventory", "org.zstack.sdk.MemoryPolicyInventory");
 			put("org.zstack.kvm.memory.MemoryStateInventory", "org.zstack.sdk.MemoryStateInventory");
 			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
@@ -1002,6 +1003,7 @@ public class SourceClassMap {
         {
 			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
 			put("org.zstack.sdk.MemoryFieldCapability", "org.zstack.kvm.memory.MemoryFieldCapability");
+			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
 			put("org.zstack.sdk.MemoryPolicyInventory", "org.zstack.kvm.memory.MemoryPolicyInventory");
 			put("org.zstack.sdk.MemoryStateInventory", "org.zstack.kvm.memory.MemoryStateInventory");
 			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");

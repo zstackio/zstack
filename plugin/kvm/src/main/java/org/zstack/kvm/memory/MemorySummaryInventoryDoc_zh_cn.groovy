@@ -6,6 +6,15 @@ doc {
 
 	title "内存优化汇总"
 
+	ref {
+		name "hosts"
+		path "org.zstack.kvm.memory.MemorySummaryInventory.hosts"
+		desc "请求带hostUuids时返回，每台物理机一项，取值规则与GetMemoryStates相同；未带hostUuids时为空。"
+		type "List"
+		since "5.5.48"
+		clz MemoryHostSavingsInventory.class
+	}
+
 	field {
 		name "formulaVersion"
 		desc "节省量计算公式版本。"
