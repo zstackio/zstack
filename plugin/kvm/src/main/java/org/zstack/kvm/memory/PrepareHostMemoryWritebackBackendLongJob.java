@@ -32,6 +32,7 @@ public class PrepareHostMemoryWritebackBackendLongJob implements LongJob {
         msg.setHostUuid(request.getUuid());
         msg.setAction(MemoryBackendPreparationRules.ACTION);
         msg.setPreparation(request.toPreparation());
+        msg.setJobUuid(job.getUuid());
         msg.setAccountUuid(job.getAccountUuid());
         msg.setUserUuid(request.getSession() == null ? null : request.getSession().getUserUuid());
         bus.makeLocalServiceId(msg, MemoryOptimizationManager.SERVICE_ID);

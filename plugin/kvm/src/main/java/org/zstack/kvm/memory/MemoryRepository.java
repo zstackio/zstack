@@ -8,6 +8,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigCanonicalEvents;
+import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.vm.VmInstanceVO;
@@ -4520,6 +4521,78 @@ public class MemoryRepository {
                     + " and not exists (select t.uuid from MemoryTaskVO t where t.hostUuid = s.hostUuid and " + unfinished + ")"
                     + " and not exists (select m.vmUuid from MemoryMigrationVO m where m.status <> 'Released'"
                     + " and (m.sourceHostUuid = s.hostUuid or m.targetHostUuid = s.hostUuid))").executeUpdate();
+            return null;
+        });
+    }
+
+    /** Recompute each Host's public state with the GetMemoryStates projection; a Host without state has none. */
+    public void refreshHostStates(Collection<String> hosts, long now) {
+        for (String host : new LinkedHashSet<>(hosts)) {
+            List<MemoryStateVO> states = allStates(Collections.singletonList(host));
+            if (states.isEmpty()) {
+                transaction(em -> {
+                    HostMemoryStateVO stale = em.find(HostMemoryStateVO.class, host);
+                    if (stale != null) { em.remove(stale); }
+                    return null;
+                });
+                continue;
+            }
+            MemoryStateVO state = states.get(0);
+            MemoryStateInventory projected = MemoryMetricsPresentation.inventory(state, null, now,
+                    canResumeControl(host, state.getControlOperationUuid()),
+                    canReconcileRejectedResume(host, state.getControlOperationUuid()),
+                    uncertainRecoveryRequest(host));
+            transaction(em -> {
+                HostMemoryStateVO row = em.find(HostMemoryStateVO.class, host);
+                boolean created = row == null;
+                if (created) { row = new HostMemoryStateVO(); row.setHostUuid(host); }
+                row.setStatus(projected.getStatus());
+                row.setFeatureState(projected.getFeatureState() == null ? "Unknown" : projected.getFeatureState());
+                row.setReason(trim(projected.getReason()));
+                row.setCapabilities(projected.getCapabilities());
+                row.setAllowedActions(JSONObjectUtil.toJsonString(projected.getAllowedActions()));
+                row.setUncertainRecovery(projected.getUncertainRecovery() == null ? null
+                        : JSONObjectUtil.toJsonString(projected.getUncertainRecovery()));
+                row.setLastObservedAt(state.getLastSampleTime());
+                if (row.getActiveJobUuid() != null && !longJobUnfinished(em, row.getActiveJobUuid())) {
+                    row.setActiveJobUuid(null);
+                }
+                if (created) { em.persist(row); }
+                return null;
+            });
+        }
+    }
+
+    /** A LongJob failed by a management node takeover never reaches the Host step that clears it. */
+    private boolean longJobUnfinished(EntityManager em, String job) {
+        List<LongJobState> states = em.createQuery("select j.state from LongJobVO j where j.uuid = :job",
+                LongJobState.class).setParameter("job", job).getResultList();
+        return !states.isEmpty() && !EnumSet.of(LongJobState.Succeeded, LongJobState.Failed, LongJobState.Canceled)
+                .contains(states.get(0));
+    }
+
+    /** Hosts with internal or public state, so a full refresh also removes rows of Hosts that lost state. */
+    public List<String> hostsWithState() {
+        return transaction(em -> {
+            Set<String> hosts = new LinkedHashSet<>(em.createQuery(
+                    "select s.hostUuid from MemoryStateVO s", String.class).getResultList());
+            hosts.addAll(em.createQuery("select h.hostUuid from HostMemoryStateVO h", String.class).getResultList());
+            return new ArrayList<>(hosts);
+        });
+    }
+
+    /** Records the LongJob operating on a Host; clearing applies only to the job that set it. */
+    public void setActiveJob(String host, String job, String previous) {
+        transaction(em -> {
+            HostMemoryStateVO row = em.find(HostMemoryStateVO.class, host);
+            if (row == null) {
+                if (job == null) { return null; }
+                row = new HostMemoryStateVO(); row.setHostUuid(host);
+                row.setStatus("Unknown"); row.setFeatureState("Unknown"); row.setActiveJobUuid(job);
+                em.persist(row);
+                return null;
+            }
+            if (job != null || Objects.equals(previous, row.getActiveJobUuid())) { row.setActiveJobUuid(job); }
             return null;
         });
     }

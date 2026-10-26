@@ -33,6 +33,7 @@ public class RecoverHostMemoryOptimizationLongJob implements LongJob {
         msg.setAction(MemoryUncertainRecoveryRules.ACTION);
         msg.setExpectedControlOperationUuid(request.getExpectedControlOperationUuid());
         msg.setRecovery(request.toRecovery());
+        msg.setJobUuid(job.getUuid());
         msg.setAccountUuid(job.getAccountUuid());
         msg.setUserUuid(request.getSession() == null ? null : request.getSession().getUserUuid());
         bus.makeLocalServiceId(msg, MemoryOptimizationManager.SERVICE_ID);

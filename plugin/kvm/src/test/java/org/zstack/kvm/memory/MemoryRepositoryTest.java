@@ -6,6 +6,8 @@ import org.hibernate.cfg.Configuration;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.zstack.header.longjob.LongJobState;
+import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.host.HostStatus;
 import javax.persistence.*;
@@ -88,6 +90,7 @@ public class MemoryRepositoryTest {
                 .addAnnotatedClass(MemoryTaskFailureOutboxVO.class)
                 .addAnnotatedClass(MemoryMigrationVO.class)
                 .addAnnotatedClass(MemoryStateVO.class)
+                .addAnnotatedClass(HostMemoryStateVO.class).addAnnotatedClass(LongJobVO.class)
                 .addAnnotatedClass(TestHost.class).addAnnotatedClass(TestVm.class).addAnnotatedClass(TestCluster.class)
                 .addAnnotatedClass(TestResource.class).addAnnotatedClass(ResourceVO.class)
                 .addAnnotatedClass(GlobalConfigVO.class).addAnnotatedClass(ResourceConfigVO.class)
@@ -5822,6 +5825,53 @@ public class MemoryRepositoryTest {
 
     private MemoryTaskVO claimChild(String parent) {
         return repository.claim("mn-recovery-test").stream().filter(t -> parent.equals(t.getParentUuid())).findFirst().get();
+    }
+
+    @Test public void hostStateProjectionStoresThePublicStateForQueries() {
+        long now = System.currentTimeMillis();
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setActiveTaskUuid(null); state.setLastSampleTime(now - 1000);
+            state.setPolicyPlanStatus("Blocked"); state.setReason("NATIVE_POOL_UNQUALIFIED");
+            return null;
+        });
+
+        repository.refreshHostStates(Collections.singletonList("host1"), now);
+
+        HostMemoryStateVO stored = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        MemoryStateInventory expected = MemoryMetricsPresentation.inventory(host1State(), null, now,
+                repository.canResumeControl("host1", host1State().getControlOperationUuid()),
+                repository.canReconcileRejectedResume("host1", host1State().getControlOperationUuid()),
+                repository.uncertainRecoveryRequest("host1"));
+        assertEquals("Blocked", stored.getStatus());
+        assertEquals(expected.getStatus(), stored.getStatus());
+        assertEquals(expected.getFeatureState(), stored.getFeatureState());
+        assertEquals(expected.getReason(), stored.getReason());
+        assertEquals(org.zstack.utils.gson.JSONObjectUtil.toJsonString(expected.getAllowedActions()), stored.getAllowedActions());
+        assertEquals(Long.valueOf(now - 1000), stored.getLastObservedAt());
+
+        repository.transaction(em -> {
+            em.createNativeQuery("insert into ResourceVO (uuid, resourceType) values ('job1', 'LongJobVO')").executeUpdate();
+            em.createNativeQuery("insert into LongJobVO (uuid, state, userSuspended) values ('job1', 'Running', false)")
+                    .executeUpdate();
+            return null;
+        });
+        repository.setActiveJob("host1", "job1", null);
+        repository.refreshHostStates(Collections.singletonList("host1"), now);
+        assertEquals("a refresh keeps the running LongJob", "job1",
+                repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")).getActiveJobUuid());
+        repository.setActiveJob("host1", null, "job1");
+        assertNull(repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")).getActiveJobUuid());
+        repository.setActiveJob("host1", "job1", null);
+        repository.transaction(em -> { em.find(LongJobVO.class, "job1").setState(LongJobState.Failed); return null; });
+        repository.refreshHostStates(Collections.singletonList("host1"), now);
+        assertNull("a LongJob failed by a takeover no longer shows as active",
+                repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")).getActiveJobUuid());
+
+        repository.transaction(em -> { em.remove(em.find(MemoryStateVO.class, "host1")); return null; });
+        repository.refreshHostStates(Collections.singletonList("host1"), now);
+        assertNull("a Host without state has no public state",
+                repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")));
     }
 
     private MemoryStateVO host1State() { return repository.states(Collections.singletonList("host1"), 0, 1).get(0); }

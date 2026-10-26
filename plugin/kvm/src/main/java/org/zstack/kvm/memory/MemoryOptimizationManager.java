@@ -10,6 +10,9 @@ import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigInitExtensionPoint;
 import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
+import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.EntityEvent;
+import org.zstack.core.db.EntityLifeCycleCallback;
 import org.zstack.core.db.Q;
 import org.zstack.core.progress.ProgressReportService;
 import org.zstack.core.thread.ChainTask;
@@ -68,6 +71,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     @Autowired private CloudBus bus;
     @Autowired private EventFacade evtf;
     @Autowired private ThreadFacade thdf;
+    @Autowired private DatabaseFacade dbf;
+    private final Set<String> dirtyHostStates = ConcurrentHashMap.newKeySet();
+    private volatile long lastHostStateRefresh;
     @Autowired private PluginRegistry pluginRgty;
     @Autowired private MemoryRepository repository;
     @Autowired private AccountManager accountManager;
@@ -166,6 +172,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     @Override public void managementNodeReady() {
+        EntityLifeCycleCallback dirty = (event, entity) -> dirtyHostStates.add(((MemoryStateVO) entity).getHostUuid());
+        dbf.installEntityLifeCycleCallback(MemoryStateVO.class, EntityEvent.POST_PERSIST, dirty);
+        dbf.installEntityLifeCycleCallback(MemoryStateVO.class, EntityEvent.POST_UPDATE, dirty);
         repository.initialize();
         repository.expireUnconfirmed(Platform.getManagementServerId());
         poller = thdf.submitPeriodicTask(new PeriodicTask() {
@@ -265,7 +274,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             String entity = node instanceof ASTNode.QueryTarget ? ((ASTNode.QueryTarget) node).getEntity()
                     : node instanceof ASTNode.SubQueryTarget ? ((ASTNode.SubQueryTarget) node).getEntity()
                     : node instanceof ASTNode.RestrictExpr ? ((ASTNode.RestrictExpr) node).getEntity() : null;
-            if ("MemoryState".equalsIgnoreCase(entity)) {
+            if ("MemoryState".equalsIgnoreCase(entity) || "HostMemoryState".equalsIgnoreCase(entity)) {
                 APIGetMemoryStatesMsg request = new APIGetMemoryStatesMsg();
                 request.setSession(ZQLContext.getAPISession());
                 try {
@@ -383,7 +392,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         List<String> hosts = msg.getHostUuid() != null ? Collections.singletonList(msg.getHostUuid()) : members;
         Map<String, String> results = new LinkedHashMap<>();
         reply.setResults(results);
-        new While<>(hosts).each((host, next) -> hostOperation(host, msg,
+        new While<>(hosts).each((host, next) -> hostOperation(host, msg, msg.getJobUuid(),
                 () -> hostActionRequest(host, msg.getAction(), msg.getAccountUuid(), msg.getUserUuid()), outcome -> {
             results.put(host, outcome);
             reportClusterProgress(results.size(), hosts.size());
@@ -402,7 +411,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         requireLicense();
         String host = msg.getHostUuid();
         repository.targets("Host", host);
-        hostOperation(host, msg, () -> {
+        hostOperation(host, msg, msg.getJobUuid(), () -> {
             APIUpdateMemoryPolicyMsg request = hostActionRequest(host, msg.getAction(),
                     msg.getAccountUuid(), msg.getUserUuid());
             if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
@@ -426,8 +435,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         bus.reply(msg, reply);
     }
 
-    private void hostOperation(String host, Message context, java.util.function.Supplier<APIUpdateMemoryPolicyMsg> request,
-                               Consumer<String> outcome) {
+    private void hostOperation(String host, Message context, String job,
+                               java.util.function.Supplier<APIUpdateMemoryPolicyMsg> request, Consumer<String> outcome) {
         thdf.chainSubmit(new ChainTask(context) {
             @Override public String getSyncSignature() { return "memory-host-operation-" + host; }
             @Override public String getName() { return getSyncSignature(); }
@@ -435,8 +444,12 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 AtomicBoolean finished = new AtomicBoolean();
                 Consumer<String> finish = result -> {
                     if (!finished.compareAndSet(false, true)) { return; }
-                    try { outcome.accept(result); } finally { chain.next(); }
+                    try {
+                        if (job != null) { markActiveJob(host, null, job); }
+                        outcome.accept(result);
+                    } finally { chain.next(); }
                 };
+                if (job != null) { markActiveJob(host, job, null); }
                 Consumer<MemoryOperationException> failed = error -> finish.accept(error.getCode() + ": " + error.getMessage());
                 try {
                     submitHostAction(request.get(), task -> awaitTask(task.getUuid(), finish), failed);
@@ -463,6 +476,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         session.setAccountUuid(accountUuid); session.setUserUuid(userUuid);
         msg.setSession(session);
         return msg;
+    }
+
+    private void markActiveJob(String host, String job, String previous) {
+        try {
+            repository.setActiveJob(host, job, previous);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("unable to record the memory LongJob of Host[%s]; it is display-only", host), e);
+        }
     }
 
     private static final List<String> IN_FLIGHT = Arrays.asList("Queued", "Applying", "Draining");
@@ -808,9 +829,29 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (System.currentTimeMillis() - lastObservation >= 30000) {
                 lastObservation = System.currentTimeMillis(); observeRuntime();
             }
+            refreshHostStates();
         } catch (Exception e) {
             logger.warn("Memory optimization task polling failed; no task is assumed successful", e);
         } finally { ticking.set(false); }
+    }
+
+    /**
+     * The public Host state follows committed MemoryStateVO changes within a tick. Every 30 seconds all
+     * Hosts are recomputed, so freshness changes and other management nodes' writes are reflected too.
+     */
+    private void refreshHostStates() {
+        long now = System.currentTimeMillis();
+        boolean full = now - lastHostStateRefresh >= 30000;
+        List<String> dirty = new ArrayList<>(dirtyHostStates);
+        dirtyHostStates.removeAll(dirty);
+        try {
+            List<String> hosts = full ? repository.hostsWithState() : dirty;
+            if (!hosts.isEmpty()) { repository.refreshHostStates(hosts, now); }
+            if (full) { lastHostStateRefresh = now; }
+        } catch (RuntimeException e) {
+            dirtyHostStates.addAll(dirty);
+            throw e;
+        }
     }
 
     private void dispatchFailureNotifications(String owner) {

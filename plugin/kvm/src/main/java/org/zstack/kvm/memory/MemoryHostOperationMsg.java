@@ -9,6 +9,7 @@ public class MemoryHostOperationMsg extends NeedReplyMessage {
     private MemoryBackendPreparation preparation;
     private MemoryUncertainRecovery recovery;
     private String expectedControlOperationUuid;
+    private String jobUuid;
     private String accountUuid;
     private String userUuid;
 
@@ -22,6 +23,8 @@ public class MemoryHostOperationMsg extends NeedReplyMessage {
     public void setRecovery(MemoryUncertainRecovery value) { recovery = value; }
     public String getExpectedControlOperationUuid() { return expectedControlOperationUuid; }
     public void setExpectedControlOperationUuid(String value) { expectedControlOperationUuid = value; }
+    public String getJobUuid() { return jobUuid; }
+    public void setJobUuid(String value) { jobUuid = value; }
     public String getAccountUuid() { return accountUuid; }
     public void setAccountUuid(String value) { accountUuid = value; }
     public String getUserUuid() { return userUuid; }
