@@ -17,6 +17,7 @@ import org.zstack.core.db.SQLBatch;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
@@ -27,6 +28,8 @@ import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmCanonicalEvents;
@@ -53,6 +56,7 @@ import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
+import org.zstack.kvm.vmfiles.VmHostFileDeletionGC;
 import org.zstack.kvm.vmfiles.message.BackupVmHostFileMsg;
 import org.zstack.kvm.vmfiles.message.BackupVmHostFileOnHypervisorMsg;
 import org.zstack.kvm.vmfiles.message.BackupVmHostFileOnHypervisorReply;
@@ -1112,8 +1116,66 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
 
     private void handle(VmHostFileDeletionMsg msg) {
         VmHostFileDeletionReply reply = new VmHostFileDeletionReply();
-        databaseFacade.removeByPrimaryKey(msg.getUuid(), VmHostFileVO.class);
-        bus.reply(msg, reply);
+        VmHostFileVO file = databaseFacade.findByUuid(msg.getUuid(), VmHostFileVO.class);
+        if (file == null) {
+            bus.reply(msg, reply);
+            return;
+        }
+
+        deleteVmHostFileOnHost(file.getHostUuid(), file.getType(), file.getPath(), new Completion(msg) {
+            @Override
+            public void success() {
+                databaseFacade.removeByPrimaryKey(file.getUuid(), VmHostFileVO.class);
+                bus.reply(msg, reply);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                if (!msg.isForceDelete()) {
+                    reply.setError(errorCode);
+                    bus.reply(msg, reply);
+                    return;
+                }
+
+                logger.warn(String.format("failed to delete %s host file[path:%s] of VM[uuid:%s] on host[uuid:%s], " +
+                                "submit GC to delete it later: %s", file.getType(), file.getPath(),
+                        file.getVmInstanceUuid(), file.getHostUuid(), errorCode.getReadableDetails()));
+                databaseFacade.removeByPrimaryKey(file.getUuid(), VmHostFileVO.class);
+                VmHostFileDeletionGC.submit(file);
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    public void deleteVmHostFileOnHost(String hostUuid, VmHostFileType type, String path, Completion completion) {
+        if (!Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).isExists()) {
+            completion.success();
+            return;
+        }
+
+        VmHostFileTO to = new VmHostFileTO();
+        to.setPath(path);
+        to.setType(type.toString());
+        to.setOperation(VmHostFileOperation.Delete.toString());
+        KVMAgentCommands.WriteVmHostFileContentCmd cmd = new KVMAgentCommands.WriteVmHostFileContentCmd();
+        cmd.setHostFiles(list(to));
+
+        new KvmCommandSender(hostUuid).send(cmd, WRITE_VM_HOST_FILE_PATH, wrapper -> {
+            KVMAgentCommands.WriteVmHostFileContentResponse rsp = wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
+            return rsp.isSuccess() ? null :
+                    operr(ORG_ZSTACK_KVM_10163, "failed to delete host file[path=%s] on host[uuid=%s]: %s",
+                            path, hostUuid, rsp.getError());
+        }, new ReturnValueCompletion<KvmResponseWrapper>(completion) {
+            @Override
+            public void success(KvmResponseWrapper wrapper) {
+                completion.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private void handle(VmHostBackupFileDeletionMsg msg) {
