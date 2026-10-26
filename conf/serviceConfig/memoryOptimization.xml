@@ -15,5 +15,8 @@
     <message><name>org.zstack.kvm.memory.APIDrainMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIPrepareHostMemoryWritebackBackendMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIRecoverHostMemoryOptimizationMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APIQueryHostMemoryStateMsg</name></message>
+    <message>
+        <name>org.zstack.kvm.memory.APIQueryHostMemoryStateMsg</name>
+        <serviceId>query</serviceId>
+    </message>
 </service>
