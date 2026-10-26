@@ -2,6 +2,7 @@ package org.zstack.network.securitygroup;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
@@ -14,15 +15,22 @@ import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.identity.AccountVO;
+import org.zstack.header.identity.AccountVO_;
 import org.zstack.header.identity.AccountConstant;
 import org.zstack.header.identity.AccountResourceRefVO;
 import org.zstack.header.identity.AccountResourceRefVO_;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
+import org.zstack.header.identity.APIRevokeResourceSharingMsg;
+import org.zstack.header.identity.APIShareResourceMsg;
 import org.zstack.identity.Account;
+import org.zstack.identity.AccountManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO;
 import org.zstack.header.network.service.NetworkServiceL3NetworkRefVO_;
+import org.zstack.header.vm.APIAttachL3NetworkToVmMsg;
+import org.zstack.header.vm.VmInstanceConstant;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
 import org.zstack.header.vm.VmNicVO_;
@@ -38,6 +46,8 @@ import org.apache.commons.lang.StringUtils;
 import javax.persistence.TypedQuery;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.Collections;
 import java.util.Arrays;
 
 import static java.util.Arrays.asList;
@@ -62,6 +72,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     private DatabaseFacade dbf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private SecurityGroupPermissionChecker permissionChecker;
+    @Autowired
+    private AccountManager acntMgr;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof AddSecurityGroupRuleMessage) {
@@ -81,6 +95,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     public List<Class> getMessageClassToIntercept() {
         List<Class> ret = new ArrayList<>();
         ret.add(APIChangeResourceOwnerMsg.class);
+        ret.add(APIAttachL3NetworkToVmMsg.class);
+        ret.add(APIShareResourceMsg.class);
+        ret.add(APIRevokeResourceSharingMsg.class);
         return ret;
     }
 
@@ -91,7 +108,19 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APIAddSecurityGroupRuleMsg) {
+        if (msg instanceof APISetSecurityGroupSharingMsg) {
+            validate((APISetSecurityGroupSharingMsg) msg);
+        } else if (msg instanceof APIShareResourceMsg) {
+            validate((APIShareResourceMsg) msg);
+        } else if (msg instanceof APIRevokeResourceSharingMsg) {
+            validate((APIRevokeResourceSharingMsg) msg);
+        } else if (msg instanceof APIGetCandidateVmNicForSecurityGroupMsg) {
+            validate((APIGetCandidateVmNicForSecurityGroupMsg) msg);
+        } else if (msg instanceof APIUpdateSecurityGroupMsg) {
+            validate((APIUpdateSecurityGroupMsg) msg);
+        } else if (msg instanceof APIChangeSecurityGroupStateMsg) {
+            validate((APIChangeSecurityGroupStateMsg) msg);
+        } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             validate((APIAddSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIAddVmNicToSecurityGroupMsg) {
             validate((APIAddVmNicToSecurityGroupMsg) msg);
@@ -105,7 +134,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIDeleteVmNicFromSecurityGroupMsg) msg);
         } else if (msg instanceof APIDetachSecurityGroupFromL3NetworkMsg) {
             validate((APIDetachSecurityGroupFromL3NetworkMsg) msg);
-        } if (msg instanceof APICreateSecurityGroupMsg) {
+        } else if (msg instanceof APICreateSecurityGroupMsg) {
             validate((APICreateSecurityGroupMsg) msg);
         } else if (msg instanceof APIChangeSecurityGroupRuleMsg) {
             validate((APIChangeSecurityGroupRuleMsg) msg);
@@ -121,11 +150,74 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             validate((APIValidateSecurityGroupRuleMsg) msg);
         } else if (msg instanceof APIChangeResourceOwnerMsg) {
             validate((APIChangeResourceOwnerMsg) msg);
+        } else if (msg instanceof APIAttachL3NetworkToVmMsg) {
+            validate((APIAttachL3NetworkToVmMsg) msg);
+        }
+        setServiceId(msg);
+        return msg;
+    }
+
+    private void validate(APIShareResourceMsg msg) {
+        if (Q.New(SecurityGroupVO.class).in(SecurityGroupVO_.uuid, msg.getResourceUuids()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10151,
+                    "cannot change security group sharing through %s; use APISetSecurityGroupSharingMsg instead", msg.getClass().getSimpleName()));
+        }
+    }
+
+    private void validate(APIRevokeResourceSharingMsg msg) {
+        if (Q.New(SecurityGroupVO.class).in(SecurityGroupVO_.uuid, msg.getResourceUuids()).isExists()) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10151,
+                    "cannot change security group sharing through %s; use APISetSecurityGroupSharingMsg instead", msg.getClass().getSimpleName()));
+        }
+    }
+
+    private void validate(APIGetCandidateVmNicForSecurityGroupMsg msg) {
+        permissionChecker.checkUse(msg.getSession().getAccountUuid(), Collections.singletonList(msg.getSecurityGroupUuid()));
+    }
+
+    private void validate(APIUpdateSecurityGroupMsg msg) {
+        permissionChecker.checkManage(msg.getSession(), msg.getSecurityGroupUuid());
+    }
+
+    private void validate(APIChangeSecurityGroupStateMsg msg) {
+        permissionChecker.checkManage(msg.getSession(), msg.getUuid());
+    }
+
+    private void validate(APIAttachL3NetworkToVmMsg msg) {
+        VmInstanceVO vm = dbf.findByUuid(msg.getVmInstanceUuid(), VmInstanceVO.class);
+        if (vm == null || !VmInstanceConstant.USER_VM_TYPE.equals(vm.getType())
+                || !VmInstanceConstant.KVM_HYPERVISOR_TYPE.equals(vm.getHypervisorType())) {
+            return;
         }
 
-        setServiceId(msg);
+        List<String> systemTags = new ArrayList<>(VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(vm.getUuid()));
+        if (msg.getSystemTags() != null) {
+            systemTags.addAll(msg.getSystemTags());
+        }
+        List<String> securityGroupUuids = SecurityGroupVmInstanceExtension.getSecurityGroupsByL3(systemTags)
+                .values().stream().flatMap(List::stream).distinct().collect(Collectors.toList());
+        if (!securityGroupUuids.isEmpty()) {
+            permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(vm.getUuid()), securityGroupUuids);
+        }
+    }
 
-        return msg;
+    private void validate(APISetSecurityGroupSharingMsg msg) {
+        permissionChecker.checkManage(msg.getSession(), msg.getSecurityGroupUuid());
+        permissionChecker.checkShareable(msg.getSecurityGroupUuid());
+        List<String> accounts = msg.getAccountUuids() == null ? Collections.emptyList() : new ArrayList<>(new LinkedHashSet<>(msg.getAccountUuids()));
+        if (SecurityGroupConstant.SHARING_MODE_SPECIFIED.equals(msg.getMode())) {
+            if (accounts.isEmpty()) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10139, "accountUuids cannot be empty for Specified sharing"));
+            }
+            List<String> existing = Q.New(AccountVO.class).select(AccountVO_.uuid).in(AccountVO_.uuid, accounts).listValues();
+            if (!existing.containsAll(accounts)) {
+                accounts.removeAll(existing);
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10147, "accounts[uuids:%s] do not exist", accounts));
+            }
+        } else if (!accounts.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10148, "accountUuids must be empty for sharing mode[%s]", msg.getMode()));
+        }
+        msg.setAccountUuids(accounts);
     }
 
     private String normalizeIpOrPort(String value) {
@@ -138,16 +230,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             return;
         }
 
-        if (VmInstanceVO.class.getSimpleName().equals(ref.getResourceType())) {
-            List<String> nics = SQL.New("select sgRef.vmNicUuid from VmInstanceVO vm, VmNicVO nic, VmNicSecurityGroupRefVO sgRef" +
-                    " where vm.uuid = :vmUuid" +
-                    " and nic.vmInstanceUuid = vm.uuid" +
-                    " and sgRef.vmNicUuid = nic.uuid", String.class)
-                    .param("vmUuid", ref.getResourceUuid())
-                    .list();
-            if (!nics.isEmpty()) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10000, "could not change resource owner, because the resource[uuid:%s, type:VmInstance] has already attached security group", msg.getResourceUuid()));
-            }
+        if (SecurityGroupVO.class.getSimpleName().equals(ref.getResourceType()) && permissionChecker.isShared(msg.getResourceUuid())) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10144,
+                    "cannot change owner of shared security group[uuid:%s], revoke sharing first", msg.getResourceUuid()));
         }
     }
 
@@ -307,8 +392,10 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         Map<Integer, String> aoMap = new HashMap<Integer, String>();
-        List<Integer> adminIntegers = new ArrayList<>();
         final String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
+        List<String> requestedUuids = msg.getRefs().stream().map(APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO::getSecurityGroupUuid).collect(Collectors.toList());
+        msg.setRequestedSecurityGroupUuids(new ArrayList<>(requestedUuids));
+        permissionChecker.checkBindingUse(msg.getSession(), vmAccountUuid, requestedUuids);
         for (APISetVmNicSecurityGroupMsg.VmNicSecurityGroupRefAO ao : msg.getRefs()) {
 
             if (!Q.New(SecurityGroupVO.class).eq(SecurityGroupVO_.uuid, ao.getSecurityGroupUuid()).isExists()) {
@@ -331,30 +418,13 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             if (!refs.stream().anyMatch(r -> r.getSecurityGroupUuid().equals(ao.getSecurityGroupUuid()))) {
                 checkIfL3NetworkSupportSecurityGroup(asList(msg.getVmNicUuid()));
             }
-
-            String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ao.getSecurityGroupUuid());
-            if (!AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !AccountConstant.isAdminPermission(vmAccountUuid) && !sgOwnerAccountUuid.equals(vmAccountUuid)) {
-                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10021, "could no set vm nic security group, because security group[uuid:%s] is not owned by account[uuid:%s] or admin", ao.getSecurityGroupUuid(), vmAccountUuid));
-            }
-            if (AccountConstant.isAdminPermission(sgOwnerAccountUuid)) {
-                adminIntegers.add(priority);
-            }
         }
-        if (!aoMap.isEmpty()) {
-            Integer[] priorities = aoMap.keySet().toArray(new Integer[aoMap.size()]);
-            Arrays.sort(priorities);
-        }
-
 
         if (!AccountConstant.isAdminPermission(msg.getSession())) {
-            List<VmNicSecurityGroupRefVO> userRefs = new ArrayList<>();
             List<VmNicSecurityGroupRefVO> otherRefs = new ArrayList<>();
 
             for (VmNicSecurityGroupRefVO ref : refs) {
-                String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(ref.getSecurityGroupUuid());
-                if (sgOwnerAccountUuid.equals(vmAccountUuid)) {
-                    userRefs.add(ref);
-                } else {
+                if (permissionChecker.isHiddenAdminSecurityGroup(vmAccountUuid, ref.getSecurityGroupUuid())) {
                     otherRefs.add(ref);
                 }
             }
@@ -390,10 +460,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10027, "could no change security group rule state, because security group[uuid:%s] not found", msg.getSecurityGroupUuid()));
         }
 
+        permissionChecker.checkManage(msg.getSession(), msg.getSecurityGroupUuid());
         List<String> toChange = new ArrayList<>();
         List<SecurityGroupRuleVO> rvos = Q.New(SecurityGroupRuleVO.class).eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid()).in(SecurityGroupRuleVO_.uuid, msg.getRuleUuids()).list();
         msg.getRuleUuids().stream().forEach(r -> {
-            SecurityGroupRuleVO vo = rvos.stream().filter(rvo -> rvo.getUuid().equals(r)).findAny().get();
+            SecurityGroupRuleVO vo = rvos.stream().filter(rvo -> rvo.getUuid().equals(r)).findAny().orElse(null);
             if (vo == null) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10028, "could no change security group rule state, because security group rule[uuid:%s] not found", r));
             }
@@ -441,6 +512,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private void validate(APIUpdateSecurityGroupRulePriorityMsg msg) {
+        permissionChecker.checkManage(msg.getSession(), msg.getSecurityGroupUuid());
         if (!SecurityGroupRuleType.isValid(msg.getType())) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10035, "could not update security group rule priority, because invalid type[%s]", msg.getType()));
         }
@@ -492,6 +564,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         SecurityGroupRuleVO vo = Q.New(SecurityGroupRuleVO.class).eq((SecurityGroupRuleVO_.uuid), msg.getUuid()).find();
         if (vo == null) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10044, "could not change security group rule, because security group rule uuid[%s] is not exist", msg.getUuid()));
+        }
+
+        permissionChecker.checkManage(msg.getSession(), vo.getSecurityGroupUuid());
+        if (StringUtils.isNotEmpty(msg.getRemoteSecurityGroupUuid())) {
+            permissionChecker.checkUse(acntMgr.getOwnerAccountUuidOfResource(vo.getSecurityGroupUuid()), Collections.singletonList(msg.getRemoteSecurityGroupUuid()));
         }
 
         if (vo.getPriority() == 0) {
@@ -812,6 +889,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private void validate(APIDeleteVmNicFromSecurityGroupMsg msg) {
+        for (VmNicVO nic : Q.New(VmNicVO.class).in(VmNicVO_.uuid, msg.getVmNicUuids()).<VmNicVO>list()) {
+            permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(nic.getVmInstanceUuid()), Collections.singletonList(msg.getSecurityGroupUuid()));
+        }
         SimpleQuery<VmNicSecurityGroupRefVO> q = dbf.createQuery(VmNicSecurityGroupRefVO.class);
         q.select(VmNicSecurityGroupRefVO_.vmNicUuid);
         q.add(VmNicSecurityGroupRefVO_.vmNicUuid, Op.IN, msg.getVmNicUuids());
@@ -840,6 +920,7 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
 
         List<SecurityGroupRuleVO> vos = Q.New(SecurityGroupRuleVO.class).in(SecurityGroupRuleVO_.uuid, uuids).list();
         String sguuid = vos.get(0).getSecurityGroupUuid();
+        permissionChecker.checkManage(msg.getSession(), sguuid);
         vos.stream().forEach(vo -> {
             if (!sguuid.equals(vo.getSecurityGroupUuid())) {
                 throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10086, "can't delete rules of different security group"));
@@ -858,6 +939,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             bus.publish(evt);
             throw new StopRoutingException();
         }
+        permissionChecker.checkManage(msg.getSession(), msg.getUuid());
+        permissionChecker.checkDelete(msg.getUuid());
     }
 
     private void validate(APIAttachSecurityGroupToL3NetworkMsg msg) {
@@ -878,7 +961,8 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
     }
 
     private void validate(APIAddVmNicToSecurityGroupMsg msg) {
-        List<String> uuids = Q.New(VmNicVO.class).select(VmNicVO_.uuid).in(VmNicVO_.uuid, msg.getVmNicUuids()).listValues();
+        List<VmNicVO> nics = Q.New(VmNicVO.class).in(VmNicVO_.uuid, msg.getVmNicUuids()).list();
+        List<String> uuids = nics.stream().map(VmNicVO::getUuid).collect(Collectors.toList());
         if (!uuids.containsAll(msg.getVmNicUuids())) {
             msg.getVmNicUuids().removeAll(uuids);
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_NETWORK_SECURITYGROUP_10090, SysErrors.RESOURCE_NOT_FOUND,
@@ -904,6 +988,9 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
             }
         }
 
+        for (VmNicVO nic : nics) {
+            permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(nic.getVmInstanceUuid()), Collections.singletonList(msg.getSecurityGroupUuid()));
+        }
         checkIfL3NetworkSupportSecurityGroup(uuids);
 
         msg.setVmNicUuids(uuids);
@@ -1023,6 +1110,11 @@ public class SecurityGroupApiInterceptor implements ApiMessageInterceptor, Globa
         }
 
         List<APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO> newRules = msg.getRules();
+
+        permissionChecker.checkManage(msg.getSession(), sgUuid);
+        List<String> remoteUuids = newRules.stream().map(APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO::getRemoteSecurityGroupUuid)
+                .filter(java.util.Objects::nonNull).distinct().collect(Collectors.toList());
+        permissionChecker.checkUse(acntMgr.getOwnerAccountUuidOfResource(sgUuid), remoteUuids);
 
         // Basic check
         for (APIAddSecurityGroupRuleMsg.SecurityGroupRuleAO ao : newRules) {

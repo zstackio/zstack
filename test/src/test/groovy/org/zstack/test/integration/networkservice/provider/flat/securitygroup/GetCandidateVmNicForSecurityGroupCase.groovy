@@ -80,7 +80,11 @@ class GetCandidateVmNicForSecurityGroupCase extends SubCase {
         action.sessionId = session.uuid
 
         def result = action.call()
-        assert result.value.inventories.size() == 0
+
+        // The SDK wraps a synchronous HTTP failure and keeps the API error in details.
+        assert result.error?.code == "sdk.1000"
+        def error = JSONObjectUtil.toObject(result.error.details, Map).error
+        assert error.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10133" : "unshared admin group must reject tenant candidate queries: actual=${error}"
     }
 
     @Override

@@ -5,6 +5,8 @@ import org.zstack.header.identity.Action;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.APINoSee;
+import org.zstack.header.message.NoJsonSchema;
 import org.zstack.header.vm.VmNicVO;
 
 import java.util.List;
@@ -23,6 +25,10 @@ public class APISetVmNicSecurityGroupMsg extends APIMessage implements VmNicSecu
 
     @APIParam(required = true)
     private List<VmNicSecurityGroupRefAO> refs;
+
+    @APINoSee
+    @NoJsonSchema
+    private List<String> requestedSecurityGroupUuids;
 
     public static class VmNicSecurityGroupRefAO {
         @APIParam(resourceType = SecurityGroupVO.class, required = true, nonempty = true)
@@ -63,6 +69,14 @@ public class APISetVmNicSecurityGroupMsg extends APIMessage implements VmNicSecu
 
     public void setRefs(List<VmNicSecurityGroupRefAO> refs) {
         this.refs = refs;
+    }
+
+    public List<String> getRequestedSecurityGroupUuids() {
+        return requestedSecurityGroupUuids;
+    }
+
+    public void setRequestedSecurityGroupUuids(List<String> requestedSecurityGroupUuids) {
+        this.requestedSecurityGroupUuids = requestedSecurityGroupUuids;
     }
 
     public static APISetVmNicSecurityGroupMsg __example__() {

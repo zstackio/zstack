@@ -12,6 +12,11 @@ import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO
 import org.zstack.network.securitygroup.VmNicSecurityGroupRefVO_
 import org.zstack.network.securitygroup.VmNicSecurityPolicyVO
 import org.zstack.network.securitygroup.SecurityGroupMembersTO
+import org.zstack.sdk.AddVmNicToSecurityGroupAction
+import org.zstack.sdk.SetVmNicSecurityGroupAction
+import org.zstack.sdk.DeleteVmNicFromSecurityGroupAction
+import org.zstack.sdk.AccountInventory
+import org.zstack.sdk.SessionInventory
 import org.zstack.sdk.L3NetworkInventory
 import org.zstack.sdk.SecurityGroupInventory
 import org.zstack.sdk.SecurityGroupRuleInventory
@@ -31,6 +36,10 @@ class SetVmNicSecurityGroupCase extends SubCase {
     L3NetworkInventory l3Net
     VmInstanceInventory vm1, vm2, vm3, vm4
     SecurityGroupInventory sg1, sg2, sg3
+    AccountInventory accountA, accountB
+    SessionInventory sessionA
+    SecurityGroupInventory tenantGroup, hiddenGroupOne, hiddenGroupTwo
+    String tenantNicUuid
 
     void testVmNicAttachSecurityGroup() {
         attachSecurityGroupToL3Network {
@@ -244,6 +253,138 @@ class SetVmNicSecurityGroupCase extends SubCase {
         }
     }
 
+    void testAdminManageHiddenBindings() {
+        accountA = createAccount {
+            name = "binding-account-a"
+            password = "password"
+        }
+        accountB = createAccount {
+            name = "binding-account-b"
+            password = "password"
+        }
+        sessionA = logInByAccount {
+            accountName = accountA.name
+            password = "password"
+        }
+        def sessionB = logInByAccount {
+            accountName = accountB.name
+            password = "password"
+        }
+        changeResourceOwner {
+            resourceUuid = vm1.uuid
+            accountUuid = accountA.uuid
+        }
+        tenantNicUuid = vm1.vmNics[0].uuid
+        tenantGroup = createSecurityGroup {
+            name = "tenant-binding-group"
+            sessionId = sessionA.uuid
+        }
+        def foreignGroup = createSecurityGroup {
+            name = "foreign-private-group"
+            sessionId = sessionB.uuid
+        }
+        hiddenGroupOne = createSecurityGroup { name = "admin-hidden-one" }
+        hiddenGroupTwo = createSecurityGroup { name = "admin-hidden-two" }
+
+        addVmNicToSecurityGroup {
+            securityGroupUuid = tenantGroup.uuid
+            vmNicUuids = [tenantNicUuid]
+            sessionId = sessionA.uuid
+        }
+        addVmNicToSecurityGroup {
+            securityGroupUuid = hiddenGroupOne.uuid
+            vmNicUuids = [tenantNicUuid]
+        }
+
+        assert bindingOrder() == [hiddenGroupOne.uuid, tenantGroup.uuid] : "private admin group must precede the tenant group"
+
+        setVmNicSecurityGroup {
+            vmNicUuid = tenantNicUuid
+            refs = refsFor([tenantGroup.uuid, hiddenGroupOne.uuid])
+        }
+        deleteVmNicFromSecurityGroup {
+            securityGroupUuid = hiddenGroupOne.uuid
+            vmNicUuids = [tenantNicUuid]
+        }
+
+        assert bindingOrder() == [tenantGroup.uuid] : "admin must be able to detach its private group"
+
+        def before = bindingOrder()
+        def foreignAdd = new AddVmNicToSecurityGroupAction(securityGroupUuid: foreignGroup.uuid, vmNicUuids: [tenantNicUuid], sessionId: adminSession()).call()
+
+        assert foreignAdd.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10133" : "admin must not bypass use permission for another account's group: ${foreignAdd.error}"
+
+        def foreignSet = new SetVmNicSecurityGroupAction(vmNicUuid: tenantNicUuid, refs: refsFor([tenantGroup.uuid, foreignGroup.uuid]), sessionId: adminSession()).call()
+
+        assert foreignSet.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10133" : "Set must reject another account's private group: ${foreignSet.error}"
+        assert bindingOrder() == before : "rejected Add and Set must preserve the original binding"
+
+        def forged = new AddVmNicToSecurityGroupAction(securityGroupUuid: hiddenGroupOne.uuid, vmNicUuids: [tenantNicUuid], sessionId: sessionA.uuid).call()
+
+        assert forged.error != null : "tenant must not bind a private admin group by UUID"
+        assert bindingOrder() == before : "rejected tenant binding must preserve existing groups"
+    }
+
+    void testShareHiddenGroupsThenReorder() {
+        addVmNicToSecurityGroup {
+            securityGroupUuid = hiddenGroupTwo.uuid
+            vmNicUuids = [tenantNicUuid]
+        }
+        addVmNicToSecurityGroup {
+            securityGroupUuid = hiddenGroupOne.uuid
+            vmNicUuids = [tenantNicUuid]
+        }
+
+        assert bindingOrder() == [hiddenGroupOne.uuid, hiddenGroupTwo.uuid, tenantGroup.uuid]
+
+        setSecurityGroupSharing {
+            securityGroupUuid = hiddenGroupOne.uuid
+            mode = "Specified"
+            accountUuids = [accountA.uuid]
+        }
+
+        assert bindingOrder() == [hiddenGroupOne.uuid, hiddenGroupTwo.uuid, tenantGroup.uuid] : "sharing must not reorder existing bindings"
+
+        setVmNicSecurityGroup {
+            vmNicUuid = tenantNicUuid
+            refs = refsFor([tenantGroup.uuid, hiddenGroupOne.uuid])
+            sessionId = sessionA.uuid
+        }
+
+        assert bindingOrder() == [hiddenGroupTwo.uuid, tenantGroup.uuid, hiddenGroupOne.uuid] : "tenant sorting must move the remaining hidden group to the front"
+
+        setVmNicSecurityGroup {
+            vmNicUuid = tenantNicUuid
+            refs = refsFor([tenantGroup.uuid])
+            sessionId = sessionA.uuid
+        }
+
+        assert bindingOrder() == [hiddenGroupTwo.uuid, tenantGroup.uuid] : "omitting the shared group must detach it and preserve the hidden group"
+
+        def explicitHidden = new SetVmNicSecurityGroupAction(vmNicUuid: tenantNicUuid, refs: refsFor([tenantGroup.uuid, hiddenGroupTwo.uuid]), sessionId: sessionA.uuid).call()
+
+        assert explicitHidden.error?.globalErrorCode == "ORG_ZSTACK_NETWORK_SECURITYGROUP_10133" : "tenant must not submit a hidden group for sorting: ${explicitHidden.error}"
+
+        def detachHidden = new DeleteVmNicFromSecurityGroupAction(securityGroupUuid: hiddenGroupTwo.uuid, vmNicUuids: [tenantNicUuid], sessionId: sessionA.uuid).call()
+
+        assert detachHidden.error != null : "tenant must not detach a hidden group"
+        assert bindingOrder() == [hiddenGroupTwo.uuid, tenantGroup.uuid]
+
+        setSecurityGroupSharing {
+            securityGroupUuid = hiddenGroupOne.uuid
+            mode = "None"
+        }
+    }
+
+    private List<VmNicSecurityGroupRefAO> refsFor(List<String> uuids) {
+        return uuids.withIndex().collect { String uuid, int index -> new VmNicSecurityGroupRefAO(securityGroupUuid: uuid, priority: index + 1) }
+    }
+
+    private List<String> bindingOrder() {
+        return Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, tenantNicUuid)
+                .orderBy(VmNicSecurityGroupRefVO_.priority, org.zstack.core.db.SimpleQuery.Od.ASC).list().collect { it.securityGroupUuid }
+    }
+
     @Override
     void clean() {
         env.delete()
@@ -286,5 +427,7 @@ class SetVmNicSecurityGroupCase extends SubCase {
         testVmNicAttachSecurityGroup()
         testUpdateGroupMembers()
         testSetVmNicSecurityGroupDirect()
+        testAdminManageHiddenBindings()
+        testShareHiddenGroupsThenReorder()
     }
 }

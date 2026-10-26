@@ -43,8 +43,26 @@ public class CreateVmInstanceMsg extends NeedReplyMessage implements CreateVmIns
     private Map<String, List<String>> dataVolumeSystemTagsOnIndex;
     private List<String> disableL3Networks;
     private List<String> sshKeyPairUuids;
+    private Map<String, List<String>> requestedSecurityGroupUuids;
+    private Map<String, List<String>> inheritedSecurityGroupUuids;
     private final List<String> candidatePrimaryStorageUuidsForRootVolume = new ArrayList<>();
     private final List<String> candidatePrimaryStorageUuidsForDataVolume = new ArrayList<>();
+
+    public Map<String, List<String>> getRequestedSecurityGroupUuids() {
+        return requestedSecurityGroupUuids;
+    }
+
+    public void setRequestedSecurityGroupUuids(Map<String, List<String>> requestedSecurityGroupUuids) {
+        this.requestedSecurityGroupUuids = requestedSecurityGroupUuids;
+    }
+
+    public Map<String, List<String>> getInheritedSecurityGroupUuids() {
+        return inheritedSecurityGroupUuids;
+    }
+
+    public void setInheritedSecurityGroupUuids(Map<String, List<String>> inheritedSecurityGroupUuids) {
+        this.inheritedSecurityGroupUuids = inheritedSecurityGroupUuids;
+    }
 
     public List<String> getCandidatePrimaryStorageUuidsForRootVolume() {
         return candidatePrimaryStorageUuidsForRootVolume;

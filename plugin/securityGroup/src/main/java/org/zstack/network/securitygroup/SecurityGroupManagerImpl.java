@@ -47,8 +47,11 @@ import org.zstack.header.host.HostVO;
 import org.zstack.header.host.HostVO_;
 import org.zstack.header.identity.APIChangeResourceOwnerMsg;
 import org.zstack.header.identity.AccountConstant;
+import org.zstack.header.identity.IdentityByPassCheck;
 import org.zstack.header.identity.Quota;
 import org.zstack.header.identity.ReportQuotaExtensionPoint;
+import org.zstack.header.identity.SharedResourceVO;
+import org.zstack.header.identity.SharedResourceVO_;
 import org.zstack.header.identity.quota.QuotaMessageHandler;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
 import org.zstack.header.message.APIDeleteMessage;
@@ -66,6 +69,7 @@ import org.zstack.header.query.ExpandedQueryAliasStruct;
 import org.zstack.header.query.ExpandedQueryStruct;
 import org.zstack.header.vm.*;
 import org.zstack.identity.AccountManager;
+import org.zstack.identity.AuthorizationManager;
 import org.zstack.identity.QuotaUtil;
 import org.zstack.network.l3.IpRangeHelper;
 import org.zstack.network.l3.L3NetworkHelper;
@@ -86,6 +90,11 @@ import javax.persistence.LockModeType;
 import javax.persistence.Query;
 import javax.persistence.Tuple;
 import javax.persistence.TypedQuery;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -126,11 +135,16 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     private ErrorFacade errf;
     @Autowired
     protected CascadeFacade casf;
+    @Autowired
+    private SecurityGroupPermissionChecker permissionChecker;
+    @Autowired
+    private AuthorizationManager authorizationManager;
 
     protected Map<String, SecurityGroupHypervisorBackend> hypervisorBackends;
     private int failureHostWorkerInterval;
     private int failureHostEachTimeTake;
     private Future<Void> failureHostCopingThread;
+    private List<SecurityGroupTemplateInventory> securityGroupTemplates = Collections.emptyList();
 
     private String getSecurityGroupSyncThreadName(String securityGroupUuid) {
         return String.format("SecurityGroup-%s", securityGroupUuid);
@@ -679,6 +693,8 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             handle((SecurityGroupDeletionMsg) msg);
         } else if (msg instanceof AddVmNicToSecurityGroupMsg) {
             handle((AddVmNicToSecurityGroupMsg) msg);
+        } else if (msg instanceof SetSecurityGroupSharingMsg) {
+            handle((SetSecurityGroupSharingMsg) msg);
         } else if (msg instanceof ChangeSecurityGroupScheduleMsg) {
             handle((ChangeSecurityGroupScheduleMsg) msg);
         } else {
@@ -1085,7 +1101,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
             @Override
             public void run(SyncTaskChain chain) {
-                deleteSecurityGroup(msg.getUuid(), new Completion(msg, chain) {
+                doDeleteSecurityGroup(msg.getUuid(), new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -1374,7 +1390,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     private void handleApiMessage(APIMessage msg) {
-        if (msg instanceof APICreateSecurityGroupMsg) {
+        if (msg instanceof APIGetSecurityGroupTemplatesMsg) {
+            handle((APIGetSecurityGroupTemplatesMsg) msg);
+        } else if (msg instanceof APISetSecurityGroupSharingMsg) {
+            handle((APISetSecurityGroupSharingMsg) msg);
+        } else if (msg instanceof APICreateSecurityGroupMsg) {
             handle((APICreateSecurityGroupMsg) msg);
         } else if (msg instanceof APIAddSecurityGroupRuleMsg) {
             handle((APIAddSecurityGroupRuleMsg) msg);
@@ -1413,6 +1433,157 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }
     }
 
+    private void loadSecurityGroupTemplates() {
+        try (InputStream input = getClass().getResourceAsStream("/security-group-templates.json")) {
+            if (input == null) {
+                logger.warn("cannot find security-group-templates.json, builtin security group templates are unavailable");
+                return;
+            }
+            String content = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8)).lines().collect(Collectors.joining("\n"));
+            SecurityGroupTemplateInventory[] templates = JSONObjectUtil.toObject(content, SecurityGroupTemplateInventory[].class);
+            if (templates == null) {
+                logger.warn("security-group-templates.json contains no templates");
+                return;
+            }
+            securityGroupTemplates = Arrays.asList(templates);
+        } catch (IOException | RuntimeException e) {
+            securityGroupTemplates = Collections.emptyList();
+            logger.warn("could not load builtin security group templates, returning an empty template list", e);
+        }
+    }
+
+    private void handle(APIGetSecurityGroupTemplatesMsg msg) {
+        APIGetSecurityGroupTemplatesReply reply = new APIGetSecurityGroupTemplatesReply();
+        reply.setTemplates(Arrays.asList(JSONObjectUtil.toObject(JSONObjectUtil.toJsonString(securityGroupTemplates), SecurityGroupTemplateInventory[].class)));
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APISetSecurityGroupSharingMsg msg) {
+        APISetSecurityGroupSharingEvent evt = new APISetSecurityGroupSharingEvent(msg.getId());
+        SetSecurityGroupSharingMsg smsg = new SetSecurityGroupSharingMsg();
+        smsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+        smsg.setMode(msg.getMode());
+        smsg.setAccountUuids(msg.getAccountUuids());
+        smsg.setSession(msg.getSession());
+        bus.makeTargetServiceIdByResourceUuid(smsg, SecurityGroupConstant.SERVICE_ID, smsg.getSecurityGroupUuid());
+        bus.send(smsg, new CloudBusCallBack(msg) {
+            @Override
+            public void run(MessageReply reply) {
+                if (reply.isSuccess()) {
+                    evt.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                    evt.setMode(msg.getMode());
+                    evt.setAccountUuids(msg.getAccountUuids() == null ? Collections.emptyList() : msg.getAccountUuids());
+                } else {
+                    evt.setError(reply.getError());
+                }
+                bus.publish(evt);
+            }
+        });
+    }
+
+    private void handle(SetSecurityGroupSharingMsg msg) {
+        SetSecurityGroupSharingReply reply = new SetSecurityGroupSharingReply();
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain taskChain) {
+                boolean targetPublic = SecurityGroupConstant.SHARING_MODE_PUBLIC.equals(msg.getMode());
+                List<String> targetAccounts = msg.getAccountUuids() == null ? Collections.emptyList() : msg.getAccountUuids();
+                List<SharedResourceVO> toRemove = new ArrayList<>();
+                List<SharedResourceVO> toCreate = new ArrayList<>();
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName(String.format("set-security-group-sharing-%s", msg.getSecurityGroupUuid()));
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "read-security-group-sharing";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        permissionChecker.checkShareable(msg.getSecurityGroupUuid());
+                        permissionChecker.checkManage(msg.getSession(), msg.getSecurityGroupUuid());
+                        List<SharedResourceVO> original = Q.New(SharedResourceVO.class).eq(SharedResourceVO_.resourceUuid, msg.getSecurityGroupUuid()).list();
+                        permissionChecker.checkSharingReferences(msg.getSecurityGroupUuid(), targetPublic, targetAccounts);
+
+                        for (SharedResourceVO record : original) {
+                            if (!(targetPublic && record.isToPublic()) && !(SecurityGroupConstant.SHARING_MODE_SPECIFIED.equals(msg.getMode()) && !record.isToPublic() && targetAccounts.contains(record.getReceiverAccountUuid()))) {
+                                toRemove.add(record);
+                            }
+                        }
+
+                        String ownerAccountUuid = acntMgr.getOwnerAccountUuidOfResource(msg.getSecurityGroupUuid());
+                        List<String> missingAccounts = new ArrayList<>();
+                        if (targetPublic && original.stream().noneMatch(SharedResourceVO::isToPublic)) {
+                            missingAccounts.add(null);
+                        } else if (SecurityGroupConstant.SHARING_MODE_SPECIFIED.equals(msg.getMode())) {
+                            for (String accountUuid : targetAccounts) {
+                                if (original.stream().noneMatch(record -> !record.isToPublic() && accountUuid.equals(record.getReceiverAccountUuid()))) {
+                                    missingAccounts.add(accountUuid);
+                                }
+                            }
+                        }
+                        for (String accountUuid : missingAccounts) {
+                            SharedResourceVO record = new SharedResourceVO();
+                            record.setResourceUuid(msg.getSecurityGroupUuid());
+                            record.setResourceType(SecurityGroupVO.class.getSimpleName());
+                            record.setOwnerAccountUuid(ownerAccountUuid);
+                            record.setReceiverAccountUuid(accountUuid);
+                            record.setToPublic(targetPublic);
+                            record.setPermission(SharedResourceVO.PERMISSION_READ);
+                            toCreate.add(record);
+                        }
+                        trigger.next();
+                    }
+                }).then(new Flow() {
+                    String __name__ = "add-security-group-sharing";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        dbf.persistCollection(toCreate);
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void rollback(FlowRollback trigger, Map data) {
+                        List<Long> ids = toCreate.stream().map(SharedResourceVO::getId)
+                                .filter(Objects::nonNull).collect(Collectors.toList());
+                        dbf.removeByPrimaryKeys(ids, SharedResourceVO.class);
+                        trigger.rollback();
+                    }
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "remove-security-group-sharing";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        // Keep the original rows until the final batch; a failed deletion rolls back the whole batch.
+                        dbf.removeCollection(toRemove, SharedResourceVO.class);
+                        trigger.next();
+                    }
+                }).done(new FlowDoneHandler(msg, taskChain) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.reply(msg, reply);
+                        taskChain.next();
+                    }
+                }).error(new FlowErrorHandler(msg, taskChain) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        reply.setError(errorCode);
+                        bus.reply(msg, reply);
+                        taskChain.next();
+                    }
+                }).start();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("set-security-group-sharing-%s", msg.getSecurityGroupUuid());
+            }
+        });
+    }
+
     private void handle(APIValidateSecurityGroupRuleMsg msg) {
         APIValidateSecurityGroupRuleReply reply = new APIValidateSecurityGroupRuleReply();
         reply.setAvailable(true);
@@ -1435,6 +1606,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(nic.getVmInstanceUuid()), msg.getRequestedSecurityGroupUuids());
                         List<VmNicSecurityGroupRefVO> toCreate = new ArrayList<>();
                         List<VmNicSecurityGroupRefVO> toDelete = new ArrayList<>();
                         List<VmNicSecurityGroupRefVO> toUpdate = new ArrayList<>();
@@ -1985,6 +2157,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        if (msg.getRemoteSecurityGroupUuid() != null) {
+                            permissionChecker.checkUse(acntMgr.getOwnerAccountUuidOfResource(sgUuid), Collections.singletonList(msg.getRemoteSecurityGroupUuid()));
+                        }
                         SecurityGroupRuleVO vo = dbf.findByUuid(msg.getUuid(), SecurityGroupRuleVO.class);
                         vo.setDescription(msg.getDescription());
                         vo.setState(SecurityGroupRuleState.valueOf(msg.getState()));
@@ -2131,13 +2306,17 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 .listValues();
 
         List<VmNicVO> candidateNics = new ArrayList<>();
-        List<VmNicVO> allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm" +
+        List<VmNicVO> allNics = SQL.New("select nic from VmNicVO nic, VmInstanceVO vm, NetworkServiceL3NetworkRefVO service, L3NetworkVO l3, L2NetworkVO l2" +
                         " where nic.vmInstanceUuid = vm.uuid" +
                         " and nic.type = :nicType " +
                         " and vm.type = :vmType" +
+                        " and nic.l3NetworkUuid = service.l3NetworkUuid and service.networkServiceType = :serviceType" +
+                        " and nic.l3NetworkUuid = l3.uuid and l3.l2NetworkUuid = l2.uuid and l2.vSwitchType = :vSwitchType" +
                         " and vm.state in (:vmStates)", VmNicVO.class)
                 .param("nicType", VmInstanceConstant.VIRTUAL_NIC_TYPE)
                 .param("vmType", VmInstanceConstant.USER_VM_TYPE)
+                .param("serviceType", SecurityGroupConstant.SECURITY_GROUP_NETWORK_SERVICE_TYPE)
+                .param("vSwitchType", Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.vSwitchType).eq(SecurityGroupVO_.uuid, sgId).findValue())
                 .param("vmStates", list(VmInstanceState.Running, VmInstanceState.Stopped))
                 .list();
         if (allNics.isEmpty()) {
@@ -2179,7 +2358,22 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIGetCandidateVmNicForSecurityGroupMsg msg) {
         APIGetCandidateVmNicForSecurityGroupReply reply = new APIGetCandidateVmNicForSecurityGroupReply();
-        reply.setInventories(VmNicInventory.valueOf(getCandidateVmNic(msg.getSecurityGroupUuid(), msg.getSession().getAccountUuid())));
+        List<VmNicVO> candidates = new ArrayList<>();
+        for (VmNicVO nic : getCandidateVmNic(msg.getSecurityGroupUuid(), msg.getSession().getAccountUuid())) {
+            APIAddVmNicToSecurityGroupMsg binding = new APIAddVmNicToSecurityGroupMsg();
+            binding.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+            binding.setVmNicUuids(Collections.singletonList(nic.getUuid()));
+            binding.setSession(msg.getSession());
+            binding.putHeaderEntry(IdentityByPassCheck.NoSessionEvaluation.toString(), true);
+            try {
+                authorizationManager.intercept(binding);
+                permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(nic.getVmInstanceUuid()), Collections.singletonList(msg.getSecurityGroupUuid()));
+                candidates.add(nic);
+            } catch (OperationFailureException | ApiMessageInterceptionException ignored) {
+                // Read permission on the group does not grant permission to bind this NIC.
+            }
+        }
+        reply.setInventories(VmNicInventory.valueOf(candidates));
         bus.reply(msg, reply);
     }
 
@@ -2671,7 +2865,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         }).start();
     }
 
-    private void deleteSecurityGroup(String sgUuid, Completion completion) {
+    private void doDeleteSecurityGroup(String sgUuid, Completion completion) {
         SecurityGroupSdnBackend backend = getSdnBackend(sgUuid);
         if (backend != null) {
             deleteSecurityGroupFromSdn(backend, sgUuid, completion);
@@ -2791,11 +2985,57 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
     private void handle(APIDeleteSecurityGroupMsg msg) {
         APIDeleteSecurityGroupEvent evt = new APIDeleteSecurityGroupEvent(msg.getId());
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return getSecurityGroupSyncThreadName(msg.getSecurityGroupUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                doDeleteSecurityGroup(msg, new Completion(msg, chain) {
+                    @Override
+                    public void success() {
+                        bus.publish(evt);
+                        chain.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        chain.next();
+                    }
+                });
+            }
+
+            @Override
+            public String getName() {
+                return String.format("delete-security-group-%s", msg.getSecurityGroupUuid());
+            }
+        });
+    }
+
+    private void doDeleteSecurityGroup(APIDeleteSecurityGroupMsg msg, Completion completion) {
+        SecurityGroupVO vo = dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class);
+        if (vo == null) {
+            completion.success();
+            return;
+        }
         final String issuer = SecurityGroupVO.class.getSimpleName();
-        SecurityGroupInventory inv = SecurityGroupInventory.valueOf(dbf.findByUuid(msg.getSecurityGroupUuid(), SecurityGroupVO.class));
+        SecurityGroupInventory inv = SecurityGroupInventory.valueOf(vo);
         final List<SecurityGroupInventory> ctx = Collections.singletonList(inv);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-security-group-%s", msg.getUuid()));
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "check-shared-security-group-references";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                permissionChecker.checkDelete(msg.getSecurityGroupUuid());
+                trigger.next();
+            }
+        });
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
@@ -2846,17 +3086,33 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
                 }
             });
         }
-        chain.done(new FlowDoneHandler(msg) {
+        chain.then(new NoRollbackFlow() {
+            String __name__ = "delete-security-group";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                doDeleteSecurityGroup(msg.getSecurityGroupUuid(), new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
                 casf.asyncCascadeFull(CascadeConstant.DELETION_CLEANUP_CODE, issuer, ctx, new NopeCompletion());
-                bus.publish(evt);
+                completion.success();
             }
-        }).error(new FlowErrorHandler(msg) {
+        }).error(new FlowErrorHandler(completion) {
             @Override
             public void handle(ErrorCode errCode, Map data) {
-                evt.setError(errCode);
-                bus.publish(evt);
+                completion.fail(errCode);
             }
         }).start();
     }
@@ -3077,13 +3333,11 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
         List<VmNicSecurityGroupRefVO> toCreateRefs = new ArrayList<VmNicSecurityGroupRefVO>();
         List<VmNicSecurityPolicyVO> toCreatePolicies = new ArrayList<VmNicSecurityPolicyVO>();
 
-        String sgOwnerAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(sgUuid);
-
         for (VmNicVO nic : nicvos) {
             VmNicSecurityGroupRefVO vo = new VmNicSecurityGroupRefVO();
 
             String vmAccountUuid = new QuotaUtil().getResourceOwnerAccountUuid(nic.getVmInstanceUuid());
-            if (AccountConstant.isAdminPermission(sgOwnerAccountUuid) && !vmAccountUuid.equals(sgOwnerAccountUuid)) {
+            if (permissionChecker.isHiddenAdminSecurityGroup(vmAccountUuid, sgUuid)) {
                 List<VmNicSecurityGroupRefVO> toUpdate = refs.stream().filter(ref -> ref.getVmNicUuid().equals(nic.getUuid())).collect(Collectors.toList());
                 if (!toUpdate.isEmpty()) {
                     toUpdate.stream().forEach(r ->{
@@ -3268,21 +3522,56 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
             }
 
             @Override
-            public void run(SyncTaskChain chain) {
-                AddVmNicToSecurityGroupMsg amsg = new AddVmNicToSecurityGroupMsg();
-                amsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
-                amsg.setVmNicUuids(msg.getVmNicUuids());
-                bus.makeTargetServiceIdByResourceUuid(amsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
-                bus.send(amsg, new CloudBusCallBack(msg) {
+            public void run(SyncTaskChain taskChain) {
+                FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
+                chain.setName(String.format("add-vm-nic-to-security-group-%s", msg.getSecurityGroupUuid()));
+                chain.then(new NoRollbackFlow() {
+                    String __name__ = "check-security-group-and-nic-permission";
+
                     @Override
-                    public void run(MessageReply reply) {
-                        if (!reply.isSuccess()) {
-                            evt.setError(reply.getError());
+                    public void run(FlowTrigger trigger, Map data) {
+                        if (!dbf.isExist(msg.getSecurityGroupUuid(), SecurityGroupVO.class)) {
+                            throw new OperationFailureException(operr(ORG_ZSTACK_NETWORK_SECURITYGROUP_10140, "security group[uuid:%s] does not exist", msg.getSecurityGroupUuid()));
                         }
-                        bus.publish(evt);
-                        chain.next();
+                        for (VmNicVO nic : Q.New(VmNicVO.class).in(VmNicVO_.uuid, msg.getVmNicUuids()).<VmNicVO>list()) {
+                            permissionChecker.checkBindingUse(msg.getSession(), acntMgr.getOwnerAccountUuidOfResource(nic.getVmInstanceUuid()), Collections.singletonList(msg.getSecurityGroupUuid()));
+                        }
+                        trigger.next();
                     }
-                });
+                }).then(new NoRollbackFlow() {
+                    String __name__ = "add-vm-nics-to-security-group";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        AddVmNicToSecurityGroupMsg amsg = new AddVmNicToSecurityGroupMsg();
+                        amsg.setSecurityGroupUuid(msg.getSecurityGroupUuid());
+                        amsg.setVmNicUuids(msg.getVmNicUuids());
+                        bus.makeTargetServiceIdByResourceUuid(amsg, SecurityGroupConstant.SERVICE_ID, msg.getSecurityGroupUuid());
+                        bus.send(amsg, new CloudBusCallBack(trigger) {
+                            @Override
+                            public void run(MessageReply reply) {
+                                if (reply.isSuccess()) {
+                                    trigger.next();
+                                } else {
+                                    trigger.fail(reply.getError());
+                                }
+                            }
+                        });
+                    }
+                }).done(new FlowDoneHandler(msg, taskChain) {
+                    @Override
+                    public void handle(Map data) {
+                        bus.publish(evt);
+                        taskChain.next();
+                    }
+                }).error(new FlowErrorHandler(msg, taskChain) {
+                    @Override
+                    public void handle(ErrorCode errorCode, Map data) {
+                        evt.setError(errorCode);
+                        bus.publish(evt);
+                        taskChain.next();
+                    }
+                }).start();
             }
 
             @Override
@@ -3434,6 +3723,9 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
 
                     @Override
                     public void run(FlowTrigger trigger, Map data) {
+                        List<String> remoteGroups = msg.getRules().stream().map(SecurityGroupRuleAO::getRemoteSecurityGroupUuid)
+                                .filter(Objects::nonNull).distinct().collect(Collectors.toList());
+                        permissionChecker.checkUse(acntMgr.getOwnerAccountUuidOfResource(msg.getSecurityGroupUuid()), remoteGroups);
                         Integer priority = msg.getPriority();
                         List<SecurityGroupRuleVO> ruleVOs = Q.New(SecurityGroupRuleVO.class)
                             .eq(SecurityGroupRuleVO_.securityGroupUuid, msg.getSecurityGroupUuid())
@@ -3702,6 +3994,7 @@ public class SecurityGroupManagerImpl extends AbstractService implements Securit
     }
 
     public boolean start() {
+        loadSecurityGroupTemplates();
         prepareGlobalConfig();
         populateExtensions();
         return true;
