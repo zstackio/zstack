@@ -276,6 +276,7 @@ class CreateDhcpServerCase extends SubCase {
                 systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "192.168.1.110")]
             }
         }
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv4)
     }
 
     void testAddDhcpv6ServerIp() {
@@ -433,6 +434,63 @@ class CreateDhcpServerCase extends SubCase {
                 addressMode = IPv6Constants.Stateful_DHCP
                 systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--12")]
             }
+        }
+        testZSTAC86900DeleteReservedIp(l3, IPv6Constants.IPv6)
+    }
+
+
+    void testZSTAC86900DeleteReservedIp(L3NetworkInventory l3, int requestedIpVersion) {
+        String reservedIp = getFreeIp {
+            l3NetworkUuid = l3.uuid
+            ipVersion = requestedIpVersion
+            limit = 1
+        }[0].ip
+        ReservedIpRangeInventory reservedIpRange = addReservedIpRange {
+            l3NetworkUuid = l3.uuid
+            startIp = reservedIp
+            endIp = reservedIp
+        }
+        UsedIpInventory reservedUsedIp = queryIpAddress {
+            conditions = ["l3NetworkUuid=${l3.uuid}", "ip=${reservedIp}"]
+        }[0]
+
+        GetL3NetworkDhcpIpAddressResult dhcpAddressResult = getL3NetworkDhcpIpAddress {
+            l3NetworkUuid = l3.uuid
+        }
+        String dhcpServerIp = dhcpAddressResult.ip6 ?: dhcpAddressResult.ip
+        UsedIpInventory dhcpUsedIp = queryIpAddress {
+            conditions = ["l3NetworkUuid=${l3.uuid}", "ip=${dhcpServerIp}"]
+        }[0]
+
+        DeleteIpAddressAction batchDelete = new DeleteIpAddressAction(
+                l3NetworkUuid: l3.uuid,
+                usedIpUuids: [reservedUsedIp.uuid, dhcpUsedIp.uuid],
+                sessionId: adminSession()
+        )
+        DeleteIpAddressAction.Result batchResult = batchDelete.call()
+        assert batchResult.error != null
+        assert batchResult.error.details.contains("dhcp server ip")
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, reservedUsedIp.uuid).isExists()
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, dhcpUsedIp.uuid).isExists()
+
+        deleteIpAddress {
+            l3NetworkUuid = l3.uuid
+            usedIpUuids = [reservedUsedIp.uuid]
+        }
+        assert !Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, reservedUsedIp.uuid).isExists()
+
+        DeleteIpAddressAction dhcpDelete = new DeleteIpAddressAction(
+                l3NetworkUuid: l3.uuid,
+                usedIpUuids: [dhcpUsedIp.uuid],
+                sessionId: adminSession()
+        )
+        DeleteIpAddressAction.Result dhcpResult = dhcpDelete.call()
+        assert dhcpResult.error != null
+        assert dhcpResult.error.details.contains("dhcp server ip")
+        assert Q.New(UsedIpVO.class).eq(UsedIpVO_.uuid, dhcpUsedIp.uuid).isExists()
+
+        deleteReservedIpRange {
+            uuid = reservedIpRange.uuid
         }
     }
 
