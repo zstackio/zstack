@@ -7,6 +7,7 @@ public class MemoryClusterOperationMsg extends NeedReplyMessage {
     private String clusterUuid;
     private String hostUuid;
     private String action;
+    private String jobUuid;
     private String accountUuid;
     private String userUuid;
 
@@ -16,6 +17,8 @@ public class MemoryClusterOperationMsg extends NeedReplyMessage {
     public void setHostUuid(String value) { hostUuid = value; }
     public String getAction() { return action; }
     public void setAction(String value) { action = value; }
+    public String getJobUuid() { return jobUuid; }
+    public void setJobUuid(String value) { jobUuid = value; }
     public String getAccountUuid() { return accountUuid; }
     public void setAccountUuid(String value) { accountUuid = value; }
     public String getUserUuid() { return userUuid; }

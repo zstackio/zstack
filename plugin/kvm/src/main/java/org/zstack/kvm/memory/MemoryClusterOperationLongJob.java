@@ -31,6 +31,7 @@ public abstract class MemoryClusterOperationLongJob implements LongJob {
         msg.setClusterUuid(request.getUuid());
         msg.setHostUuid(request.getHostUuid());
         msg.setAction(action);
+        msg.setJobUuid(job.getUuid());
         msg.setAccountUuid(job.getAccountUuid());
         msg.setUserUuid(request.getSession() == null ? null : request.getSession().getUserUuid());
         bus.makeLocalServiceId(msg, MemoryOptimizationManager.SERVICE_ID);

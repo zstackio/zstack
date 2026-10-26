@@ -5,6 +5,7 @@ import java.util.HashMap;
 public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
+			put("org.zstack.kvm.memory.HostMemoryStateInventory", "org.zstack.sdk.HostMemoryStateInventory");
 			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
 			put("org.zstack.kvm.memory.MemoryFieldCapability", "org.zstack.sdk.MemoryFieldCapability");
 			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
@@ -1001,6 +1002,7 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
+			put("org.zstack.sdk.HostMemoryStateInventory", "org.zstack.kvm.memory.HostMemoryStateInventory");
 			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
 			put("org.zstack.sdk.MemoryFieldCapability", "org.zstack.kvm.memory.MemoryFieldCapability");
 			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
