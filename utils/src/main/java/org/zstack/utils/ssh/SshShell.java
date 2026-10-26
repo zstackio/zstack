@@ -58,11 +58,22 @@ public class SshShell {
         return runCommand(cmd, false);
     }
 
+    public SshResult runCommand(String cmd, int timeoutSeconds) {
+        if (timeoutSeconds <= 0) {
+            throw new IllegalArgumentException("timeoutSeconds must be positive");
+        }
+        return runCommand(cmd, false, timeoutSeconds);
+    }
+
     public SshResult runCommandWithPseudoTty(String cmd) {
         return runCommand(cmd, true);
     }
 
     private SshResult runCommand(String cmd, boolean allocatePseudoTty) {
+        return runCommand(cmd, allocatePseudoTty, null);
+    }
+
+    private SshResult runCommand(String cmd, boolean allocatePseudoTty, Integer timeoutSeconds) {
         checkParams();
         String ssh;
         File tempPasswordFile = null;
@@ -85,7 +96,8 @@ public class SshShell {
                 logger.trace(String.format("[ssh shell]: %s", ssh));
             }
 
-            ShellResult ret = ShellUtils.runAndReturn(ssh, withSudo);
+            ShellResult ret = timeoutSeconds == null ? ShellUtils.runAndReturn(ssh, withSudo)
+                    : ShellUtils.runAndReturn(ssh, withSudo, timeoutSeconds);
             SshResult sret = new SshResult();
             sret.setCommandToExecute(cmd);
             sret.setReturnCode(ret.getRetCode());
@@ -98,6 +110,8 @@ public class SshShell {
                 sret.setSshFailure(true);
             }
             return sret;
+        } catch (ShellUtils.ShellTimeoutException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         } finally {

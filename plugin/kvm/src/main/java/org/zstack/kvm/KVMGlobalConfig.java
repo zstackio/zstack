@@ -69,6 +69,10 @@ public class KVMGlobalConfig {
     public static GlobalConfig TEST_SSH_PORT_ON_OPEN_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOpenTimeout");
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 300)
     public static GlobalConfig TEST_SSH_PORT_ON_CONNECT_TIMEOUT = new GlobalConfig(CATEGORY, "testSshPortOnConnectTimeout");
+    @GlobalConfigValidation(inNumberRange = {1, 3600})
+    @GlobalConfigDef(defaultValue = "60", type = Integer.class,
+            description = "maximum execution time of each SSH password or private-key check when reconnecting a host, in seconds")
+    public static GlobalConfig SSH_CREDENTIAL_CHECK_TIMEOUT = new GlobalConfig(CATEGORY, "sshCredentialCheckTimeout");
     @GlobalConfigValidation
     public static GlobalConfig RESTART_AGENT_IF_FAKE_DEAD = new GlobalConfig(CATEGORY, "restartagentwhenfakedead");
 

@@ -5824,6 +5824,63 @@ public class KVMHost extends HostBase implements Host {
         creator.create();
     }
 
+    protected void checkHostSshCredentials(FlowTrigger trigger) {
+        int timeout = KVMGlobalConfig.SSH_CREDENTIAL_CHECK_TIMEOUT.value(Integer.class);
+        try {
+            ErrorCode passwordError = connectWithSSHPassword(timeout);
+            if (passwordError == null) {
+                trigger.next();
+                return;
+            }
+
+            ErrorCode privateKeyError = connectWithPrivateKey(timeout);
+            if (privateKeyError == null) {
+                trigger.fail(err(ORG_ZSTACK_KVM_10100, HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
+                        "host password has been changed. " +
+                                "Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
+                        self.getUuid()));
+                return;
+            }
+            trigger.fail(passwordError);
+        } catch (ShellUtils.ShellTimeoutException e) {
+            // A timeout does not establish that the password changed. Reporting that error
+            // would stop automatic reconnects until the user updates the password.
+            trigger.fail(touterr(ORG_ZSTACK_KVM_10163,
+                    "SSH credential check on host[UUID=%s, ip=%s] timed out after %s seconds",
+                    self.getUuid(), self.getManagementIp(), timeout));
+        }
+    }
+
+    private ErrorCode connectWithSSHPassword(int timeout) {
+        SshShell sshShell = Platform.New(SshShell::new);
+        sshShell.setHostname(getSelf().getManagementIp());
+        sshShell.setUsername(getSelf().getUsername());
+        sshShell.setPassword(getSelf().getPassword());
+        sshShell.setPort(getSelf().getPort());
+        sshShell.setWithSudo(false);
+        SshResult ret = sshShell.runCommand("echo hello", timeout);
+        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+            return err(ORG_ZSTACK_KVM_10101, HostErrors.UNABLE_TO_RECONNECT_HOST,
+                    "failed to connect host[UUID=%s] with SSH password", self.getUuid());
+        }
+        return null;
+    }
+
+    private ErrorCode connectWithPrivateKey(int timeout) {
+        SshShell sshShell = Platform.New(SshShell::new);
+        sshShell.setHostname(getSelf().getManagementIp());
+        sshShell.setUsername(getSelf().getUsername());
+        sshShell.setPrivateKey(asf.getPrivateKey());
+        sshShell.setPort(getSelf().getPort());
+        sshShell.setWithSudo(false);
+        SshResult ret = sshShell.runCommand("echo hello", timeout);
+        if (ret.isSshFailure() || ret.getReturnCode() != 0) {
+            return err(ORG_ZSTACK_KVM_10102, HostErrors.UNABLE_TO_RECONNECT_HOST,
+                    "failed to connect host[UUID=%s] with private key", self.getUuid());
+        }
+        return null;
+    }
+
     @Override
     protected void checkConnectConditions(ConnectHostInfo info, Completion completion) {
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
@@ -5895,53 +5952,7 @@ public class KVMHost extends HostBase implements Host {
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
-                final ErrorCode errorCode = connectWithSSHPassword();
-                if (errorCode == null) {
-                    trigger.next();
-                    return;
-                }
-
-                final ErrorCode privateKeyError = connectWithPrivateKey();
-                if (privateKeyError == null) {
-                    trigger.fail(err(ORG_ZSTACK_KVM_10100, HostErrors.HOST_PASSWORD_HAS_BEEN_CHANGED,
-                            "host password has been changed. " +
-                            "Please update host password in management node by UpdateKVMHostAction with host UUID[%s]",
-                                    self.getUuid()));
-                    return;
-                }
-                trigger.fail(errorCode);
-            }
-
-            ErrorCode connectWithSSHPassword() {
-                SshShell sshShell = new SshShell();
-                sshShell.setHostname(getSelf().getManagementIp());
-                sshShell.setUsername(getSelf().getUsername());
-                sshShell.setPassword(getSelf().getPassword());
-                sshShell.setPort(getSelf().getPort());
-                sshShell.setWithSudo(false);
-                final String cmd = "echo hello";
-                SshResult ret = sshShell.runCommand(cmd);
-                if (ret.isSshFailure()) {
-                    return err(ORG_ZSTACK_KVM_10101, HostErrors.UNABLE_TO_RECONNECT_HOST,
-                            "failed to connect host[UUID=%s] with SSH password", self.getUuid());
-                }
-                return null;
-            }
-
-            ErrorCode connectWithPrivateKey() {
-                SshShell sshShell = new SshShell();
-                sshShell.setHostname(getSelf().getManagementIp());
-                sshShell.setUsername(getSelf().getUsername());
-                sshShell.setPrivateKey(asf.getPrivateKey());
-                sshShell.setPort(getSelf().getPort());
-                sshShell.setWithSudo(false);
-                final String cmd = "echo hello";
-                SshResult ret = sshShell.runCommand(cmd);
-                if (ret.isSshFailure()) {
-                    return err(ORG_ZSTACK_KVM_10102, HostErrors.UNABLE_TO_RECONNECT_HOST,
-                            "failed to connect host[UUID=%s] with private key", self.getUuid());
-                }
-                return null;
+                checkHostSshCredentials(trigger);
             }
         }).then(new NoRollbackFlow() {
             String __name__ = "ping-DNS-check-list";

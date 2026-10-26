@@ -12,12 +12,14 @@ import org.zstack.storage.ceph.backup.CephUploadCancelRecoveryCase
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.kvm.KvmAgentRestartGlobalConfigCase
+import org.zstack.test.unittest.kvm.KVMHostSshCredentialTimeoutCase
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyInstallerGroovyTest
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyKvmReconnectExtensionTest
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
+import org.zstack.test.unittest.utils.ShellTimeoutCase
 import org.zstack.test.unittest.utils.SystemTagUtilsCase
 import org.zstack.utils.ssh.SshExecutionDeadlineCase
 
@@ -34,6 +36,8 @@ import java.util.stream.Collectors
         SshExecutionTimeoutCase.class,
         SshExecutionDeadlineCase.class,
         MessageTimeoutContextCase.class,
+        KVMHostSshCredentialTimeoutCase.class,
+        ShellTimeoutCase.class,
         MigrateVmFinalizeCompletionCase.class,
         CephUploadCancelRecoveryCase.class,
         NetworkUtilsCase.class,
