@@ -20,4 +20,9 @@
         <id>1703</id>
         <description>The current VM state does not support this TPM operations</description>
     </code>
+
+    <code>
+        <id>1704</id>
+        <description>The current VM boot mode does not support TPM</description>
+    </code>
 </error>

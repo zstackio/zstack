@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.compute.vm.VmSystemTags;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.Q;
@@ -8,6 +9,7 @@ import org.zstack.header.apimediator.ApiMessageInterceptionException;
 import org.zstack.header.apimediator.ApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.SysErrors;
+import org.zstack.header.image.ImageBootMode;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.tpm.api.*;
 import org.zstack.header.tpm.entity.TpmVO;
@@ -67,6 +69,13 @@ public class TpmApiInterceptor implements ApiMessageInterceptor {
             throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10009, VM_STATE_ERROR,
                     "The current VM state does not support adding TPM operations")
                     .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
+        }
+
+        String bootMode = VmSystemTags.BOOT_MODE.getTokenByResourceUuid(msg.getVmInstanceUuid(), VmSystemTags.BOOT_MODE_TOKEN);
+        if (!VmTpmManager.isUefiBootMode(bootMode)) {
+            throw new ApiMessageInterceptionException(err(ORG_ZSTACK_COMPUTE_VM_DEVICES_10010, VM_BOOT_MODE_ERROR,
+                    "TPM requires UEFI boot mode, but VM[uuid:%s] is in %s boot mode, change the boot mode to UEFI first",
+                    msg.getVmInstanceUuid(), bootMode == null ? ImageBootMode.Legacy : bootMode));
         }
 
         if (msg.getResourceUuid() == null) {

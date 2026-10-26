@@ -489,6 +489,8 @@
   "ORG_ZSTACK_VPC_10019": "could not detach L3 network from VPC router[uuid:%s] because the states of the master and slave are inconsistent",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "cannot find virtual machine device with uuid: %s",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "VM device TPM/host-file operation failed: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM requires UEFI boot mode, but VM[uuid:%s] is in %s boot mode, change the boot mode to UEFI first",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "cannot change boot mode of VM[uuid:%s] to %s, because the VM has a TPM device which requires UEFI boot mode, remove the TPM first",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file operation failed: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "volume protocol operation failed: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "volume snapshot operation failed: %s",

@@ -489,6 +489,8 @@
   "ORG_ZSTACK_VPC_10019": "无法将三层网络从uuid:%s的VPC路由器解绑，因为主从状态不一致",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "无法找到具有 UUID：%s 的虚拟机设备",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "虚拟机设备 TPM/host-file 操作失败：%s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM 需要 UEFI 启动模式，但虚拟机[uuid:%s]当前为 %s 启动模式，请先将启动模式修改为 UEFI",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "无法将虚拟机[uuid:%s]的启动模式修改为 %s，因为该虚拟机已配置 TPM 设备，TPM 需要 UEFI 启动模式，请先移除 TPM",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file 操作失败：%s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "云盘协议操作失败：%s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "云盘快照操作失败：%s",

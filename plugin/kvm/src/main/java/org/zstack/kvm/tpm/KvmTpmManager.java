@@ -95,6 +95,7 @@ import static org.zstack.core.Platform.err;
 import static org.zstack.core.Platform.operr;
 import static org.zstack.header.errorcode.SysErrors.NOT_SUPPORTED;
 import static org.zstack.header.tpm.TpmConstants.*;
+import static org.zstack.header.tpm.TpmErrors.TPM_ALREADY_EXISTS;
 import static org.zstack.header.tpm.TpmErrors.VM_STATE_ERROR;
 import static org.zstack.kvm.KVMSystemTags.EDK_RPM_TOKEN;
 import static org.zstack.kvm.KVMSystemTags.SWTPM_VERSION;
@@ -264,6 +265,15 @@ public class KvmTpmManager extends AbstractService {
                         trigger.fail(err(ORG_ZSTACK_KVM_10163, VM_STATE_ERROR,
                                 "The current VM state does not support adding TPM operations")
                                 .withOpaque("support.vm.state", SUPPORT_VM_STATES_FOR_TPM_OPERATION));
+                        return;
+                    }
+                    trigger.next();
+                })
+                .build())
+            .then(Flow.of("check-tpm-not-exists")
+                .handle(trigger -> {
+                    if (VmTpmManager.findTpmUuidForVmOrNull(context.vmInstanceUuid) != null) {
+                        trigger.fail(err(ORG_ZSTACK_KVM_10163, TPM_ALREADY_EXISTS, "tpm device already exists"));
                         return;
                     }
                     trigger.next();
@@ -1048,7 +1058,7 @@ public class KvmTpmManager extends AbstractService {
         APIAddTpmEvent event = new APIAddTpmEvent(msg.getId());
 
         AddTpmMsg inner = AddTpmMsg.valueOf(msg);
-        bus.makeTargetServiceIdByResourceUuid(inner, SERVICE_ID, msg.getResourceUuid());
+        bus.makeTargetServiceIdByResourceUuid(inner, SERVICE_ID, msg.getVmInstanceUuid());
         bus.send(inner, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {

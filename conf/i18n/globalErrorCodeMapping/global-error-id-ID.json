@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "tidak dapat melepaskan jaringan L3 dari router VPC [uuid:%s] karena status master dan slave tidak konsisten",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "tidak dapat menemukan perangkat mesin virtual dengan uuid: %s",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "operasi TPM/host-file perangkat VM gagal: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM memerlukan mode boot UEFI, tetapi VM[uuid:%s] menggunakan mode boot %s; ubah mode boot ke UEFI terlebih dahulu",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "tidak dapat mengubah mode boot VM[uuid:%s] menjadi %s karena VM memiliki perangkat TPM yang memerlukan mode boot UEFI; hapus TPM terlebih dahulu",
   "ORG_ZSTACK_KVM_10163": "operasi KVM vTPM/host-file gagal: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "operasi protokol volume gagal: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "operasi snapshot volume gagal: %s",

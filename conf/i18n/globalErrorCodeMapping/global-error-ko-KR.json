@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "마스터와 슬레이브의 상태가 일치하지 않아 VPC 라우터[uuid:%s]에서 L3 네트워크를 분리할 수 없습니다",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "uuid가 %s인 가상 머신 디바이스를 찾을 수 없습니다",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "VM 디바이스 TPM/host-file 작업에 실패했습니다: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM에는 UEFI 부팅 모드가 필요하지만 VM[uuid:%s]의 부팅 모드는 %s입니다. 먼저 부팅 모드를 UEFI로 변경하세요",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "VM[uuid:%s]의 부팅 모드를 %s(으)로 변경할 수 없습니다. VM에 UEFI 부팅 모드가 필요한 TPM 디바이스가 있으므로 먼저 TPM을 제거하세요",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file 작업에 실패했습니다: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "볼륨 프로토콜 작업에 실패했습니다: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "볼륨 스냅샷 작업에 실패했습니다: %s",
