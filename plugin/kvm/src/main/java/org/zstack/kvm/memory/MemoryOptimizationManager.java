@@ -154,6 +154,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             return;
         }
         final String hostUuid = host.getUuid();
+        observationFailures.remove(hostUuid);
         observationBackoff.remove(hostUuid);
         try {
             // Host connection callbacks run in the connection flow. Only enqueue work here;
@@ -1265,12 +1266,16 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     } catch (RuntimeException eventFailure) {
                         logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
                     }
-                    // An unreachable or older Agent is retried slowly; a reconnect clears the backoff.
+                    // A transient failure is retried on the next scan; an Agent that keeps failing
+                    // (unreachable or older) is retried slowly, and a reconnect clears the backoff.
                     // A native KSM partial result is the normal reply before ZRAM is first enabled.
                     boolean ksmPartial = MemoryObservationRules.isKsmNativePartial(response, host, System.currentTimeMillis());
                     if (!ksmPartial && (response == null || !response.isSuccess())) {
-                        observationBackoff.put(host, System.currentTimeMillis() + OBSERVATION_FAILURE_BACKOFF_MS);
+                        if (observationFailures.merge(host, 1, Integer::sum) >= OBSERVATION_FAILURES_BEFORE_BACKOFF) {
+                            observationBackoff.put(host, System.currentTimeMillis() + OBSERVATION_FAILURE_BACKOFF_MS);
+                        }
                     } else {
+                        observationFailures.remove(host);
                         observationBackoff.remove(host);
                     }
                     if (ksmPartial) {
@@ -1355,7 +1360,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private final MemoryBatchCursor observationCursor = new MemoryBatchCursor();
     private static final long OBSERVATION_FAILURE_BACKOFF_MS = TimeUnit.MINUTES.toMillis(10);
+    private static final int OBSERVATION_FAILURES_BEFORE_BACKOFF = 3;
     private final Map<String, Long> observationBackoff = new ConcurrentHashMap<>();
+    private final Map<String, Integer> observationFailures = new ConcurrentHashMap<>();
 
     void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> completion) {
         Map<String, Integer> communication = new LinkedHashMap<>();
