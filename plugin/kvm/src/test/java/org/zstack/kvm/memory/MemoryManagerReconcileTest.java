@@ -29,7 +29,7 @@ public class MemoryManagerReconcileTest {
         MemoryAgentResponse resultResponse;
         MemoryAgentResponse resultObservation;
         int unobservedPreparationSubmits;
-        APIUpdateMemoryPolicyMsg submittedPreparation;
+        MemoryActionRequest submittedPreparation;
         MemoryAgentResponse submittedBackendObservation;
         int backendSubmits;
         String targetScope;
@@ -41,12 +41,12 @@ public class MemoryManagerReconcileTest {
             if (submissionTrace != null) { submissionTrace.add("targets"); }
             return Collections.singletonList("host");
         }
-        @Override MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, MemoryAgentResponse observation) {
+        @Override MemoryTaskInventory submit(MemoryActionRequest msg, MemoryAgentResponse observation) {
             backendSubmits++; submittedPreparation = msg; submittedBackendObservation = observation;
             if (submissionTrace != null) { submissionTrace.add("submit"); }
             return new MemoryTaskInventory();
         }
-        @Override public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
+        @Override public MemoryTaskInventory submit(MemoryActionRequest msg) {
             unobservedPreparationSubmits++;
             return new MemoryTaskInventory();
         }
@@ -466,7 +466,7 @@ public class MemoryManagerReconcileTest {
         inject(manager, "pluginRgty", licensedRegistry());
         inject(manager, "bus", busPublishing(manager));
 
-        APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+        MemoryActionRequest msg = new MemoryActionRequest();
         msg.setScope("Host"); msg.setResourceUuid("host");
         msg.setAction("prepareWritebackBackend"); msg.setExpectedRevision(4L);
         msg.setPolicy("{}");
@@ -477,7 +477,7 @@ public class MemoryManagerReconcileTest {
         preparation.setBackendCapacityBytes(1073741824L); preparation.setResetConfirmed(true);
         msg.setBackendPreparation(preparation);
 
-        invokeUpdate(manager, msg);
+        submitHostAction(manager, msg);
 
         assertEquals(1, repository.targetLookups);
         assertEquals("Host", repository.targetScope);
@@ -774,9 +774,12 @@ public class MemoryManagerReconcileTest {
                 });
     }
 
-    private static void invokeUpdate(MemoryOptimizationManager manager, APIUpdateMemoryPolicyMsg msg) throws Exception {
-        Method update = MemoryOptimizationManager.class.getDeclaredMethod("update", APIUpdateMemoryPolicyMsg.class);
-        update.setAccessible(true); update.invoke(manager, msg);
+    private static void submitHostAction(Manager manager, MemoryActionRequest msg) throws Exception {
+        Method submit = MemoryOptimizationManager.class.getDeclaredMethod("submitHostAction",
+                MemoryActionRequest.class, Consumer.class, Consumer.class);
+        submit.setAccessible(true);
+        submit.invoke(manager, msg, (Consumer<MemoryTaskInventory>) task -> manager.publishedEvents++,
+                (Consumer<MemoryOperationException>) error -> { throw error; });
     }
 
     @Test public void recoveryReconcileBindsOriginalRequestAndOnlyExactPreClaimRejection() throws Exception {

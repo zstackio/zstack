@@ -24,18 +24,7 @@ public final class MemoryTaskRules {
         }
     }
 
-    /** Whether a user request must pass the Cloud License configuration gate. */
-    public static boolean requiresLicenseForConfiguration(String action, String policy) {
-        // Internal recovery tasks may omit the empty policy altogether.  A
-        // reconcile with no configuration payload is still read/repair-only.
-        return "reconcile".equals(action) ? policy != null && !isSafetyAction(action, policy) : true;
-    }
-
     public static boolean blocksHost(String status) { return ACTIVE.contains(status); }
-    /** Only these per-Host states are safe terminal candidates for explicit history cleanup. */
-    public static boolean canDeleteHistory(String status) {
-        return Arrays.asList("Succeeded", "Failed", "Cancelled").contains(status);
-    }
     /** Keep parent aggregation identical for normal result processing and retention checks. */
     public static String aggregateParentStatus(Iterable<String> statuses) {
         java.util.List<String> values = new java.util.ArrayList<>();
@@ -48,7 +37,6 @@ public final class MemoryTaskRules {
                 : values.stream().allMatch("Cancelled"::equals) ? "Cancelled"
                 : values.contains("Succeeded") || hasBlocked ? "Partial" : "Failed";
     }
-    public static boolean canCancel(String status) { return "Queued".equals(status); }
     public static boolean canTransition(String from, String to) {
         switch (from) {
             case "Queued": return Arrays.asList("Applying", "Cancelled", "Failed").contains(to);

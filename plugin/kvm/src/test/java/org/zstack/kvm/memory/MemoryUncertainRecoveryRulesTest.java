@@ -170,24 +170,23 @@ public class MemoryUncertainRecoveryRulesTest {
         return response;
     }
 
-    private APIUpdateMemoryPolicyMsg message() {
-        APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+    private MemoryActionRequest message() {
+        MemoryActionRequest msg = new MemoryActionRequest();
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setAction("recoverUncertain");
         msg.setExpectedControlOperationUuid(OLD); msg.setRecovery(requestDto()); return msg;
     }
 
     @Test public void requiresExplicitNarrowHostRecoveryWithoutPolicyWrites() {
         MemoryUncertainRecoveryRules.validate(message());
-        APIUpdateMemoryPolicyMsg ordinary = message();
+        MemoryActionRequest ordinary = message();
         ordinary.getRecovery().setDrainControlOperationUuid(null);
         MemoryUncertainRecoveryRules.validate(ordinary);
-        APIUpdateMemoryPolicyMsg msg = message(); msg.getRecovery().setConfirmed(false); rejects(msg);
+        MemoryActionRequest msg = message(); msg.getRecovery().setConfirmed(false); rejects(msg);
         msg = message(); msg.setAction("apply"); rejects(msg);
         msg = message(); msg.setScope("Global"); rejects(msg);
         msg = message(); msg.setTargetHostUuids(Collections.singletonList("host1")); rejects(msg);
         msg = message(); msg.setPolicy("{\"zram\":{\"enabled\":true}}"); rejects(msg);
         msg = message(); msg.getRecovery().setExpectedPoolGeneration("../path"); rejects(msg);
-        assertTrue(MemoryTaskRules.requiresLicenseForConfiguration("recoverUncertain", "{}"));
     }
 
     @Test public void policyRecoveryRequiresExactOriginalAndCompleteFinalReceipt() {
@@ -295,7 +294,7 @@ public class MemoryUncertainRecoveryRulesTest {
         }
     }
 
-    private void rejects(APIUpdateMemoryPolicyMsg msg) {
+    private void rejects(MemoryActionRequest msg) {
         try { MemoryUncertainRecoveryRules.validate(msg); fail("invalid recovery was admitted"); }
         catch (MemoryOperationException expected) { assertEquals("MEMORY_UNCERTAIN_RECOVERY_INVALID", expected.getCode()); }
     }

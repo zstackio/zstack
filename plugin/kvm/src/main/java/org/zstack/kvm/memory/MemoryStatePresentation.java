@@ -10,11 +10,11 @@ final class MemoryStatePresentation {
     private MemoryStatePresentation() { }
     @SuppressWarnings("unchecked")
     static void populate(MemoryStateInventory out, long now) {
-        populate(out, now, false, false);
+        populate(out, now, false);
     }
 
     @SuppressWarnings("unchecked")
-    static void populate(MemoryStateInventory out, long now, boolean canResume, boolean canReconcile) {
+    static void populate(MemoryStateInventory out, long now, boolean canResume) {
         out.setDrift(out.getAppliedRevision() == null ? null
                 : out.getDesiredRevision() != out.getAppliedRevision());
         Long sample = out.getLastSampleTime();
@@ -64,7 +64,6 @@ final class MemoryStatePresentation {
         boolean taskIdle = out.getActiveTaskUuid() == null && "Succeeded".equals(out.getStatus());
         boolean hasControl = out.getControlOperationUuid() != null;
         if (!contradicted && canResume && taskIdle && hasControl) { actions.add("resume"); }
-        if (!contradicted && canReconcile && out.getActiveTaskUuid() == null && hasControl) { actions.add("reconcile"); }
         out.setAllowedActions(actions);
         Object savings = state.get("savings");
         Map<String, Object> metrics = savings instanceof Map

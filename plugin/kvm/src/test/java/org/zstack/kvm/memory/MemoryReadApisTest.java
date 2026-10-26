@@ -12,24 +12,6 @@ public class MemoryReadApisTest {
         public Double fraction;
     }
 
-    @Test public void stateExampleUsesActualStatusAndJsonObservationContract() throws Exception {
-        MemoryStateInventory example = MemoryStateInventory.__example__();
-        assertEquals("Succeeded", example.getStatus());
-        assertTrue(new com.google.gson.JsonParser().parse(example.getState()).isJsonObject());
-        String expectedFeature = example.getFeatureState();
-        String expectedSource = example.getFeatureStateSource();
-        MemoryStatePresentation.populate(example, example.getLastSampleTime() + 2000L);
-        assertEquals(expectedFeature, example.getFeatureState());
-        assertEquals(expectedSource, example.getFeatureStateSource());
-        assertEquals("Unknown", example.getQuality());
-        assertTrue(example.getMetrics().isEmpty());
-        byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
-                .digest(example.getAppliedPolicy().getBytes(java.nio.charset.StandardCharsets.UTF_8));
-        StringBuilder hex = new StringBuilder();
-        for (byte value : digest) { hex.append(String.format("%02x", value & 0xff)); }
-        assertEquals(hex.toString(), example.getAppliedPolicyHash());
-    }
-
     private static void assertExactUnsignedInteger(String expected, Object value) {
         assertTrue(value instanceof Number);
         assertFalse(value instanceof Double);

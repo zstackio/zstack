@@ -60,8 +60,6 @@ public class MemoryRepository {
                     "(uuid, scope, resourceUuid, revision, policy, createDate, lastOpDate) " +
                     "VALUES ('Global:global', 'Global', 'global', 0, '{\"schemaVersion\":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
                     .executeUpdate();
-            em.createNativeQuery("INSERT IGNORE INTO MemoryQueryVersionVO (name, revision) VALUES ('state', 0), ('task', 0)")
-                    .executeUpdate();
             return null;
         });
     }
@@ -79,18 +77,6 @@ public class MemoryRepository {
         return vo;
     }
 
-    private long queryVersion(EntityManager em, String name) {
-        MemoryQueryVersionVO version = em.find(MemoryQueryVersionVO.class, name);
-        if (version == null) { throw error("MEMORY_NOT_READY", "Query version store is not initialized"); }
-        return version.getRevision();
-    }
-
-    /** Caller owns the global admission lock; mutation and version commit together. */
-    private void bumpQueryVersion(EntityManager em, String name) {
-        MemoryQueryVersionVO version = em.find(MemoryQueryVersionVO.class, name);
-        if (version == null) { throw error("MEMORY_NOT_READY", "Query version store is not initialized"); }
-        version.setRevision(Math.addExact(version.getRevision(), 1L));
-    }
 
     private void validateResource(EntityManager em, String scope, String resource) {
         if ("Global".equals(scope)) {
@@ -245,13 +231,13 @@ public class MemoryRepository {
         if (!compatibility) {
             parent.setReason("Standard configuration committed; inspect per-Host policy application status");
         }
-        em.persist(parent); bumpQueryVersion(em, "task");
+        em.persist(parent);
         boolean queued = false, blocked = false;
         for (String host : hosts) {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) {
                 state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus("Unknown");
-                em.persist(state); bumpQueryVersion(em, "state");
+                em.persist(state);
             }
             if (compatibility && state.getActiveTaskUuid() != null) {
                 throw error("MEMORY_HOST_BUSY", "Host has an unresolved memory operation: " + host);
@@ -399,7 +385,7 @@ public class MemoryRepository {
      * observation, queue the same reconcile an operator would submit, once per task.
      */
     public boolean reconcileUnknownControl(String hostUuid) {
-        APIUpdateMemoryPolicyMsg msg = transaction(em -> {
+        MemoryActionRequest msg = transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
             MemoryTaskVO active = state == null || state.getActiveTaskUuid() == null ? null
                     : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
@@ -410,7 +396,7 @@ public class MemoryRepository {
                         && drainControl(em, state, em.find(MemoryTaskVO.class, active.getExpectedControlOperationUuid())))) {
                 return null;
             }
-            APIUpdateMemoryPolicyMsg reconcile = new APIUpdateMemoryPolicyMsg();
+            MemoryActionRequest reconcile = new MemoryActionRequest();
             reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
             reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
             reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
@@ -422,19 +408,40 @@ public class MemoryRepository {
         return true;
     }
 
+    /**
+     * A resume the Agent fenced before it took effect stays the Host control.
+     * While the earlier pause or drain is still the Agent's control, queue the
+     * reconcile that restores it, once per rejected resume.
+     */
+    public boolean reconcileRejectedResume(String hostUuid) {
+        MemoryTaskVO rejected = transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            return state == null || state.getControlOperationUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+        });
+        if (rejected == null || !canReconcileRejectedResume(hostUuid, rejected.getUuid())) { return false; }
+        MemoryActionRequest reconcile = new MemoryActionRequest();
+        reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
+        reconcile.setExpectedRevision(getPolicy("Host", hostUuid).getRevision());
+        reconcile.setExpectedControlOperationUuid(rejected.getExpectedControlOperationUuid());
+        reconcile.setClientRequestUuid(digest("rejected-resume:" + rejected.getUuid()).substring(0, 32));
+        submit(reconcile, "system:memory-rejected-resume-reconcile", null);
+        return true;
+    }
+
     public boolean reconcileVerifiedPoolBlock(String hostUuid, MemoryAgentResponse response) {
         Map<String, Object> actual = response == null || !response.isSuccess() || response.state == null
                 ? null : objectMap(response.state.get("actual"));
         Map<String, Object> zram = actual == null ? null : objectMap(actual.get("zram"));
         Map<String, Object> capacity = zram == null ? null : objectMap(zram.get("capacity"));
         if (capacity == null || !"APPLIED".equals(capacity.get("apply_state"))) { return false; }
-        APIUpdateMemoryPolicyMsg msg = transaction(em -> {
+        MemoryActionRequest msg = transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
             MemoryTaskVO active = state == null || state.getActiveTaskUuid() == null ? null
                     : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
             if (active == null || !"apply".equals(active.getAction()) || !"Blocked".equals(active.getStatus())
                     || !"NATIVE_POOL_UNQUALIFIED".equals(active.getReason())) { return null; }
-            APIUpdateMemoryPolicyMsg reconcile = new APIUpdateMemoryPolicyMsg();
+            MemoryActionRequest reconcile = new MemoryActionRequest();
             reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
             reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
             reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
@@ -459,7 +466,7 @@ public class MemoryRepository {
         active.setStatus("Failed"); active.setReason("SUPERSEDED_BY_NEWER_CONFIGURATION");
         // A deferred newer plan leaves the Host here until it is dispatched.
         state.setActiveTaskUuid(null); state.setStatus(active.getStatus()); state.setReason(active.getReason());
-        em.flush(); aggregateParent(em, active.getParentUuid()); bumpQueryVersion(em, "task");
+        em.flush(); aggregateParent(em, active.getParentUuid());
     }
 
     private String standardMutationDeferReason(EntityManager em, String host, MemoryStateVO state,
@@ -889,7 +896,7 @@ public class MemoryRepository {
         }
     }
 
-    private void checkSources(EntityManager em, APIUpdateMemoryPolicyMsg msg) {
+    private void checkSources(EntityManager em, MemoryActionRequest msg) {
         Map<String, Long> current = new LinkedHashMap<>();
         for (MemoryPolicyVO source : sourceChain(em, msg.getScope(), msg.getResourceUuid())) {
             current.put(source.getUuid(), source.getRevision());
@@ -996,18 +1003,18 @@ public class MemoryRepository {
         return mergeEffectiveLayer(em, result, "Host", host, hostPolicy);
     }
 
-    public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
+    public MemoryTaskInventory submit(MemoryActionRequest msg) {
         return submit(msg, (MemoryAgentResponse) null);
     }
 
-    MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, MemoryAgentResponse backendObservation) {
+    MemoryTaskInventory submit(MemoryActionRequest msg, MemoryAgentResponse backendObservation) {
         // Normalize before action validation and request hashing so omission and
         // the equivalent old explicit scope share one idempotency identity.
         msg.setScope(transaction(em -> resolvePolicyScope(em, msg.getScope(), msg.getResourceUuid())));
         return submit(msg, null, backendObservation);
     }
 
-    private MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg,
+    private MemoryTaskInventory submit(MemoryActionRequest msg,
                                        String internalActor, MemoryAgentResponse backendObservation) {
         MemoryBackendPreparationRules.validate(msg);
         MemoryUncertainRecoveryRules.validate(msg);
@@ -1046,18 +1053,6 @@ public class MemoryRepository {
                     throw error("MEMORY_IDEMPOTENCY_CONFLICT", "Request UUID was already used with different parameters");
                 }
                 return previous.get(0).toInventory();
-            }
-            List<MemoryTaskIdempotencyReceiptVO> purged = em.createQuery(
-                            "from MemoryTaskIdempotencyReceiptVO r where r.requestKey = :key",
-                            MemoryTaskIdempotencyReceiptVO.class)
-                    .setParameter("key", key).getResultList();
-            if (!purged.isEmpty()) {
-                MemoryTaskIdempotencyReceiptVO receipt = purged.get(0);
-                if (!Objects.equals(hash, receipt.getRequestHash())) {
-                    throw error("MEMORY_IDEMPOTENCY_CONFLICT", "Request UUID was already used with different parameters");
-                }
-                throw error("MEMORY_REQUEST_RESULT_PURGED", "Original task " + receipt.getTaskUuid()
-                        + " finished as " + receipt.getOriginalStatus() + "; the request will not be replayed");
             }
             List<String> availableTargets = targets(em, msg.getScope(), msg.getResourceUuid());
             List<String> hosts = MemoryTargetRules.select(msg.getScope(), availableTargets, msg.getTargetHostUuids());
@@ -1100,7 +1095,6 @@ public class MemoryRepository {
             parent.setRequestHash(hash);
             parent.setStatus(hosts.isEmpty() ? "Succeeded" : "Queued");
             parent.setReason(null);
-            bumpQueryVersion(em, "task");
             em.persist(parent);
             for (String host : hosts) {
                 MemoryStateVO state = em.find(MemoryStateVO.class, host);
@@ -1115,7 +1109,6 @@ public class MemoryRepository {
                 }
                 if (state == null) {
                     state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus("Unknown"); em.persist(state);
-                    bumpQueryVersion(em, "state");
                 }
                 if (recovery) { validateUncertainRecovery(em, state, msg); }
                 if (preparation && !Objects.equals(state.getControlOperationUuid(), msg.getExpectedControlOperationUuid())) {
@@ -1308,7 +1301,7 @@ public class MemoryRepository {
             MemoryUncertainRecovery recovery = new MemoryUncertainRecovery();
             recovery.setExpectedHostBootId(boot); recovery.setExpectedPoolGeneration(pool);
             recovery.setDrainControlOperationUuid(drainUuid); recovery.setConfirmed(true);
-            APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+            MemoryActionRequest msg = new MemoryActionRequest();
             msg.setScope("Host"); msg.setResourceUuid(hostUuid); msg.setAction(MemoryUncertainRecoveryRules.ACTION);
             msg.setPolicy("{}"); msg.setExpectedControlOperationUuid(original.getUuid()); msg.setRecovery(recovery);
             try {
@@ -1324,7 +1317,7 @@ public class MemoryRepository {
         });
     }
 
-    private void validateUncertainRecovery(EntityManager em, MemoryStateVO state, APIUpdateMemoryPolicyMsg msg) {
+    private void validateUncertainRecovery(EntityManager em, MemoryStateVO state, MemoryActionRequest msg) {
         MemoryTaskVO original = em.find(MemoryTaskVO.class, msg.getExpectedControlOperationUuid());
         MemoryTaskVO active = state.getActiveTaskUuid() == null ? null
                 : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
@@ -1378,7 +1371,7 @@ public class MemoryRepository {
         String capacityMaintenance;
     }
 
-    private JsonObject backendMaintenanceRequest(EntityManager em, APIUpdateMemoryPolicyMsg msg,
+    private JsonObject backendMaintenanceRequest(EntityManager em, MemoryActionRequest msg,
             MemoryStateVO state, MemoryAgentResponse observation) {
         MemoryBackendPreparation request = msg.getBackendPreparation();
         long now = System.currentTimeMillis();
@@ -2129,7 +2122,6 @@ public class MemoryRepository {
             MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) {
                 state = new MemoryStateVO(); state.setHostUuid(hostUuid); state.setStatus("Unknown"); em.persist(state);
-                bumpQueryVersion(em, "state");
             }
             if (state.getActiveTaskUuid() != null) {
                 MemoryTaskVO active = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
@@ -2156,7 +2148,6 @@ public class MemoryRepository {
                                 .setMaxResults(2).getResultList().size() == 1) {
                         MemoryTaskVO parent = em.find(MemoryTaskVO.class, active.getParentUuid());
                         if (parent != null && queueConfigurationReconcile(em, parent, state)) {
-                            bumpQueryVersion(em, "task");
                             return true;
                         }
                     }
@@ -2204,12 +2195,11 @@ public class MemoryRepository {
 
             String actor = "system:memory-host-connect-policy";
             long revision = state.getDesiredRevision() + 1;
-            APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+            MemoryActionRequest msg = new MemoryActionRequest();
             msg.setScope("Host"); msg.setResourceUuid(hostUuid);
             msg.setAction(plan.replacesAppliedPolicy ? "clearOverride" : "apply");
             MemoryTaskVO parent = task(msg, null, null, revision, "{}", actor);
             parent.setStatus("Queued"); em.persist(parent);
-            bumpQueryVersion(em, "task");
             MemoryTaskVO child = task(msg, parent.getUuid(), hostUuid, revision, plan.payload, actor);
             if (plan.capacityMaintenance != null && !plan.hasBlockers) {
                 child.setAction("drain"); child.setPolicy(plan.capacityMaintenance);
@@ -2506,7 +2496,7 @@ public class MemoryRepository {
         return null;
     }
 
-    private MemoryTaskVO task(APIUpdateMemoryPolicyMsg msg, String parent, String host, long revision,
+    private MemoryTaskVO task(MemoryActionRequest msg, String parent, String host, long revision,
                               String policy, String actor) {
         MemoryTaskVO result = new MemoryTaskVO();
         result.setUuid(UUID.randomUUID().toString().replace("-", "")); result.setParentUuid(parent); result.setHostUuid(host);
@@ -2529,8 +2519,6 @@ public class MemoryRepository {
                     "and t.status = 'Queued' and exists (select h.uuid from HostVO h where h.uuid = t.hostUuid) order by t.createDate", MemoryTaskVO.class)
                     .setMaxResults((int) (concurrency - active)).getResultList();
             List<MemoryTaskVO> stale = new ArrayList<>();
-            boolean stateChanged = false;
-            if (!list.isEmpty()) { bumpQueryVersion(em, "task"); }
             for (MemoryTaskVO task : list) {
                 if (!"VM".equals(task.getScope())
                         && (Arrays.asList("apply", "clearOverride").contains(task.getAction())
@@ -2576,18 +2564,17 @@ public class MemoryRepository {
                     // lifecycle fence. Project only the admitted queued work;
                     // actual drain/completion stages still come from its result.
                     if ("Queued".equals(state.getStatus())) {
-                        state.setStatus("Applying"); stateChanged = true;
+                        state.setStatus("Applying");
                     }
                     if (task.getPolicyPlanHash() != null
                             && task.getPolicyPlanHash().equals(state.getPolicyPlanHash())
                             && "Queued".equals(state.getPolicyPlanStatus())) {
-                        state.setPolicyPlanStatus("Applying"); stateChanged = true;
+                        state.setPolicyPlanStatus("Applying");
                     }
                 }
                 MemoryTaskVO parent = em.find(MemoryTaskVO.class, task.getParentUuid());
                 if (parent != null) { parent.setStatus("Applying"); }
             }
-            if (stateChanged) { bumpQueryVersion(em, "state"); }
             list.removeAll(stale);
             em.flush();
             return list;
@@ -2987,7 +2974,6 @@ public class MemoryRepository {
                 }
                 bumpScopeRevision(em, "Host", host.getHostUuid());
             }
-            bumpQueryVersion(em, "task");
             // A proof is only actionable for the currently admitted transition.
             // Duplicate or late callbacks must not mutate a newer fence.
             if (restoredControlFence != null || notIssuedControlRestored) { host.setControlOperationUuid(restoredControlFence); }
@@ -3061,7 +3047,6 @@ public class MemoryRepository {
                                 : "Pool preparation completed; retained target restoration is queued");
                     } else { host.setReason("Drain completed; pool preparation is queued"); }
                     host.setPolicyPlanStatus("Queued");
-                    bumpQueryVersion(em, "state");
                 }
             }
             MemoryTaskVO failedTask = task;
@@ -3510,7 +3495,6 @@ public class MemoryRepository {
             em.persist(child);
             state.setActiveTaskUuid(child.getUuid()); state.setStatus("Queued"); state.setReason(null);
             state.setDesiredRevision(revision); state.setPermitAuthorized(false);
-            bumpQueryVersion(em, "task"); bumpQueryVersion(em, "state");
             em.flush();
             return root.toInventory();
         });
@@ -3558,7 +3542,7 @@ public class MemoryRepository {
                 || observedAt > now || now - observedAt >= MemoryOptimizationGlobalConfig.displayTtlMillis()) {
             throw new IllegalArgumentException("CURRENT_MAINTENANCE_IDENTITY_NOT_PROVEN");
         }
-        APIUpdateMemoryPolicyMsg validation = new APIUpdateMemoryPolicyMsg();
+        MemoryActionRequest validation = new MemoryActionRequest();
         validation.setScope("Host");
         validation.setPolicy("{}"); validation.setExpectedControlOperationUuid(drain.getUuid());
         String preparation;
@@ -3700,7 +3684,6 @@ public class MemoryRepository {
                     || !Objects.equals(original.getUuid(), host.getControlOperationUuid())
                     || !Objects.equals(task.getHostUuid(), original.getHostUuid())) { return null; }
             task.setStatus("Failed"); task.setReason("CLOUD_LICENSE_EXPIRED_BEFORE_RECOVERY_DISPATCH");
-            bumpQueryVersion(em, "task");
             host.setActiveTaskUuid(original.getUuid()); host.setStatus("Unknown"); host.setReason(original.getReason());
             queueFailure(em, MemoryTaskFailureEvent.fromTask(task));
             em.flush(); aggregateParent(em, task.getParentUuid());
@@ -3955,7 +3938,6 @@ public class MemoryRepository {
             if (host == null) {
                 host = new MemoryStateVO(); host.setHostUuid(hostUuid);
                 host.setStatus("Unknown"); em.persist(host);
-                bumpQueryVersion(em, "state");
             }
             updateState(host, response, true);
             // Before any control operation, the first read-only observation
@@ -4030,7 +4012,6 @@ public class MemoryRepository {
             }
             state.put("nativeKsmObservation", partial);
             host.setState(JSONObjectUtil.toJsonString(state));
-            bumpQueryVersion(em, "state");
             return null;
         });
     }
@@ -4146,7 +4127,7 @@ public class MemoryRepository {
     }
 
     private static MemoryTaskVO rejectedResumeRecoverySource(EntityManager em, MemoryStateVO state,
-                                                               APIUpdateMemoryPolicyMsg msg, String host,
+                                                               MemoryActionRequest msg, String host,
                                                                long now) {
         if (state == null || state.getActiveTaskUuid() != null
                 || msg.getExpectedControlOperationUuid() == null) {
@@ -4232,225 +4213,12 @@ public class MemoryRepository {
         });
     }
 
-    MemoryQueryPage<MemoryStateVO> statePage(List<String> hosts, int start, int limit, String requestedSnapshot) {
-        if (start < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
-        int pageSize = MemoryOptimizationGlobalConfig.pageSize(limit);
-        return this.<MemoryQueryPage<MemoryStateVO>>transaction(em -> {
-            lock(em);
-            if (hosts != null && !hosts.isEmpty()) {
-                Set<String> requested = new HashSet<>(hosts);
-                List<String> existing = em.createQuery("select h.uuid from HostVO h where h.uuid in :hosts"
-                                + " and h.hypervisorType = 'KVM'", String.class)
-                        .setParameter("hosts", requested).getResultList();
-                if (existing.size() != requested.size()) {
-                    throw error("MEMORY_INVALID_TARGETS", "Current memory states require existing KVM Host UUIDs");
-                }
-            }
-            String filter = currentStateFilter(hosts);
-            TypedQuery<Long> count = em.createQuery("select count(s) from MemoryStateVO s" + filter, Long.class);
-            if (hosts != null && !hosts.isEmpty()) { count.setParameter("hosts", hosts); }
-            long total = count.getSingleResult();
-            String snapshot = digest("state-v2|" + queryVersion(em, "state") + "|" + total + "|"
-                    + (hosts == null || hosts.isEmpty() ? "*" : new TreeSet<>(hosts)));
-            if (requestedSnapshot != null && !requestedSnapshot.equals(snapshot)) {
-                throw error("MEMORY_QUERY_SNAPSHOT_CHANGED", "The memory state result set changed; restart pagination");
-            }
-            TypedQuery<MemoryStateVO> page = em.createQuery("from MemoryStateVO s" + filter + " order by s.hostUuid", MemoryStateVO.class);
-            if (hosts != null && !hosts.isEmpty()) { page.setParameter("hosts", hosts); }
-            List<MemoryStateVO> rows = page.setFirstResult(start).setMaxResults(pageSize).getResultList();
-            Set<String> activeIds = new HashSet<>();
-            for (MemoryStateVO row : rows) {
-                row.setCurrentStep(null);
-                if (row.getActiveTaskUuid() != null) { activeIds.add(row.getActiveTaskUuid()); }
-            }
-            if (!activeIds.isEmpty()) {
-                // Project only this page's bound operations in the same read
-                // transaction. Do not scan task history or query per Host.
-                Map<String, MemoryTaskVO> active = em.createQuery("from MemoryTaskVO t where t.uuid in :ids", MemoryTaskVO.class)
-                        .setParameter("ids", activeIds).getResultList().stream()
-                        .collect(Collectors.toMap(MemoryTaskVO::getUuid, task -> task));
-                Set<String> roots = active.values().stream()
-                        .filter(task -> Arrays.asList("apply", "clearOverride").contains(task.getAction()))
-                        .map(MemoryTaskVO::getParentUuid).filter(Objects::nonNull).collect(Collectors.toSet());
-                Map<String, MemoryTaskVO> drains = new HashMap<>();
-                if (!roots.isEmpty()) {
-                    List<Object[]> contexts = em.createQuery("select d, p from MemoryTaskVO d, MemoryTaskVO p "
-                            + "where d.parentUuid = p.uuid and p.uuid in :roots and d.hostUuid in :hosts "
-                            + "and d.action = 'drain' and d.status = 'Succeeded'", Object[].class)
-                            .setParameter("roots", roots)
-                            .setParameter("hosts", rows.stream().map(MemoryStateVO::getHostUuid).collect(Collectors.toList()))
-                            .getResultList();
-                    for (Object[] context : contexts) {
-                        MemoryTaskVO drain = (MemoryTaskVO) context[0];
-                        if (isAutomaticCapacityDrain(drain, (MemoryTaskVO) context[1])) {
-                            drains.put(drain.getHostUuid() + ":" + drain.getParentUuid(), drain);
-                        }
-                    }
-                }
-                for (MemoryStateVO row : rows) {
-                    MemoryTaskVO task = active.get(row.getActiveTaskUuid());
-                    if (task == null || !Objects.equals(row.getHostUuid(), task.getHostUuid())
-                            || row.getDesiredRevision() != task.getDesiredRevision()
-                            || !MemoryTaskRules.blocksHost(task.getStatus())) { continue; }
-                    String step = "clearOverride".equals(task.getAction()) ? "apply" : task.getAction();
-                    if (!Arrays.asList("apply", "drain", "pause", "resume", "reconcile", "recoverUncertain",
-                            "prepareZramPool", "prepareWritebackBackend").contains(step)) { continue; }
-                    MemoryTaskVO drain = drains.get(row.getHostUuid() + ":" + task.getParentUuid());
-                    if ("apply".equals(step) && drain != null) {
-                        if (Objects.equals(drain.getUuid(), task.getExpectedControlOperationUuid())) {
-                            step = "activateZramPool";
-                        } else {
-                            try {
-                                if (Boolean.TRUE.equals(MemoryPolicyRules.decode(task.getPolicy()).writeback.enabled)) {
-                                    step = "restoreWriteback";
-                                }
-                            } catch (RuntimeException invalid) { continue; }
-                        }
-                    }
-                    row.setCurrentStep(step);
-                }
-            }
-            return new MemoryQueryPage<>(rows, total, snapshot);
-        });
-    }
-
     public long stateCount(List<String> hosts) {
         return transaction(em -> {
             String filter = currentStateFilter(hosts);
             TypedQuery<Long> query = em.createQuery("select count(s) from MemoryStateVO s" + filter, Long.class);
             if (hosts != null && !hosts.isEmpty()) { query.setParameter("hosts", hosts); }
             return query.getSingleResult();
-        });
-    }
-
-    /**
-     * Explicitly remove one terminal root task and its Host children. The compact
-     * receipt survives indefinitely so an old clientRequestUuid cannot become a
-     * fresh operation after the visible task history is purged.
-     */
-    public MemoryTaskDeleteResult deleteTaskTree(String taskUuid) {
-        if (taskUuid == null || !taskUuid.matches("[0-9a-fA-F]{32}")) {
-            throw error("MEMORY_INVALID_REQUEST", "task UUID must be a 32-character UUID");
-        }
-        return transaction(em -> {
-            lock(em);
-            MemoryTaskVO root = em.find(MemoryTaskVO.class, taskUuid, LockModeType.PESSIMISTIC_WRITE);
-            if (root == null) {
-                // A receipt distinguishes an already purged UUID from a never-known UUID,
-                // while both remain successful no-op DELETEs.
-                em.find(MemoryTaskIdempotencyReceiptVO.class, taskUuid);
-                MemoryTaskDeleteResult missing = new MemoryTaskDeleteResult();
-                missing.setTaskUuid(taskUuid); missing.setDeleted(false);
-                return missing;
-            }
-            if (root.getParentUuid() != null) {
-                throw error("MEMORY_TASK_NOT_ROOT", "Task " + taskUuid + " is a child; delete its root task instead");
-            }
-
-            List<MemoryTaskVO> children = em.createQuery(
-                            "from MemoryTaskVO t where t.parentUuid = :parent order by t.uuid", MemoryTaskVO.class)
-                    .setParameter("parent", taskUuid).setLockMode(LockModeType.PESSIMISTIC_WRITE).getResultList();
-            if (!children.isEmpty() && !MemoryTaskRules.canDeleteHistory(root.getStatus())
-                    && !"Partial".equals(root.getStatus())) {
-                throw error("MEMORY_TASK_REFERENCED", "Root task " + taskUuid + " is not terminal: " + root.getStatus());
-            }
-            if (children.isEmpty() && !MemoryTaskRules.canDeleteHistory(root.getStatus())) {
-                throw error("MEMORY_TASK_REFERENCED", "Root task " + taskUuid + " is not terminal: " + root.getStatus());
-            }
-            for (MemoryTaskVO child : children) {
-                if (!MemoryTaskRules.canDeleteHistory(child.getStatus())) {
-                    throw error("MEMORY_TASK_REFERENCED", "Child task " + child.getUuid() + " is unresolved: " + child.getStatus());
-                }
-            }
-            if (!children.isEmpty() && !Objects.equals(root.getStatus(), MemoryTaskRules.aggregateParentStatus(
-                    children.stream().map(MemoryTaskVO::getStatus).collect(Collectors.toList())))) {
-                throw error("MEMORY_TASK_REFERENCED", "Root task " + taskUuid + " aggregate status is inconsistent with its children");
-            }
-            if (em.find(MemoryTaskIdempotencyReceiptVO.class, taskUuid) != null) {
-                throw error("MEMORY_TASK_REFERENCED", "A deletion receipt already exists for task " + taskUuid);
-            }
-            List<String> ids = new ArrayList<>();
-            ids.add(taskUuid);
-            List<String> childIds = children.stream().map(MemoryTaskVO::getUuid).collect(Collectors.toList());
-            ids.addAll(childIds);
-            Set<String> taskHosts = children.stream().map(MemoryTaskVO::getHostUuid).filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
-            if (root.getHostUuid() != null) { taskHosts.add(root.getHostUuid()); }
-
-            // A child itself must not have descendants; this is a bounded one-level task tree.
-            Long grandchildren = childIds.isEmpty() ? 0L : em.createQuery(
-                    "select count(t) from MemoryTaskVO t where t.parentUuid in :parents", Long.class)
-                    .setParameter("parents", childIds).getSingleResult();
-            if (grandchildren != 0) {
-                throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid + " is not a root with a closed child set");
-            }
-
-            Long stateReferences = em.createQuery("select count(s) from MemoryStateVO s where "
-                            + "s.activeTaskUuid in :ids or s.controlOperationUuid in :ids", Long.class)
-                    .setParameter("ids", ids).getSingleResult();
-            boolean stateJsonReference = false;
-            if (!taskHosts.isEmpty()) {
-                List<MemoryStateVO> hostStates = em.createQuery("from MemoryStateVO s where s.hostUuid in :hosts", MemoryStateVO.class)
-                        .setParameter("hosts", taskHosts).getResultList();
-                for (MemoryStateVO state : hostStates) {
-                    if (containsOperationReference(state.getState(), ids)) {
-                        stateJsonReference = true; break;
-                    }
-                }
-            }
-            Long taskReferences = em.createQuery("select count(t) from MemoryTaskVO t where t.uuid not in :ids and "
-                            + "(t.reconcileOperationUuid in :ids or t.expectedControlOperationUuid in :ids "
-                            + "or t.issuedPermitOperationUuid in :ids)", Long.class)
-                    .setParameter("ids", ids).getSingleResult();
-            Long migrationReferences = em.createQuery("select count(m) from MemoryMigrationVO m where m.operationUuid in :ids", Long.class)
-                    .setParameter("ids", ids).getSingleResult();
-            if (stateReferences != 0 || stateJsonReference || taskReferences != 0
-                    || migrationReferences != 0) {
-                throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid
-                        + " is still referenced by Host state, another task, or migration");
-            }
-
-            if (root.getRequestKey() != null) {
-                List<MemoryTaskIdempotencyReceiptVO> duplicateReceipts = em.createQuery(
-                                "from MemoryTaskIdempotencyReceiptVO r where r.requestKey = :key", MemoryTaskIdempotencyReceiptVO.class)
-                        .setParameter("key", root.getRequestKey()).getResultList();
-                if (!duplicateReceipts.isEmpty()) {
-                    throw error("MEMORY_TASK_REFERENCED", "Idempotency receipt already exists for task tree " + taskUuid);
-                }
-            }
-
-            Long pendingNotifications = em.createQuery("select count(o) from MemoryTaskFailureOutboxVO o "
-                            + "where o.taskUuid in :ids and o.delivered = false", Long.class)
-                    .setParameter("ids", ids).getSingleResult();
-            if (pendingNotifications != 0) {
-                throw error("MEMORY_TASK_REFERENCED", "Task tree " + taskUuid + " has an undelivered failure notification");
-            }
-
-            MemoryTaskIdempotencyReceiptVO receipt = new MemoryTaskIdempotencyReceiptVO();
-            receipt.setTaskUuid(taskUuid);
-            receipt.setRequestKey(root.getRequestKey());
-            receipt.setRequestHash(root.getRequestHash());
-            receipt.setOriginalStatus(root.getStatus());
-            receipt.setDeletedDate(new Timestamp(System.currentTimeMillis()));
-            em.persist(receipt);
-            MemoryTaskDeleteResult deleted = new MemoryTaskDeleteResult();
-            deleted.setTaskUuid(taskUuid); deleted.setDeleted(true);
-            deleted.setScope(root.getScope()); deleted.setResourceUuid(root.getResourceUuid());
-            List<String> hostUuids = new ArrayList<>();
-            if (root.getHostUuid() != null) { hostUuids.add(root.getHostUuid()); }
-            for (MemoryTaskVO child : children) {
-                if (child.getHostUuid() != null && !hostUuids.contains(child.getHostUuid())) { hostUuids.add(child.getHostUuid()); }
-            }
-            deleted.setHostUuids(hostUuids);
-            // Delivered outbox rows are queue bookkeeping, not the durable audit record;
-            // the platform alarm/event remains the audit. Never remove undelivered rows.
-            em.createQuery("delete from MemoryTaskFailureOutboxVO o where o.taskUuid in :ids and o.delivered = true")
-                    .setParameter("ids", ids).executeUpdate();
-            bumpQueryVersion(em, "task");
-            for (MemoryTaskVO child : children) { em.remove(child); }
-            em.remove(root);
-            em.flush();
-            return deleted;
         });
     }
 
@@ -4498,7 +4266,6 @@ public class MemoryRepository {
             lock(em);
             // A deleted Host with retained Unknown evidence leaves its state
             // row intact, but has still changed the current query membership.
-            bumpQueryVersion(em, "state");
             String unfinished = "t.status not in ('Succeeded', 'Failed', 'Cancelled')";
             String orphanVm = "not exists (select v.uuid from VmInstanceVO v where v.uuid = e.vmUuid)"
                     + " and not exists (select t.uuid from MemoryTaskVO t where t.scope = 'VM' and t.resourceUuid = e.vmUuid and " + unfinished + ")"
@@ -4525,7 +4292,7 @@ public class MemoryRepository {
         });
     }
 
-    /** Recompute each Host's public state with the GetMemoryStates projection; a Host without state has none. */
+    /** Recompute each Host's public state from the Host state projection; a Host without state has none. */
     public void refreshHostStates(Collection<String> hosts, long now) {
         for (String host : new LinkedHashSet<>(hosts)) {
             List<MemoryStateVO> states = allStates(Collections.singletonList(host));
@@ -4539,9 +4306,7 @@ public class MemoryRepository {
             }
             MemoryStateVO state = states.get(0);
             MemoryStateInventory projected = MemoryMetricsPresentation.inventory(state, null, now,
-                    canResumeControl(host, state.getControlOperationUuid()),
-                    canReconcileRejectedResume(host, state.getControlOperationUuid()),
-                    uncertainRecoveryRequest(host));
+                    canResumeControl(host, state.getControlOperationUuid()), uncertainRecoveryRequest(host));
             transaction(em -> {
                 HostMemoryStateVO row = em.find(HostMemoryStateVO.class, host);
                 boolean created = row == null;
@@ -4606,126 +4371,12 @@ public class MemoryRepository {
         }
     }
 
-    public long taskCount(APIGetMemoryTasksMsg msg) {
-        return transaction(em -> {
-            String query = "select count(t) from MemoryTaskVO t where 1=1";
-            if (msg.getUuid() != null) { query += " and (t.uuid = :uuid or t.parentUuid = :uuid)"; }
-            if (msg.getHostUuid() != null) { query += " and t.hostUuid = :host"; }
-            if (msg.getStatus() != null) { query += " and t.status = :status"; }
-            TypedQuery<Long> q = em.createQuery(query, Long.class);
-            if (msg.getUuid() != null) { q.setParameter("uuid", msg.getUuid()); }
-            if (msg.getHostUuid() != null) { q.setParameter("host", msg.getHostUuid()); }
-            if (msg.getStatus() != null) { q.setParameter("status", msg.getStatus()); }
-            return q.getSingleResult();
-        });
-    }
-
-    public List<MemoryTaskInventory> tasks(APIGetMemoryTasksMsg msg) {
-        if (msg.getStart() < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
-        return transaction(em -> {
-            String query = "from MemoryTaskVO t where 1=1";
-            if (msg.getUuid() != null) { query += " and (t.uuid = :uuid or t.parentUuid = :uuid)"; }
-            if (msg.getHostUuid() != null) { query += " and t.hostUuid = :host"; }
-            if (msg.getStatus() != null) { query += " and t.status = :status"; }
-            TypedQuery<MemoryTaskVO> q = em.createQuery(query + " order by t.createDate desc, t.uuid", MemoryTaskVO.class);
-            if (msg.getUuid() != null) { q.setParameter("uuid", msg.getUuid()); }
-            if (msg.getHostUuid() != null) { q.setParameter("host", msg.getHostUuid()); }
-            if (msg.getStatus() != null) { q.setParameter("status", msg.getStatus()); }
-            return q.setFirstResult(msg.getStart()).setMaxResults(msg.getLimit())
-                    .getResultList().stream().map(MemoryTaskVO::toInventory).collect(Collectors.toList());
-        });
-    }
-
-    MemoryQueryPage<MemoryTaskInventory> taskPage(APIGetMemoryTasksMsg msg) {
-        if (msg.getStart() < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
-        return this.<MemoryQueryPage<MemoryTaskInventory>>transaction(em -> {
-            lock(em);
-            String query = "from MemoryTaskVO t where 1=1";
-            if (msg.getUuid() != null) { query += " and (t.uuid = :uuid or t.parentUuid = :uuid)"; }
-            if (msg.getHostUuid() != null) { query += " and t.hostUuid = :host"; }
-            if (msg.getStatus() != null) { query += " and t.status = :status"; }
-            TypedQuery<Long> count = em.createQuery("select count(t) " + query, Long.class);
-            bindTaskFilter(count, msg);
-            long total = count.getSingleResult();
-            String snapshot = digest("task-v2|" + queryVersion(em, "task") + "|" + total + "|"
-                    + msg.getUuid() + "|" + msg.getHostUuid() + "|" + msg.getStatus());
-            if (msg.getSnapshotId() != null && !msg.getSnapshotId().equals(snapshot)) {
-                throw error("MEMORY_QUERY_SNAPSHOT_CHANGED", "The memory task result set changed; restart pagination");
-            }
-            TypedQuery<MemoryTaskVO> page = em.createQuery(query + " order by t.createDate desc, t.uuid", MemoryTaskVO.class);
-            bindTaskFilter(page, msg);
-            List<MemoryTaskInventory> items = page.setFirstResult(msg.getStart()).setMaxResults(msg.getLimit())
-                    .getResultList().stream().map(MemoryTaskVO::toInventory).collect(Collectors.toList());
-            return new MemoryQueryPage<>(items, total, snapshot);
-        });
-    }
-
-    private static void bindTaskFilter(TypedQuery<?> query, APIGetMemoryTasksMsg msg) {
-        if (msg.getUuid() != null) { query.setParameter("uuid", msg.getUuid()); }
-        if (msg.getHostUuid() != null) { query.setParameter("host", msg.getHostUuid()); }
-        if (msg.getStatus() != null) { query.setParameter("status", msg.getStatus()); }
-    }
-
-    public MemoryTaskInventory cancel(String uuid) {
-        return transaction(em -> {
-            lock(em);
-            MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
-            if (task == null || !MemoryTaskRules.canCancel(task.getStatus())) {
-                throw error("MEMORY_TASK_NOT_CANCELLABLE", "Only Queued tasks can be cancelled");
-            }
-            bumpQueryVersion(em, "task");
-            List<MemoryTaskVO> children = task.getHostUuid() == null
-                    ? em.createQuery("from MemoryTaskVO t where t.parentUuid = :parent", MemoryTaskVO.class)
-                    .setParameter("parent", uuid).getResultList() : Collections.singletonList(task);
-            for (MemoryTaskVO child : children) {
-                if (!MemoryTaskRules.canCancel(child.getStatus())) { throw error("MEMORY_TASK_NOT_CANCELLABLE", "A child already started"); }
-                child.setStatus("Cancelled");
-                MemoryStateVO state = em.find(MemoryStateVO.class, child.getHostUuid());
-                if (state != null && child.getUuid().equals(state.getActiveTaskUuid())) {
-                    MemoryTaskVO recovery = uncertainRecoveryForResult(em, child);
-                    if (recovery != null) {
-                        String restore = "reconcile".equals(child.getAction()) ? recovery.getUuid()
-                                : recovery.getExpectedControlOperationUuid();
-                        MemoryTaskVO previous = em.find(MemoryTaskVO.class, restore);
-                        if (previous == null || !"Unknown".equals(previous.getStatus())
-                                || !Objects.equals(previous.getHostUuid(), child.getHostUuid())
-                                || !Objects.equals(recovery.getExpectedControlOperationUuid(), state.getControlOperationUuid())) {
-                            throw error("MEMORY_CONTROL_OPERATION_FENCED", "Cannot verify the original unresolved recovery owner");
-                        }
-                        state.setActiveTaskUuid(previous.getUuid()); state.setStatus(previous.getStatus());
-                        state.setReason(previous.getReason());
-                    } else if (unresolvedReconcileOriginal(em, child) != null) {
-                        // A queued reconcile never reached the Agent; its original
-                        // Unknown operation and the control it was fenced on remain.
-                        MemoryTaskVO original = unresolvedReconcileOriginal(em, child);
-                        state.setActiveTaskUuid(original.getUuid()); state.setControlOperationUuid(original.getUuid());
-                        state.setStatus(original.getStatus()); state.setReason(original.getReason());
-                    } else { state.setActiveTaskUuid(null); }
-                }
-            }
-            task.setStatus("Cancelled");
-            em.flush(); aggregateParent(em, task.getParentUuid());
-            return task.toInventory();
-        });
-    }
-
-    private static MemoryTaskVO unresolvedReconcileOriginal(EntityManager em, MemoryTaskVO reconcile) {
-        if (!"reconcile".equals(reconcile.getAction()) || reconcile.getReconcileOperationUuid() == null
-                || !Objects.equals(reconcile.getReconcileOperationUuid(), reconcile.getExpectedControlOperationUuid())) {
-            return null;
-        }
-        MemoryTaskVO original = em.find(MemoryTaskVO.class, reconcile.getReconcileOperationUuid());
-        return original != null && "Unknown".equals(original.getStatus())
-                && Objects.equals(original.getHostUuid(), reconcile.getHostUuid()) ? original : null;
-    }
-
     public void expireUnconfirmed(String owner) {
         transaction(em -> {
             lock(em);
             List<MemoryTaskVO> tasks = em.createQuery("from MemoryTaskVO t where t.ownerManagementNodeUuid = :owner " +
                     "and t.hostUuid is not null and t.status in ('Applying', 'Draining')", MemoryTaskVO.class)
                     .setParameter("owner", owner).getResultList();
-            if (!tasks.isEmpty()) { bumpQueryVersion(em, "task"); }
             for (MemoryTaskVO task : tasks) {
                 task.setStatus("Unknown"); task.setReason("Management node restarted; explicit reconcile required");
                 MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());

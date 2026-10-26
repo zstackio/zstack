@@ -1,13 +1,9 @@
 package org.zstack.kvm.memory;
 
-import org.zstack.header.search.Inventory;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-/** Public API inventory. Nullable samples represent unknown, never a fabricated zero. */
-@Inventory(mappingVOClass = MemoryStateVO.class)
 public class MemoryStateInventory {
     public static MemoryStateInventory valueOf(MemoryStateVO vo) {
         return vo.toInventory();
@@ -19,29 +15,6 @@ public class MemoryStateInventory {
             inventories.add(valueOf(vo));
         }
         return inventories;
-    }
-
-    public static MemoryStateInventory __example__() {
-        MemoryStateInventory inventory = new MemoryStateInventory();
-        inventory.setHostUuid("1234567890abcdef1234567890abcdef");
-        inventory.setBootId("1e73a145-2662-4911-9c4f-b75a7d91a88e");
-        inventory.setFeatureState("Active");
-        inventory.setFeatureStateSource("KSM_NATIVE");
-        inventory.setDrift(false);
-        inventory.setDataAgeSeconds(2L);
-        // KSM runtime is confirmed, but this example has no savings sample.
-        inventory.setQuality("Unknown");
-        inventory.setMetrics(java.util.Collections.<String, Object>emptyMap());
-        inventory.setControlOperationUuid("abcdef0123456789abcdef0123456789");
-        inventory.setDesiredRevision(7L);
-        inventory.setAppliedRevision(7L);
-        inventory.setStatus("Succeeded");
-        inventory.setState("{\"managed\":true,\"ksmOnly\":true,\"bootId\":\"" + inventory.getBootId()
-                + "\",\"actual\":{\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":false,\"pagesToScan\":1250,\"sleepMillis\":10}}}");
-        inventory.setLastSampleTime(1791583200000L);
-        inventory.setAppliedPolicy("{\"ksm\":{\"enabled\":true}}");
-        inventory.setAppliedPolicyHash("3045708b6c3b9af13e9d314374300f24aec538669a8edcb5a509389cd0abe0e4");
-        return inventory;
     }
 
     private String schemaVersion = "memory-state-v1";
@@ -115,9 +88,6 @@ public class MemoryStateInventory {
     public String getActiveTaskUuid() { return activeTaskUuid; }
     public void setActiveTaskUuid(String value) { activeTaskUuid = value; }
 
-    private String currentStep;
-    public String getCurrentStep() { return currentStep; }
-    public void setCurrentStep(String value) { currentStep = value; }
 
     private String appliedPolicyHash;
     public String getAppliedPolicyHash() { return appliedPolicyHash; }

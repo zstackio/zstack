@@ -85,7 +85,7 @@ public class MemoryStatePresentationTest {
         state.setState(state.getState().replace("\"compatibility\"", "\"paused\"").replace("\"paused\":false", "\"paused\":true"));
         MemoryStatePresentation.populate(state, 100100L);
         assertEquals(java.util.Arrays.asList("query", "drain"), state.getAllowedActions());
-        MemoryStatePresentation.populate(state, 100100L, true, false);
+        MemoryStatePresentation.populate(state, 100100L, true);
         assertEquals(java.util.Arrays.asList("query", "drain", "resume"), state.getAllowedActions());
     }
 
@@ -309,7 +309,7 @@ public class MemoryStatePresentationTest {
                 raw.getAsJsonObject("nativeKsmObservation").getAsJsonObject("ksm").addProperty("pagesToScan", 3000);
                 state.setState(raw.toString());
             }
-            MemoryStatePresentation.populate(state, 100100L, true, true);
+            MemoryStatePresentation.populate(state, 100100L, true);
             assertEquals(defect, "Unknown", state.getFeatureState());
             assertNull(defect, state.getFeatureStateSource());
             assertEquals(defect, java.util.Collections.singletonList("query"), state.getAllowedActions());

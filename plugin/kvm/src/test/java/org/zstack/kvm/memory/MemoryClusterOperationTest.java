@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 
 public class MemoryClusterOperationTest {
     static class Repository extends MemoryRepository {
-        final List<APIUpdateMemoryPolicyMsg> submitted = new ArrayList<>();
+        final List<MemoryActionRequest> submitted = new ArrayList<>();
         final Map<String, Deque<String>> statuses = new HashMap<>();
         final Map<String, String> reasons = new HashMap<>();
         final Set<String> rejected = new HashSet<>();
@@ -43,11 +43,11 @@ public class MemoryClusterOperationTest {
             throw new IllegalStateException("database unavailable");
         }
         MemoryAgentResponse preparationObservation;
-        @Override MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg, MemoryAgentResponse observation) {
+        @Override MemoryTaskInventory submit(MemoryActionRequest msg, MemoryAgentResponse observation) {
             preparationObservation = observation;
             return submit(msg);
         }
-        @Override public MemoryTaskInventory submit(APIUpdateMemoryPolicyMsg msg) {
+        @Override public MemoryTaskInventory submit(MemoryActionRequest msg) {
             submitted.add(msg);
             if (crashed.contains(msg.getResourceUuid())) { throw new IllegalStateException("database unavailable"); }
             if (rejected.contains(msg.getResourceUuid())) {
@@ -100,7 +100,7 @@ public class MemoryClusterOperationTest {
             msg.setAccountUuid("account"); msg.setUserUuid("user");
             invokeHostOperation(manager, msg);
 
-            APIUpdateMemoryPolicyMsg request = repository.submitted.get(0);
+            MemoryActionRequest request = repository.submitted.get(0);
             assertEquals("prepareWritebackBackend", request.getAction());
             assertEquals("host1", request.getResourceUuid()); assertEquals("{}", request.getPolicy());
             assertEquals(7, request.getExpectedRevision());
@@ -131,7 +131,7 @@ public class MemoryClusterOperationTest {
         invoke(manager, msg);
 
         assertEquals(2, repository.submitted.size());
-        APIUpdateMemoryPolicyMsg first = repository.submitted.get(0), second = repository.submitted.get(1);
+        MemoryActionRequest first = repository.submitted.get(0), second = repository.submitted.get(1);
         assertEquals("host1", first.getResourceUuid()); assertEquals("host2", second.getResourceUuid());
         assertEquals("Host", first.getScope()); assertEquals("pause", first.getAction()); assertEquals("{}", first.getPolicy());
         assertEquals(7, first.getExpectedRevision()); assertEquals(9, second.getExpectedRevision());
@@ -186,7 +186,7 @@ public class MemoryClusterOperationTest {
         msg.setAccountUuid("account"); msg.setUserUuid("user");
         invokeHostOperation(manager, msg);
 
-        APIUpdateMemoryPolicyMsg request = repository.submitted.get(0);
+        MemoryActionRequest request = repository.submitted.get(0);
         assertEquals("recoverUncertain", request.getAction()); assertEquals("{}", request.getPolicy());
         assertEquals("uncertain-activation", request.getExpectedControlOperationUuid());
         assertEquals(7, request.getExpectedRevision());

@@ -9,7 +9,7 @@ doc {
 	ref {
 		name "hosts"
 		path "org.zstack.kvm.memory.MemorySummaryInventory.hosts"
-		desc "请求带hostUuids时返回，每台物理机一项，取值规则与GetMemoryStates相同；未带hostUuids时为空。"
+		desc "请求带hostUuids时返回，每台物理机一项，含节省量指标、数据质量和采样时间；未带hostUuids时为空。"
 		type "List"
 		since "5.5.48"
 		clz MemoryHostSavingsInventory.class

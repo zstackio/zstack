@@ -6,7 +6,7 @@ import java.util.Arrays;
 final class MemoryPolicyActionParameters {
     private MemoryPolicyActionParameters() { }
 
-    static void validate(APIUpdateMemoryPolicyMsg msg) {
+    static void validate(MemoryActionRequest msg) {
         String action = msg.getAction();
         if (!Arrays.asList("pause", "drain", "resume", "reconcile",
                 "recoverUncertain", "prepareWritebackBackend").contains(action)) {

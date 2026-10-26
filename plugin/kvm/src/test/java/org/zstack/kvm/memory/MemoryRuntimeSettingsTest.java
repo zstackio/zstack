@@ -20,12 +20,9 @@ public class MemoryRuntimeSettingsTest {
         String oldMax = max.value(), oldDefault = def.value();
         try {
             set(max, "800"); set(def, "600");
-            assertEquals(600, new APIGetMemoryStatesMsg().getLimit());
-            assertEquals(600, new APIGetMemoryTasksMsg().getLimit());
-            APIGetMemoryStatesMsg request = new APIGetMemoryStatesMsg(); request.setLimit(700);
-            assertEquals(700, request.getLimit());
-            request.setLimit(801);
-            try { request.getLimit(); fail("must reject configured page overflow"); }
+            assertEquals(600, MemoryOptimizationGlobalConfig.pageSize(null));
+            assertEquals(700, MemoryOptimizationGlobalConfig.pageSize(700));
+            try { MemoryOptimizationGlobalConfig.pageSize(801); fail("must reject configured page overflow"); }
             catch (MemoryOperationException expected) { assertNotNull(expected.getMessage()); }
         } finally { set(max, oldMax); set(def, oldDefault); }
     }

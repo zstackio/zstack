@@ -191,14 +191,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (message instanceof APIMessage) {
                 checkReadAuthorization((APIMessage) message);
             }
-            if (message instanceof APIUpdateMemoryPolicyMsg) { update((APIUpdateMemoryPolicyMsg) message); }
-            else if (message instanceof APIGetMemoryPolicyMsg) { policy((APIGetMemoryPolicyMsg) message); }
-            else if (message instanceof APIGetMemoryStatesMsg) { states((APIGetMemoryStatesMsg) message); }
-            else if (message instanceof APIGetMemoryTasksMsg) { tasks((APIGetMemoryTasksMsg) message); }
-            else if (message instanceof APIGetVmMemoryOptimizationsMsg) { vmAccountings((APIGetVmMemoryOptimizationsMsg) message); }
+            if (message instanceof APIGetVmMemoryOptimizationsMsg) { vmAccountings((APIGetVmMemoryOptimizationsMsg) message); }
             else if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
-            else if (message instanceof APICancelMemoryTaskMsg) { cancel((APICancelMemoryTaskMsg) message); }
-            else if (message instanceof APIDeleteMemoryTaskMsg) { deleteTask((APIDeleteMemoryTaskMsg) message); }
             else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
             else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
             else if (message instanceof MemoryHostOperationMsg) { singleHostOperation((MemoryHostOperationMsg) message); }
@@ -275,8 +269,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             String entity = node instanceof ASTNode.QueryTarget ? ((ASTNode.QueryTarget) node).getEntity()
                     : node instanceof ASTNode.SubQueryTarget ? ((ASTNode.SubQueryTarget) node).getEntity()
                     : node instanceof ASTNode.RestrictExpr ? ((ASTNode.RestrictExpr) node).getEntity() : null;
-            if ("MemoryState".equalsIgnoreCase(entity) || "HostMemoryState".equalsIgnoreCase(entity)) {
-                APIGetMemoryStatesMsg request = new APIGetMemoryStatesMsg();
+            if ("HostMemoryState".equalsIgnoreCase(entity)) {
+                APIQueryHostMemoryStateMsg request = new APIQueryHostMemoryStateMsg();
                 request.setSession(ZQLContext.getAPISession());
                 try {
                     checkReadAuthorization(request);
@@ -313,16 +307,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private void update(APIUpdateMemoryPolicyMsg msg) {
-        if (MemoryTaskRules.requiresLicenseForConfiguration(msg.getAction(), msg.getPolicy())) { requireLicense(); }
-        APIUpdateMemoryPolicyEvent event = new APIUpdateMemoryPolicyEvent(msg.getId());
-        submitHostAction(msg, inventory -> {
-            event.setInventory(inventory);
-            bus.publish(event);
-        }, error -> bus.replyErrorByMessageType(msg, error.toErrorCode()));
-    }
-
-    private void submitHostAction(APIUpdateMemoryPolicyMsg msg, Consumer<MemoryTaskInventory> done,
+    private void submitHostAction(MemoryActionRequest msg, Consumer<MemoryTaskInventory> done,
                                   Consumer<MemoryOperationException> failed) {
         if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
             // Device selection is authorized by the existing preparation DTO;
@@ -413,7 +398,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         String host = msg.getHostUuid();
         repository.targets("Host", host);
         hostOperation(host, msg, msg.getJobUuid(), () -> {
-            APIUpdateMemoryPolicyMsg request = hostActionRequest(host, msg.getAction(),
+            MemoryActionRequest request = hostActionRequest(host, msg.getAction(),
                     msg.getAccountUuid(), msg.getUserUuid());
             if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
                 request.setExpectedSourceRevisions(repository.getPolicy("Host", host).getSourceRevisions());
@@ -437,7 +422,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     private void hostOperation(String host, Message context, String job,
-                               java.util.function.Supplier<APIUpdateMemoryPolicyMsg> request, Consumer<String> outcome) {
+                               java.util.function.Supplier<MemoryActionRequest> request, Consumer<String> outcome) {
         thdf.chainSubmit(new ChainTask(context) {
             @Override public String getSyncSignature() { return "memory-host-operation-" + host; }
             @Override public String getName() { return getSyncSignature(); }
@@ -466,8 +451,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    private APIUpdateMemoryPolicyMsg hostActionRequest(String host, String action, String accountUuid, String userUuid) {
-        APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+    private MemoryActionRequest hostActionRequest(String host, String action, String accountUuid, String userUuid) {
+        MemoryActionRequest msg = new MemoryActionRequest();
         msg.setScope("Host"); msg.setResourceUuid(host); msg.setAction(action); msg.setPolicy("{}");
         msg.setExpectedRevision(repository.getPolicy("Host", host).getRevision());
         List<MemoryStateVO> states = repository.allStates(Collections.singletonList(host));
@@ -532,98 +517,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             }
             done.accept(recovered);
         });
-    }
-
-    private void policy(APIGetMemoryPolicyMsg msg) {
-        APIGetMemoryPolicyReply reply = new APIGetMemoryPolicyReply();
-        MemoryPolicyInventory inventory = repository.getPolicy(msg.getScope(), msg.getResourceUuid());
-        describe(inventory);
-        reply.setInventory(inventory);
-        bus.reply(msg, reply);
-    }
-
-    private void describe(MemoryPolicyInventory inventory) {
-        boolean licensed = licenseDeadline() > System.currentTimeMillis();
-        inventory.setSource(policySource(inventory));
-        Map<String, MemoryFieldCapability> fields = new LinkedHashMap<>();
-        if ("VM".equals(inventory.getScope())) {
-            fields.put("participation", new MemoryFieldCapability(licensed, true, "enum", null, "InstanceFenced"));
-        } else {
-            fields.put("ksm.enabled", new MemoryFieldCapability(licensed, true, "boolean", null, "NextPolicyCycle"));
-            fields.put("ksm.zeroPagesEnabled", new MemoryFieldCapability(licensed, true, "boolean", null, "NextPolicyCycle"));
-            addPolicyCapabilities(fields, licensed, inventory.getScope());
-        }
-        if ("Host".equals(inventory.getScope())) {
-            List<MemoryStateVO> states = repository.states(Collections.singletonList(inventory.getResourceUuid()), 0, 1);
-            MemoryCapabilityRules.restrict(fields, states.isEmpty() ? null : states.get(0), System.currentTimeMillis());
-        }
-        inventory.setFieldCapabilities(fields);
-    }
-
-    /**
-     * A policy may inherit different fields from different scopes. Keep the
-     * fieldSources map authoritative and expose a single source only when all
-     * configured fields agree; schema defaults are not an override source.
-     */
-    private static String policySource(MemoryPolicyInventory inventory) {
-        Set<String> sources = new LinkedHashSet<>();
-        Map<String, String> fieldSources = inventory.getFieldSources();
-        if (fieldSources != null) {
-            for (String source : fieldSources.values()) {
-                if (source == null || source.isEmpty() || "Default".equals(source)) { continue; }
-                int separator = source.indexOf(':');
-                sources.add(separator < 0 ? source : source.substring(0, separator));
-            }
-        }
-        if (sources.size() == 1) { return sources.iterator().next(); }
-        if (sources.size() > 1) { return "Mixed"; }
-        return "Default";
-    }
-
-    /** Keep the public policy schema and the discovery contract in lockstep. */
-    private static void addPolicyCapabilities(Map<String, MemoryFieldCapability> fields, boolean writable,
-                                              String scope) {
-        fields.put("schemaVersion", capability(writable, false, "int32", "version", "PersistedSchema"));
-        fields.put("zram.enabled", capability(writable, true, "boolean", null, "EnableOrDrain"));
-        fields.put("zram.logicalCapacityBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
-        fields.put("zram.ramLimitBytes", capability(writable, true, "int64", "bytes", "CapacityChecked"));
-        fields.put("writeback.enabled", capability(writable, false, "boolean", null, "OfflinePreparationMayBeRequired"));
-        boolean hostBackend = "Host".equals(scope);
-        fields.put("writeback.backendResourceUuid", capability(writable && hostBackend, false, "uuid", null, "DrainAndOfflinePreparation"));
-        fields.put("writeback.backendCapacityBytes", capability(writable && hostBackend, false, "int64", "bytes", "DrainAndOfflinePreparation"));
-    }
-
-    private static MemoryFieldCapability capability(boolean writable, boolean basicUi, String type, String unit, String effect) {
-        return new MemoryFieldCapability(writable, basicUi, type, unit, effect);
-    }
-
-    private void states(APIGetMemoryStatesMsg msg) {
-        APIQueryMemoryStateReply reply = new APIQueryMemoryStateReply();
-        MemoryQueryPage<MemoryStateVO> page = repository.statePage(msg.getHostUuids(), msg.getStart(), msg.getLimit(), msg.getSnapshotId());
-        long now = System.currentTimeMillis();
-        Map<String, Map<String, Object>> samples = hostMetricSamples(page.items.stream()
-                .map(MemoryStateVO::getHostUuid).collect(Collectors.toList()), now);
-        List<MemoryStateInventory> inventories = page.items
-                .stream().map(state -> MemoryMetricsPresentation.inventory(state,
-                        samples.get(state.getHostUuid()), now,
-                        repository.canResumeControl(state.getHostUuid(), state.getControlOperationUuid()),
-                        repository.canReconcileRejectedResume(state.getHostUuid(), state.getControlOperationUuid()),
-                        repository.uncertainRecoveryRequest(state.getHostUuid())))
-                .collect(Collectors.toList());
-        reply.setInventories(inventories); reply.setTotal(page.total); reply.setSnapshotId(page.snapshotId);
-        reply.setNextPage(nextPage(msg.getStart(), inventories.size(), reply.getTotal())); bus.reply(msg, reply);
-    }
-
-    private void tasks(APIGetMemoryTasksMsg msg) {
-        APIQueryMemoryTaskReply reply = new APIQueryMemoryTaskReply();
-        MemoryQueryPage<MemoryTaskInventory> page = repository.taskPage(msg);
-        reply.setInventories(page.items); reply.setTotal(page.total); reply.setSnapshotId(page.snapshotId);
-        reply.setNextPage(nextPage(msg.getStart(), reply.getInventories().size(), reply.getTotal())); bus.reply(msg, reply);
-    }
-
-    static Integer nextPage(int start, int size, long total) {
-        long next = (long) start + size;
-        return size > 0 && next < total && next <= Integer.MAX_VALUE ? (int) next : null;
     }
 
     /** One read-only Prometheus snapshot per Host, then expose only requested VMs. */
@@ -751,20 +644,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         "Writeback device observation is malformed; no storage was modified").toErrorCode());
             }
         });
-    }
-
-    private void cancel(APICancelMemoryTaskMsg msg) {
-        APICancelMemoryTaskEvent event = new APICancelMemoryTaskEvent(msg.getId());
-        event.setInventory(repository.cancel(msg.getUuid())); bus.publish(event);
-    }
-
-    private void deleteTask(APIDeleteMemoryTaskMsg msg) {
-        APIDeleteMemoryTaskEvent event = new APIDeleteMemoryTaskEvent(msg.getId());
-        MemoryTaskDeleteResult result = repository.deleteTaskTree(msg.getUuid());
-        event.setTaskUuid(result.getTaskUuid()); event.setDeleted(result.isDeleted());
-        event.setScope(result.getScope()); event.setResourceUuid(result.getResourceUuid());
-        event.setHostUuids(result.getHostUuids());
-        bus.publish(event);
     }
 
     private void summary(APIGetMemorySummaryMsg msg) {
@@ -1285,6 +1164,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         applyInheritedPolicyAfterObservation(host);
                         reconcileVerifiedPoolBlock(host, response);
                         reconcileUnknownControl(host);
+                        reconcileRejectedResume(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);
                     }
                 } catch (RuntimeException e) {
@@ -1341,6 +1221,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             logger.debug(String.format("Host[%s] unknown control reconcile was not queued: %s", host, e.getCode()));
         } catch (RuntimeException e) {
             logger.warn(String.format("Host[%s] unknown control reconcile was not accepted", host), e);
+        }
+    }
+
+    private void reconcileRejectedResume(String host) {
+        try { repository.reconcileRejectedResume(host); }
+        catch (MemoryOperationException e) {
+            logger.debug(String.format("Host[%s] rejected resume reconcile was not queued: %s", host, e.getCode()));
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] rejected resume reconcile was not accepted", host), e);
         }
     }
 

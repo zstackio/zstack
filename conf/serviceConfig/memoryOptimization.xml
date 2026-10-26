@@ -1,15 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <service xmlns="http://zstack.org/schema/zstack">
     <id>memoryOptimization</id>
-    <message><name>org.zstack.kvm.memory.APIGetMemoryStatesMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIGetVmMemoryOptimizationsMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIGetHostMemoryWritebackBackendsMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APIGetMemoryPolicyMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APIUpdateMemoryPolicyMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APIGetMemoryTasksMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIGetMemorySummaryMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APICancelMemoryTaskMsg</name></message>
-    <message><name>org.zstack.kvm.memory.APIDeleteMemoryTaskMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIPauseMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIResumeMemoryOptimizationMsg</name></message>
     <message><name>org.zstack.kvm.memory.APIDrainMemoryOptimizationMsg</name></message>

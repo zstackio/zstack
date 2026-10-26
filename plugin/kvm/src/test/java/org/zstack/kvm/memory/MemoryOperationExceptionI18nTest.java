@@ -118,14 +118,6 @@ public class MemoryOperationExceptionI18nTest {
     }
 
     @Test
-    public void nonCancellableTaskUsesDeclaredMetadataAndLocalizes() {
-        assertLocalized("MEMORY_TASK_NOT_CANCELLABLE", 11028,
-                "Only Queued tasks can be cancelled",
-                "Not Cancellable in memory optimization",
-                "该内存优化任务不可取消：Only Queued tasks can be cancelled");
-    }
-
-    @Test
     public void everyMemoryErrorHasChineseCategoryWithoutEmbeddedEnglishLabels() throws Exception {
         Path mapping = productRoot.resolve("conf/i18n/globalErrorCodeMapping/global-error-zh_CN.json");
         assertTrue("Chinese global error mapping not found", Files.isRegularFile(mapping));
@@ -140,7 +132,7 @@ public class MemoryOperationExceptionI18nTest {
                     Pattern.compile("(?i)\\b[a-z]{2,}\\b").matcher(value).find());
             count++;
         }
-        assertEquals("all memory error categories must be checked", 49, count);
+        assertEquals("all memory error categories must be checked", 44, count);
     }
 
     @Test
@@ -193,17 +185,11 @@ public class MemoryOperationExceptionI18nTest {
             assertTrue("metadata id must be unique: " + error, ids.add(error.getId()));
             assertNotNull(errorFacade.instantiateErrorCode(error.toString(), businessCode));
         }
-        assertEquals(48, businessCodes.size());
+        assertEquals(43, businessCodes.size());
     }
 
     @Test
-    public void taskCleanupErrorsHaveLocalizedCategoriesAndPreserveDiagnostics() {
-        assertLocalized("MEMORY_TASK_NOT_ROOT", 11042, "child task UUID",
-                "Memory task deletion requires a root task", "只能删除内存任务的根任务");
-        assertLocalized("MEMORY_TASK_REFERENCED", 11043, "activeTaskUuid still references task",
-                "Memory task is still referenced", "内存任务仍被运行状态或历史操作引用");
-        assertLocalized("MEMORY_REQUEST_RESULT_PURGED", 11044, "Original task [abc], status [Succeeded]",
-                "Memory task result was purged", "该内存任务结果已清理且不会重放");
+    public void serviceStopErrorHasLocalizedCategoryAndPreservesDiagnostics() {
         assertLocalized("MEMORY_SERVICE_NOT_STOPPED", 11045, "controller is still active",
                 "Memory optimization service has not stopped", "内存优化服务尚未停止");
     }
@@ -225,15 +211,15 @@ public class MemoryOperationExceptionI18nTest {
 
     @Test public void memoryZqlTargetsKeepInfrastructureReadPermissionIncludingNestedQueries() {
         String[] queries = {
-                "query MemoryState.hostUuid,status",
-                "count MemoryState",
-                "query Host.uuid restrict by (MemoryState.status='Succeeded')",
-                "query Host.uuid left join MemoryState on Host.uuid=MemoryState.hostUuid",
-                "query Host.uuid where uuid in (query MemoryState.hostUuid where status='Succeeded')",
+                "query HostMemoryState.hostUuid,status",
+                "count HostMemoryState",
+                "query Host.uuid restrict by (HostMemoryState.status='Applied')",
+                "query Host.uuid left join HostMemoryState on Host.uuid=HostMemoryState.hostUuid",
+                "query Host.uuid where uuid in (query HostMemoryState.hostUuid where status='Applied')",
                 "query VmInstance.uuid where hostUuid in (query Host.uuid where uuid in "
-                        + "(query MemoryState.hostUuid where status='Unknown'))",
+                        + "(query HostMemoryState.hostUuid where status='Unknown'))",
                 "query Host.uuid where hypervisorType='KVM' and (uuid='other' or uuid not in "
-                        + "(query memorystate.hostUuid where activeTaskUuid is not null))"
+                        + "(query hostmemorystate.hostUuid where activeJobUuid is not null))"
         };
         for (String query : queries) {
             for (String account : new String[]{null, "tenant"}) {
@@ -258,7 +244,7 @@ public class MemoryOperationExceptionI18nTest {
     }
 
     @Test public void memoryZqlGuardDoesNotChangeUnrelatedQueriesOrMatchQuotedValues() {
-        checkMemoryZql("query Host.uuid where name='MemoryState'", null,
+        checkMemoryZql("query Host.uuid where name='HostMemoryState'", null,
                 MemoryReadAuthorizationTest.managerFor(java.util.Collections.emptyList()));
         checkMemoryZql("query VmInstance.uuid where uuid in (query VmNic.vmInstanceUuid)", null,
                 MemoryReadAuthorizationTest.managerFor(java.util.Collections.emptyList()));
@@ -311,10 +297,6 @@ public class MemoryOperationExceptionI18nTest {
         if (metadataId == 11026) {
             return "Invalid Policy in memory optimization";
         }
-        if (metadataId == 11028) { return "Not Cancellable in memory optimization"; }
-        if (metadataId == 11042) { return "Memory Task Delete Requires Root Task"; }
-        if (metadataId == 11043) { return "Memory Task Is Still Referenced"; }
-        if (metadataId == 11044) { return "Memory Task Result Has Been Purged"; }
         if (metadataId == 11045) { return "Memory Optimization Service Has Not Stopped"; }
         throw new AssertionError("unexpected metadata id " + metadataId);
     }

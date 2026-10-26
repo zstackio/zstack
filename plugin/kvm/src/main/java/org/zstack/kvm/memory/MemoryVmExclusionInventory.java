@@ -2,16 +2,6 @@ package org.zstack.kvm.memory;
 
 /** Why migration retained non-participation; no live qualification is inferred. */
 public class MemoryVmExclusionInventory {
-    public static MemoryVmExclusionInventory __example__() {
-        MemoryVmExclusionInventory inventory = new MemoryVmExclusionInventory();
-        inventory.setSourceHostUuid("1234567890abcdef1234567890abcdef");
-        inventory.setTargetHostUuid("abcdef1234567890abcdef1234567890");
-        inventory.setSourceRevisions("{\"Host\":4}");
-        inventory.setSourceInstanceGeneration("vm-generation-3");
-        inventory.setRetained(true);
-        return inventory;
-    }
-
     private String sourceHostUuid;
     private String targetHostUuid;
     private String sourceRevisions;

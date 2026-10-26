@@ -47,12 +47,10 @@ public class MemoryReadAuthorizationTest {
 
     private static List<APIMessage> adminReadMessages(String account) {
         SessionInventory session = session(account);
-        APIGetMemoryStatesMsg state = new APIGetMemoryStatesMsg(); state.setSession(session);
-        APIGetMemoryTasksMsg task = new APIGetMemoryTasksMsg(); task.setSession(session);
+        APIQueryHostMemoryStateMsg state = new APIQueryHostMemoryStateMsg(); state.setSession(session);
         APIGetMemorySummaryMsg summary = new APIGetMemorySummaryMsg(); summary.setSession(session);
         APIGetHostMemoryWritebackBackendsMsg backends = new APIGetHostMemoryWritebackBackendsMsg(); backends.setSession(session);
-        APIGetMemoryPolicyMsg policy = new APIGetMemoryPolicyMsg(); policy.setSession(session);
-        return Arrays.<APIMessage>asList(state, task, summary, backends, policy);
+        return Arrays.<APIMessage>asList(state, summary, backends);
     }
 
     private static APIGetVmMemoryOptimizationsMsg batch(List<String> uuids, String account) {

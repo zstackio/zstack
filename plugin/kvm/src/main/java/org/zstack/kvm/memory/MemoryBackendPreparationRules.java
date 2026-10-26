@@ -7,7 +7,7 @@ public final class MemoryBackendPreparationRules {
     public static final String ACTION = "prepareWritebackBackend";
     private MemoryBackendPreparationRules() { }
 
-    public static void validate(APIUpdateMemoryPolicyMsg message) {
+    public static void validate(MemoryActionRequest message) {
         MemoryBackendPreparation request = message.getBackendPreparation();
         if (!ACTION.equals(message.getAction())) {
             if (request != null) { invalid(); }
