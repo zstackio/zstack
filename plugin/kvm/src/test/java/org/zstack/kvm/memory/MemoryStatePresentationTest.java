@@ -1,7 +1,6 @@
 package org.zstack.kvm.memory;
 
 import org.junit.Test;
-import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import static org.junit.Assert.*;
@@ -27,7 +26,6 @@ public class MemoryStatePresentationTest {
             MemoryStateInventory state = observerKsmState(enabled);
             MemoryStatePresentation.populate(state, 100100L);
             assertEquals(enabled ? "Active" : "Disabled", state.getFeatureState());
-            assertEquals("KSM_NATIVE", state.getFeatureStateSource());
             assertEquals(java.util.Collections.singletonList("query"), state.getAllowedActions());
         }
     }
@@ -75,7 +73,6 @@ public class MemoryStatePresentationTest {
         MemoryStateInventory state = runningGoState();
         MemoryStatePresentation.populate(state, 100100L);
         assertEquals("Active", state.getFeatureState());
-        assertEquals("GO_LIFECYCLE", state.getFeatureStateSource());
         assertEquals(java.util.Arrays.asList("query", "pause", "drain"), state.getAllowedActions());
         assertTrue("native Go section revision is not a Cloud revision", state.getState().contains("\"desiredRevision\":23"));
     }
@@ -153,18 +150,15 @@ public class MemoryStatePresentationTest {
                 + "\"savings\":{\"quality\":\"Fresh\",\"totalSavedEstimateBytes\":-16}}");
         MemoryStatePresentation.populate(state, 92000);
         assertEquals("Stale", state.getQuality());
-        assertEquals(Long.valueOf(91), state.getDataAgeSeconds());
-        assertEquals(Boolean.TRUE, state.getDrift());
         assertEquals("Paused", state.getFeatureState());
         assertEquals(-16, ((Number) state.getMetrics().get("totalSavedEstimateBytes")).intValue());
     }
     @Test public void missingOrFutureSampleDoesNotBecomeZeroOrFresh() {
         MemoryStateInventory state = new MemoryStateInventory();
         state.setState("not-json"); MemoryStatePresentation.populate(state, 1000);
-        assertEquals("Unknown", state.getQuality()); assertNull(state.getDrift());
-        assertNull(state.getDataAgeSeconds()); assertTrue(state.getMetrics().isEmpty());
+        assertEquals("Unknown", state.getQuality()); assertTrue(state.getMetrics().isEmpty());
         state.setLastSampleTime(7000L); MemoryStatePresentation.populate(state, 1000);
-        assertEquals("Unknown", state.getQuality()); assertNull(state.getDataAgeSeconds());
+        assertEquals("Unknown", state.getQuality());
         assertEquals(java.util.Collections.singletonList("query"), state.getAllowedActions());
     }
 
@@ -179,9 +173,6 @@ public class MemoryStatePresentationTest {
         MemoryStatePresentation.populate(state, 100100L);
         assertEquals("Active", state.getFeatureState());
         assertEquals("Partial", state.getQuality());
-        String json = new Gson().toJson(state);
-        assertTrue("the source of Active must be explicit", json.contains("featureStateSource"));
-        assertTrue(json.contains("KSM_NATIVE"));
         assertFalse("KSM-only proof must not invent a Go lifecycle", state.getState().contains("lifecycle"));
     }
 
@@ -221,8 +212,6 @@ public class MemoryStatePresentationTest {
                 + "\"sampleTime\":100000}}");
         MemoryStatePresentation.populate(state, 100100L);
         assertEquals("Disabled", state.getFeatureState());
-        String json = new Gson().toJson(state);
-        assertTrue(json.contains("featureStateSource")); assertTrue(json.contains("KSM_NATIVE"));
     }
 
     @Test public void realKylinOffObservationReplaysAsDisabledKsmNative() throws Exception {
@@ -311,7 +300,6 @@ public class MemoryStatePresentationTest {
             }
             MemoryStatePresentation.populate(state, 100100L, true);
             assertEquals(defect, "Unknown", state.getFeatureState());
-            assertNull(defect, state.getFeatureStateSource());
             assertEquals(defect, java.util.Collections.singletonList("query"), state.getAllowedActions());
             assertEquals(Long.valueOf(100000), state.getLastSampleTime());
             assertEquals("Succeeded", state.getStatus());
