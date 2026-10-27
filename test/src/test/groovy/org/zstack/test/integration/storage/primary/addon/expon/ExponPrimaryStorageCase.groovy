@@ -11,10 +11,19 @@ import org.zstack.core.db.SQL
 import org.zstack.core.singleflight.MultiNodeSingleFlightImpl
 import org.zstack.expon.ExponApiHelper
 import org.zstack.expon.ExponStorageController
+import org.zstack.externalStorage.primary.kvm.ExternalPrimaryStorageKvmFactory
+import org.zstack.header.core.Completion
+import org.zstack.header.errorcode.ErrorCode
+import org.zstack.header.host.HostVO
+import org.zstack.header.host.HostVO_
+import org.zstack.header.storage.primary.PrimaryStorageVO
+import org.zstack.header.storage.primary.PrimaryStorageVO_
 import org.zstack.expon.sdk.iscsi.IscsiClientGroupModule
 import org.zstack.expon.sdk.iscsi.IscsiModule
 import org.zstack.expon.sdk.vhost.VhostControllerModule
 import org.zstack.header.host.HostConstant
+import org.zstack.header.host.ChangeHostStatusMsg
+import org.zstack.header.host.HostStatusEvent
 import org.zstack.header.host.PingHostMsg
 import org.zstack.header.message.MessageReply
 import org.zstack.header.storage.backup.DownloadImageFromRemoteTargetMsg
@@ -28,6 +37,9 @@ import org.zstack.header.storage.primary.ImageCacheVO_
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO
 import org.zstack.header.storage.primary.PrimaryStorageHostRefVO_
 import org.zstack.header.vm.VmBootDevice
+import org.zstack.header.vm.ChangeVmStateMsg
+import org.zstack.header.vm.VmInstanceConstant
+import org.zstack.header.vm.VmInstanceStateEvent
 import org.zstack.header.vm.VmInstanceState
 import org.zstack.header.vm.VmInstanceVO
 import org.zstack.header.vm.VmInstanceVO_
@@ -39,6 +51,7 @@ import org.zstack.header.volume.VolumeVO_
 import org.zstack.kvm.KVMAgentCommands
 import org.zstack.kvm.KVMConstant
 import org.zstack.kvm.KVMGlobalConfig
+import org.zstack.kvm.KvmVmActiveVolumeSyncPingTask
 import org.zstack.kvm.VolumeTO
 import org.zstack.sdk.*
 import org.zstack.storage.addon.primary.ExternalPrimaryStorageFactory
@@ -50,6 +63,8 @@ import org.zstack.testlib.SubCase
 import org.zstack.utils.CollectionUtils
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 import static java.util.Arrays.asList
 import static java.util.UUID.randomUUID
@@ -189,6 +204,7 @@ class ExponPrimaryStorageCase extends SubCase {
             testComplexPassword()
             testSessionExpired()
             testCreateVm()
+            testDeactivateVolumesAfterAbnormalStop()
             testHandleInactiveVolume()
             testCreateVolumeRollback()
             testAttachIso()
@@ -398,6 +414,145 @@ class ExponPrimaryStorageCase extends SubCase {
         } as VmInstanceInventory
 
         deleteVm(vm2.uuid)
+    }
+
+    void testDeactivateVolumesAfterAbnormalStop() {
+        def stoppedVm = createVmInstance {
+            name = "abnormally-stopped-vm"
+            instanceOfferingUuid = instanceOffering.uuid
+            imageUuid = image.uuid
+            l3NetworkUuids = [l3.uuid]
+            dataDiskOfferingUuids = [diskOffering.uuid, diskOffering.uuid]
+            hostUuid = host1.uuid
+        } as VmInstanceInventory
+        def vhosts = stoppedVm.allVolumes.collect {
+            apiHelper.queryVhostController("volume-" + it.uuid)
+        }
+        def hostInventoryForPaths = org.zstack.header.host.HostInventory.valueOf(
+                Q.New(HostVO.class).eq(HostVO_.uuid, host1.uuid).find())
+        stoppedVm.allVolumes.each { volume ->
+            def fromDatabase = controller.getActiveVolumeInfo(volume.installPath, hostInventoryForPaths, false)
+            def fromSocket = controller.getActiveVolumeInfo("/var/run/wds/volume-" + volume.uuid,
+                    hostInventoryForPaths, false)
+            assert fromDatabase.uuid == volume.uuid
+            assert fromDatabase.installPath == fromSocket.installPath
+            assert fromDatabase.protocol == fromSocket.protocol
+        }
+        assert vhosts.size() == 3
+        String sharedVolumeUuid = stoppedVm.allVolumes.find { it.type == "Data" }.uuid
+        def sharedVhost = apiHelper.queryVhostController("volume-" + sharedVolumeUuid)
+        vhosts.each {
+            assert !CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(it.id))
+        }
+
+        def changeState = { VmInstanceStateEvent event ->
+            def msg = new ChangeVmStateMsg()
+            msg.vmInstanceUuid = stoppedVm.uuid
+            msg.stateEvent = event.toString()
+            bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, stoppedVm.uuid)
+            assert bus.call(msg).success
+        }
+
+        KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(false)
+        def unbindCount = new java.util.concurrent.atomic.AtomicInteger()
+        String unbindPath = "/api/v2/(sync/)?block/vhost/unbind_uss"
+        env.preSimulator(unbindPath) { HttpEntity<String> e ->
+            def body = JSONObjectUtil.toObject(e.body, LinkedHashMap.class)
+            if (vhosts.any { it.id == body.vhost_id }) {
+                unbindCount.incrementAndGet()
+            }
+        }
+        env.message(VmStateChangedOnHostMsg.class) { VmStateChangedOnHostMsg msg, CloudBus bus ->
+            bus.reply(msg, new MessageReply())
+        }
+        try {
+            stopVmInstance {
+                uuid = stoppedVm.uuid
+            }
+            changeState(VmInstanceStateEvent.stopped)
+            assert unbindCount.get() == vhosts.size() :
+                    "Normal stop must unbind each volume once, without duplicate Stopped-event cleanup"
+            stoppedVm = startVmInstance {
+                uuid = stoppedVm.uuid
+                hostUuid = host1.uuid
+            } as VmInstanceInventory
+            SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, sharedVolumeUuid)
+                    .set(VolumeVO_.isShareable, true).update()
+
+            def disconnect = new ChangeHostStatusMsg()
+            disconnect.uuid = host1.uuid
+            disconnect.statusEvent = HostStatusEvent.disconnected.toString()
+            bus.makeTargetServiceIdByResourceUuid(disconnect, HostConstant.SERVICE_ID, host1.uuid)
+            assert bus.call(disconnect).success
+
+            changeState(VmInstanceStateEvent.unknown)
+            vhosts.each {
+                assert !CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(it.id)) :
+                        "Unknown VM volumes must remain bound"
+            }
+
+            changeState(VmInstanceStateEvent.stopped)
+            retryInSecs {
+                vhosts.findAll { it.id != sharedVhost.id }.each {
+                    assert CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(it.id)) :
+                            "Stopped VM volumes must be unbound without host volume sync"
+                }
+            }
+            changeState(VmInstanceStateEvent.stopped)
+            assert !CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(sharedVhost.id)) :
+                    "Stopping one VM must not release a shared volume binding"
+
+            def completed = new AtomicBoolean(false)
+            def cleanupError = new AtomicReference<ErrorCode>()
+            def hostInventory = org.zstack.header.host.HostInventory.valueOf(
+                    Q.New(HostVO.class).eq(HostVO_.uuid, host1.uuid).find())
+            def psInventory = org.zstack.header.storage.primary.PrimaryStorageInventory.valueOf(
+                    Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, ps.uuid).find())
+            bean(ExternalPrimaryStorageKvmFactory.class).handleInactiveVolume(hostInventory,
+                    [(psInventory): ["/var/run/wds/volume-" + sharedVolumeUuid]], new Completion(null) {
+                @Override
+                void success() {
+                    completed.set(true)
+                }
+
+                @Override
+                void fail(ErrorCode errorCode) {
+                    cleanupError.set(errorCode)
+                    completed.set(true)
+                }
+            })
+            retryInSecs {
+                assert completed.get()
+            }
+            assert cleanupError.get() == null : cleanupError.get()
+            assert CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(sharedVhost.id)) :
+                    "Host-reported inactive shared volumes must remain eligible for cleanup"
+        } finally {
+            SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, sharedVolumeUuid)
+                    .set(VolumeVO_.isShareable, false).update()
+            env.preSimulator(unbindPath) { }
+            env.cleanMessageHandlers()
+            KVMGlobalConfig.VM_SYNC_ON_HOST_PING.updateValue(true)
+            reconnectHost {
+                uuid = host1.uuid
+            }
+        }
+
+        stoppedVm = startVmInstance {
+            uuid = stoppedVm.uuid
+            hostUuid = host1.uuid
+        } as VmInstanceInventory
+        bean(KvmVmActiveVolumeSyncPingTask.class).vmStateChanged(
+                org.zstack.header.vm.VmInstanceInventory.valueOf(Q.New(VmInstanceVO.class)
+                        .eq(VmInstanceVO_.uuid, stoppedVm.uuid).find()),
+                VmInstanceState.Unknown, VmInstanceState.Stopped)
+        changeState(VmInstanceStateEvent.running)
+        vhosts.each {
+            assert !CollectionUtils.isEmpty(apiHelper.getVhostControllerBoundUss(it.id)) :
+                    "A stale Stopped notification must not unbind a restarted VM"
+        }
+        deleteVm(stoppedVm.uuid)
+        stoppedVm.allVolumes.findAll { it.type == "Data" }.each { deleteVolume(it.uuid) }
     }
 
     void testHandleInactiveVolume() {

@@ -404,7 +404,8 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
             return;
         }
 
-        new While<>(inactiveVolumePaths.entrySet()).all((entry, compl) -> {
+        new While<>(inactiveVolumePaths.entrySet().stream()
+                .filter(entry -> !entry.getValue().isEmpty()).collect(Collectors.toList())).all((entry, compl) -> {
             PrimaryStorageInventory ps = entry.getKey();
             List<String> paths = entry.getValue();
 
@@ -416,6 +417,7 @@ public class ExternalPrimaryStorageKvmFactory implements KVMHostConnectExtension
 
             List<BaseVolumeInfo> infos = paths.stream()
                     .map(path -> nodeSvc.getActiveVolumeInfo(path, host, false))
+                    .filter(info -> info != null)
                     .collect(Collectors.toList());
             if (infos.isEmpty()) {
                 compl.done();

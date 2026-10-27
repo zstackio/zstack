@@ -56,6 +56,7 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.iscsi.IscsiUtils.getHostMnIpFromInitiatorName;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildImageName;
 import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.buildVolumeName;
+import static org.zstack.storage.addon.primary.ExternalPrimaryStorageNameHelper.getVolumeInfo;
 import static org.zstack.xinfini.XInfiniIscsiHelper.buildIscsiClientGroupName;
 import static org.zstack.xinfini.XInfiniIscsiHelper.iscsiHeartbeatVolumeName;
 import static org.zstack.xinfini.XInfiniPathHelper.*;
@@ -347,6 +348,19 @@ public class XInfiniStorageController implements PrimaryStorageControllerSvc, Pr
 
     @Override
     public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
+        if (activePath.startsWith(getIdentity() + "://")) {
+            VolumeModule vol = apiHelper.queryVolumeById(getVolIdFromPath(activePath));
+            if (vol == null) {
+                return null;
+            }
+
+            BaseVolumeInfo info = getVolumeInfo(vol.getSpec().getName());
+            info.setInstallPath(activePath);
+            info.setProtocol(VolumeProtocol.Vhost.toString());
+            info.setShareable(shareable);
+            return info;
+        }
+
         BaseVolumeInfo info = new BaseVolumeInfo();
         String volUuid;
         if (activePath.startsWith(getVhostSocketDir())) {

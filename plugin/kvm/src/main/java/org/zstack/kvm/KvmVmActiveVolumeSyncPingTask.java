@@ -7,6 +7,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.SQL;
+import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
@@ -18,16 +19,29 @@ import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
+import org.zstack.header.host.HostVO;
+import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
+import org.zstack.header.vm.VmInstanceInventory;
+import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
+import org.zstack.header.vm.VmInstanceVO;
+import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.VmStateChangedExtensionPoint;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeProtocol;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import javax.persistence.Tuple;
 
-public class KvmVmActiveVolumeSyncPingTask implements KVMPingAgentNoFailureExtensionPoint, Component {
+public class KvmVmActiveVolumeSyncPingTask implements KVMPingAgentNoFailureExtensionPoint, VmStateChangedExtensionPoint, Component {
     private static final CLogger logger = Utils.getLogger(KvmVmActiveVolumeSyncPingTask.class);
     @Autowired
     private CloudBus bus;
@@ -37,6 +51,85 @@ public class KvmVmActiveVolumeSyncPingTask implements KVMPingAgentNoFailureExten
     private PluginRegistry pluginRgty;
 
     private List<KvmVmActiveVolumeSyncExtensionPoint> exts;
+
+    @Override
+    public void vmStateChanged(VmInstanceInventory vm, VmInstanceState oldState, VmInstanceState newState) {
+        if (newState != VmInstanceState.Stopped || oldState == VmInstanceState.Stopping
+                || !KVMConstant.KVM_HYPERVISOR_TYPE.equals(vm.getHypervisorType())
+                || vm.getLastHostUuid() == null) {
+            return;
+        }
+
+        thdf.chainSubmit(new ChainTask(null) {
+            @Override
+            public String getSyncSignature() {
+                return VmInstanceConstant.VM_SYNC_SIGNATURE_PREFIX + vm.getUuid();
+            }
+
+            @Override
+            public String getName() {
+                return String.format("deactivate-volumes-of-stopped-vm-%s", vm.getUuid());
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                if (!Q.New(VmInstanceVO.class).eq(VmInstanceVO_.uuid, vm.getUuid())
+                        .eq(VmInstanceVO_.state, VmInstanceState.Stopped)
+                        .eq(VmInstanceVO_.lastHostUuid, vm.getLastHostUuid())
+                        .notNull(VmInstanceVO_.rootVolumeUuid).isExists()) {
+                    chain.next();
+                    return;
+                }
+
+                HostVO hostVO = Q.New(HostVO.class).eq(HostVO_.uuid, vm.getLastHostUuid()).find();
+                if (hostVO == null) {
+                    chain.next();
+                    return;
+                }
+
+                HostInventory host = HostInventory.valueOf(hostVO);
+                List<Tuple> volumes = Q.New(VolumeVO.class)
+                        .select(VolumeVO_.primaryStorageUuid, VolumeVO_.installPath)
+                        .eq(VolumeVO_.vmInstanceUuid, vm.getUuid())
+                        .eq(VolumeVO_.isShareable, false)
+                        .eq(VolumeVO_.protocol, VolumeProtocol.Vhost.toString())
+                        .in(VolumeVO_.type, Arrays.asList(VolumeType.Root, VolumeType.Data))
+                        .notNull(VolumeVO_.primaryStorageUuid).notNull(VolumeVO_.installPath).listTuple();
+                Map<String, List<String>> pathsByStorage = new HashMap<>();
+                volumes.forEach(volume -> pathsByStorage.computeIfAbsent(volume.get(0, String.class),
+                        uuid -> new ArrayList<>()).add(volume.get(1, String.class)));
+                Map<PrimaryStorageInventory, List<String>> inactiveVolumePaths = new HashMap<>();
+                pathsByStorage.forEach((uuid, paths) -> {
+                    PrimaryStorageInventory ps = new PrimaryStorageInventory();
+                    ps.setUuid(uuid);
+                    inactiveVolumePaths.put(ps, paths);
+                });
+
+                new While<>(exts).each((ext, completion) -> ext.handleInactiveVolume(
+                        host, inactiveVolumePaths, new Completion(completion) {
+                            @Override
+                            public void success() {
+                                completion.done();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                completion.addError(errorCode);
+                                completion.done();
+                            }
+                        })).run(new WhileDoneCompletion(chain) {
+                    @Override
+                    public void done(ErrorCodeList errorCodeList) {
+                        if (!errorCodeList.getCauses().isEmpty()) {
+                            logger.warn(String.format("failed to deactivate volumes of stopped vm[uuid:%s] on host[uuid:%s]: %s",
+                                    vm.getUuid(), host.getUuid(), errorCodeList));
+                        }
+                        chain.next();
+                    }
+                });
+            }
+        });
+    }
 
 
     private void syncVolume(final HostInventory host, final NoErrorCompletion completion) {

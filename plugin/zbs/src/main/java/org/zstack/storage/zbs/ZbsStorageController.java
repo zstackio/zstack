@@ -328,7 +328,16 @@ public class ZbsStorageController implements PrimaryStorageControllerSvc, Primar
 
     @Override
     public BaseVolumeInfo getActiveVolumeInfo(String activePath, HostInventory h, boolean shareable) {
-        return null;
+        if (!activePath.startsWith(ZbsConstants.SCHEME_PREFIX)) {
+            return null;
+        }
+
+        BaseVolumeInfo info = new BaseVolumeInfo();
+        info.setUuid(volumeUuidFromInstallPath(activePath));
+        info.setInstallPath(activePath);
+        info.setProtocol(VolumeProtocol.Vhost.toString());
+        info.setShareable(shareable);
+        return info;
     }
 
     @Override
