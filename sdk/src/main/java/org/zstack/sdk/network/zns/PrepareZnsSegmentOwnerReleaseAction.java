@@ -1,0 +1,113 @@
+package org.zstack.sdk.network.zns;
+
+import java.util.HashMap;
+import java.util.Map;
+import org.zstack.sdk.*;
+
+public class PrepareZnsSegmentOwnerReleaseAction extends AbstractAction {
+
+    private static final HashMap<String, Parameter> parameterMap = new HashMap<>();
+
+    private static final HashMap<String, Parameter> nonAPIParameterMap = new HashMap<>();
+
+    public static class Result {
+        public ErrorCode error;
+        public org.zstack.sdk.network.zns.PrepareZnsSegmentOwnerReleaseResult value;
+
+        public Result throwExceptionIfError() {
+            if (error != null) {
+                throw new ApiException(
+                    String.format("error[code: %s, description: %s, details: %s, globalErrorCode: %s]", error.code, error.description, error.details, error.globalErrorCode)    
+                );
+            }
+            
+            return this;
+        }
+    }
+
+    @Param(required = true, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String segmentUuid;
+
+    @Param(required = false, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String zoneUuid;
+
+    @Param(required = true, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String computeManagerUuid;
+
+    @Param(required = true, nonempty = false, nullElements = false, emptyString = true, numberRange = {0L,9223372036854775807L}, noTrim = false)
+    public java.lang.Long configVersion;
+
+    @Param(required = true, validRegexValues = "(?i)(?!0{32}$|0{8}-0{4}-0{4}-0{4}-0{12}$)([0-9a-f]{32}|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})", nonempty = false, nullElements = false, emptyString = false, noTrim = false)
+    public java.lang.String operationUuid;
+
+    @Param(required = false)
+    public java.util.List systemTags;
+
+    @Param(required = false)
+    public java.util.List userTags;
+
+    @Param(required = false)
+    public String sessionId;
+
+    @Param(required = false)
+    public String accessKeyId;
+
+    @Param(required = false)
+    public String accessKeySecret;
+
+    @Param(required = false)
+    public String requestIp;
+
+    @NonAPIParam
+    public long timeout = -1;
+
+    @NonAPIParam
+    public long pollingInterval = -1;
+
+
+    private Result makeResult(ApiResult res) {
+        Result ret = new Result();
+        if (res.error != null) {
+            ret.error = res.error;
+            return ret;
+        }
+        
+        org.zstack.sdk.network.zns.PrepareZnsSegmentOwnerReleaseResult value = res.getResult(org.zstack.sdk.network.zns.PrepareZnsSegmentOwnerReleaseResult.class);
+        ret.value = value == null ? new org.zstack.sdk.network.zns.PrepareZnsSegmentOwnerReleaseResult() : value; 
+
+        return ret;
+    }
+
+    public Result call() {
+        ApiResult res = ZSClient.call(this);
+        return makeResult(res);
+    }
+
+    public void call(final Completion<Result> completion) {
+        ZSClient.call(this, new InternalCompletion() {
+            @Override
+            public void complete(ApiResult res) {
+                completion.complete(makeResult(res));
+            }
+        });
+    }
+
+    protected Map<String, Parameter> getParameterMap() {
+        return parameterMap;
+    }
+
+    protected Map<String, Parameter> getNonAPIParameterMap() {
+        return nonAPIParameterMap;
+    }
+
+    protected RestInfo getRestInfo() {
+        RestInfo info = new RestInfo();
+        info.httpMethod = "POST";
+        info.path = "/sdn-controller/zns/segments/{segmentUuid}/actions/release-owner";
+        info.needSession = true;
+        info.needPoll = true;
+        info.parameterName = "params";
+        return info;
+    }
+
+}
