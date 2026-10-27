@@ -22,9 +22,10 @@ public final class MemorySummaryRules {
             if (state == null) {
                 detail.setMetrics(new LinkedHashMap<>()); detail.setQuality("Unknown");
             } else {
-                MemoryStateInventory projected = MemoryMetricsPresentation.inventory(state, samples.get(host), now);
-                detail.setMetrics(projected.getMetrics()); detail.setQuality(projected.getQuality());
-                Object sampled = projected.getMetrics().get("sampleTime");
+                Map<String, Object> savings = samples.get(host);
+                detail.setMetrics(MemoryMetricsPresentation.metrics(savings, now));
+                detail.setQuality(MemoryMetricsPresentation.quality(savings, now));
+                Object sampled = detail.getMetrics().get("sampleTime");
                 detail.setSampleTime(sampled instanceof Number ? ((Number) sampled).longValue() : null);
             }
             details.add(detail);
@@ -251,13 +252,12 @@ public final class MemorySummaryRules {
         try {
             JsonObject state = new JsonParser().parse(host.getState()).getAsJsonObject();
             JsonObject caps = object(state, "capabilities");
-            JsonObject actual = object(state, "actual");
+            JsonObject ksm = object(state, "ksm");
+            JsonObject zram = object(state, "zram");
             JsonObject savings = object(state, "savings");
             boolean classified = false;
-            String phase = string(state, "phase");
-            JsonObject lifecycle = object(state, "lifecycle");
-            if ("PAUSED".equalsIgnoreCase(phase)
-                    || (lifecycle != null && bool(lifecycle, "paused"))) {
+            String control = string(state, "control");
+            if ("paused".equals(control) || "drained".equals(control)) {
                 increment(counts, "paused"); classified = true;
             }
             if (Boolean.TRUE.equals(boolObject(state, "inventoryComplete"))
@@ -272,7 +272,7 @@ public final class MemorySummaryRules {
                     || (zramUnavailable && reason != null && reason.startsWith("UNSUPPORTED_"))) {
                 increment(counts, "unsupported"); classified = true;
             }
-            JsonObject hostFeedback = object(state, "host");
+            JsonObject hostFeedback = object(object(zram, "status"), "host");
             boolean explicitConditions = Boolean.FALSE.equals(boolObject(hostFeedback, "safe"))
                     || "CONDITIONS_UNMET".equals(reason)
                     || "HOST_FEEDBACK_UNSAFE".equals(string(hostFeedback, "reason"))
@@ -283,18 +283,16 @@ public final class MemorySummaryRules {
             if (Boolean.TRUE.equals(boolObject(caps, "rebootRequired"))) {
                 increment(counts, "rebootRequired"); classified = true;
             }
-            Boolean ksmEnabled = boolObject(object(actual, "ksm"), "enabled");
-            Boolean zramEnabled = boolObject(object(actual, "zram"), "efficiencyEnabled");
+            Boolean ksmEnabled = boolObject(ksm, "enabled");
+            Boolean zramEnabled = boolObject(zram, "efficiencyEnabled");
             boolean enabled = Boolean.TRUE.equals(ksmEnabled) || Boolean.TRUE.equals(zramEnabled);
             if (Boolean.FALSE.equals(ksmEnabled) && Boolean.FALSE.equals(zramEnabled)) {
                 increment(counts, "disabled"); classified = true;
             }
-            Boolean zramEnabledState = boolObject(object(actual, "zram"), "efficiencyEnabled");
-            String zramReason = string(caps, "zramReasonCode");
-            boolean zramOptional = Boolean.FALSE.equals(boolObject(caps, "zram"))
-                    && !Boolean.TRUE.equals(zramEnabledState)
-                    && zramReason != null && (zramReason.startsWith("UNSUPPORTED_") || "ABI_INCOMPLETE".equals(zramReason));
-            if (hasBlockingErrors(actual, zramOptional, false, true) || "error".equalsIgnoreCase(string(savings, "quality"))) {
+            // An observation the Agent could not read reports its reason.
+            boolean zramObserved = !"absent".equals(string(zram, "serviceState"));
+            if (string(ksm, "reason") != null || zramObserved && string(zram, "reason") != null
+                    || "error".equalsIgnoreCase(string(savings, "quality"))) {
                 increment(counts, "error"); classified = true;
             }
             if (enabled && "Fresh".equals(string(savings, "quality"))
@@ -325,41 +323,5 @@ public final class MemorySummaryRules {
         return object != null && object.has(key) && object.get(key).isJsonPrimitive()
                 && object.get(key).getAsJsonPrimitive().isBoolean()
                 ? object.get(key).getAsBoolean() : null;
-    }
-    private static boolean bool(JsonObject object, String key) {
-        return Boolean.TRUE.equals(boolObject(object, key));
-    }
-    private static boolean hasErrors(JsonObject object) {
-        if (object == null) { return false; }
-        if ("unknown".equalsIgnoreCase(string(object, "quality")) && string(object, "reason") != null) {
-            return true; // A native actual-value read explicitly failed.
-        }
-        for (Map.Entry<String, com.google.gson.JsonElement> entry : object.entrySet()) {
-            if ("errors".equals(entry.getKey()) && entry.getValue().isJsonArray()
-                    && entry.getValue().getAsJsonArray().size() > 0) { return true; }
-            if (entry.getValue().isJsonObject() && hasErrors(entry.getValue().getAsJsonObject())) { return true; }
-        }
-        return false;
-    }
-
-    private static boolean hasBlockingErrors(JsonObject object, boolean optionalZram, boolean optionalAllowed, boolean rootActual) {
-        if (object == null) return false;
-        if ("unknown".equalsIgnoreCase(string(object, "quality")) && string(object, "reason") != null) {
-            String reason = string(object, "reason").toLowerCase(Locale.ROOT);
-            if (!(optionalAllowed && optionalZram && reason.contains("[errno 2] no such file or directory"))) return true;
-        }
-        for (Map.Entry<String, com.google.gson.JsonElement> entry : object.entrySet()) {
-            if ("errors".equals(entry.getKey()) && entry.getValue().isJsonArray()) {
-                for (com.google.gson.JsonElement error : entry.getValue().getAsJsonArray()) {
-                    String text = error.toString().toLowerCase(Locale.ROOT);
-                    if (!(optionalAllowed && optionalZram && text.contains("[errno 2] no such file or directory"))) return true;
-                }
-            } else if (entry.getValue().isJsonObject()
-                    && hasBlockingErrors(entry.getValue().getAsJsonObject(), optionalZram,
-                    rootActual && optionalZram && ("zram".equals(entry.getKey()) || "writeback".equals(entry.getKey()))
-                    && !Boolean.TRUE.equals(boolObject(entry.getValue().getAsJsonObject(), "enabled"))
-                    && !Boolean.TRUE.equals(boolObject(entry.getValue().getAsJsonObject(), "efficiencyEnabled")), false)) return true;
-        }
-        return false;
     }
 }

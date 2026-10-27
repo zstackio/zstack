@@ -28,9 +28,11 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     private final Map<String, String> lifecycleGenerations = new ConcurrentHashMap<>();
     private final MemoryBatchCursor bindingCursor = new MemoryBatchCursor();
 
-    private MemoryStateVO state(String host) {
-        List<MemoryStateVO> states = repository.states(Collections.singletonList(host), 0, 1);
-        return states.isEmpty() ? null : states.get(0);
+    private MemoryStateVO state(String host) { return repository.state(host); }
+
+    private static Map<?, ?> capabilities(MemoryAgentResponse response) {
+        Object value = response == null || response.state == null ? null : response.state.get("capabilities");
+        return value instanceof Map ? (Map<?, ?>) value : null;
     }
 
     /** Only a service-owned ZRAM pool creates a migration hold. KSM-only state does not. */
@@ -134,7 +136,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         Map<String, Object> command = command(hold);
         command.put("holdAction", action); command.put("poolGeneration", hold.poolGeneration);
         manager.call(hold.sourceHostUuid, "migration-hold", command, response -> {
-            boolean confirmed = "Succeeded".equals(MemoryResultRules.status(hold.operationUuid, -1, response));
+            boolean confirmed = MemoryResultRules.succeeded(hold.operationUuid, response);
             hold.status = confirmed ? ("acquire".equals(action) ? "Held" : "Released") : "Unknown";
             hold.reason = confirmed ? null : "Migration hold result must be reconciled";
             record(hold); completion.accept(confirmed);
@@ -241,9 +243,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         if (target && !managedZram(host)) { completion.accept(true); return; }
         if (target) {
             manager.call(host, "state", command(hold, host), response -> {
-                if (response != null && response.capabilities != null
-                        && Boolean.FALSE.equals(response.capabilities.get("service"))
-                        && response.state != null && Boolean.FALSE.equals(response.state.get("managed"))) {
+                if (capabilities(response) != null && Boolean.FALSE.equals(capabilities(response).get("service"))
+                        && Boolean.FALSE.equals(response.state.get("managed"))) {
                     // A destination without this feature needs no optimizer
                     // binding. Native VM identity was already verified above.
                     completion.accept(true);
@@ -254,13 +255,13 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                     completion.accept(true);
                 } else {
                     manager.call(host, "vm-efficiency", command, result -> completion.accept(
-                            "Succeeded".equals(MemoryResultRules.status(hold.operationUuid, -1, result))));
+                            MemoryResultRules.succeeded(hold.operationUuid, result)));
                 }
             });
             return;
         }
         manager.call(host, "vm-efficiency", command,
-                response -> completion.accept("Succeeded".equals(MemoryResultRules.status(hold.operationUuid, -1, response))));
+                response -> completion.accept(MemoryResultRules.succeeded(hold.operationUuid, response)));
     }
 
     String vmParticipation(String vmUuid) {
@@ -276,8 +277,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     /** Bind existing/rerun VMs only after a confirmed Host policy and fresh inventory. */
     void reconcileObservedBindings(String host, MemoryAgentResponse response) {
         MemoryStateVO state = state(host);
-        if (state == null || state.getActiveTaskUuid() != null
-                || state.getAppliedRevision() == null
+        if (state == null || state.getAppliedRevision() == null
                 || state.getAppliedRevision() != state.getDesiredRevision()
                 || !"Succeeded".equals(state.getStatus())
                 || response == null || !response.isSuccess() || response.state == null
@@ -312,7 +312,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         command.put("action", "revoke"); command.put("scope", "VM");
         command.put("expectedInstanceGeneration", hold.sourceInstanceGeneration);
         manager.call(hold.sourceHostUuid, "vm-efficiency", command,
-                response -> completion.accept("Succeeded".equals(MemoryResultRules.status(hold.operationUuid, -1, response))));
+                response -> completion.accept(MemoryResultRules.succeeded(hold.operationUuid, response)));
     }
 
     private static String stateString(MemoryAgentResponse response, String... keys) {
@@ -376,14 +376,14 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     private static boolean targetHasNoZram(MemoryAgentResponse response) {
-        if (response == null || response.capabilities == null) { return false; }
-        if (!Boolean.FALSE.equals(response.capabilities.get("zram"))) { return false; }
+        Map<?, ?> capabilities = capabilities(response);
+        if (capabilities == null || !Boolean.FALSE.equals(capabilities.get("zram"))) { return false; }
         // Agent discover_capabilities reports zram=false for both a known
         // unsupported platform and an unavailable/old service. Only the
         // former is an authoritative no-ZRAM result. In particular,
         // SERVICE_RECLAIM_CAPABILITY_UNKNOWN must remain Unknown when the
         // target still has a configured ZRAM service.
-        Object rawReason = response.capabilities.get("zramReasonCode");
+        Object rawReason = capabilities.get("zramReasonCode");
         if (!(rawReason instanceof String)) { return false; }
         String reason = (String) rawReason;
         return "UNSUPPORTED_ARCHITECTURE".equals(reason)
@@ -396,7 +396,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     /** Host removal is never blocked: an offline or old-Agent Host cannot prove a drain. */
     @Override public void preDeleteHost(HostInventory host) throws HostException {
         MemoryStateVO state = state(host.getUuid());
-        if (state != null && (state.getActiveTaskUuid() != null || hasPoolGeneration(state.getState()))) {
+        if (state != null && hasPoolGeneration(state.getState())) {
             logger.warn(String.format("deleting Host[%s] with memory optimization state %s; its local ZRAM pool and"
                     + " service state remain on the Host until it is drained or reinstalled", host.getUuid(), state.getStatus()));
         }

@@ -102,7 +102,7 @@ public class MemoryLifecycleHooksCallbackTest {
                                 Consumer<MemoryAgentResponse> callback) {
                 if ("host-b".equals(host) && "state".equals(action)) {
                     MemoryAgentResponse answer = response(host, "instance-target");
-                    answer.capabilities = Collections.singletonMap("service", false);
+                    answer.state.put("capabilities", Collections.singletonMap("service", false));
                     answer.state.put("managed", false);
                     callback.accept(answer);
                 } else { super.call(host, action, command, callback); }
@@ -123,9 +123,9 @@ public class MemoryLifecycleHooksCallbackTest {
                     MemoryAgentResponse answer = response(host, null);
                     answer.state.put("managed", true);
                     answer.state.put("vms", Collections.singletonMap("vm-1", Collections.emptyMap()));
-                    answer.capabilities = new HashMap<>(); answer.capabilities.put("service", true);
-                    answer.capabilities.put("zram", false);
-                    answer.capabilities.put("zramReasonCode", "UNSUPPORTED_RECLAIM_KERNEL");
+                    Map<String, Object> capabilities = new HashMap<>(); capabilities.put("service", true);
+                    capabilities.put("zram", false); answer.state.put("capabilities", capabilities);
+                    capabilities.put("zramReasonCode", "UNSUPPORTED_RECLAIM_KERNEL");
                     callback.accept(answer);
                 } else { super.call(host, action, command, callback); }
             }
@@ -145,9 +145,9 @@ public class MemoryLifecycleHooksCallbackTest {
                     MemoryAgentResponse answer = response(host, null);
                     answer.state.put("managed", true);
                     answer.state.put("vms", Collections.singletonMap("vm-1", Collections.emptyMap()));
-                    answer.capabilities = new HashMap<>(); answer.capabilities.put("service", true);
-                    answer.capabilities.put("zram", false);
-                    answer.capabilities.put("zramReasonCode", "SERVICE_RECLAIM_CAPABILITY_UNKNOWN");
+                    Map<String, Object> capabilities = new HashMap<>(); capabilities.put("service", true);
+                    capabilities.put("zram", false); answer.state.put("capabilities", capabilities);
+                    capabilities.put("zramReasonCode", "SERVICE_RECLAIM_CAPABILITY_UNKNOWN");
                     callback.accept(answer);
                 } else { super.call(host, action, command, callback); }
             }
@@ -448,8 +448,8 @@ public class MemoryLifecycleHooksCallbackTest {
                     // The target lists the VM from libvirt; its stopped ZRAM service gives no generation.
                     MemoryAgentResponse answer = response(host, null);
                     ((Map<String, Object>) answer.state.get("vms")).put("vm-1", new HashMap<>());
-                    answer.capabilities = new HashMap<>();
-                    answer.capabilities.put("zram", false); answer.capabilities.put("zramReasonCode", "SERVICE_UNAVAILABLE");
+                    Map<String, Object> capabilities = new HashMap<>(); answer.state.put("capabilities", capabilities);
+                    capabilities.put("zram", false); capabilities.put("zramReasonCode", "SERVICE_UNAVAILABLE");
                     callback.accept(answer);
                 } else { super.call(host, action, command, callback); }
             }
@@ -465,10 +465,10 @@ public class MemoryLifecycleHooksCallbackTest {
         FakeManager manager = new FakeManager();
         inject(hooks, "manager", manager);
         inject(hooks, "repository", new FakeRepository() {
-            @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
+            @Override public MemoryStateVO state(String host) {
                 MemoryStateVO state = new MemoryStateVO();
                 state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
-                return Collections.singletonList(state);
+                return state;
             }
             @Override String vmPolicy(String vm) { return "{\"participation\":\"deny\"}"; }
         });
@@ -517,8 +517,7 @@ public class MemoryLifecycleHooksCallbackTest {
 
     private static class FakeRepository extends MemoryRepository {
         @Override public String vmParticipation(String uuid) {
-            String value = MemoryPolicyRules.decode(vmPolicy(uuid)).participation;
-            return value == null ? "inherit" : value;
+            return vmPolicy(uuid).contains("\"deny\"") ? "deny" : "inherit";
         }
         MemoryMigrationVO hold;
         private final EntityManager entityManager = (EntityManager) Proxy.newProxyInstance(
@@ -560,11 +559,11 @@ public class MemoryLifecycleHooksCallbackTest {
         }
         String vmPolicy(String vm) { return "{\"schemaVersion\":1,\"participation\":\"inherit\"}"; }
         final Set<String> hostsWithoutPool = new HashSet<>();
-        @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
+        @Override public MemoryStateVO state(String host) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host-a");
             state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
-            state.setState(hostsWithoutPool.contains(hosts.get(0)) ? "{}" : "{\"poolGeneration\":\"pool-1\"}");
-            return Collections.singletonList(state);
+            state.setState(hostsWithoutPool.contains(host) ? "{}" : "{\"zram\":{\"poolGeneration\":\"pool-1\"}}");
+            return state;
         }
     }
 

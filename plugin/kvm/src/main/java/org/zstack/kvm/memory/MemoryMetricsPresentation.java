@@ -4,9 +4,10 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
-/** Replace cached Agent savings, never mutate the persisted control observation. */
+/** Replace cached Agent savings, never mutate the persisted observation. */
 final class MemoryMetricsPresentation {
     private MemoryMetricsPresentation() { }
 
@@ -24,56 +25,26 @@ final class MemoryMetricsPresentation {
         return copy;
     }
 
-    static MemoryStateInventory inventory(MemoryStateVO source, Map<String, Object> savings, long now) {
-        return inventory(source, savings, now, false);
+    /**
+     * The savings sample with presentation metadata. Clients use the server's
+     * TTL and elapsed time since this response, not their own clocks.
+     */
+    static Map<String, Object> metrics(Map<String, Object> savings, long now) {
+        Map<String, Object> metrics = savings == null ? new LinkedHashMap<>() : new LinkedHashMap<>(savings);
+        if (savings != null) {
+            metrics.put("displayTtlMillis", MemoryOptimizationGlobalConfig.displayTtlMillis());
+            metrics.put("presentationTime", now);
+        }
+        return metrics;
     }
 
-    static MemoryStateInventory inventory(MemoryStateVO source, Map<String, Object> savings, long now,
-                                          boolean canResume) {
-        return inventory(source, savings, now, canResume, null);
-    }
-
-    static MemoryStateInventory inventory(MemoryStateVO source, Map<String, Object> savings, long now,
-                                          boolean canResume, Map<String, String> uncertainRecovery) {
-        MemoryStateInventory out = withSavings(source, savings).toInventory();
-        // lastSampleTime remains the control-observation time. The metric
-        // timestamp is independent and must not be renewed by a control poll.
+    /** The quality of the metric sample, which may be older than the Host observation. */
+    static String quality(Map<String, Object> savings, long now) {
         Object time = savings == null ? null : savings.get("sampleTime");
         Object quality = savings == null ? null : savings.get("quality");
         Long sampled = time instanceof Number ? ((Number) time).longValue() : null;
-        MemoryStatePresentation.populate(out, now, canResume);
-        if (uncertainRecovery != null) {
-            java.util.List<String> actions = new java.util.ArrayList<>(out.getAllowedActions());
-            actions.add(MemoryUncertainRecoveryRules.ACTION);
-            out.setAllowedActions(actions); out.setUncertainRecovery(uncertainRecovery);
-        }
-        // This inventory's quality describes the metric sample, which may be
-        // older than the control observation in MemoryStateVO.
-        out.setQuality(sampled == null || sampled > now + 5000 ? "Unknown"
+        return sampled == null || sampled > now + 5000 ? "Unknown"
                 : now - sampled >= MemoryOptimizationGlobalConfig.displayTtlMillis() ? "Stale"
-                : quality instanceof String ? (String) quality : "Unknown");
-        // Project the public result only after native eligibility and actions
-        // have been evaluated from the original control observation.
-        String status = source.getStatus();
-        switch (status == null ? "Unknown" : status) {
-            case "Queued": case "Applying": case "Draining": case "Unknown":
-                break;
-            case "Succeeded": case "Failed": case "Blocked":
-                if (source.getActiveTaskUuid() != null) {
-                    if (!"Blocked".equals(status)) status = "Unknown";
-                } else {
-                    String plan = source.getPolicyPlanStatus();
-                    if ("Blocked".equals(plan) || "NeedsReview".equals(plan)) status = "Blocked";
-                    else if ("Failed".equals(plan) || "Unknown".equals(plan)) status = plan;
-                    else if ("Queued".equals(plan) || "Applying".equals(plan) || "Draining".equals(plan)) {
-                        status = "Unknown";
-                    }
-                }
-                break;
-            default:
-                status = "Unknown";
-        }
-        out.setStatus(status == null ? "Unknown" : status);
-        return out;
+                : quality instanceof String ? (String) quality : "Unknown";
     }
 }

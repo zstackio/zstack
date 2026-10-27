@@ -16,7 +16,7 @@ public class MemoryTaskFailureEvent {
     }
 
     public static MemoryTaskFailureEvent fromTask(MemoryTaskVO task, String reasonOverride) {
-        if (task == null || !isHostExecutionScope(task.getScope()) || !"Failed".equals(task.getStatus())
+        if (task == null || !"Failed".equals(task.getStatus())
                 || task.getHostUuid() == null || task.getHostUuid().trim().isEmpty()
                 || task.getUuid() == null || task.getUuid().trim().isEmpty()
                 || task.getAction() == null || task.getAction().trim().isEmpty()) {
@@ -30,10 +30,6 @@ public class MemoryTaskFailureEvent {
         event.status = task.getStatus();
         event.createTimeMillis = System.currentTimeMillis();
         return event;
-    }
-
-    private static boolean isHostExecutionScope(String scope) {
-        return "Host".equals(scope) || "Cluster".equals(scope) || "Global".equals(scope);
     }
 
     public String getHostUuid() { return hostUuid; }

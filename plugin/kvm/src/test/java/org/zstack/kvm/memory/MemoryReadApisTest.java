@@ -72,15 +72,18 @@ public class MemoryReadApisTest {
         assertEquals("unavailable", MemoryObservationRules.vm("host", "vm", report, observed, 90000).getQuality());
     }
 
-    @Test public void pausedStateExposesResumeFenceAndAllowedAction() {
-        MemoryStateVO state = new MemoryStateVO();
-        state.setHostUuid("host"); state.setStatus("Succeeded");
-        state.setControlOperationUuid("pause-operation"); state.setLastSampleTime(System.currentTimeMillis());
-        state.setState("{\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}}");
-        MemoryStateInventory inventory = state.toInventory();
-        assertEquals("pause-operation", inventory.getControlOperationUuid());
-        // A plain state row cannot establish which durable operation owns the
-        // fence; the API service adds resume only after checking the task row.
-        assertEquals(Collections.singletonList("query"), inventory.getAllowedActions());
+    @Test public void allowedActionsFollowTheOperatorControlAndTheObservedHost() {
+        java.util.Map<String, Object> observed = new java.util.LinkedHashMap<>();
+        observed.put("control", "active");
+        observed.put("ksm", Collections.singletonMap("enabled", true));
+        observed.put("zram", Collections.singletonMap("poolGeneration", "pool"));
+        assertEquals("Active", MemoryRepository.featureState(observed));
+        assertEquals(java.util.Arrays.asList("query", "pause", "drain"), MemoryRepository.allowedActions("active", observed));
+        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("paused", observed));
+        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("drained", observed));
+        observed.put("control", "drained");
+        assertEquals("Drained", MemoryRepository.featureState(observed));
+        assertEquals("Unknown", MemoryRepository.featureState(Collections.emptyMap()));
+        assertEquals(Collections.singletonList("query"), MemoryRepository.allowedActions("active", Collections.emptyMap()));
     }
 }

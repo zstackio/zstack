@@ -12,9 +12,7 @@ public class MemoryResourceDeletionTest {
         MemoryLifecycleHooks result = new MemoryLifecycleHooks();
         Field field = MemoryLifecycleHooks.class.getDeclaredField("repository"); field.setAccessible(true);
         field.set(result, new MemoryRepository() {
-            @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
-                return state == null ? Collections.emptyList() : Collections.singletonList(state);
-            }
+            @Override public MemoryStateVO state(String host) { return state; }
         });
         return result;
     }
@@ -27,7 +25,7 @@ public class MemoryResourceDeletionTest {
         hooks(null).preDeleteHost(host());
         hooks(sample("{\"managed\":false}")).preDeleteHost(host());
         MemoryStateVO busy = sample("{\"managed\":true,\"poolGeneration\":\"g1\"}");
-        busy.setActiveTaskUuid("unknown-task"); busy.setLastSampleTime(null);
+        busy.setLastSampleTime(null);
         hooks(busy).preDeleteHost(host());
     }
 }

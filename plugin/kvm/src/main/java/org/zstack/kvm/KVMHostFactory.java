@@ -630,7 +630,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
         });
         new MemoryStandardConfigurationCoordinator(memoryRepository, pluginRgty, thdf,
-                memoryOptimizationManager::recoverDrainedHosts).install(rcf);
+                memoryOptimizationManager::standardConfigurationChanged).install(rcf);
 
         resourceConfig = rcf.getResourceConfig(KVMGlobalConfig.NESTED_VIRTUALIZATION.getIdentity());
         resourceConfig.installValidatorExtension((resourceUuid, oldValue, newValue) -> {

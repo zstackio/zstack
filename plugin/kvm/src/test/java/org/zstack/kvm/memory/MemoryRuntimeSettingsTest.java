@@ -31,10 +31,10 @@ public class MemoryRuntimeSettingsTest {
         String old = ttl.value();
         try {
             set(ttl, "120");
-            MemoryStateInventory state = new MemoryStateInventory(); state.setLastSampleTime(1000L);
-            state.setState("{\"savings\":{\"quality\":\"Fresh\"}}");
-            MemoryStatePresentation.populate(state, 91000); assertEquals("Fresh", state.getQuality());
-            MemoryStatePresentation.populate(state, 121000); assertEquals("Stale", state.getQuality());
+            java.util.Map<String, Object> savings = new java.util.HashMap<>();
+            savings.put("quality", "Fresh"); savings.put("sampleTime", 1000L);
+            assertEquals("Fresh", MemoryMetricsPresentation.quality(savings, 91000));
+            assertEquals("Stale", MemoryMetricsPresentation.quality(savings, 121000));
         } finally { set(ttl, old); }
     }
 }

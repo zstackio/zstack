@@ -44,47 +44,6 @@ public final class MemoryStandardConfigAdapter {
         return readStored(field, value);
     }
 
-    /** One scoped read in the caller's transaction; no process-wide config cache. */
-    public Map<MemoryStandardField, Object> readOwn(EntityManager em, MemoryStandardField.Scope scope,
-            String resourceUuid, Set<String> skippedPaths) {
-        Set<MemoryStandardField> selected = EnumSet.noneOf(MemoryStandardField.class);
-        Set<String> categories = new HashSet<>(), names = new HashSet<>();
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (field.allows(scope) && !skippedPaths.contains(field.path())) {
-                selected.add(field); categories.add(field.category()); names.add(field.configName());
-            }
-        }
-        Map<MemoryStandardField, Object> values = new EnumMap<>(MemoryStandardField.class);
-        if (selected.isEmpty()) { return values; }
-        if (scope == MemoryStandardField.Scope.GLOBAL) {
-            List<GlobalConfigVO> rows = em.createQuery(
-                    "select g from GlobalConfigVO g where g.category in :categories and g.name in :names", GlobalConfigVO.class)
-                    .setParameter("categories", categories).setParameter("names", names).getResultList();
-            for (GlobalConfigVO row : rows) {
-                MemoryStandardField field = MemoryStandardField.forConfig(row.getCategory(), row.getName());
-                if (!selected.contains(field)) { continue; }
-                if (values.containsKey(field)) { throw new javax.persistence.NonUniqueResultException(field.path()); }
-                values.put(field, readGlobalStored(field, row));
-            }
-            for (MemoryStandardField field : selected) {
-                if (!values.containsKey(field)) { values.put(field, readGlobalStored(field, null)); }
-            }
-        } else {
-            List<ResourceConfigVO> rows = em.createQuery(
-                    "select r from ResourceConfigVO r where r.category in :categories and r.name in :names "
-                            + "and r.resourceUuid = :resourceUuid", ResourceConfigVO.class)
-                    .setParameter("categories", categories).setParameter("names", names)
-                    .setParameter("resourceUuid", resourceUuid).getResultList();
-            for (ResourceConfigVO row : rows) {
-                MemoryStandardField field = MemoryStandardField.forConfig(row.getCategory(), row.getName());
-                if (!selected.contains(field)) { continue; }
-                if (values.containsKey(field)) { throw new javax.persistence.NonUniqueResultException(field.path()); }
-                values.put(field, readResourceStored(field, row, resourceUuid));
-            }
-        }
-        return values;
-    }
-
     private static Object readStored(MemoryStandardField field, String value) {
         if (field.isFeatureSwitch() && value != null
                 && "none".equalsIgnoreCase(value.trim())) {
@@ -93,22 +52,6 @@ public final class MemoryStandardConfigAdapter {
         // GlobalConfig schema defaults may be empty for optional fields. Resource
         // overrides are checked for blank storage by readOverrideOwn above.
         return MemoryStandardConfigCodec.decode(field.path(), value);
-    }
-
-    public boolean hasOverrideRow(EntityManager em, String path, String resourceUuid) {
-        return resourceRow(em, MemoryStandardField.forPath(path), resourceUuid) != null;
-    }
-
-    public boolean globalIsSchemaDefault(EntityManager em, String path) {
-        MemoryStandardField field = MemoryStandardField.forPath(path);
-        GlobalConfigVO row = globalRow(em, field);
-        if (row == null) { return true; }
-        String defaultValue = row.getDefaultValue();
-        String storedValue = row.getValue();
-        // A literal `none` is only the schema default when it actually equals
-        // this row's declared default. If an administrator explicitly stored
-        // none over a different default, it remains an explicit stored none rather than a reset to the default.
-        return Objects.equals(storedValue, defaultValue);
     }
 
     /** Set/delete same-scope rows; caller owns cross-field validation and the enclosing transaction. */

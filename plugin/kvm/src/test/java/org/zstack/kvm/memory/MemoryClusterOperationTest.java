@@ -3,9 +3,8 @@ package org.zstack.kvm.memory;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
-import org.zstack.core.thread.ChainTask;
-import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.Message;
@@ -14,322 +13,283 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.*;
+import java.util.function.Consumer;
 import static org.junit.Assert.*;
 
 public class MemoryClusterOperationTest {
+    static final String BACKEND = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+
+    /** One generation per control change; a task finishes with the Agent result for it. */
     static class Repository extends MemoryRepository {
-        final List<MemoryActionRequest> submitted = new ArrayList<>();
-        final Map<String, Deque<String>> statuses = new HashMap<>();
-        final Map<String, String> reasons = new HashMap<>();
+        final Map<String, Long> generations = new HashMap<>();
+        final Map<String, String> controls = new HashMap<>();
+        final Map<String, MemoryTaskVO> tasks = new LinkedHashMap<>();
+        final List<String> plans = new ArrayList<>();
         final Set<String> rejected = new HashSet<>();
-        final Set<String> crashed = new HashSet<>();
-        final Set<String> unreadable = new HashSet<>();
+        final Set<String> drained = new HashSet<>();
+        String preparedBackend;
+        long preparedCapacity;
+
         @Override public List<String> targets(String scope, String resource) {
-            if ("Host".equals(scope)) { return Collections.singletonList(resource); }
+            if ("Host".equals(scope)) {
+                if (rejected.contains(resource)) {
+                    throw new MemoryOperationException("MEMORY_HOST_NOT_CONNECTED", "Host is not connected");
+                }
+                return Collections.singletonList(resource);
+            }
             assertEquals("Cluster", scope); assertEquals("cluster", resource);
             return Arrays.asList("host1", "host2");
         }
-        final Set<String> drained = new HashSet<>();
-        @Override public boolean isDrainedHost(String host) { return drained.contains(host); }
-        @Override public String recoverDrain(String host, String actor, MemoryAgentResponse observation) {
-            throw new IllegalStateException("database unavailable");
-        }
-        MemoryAgentResponse preparationObservation;
-        @Override String submit(MemoryActionRequest msg, MemoryAgentResponse observation) {
-            preparationObservation = observation;
-            return submit(msg);
-        }
-        @Override public String submit(MemoryActionRequest msg) {
-            submitted.add(msg);
-            if (crashed.contains(msg.getResourceUuid())) { throw new IllegalStateException("database unavailable"); }
-            if (rejected.contains(msg.getResourceUuid())) {
-                throw new MemoryOperationException("MEMORY_HOST_NOT_CONNECTED", "Host is not connected");
+        @Override public List<String> standardConfigurationTargets(String resource) { return Arrays.asList("host1", "host2"); }
+        @Override public boolean isDrained(String host) { return drained.contains(host); }
+        @Override public Planned plan(String host, String control, String action, String actor, boolean licensed, boolean operation) {
+            plans.add(host + ":" + action + ":" + control);
+            long generation = generations.getOrDefault(host, 0L);
+            if (generation == 0 || control != null && !control.equals(controls.get(host))) {
+                generations.put(host, ++generation);
+                if (control != null) { controls.put(host, control); }
             }
-            return "task-" + msg.getResourceUuid();
+            MemoryTaskVO task = new MemoryTaskVO();
+            task.setUuid("task-" + host + "-" + tasks.size()); task.setHostUuid(host); task.setAction(action);
+            task.setStatus(CONVERGING); task.setDesiredRevision(generation);
+            tasks.put(task.getUuid(), task);
+            return new Planned(generation, task.getUuid());
         }
-        /** The queued work the Host's queue claims, in order; the test sets each final status. */
-        final Deque<MemoryTaskVO> claims = new ArrayDeque<>();
-        final List<String> claimedHosts = new ArrayList<>();
-        final List<String> results = new ArrayList<>();
-        final List<String> pending = new ArrayList<>();
-        final List<String> unconfirmed = new ArrayList<>();
-        final List<String> expired = new ArrayList<>();
-        @Override public MemoryTaskVO claim(String host) { claimedHosts.add(host); return claims.poll(); }
-        @Override public void result(String uuid, String status, String reason, MemoryAgentResponse response) {
-            results.add(uuid);
+        @Override public Delivery pending(String host) {
+            boolean waiting = tasks.values().stream().anyMatch(t -> host.equals(t.getHostUuid()) && CONVERGING.equals(t.getStatus()));
+            if (!waiting) { return null; }
+            Map<String, Object> desired = new LinkedHashMap<>();
+            desired.put("control", controls.getOrDefault(host, "active"));
+            return new Delivery(host, generations.get(host), desired);
         }
-        @Override public void result(String uuid, String status, String reason, MemoryAgentResponse response,
-                                     MemoryAgentResponse observation) { results.add(uuid); }
-        @Override public List<String> hostsWithPendingWork() { return pending; }
-        @Override public List<String> hostsWithUnconfirmedWork() { return unconfirmed; }
-        @Override public void expireUnconfirmed(Collection<String> hosts) { expired.addAll(hosts); }
-        @Override public List<String> connectedHosts() { return Collections.emptyList(); }
-        @Override public List<String> hostsWithState() { return Collections.emptyList(); }
-        @Override public int purgeHistory(long now) { return 0; }
+        @Override public Outcome record(String host, long generation, MemoryAgentResponse response) {
+            String status = response == null || response.status == null ? CONVERGING : response.status;
+            if (!CONVERGING.equals(status)) {
+                for (MemoryTaskVO task : tasks.values()) {
+                    if (host.equals(task.getHostUuid()) && CONVERGING.equals(task.getStatus())) {
+                        task.setStatus(status); task.setReason(response.reasonCode);
+                    }
+                }
+            }
+            return new Outcome(status, response == null ? null : response.reasonCode, generation);
+        }
+        @Override public Map<String, MemoryTaskVO> tasks(Collection<String> uuids) {
+            Map<String, MemoryTaskVO> result = new HashMap<>();
+            for (String uuid : uuids) { if (tasks.containsKey(uuid)) { result.put(uuid, tasks.get(uuid)); } }
+            return result;
+        }
+        @Override public String startTask(String host, String action, String actor, long generation) { return "prepare"; }
+        @Override public void finishTask(String uuid, String status, String reason) { }
+        @Override public void recordPreparedBackend(String host, String resource, long capacity) {
+            preparedBackend = resource; preparedCapacity = capacity;
+        }
         @Override public void setActiveJob(String host, String job, String previous) { }
-        @Override MemoryTaskVO findTask(String uuid) {
-            if (unreadable.contains(uuid)) { throw new IllegalStateException("database unavailable"); }
-            MemoryTaskVO task = new MemoryTaskVO(); task.setUuid(uuid);
-            Deque<String> sequence = statuses.get(uuid);
-            task.setStatus(sequence.peek());
-            task.setReason(reasons.get(uuid));
-            return task;
-        }
     }
 
+    /** Agent replies are scripted per action; an unscripted call is held until the test answers it. */
     static class Manager extends MemoryOptimizationManager {
         final List<Integer> progress = new ArrayList<>();
-        final List<String> probes = new ArrayList<>();
-        final List<String> preparationOutcomes = new ArrayList<>();
+        final List<Map<String, Object>> commands = new ArrayList<>();
+        final Map<String, Deque<MemoryAgentResponse>> replies = new HashMap<>();
+        final Deque<Consumer<MemoryAgentResponse>> held = new ArrayDeque<>();
+        final List<String> outcomes = new ArrayList<>();
         CloudBus hostBus;
         final List<Long> hostTimeouts = new ArrayList<>();
-        /** The Host outcome alone; a platform error code needs the running platform. */
+
         @Override void replyHostOperation(MemoryHostOperationMsg msg, String outcome) {
-            preparationOutcomes.add(outcome);
+            outcomes.add(outcome);
             MemoryClusterOperationReply reply = new MemoryClusterOperationReply();
             reply.setResults(Collections.singletonMap(msg.getHostUuid(), outcome));
             hostBus.reply(msg, reply);
         }
         @Override void reportClusterProgress(int done, int total) { progress.add(100 * done / total); }
-        @Override void call(String host, String action, Map<String, Object> command, java.util.function.Consumer<MemoryAgentResponse> completion) {
-            probes.add(host + ":" + action);
-            MemoryAgentResponse response = new MemoryAgentResponse(); response.setSuccess(true);
-            completion.accept(response);
+        @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> completion) {
+            Map<String, Object> recorded = new LinkedHashMap<>(command); recorded.put("path", action);
+            commands.add(recorded);
+            Deque<MemoryAgentResponse> scripted = replies.get(host + ":" + action);
+            if (scripted == null || scripted.isEmpty()) { held.add(completion); return; }
+            completion.accept(scripted.poll());
+        }
+        void script(String host, String action, MemoryAgentResponse... responses) {
+            replies.computeIfAbsent(host + ":" + action, k -> new ArrayDeque<>()).addAll(Arrays.asList(responses));
         }
     }
 
-    @Test public void hostPreparationFailsTheJobUnlessPrepared() throws Exception {
-        for (String finalStatus : Arrays.asList("Succeeded", "Failed")) {
-            Manager manager = new Manager(); Repository repository = new Repository();
-            repository.statuses.put("task-host1", new ArrayDeque<>(Collections.singletonList(finalStatus)));
-            repository.reasons.put("task-host1", "Failed".equals(finalStatus) ? "WRITEBACK_INVENTORY_IDENTITY_OR_CONTROL_MISMATCH" : null);
-            List<MessageReply> replies = new ArrayList<>();
-            inject(manager, "repository", repository);
-            inject(manager, "bus", bus(replies, manager));
-            inject(manager, "thdf", synchronousThreads());
-            inject(manager, "pluginRgty", licensedRegistry());
-
-            MemoryBackendPreparation preparation = new MemoryBackendPreparation();
-            preparation.setCandidateId("candidate:" + String.join("", Collections.nCopies(64, "a")));
-            preparation.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
-            preparation.setExpectedPoolGeneration("none");
-            preparation.setBackendCapacityBytes(10737418240L); preparation.setResetConfirmed(true);
-            MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
-            msg.setHostUuid("host1"); msg.setAction("prepareWritebackBackend"); msg.setPreparation(preparation);
-            msg.setAccountUuid("account"); msg.setUserUuid("user");
-            invokeHostOperation(manager, msg);
-
-            MemoryActionRequest request = repository.submitted.get(0);
-            assertEquals("prepareWritebackBackend", request.getAction());
-            assertEquals("host1", request.getResourceUuid()); assertEquals("{}", request.getPolicy());
-            assertNull("the repository fences on the Host's current control", request.getExpectedControlOperationUuid());
-            assertSame(preparation, request.getBackendPreparation());
-            assertEquals(Collections.singletonList("host1:writeback-backends"), manager.probes);
-            assertNotNull("the fresh probe is the submission evidence", repository.preparationObservation);
-            assertEquals(Collections.singletonList("Succeeded".equals(finalStatus) ? "success"
-                    : "Failed: WRITEBACK_INVENTORY_IDENTITY_OR_CONTROL_MISMATCH"), manager.preparationOutcomes);
-        }
+    private static MemoryAgentResponse reply(String status, String reason, Long retryAfter) {
+        MemoryAgentResponse response = new MemoryAgentResponse();
+        response.setSuccess(!"Failed".equals(status));
+        response.status = status; response.reasonCode = reason; response.retryAfterSeconds = retryAfter;
+        response.state = new LinkedHashMap<>();
+        return response;
     }
 
-    @Test public void clusterPauseRunsHostByHostAndReportsEachOutcome() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.statuses.put("task-host1", new ArrayDeque<>(Collections.singletonList("Succeeded")));
-        repository.statuses.put("task-host2", new ArrayDeque<>(Collections.singletonList("Failed")));
-        repository.reasons.put("task-host2", "KSM_CONTROL_OPERATION_UNKNOWN");
-        List<MessageReply> replies = new ArrayList<>();
+    private Manager manager;
+    private Repository repository;
+    private final List<MessageReply> replies = new ArrayList<>();
+
+    private void setup() throws Exception {
+        manager = new Manager(); repository = new Repository();
         inject(manager, "repository", repository);
         inject(manager, "bus", bus(replies, manager));
         inject(manager, "thdf", synchronousThreads());
         inject(manager, "pluginRgty", licensedRegistry());
+        inject(manager, "destMaker", Proxy.newProxyInstance(ResourceDestinationMaker.class.getClassLoader(),
+                new Class<?>[]{ResourceDestinationMaker.class}, (proxy, method, args) -> true));
+    }
 
+    private static MemoryClusterOperationMsg cluster(String action) {
         MemoryClusterOperationMsg msg = new MemoryClusterOperationMsg();
-        msg.setClusterUuid("cluster"); msg.setAction("pause");
+        msg.setClusterUuid("cluster"); msg.setAction(action);
         msg.setAccountUuid("account"); msg.setUserUuid("user"); msg.setTimeout(7200000L);
-        invoke(manager, msg);
+        return msg;
+    }
+
+    @Test public void clusterPauseSendsEachHostItsGenerationAndReportsEachOutcome() throws Exception {
+        setup();
+        manager.script("host1", "apply", reply("Succeeded", null, null));
+        manager.script("host2", "apply", reply("Failed", "KSM_NATIVE_PROFILE_UNSUPPORTED", null));
+        invoke(manager, cluster("pause"));
 
         assertEquals("each Host step may last as long as the job", Arrays.asList(7200000L, 7200000L), manager.hostTimeouts);
-        assertEquals(2, repository.submitted.size());
-        MemoryActionRequest first = repository.submitted.get(0), second = repository.submitted.get(1);
-        assertEquals("host1", first.getResourceUuid()); assertEquals("host2", second.getResourceUuid());
-        assertEquals("Host", first.getScope()); assertEquals("pause", first.getAction()); assertEquals("{}", first.getPolicy());
-        assertEquals("account", first.getSession().getAccountUuid());
-        assertEquals("user", first.getSession().getUserUuid());
-
-        MemoryClusterOperationReply reply = (MemoryClusterOperationReply) replies.get(0);
+        assertEquals(Arrays.asList("host1:pause:paused", "host2:pause:paused"), repository.plans);
+        Map<String, Object> apply = manager.commands.get(0);
+        assertEquals("apply", apply.get("path"));
+        assertEquals("host1", apply.get("hostUuid"));
+        assertEquals(1L, apply.get("generation"));
+        assertEquals("paused", ((Map<?, ?>) apply.get("desired")).get("control"));
         Map<String, String> expected = new LinkedHashMap<>();
-        expected.put("host1", "success"); expected.put("host2", "Failed: KSM_CONTROL_OPERATION_UNKNOWN");
-        assertEquals(expected, reply.getResults());
+        expected.put("host1", "success"); expected.put("host2", "Failed: KSM_NATIVE_PROFILE_UNSUPPORTED");
+        assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
         assertEquals(Arrays.asList(50, 100), manager.progress);
     }
 
+    @Test public void convergingHostIsSentTheSameGenerationAgainUntilApplied() throws Exception {
+        setup();
+        manager.script("host1", "apply", reply("Converging", "DRAINING", 5L), reply("Succeeded", null, null));
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("drain"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setTimeout(7200000L);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        assertTrue("a converging Host has not finished the operation", manager.outcomes.isEmpty());
+
+        Method deliver = MemoryOptimizationManager.class.getDeclaredMethod("deliver", String.class);
+        deliver.setAccessible(true); deliver.invoke(manager, "host1");
+        assertEquals(Collections.singletonList("success"), manager.outcomes);
+        assertEquals(2, manager.commands.size());
+        assertEquals(manager.commands.get(0).get("generation"), manager.commands.get(1).get("generation"));
+        assertEquals("drained", ((Map<?, ?>) manager.commands.get(1).get("desired")).get("control"));
+    }
+
+    @Test public void aHostWithAnApplyInFlightIsNotSentASecondOne() throws Exception {
+        setup();
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("pause"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        Method deliver = MemoryOptimizationManager.class.getDeclaredMethod("deliver", String.class);
+        deliver.setAccessible(true); deliver.invoke(manager, "host1");
+        assertEquals(1, manager.commands.size());
+        manager.held.poll().accept(reply("Succeeded", null, null));
+        assertEquals(Collections.singletonList("success"), manager.outcomes);
+    }
+
     @Test public void oneHostRejectedAtSubmissionDoesNotStopTheRest() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
+        setup();
         repository.rejected.add("host1");
-        repository.statuses.put("task-host2", new ArrayDeque<>(Collections.singletonList("Succeeded")));
-        List<MessageReply> replies = new ArrayList<>();
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(replies, manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-
-        MemoryClusterOperationMsg msg = new MemoryClusterOperationMsg();
-        msg.setClusterUuid("cluster"); msg.setAction("drain");
-        msg.setAccountUuid("account"); msg.setUserUuid("user");
-        invoke(manager, msg);
-
+        manager.script("host2", "apply", reply("Succeeded", null, null));
+        invoke(manager, cluster("drain"));
         Map<String, String> results = ((MemoryClusterOperationReply) replies.get(0)).getResults();
         assertEquals("MEMORY_HOST_NOT_CONNECTED: Host is not connected", results.get("host1"));
         assertEquals("success", results.get("host2"));
     }
 
-    @Test public void hostRecoveryUsesTheConfirmedUncertainControlNotTheCurrentOne() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.statuses.put("task-host1", new ArrayDeque<>(Collections.singletonList("Succeeded")));
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(new ArrayList<>(), manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-
-        APIRecoverHostMemoryOptimizationMsg api = new APIRecoverHostMemoryOptimizationMsg();
-        api.setUuid("host1"); api.setExpectedControlOperationUuid("uncertain-activation");
-        api.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
-        api.setExpectedPoolGeneration("none"); api.setDrainControlOperationUuid("drain");
+    @Test public void unreachableAgentKeepsTheOperationWaiting() throws Exception {
+        setup();
         MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
-        msg.setHostUuid("host1"); msg.setAction("recoverUncertain");
-        msg.setExpectedControlOperationUuid(api.getExpectedControlOperationUuid()); msg.setRecovery(api.toRecovery());
-        msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setHostUuid("host1"); msg.setAction("resume"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, msg);
-
-        MemoryActionRequest request = repository.submitted.get(0);
-        assertEquals("recoverUncertain", request.getAction()); assertEquals("{}", request.getPolicy());
-        assertEquals("uncertain-activation", request.getExpectedControlOperationUuid());
-        assertTrue(request.getRecovery().isConfirmed());
-        assertEquals("drain", request.getRecovery().getDrainControlOperationUuid());
-        assertEquals("none", request.getRecovery().getExpectedPoolGeneration());
-        assertTrue("recovery takes no Agent probe", manager.probes.isEmpty());
-        assertEquals(Collections.singletonList("success"), manager.preparationOutcomes);
+        manager.held.poll().accept(null);
+        assertTrue(manager.outcomes.isEmpty());
+        assertEquals("host1:resume:active", repository.plans.get(0));
     }
 
-    @Test public void anAgentCallbackFailureStillFinishesTheHostStep() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.crashed.add("host1"); repository.drained.add("host2");
-        List<MessageReply> replies = new ArrayList<>();
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(replies, manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-
-        MemoryHostOperationMsg prepare = new MemoryHostOperationMsg();
-        prepare.setHostUuid("host1"); prepare.setAction("prepareWritebackBackend");
-        prepare.setPreparation(new MemoryBackendPreparation());
-        invokeHostOperation(manager, prepare);
-        assertEquals(Collections.singletonList("MEMORY_RESULT_UNKNOWN: database unavailable"), manager.preparationOutcomes);
-
-        MemoryClusterOperationMsg resume = new MemoryClusterOperationMsg();
-        resume.setClusterUuid("cluster"); resume.setHostUuid("host2"); resume.setAction("resume");
-        invoke(manager, resume);
-        assertEquals("MEMORY_RESULT_UNKNOWN: database unavailable",
-                ((MemoryClusterOperationReply) replies.get(replies.size() - 1)).getResults().get("host2"));
-    }
-
-    private static MemoryTaskVO queued(String uuid, String status) {
-        MemoryTaskVO task = new MemoryTaskVO(); task.setUuid(uuid); task.setHostUuid("host1");
-        task.setScope("Host"); task.setResourceUuid("host1"); task.setAction("pause");
-        task.setStatus(status); task.setPolicy("{}"); task.setDesiredRevision(1);
-        return task;
-    }
-
-    @Test public void hostOperationSendsEveryQueuedStepAndPollsDrainingBeforeTheOutcome() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.statuses.put("task-host1", new ArrayDeque<>(Collections.singletonList("Succeeded")));
-        repository.claims.add(queued("task-host1", "Applying"));
-        repository.claims.add(queued("task-host1", "Draining"));
-        repository.claims.add(queued("next-step", "Applying"));
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(new ArrayList<>(), manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-
+    private MemoryHostOperationMsg preparation() {
+        MemoryBackendPreparation preparation = new MemoryBackendPreparation();
+        preparation.setCandidateId("candidate:" + String.join("", Collections.nCopies(64, "a")));
+        preparation.setExpectedHostBootId("d339587c-b015-4745-8091-d00521319861");
+        preparation.setExpectedPoolGeneration("none");
+        preparation.setBackendCapacityBytes(10737418240L); preparation.setResetConfirmed(true);
         MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
-        msg.setHostUuid("host1"); msg.setAction("pause"); msg.setAccountUuid("account"); msg.setUserUuid("user");
-        invokeHostOperation(manager, msg);
-
-        assertEquals(Arrays.asList("host1:apply", "host1:reconcile", "host1:apply"), manager.probes);
-        assertEquals(Arrays.asList("task-host1", "task-host1", "next-step"), repository.results);
-        assertEquals("the queue stops once nothing is claimable", 4, repository.claimedHosts.size());
-        assertEquals(Collections.singletonList("success"), manager.preparationOutcomes);
+        msg.setHostUuid("host1"); msg.setAction("prepareWritebackBackend"); msg.setPreparation(preparation);
+        msg.setAccountUuid("account"); msg.setUserUuid("user"); msg.setTimeout(7200000L);
+        return msg;
     }
 
-    @Test public void scanDrivesOnlyOwnedHostsAndExpiresOnlyRequestsWithoutALocalDrive() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.pending.addAll(Arrays.asList("host1", "host2"));
-        repository.unconfirmed.addAll(Arrays.asList("host1", "host2", "host3"));
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(new ArrayList<>(), manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-        inject(manager, "destMaker", ownedHosts("host1", "host3"));
-        Method tick = MemoryOptimizationManager.class.getDeclaredMethod("tick");
-        tick.setAccessible(true); tick.invoke(manager);
-        assertEquals(Collections.singletonList("host1"), repository.claimedHosts);
+    @Test public void preparationIsResentUntilTheBackendIsBoundToTheHost() throws Exception {
+        setup();
+        MemoryAgentResponse done = reply("Succeeded", null, null);
+        done.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
+        manager.script("host1", "writeback-backends", reply("Converging", "BACKEND_PREPARING", 1L), done);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
 
-        Field active = MemoryOptimizationManager.class.getDeclaredField("activeDrives"); active.setAccessible(true);
-        ((Set<String>) active.get(manager)).add("host1");
-        manager.nodeLeft(null);
-        assertEquals("a Host this node is sending to is not another node's lost request",
-                Collections.singletonList("host3"), repository.expired);
+        assertEquals(Collections.singletonList("success"), manager.outcomes);
+        assertEquals(BACKEND, repository.preparedBackend);
+        assertEquals(10737418240L, repository.preparedCapacity);
+        Map<String, Object> first = manager.commands.get(0), second = manager.commands.get(1);
+        assertEquals("prepare", first.get("action"));
+        assertEquals(first.get("generation"), second.get("generation"));
+        assertEquals("candidate:" + String.join("", Collections.nCopies(64, "a")), first.get("candidateId"));
+        assertEquals(true, first.get("resetConfirmed"));
+        assertTrue(repository.plans.contains("host1:prepareWritebackBackend:null"));
+        assertEquals("the prepared backend reaches the Host in its next generation", "apply",
+                manager.commands.get(manager.commands.size() - 1).get("path"));
     }
 
-    private static org.zstack.core.cloudbus.ResourceDestinationMaker ownedHosts(String... hosts) {
-        Set<String> owned = new HashSet<>(Arrays.asList(hosts));
-        return (org.zstack.core.cloudbus.ResourceDestinationMaker) Proxy.newProxyInstance(
-                org.zstack.core.cloudbus.ResourceDestinationMaker.class.getClassLoader(),
-                new Class<?>[]{org.zstack.core.cloudbus.ResourceDestinationMaker.class},
-                (proxy, method, args) -> "isManagedByUs".equals(method.getName()) ? owned.contains(args[0])
-                        : method.getReturnType() == boolean.class ? false : null);
+    @Test public void preparationWithoutAReportedBackendFails() throws Exception {
+        setup();
+        manager.script("host1", "writeback-backends", reply("Succeeded", null, null));
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+        assertEquals(Collections.singletonList("Failed: BACKEND_RESOURCE_UNREPORTED"), manager.outcomes);
+        assertNull(repository.preparedBackend);
     }
 
-    private static void invokeHostOperation(MemoryOptimizationManager manager, MemoryHostOperationMsg msg) throws Exception {
-        Method method = MemoryOptimizationManager.class.getDeclaredMethod("hostOperation", MemoryHostOperationMsg.class);
-        method.setAccessible(true); method.invoke(manager, msg);
+    @Test public void rejectedPreparationReportsTheAgentReason() throws Exception {
+        setup();
+        manager.script("host1", "writeback-backends", reply("Failed", "MEMORY_SERVICE_NOT_STOPPED", null));
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+        assertEquals(Collections.singletonList("Failed: MEMORY_SERVICE_NOT_STOPPED"), manager.outcomes);
     }
 
-    @Test public void anUnexpectedFailureStillFinishesTheHostAndTheJob() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        repository.crashed.add("host1"); repository.unreadable.add("task-host2");
-        List<MessageReply> replies = new ArrayList<>();
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(replies, manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-
-        MemoryClusterOperationMsg msg = new MemoryClusterOperationMsg();
-        msg.setClusterUuid("cluster"); msg.setAction("pause");
-        msg.setAccountUuid("account"); msg.setUserUuid("user");
-        invoke(manager, msg);
-
-        assertEquals("the job completes even when no Host step ended normally", 1, replies.size());
-        Map<String, String> results = ((MemoryClusterOperationReply) replies.get(0)).getResults();
-        assertEquals("Unknown: database unavailable", results.get("host1"));
-        assertEquals("Unknown: task status unavailable: database unavailable", results.get("host2"));
-        assertEquals(Arrays.asList(50, 100), manager.progress);
+    @Test public void reenablingZramResumesOnlyDrainedHosts() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        manager.standardConfigurationChanged("cluster", true);
+        assertEquals(Arrays.asList("host1:resume:active", "host2:configure:null"), repository.plans);
+        repository.plans.clear();
+        manager.standardConfigurationChanged("cluster", false);
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
     }
 
-    @Test public void aHostOutsideTheClusterIsRejectedBeforeAnySubmission() throws Exception {
-        Manager manager = new Manager(); Repository repository = new Repository();
-        inject(manager, "repository", repository);
-        inject(manager, "bus", bus(new ArrayList<>(), manager));
-        inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
-        MemoryClusterOperationMsg msg = new MemoryClusterOperationMsg();
-        msg.setClusterUuid("cluster"); msg.setHostUuid("elsewhere"); msg.setAction("pause");
+    @Test public void aHostOutsideTheClusterIsRejectedBeforeAnyPlan() throws Exception {
+        setup();
+        MemoryClusterOperationMsg msg = cluster("pause"); msg.setHostUuid("elsewhere");
         try {
             invoke(manager, msg);
             fail("a Host outside the Cluster must be rejected");
         } catch (java.lang.reflect.InvocationTargetException e) {
             assertEquals("MEMORY_INVALID_REQUEST", ((MemoryOperationException) e.getCause()).getCode());
         }
-        assertTrue(repository.submitted.isEmpty());
+        assertTrue(repository.plans.isEmpty());
+    }
+
+    private static void invokeHostOperation(MemoryOptimizationManager manager, MemoryHostOperationMsg msg) throws Exception {
+        Method method = MemoryOptimizationManager.class.getDeclaredMethod("hostOperation", MemoryHostOperationMsg.class);
+        method.setAccessible(true); method.invoke(manager, msg);
     }
 
     private static PluginRegistry licensedRegistry() {
@@ -364,13 +324,7 @@ public class MemoryClusterOperationTest {
     private static ThreadFacade synchronousThreads() {
         return (ThreadFacade) Proxy.newProxyInstance(ThreadFacade.class.getClassLoader(), new Class<?>[]{ThreadFacade.class},
                 (proxy, method, args) -> {
-                    if ("chainSubmit".equals(method.getName())) {
-                        SyncTaskChain chain = (SyncTaskChain) Proxy.newProxyInstance(SyncTaskChain.class.getClassLoader(),
-                                new Class<?>[]{SyncTaskChain.class}, (p, m, a) -> null);
-                        ((ChainTask) args[0]).run(chain);
-                    } else if ("submitTimeoutTask".equals(method.getName())) {
-                        ((Runnable) args[0]).run();
-                    }
+                    if ("submitTimeoutTask".equals(method.getName())) { ((Runnable) args[0]).run(); }
                     return null;
                 });
     }
