@@ -183,14 +183,23 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             }
             boolean sourceExpected = source.present && hold.sourceInstanceGeneration != null
                     && hold.sourceInstanceGeneration.equals(source.generation);
-            boolean targetExpected = target.present
-                    && (target.generation != null || target.featureAbsent);
+            boolean targetExpected = targetExpected(hold, target);
             boolean sourceAbsent = source.authoritative && !source.present;
             boolean targetAbsent = target.authoritative && !target.present;
             boolean safe = migrated ? targetExpected && sourceAbsent : sourceExpected && targetAbsent;
             if (!safe) { hold.status = "Unknown"; hold.reason = "Source/target VM instance identity was not conclusively verified"; record(hold); }
             completion.accept(safe);
         });
+    }
+
+    /**
+     * The migrated instance is on the target. Its generation, given by the target's
+     * ZRAM service, is needed only to bind it; a target without a service-owned pool
+     * has nothing to bind, even when its service is not running.
+     */
+    private boolean targetExpected(MemoryMigrationVO hold, VmIdentity target) {
+        return target.present && (target.generation != null || target.featureAbsent
+                || !managedZram(hold.targetHostUuid));
     }
 
     private static final class VmIdentity {
@@ -229,6 +238,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         String participation = vmParticipation(hold.vmUuid);
         command.put("participation", participation);
         String host = target ? hold.targetHostUuid : hold.sourceHostUuid;
+        if (target && !managedZram(host)) { completion.accept(true); return; }
         if (target) {
             manager.call(host, "state", command(hold, host), response -> {
                 if (response != null && response.capabilities != null
@@ -604,7 +614,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         inspectMigrationIdentities(hold, (source, target) -> {
             boolean sourceExpected = source.present && hold.sourceInstanceGeneration != null
                     && hold.sourceInstanceGeneration.equals(source.generation);
-            boolean targetExpected = target.present && target.generation != null;
+            boolean targetExpected = targetExpected(hold, target);
             boolean sourceAbsent = source.authoritative && !source.present;
             boolean targetAbsent = target.authoritative && !target.present;
             if (acquireNotSent && source.present && targetAbsent) {
