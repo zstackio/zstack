@@ -3736,6 +3736,13 @@ public class MemoryRepository {
         if (hostUuid == null || controlUuid == null) { return false; }
         return transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            if (drainControl(em, state) != null) {
+                // Resuming a drained Host rebuilds its pool, as recoverDrain requires; a
+                // rejected resume leaves the Host Failed and can be retried.
+                return ("Succeeded".equals(state.getStatus()) || "Failed".equals(state.getStatus()))
+                        && Boolean.TRUE.equals(
+                        MemoryStandardConfigCodec.get(effective(em, "Host", hostUuid), "zram.enabled"));
+            }
             MemoryTaskVO control = em.find(MemoryTaskVO.class, controlUuid);
             return state != null && state.getActiveTaskUuid() == null && "Succeeded".equals(state.getStatus())
                     && control != null && "pause".equals(control.getAction())

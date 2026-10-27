@@ -3125,6 +3125,30 @@ public class MemoryRepositoryTest {
         }
     }
 
+    @Test public void aDrainedHostOffersResumeOnlyWhileZramIsEnabledAndIdle() {
+        prepareDrainedHost(false);
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setStatus("Succeeded"); return null; });
+        assertTrue("a drained Host can be resumed", repository.canResumeControl("host1", "user-drain"));
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setActiveTaskUuid("in-flight"); return null; });
+        assertFalse("not while an operation runs", repository.canResumeControl("host1", "user-drain"));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setActiveTaskUuid(null); state.setStatus("Failed");
+            return null;
+        });
+        assertTrue("a rejected resume can be retried", repository.canResumeControl("host1", "user-drain"));
+        repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setStatus("Unknown"); return null; });
+        assertFalse("an Unknown Host goes through uncertain recovery",
+                repository.canResumeControl("host1", "user-drain"));
+        repository.transaction(em -> {
+            em.find(MemoryStateVO.class, "host1").setStatus("Succeeded");
+            writeGlobal(em, "zram.enabled", false);
+            return null;
+        });
+        assertFalse("resume rebuilds the ZRAM pool, so it needs ZRAM enabled",
+                repository.canResumeControl("host1", "user-drain"));
+    }
+
     @Test public void ordinaryPlanningDoesNotReactivateADrainedHost() {
         prepareDrainedHost(true);
         assertFalse("a reconnect must not undo a drain", repository.applyEffectivePolicyAfterConnect("host1"));
