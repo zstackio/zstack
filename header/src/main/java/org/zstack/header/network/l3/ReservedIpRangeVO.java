@@ -1,5 +1,6 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.tag.AutoDeleteTag;
 import org.zstack.header.vo.EntityGraph;
 import org.zstack.header.vo.ForeignKey;
 import org.zstack.header.vo.ForeignKey.ReferenceOption;
@@ -13,6 +14,7 @@ import java.sql.Timestamp;
 
 @Entity
 @Table
+@AutoDeleteTag
 @org.zstack.header.vo.EntityGraph(
         parents = {
                 @EntityGraph.Neighbour(type = L3NetworkVO.class, myField = "l3NetworkUuid", targetField = "uuid")

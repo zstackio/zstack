@@ -629,7 +629,11 @@ public class L3BasicNetwork implements L3Network {
 
     private void handle(APIAddReservedIpRangeMsg msg) {
         APIAddReservedIpRangeEvent event = new APIAddReservedIpRangeEvent(msg.getId());
+        event.setInventory(createReservedIpRange(msg));
+        bus.publish(event);
+    }
 
+    private ReservedIpRangeInventory createReservedIpRange(APIAddReservedIpRangeMsg msg) {
         /* step 1: create reservedIpRangeVO */
         ReservedIpRangeVO reservedIpRangeVO = new ReservedIpRangeVO();
         reservedIpRangeVO.setUuid(Platform.getUuid());
@@ -641,7 +645,6 @@ public class L3BasicNetwork implements L3Network {
         } else {
             reservedIpRangeVO.setIpVersion(IPv6Constants.IPv6);
         }
-        reservedIpRangeVO = dbf.persistAndRefresh(reservedIpRangeVO);
 
         /* step 2: allocate usedIpVO */
         List<IpRangeVO> ipv4Ranges = self.getIpRanges().stream()
@@ -737,17 +740,26 @@ public class L3BasicNetwork implements L3Network {
             }
         }
 
-        if (!usedIpVOS.isEmpty()) {
-            StopWatch watch = Utils.getStopWatch();
-            watch.start();
-            dbf.persistCollection(usedIpVOS);
-            watch.stop();
-            logger.debug(String.format("it takes %d microseconds to save %d ip addresses", watch.getLapse(), usedIpVOS.size()));
-        }
+        return new SQLBatchWithReturn<ReservedIpRangeInventory>() {
+            @Override
+            protected ReservedIpRangeInventory scripts() {
+                persist(reservedIpRangeVO);
+                if (!usedIpVOS.isEmpty()) {
+                    StopWatch watch = Utils.getStopWatch();
+                    watch.start();
+                    for (UsedIpVO vo : usedIpVOS) {
+                        persist(vo);
+                    }
+                    flush();
+                    watch.stop();
+                    logger.debug(String.format("it takes %d microseconds to save %d ip addresses", watch.getLapse(), usedIpVOS.size()));
+                }
 
-        event.setInventory(ReservedIpRangeInventory.valueOf(reservedIpRangeVO));
-
-        bus.publish(event);
+                tagMgr.createTags(Collections.emptyList(), msg.getUserTags(), reservedIpRangeVO.getUuid(),
+                        ReservedIpRangeVO.class.getSimpleName());
+                return ReservedIpRangeInventory.valueOf(reload(reservedIpRangeVO));
+            }
+        }.execute();
     }
 
     private void handle(APIDeleteReservedIpRangeMsg msg) {
