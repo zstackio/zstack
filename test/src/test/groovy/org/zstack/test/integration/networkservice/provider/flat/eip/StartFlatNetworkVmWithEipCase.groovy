@@ -2,7 +2,21 @@ package org.zstack.test.integration.networkservice.provider.flat.eip
 
 import org.springframework.http.HttpEntity
 import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.componentloader.PluginRegistry
+import org.zstack.header.rest.RESTFacade
+import org.zstack.header.rest.RESTConstant
+import org.zstack.header.vm.VmAbnormalLifeCycleExtensionPoint
+import org.zstack.header.core.workflow.Flow
+import org.springframework.web.util.UriComponentsBuilder
+import org.zstack.header.core.workflow.FlowTrigger
+import org.zstack.header.core.workflow.NoRollbackFlow
+import org.zstack.header.host.CheckVmStateOnHypervisorMsg
+import org.zstack.header.host.CheckVmStateOnHypervisorReply
 import org.zstack.header.network.service.NetworkServiceType
+import org.zstack.header.vm.VmAbnormalLifeCycleStruct
+import org.zstack.header.vm.VmInstanceState
+import org.zstack.kvm.KVMConstant
+import org.zstack.kvm.KVMAgentCommands
 import org.zstack.network.service.eip.EipConstant
 import org.zstack.network.service.flat.FlatEipBackend
 import org.zstack.network.service.flat.FlatNetworkServiceConstant
@@ -17,6 +31,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.HttpError
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
+import org.zstack.utils.gson.JSONObjectUtil
 
 import static org.zstack.core.Platform.operr
 
@@ -126,6 +141,10 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                     name = "eip-1"
                     useVip("pubL3")
                 }
+                eip {
+                    name = "eip-2"
+                    useVip("pubL3")
+                }
             }
 
             vm {
@@ -141,6 +160,13 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
                 useInstanceOffering("instanceOffering")
                 useHost("kvm")
             }
+            vm {
+                name = "vm-2"
+                useImage("image")
+                useL3Networks("l3")
+                useInstanceOffering("instanceOffering")
+                useHost("kvm")
+            }
         }
     }
 
@@ -150,7 +176,9 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             testStartVmWithEip()
             testRecoverVmWithEip()
             testRecoverVmWithEipWithError()
-            testMigrateVmWithEip()
+            testMigrateVmWithEipZSTAC86874()
+            testFailedMigrationEipUsesActualVmLocationZSTAC86874()
+            testAbnormalLifecycleMovesAndRollsBackEipsZSTAC86874()
         }
     }
 
@@ -234,7 +262,7 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
     }
 
-    void testMigrateVmWithEip() {
+    void testMigrateVmWithEipZSTAC86874() {
         def eip = env.inventoryByName("eip-1") as EipInventory
         def vm = env.inventoryByName("vm-1") as VmInstanceInventory
         def host1 = env.inventoryByName("kvm") as HostInventory
@@ -245,16 +273,20 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
             vmNicUuid = vm.vmNics[0].uuid
         }
 
-        boolean deleteEipOnSrcHostFailed = false
-        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) {
-            deleteEipOnSrcHostFailed = true
-            throw new HttpError(403, "on purpose")
+        List<String> operations = Collections.synchronizedList([])
+        env.afterSimulator(FlatEipBackend.BATCH_PREPARE_EIP_PATH) { rsp ->
+            operations.add("prepare")
+            return rsp
         }
 
-        boolean applyEipOnDestHostSuccessed = false
-        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp, HttpEntity<String> e ->
-            applyEipOnDestHostSuccessed = true
+        env.afterSimulator(FlatEipBackend.BATCH_ENABLE_EIP_PATH) { rsp ->
+            operations.add("enable")
             return rsp
+        }
+
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            throw new HttpError(403, "on purpose")
         }
 
         migrateVm {
@@ -263,13 +295,12 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == true
-            assert applyEipOnDestHostSuccessed == true
+            assert operations == ["prepare", "enable", "delete"]
         }
 
-        applyEipOnDestHostSuccessed = false
-        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp, HttpEntity<String> e ->
-            deleteEipOnSrcHostFailed = false
+        operations.clear()
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
             return rsp
         }
 
@@ -279,9 +310,187 @@ class StartFlatNetworkVmWithEipCase extends SubCase {
         }
 
         retryInSecs {
-            assert deleteEipOnSrcHostFailed == false
-            assert applyEipOnDestHostSuccessed == true
+            assert operations == ["prepare", "enable", "delete"]
         }
+    }
+
+    void testFailedMigrationEipUsesActualVmLocationZSTAC86874() {
+        def vm = env.inventoryByName("vm-1") as VmInstanceInventory
+        def unresolvedVm = env.inventoryByName("vm-2") as VmInstanceInventory
+        def unresolvedEip = env.inventoryByName("eip-2") as EipInventory
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+
+        attachEip {
+            eipUuid = unresolvedEip.uuid
+            vmNicUuid = unresolvedVm.vmNics[0].uuid
+        }
+
+        List<String> operations = Collections.synchronizedList([])
+        env.afterSimulator(FlatEipBackend.BATCH_PREPARE_EIP_PATH) { rsp ->
+            operations.add("prepare")
+            return rsp
+        }
+        env.afterSimulator(FlatEipBackend.BATCH_ENABLE_EIP_PATH) { rsp ->
+            operations.add("enable")
+            return rsp
+        }
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            return rsp
+        }
+        env.simulator(KVMConstant.KVM_MIGRATE_VM_PATH) {
+            def rsp = new KVMAgentCommands.MigrateVmResponse()
+            rsp.setError("migrate failed on purpose")
+            return rsp
+        }
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(vm.uuid): msg.hostUuid == host1.uuid ?
+                    VmInstanceState.Running.toString() : VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare", "delete", "enable"]
+        }
+
+        operations.clear()
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(vm.uuid): msg.hostUuid == host2.uuid ?
+                    VmInstanceState.Running.toString() : VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = vm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare", "enable", "delete"]
+        }
+
+        operations.clear()
+        env.message(CheckVmStateOnHypervisorMsg.class) { CheckVmStateOnHypervisorMsg msg, CloudBus bus ->
+            def reply = new CheckVmStateOnHypervisorReply()
+            reply.states = [(unresolvedVm.uuid): VmInstanceState.Stopped.toString()]
+            reply.success = true
+            bus.reply(msg, reply)
+        }
+
+        expect(AssertionError.class) {
+            migrateVm {
+                vmInstanceUuid = unresolvedVm.uuid
+                hostUuid = host2.uuid
+            }
+        }
+
+        retryInSecs {
+            assert operations == ["prepare"]
+        }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
+    void testAbnormalLifecycleMovesAndRollsBackEipsZSTAC86874() {
+        def vm = queryVmInstance { conditions = ["name=vm-1"] }[0]
+        if (vm.state == "Stopped") {
+            vm = startVmInstance { uuid = vm.uuid }
+        }
+        assert vm.state == "Running"
+        assert vm.hostUuid != null
+        def host1 = env.inventoryByName("kvm") as HostInventory
+        def host2 = env.inventoryByName("kvm2") as HostInventory
+        List<VmAbnormalLifeCycleExtensionPoint> extensions = bean(PluginRegistry.class)
+                .getExtensionList(VmAbnormalLifeCycleExtensionPoint.class)
+        def failAfterNetwork = new VmAbnormalLifeCycleExtensionPoint() {
+            @Override
+            Flow createVmAbnormalLifeCycleHandlingFlow(VmAbnormalLifeCycleStruct struct) {
+                return new NoRollbackFlow() {
+                    @Override
+                    void run(FlowTrigger trigger, Map data) {
+                        if (struct.vmInstance.uuid == vm.uuid) {
+                            trigger.fail(operr("rollback on purpose"))
+                        } else {
+                            trigger.next()
+                        }
+                    }
+                }
+            }
+        }
+
+        vm = queryVmInstance { conditions = ["uuid=${vm.uuid}"] }[0]
+        String source = vm.hostUuid
+        String destination = source == host1.uuid ? host2.uuid : host1.uuid
+        List<String> operations = Collections.synchronizedList([])
+        env.afterSimulator(FlatEipBackend.BATCH_APPLY_EIP_PATH) { rsp ->
+            operations.add("apply")
+            return rsp
+        }
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            return rsp
+        }
+
+        // Inject a failure after the real network extension to exercise its rollback.
+        extensions.add(failAfterNetwork)
+        try {
+            reportVmState(vm.uuid, destination, "Running")
+            retryInSecs { assert operations == ["apply", "delete", "apply", "delete"] }
+            assert queryVmInstance { conditions = ["uuid=${vm.uuid}"] }[0].hostUuid == source
+        } finally {
+            extensions.remove(failAfterNetwork)
+        }
+
+        operations.clear()
+        boolean failOriginalDelete = true
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            if (failOriginalDelete) {
+                failOriginalDelete = false
+                rsp.success = false
+                rsp.error = "delete original EIP on purpose"
+            }
+            return rsp
+        }
+        reportVmState(vm.uuid, destination, "Running")
+        retryInSecs { assert operations == ["apply", "delete", "delete"] }
+        assert queryVmInstance { conditions = ["uuid=${vm.uuid}"] }[0].hostUuid == source
+
+        operations.clear()
+        env.afterSimulator(FlatEipBackend.BATCH_DELETE_EIP_PATH) { rsp ->
+            operations.add("delete")
+            return rsp
+        }
+        reportVmState(vm.uuid, destination, "Running")
+        retryInSecs {
+            def updated = queryVmInstance { conditions = ["uuid=${vm.uuid}"] }[0]
+            assert updated.hostUuid == destination
+            assert updated.state == "Running"
+            assert operations == ["apply", "delete"]
+        }
+        env.cleanSimulatorAndMessageHandlers()
+    }
+
+    private void reportVmState(String vmUuid, String hostUuid, String state) {
+        RESTFacade rest = bean(RESTFacade.class)
+        String url = UriComponentsBuilder.fromHttpUrl(rest.baseUrl)
+                .path(RESTConstant.COMMAND_CHANNEL_PATH).build().toUriString()
+        def cmd = new KVMAgentCommands.ReportVmStateCmd(vmUuid: vmUuid, hostUuid: hostUuid, vmState: state)
+        rest.syncJsonPost(url, JSONObjectUtil.toJsonString(cmd),
+                [(RESTConstant.COMMAND_PATH): KVMConstant.KVM_REPORT_VM_STATE], String.class)
     }
 
     @Override
