@@ -20,7 +20,6 @@ public class MemoryMetricsPresentationTest {
         savings.put("totalSavedEstimateBytes", -20L);
         MemoryStateInventory result = MemoryMetricsPresentation.inventory(state(), savings, 100000);
         assertEquals("Stale", result.getQuality());
-        assertEquals(Long.valueOf(90), result.getDataAgeSeconds());
         assertEquals(-20, ((Number) result.getMetrics().get("totalSavedEstimateBytes")).longValue());
     }
 
@@ -42,7 +41,6 @@ public class MemoryMetricsPresentationTest {
         String sourceState = state.getState();
         MemoryStateInventory result = MemoryMetricsPresentation.inventory(state, null, 100100L);
         assertEquals("Active", result.getFeatureState());
-        assertEquals("KSM_NATIVE", result.getFeatureStateSource());
         assertEquals(java.util.Collections.singletonList("query"), result.getAllowedActions());
         assertEquals(sourceState, state.getState());
         assertEquals("Succeeded", state.getStatus());

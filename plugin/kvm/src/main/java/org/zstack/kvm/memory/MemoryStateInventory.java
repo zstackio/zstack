@@ -1,43 +1,15 @@
 package org.zstack.kvm.memory;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 public class MemoryStateInventory {
-    public static MemoryStateInventory valueOf(MemoryStateVO vo) {
-        return vo.toInventory();
-    }
-
-    public static List<MemoryStateInventory> valueOf(Collection<MemoryStateVO> vos) {
-        List<MemoryStateInventory> inventories = new ArrayList<>(vos.size());
-        for (MemoryStateVO vo : vos) {
-            inventories.add(valueOf(vo));
-        }
-        return inventories;
-    }
-
-    private String schemaVersion = "memory-state-v1";
     private String bootId;
     private String featureState;
-    private String featureStateSource;
-    private Boolean drift;
-    private Long dataAgeSeconds;
     private String quality;
     private java.util.Map<String, Object> metrics;
     private java.util.List<String> allowedActions = java.util.Collections.singletonList("query");
-    public String getSchemaVersion() { return schemaVersion; }
-    public void setSchemaVersion(String value) { schemaVersion = value; }
     public String getBootId() { return bootId; }
     public void setBootId(String value) { bootId = value; }
     public String getFeatureState() { return featureState; }
     public void setFeatureState(String value) { featureState = value; }
-    public String getFeatureStateSource() { return featureStateSource; }
-    public void setFeatureStateSource(String value) { featureStateSource = value; }
-    public Boolean getDrift() { return drift; }
-    public void setDrift(Boolean value) { drift = value; }
-    public Long getDataAgeSeconds() { return dataAgeSeconds; }
-    public void setDataAgeSeconds(Long value) { dataAgeSeconds = value; }
     public String getQuality() { return quality; }
     public void setQuality(String value) { quality = value; }
     public java.util.Map<String, Object> getMetrics() { return metrics; }

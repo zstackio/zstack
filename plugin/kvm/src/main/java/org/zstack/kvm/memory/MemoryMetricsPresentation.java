@@ -47,9 +47,8 @@ final class MemoryMetricsPresentation {
             actions.add(MemoryUncertainRecoveryRules.ACTION);
             out.setAllowedActions(actions); out.setUncertainRecovery(uncertainRecovery);
         }
-        // This inventory's quality and age describe the metric sample, which
-        // may be older than the control observation in MemoryStateVO.
-        out.setDataAgeSeconds(sampled == null || sampled > now + 5000 ? null : Math.max(0, (now - sampled) / 1000));
+        // This inventory's quality describes the metric sample, which may be
+        // older than the control observation in MemoryStateVO.
         out.setQuality(sampled == null || sampled > now + 5000 ? "Unknown"
                 : now - sampled >= MemoryOptimizationGlobalConfig.displayTtlMillis() ? "Stale"
                 : quality instanceof String ? (String) quality : "Unknown");

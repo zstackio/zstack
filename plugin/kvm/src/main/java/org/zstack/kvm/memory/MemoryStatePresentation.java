@@ -15,10 +15,7 @@ final class MemoryStatePresentation {
 
     @SuppressWarnings("unchecked")
     static void populate(MemoryStateInventory out, long now, boolean canResume) {
-        out.setDrift(out.getAppliedRevision() == null ? null
-                : out.getDesiredRevision() != out.getAppliedRevision());
         Long sample = out.getLastSampleTime();
-        out.setDataAgeSeconds(sample == null || sample > now + 5000 ? null : Math.max(0, (now - sample) / 1000));
         Map<String, Object> state;
         try { state = new Gson().fromJson(out.getState(), Map.class); }
         catch (RuntimeException ignored) { state = null; }
@@ -29,7 +26,7 @@ final class MemoryStatePresentation {
         boolean contradicted = newerPartialContradictsState(out, state, now);
         boolean controlledPool = !contradicted && controlledGoPool(out, state, now);
         if (contradicted) {
-            out.setFeatureState("Unknown"); out.setFeatureStateSource(null);
+            out.setFeatureState("Unknown");
             if (!java.util.Objects.equals(state.get("bootId"), field(state.get("nativeKsmObservation"), "bootId"))) {
                 out.setBootId(null);
             }
@@ -45,14 +42,12 @@ final class MemoryStatePresentation {
                     ? "Active" : controlledPool && Boolean.FALSE.equals(zramEnabled) && Boolean.FALSE.equals(ksmEnabled)
                     ? "Disabled" : "Unknown";
             out.setFeatureState(observed);
-            out.setFeatureStateSource("Unknown".equals(observed) ? null : nativeKsm ? "KSM_NATIVE" : "GO_LIFECYCLE");
         } else if (active instanceof String) {
-            out.setFeatureState((String) active); out.setFeatureStateSource("GO_LIFECYCLE");
+            out.setFeatureState((String) active);
         } else if (nativeKsmProof(out, state, now)) {
             Map<?, ?> ksm = (Map<?, ?>) ((Map<?, ?>) state.get("actual")).get("ksm");
             out.setFeatureState(Boolean.TRUE.equals(ksm.get("enabled")) ? "Active" : "Disabled");
-            out.setFeatureStateSource("KSM_NATIVE");
-        } else { out.setFeatureState("Unknown"); out.setFeatureStateSource(null); }
+        } else { out.setFeatureState("Unknown"); }
         java.util.List<String> actions = new java.util.ArrayList<>();
         actions.add("query");
         if (controlledPool) {
