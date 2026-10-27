@@ -88,7 +88,7 @@ public class MemoryArbiterBoundaryTest {
 
     @Test public void unknownNativeKsmQualityWithReasonRemainsHostError() {
         String prefix = "{\"capabilities\":{\"zram\":false,\"zramReasonCode\":\"UNSUPPORTED_RECLAIM_KERNEL\"},"
-                + "\"actual\":{\"ksm\":{\"quality\":\"unknown\",\"reason\":\"native read failed\"}},";
+                + "\"ksm\":{\"reason\":\"native read failed\"},";
         Map<String, Integer> status = MemorySummaryRules.summarize(
                 Collections.singletonList("a"),
                 Collections.singletonList(state("a", partial(""), prefix)), NOW).getCurrentStatus();
@@ -97,24 +97,12 @@ public class MemoryArbiterBoundaryTest {
 
     @Test public void unsupportedCapabilityDoesNotHideErrorWhenZramIsActuallyEnabled() {
         String prefix = "{\"capabilities\":{\"zram\":false,\"zramReasonCode\":\"UNSUPPORTED_RECLAIM_KERNEL\"},"
-                + "\"actual\":{\"ksm\":{\"enabled\":false},\"zram\":{\"efficiencyEnabled\":true,"
-                + "\"errors\":[{\"operation\":\"capacity\",\"reason\":\"[Errno 2] No such file or directory\"}]}},";
+                + "\"ksm\":{\"enabled\":false},\"zram\":{\"serviceState\":\"active\",\"efficiencyEnabled\":true,"
+                + "\"reason\":\"capacity-state: [Errno 2] No such file or directory\"},";
         Map<String, Integer> status = MemorySummaryRules.summarize(
                 Collections.singletonList("a"),
                 Collections.singletonList(state("a", partial(""), prefix)), NOW).getCurrentStatus();
         assertEquals(Integer.valueOf(1), status.get("error"));
-    }
-
-    @Test public void nativeKsmNumericParametersMustBeIntegers() {
-        MemoryStateInventory state = new MemoryStateInventory();
-        state.setHostUuid("host-ksm"); state.setControlOperationUuid("op-ksm");
-        state.setStatus("Succeeded"); state.setDesiredRevision(2L); state.setAppliedRevision(2L);
-        state.setLastSampleTime(100000L);
-        state.setState("{\"managed\":true,\"ksmOnly\":true,\"bootId\":\"boot-1\","
-                + "\"actual\":{\"ksm\":{\"enabled\":true,\"pagesToScan\":1.5,"
-                + "\"sleepMillis\":20,\"zeroPagesEnabled\":false}}}");
-        MemoryStatePresentation.populate(state, 100100L);
-        assertEquals("Unknown", state.getFeatureState());
     }
 
     @Test public void explicitDisabledZeroRetainsScalarAndCoverage() {
@@ -144,14 +132,6 @@ public class MemoryArbiterBoundaryTest {
         assertEquals(1,coverage(result,"ksmOrdinaryBytes").get("coveredHosts").getAsInt());
     }
 
-    @Test public void topLevelActualErrorsAreNeverOptionalComponentErrors() {
-        String prefix="{\"capabilities\":{\"zram\":false,\"zramReasonCode\":\"UNSUPPORTED_RECLAIM_KERNEL\"},"
-                +"\"actual\":{\"errors\":[{\"reason\":\"[Errno 2] No such file or directory\"}]},";
-        MemorySummaryInventory result=MemorySummaryRules.summarize(Collections.singletonList("a"),
-                Collections.singletonList(state("a",partial(""),prefix)),NOW);
-        assertEquals(Integer.valueOf(1),result.getCurrentStatus().get("error"));
-    }
-
     @Test public void explicitDisabledZeroPageMetricKeepsItsScalar() {
         MemorySummaryInventory r=summary(partial("\"ksmZeroBytes\":0,\"metricQuality\":{\"ksm_zero\":\"disabled\"}"));
         assertEquals(Long.valueOf(0),r.getKsmZeroBytes());
@@ -178,22 +158,6 @@ public class MemoryArbiterBoundaryTest {
         assertEquals(Long.valueOf(1),r.getKsmZeroBytes());
         assertEquals(Long.valueOf(2),r.getZramBytes());
         assertNull(r.getTotalSavedEstimateBytes());
-    }
-
-    @Test public void optionalZramUnknownPermissionErrorIsStillBlocking() {
-        assertBlocking("\"zram\":{\"quality\":\"unknown\",\"reason\":\"[Errno 13] Permission denied\"}");
-    }
-
-    @Test public void enabledWritebackReadErrorIsNeverOptional() {
-        assertBlocking("\"writeback\":{\"enabled\":true,\"errors\":[{\"operation\":\"backend-state\",\"reason\":\"[Errno 2] No such file or directory\"}]}");
-    }
-
-    @Test public void nestedZramNameUnderKsmDoesNotBecomeOptional() {
-        assertBlocking("\"ksm\":{\"zram\":{\"errors\":[{\"reason\":\"[Errno 2] No such file or directory\"}]}}");
-    }
-
-    @Test public void errnoTwentyIsNotErrnoTwo() {
-        assertBlocking("\"zram\":{\"errors\":[{\"operation\":\"capacity-state\",\"reason\":\"[Errno 20] Not a directory\"}]}");
     }
 
     @Test public void malformedPerMetricQualityIsNotImplicitlyObserved() {
@@ -250,12 +214,6 @@ public class MemoryArbiterBoundaryTest {
             assertEquals(Long.valueOf(50),r.getTotalSavedEstimateBytes());
             assertEquals(1,r.getCoveredHosts());assertEquals("Fresh",r.getQuality());
         }
-    }
-
-    private void assertBlocking(String actual) {
-        String prefix="{\"capabilities\":{\"zram\":false,\"zramReasonCode\":\"UNSUPPORTED_RECLAIM_KERNEL\"},\"actual\":{"+actual+"},";
-        MemorySummaryInventory r=MemorySummaryRules.summarize(Collections.singletonList("a"),Collections.singletonList(state("a",partial(""),prefix)),NOW);
-        assertEquals(Integer.valueOf(1),r.getCurrentStatus().get("error"));
     }
 
     private JsonObject coverage(MemorySummaryInventory result, String key) {

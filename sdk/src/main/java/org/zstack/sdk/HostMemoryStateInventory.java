@@ -52,14 +52,6 @@ public class HostMemoryStateInventory  {
         return this.allowedActions;
     }
 
-    public java.util.Map uncertainRecovery;
-    public void setUncertainRecovery(java.util.Map uncertainRecovery) {
-        this.uncertainRecovery = uncertainRecovery;
-    }
-    public java.util.Map getUncertainRecovery() {
-        return this.uncertainRecovery;
-    }
-
     public java.lang.String activeJobUuid;
     public void setActiveJobUuid(java.lang.String activeJobUuid) {
         this.activeJobUuid = activeJobUuid;

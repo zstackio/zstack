@@ -11,32 +11,19 @@ import static org.junit.Assert.fail;
 public class MemoryMaintenanceRequestAdaptersTest {
     private static final String HASH = repeat('a', 64);
     private static final String BOOT = "123e4567-e89b-12d3-a456-426614174000";
-    private static final String UUID = repeat('1', 32);
     private final Gson gson = new GsonBuilder().create();
 
-    @Test public void standaloneRequestObjectsAreRegisteredForPlatformSdkGeneration() {
-        for (Class<?> type : new Class<?>[]{MemoryBackendPreparation.class,
-                MemoryZramPoolPreparation.class, MemoryUncertainRecovery.class}) {
-            assertTrue(type.getName(), type.isAnnotationPresent(org.zstack.header.rest.SDK.class));
-        }
+    @Test public void standaloneRequestObjectIsRegisteredForPlatformSdkGeneration() {
+        assertTrue(MemoryBackendPreparation.class.isAnnotationPresent(org.zstack.header.rest.SDK.class));
     }
 
     @Test public void rejectsDuplicateMembersFromTheOriginalJsonStream() {
         bad("{\"candidateId\":\"candidate:" + HASH + "\",\"expectedHostBootId\":\"" + BOOT
                 + "\",\"expectedPoolGeneration\":\"none\",\"backendCapacityBytes\":8192,"
                 + "\"resetConfirmed\":true,\"resetConfirmed\":false}", MemoryBackendPreparation.class);
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"resetConfirmed\":true,\"resetConfirmed\":false}", MemoryZramPoolPreparation.class);
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"drainControlOperationUuid\":\"" + UUID
-                + "\",\"confirmed\":true,\"confirmed\":false}", MemoryUncertainRecovery.class);
     }
 
     @Test public void rejectsUnknownMembersAndWrongJsonKinds() {
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"resetConfirmed\":true,\"device\":\"/dev/zram0\"}", MemoryZramPoolPreparation.class);
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"resetConfirmed\":\"true\"}", MemoryZramPoolPreparation.class);
         bad("{\"candidateId\":\"candidate:" + HASH + "\",\"expectedHostBootId\":\"" + BOOT
                 + "\",\"expectedPoolGeneration\":\"none\",\"backendCapacityBytes\":\"8192\","
                 + "\"resetConfirmed\":true}", MemoryBackendPreparation.class);
@@ -63,22 +50,6 @@ public class MemoryMaintenanceRequestAdaptersTest {
 
     @Test public void rejectsMissingRequiredMembersAndNullObjects() {
         bad("{}", MemoryBackendPreparation.class);
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"resetConfirmed\":true}",
-                MemoryZramPoolPreparation.class);
-        bad("{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\"}", MemoryUncertainRecovery.class);
-        bad("null", MemoryZramPoolPreparation.class);
-    }
-
-    @Test public void cpuRecoveryOmitsDrainWhileActivationRetainsStrictDrainIdentity() {
-        String raw = "{\"expectedHostBootId\":\"" + BOOT + "\",\"expectedPoolGeneration\":\"" + HASH
-                + "\",\"confirmed\":true}";
-        MemoryUncertainRecovery decoded = gson.fromJson(raw, MemoryUncertainRecovery.class);
-        assertEquals(null, decoded.getDrainControlOperationUuid());
-        assertEquals(raw, gson.toJson(decoded));
-        bad(raw.replace("\"confirmed\"", "\"drainControlOperationUuid\":null,\"confirmed\""), MemoryUncertainRecovery.class);
-        decoded.setDrainControlOperationUuid(UUID);
-        assertEquals(UUID, gson.fromJson(gson.toJson(decoded), MemoryUncertainRecovery.class).getDrainControlOperationUuid());
     }
 
     @Test public void keepsLargeAlignedCapacityExactWithoutDoubleConversion() {

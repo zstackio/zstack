@@ -12,7 +12,7 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 /** Hooks standard memory configuration into the existing GlobalConfig/ResourceConfig extension points. */
 public final class MemoryStandardConfigurationCoordinator {
@@ -20,11 +20,11 @@ public final class MemoryStandardConfigurationCoordinator {
     private final MemoryRepository repository;
     private final PluginRegistry registry;
     private final ThreadFacade thdf;
-    private final Consumer<String> zramReenabled;
+    private final BiConsumer<String, Boolean> changed;
 
     public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry, ThreadFacade thdf,
-                                                  Consumer<String> zramReenabled) {
-        this.repository = repository; this.registry = registry; this.thdf = thdf; this.zramReenabled = zramReenabled;
+                                                  BiConsumer<String, Boolean> changed) {
+        this.repository = repository; this.registry = registry; this.thdf = thdf; this.changed = changed;
     }
 
     public void install(ResourceConfigFacade rcf) {
@@ -49,8 +49,8 @@ public final class MemoryStandardConfigurationCoordinator {
                 throw new IllegalArgumentException("Blank memory configuration is not an override; delete the resource override to inherit");
             }
             Object decoded = MemoryStandardConfigCodec.decode(field.path(), value);
-            if (decoded != null) {
-                MemoryPolicyRules.mergeOverridesOnly("{}", MemoryStandardPolicy.set("{}", field.path(), decoded), "Host");
+            if (decoded instanceof Long && ((Long) decoded < 4096 || (Long) decoded % 4096 != 0)) {
+                throw new IllegalArgumentException(field.path() + " must be a positive 4KiB-aligned byte count");
             }
         } catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
     }
@@ -81,11 +81,10 @@ public final class MemoryStandardConfigurationCoordinator {
             @Override public String getName() { return "memory-standard-config-changed"; }
             @Override public Void call() {
                 try {
-                    repository.standardConfigurationChanged(resourceUuid);
-                    if (zramEnabled) { zramReenabled.accept(resourceUuid); }
+                    changed.accept(resourceUuid, zramEnabled);
                 } catch (RuntimeException e) {
-                    logger.warn(String.format("unable to queue memory policy application for resource[%s]; "
-                            + "the next Host connect re-applies the effective policy", resourceUuid), e);
+                    logger.warn(String.format("unable to plan the memory configuration for resource[%s]; "
+                            + "the next Host connect plans it", resourceUuid), e);
                 }
                 return null;
             }

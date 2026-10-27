@@ -2,48 +2,16 @@ package org.zstack.kvm.memory;
 
 import javax.persistence.*;
 
+/** One Host's desired memory configuration, its delivery status and the last Agent observation. */
 @Entity
 @Table
 public class MemoryStateVO {
-    @Column(length = 64)
-    private String appliedPolicyHash;
-    public String getAppliedPolicyHash() { return appliedPolicyHash; }
-    public void setAppliedPolicyHash(String value) { appliedPolicyHash = value; }
-
-    @Column(columnDefinition = "MEDIUMTEXT")
-    private String appliedPolicy;
-    public String getAppliedPolicy() { return appliedPolicy; }
-    public void setAppliedPolicy(String value) { appliedPolicy = value; }
-
-    @Column(length = 64)
-    private String policyTargetHash;
-    public String getPolicyTargetHash() { return policyTargetHash; }
-    public void setPolicyTargetHash(String value) { policyTargetHash = value; }
-
-    @Column(length = 64)
-    private String policyPlanHash;
-    public String getPolicyPlanHash() { return policyPlanHash; }
-    public void setPolicyPlanHash(String value) { policyPlanHash = value; }
-
-    @Column(length = 16)
-    private String policyPlanStatus;
-    public String getPolicyPlanStatus() { return policyPlanStatus; }
-    public void setPolicyPlanStatus(String value) { policyPlanStatus = value; }
-
-    @Column(columnDefinition = "TEXT")
-    private String policyBlockedFields;
-    public String getPolicyBlockedFields() { return policyBlockedFields; }
-    public void setPolicyBlockedFields(String value) { policyBlockedFields = value; }
-
-    @Column(length = 32)
-    private String controlOperationUuid;
-    public String getControlOperationUuid() { return controlOperationUuid; }
-    public void setControlOperationUuid(String value) { controlOperationUuid = value; }
     @Id @Column(length = 32)
     private String hostUuid;
     public String getHostUuid() { return hostUuid; }
     public void setHostUuid(String value) { hostUuid = value; }
 
+    /** The generation of the desired configuration; every change increments it. */
     @Column(nullable = false)
     private long desiredRevision;
     public long getDesiredRevision() { return desiredRevision; }
@@ -54,6 +22,18 @@ public class MemoryStateVO {
     public Long getAppliedRevision() { return appliedRevision; }
     public void setAppliedRevision(Long value) { appliedRevision = value; }
 
+    /** The operator's lifecycle choice: active, paused or drained. */
+    @Column(nullable = false, length = 16)
+    private String control = "active";
+    public String getControl() { return control; }
+    public void setControl(String value) { control = value; }
+
+    /** The desired configuration last sent for desiredRevision. */
+    @Column(columnDefinition = "TEXT")
+    private String desired;
+    public String getDesired() { return desired; }
+    public void setDesired(String value) { desired = value; }
+
     @Column(nullable = false, length = 32)
     private String status;
     public String getStatus() { return status; }
@@ -63,6 +43,16 @@ public class MemoryStateVO {
     private String reason;
     public String getReason() { return reason; }
     public void setReason(String value) { reason = value; }
+
+    @Column(nullable = false)
+    private int failures;
+    public int getFailures() { return failures; }
+    public void setFailures(int value) { failures = value; }
+
+    @Column
+    private Long nextAttemptAt;
+    public Long getNextAttemptAt() { return nextAttemptAt; }
+    public void setNextAttemptAt(Long value) { nextAttemptAt = value; }
 
     @Column(columnDefinition = "TEXT")
     private String capabilities;
@@ -78,11 +68,6 @@ public class MemoryStateVO {
     private Long lastSampleTime;
     public Long getLastSampleTime() { return lastSampleTime; }
     public void setLastSampleTime(Long value) { lastSampleTime = value; }
-
-    @Column(length = 32)
-    private String activeTaskUuid;
-    public String getActiveTaskUuid() { return activeTaskUuid; }
-    public void setActiveTaskUuid(String value) { activeTaskUuid = value; }
 
     @Column(nullable = false)
     private java.sql.Timestamp createDate;
@@ -103,26 +88,4 @@ public class MemoryStateVO {
 
     @PreUpdate
     private void onUpdate() { lastOpDate = new java.sql.Timestamp(System.currentTimeMillis()); }
-
-    public MemoryStateInventory toInventory() {
-        MemoryStateInventory result = new MemoryStateInventory();
-        result.setHostUuid(hostUuid);
-        result.setDesiredRevision(desiredRevision);
-        result.setAppliedRevision(appliedRevision);
-        result.setStatus(status);
-        result.setReason(reason);
-        result.setCapabilities(capabilities);
-        result.setState(state);
-        result.setLastSampleTime(lastSampleTime);
-        result.setActiveTaskUuid(activeTaskUuid);
-        result.setControlOperationUuid(controlOperationUuid);
-        result.setAppliedPolicyHash(appliedPolicyHash);
-        result.setAppliedPolicy(appliedPolicy);
-        result.setPolicyTargetHash(policyTargetHash);
-        result.setPolicyPlanHash(policyPlanHash);
-        result.setPolicyPlanStatus(policyPlanStatus);
-        result.setPolicyBlockedFields(policyBlockedFields);
-        MemoryStatePresentation.populate(result, System.currentTimeMillis());
-        return result;
-    }
 }

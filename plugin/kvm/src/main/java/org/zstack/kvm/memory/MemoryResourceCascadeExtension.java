@@ -25,6 +25,6 @@ public class MemoryResourceCascadeExtension extends AbstractAsyncCascadeExtensio
     @Override public List<String> getEdgeNames() {
         return Arrays.asList(HostVO.class.getSimpleName(), ClusterVO.class.getSimpleName(), VmInstanceVO.class.getSimpleName());
     }
-    @Override public String getCascadeResourceName() { return MemoryPolicyVO.class.getSimpleName(); }
+    @Override public String getCascadeResourceName() { return MemoryStateVO.class.getSimpleName(); }
     @Override public CascadeAction createActionForChildResource(CascadeAction action) { return null; }
 }

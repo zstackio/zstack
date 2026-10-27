@@ -63,14 +63,6 @@ public enum MemoryStandardField {
         return field;
     }
 
-    /** Null denotes an unrelated standard configuration, not an invalid memory field. */
-    public static MemoryStandardField forConfig(String category, String name) {
-        for (MemoryStandardField field : values()) {
-            if (field.category().equals(category) && field.configName().equals(name)) { return field; }
-        }
-        return null;
-    }
-
     public static Scope scope(String resourceType) {
         if (HostVO.class.getSimpleName().equals(resourceType)) { return Scope.HOST; }
         if (ClusterVO.class.getSimpleName().equals(resourceType)) { return Scope.CLUSTER; }

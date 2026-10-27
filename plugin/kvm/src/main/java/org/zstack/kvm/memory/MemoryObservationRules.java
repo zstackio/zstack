@@ -21,48 +21,49 @@ public final class MemoryObservationRules {
     private MemoryObservationRules() {
     }
 
-    /** Interpret only explicit fresh service facts, never control Unknown or run=0 as failure. */
+    /**
+     * Service failures and recoveries of a fresh sample on an active Host. A
+     * paused or drained Host stops its services on purpose.
+     */
     static List<HostMemoryOptimizationServiceStateChangedData> serviceEvents(String host,
-            MemoryAgentResponse response, MemoryPolicyConfig policy, long now) {
+            MemoryAgentResponse response, MemoryStateVO current, long now) {
         List<HostMemoryOptimizationServiceStateChangedData> result = new ArrayList<>();
-        if (policy == null || response == null || response.state == null || response.sampleTime == null
-                || now < response.sampleTime || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
-                || !(response.state.get("bootId") instanceof String)
-                || ((String) response.state.get("bootId")).trim().isEmpty()
-                || response.bootId != null && !response.bootId.equals(response.state.get("bootId"))
-                || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
-        boolean complete = response.isSuccess() && "Succeeded".equals(response.status);
-        boolean nativeOnly = !response.isSuccess() && "Unknown".equals(response.status)
-                && "LOCAL_SERVICE_UNAVAILABLE".equals(response.reasonCode);
-        if (!complete && !nativeOnly) { return result; }
+        if (current == null || current.getDesired() == null || response == null || !response.isSuccess()
+                || response.state == null || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
         Map<String, Object> state = response.state;
-        Map<?, ?> lifecycle = map(state.get("lifecycle"));
-        if (Boolean.TRUE.equals(state.get("maintenance_blocks_activation"))
-                || lifecycle != null && (Boolean.TRUE.equals(lifecycle.get("paused"))
-                || "paused".equalsIgnoreCase(stringOrNull(lifecycle.get("activeState"))))) { return result; }
-        if (policy.ksm != null && Boolean.TRUE.equals(policy.ksm.enabled)) {
-            Map<?, ?> actual = map(state.get("actual"));
-            Map<?, ?> ksm = actual == null ? null : map(actual.get("ksm"));
-            if (ksm != null && !"unknown".equals(ksm.get("quality"))) {
-                nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"));
-                nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"));
-            }
+        Long sampled = nullableLong(state.get("sampleTime"));
+        long ttl = MemoryOptimizationGlobalConfig.displayTtlMillis();
+        if (sampled == null || sampled > now + 5000 || now - sampled >= ttl || !"active".equals(state.get("control"))) {
+            return result;
         }
-        if (complete && policy.zram != null && Boolean.TRUE.equals(policy.zram.enabled)
-                && policy.writeback != null && Boolean.TRUE.equals(policy.writeback.enabled)
-                && Boolean.TRUE.equals(state.get("resource_authorized"))
-                && observationFailure(state.get("observed_at"), now,
-                        MemoryOptimizationGlobalConfig.displayTtlMillis()) == null) {
-            Map<?, ?> health = map(state.get("backend_health"));
+        Map<?, ?> desired;
+        try { desired = org.zstack.utils.gson.JSONObjectUtil.toObject(current.getDesired(), java.util.LinkedHashMap.class); }
+        catch (RuntimeException invalid) { return result; }
+        if (!"active".equals(desired.get("control"))) { return result; }
+        Map<?, ?> ksm = map(state.get("ksm"));
+        if (Boolean.TRUE.equals(field(desired.get("ksm"), "enabled")) && ksm != null) {
+            nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"));
+            nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"));
+        }
+        Map<?, ?> status = map(field(state.get("zram"), "status"));
+        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
+                && Boolean.TRUE.equals(field(desired.get("writeback"), "enabled"))
+                && status != null && Boolean.TRUE.equals(status.get("resource_authorized"))
+                && observationFailure(status.get("observed_at"), now, ttl) == null) {
+            Map<?, ?> health = map(status.get("backend_health"));
             if (health != null && "DEGRADED".equals(health.get("state"))
                     && "NATIVE_BACKEND_IO_ERROR_BACKOFF".equals(health.get("reason"))
                     && Boolean.FALSE.equals(health.get("new_io_permitted_by_backend_health"))) {
                 result.add(serviceEvent(host, "zram-writeback", "Failed", "NATIVE_BACKEND_IO_ERROR_BACKOFF"));
-            } else if (health != null && writebackRecovered(state, health)) {
+            } else if (health != null && writebackRecovered(status, health)) {
                 result.add(serviceEvent(host, "zram-writeback", "Recovered", "WRITEBACK_IO_SUCCEEDED_AFTER_BACKOFF"));
             }
         }
         return result;
+    }
+
+    private static Object field(Object value, String key) {
+        return value instanceof Map ? ((Map<?, ?>) value).get(key) : null;
     }
 
     private static void nativeServiceEvent(List<HostMemoryOptimizationServiceStateChangedData> events,
@@ -78,7 +79,7 @@ public final class MemoryObservationRules {
         return result;
     }
 
-    private static boolean writebackRecovered(Map<String, Object> state, Map<?, ?> health) {
+    private static boolean writebackRecovered(Map<?, ?> state, Map<?, ?> health) {
         if (!"READY".equals(health.get("state"))
                 || !"BACKOFF_ELAPSED_BOUNDED_IO_PERMITTED".equals(health.get("reason"))
                 || !Boolean.TRUE.equals(health.get("new_io_permitted_by_backend_health"))) { return false; }
@@ -116,45 +117,6 @@ public final class MemoryObservationRules {
             }
             return true;
         } catch (RuntimeException malformed) { return false; }
-    }
-
-    /**
-     * An explicit read-only native KSM sample may refresh only KSM capability
-     * metadata. It never changes the envelope's Unknown control outcome.
-     */
-    static boolean isKsmNativePartial(MemoryAgentResponse response, String hostUuid, long now) {
-        if (response == null || response.isSuccess() || !"Unknown".equals(response.status)
-                || !"KSM_NATIVE_PARTIAL".equals(response.observationKind)
-                || !"LOCAL_SERVICE_UNAVAILABLE".equals(response.reasonCode)
-                || (response.hostUuid != null && !response.hostUuid.equals(hostUuid))
-                || response.sampleTime == null || response.sampleTime > now + 5000
-                || now - response.sampleTime < 0
-                || now - response.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()
-                || response.capabilities == null || response.state == null
-                || response.bootId == null || response.bootId.trim().isEmpty()) {
-            return false;
-        }
-        if (!Boolean.TRUE.equals(response.capabilities.get("supported"))
-                || !Boolean.TRUE.equals(response.capabilities.get("ksm"))) { return false; }
-        Object boot = response.state.get("bootId");
-        Map<?, ?> actual = map(response.state.get("actual"));
-        Map<?, ?> ksm = actual == null ? null : map(actual.get("ksm"));
-        if (!response.bootId.equals(boot) || ksm == null || !(ksm.get("enabled") instanceof Boolean)) {
-            return false;
-        }
-        return nonNegativeInteger(ksm.get("pagesToScan")) && nonNegativeInteger(ksm.get("sleepMillis"));
-    }
-
-    private static boolean nonNegativeInteger(Object value) {
-        if (!(value instanceof Number)) { return false; }
-        // Agent JSON maps decode numbers as Double; accept only exact integral values.
-        if (value instanceof Float || value instanceof Double) {
-            double number = ((Number) value).doubleValue();
-            return Double.isFinite(number) && number == Math.rint(number)
-                    && number >= 0 && number <= MAX_SAFE_DOUBLE_INTEGER;
-        }
-        try { return new BigDecimal(value.toString()).longValueExact() >= 0; }
-        catch (ArithmeticException | NumberFormatException invalid) { return false; }
     }
 
     private static Map<?, ?> map(Object value) {

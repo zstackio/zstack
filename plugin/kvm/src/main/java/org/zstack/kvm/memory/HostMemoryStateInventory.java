@@ -15,7 +15,6 @@ public class HostMemoryStateInventory {
     private String reason;
     private Map<String, Object> capabilities;
     private List<String> allowedActions;
-    private Map<String, String> uncertainRecovery;
     private String activeJobUuid;
     private Long lastObservedAt;
     private Timestamp createDate;
@@ -30,8 +29,6 @@ public class HostMemoryStateInventory {
         inventory.capabilities = vo.getCapabilities() == null ? null : JSONObjectUtil.toObject(vo.getCapabilities(), LinkedHashMap.class);
         inventory.allowedActions = vo.getAllowedActions() == null ? Collections.emptyList()
                 : JSONObjectUtil.toObject(vo.getAllowedActions(), ArrayList.class);
-        inventory.uncertainRecovery = vo.getUncertainRecovery() == null ? null
-                : JSONObjectUtil.toObject(vo.getUncertainRecovery(), LinkedHashMap.class);
         inventory.activeJobUuid = vo.getActiveJobUuid();
         inventory.lastObservedAt = vo.getLastObservedAt();
         inventory.createDate = vo.getCreateDate();
@@ -68,8 +65,6 @@ public class HostMemoryStateInventory {
     public void setCapabilities(Map<String, Object> value) { capabilities = value; }
     public List<String> getAllowedActions() { return allowedActions; }
     public void setAllowedActions(List<String> value) { allowedActions = value; }
-    public Map<String, String> getUncertainRecovery() { return uncertainRecovery; }
-    public void setUncertainRecovery(Map<String, String> value) { uncertainRecovery = value; }
     public String getActiveJobUuid() { return activeJobUuid; }
     public void setActiveJobUuid(String value) { activeJobUuid = value; }
     public Long getLastObservedAt() { return lastObservedAt; }

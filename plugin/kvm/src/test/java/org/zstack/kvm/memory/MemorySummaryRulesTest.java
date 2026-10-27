@@ -30,9 +30,8 @@ public class MemorySummaryRulesTest {
 
         assertEquals(3, hosts.size());
         assertEquals("a", hosts.get(0).getHostUuid());
-        MemoryStateInventory state = MemoryMetricsPresentation.inventory(a, fresh, now);
-        assertEquals(state.getMetrics(), hosts.get(0).getMetrics());
-        assertEquals(state.getQuality(), hosts.get(0).getQuality());
+        assertEquals(MemoryMetricsPresentation.metrics(fresh, now), hosts.get(0).getMetrics());
+        assertEquals("Fresh", hosts.get(0).getQuality());
         assertEquals(Long.valueOf(now - 1000), hosts.get(0).getSampleTime());
         assertEquals("b", hosts.get(1).getHostUuid());
         assertEquals("Stale", hosts.get(1).getQuality());
@@ -46,7 +45,7 @@ public class MemorySummaryRulesTest {
         Map<String, Integer> unknown = reasons(current("a", now, "{" + zero + "}"));
         assertEquals(Integer.valueOf(1), unknown.get("unknown"));
         assertFalse(unknown.containsKey("enabledNoSavings"));
-        String off = "{\"actual\":{\"ksm\":{\"enabled\":false},\"zram\":{\"efficiencyEnabled\":false}}," + zero + "}";
+        String off = "{\"ksm\":{\"enabled\":false},\"zram\":{\"efficiencyEnabled\":false}," + zero + "}";
         assertEquals(Integer.valueOf(1), reasons(current("a", now, off)).get("disabled"));
         assertFalse(reasons(current("a", now, off)).containsKey("enabledNoSavings"));
         String on = off.replace("\"enabled\":false", "\"enabled\":true");
@@ -57,7 +56,7 @@ public class MemorySummaryRulesTest {
         assertFalse(active.containsKey("unknown"));
     }
     @Test public void expiredOrMissingSamplesDoNotClaimCurrentOffOrNoVms() {
-        String off = "{\"actual\":{\"ksm\":{\"enabled\":false},\"zram\":{\"efficiencyEnabled\":false}},\"vms\":{},\"inventoryComplete\":true}";
+        String off = "{\"ksm\":{\"enabled\":false},\"zram\":{\"efficiencyEnabled\":false},\"vms\":{},\"inventoryComplete\":true}";
         assertEquals(Collections.singletonMap("stale", 1), reasons(current("a", now - 90000, off)));
         assertEquals(Collections.singletonMap("noRunningVms", 1), reasons(current("a", now,
                 "{\"vms\":{},\"inventoryComplete\":true}")));
@@ -76,8 +75,8 @@ public class MemorySummaryRulesTest {
     }
     @Test public void independentlySupportedKsmDoesNotHideZramLimitationsOrReadErrors() {
         String state = "{\"capabilities\":{\"supported\":true,\"ksm\":true,\"zram\":false,\"zramReasonCode\":\"UNSUPPORTED_RECLAIM_KERNEL\"},"
-                + "\"actual\":{\"ksm\":{\"enabled\":true},\"zram\":{\"errors\":[{\"operation\":\"host-cpu-state\"}]}},"
-                + "\"host\":{\"safe\":false},\"lifecycle\":{\"paused\":true}}";
+                + "\"ksm\":{\"enabled\":true},\"zram\":{\"serviceState\":\"active\",\"reason\":\"host-cpu-state failed\","
+                + "\"status\":{\"host\":{\"safe\":false}}},\"control\":\"paused\"}";
         Map<String, Integer> counts = reasons(current("a", now, state));
         for (String reason : Arrays.asList("unsupported", "conditionsUnmet", "error", "paused")) {
             assertEquals(Integer.valueOf(1), counts.get(reason));
@@ -92,10 +91,10 @@ public class MemorySummaryRulesTest {
         assertFalse(counts.containsKey("conditionsUnmet"));
     }
     @Test public void observationQueriesBypassOnlyHostStatusGate() {
-        for (String action : Arrays.asList("state", "capabilities", "accounting", "reconcile")) {
+        for (String action : Arrays.asList("state", "accounting")) {
             assertTrue(action, MemoryOptimizationManager.readOnlyAgentQuery(action));
         }
-        for (String action : Arrays.asList("apply", "migration-hold", "drain-start",
+        for (String action : Arrays.asList("apply", "writeback-backends", "vm-efficiency", "capabilities", "reconcile", "migration-hold", "drain-start",
                 "drain-status", "lifecycle-pause", "capacity", "host-cpu", "vm-policy",
                 "vm-management", "vm-management-shard-stage", "vm-management-shard-commit",
                 "vm-management-shard-cancel", "tuning-state", "capacity-state", "host-cpu-state",

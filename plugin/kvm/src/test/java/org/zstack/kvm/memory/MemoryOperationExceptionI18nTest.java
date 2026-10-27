@@ -102,19 +102,11 @@ public class MemoryOperationExceptionI18nTest {
     }
 
     @Test
-    public void revisionConflictUsesDeclaredMetadataAndLocalizes() {
-        assertLocalized("MEMORY_REVISION_CONFLICT", 11034,
-                "Inherited policy changed; preview and confirm again",
-                "Revision Conflict in memory optimization",
-                "内存优化策略版本冲突：Inherited policy changed; preview and confirm again");
-    }
-
-    @Test
-    public void invalidPolicyUsesDeclaredMetadataAndLocalizes() {
-        assertLocalized("MEMORY_INVALID_POLICY", 11026,
-                "Writeback backend must be configured per host",
-                "Invalid Policy in memory optimization",
-                "内存优化策略配置无效：Writeback backend must be configured per host");
+    public void invalidScopeUsesDeclaredMetadataAndLocalizes() {
+        assertLocalized("MEMORY_INVALID_SCOPE", 11027,
+                "Expected an existing KVM Host",
+                "Invalid Scope in memory optimization",
+                "内存优化作用范围无效：Expected an existing KVM Host");
     }
 
     @Test
@@ -132,7 +124,7 @@ public class MemoryOperationExceptionI18nTest {
                     Pattern.compile("(?i)\\b[a-z]{2,}\\b").matcher(value).find());
             count++;
         }
-        assertEquals("all memory error categories must be checked", 44, count);
+        assertEquals("all memory error categories must be checked", 18, count);
     }
 
     @Test
@@ -185,7 +177,7 @@ public class MemoryOperationExceptionI18nTest {
             assertTrue("metadata id must be unique: " + error, ids.add(error.getId()));
             assertNotNull(errorFacade.instantiateErrorCode(error.toString(), businessCode));
         }
-        assertEquals(43, businessCodes.size());
+        assertEquals(17, businessCodes.size());
     }
 
     @Test
@@ -291,12 +283,7 @@ public class MemoryOperationExceptionI18nTest {
     }
 
     private String metadataDescription(int metadataId) {
-        if (metadataId == 11034) {
-            return "Revision Conflict in memory optimization";
-        }
-        if (metadataId == 11026) {
-            return "Invalid Policy in memory optimization";
-        }
+        if (metadataId == 11027) { return "Invalid Scope in memory optimization"; }
         if (metadataId == 11045) { return "Memory Optimization Service Has Not Stopped"; }
         throw new AssertionError("unexpected metadata id " + metadataId);
     }

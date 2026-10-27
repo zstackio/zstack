@@ -36,10 +36,6 @@ public class HostMemoryStateVO {
     public String getAllowedActions() { return allowedActions; }
     public void setAllowedActions(String value) { allowedActions = value; }
 
-    @Column(columnDefinition = "TEXT")
-    private String uncertainRecovery;
-    public String getUncertainRecovery() { return uncertainRecovery; }
-    public void setUncertainRecovery(String value) { uncertainRecovery = value; }
 
     @Column(length = 32)
     private String activeJobUuid;

@@ -62,8 +62,6 @@ public class MemoryStandardConfigAdapterTest {
             em.flush();
             assertThrows(javax.persistence.NonUniqueResultException.class,
                     () -> adapter.readOverrideOwn(em, field.path(), "host1"));
-            assertThrows(javax.persistence.NonUniqueResultException.class,
-                    () -> adapter.readOwn(em, MemoryStandardField.Scope.HOST, "host1", Collections.emptySet()));
             return null;
         });
     }
@@ -93,17 +91,6 @@ public class MemoryStandardConfigAdapterTest {
             row.setResourceType("HostVO"); em.persist(row); em.flush();
             return adapter.readOverrideOwn(em, "ksm.enabled", "host1");
         });
-    }
-
-    @Test public void policySplitKeepsSpecializedSelectionAndRejectsInvalidScope() {
-        MemoryStandardPolicy.Parts parts = MemoryStandardPolicy.split(
-                "{\"zram\":{\"logicalCapacityBytes\":16777216,\"ramLimitBytes\":8388608,"
-                        + "\"selectionMode\":\"list\",\"selectedVmUuids\":[\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"]}}", "Host");
-        assertEquals(2, parts.standardValues.size());
-        assertTrue(parts.specialized.contains("selectionMode"));
-        assertFalse(parts.specialized.contains("logicalCapacityBytes"));
-        assertThrows(IllegalArgumentException.class, () -> MemoryStandardPolicy.split(
-                "{\"writeback\":{\"backendResourceUuid\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}}", "Cluster"));
     }
 
     private void seedGlobal(String path, String value, String defaultValue) {

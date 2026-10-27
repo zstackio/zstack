@@ -10,12 +10,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class MemoryObservationRulesTest {
+    private static MemoryStateVO desired(String json) {
+        MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host"); state.setDesired(json); return state;
+    }
+
+    private static final String KSM_ENABLED = "{\"control\":\"active\",\"ksm\":{\"enabled\":true}}";
+
     @Test public void nativeServiceEventsRequireExplicitFailedOrActiveNotScanningOrUnknown() {
         long now = System.currentTimeMillis();
-        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
+        MemoryStateVO policy = desired(KSM_ENABLED);
         MemoryAgentResponse response = serviceObservation(now);
         Map<String, Object> ksm = new LinkedHashMap<>();
-        response.state.put("actual", Collections.singletonMap("ksm", ksm));
+        response.state.put("ksm", ksm);
         ksm.put("enabled", null); ksm.put("scanning", false);
         ksm.put("serviceState", "failed"); ksm.put("tunedServiceState", "activating");
         assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
@@ -28,89 +34,71 @@ public class MemoryObservationRulesTest {
         }
         ksm.put("tunedServiceState", "failed");
         assertEquals("ksmtuned", MemoryObservationRules.serviceEvents("host", response, policy, now).get(0).getService());
-        response.setSuccess(false); response.status = "Unknown";
+        response.setSuccess(false);
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.reasonCode = "LOCAL_SERVICE_UNAVAILABLE";
-        assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        org.junit.Assert.assertFalse(MemoryObservationRules.isKsmNativePartial(response, "host", now));
-        for (Boolean enabled : new Boolean[]{false, null}) {
-            policy.ksm.enabled = enabled;
-            assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.setSuccess(true);
+        for (String json : new String[]{"{\"control\":\"active\",\"ksm\":{\"enabled\":false}}",
+                "{\"control\":\"active\",\"ksm\":{}}", "{\"control\":\"paused\",\"ksm\":{\"enabled\":true}}"}) {
+            assertEquals(json, 0, MemoryObservationRules.serviceEvents("host", response, desired(json), now).size());
         }
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, null, now).size());
     }
 
-    @Test public void serviceEventsRejectStaleForeignUnidentifiedAndPausedSamples() {
+    @Test public void serviceEventsRejectStaleForeignAndPausedSamples() {
         long now = System.currentTimeMillis();
-        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
+        MemoryStateVO policy = desired(KSM_ENABLED);
         MemoryAgentResponse response = serviceObservation(now);
-        response.state.put("actual", Collections.singletonMap("ksm", Collections.singletonMap("serviceState", "failed")));
-        response.sampleTime = now - MemoryOptimizationGlobalConfig.displayTtlMillis();
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.sampleTime = now + 1;
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.sampleTime = now; response.hostUuid = "other-host";
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.hostUuid = "host"; response.state.remove("bootId");
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.state.put("bootId", "boot"); response.state.put("maintenance_blocks_activation", true);
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.state.put("maintenance_blocks_activation", false);
-        response.state.put("lifecycle", Collections.singletonMap("paused", true));
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-    }
-
-    @Test public void serviceEventsRejectConflictingEnvelopeAndStateBootIds() {
-        long now = System.currentTimeMillis();
-        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"ksm\":{\"enabled\":true}}");
-        MemoryAgentResponse response = serviceObservation(now);
-        response.hostUuid = "host";
-        response.state.put("actual", Collections.singletonMap("ksm",
-                Collections.singletonMap("serviceState", "failed")));
-        response.bootId = "other-boot";
-        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.bootId = "boot";
+        response.state.put("ksm", Collections.singletonMap("serviceState", "failed"));
         assertEquals(1, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.state.put("sampleTime", now - MemoryOptimizationGlobalConfig.displayTtlMillis());
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.state.put("sampleTime", now + 6000);
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.state.put("sampleTime", now); response.hostUuid = "other-host";
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
+        response.hostUuid = "host"; response.state.put("control", "paused");
+        assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
     }
 
     @Test public void writebackFailureDoesNotTreatUnknownFenceOrHistoricalBaselineAsIoFailure() {
         long now = OffsetDateTime.parse("2026-10-13T00:00:00Z").toInstant().toEpochMilli();
         MemoryAgentResponse response = writebackObservation(now);
-        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true}}");
+        MemoryStateVO policy = desired("{\"control\":\"active\",\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true}}");
         Map<String, Object> health = new LinkedHashMap<>();
         health.put("state", "DEGRADED"); health.put("reason", "NATIVE_BACKEND_IO_ERROR_BACKOFF");
-        health.put("new_io_permitted_by_backend_health", false); response.state.put("backend_health", health);
+        health.put("new_io_permitted_by_backend_health", false); status(response).put("backend_health", health);
         assertEquals("Failed", MemoryObservationRules.serviceEvents("host", response, policy, now).get(0).getStatus());
         for (String reason : new String[]{"UNKNOWN_OPERATION_NO_REPLAY", "NATIVE_ERROR_BASELINE_RECORDED", "NO_BACKEND"}) {
             health.put("reason", reason);
             assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
         }
         health.put("reason", "NATIVE_BACKEND_IO_ERROR_BACKOFF");
-        response.state.put("observed_at", "2020-01-01T00:00:00Z");
+        status(response).put("observed_at", "2020-01-01T00:00:00Z");
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
-        response.state.put("observed_at", "2026-10-13T00:00:00Z"); response.state.put("resource_authorized", false);
+        status(response).put("observed_at", "2026-10-13T00:00:00Z"); status(response).put("resource_authorized", false);
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
     }
 
     @Test public void writebackRecoveryRequiresSuccessfulIoAfterBackoffNotIdleOrElapsedTimeAlone() {
         long now = OffsetDateTime.parse("2026-10-13T00:00:00Z").toInstant().toEpochMilli();
         MemoryAgentResponse response = writebackObservation(now);
-        MemoryPolicyConfig policy = MemoryPolicyRules.decode("{\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true}}");
+        MemoryStateVO policy = desired("{\"control\":\"active\",\"zram\":{\"enabled\":true},\"writeback\":{\"enabled\":true}}");
         Map<String, Object> health = new LinkedHashMap<>();
         health.put("state", "READY"); health.put("reason", "BACKOFF_ELAPSED_BOUNDED_IO_PERMITTED");
         health.put("new_io_permitted_by_backend_health", true); health.put("backoff_until", "2026-10-12T23:59:50Z");
-        response.state.put("backend_health", health);
+        status(response).put("backend_health", health);
         assertEquals(0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
         Map<String, Object> schedule = new LinkedHashMap<>(); schedule.put("pool_generation", "pool-1");
-        schedule.put("last_completed_id", "operation-1"); response.state.put("writeback_schedule", schedule);
+        schedule.put("last_completed_id", "operation-1"); status(response).put("writeback_schedule", schedule);
         Map<String, Object> pool = new LinkedHashMap<>(); pool.put("pool_generation", "pool-1");
-        pool.put("quality", "native_host_device"); response.state.put("host_zram", pool);
+        pool.put("quality", "native_host_device"); status(response).put("host_zram", pool);
         Map<String, Object> before = new LinkedHashMap<>(); before.put("quality", "native_host_device");
         before.put("observed_at", "2026-10-12T23:59:51Z");
         before.put("committed_writeback_pages_total", 10L); before.put("read_errors", 1L); before.put("write_errors", 2L);
         Map<String, Object> after = new LinkedHashMap<>(before);
         Map<String, Object> returned = new LinkedHashMap<>(); returned.put("operation_id", "operation-1");
         returned.put("returned_at", "2026-10-12T23:59:52Z"); returned.put("kernel_called", true);
-        returned.put("before", before); returned.put("after", after); response.state.put("last_writeback_return", returned);
+        returned.put("before", before); returned.put("after", after); status(response).put("last_writeback_return", returned);
         assertEquals("idle/no progress is not recovery", 0, MemoryObservationRules.serviceEvents("host", response, policy, now).size());
         after.put("committed_writeback_pages_total", 11L);
         assertEquals("Recovered", MemoryObservationRules.serviceEvents("host", response, policy, now).get(0).getStatus());
@@ -128,13 +116,21 @@ public class MemoryObservationRulesTest {
 
     private static MemoryAgentResponse serviceObservation(long now) {
         MemoryAgentResponse response = new MemoryAgentResponse(); response.setSuccess(true); response.status = "Succeeded";
-        response.sampleTime = now; response.state = new LinkedHashMap<>(); response.state.put("bootId", "boot");
+        response.state = new LinkedHashMap<>(); response.state.put("sampleTime", now); response.state.put("control", "active");
         return response;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> status(MemoryAgentResponse response) {
+        return (Map<String, Object>) ((Map<String, Object>) response.state.get("zram")).get("status");
+    }
+
     private static MemoryAgentResponse writebackObservation(long now) {
-        MemoryAgentResponse response = serviceObservation(now); response.state.put("resource_authorized", true);
-        response.state.put("observed_at", "2026-10-13T00:00:00Z"); return response;
+        MemoryAgentResponse response = serviceObservation(now);
+        Map<String, Object> status = new LinkedHashMap<>();
+        status.put("resource_authorized", true); status.put("observed_at", "2026-10-13T00:00:00Z");
+        response.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("status", status)));
+        return response;
     }
 
     @Test public void capturedVmSampleConvertsAsFreshAndPreservesProcIdentityAndMetrics() {

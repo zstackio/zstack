@@ -14,38 +14,22 @@ public class MemoryBackendPreparationRulesTest {
         return value;
     }
 
-    private MemoryActionRequest request() {
-        MemoryActionRequest message = new MemoryActionRequest();
-        message.setScope("Host"); message.setAction("prepareWritebackBackend");
-        message.setBackendPreparation(preparation()); return message;
+    @Test public void acceptsAnExplicitHostBoundPreparation() {
+        MemoryBackendPreparationRules.validate(preparation());
     }
 
-    @Test public void acceptsExplicitHostBoundPreparationWithoutChangingPolicy() {
-        MemoryActionRequest message = request();
-        MemoryBackendPreparationRules.validate(message);
-        assertEquals("{}", message.getPolicy());
+    @Test public void rejectsMissingConfirmationUnsafeNumbersAndUnboundIdentity() {
+        reject(null);
+        MemoryBackendPreparation value = preparation(); value.setResetConfirmed(false); reject(value);
+        value = preparation(); value.setBackendCapacityBytes(4096); reject(value);
+        value = preparation(); value.setBackendCapacityBytes((20L << 30) + 1); reject(value);
+        value = preparation(); value.setExpectedHostBootId(""); reject(value);
+        value = preparation(); value.setExpectedPoolGeneration("unknown"); reject(value);
+        value = preparation(); value.setCandidateId("/dev/vdb"); reject(value);
     }
 
-    @Test public void rejectsBulkScopePathsMissingConfirmationAndUnsafeNumbers() {
-        for (String scope : new String[]{"Global", "Cluster", "VM"}) {
-            MemoryActionRequest message = request(); message.setScope(scope); reject(message);
-        }
-        MemoryActionRequest message = request(); message.setBackendPreparation(null); reject(message);
-        message = request(); message.getBackendPreparation().setResetConfirmed(false); reject(message);
-        message = request(); message.getBackendPreparation().setBackendCapacityBytes(4096); reject(message);
-        message = request(); message.setPolicy("{\"zram\":{\"enabled\":true}}"); reject(message);
-    }
-
-    @Test public void rejectsUnboundIdentityAndSmuggledPreparationOnOtherActions() {
-        MemoryActionRequest message = request(); message.getBackendPreparation().setExpectedHostBootId(""); reject(message);
-        message = request(); message.getBackendPreparation().setExpectedPoolGeneration("unknown"); reject(message);
-        message = request(); message.getBackendPreparation().setCandidateId("/dev/vdb"); reject(message);
-        message = request(); message.setAction("apply"); reject(message);
-        message = request(); message.setBackendPreparation(null); reject(message);
-    }
-
-    private void reject(MemoryActionRequest message) {
-        try { MemoryBackendPreparationRules.validate(message); fail("unsafe request was accepted"); }
+    private void reject(MemoryBackendPreparation value) {
+        try { MemoryBackendPreparationRules.validate(value); fail("unsafe request was accepted"); }
         catch (IllegalArgumentException expected) { }
     }
 }

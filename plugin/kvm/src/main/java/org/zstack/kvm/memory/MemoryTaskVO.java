@@ -2,65 +2,24 @@ package org.zstack.kvm.memory;
 
 import javax.persistence.*;
 
+/** One operator operation on a Host, finished when the Host reaches its generation. */
 @Entity
 @Table
 public class MemoryTaskVO {
-    // Persist admission evidence with the task; later samples cannot replace it.
-    @Column
-    private Boolean requiresKsmNativePartialFence = false;
-    public Boolean getRequiresKsmNativePartialFence() { return requiresKsmNativePartialFence; }
-    public void setRequiresKsmNativePartialFence(Boolean value) { requiresKsmNativePartialFence = value; }
-    @Column(length = 128)
-    private String ksmNativeObservationBootId;
-    public String getKsmNativeObservationBootId() { return ksmNativeObservationBootId; }
-    public void setKsmNativeObservationBootId(String value) { ksmNativeObservationBootId = value; }
-    @Column
-    private Long ksmNativeObservationSampleTime;
-    public Long getKsmNativeObservationSampleTime() { return ksmNativeObservationSampleTime; }
-    public void setKsmNativeObservationSampleTime(Long value) { ksmNativeObservationSampleTime = value; }
-
-    @Column(length = 32)
-    private String reconcileOperationUuid;
-    public String getReconcileOperationUuid() { return reconcileOperationUuid; }
-    public void setReconcileOperationUuid(String value) { reconcileOperationUuid = value; }
-    @Column(length = 32)
-    private String expectedControlOperationUuid;
-    public String getExpectedControlOperationUuid() { return expectedControlOperationUuid; }
-    public void setExpectedControlOperationUuid(String value) { expectedControlOperationUuid = value; }
     @Id @Column(length = 32)
     private String uuid;
     public String getUuid() { return uuid; }
     public void setUuid(String value) { uuid = value; }
 
     @Column(length = 32)
-    private String parentUuid;
-    public String getParentUuid() { return parentUuid; }
-    public void setParentUuid(String value) { parentUuid = value; }
-
-    @Column(length = 32)
     private String hostUuid;
     public String getHostUuid() { return hostUuid; }
     public void setHostUuid(String value) { hostUuid = value; }
-
-    @Column(nullable = false, length = 16)
-    private String scope;
-    public String getScope() { return scope; }
-    public void setScope(String value) { scope = value; }
-
-    @Column(nullable = false, length = 64)
-    private String resourceUuid;
-    public String getResourceUuid() { return resourceUuid; }
-    public void setResourceUuid(String value) { resourceUuid = value; }
 
     @Column(nullable = false, length = 80)
     private String actorUuid;
     public String getActorUuid() { return actorUuid; }
     public void setActorUuid(String value) { actorUuid = value; }
-
-    @Column(length = 64)
-    private String policyPlanHash;
-    public String getPolicyPlanHash() { return policyPlanHash; }
-    public void setPolicyPlanHash(String value) { policyPlanHash = value; }
 
     @Column(nullable = false, length = 32)
     private String action;
@@ -77,15 +36,11 @@ public class MemoryTaskVO {
     public String getReason() { return reason; }
     public void setReason(String value) { reason = value; }
 
+    /** The Host generation that carries this operation. */
     @Column(nullable = false)
     private long desiredRevision;
     public long getDesiredRevision() { return desiredRevision; }
     public void setDesiredRevision(long value) { desiredRevision = value; }
-
-    @Column(nullable = false, columnDefinition = "LONGTEXT")
-    private String policy;
-    public String getPolicy() { return policy; }
-    public void setPolicy(String value) { policy = value; }
 
     @Column(nullable = false)
     private java.sql.Timestamp createDate;
@@ -106,5 +61,4 @@ public class MemoryTaskVO {
 
     @PreUpdate
     private void onUpdate() { lastOpDate = new java.sql.Timestamp(System.currentTimeMillis()); }
-
 }
