@@ -15,11 +15,8 @@ import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.header.Component;
-import org.zstack.header.core.FutureReturnValueCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
-import org.zstack.header.host.HostVO;
-import org.zstack.header.host.HostVO_;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.vm.VmCanonicalEvents;
 import org.zstack.header.vm.VmInstanceAO_;
@@ -33,17 +30,13 @@ import org.zstack.header.vm.additions.VmHostBackupFileVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO;
 import org.zstack.header.vm.additions.VmHostFileContentVO_;
 import org.zstack.header.vm.additions.VmHostFileDeletionMsg;
-import org.zstack.header.vm.additions.VmHostFileOperation;
 import org.zstack.header.vm.additions.VmHostFileSyncReason;
 import org.zstack.header.vm.additions.VmHostFileType;
 import org.zstack.header.vm.additions.VmHostFileVO;
 import org.zstack.header.vm.additions.VmHostFileVO_;
 import org.zstack.header.vo.ResourceVO;
 import org.zstack.header.vo.ResourceVO_;
-import org.zstack.kvm.KVMAgentCommands;
-import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMGlobalConfig;
-import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.vmfiles.message.SyncVmHostFilesFromHostMsg;
 import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.Utils;
@@ -57,9 +50,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.CollectionUtils.transformToSet;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class VmHostFileTracker implements Component {
     private static final CLogger logger = Utils.getLogger(VmHostFileTracker.class);
@@ -68,7 +59,6 @@ public class VmHostFileTracker implements Component {
     private static final long ONE_DAY_MS = TimeUnit.DAYS.toMillis(1);
     private static final long SEVEN_DAYS_MS = TimeUnit.DAYS.toMillis(7);
     private static final long NINETY_DAYS_MS = TimeUnit.DAYS.toMillis(90);
-    private static final long KVM_CMD_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(3);
 
     @Autowired
     private ThreadFacade threadFacade;
@@ -385,7 +375,7 @@ public class VmHostFileTracker implements Component {
                 for (VmHostFileVO file : files) {
                     logger.info(String.format("deleting VmHostFileVO[uuid=%s] for expunged VM[uuid=%s]",
                             file.getUuid(), vmUuid));
-                    deleteVmHostFileFromDb(file.getUuid());
+                    deleteVmHostFile(file.getUuid(), true);
                 }
             }
         });
@@ -429,15 +419,9 @@ public class VmHostFileTracker implements Component {
                 }
             }
 
-            boolean cmdSuccess = sendDeleteCommandToHost(file);
-            if (cmdSuccess) {
-                logger.info(String.format("deleting expired VmHostFileVO[uuid=%s, vm=%s, type=%s, age=%d hours]",
-                        file.getUuid(), file.getVmInstanceUuid(), file.getType(), TimeUnit.MILLISECONDS.toHours(age)));
-                deleteVmHostFileFromDb(file.getUuid());
-            } else {
-                logger.warn(String.format("failed to delete host file for VmHostFileVO[uuid=%s], skipping DB deletion",
-                        file.getUuid()));
-            }
+            logger.info(String.format("deleting expired VmHostFileVO[uuid=%s, vm=%s, type=%s, age=%d hours]",
+                    file.getUuid(), file.getVmInstanceUuid(), file.getType(), TimeUnit.MILLISECONDS.toHours(age)));
+            deleteVmHostFile(file.getUuid(), false);
         }
     }
 
@@ -450,21 +434,9 @@ public class VmHostFileTracker implements Component {
                 continue;
             }
 
-            if (age <= SEVEN_DAYS_MS) {
-                boolean cmdSuccess = sendDeleteCommandToHost(file);
-                if (!cmdSuccess) {
-                    logger.warn(String.format(
-                            "KVM delete failed for VmHostFileVO[uuid=%s] of deleted VM, lastOpDate within 7 days, skipping",
-                            file.getUuid()));
-                    continue;
-                }
-            } else {
-                sendDeleteCommandToHost(file);
-            }
-
             logger.info(String.format("deleting VmHostFileVO[uuid=%s] for deleted VM[uuid=%s, type=%s, age=%d days]",
             file.getUuid(), file.getVmInstanceUuid(), file.getType(), TimeUnit.MILLISECONDS.toDays(age)));
-            deleteVmHostFileFromDb(file.getUuid());
+            deleteVmHostFile(file.getUuid(), age > SEVEN_DAYS_MS);
         }
     }
 
@@ -500,45 +472,18 @@ public class VmHostFileTracker implements Component {
         });
     }
 
-    /**
-     * Send a KVM delete command to the host for the given file.
-     * Returns true if the command succeeded or the host doesn't exist (allowing DB cleanup).
-     */
-    private boolean sendDeleteCommandToHost(VmHostFileVO file) {
-        String hostUuid = file.getHostUuid();
-
-        // If host is gone (soft-deleted or expunged), allow direct DB cleanup
-        if (!Q.New(HostVO.class).eq(HostVO_.uuid, hostUuid).isExists()) {
-            return true;
-        }
-
-        KVMAgentCommands.WriteVmHostFileContentCmd cmd = new KVMAgentCommands.WriteVmHostFileContentCmd();
-        KVMAgentCommands.VmHostFileTO to = new KVMAgentCommands.VmHostFileTO();
-        to.setPath(file.getPath());
-        to.setType(file.getType().toString());
-        to.setOperation(VmHostFileOperation.Delete.toString());
-        cmd.setHostFiles(Collections.singletonList(to));
-
-        FutureReturnValueCompletion future = new FutureReturnValueCompletion(null);
-        new KvmCommandSender(hostUuid).send(cmd, KVMConstant.WRITE_VM_HOST_FILE_PATH, wrapper -> {
-            KVMAgentCommands.WriteVmHostFileContentResponse rsp =
-                    wrapper.getResponse(KVMAgentCommands.WriteVmHostFileContentResponse.class);
-            return rsp.isSuccess() ? null : operr(ORG_ZSTACK_KVM_10163, "failed to delete host file[path=%s] on host[uuid=%s]",
-                    file.getPath(), hostUuid);
-        }, future);
-
-        future.await(KVM_CMD_TIMEOUT_MS);
-        return future.isSuccess();
-    }
-
     private boolean hasContent(String fileUuid) {
         return Q.New(VmHostFileContentVO.class).eq(VmHostFileContentVO_.uuid, fileUuid).isExists();
     }
 
-    private void deleteVmHostFileFromDb(String fileUuid) {
+    /**
+     * {@link VmHostFileDeletionMsg} deletes the file on host before the DB record. Without force, the record
+     * is kept on host failure and retried in the next cleanup round; with force, a GC job takes over the host file.
+     */
+    private void deleteVmHostFile(String fileUuid, boolean force) {
         VmHostFileDeletionMsg msg = new VmHostFileDeletionMsg();
         msg.setUuid(fileUuid);
-        msg.setForceDelete(false);
+        msg.setForceDelete(force);
         bus.makeLocalServiceId(msg, VmInstanceConstant.SECURE_BOOT_SERVICE_ID);
         MessageReply reply = bus.call(msg);
         if (!reply.isSuccess()) {
