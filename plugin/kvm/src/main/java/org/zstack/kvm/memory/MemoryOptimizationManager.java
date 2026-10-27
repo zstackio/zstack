@@ -5,6 +5,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
 import org.zstack.core.config.GlobalConfigInitExtensionPoint;
@@ -28,7 +29,6 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
-import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostCanonicalEvents;
@@ -78,11 +78,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     @Autowired private MemoryRepository repository;
     @Autowired private AccountManager accountManager;
     @Autowired private MemoryLifecycleHooks lifecycleHooks;
+    @Autowired private ResourceDestinationMaker destMaker;
     private final AtomicBoolean ticking = new AtomicBoolean();
     /** Coalesce event and periodic observations on this MN; DB admission remains the cross-MN fence. */
     private final Set<String> observingHosts = ConcurrentHashMap.newKeySet();
     private Future<?> poller;
     private long lastObservation;
+    private long lastHistoryPurge;
 
     static final String SERVICE_ID = "memoryOptimization";
 
@@ -90,10 +92,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     @Override public boolean start() { return true; }
     @Override public boolean stop() { if (poller != null) { poller.cancel(false); } return true; }
     @Override public void nodeJoin(ManagementNodeInventory node) { }
-    @Override public void nodeLeft(ManagementNodeInventory node) {
-        repository.expireUnconfirmed(node.getUuid());
-        repository.releaseFailureNotifications(node.getUuid());
-    }
+    @Override public void nodeLeft(ManagementNodeInventory node) { expireUnconfirmed(); }
     @Override public void iAmDead(ManagementNodeInventory node) { stop(); }
     @Override public void iJoin(ManagementNodeInventory node) { }
 
@@ -177,7 +176,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         dbf.installEntityLifeCycleCallback(MemoryStateVO.class, EntityEvent.POST_PERSIST, dirty);
         dbf.installEntityLifeCycleCallback(MemoryStateVO.class, EntityEvent.POST_UPDATE, dirty);
         repository.initialize();
-        repository.expireUnconfirmed(Platform.getManagementServerId());
+        expireUnconfirmed();
         poller = thdf.submitPeriodicTask(new PeriodicTask() {
             @Override public TimeUnit getTimeUnit() { return TimeUnit.SECONDS; }
             @Override public long getInterval() { return 5; }
@@ -195,7 +194,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             else if (message instanceof APIGetHostMemoryWritebackBackendsMsg) { writebackBackends((APIGetHostMemoryWritebackBackendsMsg) message); }
             else if (message instanceof APIGetMemorySummaryMsg) { summary((APIGetMemorySummaryMsg) message); }
             else if (message instanceof MemoryClusterOperationMsg) { clusterOperation((MemoryClusterOperationMsg) message); }
-            else if (message instanceof MemoryHostOperationMsg) { singleHostOperation((MemoryHostOperationMsg) message); }
+            else if (message instanceof MemoryHostOperationMsg) { hostOperation((MemoryHostOperationMsg) message); }
             else if (message instanceof APIPrepareHostMemoryWritebackBackendMsg) {
                 APIPrepareHostMemoryWritebackBackendEvent event = new APIPrepareHostMemoryWritebackBackendEvent(message.getId());
                 submitLongJob((APICreateMessage) message, event, event::setInventory);
@@ -307,14 +306,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private void submitHostAction(MemoryActionRequest msg, Consumer<MemoryTaskInventory> done,
+    /** Queues the request and returns the task whose status is the operation outcome. */
+    private void submitHostAction(MemoryActionRequest msg, Consumer<String> done,
                                   Consumer<MemoryOperationException> failed) {
         if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
             // Device selection is authorized by the existing preparation DTO;
             // the physical identity comes only from this fresh Agent probe.
             repository.targets("Host", msg.getResourceUuid());
             call(msg.getResourceUuid(), "writeback-backends", command(msg.getResourceUuid(), Platform.getUuid()), response -> {
-                MemoryTaskInventory submitted;
+                String submitted;
                 try {
                     MemoryAgentResponse observed = response;
                     if (observed == null) { observed = new MemoryAgentResponse(); observed.setSuccess(false); }
@@ -334,10 +334,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             });
             return;
         }
-        if ("resume".equals(msg.getAction()) && "Host".equals(msg.getScope())
-                && repository.isDrainedHost(msg.getResourceUuid())) {
+        if ("resume".equals(msg.getAction()) && repository.isDrainedHost(msg.getResourceUuid())) {
             String actor = msg.getSession().getAccountUuid() + ":" + msg.getSession().getUserUuid();
-            recoverDrain(msg.getResourceUuid(), actor, actor + ":" + msg.getClientRequestUuid(), done, failed);
+            recoverDrain(msg.getResourceUuid(), actor, done, failed);
             return;
         }
         done.accept(repository.submit(msg));
@@ -366,7 +365,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    /** Hosts run one at a time; each request carries the Host's current revision and control. */
+    /** Hosts run one at a time, each on the management node that owns it. */
     private void clusterOperation(MemoryClusterOperationMsg msg) {
         requireLicense();
         List<String> members = repository.targets("Cluster", msg.getClusterUuid());
@@ -378,67 +377,59 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         List<String> hosts = msg.getHostUuid() != null ? Collections.singletonList(msg.getHostUuid()) : members;
         Map<String, String> results = new LinkedHashMap<>();
         reply.setResults(results);
-        new While<>(hosts).each((host, next) -> hostOperation(host, msg, msg.getJobUuid(),
-                () -> hostActionRequest(host, msg.getAction(), msg.getAccountUuid(), msg.getUserUuid()), outcome -> {
-            results.put(host, outcome);
-            reportClusterProgress(results.size(), hosts.size());
-            next.done();
-        })).run(new WhileDoneCompletion(msg) {
+        new While<>(hosts).each((host, next) -> {
+            MemoryHostOperationMsg operation = new MemoryHostOperationMsg();
+            operation.setHostUuid(host); operation.setAction(msg.getAction()); operation.setJobUuid(msg.getJobUuid());
+            operation.setAccountUuid(msg.getAccountUuid()); operation.setUserUuid(msg.getUserUuid());
+            // A Host step lasts as long as the job may, including its Draining polls.
+            operation.setTimeout(msg.getTimeout());
+            bus.makeTargetServiceIdByResourceUuid(operation, SERVICE_ID, host);
+            bus.send(operation, new CloudBusCallBack(next) {
+                @Override public void run(MessageReply hostReply) {
+                    results.put(host, hostOutcome(host, hostReply));
+                    reportClusterProgress(results.size(), hosts.size());
+                    next.done();
+                }
+            });
+        }).run(new WhileDoneCompletion(msg) {
             @Override public void done(ErrorCodeList errors) { bus.reply(msg, reply); }
         });
+    }
+
+    static String hostOutcome(String host, MessageReply reply) {
+        if (reply instanceof MemoryClusterOperationReply && ((MemoryClusterOperationReply) reply).getResults() != null
+                && ((MemoryClusterOperationReply) reply).getResults().containsKey(host)) {
+            return ((MemoryClusterOperationReply) reply).getResults().get(host);
+        }
+        if (reply.isSuccess()) { return "success"; }
+        return reply.getError() == null ? "Unknown: no reply" : reply.getError().getCode() + ": " + reply.getError().getDetails();
     }
 
     void reportClusterProgress(int done, int total) {
         ProgressReportService.reportProgress(String.valueOf(100 * done / total));
     }
 
-    /** Writeback preparation or uncertain recovery on the same per-Host queue as pause, resume and drain. */
-    private void singleHostOperation(MemoryHostOperationMsg msg) {
+    /** One Host's operation, run on its owner's queue; the reply carries the Host outcome. */
+    private void hostOperation(MemoryHostOperationMsg msg) {
         requireLicense();
         String host = msg.getHostUuid();
         repository.targets("Host", host);
-        hostOperation(host, msg, msg.getJobUuid(), () -> {
-            MemoryActionRequest request = hostActionRequest(host, msg.getAction(),
-                    msg.getAccountUuid(), msg.getUserUuid());
-            if (MemoryBackendPreparationRules.ACTION.equals(msg.getAction())) {
-                request.setExpectedSourceRevisions(repository.getPolicy("Host", host).getSourceRevisions());
-                request.setBackendPreparation(msg.getPreparation());
-            } else {
-                // The uncertain control is the caller's confirmation, not the Host's current fence.
-                request.setExpectedControlOperationUuid(msg.getExpectedControlOperationUuid());
-                request.setRecovery(msg.getRecovery());
-            }
-            return request;
-        }, outcome -> replyHostOperation(msg, outcome));
-    }
-
-    void replyHostOperation(MemoryHostOperationMsg msg, String outcome) {
-        MessageReply reply = new MessageReply();
-        if (!"success".equals(outcome)) {
-            reply.setError(new MemoryOperationException("MEMORY_HOST_OPERATION_FAILED",
-                    "Host[" + msg.getHostUuid() + "] " + msg.getAction() + ": " + outcome).toErrorCode());
-        }
-        bus.reply(msg, reply);
-    }
-
-    private void hostOperation(String host, Message context, String job,
-                               java.util.function.Supplier<MemoryActionRequest> request, Consumer<String> outcome) {
-        thdf.chainSubmit(new ChainTask(context) {
-            @Override public String getSyncSignature() { return "memory-host-operation-" + host; }
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override public String getSyncSignature() { return hostQueue(host); }
             @Override public String getName() { return getSyncSignature(); }
             @Override public void run(SyncTaskChain chain) {
                 AtomicBoolean finished = new AtomicBoolean();
                 Consumer<String> finish = result -> {
                     if (!finished.compareAndSet(false, true)) { return; }
                     try {
-                        if (job != null) { markActiveJob(host, null, job); }
-                        outcome.accept(result);
+                        if (msg.getJobUuid() != null) { markActiveJob(host, null, msg.getJobUuid()); }
+                        replyHostOperation(msg, result);
                     } finally { chain.next(); }
                 };
-                if (job != null) { markActiveJob(host, job, null); }
+                if (msg.getJobUuid() != null) { markActiveJob(host, msg.getJobUuid(), null); }
                 Consumer<MemoryOperationException> failed = error -> finish.accept(error.getCode() + ": " + error.getMessage());
                 try {
-                    submitHostAction(request.get(), task -> awaitTask(task.getUuid(), finish), failed);
+                    submitHostAction(hostActionRequest(msg), task -> drive(host, () -> finish.accept(outcome(task))), failed);
                 } catch (MemoryOperationException error) {
                     failed.accept(error);
                 } catch (IllegalArgumentException error) {
@@ -451,17 +442,27 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
-    private MemoryActionRequest hostActionRequest(String host, String action, String accountUuid, String userUuid) {
-        MemoryActionRequest msg = new MemoryActionRequest();
-        msg.setScope("Host"); msg.setResourceUuid(host); msg.setAction(action); msg.setPolicy("{}");
-        msg.setExpectedRevision(repository.getPolicy("Host", host).getRevision());
-        List<MemoryStateVO> states = repository.allStates(Collections.singletonList(host));
-        msg.setExpectedControlOperationUuid(states.isEmpty() ? null : states.get(0).getControlOperationUuid());
-        msg.setClientRequestUuid(Platform.getUuid());
+    void replyHostOperation(MemoryHostOperationMsg msg, String outcome) {
+        MemoryClusterOperationReply reply = new MemoryClusterOperationReply();
+        reply.setResults(Collections.singletonMap(msg.getHostUuid(), outcome));
+        if (!"success".equals(outcome)) {
+            reply.setError(new MemoryOperationException("MEMORY_HOST_OPERATION_FAILED",
+                    "Host[" + msg.getHostUuid() + "] " + msg.getAction() + ": " + outcome).toErrorCode());
+        }
+        bus.reply(msg, reply);
+    }
+
+    private MemoryActionRequest hostActionRequest(MemoryHostOperationMsg msg) {
+        MemoryActionRequest request = new MemoryActionRequest();
+        request.setScope("Host"); request.setResourceUuid(msg.getHostUuid()); request.setAction(msg.getAction());
         SessionInventory session = new SessionInventory();
-        session.setAccountUuid(accountUuid); session.setUserUuid(userUuid);
-        msg.setSession(session);
-        return msg;
+        session.setAccountUuid(msg.getAccountUuid()); session.setUserUuid(msg.getUserUuid());
+        request.setSession(session);
+        request.setBackendPreparation(msg.getPreparation());
+        // The uncertain control is the caller's confirmation, not the Host's current fence.
+        request.setExpectedControlOperationUuid(msg.getExpectedControlOperationUuid());
+        request.setRecovery(msg.getRecovery());
+        return request;
     }
 
     private void markActiveJob(String host, String job, String previous) {
@@ -472,39 +473,106 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private static final List<String> IN_FLIGHT = Arrays.asList("Queued", "Applying", "Draining");
-
-    private void awaitTask(String taskUuid, Consumer<String> outcome) {
+    private String outcome(String taskUuid) {
         MemoryTaskVO task;
         try {
             task = repository.findTask(taskUuid);
         } catch (RuntimeException error) {
-            outcome.accept("Unknown: task status unavailable: " + error.getMessage());
+            return "Unknown: task status unavailable: " + error.getMessage();
+        }
+        return task == null ? "Unknown: task not found" : "Succeeded".equals(task.getStatus()) ? "success"
+                : task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason());
+    }
+
+    static String hostQueue(String host) { return "memory-host-operation-" + host; }
+
+    /** Hosts with a scan-triggered drive waiting on their queue. */
+    private final Set<String> queuedDrives = ConcurrentHashMap.newKeySet();
+    /** Hosts whose Agent requests this management node is sending. */
+    private final Set<String> activeDrives = ConcurrentHashMap.newKeySet();
+
+    /** Runs the queued work of a Host this management node owns. */
+    private void scheduleDrive(String host) {
+        if (!queuedDrives.add(host)) { return; }
+        thdf.chainSubmit(new ChainTask(null) {
+            @Override public String getSyncSignature() { return hostQueue(host); }
+            @Override public String getName() { return getSyncSignature(); }
+            @Override public void run(SyncTaskChain chain) {
+                queuedDrives.remove(host);
+                drive(host, chain::next);
+            }
+        });
+    }
+
+    /**
+     * Sends the Host's active operation until none is queued: each result may
+     * queue the next maintenance step. A Draining result is polled every 5s.
+     * The caller holds the Host queue.
+     */
+    private void drive(String host, Runnable done) {
+        activeDrives.add(host);
+        AtomicBoolean finished = new AtomicBoolean();
+        driveNext(host, () -> {
+            if (!finished.compareAndSet(false, true)) { return; }
+            activeDrives.remove(host);
+            done.run();
+        });
+    }
+
+    private void driveNext(String host, Runnable done) {
+        MemoryTaskVO task;
+        try {
+            task = repository.claim(host);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] memory operation could not be claimed", host), e);
+            done.run();
             return;
         }
-        if (task != null && IN_FLIGHT.contains(task.getStatus())) {
-            thdf.submitTimeoutTask(() -> awaitTask(taskUuid, outcome), TimeUnit.SECONDS, 2);
-            return;
+        if (task == null) { done.run(); return; }
+        Runnable next = () -> driveNext(host, done);
+        boolean poll = "Draining".equals(task.getStatus());
+        Runnable send = () -> {
+            try {
+                dispatch(task, poll, next);
+            } catch (RuntimeException e) {
+                // Building the request failed before or while sending it.
+                settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                        "Memory Agent dispatch outcome is unknown: " + e.getMessage(), null));
+            }
+        };
+        if (poll) {
+            thdf.submitTimeoutTask(send, TimeUnit.SECONDS, 5);
+        } else {
+            send.run();
         }
-        outcome.accept(task == null ? "Unknown: task not found" : "Succeeded".equals(task.getStatus()) ? "success"
-                : task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason()));
+    }
+
+    /** Records a result, then continues the Host queue even if recording failed. */
+    private void settle(Runnable next, Runnable result) {
+        try {
+            result.run();
+        } catch (RuntimeException e) {
+            logger.warn("Unable to record a memory operation result; the Host keeps its in-flight state", e);
+        } finally {
+            next.run();
+        }
     }
 
     /** Re-enabling ZRAM is the configuration form of resuming a drained Host. */
     public void recoverDrainedHosts(String resourceUuid) {
         for (String host : repository.drainedHostsWithZramEnabled(resourceUuid)) {
-            recoverDrain(host, "system:memory-zram-reenabled", null, inventory -> { },
+            recoverDrain(host, "system:memory-zram-reenabled", task -> { },
                     error -> logger.warn(String.format("drained Host[%s] was not recovered after ZRAM was re-enabled: %s",
                             host, error.getMessage())));
         }
     }
 
-    private void recoverDrain(String host, String actor, String requestKey, Consumer<MemoryTaskInventory> done,
+    private void recoverDrain(String host, String actor, Consumer<String> done,
                               Consumer<MemoryOperationException> failed) {
         call(host, "writeback-backends", command(host, Platform.getUuid()), response -> {
-            MemoryTaskInventory recovered;
+            String recovered;
             try {
-                recovered = repository.recoverDrain(host, actor, requestKey, response);
+                recovered = repository.recoverDrain(host, actor, response);
             } catch (MemoryOperationException invalid) {
                 failed.accept(invalid);
                 return;
@@ -700,18 +768,36 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
+    /**
+     * An in-flight request of a Host this node now owns, with no drive here, was
+     * sent by a management node that restarted or left; its outcome is Unknown.
+     */
+    private void expireUnconfirmed() {
+        try {
+            repository.expireUnconfirmed(repository.hostsWithUnconfirmedWork().stream()
+                    .filter(host -> destMaker.isManagedByUs(host) && !activeDrives.contains(host))
+                    .collect(Collectors.toList()));
+        } catch (RuntimeException e) {
+            logger.warn("Unable to expire memory operations of a departed management node", e);
+        }
+    }
+
     private void tick() {
         if (!ticking.compareAndSet(false, true)) { return; }
         try {
-            for (MemoryTaskVO task : repository.claim(Platform.getManagementServerId())) { dispatch(task, false); }
-            for (MemoryTaskVO task : repository.outstanding(Platform.getManagementServerId())) { dispatch(task, true); }
-            dispatchFailureNotifications(Platform.getManagementServerId());
+            for (String host : repository.hostsWithPendingWork()) {
+                if (destMaker.isManagedByUs(host)) { scheduleDrive(host); }
+            }
             if (System.currentTimeMillis() - lastObservation >= 30000) {
                 lastObservation = System.currentTimeMillis(); observeRuntime();
             }
             refreshHostStates();
+            if (System.currentTimeMillis() - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
+                lastHistoryPurge = System.currentTimeMillis();
+                repository.purgeHistory(lastHistoryPurge);
+            }
         } catch (Exception e) {
-            logger.warn("Memory optimization task polling failed; no task is assumed successful", e);
+            logger.warn("Memory optimization scan failed; no task is assumed successful", e);
         } finally { ticking.set(false); }
     }
 
@@ -734,44 +820,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private void dispatchFailureNotifications(String owner) {
-        for (MemoryTaskFailureOutboxVO outbox : repository.claimFailureNotifications(owner)) {
-            MemoryTaskFailureNotificationMsg msg = new MemoryTaskFailureNotificationMsg();
-            msg.setEvent(outbox.toEvent());
-            bus.makeTargetServiceIdByResourceUuid(msg, "zwatch.alarm", outbox.getHostUuid());
-            bus.send(msg, new CloudBusCallBack(null) {
-                @Override public void run(MessageReply reply) {
-                    boolean success = reply != null && reply.isSuccess();
-                    String error = success || reply == null || reply.getError() == null
-                            ? null : reply.getError().getDetails();
-                    try {
-                        repository.completeFailureNotification(outbox.getTaskUuid(), owner, success, error);
-                    } catch (RuntimeException e) {
-                        logger.warn(String.format("Unable to update memory failure outbox task[%s] delivery state",
-                                outbox.getTaskUuid()), e);
-                    }
-                }
-            });
-        }
-    }
-
-    private void dispatch(MemoryTaskVO task, boolean poll) {
-        // VM reconcile has two durable concerns: the host-side operation and
-        // the migration hold. Resolve the latter through the lifecycle hook so
-        // a management-node restart can recover a persisted hold without
-        // replaying an apply or relying on an in-memory callback.
-        if ("reconcile".equals(task.getAction()) && "VM".equals(task.getScope())
-                && task.getReconcileOperationUuid() == null) {
-            lifecycleHooks.reconcileMigrationHold(task.getResourceUuid(), new Completion(null) {
-                @Override public void success() {
-                    repository.result(task.getUuid(), "Succeeded", "VM migration hold reconciled", null);
-                }
-                @Override public void fail(org.zstack.header.errorcode.ErrorCode errorCode) {
-                    repository.result(task.getUuid(), "Unknown", errorCode == null ? "VM migration hold remains unknown" : errorCode.getDetails(), null);
-                }
-            });
-            return;
-        }
+    private void dispatch(MemoryTaskVO task, boolean poll, Runnable next) {
         boolean active = Arrays.asList("apply", "clearOverride").contains(task.getAction());
         // Repository tasks may contain the materialized effective policy.
         // Reconcile's empty user payload was already validated at admission;
@@ -789,19 +838,19 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             // Never let a stale/internal reconnect task fall through to an
             // ordinary apply. The Agent's special journal guard is attached
             // only to a fully proven request and cannot be synthesized later.
-            repository.result(task.getUuid(), "Unknown", "KSM_RECONNECT_PROOF_UNQUALIFIED", null);
+            settle(next, () -> repository.result(task.getUuid(), "Unknown", "KSM_RECONNECT_PROOF_UNQUALIFIED", null));
             return;
         }
         if (configuration && !poll && licenseDeadline() <= System.currentTimeMillis() && !confirmedKsmReconnect) {
             if (MemoryUncertainRecoveryRules.ACTION.equals(task.getAction())) {
-                repository.recoveryLicenseExpiredBeforeDispatch(task.getUuid()); return;
+                settle(next, () -> repository.recoveryLicenseExpiredBeforeDispatch(task.getUuid())); return;
             }
-            repository.result(task.getUuid(), "Failed", "Cloud License expired before dispatch", null); return;
+            settle(next, () -> repository.result(task.getUuid(), "Failed", "Cloud License expired before dispatch", null)); return;
         }
         if (active && !poll) {
             String rejection = coldKsmDispatchRejection(task, System.currentTimeMillis());
             if (rejection != null) {
-                repository.result(task.getUuid(), "Failed", rejection, null);
+                settle(next, () -> repository.result(task.getUuid(), "Failed", rejection, null));
                 return;
             }
         }
@@ -819,7 +868,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         // every chunk. The policy revision is the MN snapshot generation for
         // a configuration task; it is never refreshed between chunks.
         command.put("targetSnapshotGeneration", "policy-" + task.getDesiredRevision());
-        command.put("expectedInstanceGeneration", task.getExpectedInstanceGeneration());
         command.put("expectedControlOperationUuid", task.getExpectedControlOperationUuid());
         if (confirmedKsmReconnect) {
             command.put("confirmedKsmReconnect", true);
@@ -885,27 +933,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 command.put("expectedControlOperationUuid", original.getExpectedControlOperationUuid());
                 command.put("desiredRevision", original.getDesiredRevision());
                 command.put("recovery", JSONObjectUtil.toObject(original.getPolicy(), Map.class));
-                // The standard admission stores the immutable request hash on
-                // the parent, not each dispatched Host child.
-                MemoryTaskVO requestOwner = original.getParentUuid() == null ? original
-                        : repository.findTask(original.getParentUuid());
-                String recoveryRequestHash = requestOwner != null
-                        && "Host".equals(requestOwner.getScope())
-                        && MemoryUncertainRecoveryRules.ACTION.equals(requestOwner.getAction())
-                        && Objects.equals(original.getResourceUuid(), requestOwner.getResourceUuid())
-                        && Objects.equals(original.getExpectedControlOperationUuid(), requestOwner.getExpectedControlOperationUuid())
-                        ? requestOwner.getRequestHash() : null;
-                command.put("recoveryRequestHash", recoveryRequestHash);
-                // This precise legacy result was returned before the Agent
-                // claimed or issued anything. Absence of a journal, a generic
-                // timeout, or a substring of an error is not that evidence.
-                if (recoveryRequestHash != null && recoveryRequestHash.matches("[0-9a-f]{64}")
-                        && "Host".equals(original.getScope()) && "Unknown".equals(original.getStatus())
-                        && Objects.equals(task.getHostUuid(), original.getHostUuid())
-                        && "Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID".equals(original.getReason())) {
-                    command.put("reconcileAction", "seal-rejected-recovery");
-                    command.put("classification", "RECOVERY_REQUEST_INVALID");
-                }
             }
         }
         if (MemoryRepository.isConfigurationReconcile(task)) {
@@ -913,7 +940,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     || original.getDesiredRevision() != task.getDesiredRevision()
                     || !Arrays.asList("Host", "Cluster", "Global").contains(original.getScope())
                     || original.getResourceUuid() == null) {
-                repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_ORIGINAL_IDENTITY_INVALID", null);
+                settle(next, () -> repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_ORIGINAL_IDENTITY_INVALID", null));
                 return;
             }
             // Automatic completion is a read of the original completed
@@ -954,70 +981,60 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         String endpoint = poll || "reconcile".equals(task.getAction()) ? "reconcile" : "apply";
         try {
             Consumer<MemoryAgentResponse> completion = response -> {
-                String status = MemoryResultRules.status(queriedOperation, active ? task.getDesiredRevision() : -1, response);
-                if ("reconcile".equals(task.getAction()) && "VM".equals(task.getScope())
-                        && "Succeeded".equals(status)) {
-                    // A resolved migration hold is not proof that the original
-                    // VM configuration operation succeeded. Verify both journals.
-                    lifecycleHooks.reconcileMigrationHold(task.getResourceUuid(), new Completion(null) {
-                        @Override public void success() {
-                            repository.result(task.getUuid(), status, response.reason, response);
+                try {
+                    String status = MemoryResultRules.status(queriedOperation, active ? task.getDesiredRevision() : -1, response);
+                    if (automaticMaintenance && "Succeeded".equals(status)) {
+                        // Keep the immutable executor receipt separate from the
+                        // fresh proof needed to admit the next maintenance step.
+                        // Drain has stopped the service: its local inventory is
+                        // available even when a normal live state read is not.
+                        try {
+                            call(task.getHostUuid(), maintenanceObservation,
+                                    command(task.getHostUuid(), Platform.getUuid()), observation ->
+                                            settle(next, () -> repository.result(task.getUuid(), status, response.reason, response, observation)));
+                        } catch (RuntimeException observationFailure) {
+                            settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                                    "Maintenance result requires a fresh Host observation", response));
                         }
-                        @Override public void fail(org.zstack.header.errorcode.ErrorCode errorCode) {
-                            repository.result(task.getUuid(), "Unknown", errorCode == null
-                                    ? "VM migration hold remains unknown" : errorCode.getDetails(), response);
+                        return;
+                    }
+                    if (ordinaryReconcile && "Succeeded".equals(status)) {
+                        // Agent reconciliation can return an immutable historical
+                        // journal receipt. Collect current proof using the existing
+                        // read-only endpoint, without overwriting either response or
+                        // dispatching configuration from this callback.
+                        try {
+                            call(task.getHostUuid(), "state", command(task.getHostUuid(), Platform.getUuid()), observation -> {
+                                if (queryBootId == null || !successfulFreshObservation(task.getHostUuid(), observation)
+                                        || !queryBootId.equals(observation.bootId)) {
+                                    settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                                            "Original result requires fresh same-boot Host observation", null));
+                                    return;
+                                }
+                                settle(next, () -> repository.result(task.getUuid(), status, response.reason, response, observation));
+                            });
+                        } catch (RuntimeException observationFailure) {
+                            settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                                    "Original result could not be confirmed by current Host observation", null));
                         }
-                    });
-                    return;
-                }
-                if (automaticMaintenance && "Succeeded".equals(status)) {
-                    // Keep the immutable executor receipt separate from the
-                    // fresh proof needed to admit the next maintenance step.
-                    // Drain has stopped the service: its local inventory is
-                    // available even when a normal live state read is not.
-                    try {
-                        call(task.getHostUuid(), maintenanceObservation,
-                                command(task.getHostUuid(), Platform.getUuid()), observation ->
-                                        repository.result(task.getUuid(), status, response.reason, response, observation));
-                    } catch (RuntimeException observationFailure) {
-                        repository.result(task.getUuid(), "Unknown",
-                                "Maintenance result requires a fresh Host observation", response);
+                        return;
                     }
-                    return;
-                }
-                if (ordinaryReconcile && "Succeeded".equals(status)) {
-                    // Agent reconciliation can return an immutable historical
-                    // journal receipt. Collect current proof using the existing
-                    // read-only endpoint, without overwriting either response or
-                    // dispatching configuration from this callback.
-                    try {
-                        call(task.getHostUuid(), "state", command(task.getHostUuid(), Platform.getUuid()), observation -> {
-                            if (queryBootId == null || !successfulFreshObservation(task.getHostUuid(), observation)
-                                    || !queryBootId.equals(observation.bootId)) {
-                                repository.result(task.getUuid(), "Unknown",
-                                        "Original result requires fresh same-boot Host observation", null);
-                                return;
-                            }
-                            repository.result(task.getUuid(), status, response.reason, response, observation);
-                        });
-                    } catch (RuntimeException observationFailure) {
-                        repository.result(task.getUuid(), "Unknown",
-                                "Original result could not be confirmed by current Host observation", null);
+                    String reason = response == null ? "No confirmed Agent result"
+                            : (response.reason != null ? response.reason : response.reasonCode);
+                    if ("resume".equals(task.getAction()) && response != null
+                            && "CONTROL_OPERATION_FENCED".equals(response.reasonCode)) {
+                        // Persist the exact structured precondition rejection. The
+                        // narrowly scoped reconcile path depends on this code and
+                        // never trusts free-form Agent stderr/reason text.
+                        reason = "CONTROL_OPERATION_FENCED";
                     }
-                    return;
+                    String recorded = ("Succeeded".equals(status) && reason == null) ? null
+                            : (reason == null ? "Agent returned no reason" : reason);
+                    settle(next, () -> repository.result(task.getUuid(), status, recorded, response));
+                } catch (RuntimeException e) {
+                    settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                            "Memory Agent result could not be processed: " + e.getMessage(), response));
                 }
-                String reason = response == null ? "No confirmed Agent result"
-                        : (response.reason != null ? response.reason : response.reasonCode);
-                if ("resume".equals(task.getAction()) && response != null
-                        && "CONTROL_OPERATION_FENCED".equals(response.reasonCode)) {
-                    // Persist the exact structured precondition rejection. The
-                    // narrowly scoped reconcile path depends on this code and
-                    // never trusts free-form Agent stderr/reason text.
-                    reason = "CONTROL_OPERATION_FENCED";
-                }
-                repository.result(task.getUuid(), status,
-                        ("Succeeded".equals(status) && reason == null) ? null
-                                : (reason == null ? "Agent returned no reason" : reason), response);
             };
             if (MemoryRepository.isConfigurationReconcile(task)) {
                 // Older Agents ignore unknown reconcileAction values and may
@@ -1028,18 +1045,18 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                             || !Objects.equals(task.getHostUuid(), support.hostUuid)
                             || command.get("bootId") == null
                             || !Objects.equals(command.get("bootId"), support.bootId)) {
-                        repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_OBSERVATION_UNQUALIFIED", null);
+                        settle(next, () -> repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_OBSERVATION_UNQUALIFIED", null));
                         return;
                     }
                     if (support.capabilities == null
                             || !Boolean.TRUE.equals(support.capabilities.get("readOnlyCompletedReconcile"))) {
-                        repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null);
+                        settle(next, () -> repository.result(task.getUuid(), "Unknown", "READ_ONLY_COMPLETION_UNSUPPORTED", null));
                         return;
                     }
                     try { call(task.getHostUuid(), endpoint, command, completion); }
                     catch (RuntimeException dispatchFailure) {
-                        repository.result(task.getUuid(), "Unknown",
-                                "Read-only original result could not be confirmed", null);
+                        settle(next, () -> repository.result(task.getUuid(), "Unknown",
+                                "Read-only original result could not be confirmed", null));
                     }
                 });
             } else {
@@ -1050,7 +1067,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             // whether the Agent received the command. Keep the operation
             // conservative and recoverable instead of leaving Applying or
             // incorrectly declaring a failed configuration.
-            repository.result(task.getUuid(), "Unknown", "Memory Agent dispatch outcome is unknown: " + error.getMessage(), null);
+            settle(next, () -> repository.result(task.getUuid(), "Unknown", "Memory Agent dispatch outcome is unknown: " + error.getMessage(), null));
         }
     }
 
@@ -1120,7 +1137,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void observeRuntime() {
         long now = System.currentTimeMillis();
         List<String> hosts = repository.connectedHosts().stream()
-                .filter(host -> observationBackoff.getOrDefault(host, 0L) <= now).collect(Collectors.toList());
+                .filter(host -> destMaker.isManagedByUs(host) && observationBackoff.getOrDefault(host, 0L) <= now)
+                .collect(Collectors.toList());
         for (String host : observationCursor.next("global", hosts,
                 MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.HOST_BATCH_SIZE, 100))) {
             observeHostAfterConnect(host);
@@ -1166,6 +1184,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         reconcileUnknownControl(host);
                         reconcileRejectedResume(host);
                         lifecycleHooks.reconcileObservedBindings(host, response);
+                        lifecycleHooks.reconcileUnknownMigrationHolds(host);
                     }
                 } catch (RuntimeException e) {
                     logger.warn(String.format("Host[%s] memory observation reconciliation failed; periodic scan will retry", host), e);

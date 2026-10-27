@@ -27,6 +27,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.sql.Timestamp;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -46,7 +47,6 @@ public class MemoryRepository {
     @Autowired private EventFacade evtf;
     @Autowired private PlatformTransactionManager transactionManager;
     private final MemoryStandardConfigAdapter standardConfigs = new MemoryStandardConfigAdapter();
-    private static final long FAILURE_NOTIFICATION_LEASE_MS = 120_000L;
 
     protected <T> T transaction(Function<EntityManager, T> function) {
         return new SQLBatchWithReturn<T>() {
@@ -57,8 +57,8 @@ public class MemoryRepository {
     public void initialize() {
         transaction(em -> {
             em.createNativeQuery("INSERT IGNORE INTO MemoryPolicyVO " +
-                    "(uuid, scope, resourceUuid, revision, policy, createDate, lastOpDate) " +
-                    "VALUES ('Global:global', 'Global', 'global', 0, '{\"schemaVersion\":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
+                    "(uuid, scope, resourceUuid, policy, createDate, lastOpDate) " +
+                    "VALUES ('Global:global', 'Global', 'global', '{\"schemaVersion\":1}', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)")
                     .executeUpdate();
             return null;
         });
@@ -204,55 +204,40 @@ public class MemoryRepository {
         transaction(em -> {
             String scope = standardScope(em, resourceUuid);
             String resource = resourceUuid == null ? "global" : resourceUuid;
-            commitConfiguration(em, scope, resource, null, targets(em, scope, resource),
-                    "system:standard-config", null, null, "apply", false);
+            commitConfiguration(em, scope, resource, targets(em, scope, resource), "system:standard-config");
             return null;
         });
     }
 
     /**
-     * The common configuration commit for both public entry families. The caller
-     * owns the same transaction as the already-written standard rows. Ordinary
-     * APIs persist desired intent for unavailable Hosts; the legacy CAS/preview
-     * entry retains its stricter pre-admission and full-payload behavior.
+     * Plans every Host under the changed scope in the transaction that saw the
+     * committed standard rows. An unavailable Host keeps its desired intent as a
+     * deferred plan; only an admitted Host gets a queued task.
      */
-    private MemoryTaskInventory commitConfiguration(EntityManager em, String scope, String resource,
-            String specializedPolicy, List<String> hosts, String actor, String requestKey,
-            String requestHash, String action, boolean compatibility) {
+    private void commitConfiguration(EntityManager em, String scope, String resource,
+            List<String> hosts, String actor) {
         lock(em);
         em.flush();
-        bumpScopeRevision(em, scope, resource);
-        MemoryPolicyVO desired = policy(em, scope, resource);
-        if (specializedPolicy != null) { desired.setPolicy(specializedPolicy); }
-        MemoryTaskVO parent = configurationTask(scope, resource, action, null, null,
-                desired.getRevision(), "{}", actor);
-        parent.setRequestKey(requestKey); parent.setRequestHash(requestHash);
-        parent.setStatus("Succeeded");
-        if (!compatibility) {
-            parent.setReason("Standard configuration committed; inspect per-Host policy application status");
-        }
-        em.persist(parent);
-        boolean queued = false, blocked = false;
+        MemoryTaskVO parent = null;
         for (String host : hosts) {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) {
                 state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus("Unknown");
                 em.persist(state);
             }
-            if (compatibility && state.getActiveTaskUuid() != null) {
-                throw error("MEMORY_HOST_BUSY", "Host has an unresolved memory operation: " + host);
-            }
-            if (!compatibility) { supersedePoolWaitingApply(em, state); }
+            supersedePoolWaitingApply(em, state);
             String effectivePolicy = effective(em, "Host", host);
             HostPolicyPlan plan = planForHost(em, host, effectivePolicy, state);
             boolean legacyReview = "NeedsReview".equals(state.getPolicyPlanStatus());
-            boolean compatibilityDelta = compatibility && "apply".equals(action) && !plan.replacesAppliedPolicy
-                    && !plan.maintenanceActivation && !legacyReview;
-            if (!compatibility && queueConfigurationReconcile(em, parent, state)) {
-                queued = true;
+            if (parent == null) {
+                parent = configurationTask(scope, resource, "apply", null, null,
+                        0, "{}", actor);
+            }
+            if (queueConfigurationReconcile(em, parent, state)) {
+                if (!em.contains(parent)) { em.persist(parent); }
                 continue;
             }
-            if ((!compatibility || compatibilityDelta) && plan.changedFields.isEmpty()) {
+            if (plan.changedFields.isEmpty()) {
                 // Reverting to the confirmed applied target must not retain
                 // the previous target's blocker. Use the existing admission
                 // fences; a no-op save is not a recovery or a new execution.
@@ -265,11 +250,11 @@ public class MemoryRepository {
                 continue;
             }
             long admissionTime = System.currentTimeMillis();
-            Map<String, Object> coldKsm = !compatibility && isPureKsmPlan(plan)
+            Map<String, Object> coldKsm = isPureKsmPlan(plan)
                     && MemoryCapabilityRules.coldKsmAdmissionReason(state, admissionTime) == null
                     ? MemoryCapabilityRules.coldKsmObservation(state, admissionTime) : null;
-            String defer = compatibility ? null : standardMutationDeferReason(em, host, state, admissionTime, coldKsm != null);
-            if (!compatibility && defer == null && isConfirmedPausedState(state.getState())
+            String defer = standardMutationDeferReason(em, host, state, admissionTime, coldKsm != null);
+            if (defer == null && isConfirmedPausedState(state.getState())
                     && !plan.maintenanceActivation && state.getControlOperationUuid() != null) {
                 MemoryTaskVO control = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
                 if (control != null && "drain".equals(control.getAction())) {
@@ -279,48 +264,39 @@ public class MemoryRepository {
             if (defer != null) { plan = deferredPlan(plan, defer); }
             // The standard batch is one candidate. Do not partially dispatch a
             // writeback/reclaim configuration when any field lacks admission.
-            boolean canIssue = (compatibility && !compatibilityDelta)
-                    || (compatibilityDelta && plan.hasPayload
-                            && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly))
-                    || (!compatibility && defer == null && plan.hasPayload
-                            && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly));
-            String status = canIssue ? "Queued" : "Blocked";
+            boolean canIssue = defer == null && plan.hasPayload
+                    && (!plan.hasBlockers || plan.maintenanceActivation || plan.writebackDisableOnly);
             // An accepted request is not evidence that a legacy operation was
             // applied. Keep NeedsReview until the matching fresh Agent result.
-            if ((compatibilityDelta || !compatibility || plan.maintenanceActivation) && !legacyReview
-                    && !isConfigurationReconcile(state.getActiveTaskUuid() == null ? null
-                            : em.find(MemoryTaskVO.class, state.getActiveTaskUuid()))) {
-                recordPolicyPlan(state, plan, status);
+            if (!legacyReview && !isConfigurationReconcile(state.getActiveTaskUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getActiveTaskUuid()))) {
+                recordPolicyPlan(state, plan, canIssue ? "Queued" : "Blocked");
             }
+            if (!canIssue) { continue; }
             long revision = Math.addExact(state.getDesiredRevision(), 1L);
-            String childAction = !compatibility && plan.replacesAppliedPolicy ? "clearOverride" : action;
-            boolean automaticMaintenance = !compatibility && canIssue && plan.capacityMaintenance != null;
+            boolean automaticMaintenance = plan.capacityMaintenance != null;
             MemoryTaskVO child = configurationTask(automaticMaintenance ? "Host" : scope,
-                    automaticMaintenance ? host : resource, automaticMaintenance ? "drain" : childAction,
-                    parent.getUuid(), host, revision, automaticMaintenance ? plan.capacityMaintenance
-                            : compatibility && !compatibilityDelta && !plan.maintenanceActivation
-                                    ? effectivePolicy : canIssue ? plan.payload : "{}", actor);
+                    automaticMaintenance ? host : resource,
+                    automaticMaintenance ? "drain" : plan.replacesAppliedPolicy ? "clearOverride" : "apply",
+                    parent.getUuid(), host, revision,
+                    automaticMaintenance ? plan.capacityMaintenance : plan.payload, actor);
             if (automaticMaintenance) { child.setExpectedControlOperationUuid(state.getControlOperationUuid()); }
-            if (!compatibility || compatibilityDelta || plan.maintenanceActivation) { child.setPolicyPlanHash(plan.planHash); }
-            if (canIssue && coldKsm != null) {
+            child.setPolicyPlanHash(plan.planHash);
+            if (coldKsm != null) {
                 child.setRequiresKsmNativePartialFence(true);
                 child.setKsmNativeObservationBootId((String) coldKsm.get("bootId"));
                 child.setKsmNativeObservationSampleTime((Long) coldKsm.get("sampleTime"));
             }
-            child.setStatus(status);
-            if (!canIssue) {
-                child.setReason("Policy not applied: " + plan.blockedFields);
-                blocked = true;
-            } else {
-                state.setActiveTaskUuid(child.getUuid()); state.setDesiredRevision(revision);
-                state.setControlOperationUuid(child.getUuid()); state.setPermitAuthorized(false);
-                state.setStatus("Queued"); state.setReason(null); queued = true;
-            }
+            state.setActiveTaskUuid(child.getUuid()); state.setDesiredRevision(revision);
+            state.setControlOperationUuid(child.getUuid());
+            state.setStatus("Queued"); state.setReason(null);
+            if (!em.contains(parent)) { em.persist(parent); }
             em.persist(child);
         }
-        parent.setStatus(queued ? "Queued" : blocked ? "Blocked" : "Succeeded");
-        em.flush();
-        return parent.toInventory();
+        if (parent != null && em.contains(parent)) {
+            em.flush();
+            aggregateParent(em, parent.getUuid());
+        }
     }
 
     static boolean isConfigurationReconcile(MemoryTaskVO task) {
@@ -367,7 +343,7 @@ public class MemoryRepository {
         query.setReconcileOperationUuid(original.getUuid());
         query.setExpectedControlOperationUuid(state.getControlOperationUuid());
         em.persist(query);
-        state.setActiveTaskUuid(query.getUuid()); state.setPermitAuthorized(false);
+        state.setActiveTaskUuid(query.getUuid());
         return true;
     }
 
@@ -398,9 +374,7 @@ public class MemoryRepository {
             }
             MemoryActionRequest reconcile = new MemoryActionRequest();
             reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
-            reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
             reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
-            reconcile.setClientRequestUuid(digest("unknown-control:" + active.getUuid()).substring(0, 32));
             return reconcile;
         });
         if (msg == null) { return false; }
@@ -419,14 +393,20 @@ public class MemoryRepository {
             return state == null || state.getControlOperationUuid() == null ? null
                     : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
         });
-        if (rejected == null || !canReconcileRejectedResume(hostUuid, rejected.getUuid())) { return false; }
+        if (rejected == null || !canReconcileRejectedResume(hostUuid, rejected.getUuid())
+                || transaction(em -> reconciled(em, rejected.getUuid()))) { return false; }
         MemoryActionRequest reconcile = new MemoryActionRequest();
         reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
-        reconcile.setExpectedRevision(getPolicy("Host", hostUuid).getRevision());
         reconcile.setExpectedControlOperationUuid(rejected.getExpectedControlOperationUuid());
-        reconcile.setClientRequestUuid(digest("rejected-resume:" + rejected.getUuid()).substring(0, 32));
         submit(reconcile, "system:memory-rejected-resume-reconcile", null);
         return true;
+    }
+
+    /** One reconcile per original operation; a repeated observation finds the earlier one. */
+    private static boolean reconciled(EntityManager em, String original) {
+        return !em.createQuery("select t.uuid from MemoryTaskVO t where t.action = 'reconcile'"
+                + " and t.reconcileOperationUuid = :original", String.class)
+                .setParameter("original", original).setMaxResults(1).getResultList().isEmpty();
     }
 
     public boolean reconcileVerifiedPoolBlock(String hostUuid, MemoryAgentResponse response) {
@@ -443,10 +423,7 @@ public class MemoryRepository {
                     || !"NATIVE_POOL_UNQUALIFIED".equals(active.getReason())) { return null; }
             MemoryActionRequest reconcile = new MemoryActionRequest();
             reconcile.setScope("Host"); reconcile.setResourceUuid(hostUuid); reconcile.setAction("reconcile");
-            reconcile.setExpectedRevision(policy(em, "Host", hostUuid).getRevision());
             reconcile.setExpectedControlOperationUuid(state.getControlOperationUuid());
-            // One reconcile per blocked task; a repeated observation reuses the same request.
-            reconcile.setClientRequestUuid(digest(active.getUuid()).substring(0, 32));
             return reconcile;
         });
         if (msg == null) { return false; }
@@ -601,20 +578,7 @@ public class MemoryRepository {
         task.setStatus("Queued"); return task;
     }
 
-    private void bumpScopeRevision(EntityManager em, String scope, String resource) {
-        String uuid = scope + ":" + resource;
-        MemoryPolicyVO row = em.find(MemoryPolicyVO.class, uuid, LockModeType.PESSIMISTIC_WRITE);
-        if (row == null) {
-            row = new MemoryPolicyVO();
-            row.setUuid(uuid); row.setScope(scope); row.setResourceUuid(resource);
-            row.setRevision(1); row.setPolicy("{\"schemaVersion\":1}");
-            em.persist(row);
-        } else {
-            row.setRevision(Math.addExact(row.getRevision(), 1L));
-        }
-    }
-
-    private String effective(EntityManager em, String scope, String resource) {
+    String effective(EntityManager em, String scope, String resource) {
         MemoryPolicyVO own = policy(em, scope, resource);
         if ("VM".equals(scope)) {
             return retainedExclusion(em, resource) == null ? own.getPolicy()
@@ -658,7 +622,7 @@ public class MemoryRepository {
         return root.toString();
     }
 
-    private String ownPolicy(EntityManager em, String scope, String resource) {
+    String ownPolicy(EntityManager em, String scope, String resource) {
         return ownPolicy(em, scope, resource, Collections.<String>emptySet());
     }
 
@@ -678,17 +642,6 @@ public class MemoryRepository {
             }
         }
         return MemoryStandardPolicy.combine(compatibility, standardOwnPolicy(values));
-    }
-
-    private boolean standardFieldAuthoritative(EntityManager em, String scope, String resource,
-            MemoryStandardField field) {
-        if ("Global".equals(scope)) {
-            Object value = standardConfigs.readGlobalOwn(em, field.path());
-            // The Global KSM row is authoritative even at its schema default,
-            // so a default "none" masks stale compatibility JSON.
-            return value != null || field == MemoryStandardField.KSM_ENABLED;
-        }
-        return standardConfigs.hasOverrideRow(em, field.path(), resource);
     }
 
     private String standardOwnPolicy(EntityManager em, String scope, String resource) {
@@ -732,11 +685,6 @@ public class MemoryRepository {
             }
             MemoryVmExclusionVO capture = new MemoryVmExclusionVO();
             capture.vmUuid = vm; capture.sourceHostUuid = source; capture.targetHostUuid = target;
-            capture.vmPolicyRevision = policy(em, "VM", vm).getRevision();
-            Map<String, Long> revisions = new LinkedHashMap<>();
-            for (MemoryPolicyVO item : sourceChain(em, "Host", source)) { revisions.put(item.getUuid(), item.getRevision()); }
-            revisions.put("Host:" + source, policy(em, "Host", source).getRevision());
-            capture.sourceRevisions = JSONObjectUtil.toJsonString(revisions);
             MemoryStateVO state = em.find(MemoryStateVO.class, source);
             if (state != null && state.getState() != null) {
                 try {
@@ -753,9 +701,6 @@ public class MemoryRepository {
         MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, vm);
         if (exclusion == null) { return null; }
         if (!exclusion.retained) {
-            if (policy(em, "VM", vm).getRevision() != exclusion.vmPolicyRevision) {
-                em.remove(exclusion); return null; // Explicit upper-layer change superseded the capture.
-            }
             List<String> hosts = em.createQuery("select v.hostUuid from VmInstanceVO v where v.uuid = :uuid", String.class)
                     .setParameter("uuid", vm).getResultList();
             if (hosts.isEmpty() || !exclusion.targetHostUuid.equals(hosts.get(0))) { return null; }
@@ -805,145 +750,6 @@ public class MemoryRepository {
         return chain;
     }
 
-    private void describeSources(EntityManager em, String scope, String resource, MemoryPolicyInventory result) {
-        describeSources(em, scope, resource, result, Collections.<String>emptySet(), null);
-    }
-
-    private void describeSources(EntityManager em, String scope, String resource, MemoryPolicyInventory result,
-            Set<String> previewClearedFields, String previewPatch) {
-        Map<String, Long> revisions = new LinkedHashMap<>();
-        Map<String, String> fields = new LinkedHashMap<>();
-        Map<String, String> switchSources = new LinkedHashMap<>();
-        if (!"VM".equals(scope)) { MemoryPolicyRules.addFieldSources(MemoryPolicyRules.defaults(), "Default", fields); }
-        for (MemoryPolicyVO source : sourceChain(em, scope, resource)) {
-            revisions.put(source.getUuid(), source.getRevision());
-            Map<String, String> layerFields = new LinkedHashMap<>();
-            String visiblePolicy = compatibilityPolicyForSource(em, source);
-            MemoryPolicyRules.addFieldSources(visiblePolicy, source.getUuid(), layerFields);
-            applyStandardFieldSources(em, source, layerFields);
-            if (source.getUuid().equals(scope + ":" + resource)) {
-                for (String field : previewClearedFields) { layerFields.remove(field); }
-            }
-            fields.putAll(layerFields);
-            if (!"VM".equals(scope)) {
-                boolean editedScope = source.getUuid().equals(scope + ":" + resource);
-                String layerPolicy = ownPolicy(em, source.getScope(), source.getResourceUuid());
-                for (MemoryStandardField field : MemoryStandardField.values()) {
-                    if (!field.isFeatureSwitch() || editedScope && previewClearedFields.contains(field.path())) { continue; }
-                    Object value = MemoryStandardConfigCodec.get(layerPolicy, field.path());
-                    Object patched = editedScope && previewPatch != null
-                            ? MemoryStandardConfigCodec.get(previewPatch, field.path()) : null;
-                    if (patched != null) { value = patched; }
-                    if (value instanceof Boolean) { switchSources.put(field.path(), source.getUuid()); }
-                }
-            }
-        }
-        // Preview patches belong to the edited scope, including explicit false.
-        // A GET's ownPolicy includes schema defaults; they are not explicit writes.
-        if (previewPatch != null) { MemoryPolicyRules.addFieldSources(previewPatch, scope + ":" + resource, fields); }
-        fields.putAll(switchSources);
-        result.setSourceRevisions(revisions);
-        result.setFieldSources(fields);
-        result.setFieldModes("VM".equals(scope) ? Collections.emptyMap() : unmanagedFieldModes(result.getEffectivePolicy()));
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (field.isFeatureSwitch() && MemoryStandardConfigCodec.get(result.getEffectivePolicy(), field.path()) == null) {
-                fields.remove(field.path());
-            }
-        }
-        result.setSourceRevision(policy(em, "Global", "global").getRevision());
-    }
-
-    private Map<String, String> unmanagedFieldModes(String effectivePolicy) {
-        Map<String, String> modes = new LinkedHashMap<>();
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (field.isFeatureSwitch() && MemoryStandardConfigCodec.get(effectivePolicy, field.path()) == null) {
-                modes.put(field.path(), "Unmanaged");
-            }
-        }
-        return modes;
-    }
-
-    private String compatibilityPolicyForSource(EntityManager em, MemoryPolicyVO source) {
-        String result = source.getPolicy();
-        MemoryStandardField.Scope level = scopeOf(source.getScope());
-        if (level == null) { return result; }
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (field.allows(level) && standardFieldAuthoritative(em, source.getScope(), source.getResourceUuid(), field)) {
-                result = MemoryStandardConfigCodec.put(result, field.path(), null);
-            }
-        }
-        return result;
-    }
-
-    private Object standardValue(EntityManager em, MemoryPolicyVO source, MemoryStandardField field) {
-        return "Global".equals(source.getScope()) ? standardConfigs.readGlobalOwn(em, field.path())
-                : standardConfigs.readOverrideOwn(em, field.path(), source.getResourceUuid());
-    }
-
-    private void applyStandardFieldSources(EntityManager em, MemoryPolicyVO source, Map<String, String> fields) {
-        MemoryStandardField.Scope level = scopeOf(source.getScope());
-        if (level == null) { return; }
-        for (MemoryStandardField field : MemoryStandardField.values()) {
-            if (!field.allows(level) || !standardFieldAuthoritative(em, source.getScope(), source.getResourceUuid(), field)) { continue; }
-            Object value = standardValue(em, source, field);
-            boolean schemaDefault = "Global".equals(source.getScope())
-                    && standardConfigs.globalIsSchemaDefault(em, field.path());
-            if (schemaDefault && (!field.isFeatureSwitch()
-                    || MemoryStandardConfigAdapter.isUnmanaged(value))) { continue; }
-            if (value != null && !MemoryStandardConfigAdapter.isUnmanaged(value)) {
-                fields.put(field.path(), source.getUuid());
-            }
-        }
-    }
-
-    private void checkSources(EntityManager em, MemoryActionRequest msg) {
-        Map<String, Long> current = new LinkedHashMap<>();
-        for (MemoryPolicyVO source : sourceChain(em, msg.getScope(), msg.getResourceUuid())) {
-            current.put(source.getUuid(), source.getRevision());
-        }
-        if (msg.getExpectedGlobalRevision() != null
-                && !msg.getExpectedGlobalRevision().equals(current.get(GLOBAL))) {
-            throw error("MEMORY_REVISION_CONFLICT", "Global policy changed; preview and confirm again");
-        }
-        if (msg.getExpectedSourceRevisions() != null) {
-            if (!current.equals(msg.getExpectedSourceRevisions())) {
-                throw error("MEMORY_REVISION_CONFLICT", "Inherited policy changed; preview and confirm again");
-            }
-            return;
-        }
-        // Pre-Cluster clients may still use the original Global snapshot, but
-        // cannot unknowingly apply over a configured Cluster policy.
-        if ("Host".equals(msg.getScope()) || "Cluster".equals(msg.getScope())) {
-            boolean clusterConfigured = current.entrySet().stream().anyMatch(e ->
-                    e.getKey().startsWith("Cluster:") && !e.getKey().equals(msg.getScope() + ":" + msg.getResourceUuid())
-                            && e.getValue() != 0);
-            if (clusterConfigured || msg.getExpectedGlobalRevision() == null
-                    || !msg.getExpectedGlobalRevision().equals(current.get(GLOBAL))) {
-                throw error("MEMORY_REVISION_CONFLICT", "Inherited policy changed; preview and confirm again");
-            }
-        }
-    }
-
-    /** Omitted compatibility scope is inferred from the platform resource registry,
-     * never from a policy row or a client-supplied type hint. */
-    private String resolvePolicyScope(EntityManager em, String requestedScope, String resource) {
-        String scope = requestedScope;
-        if (scope == null) {
-            if ("global".equals(resource)) { scope = "Global"; }
-            else {
-                List<String> types = em.createQuery("select r.resourceType from ResourceVO r where r.uuid = :uuid", String.class)
-                        .setParameter("uuid", resource).getResultList();
-                String type = types.isEmpty() ? null : types.get(0);
-                if ("HostVO".equals(type)) { scope = "Host"; }
-                else if ("ClusterVO".equals(type)) { scope = "Cluster"; }
-                else if ("VmInstanceVO".equals(type)) { scope = "VM"; }
-                else { throw error("MEMORY_INVALID_SCOPE", "Expected global or an existing KVM Host, Cluster or VM resource UUID"); }
-            }
-        }
-        validateResource(em, scope, resource);
-        return scope;
-    }
-
     /** Read existing policy/control facts only; this observation never admits an operation. */
     MemoryPolicyConfig serviceObservationPolicy(String host) {
         return transaction(em -> {
@@ -956,21 +762,6 @@ public class MemoryRepository {
                 return null;
             }
             return MemoryPolicyRules.decode(effective(em, "Host", host));
-        });
-    }
-
-    public MemoryPolicyInventory getPolicy(String requestedScope, String resource) {
-        return transaction(em -> {
-            String scope = resolvePolicyScope(em, requestedScope, resource);
-            MemoryPolicyInventory result = policy(em, scope, resource).toInventory();
-            result.setPolicy(ownPolicy(em, scope, resource));
-            result.setEffectivePolicy(effective(em, scope, resource));
-            if ("VM".equals(scope)) {
-                MemoryVmExclusionVO exclusion = retainedExclusion(em, resource);
-                if (exclusion != null) { result.setMigrationExclusion(exclusion.toInventory()); }
-            }
-            describeSources(em, scope, resource, result);
-            return result;
         });
     }
 
@@ -1003,246 +794,175 @@ public class MemoryRepository {
         return mergeEffectiveLayer(em, result, "Host", host, hostPolicy);
     }
 
-    public MemoryTaskInventory submit(MemoryActionRequest msg) {
-        return submit(msg, (MemoryAgentResponse) null);
+    /** Queues one Host operation and returns the task whose status is the operation outcome. */
+    public String submit(MemoryActionRequest msg) {
+        return submit(msg, null, null);
     }
 
-    MemoryTaskInventory submit(MemoryActionRequest msg, MemoryAgentResponse backendObservation) {
-        // Normalize before action validation and request hashing so omission and
-        // the equivalent old explicit scope share one idempotency identity.
-        msg.setScope(transaction(em -> resolvePolicyScope(em, msg.getScope(), msg.getResourceUuid())));
+    String submit(MemoryActionRequest msg, MemoryAgentResponse backendObservation) {
         return submit(msg, null, backendObservation);
     }
 
-    private MemoryTaskInventory submit(MemoryActionRequest msg,
-                                       String internalActor, MemoryAgentResponse backendObservation) {
+    private String submit(MemoryActionRequest msg, String internalActor, MemoryAgentResponse backendObservation) {
+        msg.setScope("Host");
         MemoryBackendPreparationRules.validate(msg);
         MemoryUncertainRecoveryRules.validate(msg);
         MemoryPolicyActionParameters.validate(msg);
         boolean recovery = MemoryUncertainRecoveryRules.ACTION.equals(msg.getAction());
         boolean preparation = MemoryBackendPreparationRules.ACTION.equals(msg.getAction());
-        if (!MemoryPolicyRules.validUuid(msg.getClientRequestUuid())) {
-            throw error("MEMORY_INVALID_REQUEST", "clientRequestUuid must be a UUID");
+        if (!preparation && !recovery && !MemoryTaskRules.isSafetyAction(msg.getAction(), msg.getPolicy())) {
+            throw error("MEMORY_INVALID_ACTION", "Safety actions cannot contain configuration");
         }
         String actor = internalActor == null
                 ? msg.getSession().getAccountUuid() + ":" + String.valueOf(msg.getSession().getUserUuid())
                 : internalActor;
-        String key = actor + ":" + msg.getClientRequestUuid();
-        List<Object> requestIdentity = new ArrayList<>(Arrays.asList(msg.getScope(), msg.getResourceUuid(),
-                msg.getAction(), msg.getExpectedRevision(), msg.getExpectedGlobalRevision(), msg.getExpectedSourceRevisions(),
-                msg.getExpectedInstanceGeneration(), msg.getTargetHostUuids(),
-                JSONObjectUtil.toObject(msg.getPolicy(), Map.class)));
-        if (preparation) {
-            requestIdentity.add(msg.getBackendPreparation());
-            requestIdentity.add(msg.getExpectedControlOperationUuid());
-        }
-        if (recovery) {
-            requestIdentity.add(msg.getRecovery()); requestIdentity.add(msg.getExpectedControlOperationUuid());
-        }
-        if (!preparation && !recovery && msg.getExpectedControlOperationUuid() != null) {
-            requestIdentity.add(msg.getExpectedControlOperationUuid());
-        }
-        String hash = digest(MemoryPolicyRules.canonicalRequest(requestIdentity));
+        String host = msg.getResourceUuid();
         try {
         return transaction(em -> {
             lock(em);
-            List<MemoryTaskVO> previous = em.createQuery("from MemoryTaskVO t where t.requestKey = :key", MemoryTaskVO.class)
-                    .setParameter("key", key).getResultList();
-            if (!previous.isEmpty()) {
-                if (!hash.equals(previous.get(0).getRequestHash())) {
-                    throw error("MEMORY_IDEMPOTENCY_CONFLICT", "Request UUID was already used with different parameters");
+            targets(em, "Host", host);
+            if (!"reconcile".equals(msg.getAction()) && em.createQuery(
+                    "select h.uuid from HostVO h where h.uuid = :host and h.status = 'Connected'", String.class)
+                    .setParameter("host", host).getResultList().isEmpty()) {
+                throw error("MEMORY_HOST_NOT_CONNECTED", "Configuration requires Connected hosts: " + host);
+            }
+            MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
+            if (state != null && state.getActiveTaskUuid() != null) {
+                if (!"reconcile".equals(msg.getAction()) && !recovery) {
+                    throw error("MEMORY_HOST_BUSY", "Host has an unresolved memory operation: " + host);
                 }
-                return previous.get(0).toInventory();
-            }
-            List<String> availableTargets = targets(em, msg.getScope(), msg.getResourceUuid());
-            List<String> hosts = MemoryTargetRules.select(msg.getScope(), availableTargets, msg.getTargetHostUuids());
-            if ("VM".equals(msg.getScope()) && !hosts.isEmpty() && msg.getExpectedInstanceGeneration() == null) {
-                throw error("MEMORY_INSTANCE_REQUIRED", "Refresh the actual VM instance generation before changing participation");
-            }
-            if (!"VM".equals(msg.getScope()) && !"reconcile".equals(msg.getAction())) {
-                List<String> unavailable = em.createQuery(
-                                "select h.uuid from HostVO h where h.uuid in :hosts and h.status <> 'Connected' order by h.uuid",
-                                String.class)
-                        .setParameter("hosts", hosts).getResultList();
-                if (!unavailable.isEmpty()) {
-                    throw error("MEMORY_HOST_NOT_CONNECTED",
-                            "Configuration requires Connected hosts: " + String.join(",", unavailable));
+                MemoryTaskVO unresolved = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+                if (unresolved != null && !Arrays.asList("Unknown", "Blocked").contains(unresolved.getStatus())) {
+                    throw error("MEMORY_HOST_BUSY", "Only an Unknown or Blocked result can be reconciled");
                 }
             }
-            if ("resume".equals(msg.getAction()) && msg.getExpectedControlOperationUuid() == null) {
-                throw error("MEMORY_CONTROL_OPERATION_REQUIRED", "Resume requires the active control operation UUID");
+            if (state == null) {
+                state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus("Unknown"); em.persist(state);
             }
-            MemoryPolicyVO desired = policy(em, msg.getScope(), msg.getResourceUuid());
-            if (desired.getRevision() != msg.getExpectedRevision()) {
-                throw error("MEMORY_REVISION_CONFLICT", "Policy has changed; refresh before applying");
+            if (recovery) { validateUncertainRecovery(em, state, msg); }
+            JsonObject backendMaintenance = preparation && backendObservation != null
+                    ? backendMaintenanceRequest(em, msg, state, backendObservation) : null;
+            MemoryTaskVO root = null;
+            if (backendMaintenance != null) {
+                // The chain root keeps the admitted device and pool evidence for every later step.
+                root = task(msg, null, null, state.getDesiredRevision(), backendMaintenance.toString(), actor);
+                em.persist(root);
             }
-            if (preparation || msg.getExpectedSourceRevisions() != null
-                    || msg.getExpectedGlobalRevision() != null) { checkSources(em, msg); }
-            if (Arrays.asList("pause", "drain").contains(msg.getAction())
-                    && msg.getExpectedControlOperationUuid() != null) {
-                for (String host : hosts) {
-                    MemoryStateVO control = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
-                    if (control == null || !Objects.equals(control.getControlOperationUuid(), msg.getExpectedControlOperationUuid())) {
-                        throw error("MEMORY_CONTROL_OPERATION_FENCED", "Refresh the Host control operation: " + host);
-                    }
+            if ("resume".equals(msg.getAction())) {
+                MemoryTaskVO pause = state.getControlOperationUuid() == null ? null
+                        : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+                if (state.getActiveTaskUuid() != null
+                        || !"Succeeded".equals(state.getStatus())
+                        || pause == null || !"pause".equals(pause.getAction())
+                        || !"Succeeded".equals(pause.getStatus()) || !Objects.equals(host, pause.getHostUuid())) {
+                    throw error("MEMORY_CONTROL_OPERATION_FENCED", "Resume control operation is stale or unresolved: " + host);
                 }
+                try {
+                    if (!isConfirmedPausedState(state.getState())) {
+                        throw error("MEMORY_RESUME_NOT_PAUSED", "Only a confirmed pause can be resumed: " + host);
+                    }
+                } catch (MemoryOperationException e) { throw e; }
+                catch (RuntimeException e) { throw error("MEMORY_RESUME_STATE_UNKNOWN", "Paused state is not verifiable: " + host); }
             }
-            if (!preparation && !recovery && !MemoryTaskRules.isSafetyAction(msg.getAction(), msg.getPolicy())) {
-                throw error("MEMORY_INVALID_ACTION", "Safety actions cannot contain configuration");
+            long revision = state.getDesiredRevision();
+            MemoryTaskVO child = task(msg, root == null ? null : root.getUuid(), host, revision,
+                    recovery ? JSONObjectUtil.toJsonString(msg.getRecovery())
+                            : preparation ? JSONObjectUtil.toJsonString(msg.getBackendPreparation())
+                            : effective(em, "Host", host), actor);
+            if (!recovery && !"reconcile".equals(msg.getAction())) {
+                // The Agent fences these on the Host's current control.
+                child.setExpectedControlOperationUuid(state.getControlOperationUuid());
             }
-            MemoryTaskVO parent = task(msg, null, null, desired.getRevision(), "{}", actor);
-            parent.setRequestKey(key);
-            parent.setRequestHash(hash);
-            parent.setStatus(hosts.isEmpty() ? "Succeeded" : "Queued");
-            parent.setReason(null);
-            em.persist(parent);
-            for (String host : hosts) {
-                MemoryStateVO state = em.find(MemoryStateVO.class, host);
-                if (state != null && state.getActiveTaskUuid() != null) {
-                    if (!"reconcile".equals(msg.getAction()) && !recovery) {
-                        throw error("MEMORY_HOST_BUSY", "Host has an unresolved memory operation: " + host);
-                    }
-                    MemoryTaskVO unresolved = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
-                    if (unresolved != null && !Arrays.asList("Unknown", "Blocked").contains(unresolved.getStatus())) {
-                        throw error("MEMORY_HOST_BUSY", "Only an Unknown or Blocked result can be reconciled");
-                    }
+            boolean backendDrain = backendMaintenance != null && getBoolean(backendMaintenance, "drainRequired");
+            if (backendMaintenance != null) {
+                HostPolicyPlan plan = planForHost(em, host, effective(em, "Host", host), state);
+                if (backendDrain) {
+                    child.setAction("drain"); child.setPolicy(backendMaintenance.toString());
                 }
-                if (state == null) {
-                    state = new MemoryStateVO(); state.setHostUuid(host); state.setStatus("Unknown"); em.persist(state);
-                }
-                if (recovery) { validateUncertainRecovery(em, state, msg); }
-                if (preparation && !Objects.equals(state.getControlOperationUuid(), msg.getExpectedControlOperationUuid())) {
-                    throw error("MEMORY_CONTROL_OPERATION_FENCED", "Refresh the Host control operation before backend maintenance: " + host);
-                }
-                JsonObject backendMaintenance = MemoryBackendPreparationRules.ACTION.equals(msg.getAction())
-                        && backendObservation != null
-                        ? backendMaintenanceRequest(em, msg, state, backendObservation) : null;
-                if (backendMaintenance != null) { parent.setPolicy(backendMaintenance.toString()); }
-                if ("resume".equals(msg.getAction())) {
-                    MemoryTaskVO pause = msg.getExpectedControlOperationUuid() == null ? null
-                            : em.find(MemoryTaskVO.class, msg.getExpectedControlOperationUuid());
-                    if (state.getActiveTaskUuid() != null
-                            || !"Succeeded".equals(state.getStatus())
-                            || !Objects.equals(msg.getExpectedControlOperationUuid(), state.getControlOperationUuid())
-                            || pause == null || !"pause".equals(pause.getAction())
-                            || !"Succeeded".equals(pause.getStatus()) || !Objects.equals(host, pause.getHostUuid())) {
-                        throw error("MEMORY_CONTROL_OPERATION_FENCED", "Resume control operation is stale or unresolved: " + host);
+                child.setPolicyPlanHash(plan.planHash);
+                recordPolicyPlan(state, plan, "Queued");
+                state.setStatus("Queued"); state.setReason(null);
+            }
+            boolean preserveMaintenanceControlFence = recovery;
+            MemoryTaskVO rejectedResume = null;
+            // Reconcile tracks the original operation; it never repeats destructive commands.
+            if ("reconcile".equals(msg.getAction()) && state.getActiveTaskUuid() != null) {
+                MemoryTaskVO old = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+                String operationUuid = old != null && old.getReconcileOperationUuid() != null
+                        ? old.getReconcileOperationUuid() : state.getActiveTaskUuid();
+                child.setReconcileOperationUuid(operationUuid);
+                MemoryTaskVO original = old != null && old.getReconcileOperationUuid() != null
+                        ? em.find(MemoryTaskVO.class, old.getReconcileOperationUuid()) : old;
+                if (original != null && MemoryUncertainRecoveryRules.ACTION.equals(original.getAction())) {
+                    if (!Objects.equals(original.getExpectedControlOperationUuid(), state.getControlOperationUuid())) {
+                        throw error("MEMORY_CONTROL_OPERATION_FENCED", "Uncertain recovery control owner changed: " + host);
                     }
-                    try {
-                        if (!isConfirmedPausedState(state.getState())) {
-                            throw error("MEMORY_RESUME_NOT_PAUSED", "Only a confirmed pause can be resumed: " + host);
-                        }
-                    } catch (MemoryOperationException e) { throw e; }
-                    catch (RuntimeException e) { throw error("MEMORY_RESUME_STATE_UNKNOWN", "Paused state is not verifiable: " + host); }
+                    child.setExpectedControlOperationUuid(original.getExpectedControlOperationUuid());
+                    preserveMaintenanceControlFence = true;
                 }
-                boolean vmOnly = "VM".equals(msg.getScope());
-                long revision = vmOnly ? desired.getRevision()
-                        : state.getDesiredRevision();
-                MemoryTaskVO child = task(msg, parent.getUuid(), host, revision,
-                        recovery ? JSONObjectUtil.toJsonString(msg.getRecovery())
-                                : preparation ? JSONObjectUtil.toJsonString(msg.getBackendPreparation())
-                                : "VM".equals(msg.getScope()) ? desired.getPolicy() : effective(em, "Host", host), actor);
-                if (Arrays.asList("pause", "drain").contains(child.getAction())
-                        && child.getExpectedControlOperationUuid() == null) {
-                    // The Agent fences pause/drain on its active control; callers need not echo it.
-                    child.setExpectedControlOperationUuid(state.getControlOperationUuid());
-                }
-                boolean backendDrain = backendMaintenance != null && getBoolean(backendMaintenance, "drainRequired");
-                if (backendMaintenance != null) {
-                    HostPolicyPlan plan = planForHost(em, host, effective(em, "Host", host), state);
-                    if (backendDrain) {
-                        child.setAction("drain"); child.setPolicy(backendMaintenance.toString());
-                    }
-                    child.setPolicyPlanHash(plan.planHash);
-                    recordPolicyPlan(state, plan, "Queued");
-                    state.setStatus("Queued"); state.setReason(null);
-                }
-                boolean preserveMaintenanceControlFence = recovery;
-                MemoryTaskVO rejectedResume = null;
-                // Reconcile tracks the original operation; it never repeats destructive commands.
-                if ("reconcile".equals(msg.getAction()) && state.getActiveTaskUuid() != null) {
-                    MemoryTaskVO old = em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
-                    String operationUuid = old != null && old.getReconcileOperationUuid() != null
-                            ? old.getReconcileOperationUuid() : state.getActiveTaskUuid();
-                    child.setReconcileOperationUuid(operationUuid);
-                    MemoryTaskVO original = old != null && old.getReconcileOperationUuid() != null
-                            ? em.find(MemoryTaskVO.class, old.getReconcileOperationUuid()) : old;
-                    if (original != null && MemoryUncertainRecoveryRules.ACTION.equals(original.getAction())) {
-                        if (!Objects.equals(original.getExpectedControlOperationUuid(), state.getControlOperationUuid())) {
-                            throw error("MEMORY_CONTROL_OPERATION_FENCED", "Uncertain recovery control owner changed: " + host);
-                        }
-                        child.setExpectedControlOperationUuid(original.getExpectedControlOperationUuid());
-                        preserveMaintenanceControlFence = true;
-                    }
-                    // Maintenance preparation keeps the original drain UUID as
-                    // the Host control fence. A reconcile queries the original
-                    // Agent journal; it never replaces that Agent-side fence
-                    // with the reconcile task UUID.
-                    if (original != null && isMaintenancePreparationAction(original.getAction())) {
-                        String drainUuid = original.getExpectedControlOperationUuid();
-                        MemoryTaskVO drain = drainUuid == null ? null : em.find(MemoryTaskVO.class, drainUuid);
-                        if (drain == null || !"drain".equals(drain.getAction())
-                                || !"Succeeded".equals(drain.getStatus())
-                                || !Objects.equals(host, drain.getHostUuid())) {
-                            throw error("MEMORY_CONTROL_OPERATION_FENCED",
-                                    "The original successful Host drain cannot be verified: " + host);
-                        }
-                        if (!Objects.equals(drainUuid, state.getControlOperationUuid())) {
-                            throw error("MEMORY_CONTROL_OPERATION_FENCED",
-                                    "The Host control fence changed after maintenance was submitted: " + host);
-                        }
-                        preserveMaintenanceControlFence = true;
-                    }
-                } else if ("reconcile".equals(msg.getAction())) {
-                    rejectedResume = rejectedResumeRecoverySource(em, state, msg, host, System.currentTimeMillis());
-                    MemoryTaskVO currentControl = state.getControlOperationUuid() == null ? null
-                            : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
-                    if (currentControl != null && "resume".equals(currentControl.getAction())
-                            && "Failed".equals(currentControl.getStatus()) && rejectedResume == null) {
+                // Maintenance preparation keeps the original drain UUID as
+                // the Host control fence. A reconcile queries the original
+                // Agent journal; it never replaces that Agent-side fence
+                // with the reconcile task UUID.
+                if (original != null && isMaintenancePreparationAction(original.getAction())) {
+                    String drainUuid = original.getExpectedControlOperationUuid();
+                    MemoryTaskVO drain = drainUuid == null ? null : em.find(MemoryTaskVO.class, drainUuid);
+                    if (drain == null || !"drain".equals(drain.getAction())
+                            || !"Succeeded".equals(drain.getStatus())
+                            || !Objects.equals(host, drain.getHostUuid())) {
                         throw error("MEMORY_CONTROL_OPERATION_FENCED",
-                                "Rejected resume recovery requires its original same-boot control proof: " + host);
+                                "The original successful Host drain cannot be verified: " + host);
                     }
-                    if (rejectedResume != null) {
-                        child.setReconcileOperationUuid(rejectedResume.getUuid());
-                        child.setExpectedControlOperationUuid(rejectedResume.getExpectedControlOperationUuid());
-                        preserveMaintenanceControlFence = true;
-                    } else if (currentControl != null && "reconcile".equals(currentControl.getAction())
-                            && "Succeeded".equals(currentControl.getStatus())
-                            && currentControl.getReconcileOperationUuid() != null) {
-                        // Older MNs closed the query but kept its UUID as the
-                        // control owner. Query the same original journal, not
-                        // this new read request, to finish the existing chain.
-                        MemoryTaskVO original = em.find(MemoryTaskVO.class, currentControl.getReconcileOperationUuid());
-                        if (original == null || !"Succeeded".equals(original.getStatus())
-                                || !Arrays.asList("apply", "clearOverride", "pause", "resume", "drain").contains(original.getAction())
-                                || "VM".equals(original.getScope()) || "VM".equals(msg.getScope())
-                                || !Objects.equals(host, original.getHostUuid())
-                                || !Objects.equals(host, currentControl.getHostUuid())
-                                || currentControl.getDesiredRevision() != original.getDesiredRevision()
-                                || original.getDesiredRevision() != state.getDesiredRevision()) {
-                            throw error("MEMORY_CONTROL_OPERATION_FENCED", "Completed reconciliation no longer owns the Host control: " + host);
-                        }
-                        child.setReconcileOperationUuid(original.getUuid());
-                        // A cancellable read must leave this durable alias
-                        // available until its original receipt is verified.
-                        preserveMaintenanceControlFence = true;
+                    if (!Objects.equals(drainUuid, state.getControlOperationUuid())) {
+                        throw error("MEMORY_CONTROL_OPERATION_FENCED",
+                                "The Host control fence changed after maintenance was submitted: " + host);
                     }
+                    preserveMaintenanceControlFence = true;
                 }
-                em.persist(child);
-                state.setActiveTaskUuid(child.getUuid());
-                if (rejectedResume != null) { state.setStatus("Queued"); }
-                if (!vmOnly) {
-                    state.setDesiredRevision(revision);
-                    // Maintenance must retain the original drain fence for native proof.
-                    if (backendDrain || !preparation && !preserveMaintenanceControlFence) {
-                        state.setControlOperationUuid(child.getUuid());
-                    }
-                    // A stale apply/lease callback must not restart a later pause or exit.
-                    state.setPermitAuthorized(false);
+            } else if ("reconcile".equals(msg.getAction())) {
+                rejectedResume = rejectedResumeRecoverySource(em, state, msg, host, System.currentTimeMillis());
+                MemoryTaskVO currentControl = state.getControlOperationUuid() == null ? null
+                        : em.find(MemoryTaskVO.class, state.getControlOperationUuid());
+                if (currentControl != null && "resume".equals(currentControl.getAction())
+                        && "Failed".equals(currentControl.getStatus()) && rejectedResume == null) {
+                    throw error("MEMORY_CONTROL_OPERATION_FENCED",
+                            "Rejected resume recovery requires its original same-boot control proof: " + host);
                 }
+                if (rejectedResume != null) {
+                    child.setReconcileOperationUuid(rejectedResume.getUuid());
+                    child.setExpectedControlOperationUuid(rejectedResume.getExpectedControlOperationUuid());
+                    preserveMaintenanceControlFence = true;
+                } else if (currentControl != null && "reconcile".equals(currentControl.getAction())
+                        && "Succeeded".equals(currentControl.getStatus())
+                        && currentControl.getReconcileOperationUuid() != null) {
+                    // Older MNs closed the query but kept its UUID as the
+                    // control owner. Query the same original journal, not
+                    // this new read request, to finish the existing chain.
+                    MemoryTaskVO original = em.find(MemoryTaskVO.class, currentControl.getReconcileOperationUuid());
+                    if (original == null || !"Succeeded".equals(original.getStatus())
+                            || !Arrays.asList("apply", "clearOverride", "pause", "resume", "drain").contains(original.getAction())
+                            || "VM".equals(original.getScope())
+                            || !Objects.equals(host, original.getHostUuid())
+                            || !Objects.equals(host, currentControl.getHostUuid())
+                            || currentControl.getDesiredRevision() != original.getDesiredRevision()
+                            || original.getDesiredRevision() != state.getDesiredRevision()) {
+                        throw error("MEMORY_CONTROL_OPERATION_FENCED", "Completed reconciliation no longer owns the Host control: " + host);
+                    }
+                    child.setReconcileOperationUuid(original.getUuid());
+                    // A cancellable read must leave this durable alias
+                    // available until its original receipt is verified.
+                    preserveMaintenanceControlFence = true;
+                }
+            }
+            em.persist(child);
+            state.setActiveTaskUuid(child.getUuid());
+            if (rejectedResume != null) { state.setStatus("Queued"); }
+            // Maintenance must retain the original drain fence for native proof.
+            if (backendDrain || !preparation && !preserveMaintenanceControlFence) {
+                state.setControlOperationUuid(child.getUuid());
             }
             em.flush();
-            return parent.toInventory();
+            return root == null ? child.getUuid() : root.getUuid();
         });
         } catch (IllegalArgumentException invalid) {
             throw translatePolicyRuleFailure(invalid);
@@ -2042,6 +1762,50 @@ public class MemoryRepository {
         }
     }
 
+    private boolean standardFieldAuthoritative(EntityManager em, String scope, String resource,
+            MemoryStandardField field) {
+        if ("Global".equals(scope)) {
+            Object value = standardConfigs.readGlobalOwn(em, field.path());
+            // The Global KSM row is authoritative even at its schema default,
+            // so a default "none" masks stale compatibility JSON.
+            return value != null || field == MemoryStandardField.KSM_ENABLED;
+        }
+        return standardConfigs.hasOverrideRow(em, field.path(), resource);
+    }
+
+    private String compatibilityPolicyForSource(EntityManager em, MemoryPolicyVO source) {
+        String result = source.getPolicy();
+        MemoryStandardField.Scope level = scopeOf(source.getScope());
+        if (level == null) { return result; }
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            if (field.allows(level) && standardFieldAuthoritative(em, source.getScope(), source.getResourceUuid(), field)) {
+                result = MemoryStandardConfigCodec.put(result, field.path(), null);
+            }
+        }
+        return result;
+    }
+
+    private Object standardValue(EntityManager em, MemoryPolicyVO source, MemoryStandardField field) {
+        return "Global".equals(source.getScope()) ? standardConfigs.readGlobalOwn(em, field.path())
+                : standardConfigs.readOverrideOwn(em, field.path(), source.getResourceUuid());
+    }
+
+    private void applyStandardFieldSources(EntityManager em, MemoryPolicyVO source, Map<String, String> fields) {
+        MemoryStandardField.Scope level = scopeOf(source.getScope());
+        if (level == null) { return; }
+        for (MemoryStandardField field : MemoryStandardField.values()) {
+            if (!field.allows(level) || !standardFieldAuthoritative(em, source.getScope(), source.getResourceUuid(), field)) { continue; }
+            Object value = standardValue(em, source, field);
+            boolean schemaDefault = "Global".equals(source.getScope())
+                    && standardConfigs.globalIsSchemaDefault(em, field.path());
+            if (schemaDefault && (!field.isFeatureSwitch()
+                    || MemoryStandardConfigAdapter.isUnmanaged(value))) { continue; }
+            if (value != null && !MemoryStandardConfigAdapter.isUnmanaged(value)) {
+                fields.put(field.path(), source.getUuid());
+            }
+        }
+    }
+
     private JsonObject explicitlyManagedPolicy(EntityManager em, String hostUuid, String effectivePolicy) {
         Map<String, String> sources = new LinkedHashMap<>();
         for (MemoryPolicyVO source : sourceChain(em, "Host", hostUuid)) {
@@ -2211,7 +1975,7 @@ public class MemoryRepository {
             }
             em.persist(child);
             state.setDesiredRevision(revision); state.setActiveTaskUuid(child.getUuid());
-            state.setControlOperationUuid(child.getUuid()); state.setPermitAuthorized(false);
+            state.setControlOperationUuid(child.getUuid());
             state.setStatus("Queued"); state.setReason(null);
             recordPolicyPlan(state, plan, "Queued");
             return true;
@@ -2502,137 +2266,84 @@ public class MemoryRepository {
         result.setUuid(UUID.randomUUID().toString().replace("-", "")); result.setParentUuid(parent); result.setHostUuid(host);
         result.setScope(msg.getScope()); result.setResourceUuid(msg.getResourceUuid());
         result.setAction(msg.getAction()); result.setDesiredRevision(revision); result.setPolicy(policy);
-        result.setExpectedInstanceGeneration(msg.getExpectedInstanceGeneration());
         result.setExpectedControlOperationUuid(msg.getExpectedControlOperationUuid());
         result.setActorUuid(actor); result.setStatus("Queued");
         return result;
     }
 
-    public List<MemoryTaskVO> claim(String owner) {
+    /** Hosts whose active operation waits for dispatch or for its Draining result. */
+    public List<String> hostsWithPendingWork() {
+        return transaction(em -> em.createQuery("select s.hostUuid from MemoryStateVO s, MemoryTaskVO t"
+                + " where t.uuid = s.activeTaskUuid and t.status in ('Queued', 'Draining')", String.class)
+                .getResultList());
+    }
+
+    /**
+     * The Host's next Agent request: its queued operation, now Applying, or a
+     * Draining operation whose result is polled. The caller runs it on the
+     * Host's queue of the management node that owns the Host.
+     */
+    public MemoryTaskVO claim(String hostUuid) {
         return transaction(em -> {
             lock(em);
-            long active = em.createQuery("select count(t) from MemoryTaskVO t where t.hostUuid is not null " +
-                    "and t.status in ('Applying', 'Draining')", Long.class).getSingleResult();
-            int concurrency = MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.DISPATCH_CONCURRENCY, 10);
-            if (active >= concurrency) { return Collections.emptyList(); }
-            List<MemoryTaskVO> list = em.createQuery("from MemoryTaskVO t where t.hostUuid is not null " +
-                    "and t.status = 'Queued' and exists (select h.uuid from HostVO h where h.uuid = t.hostUuid) order by t.createDate", MemoryTaskVO.class)
-                    .setMaxResults((int) (concurrency - active)).getResultList();
-            List<MemoryTaskVO> stale = new ArrayList<>();
-            for (MemoryTaskVO task : list) {
-                if (!"VM".equals(task.getScope())
-                        && (Arrays.asList("apply", "clearOverride").contains(task.getAction())
-                        || task.getPolicyPlanHash() != null && Arrays.asList("drain",
-                                MemoryZramPoolPreparationRules.ACTION,
-                                MemoryBackendPreparationRules.ACTION).contains(task.getAction()))) {
-                    String currentPolicy = effective(em, "Host", task.getHostUuid());
-                    MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());
-                    if (task.getPolicyPlanHash() != null && state != null && state.getPolicyTargetHash() != null) {
-                        // Compare the admitted desired target, not the delta payload:
-                        // maintenance initialization may legitimately send writeback=false.
-                        if (!Objects.equals(task.getPolicyPlanHash(), state.getPolicyPlanHash())
-                                || !Objects.equals(state.getPolicyTargetHash(), digest(
-                                        explicitlyManagedPolicy(em, task.getHostUuid(), currentPolicy).toString()))) {
-                            stale.add(task);
-                        }
-                    } else {
-                        // Legacy full-policy tasks may predate target hashes. Never
-                        // dispatch a boolean that no longer matches the resolved target.
-                        for (MemoryStandardField field : MemoryStandardField.values()) {
-                            if (field.isFeatureSwitch()
-                                    && MemoryStandardConfigCodec.get(task.getPolicy(), field.path()) instanceof Boolean
-                                    && !Objects.equals(MemoryStandardConfigCodec.get(task.getPolicy(), field.path()),
-                                            MemoryStandardConfigCodec.get(currentPolicy, field.path()))) {
-                                stale.add(task);
-                                break;
-                            }
+            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
+            MemoryTaskVO task = state == null || state.getActiveTaskUuid() == null ? null
+                    : em.find(MemoryTaskVO.class, state.getActiveTaskUuid());
+            if (task == null || "Draining".equals(task.getStatus())) { return task; }
+            if (!"Queued".equals(task.getStatus()) || em.createQuery("select h.uuid from HostVO h where h.uuid = :uuid",
+                    String.class).setParameter("uuid", hostUuid).getResultList().isEmpty()) { return null; }
+            boolean stale = false;
+            if (Arrays.asList("apply", "clearOverride").contains(task.getAction())
+                    || task.getPolicyPlanHash() != null && Arrays.asList("drain",
+                            MemoryZramPoolPreparationRules.ACTION,
+                            MemoryBackendPreparationRules.ACTION).contains(task.getAction())) {
+                String currentPolicy = effective(em, "Host", task.getHostUuid());
+                if (task.getPolicyPlanHash() != null && state.getPolicyTargetHash() != null) {
+                    // Compare the admitted desired target, not the delta payload:
+                    // maintenance initialization may legitimately send writeback=false.
+                    if (!Objects.equals(task.getPolicyPlanHash(), state.getPolicyPlanHash())
+                            || !Objects.equals(state.getPolicyTargetHash(), digest(
+                                    explicitlyManagedPolicy(em, task.getHostUuid(), currentPolicy).toString()))) {
+                        stale = true;
+                    }
+                } else {
+                    // Legacy full-policy tasks may predate target hashes. Never
+                    // dispatch a boolean that no longer matches the resolved target.
+                    for (MemoryStandardField field : MemoryStandardField.values()) {
+                        if (field.isFeatureSwitch()
+                                && MemoryStandardConfigCodec.get(task.getPolicy(), field.path()) instanceof Boolean
+                                && !Objects.equals(MemoryStandardConfigCodec.get(task.getPolicy(), field.path()),
+                                        MemoryStandardConfigCodec.get(currentPolicy, field.path()))) {
+                            stale = true;
+                            break;
                         }
                     }
                 }
-                if (stale.contains(task)) {
-                    // No Agent request has been sent. result() joins this transaction,
-                    // so failure, parent aggregation and outbox commit with the claim.
-                    result(task.getUuid(), "Failed", "MEMORY_REVISION_CONFLICT: effective policy changed before dispatch; request was not sent", null);
-                    continue;
+            }
+            if (stale) {
+                // No Agent request has been sent. result() joins this transaction,
+                // so the failure and parent aggregation commit with the claim.
+                result(task.getUuid(), "Failed", "MEMORY_REVISION_CONFLICT: effective policy changed before dispatch; request was not sent", null);
+                return null;
+            }
+            task.setStatus("Applying");
+            if (task.getDesiredRevision() == state.getDesiredRevision()) {
+                // Claiming an old task must not replace a newer target or
+                // lifecycle fence. Project only the admitted queued work;
+                // actual drain/completion stages still come from its result.
+                if ("Queued".equals(state.getStatus())) {
+                    state.setStatus("Applying");
                 }
-                task.setStatus("Applying"); task.setOwnerManagementNodeUuid(owner);
-                MemoryStateVO state = "VM".equals(task.getScope()) ? null
-                        : em.find(MemoryStateVO.class, task.getHostUuid());
-                if (state != null && task.getUuid().equals(state.getActiveTaskUuid())
-                        && task.getDesiredRevision() == state.getDesiredRevision()) {
-                    // Claiming an old task must not replace a newer target or
-                    // lifecycle fence. Project only the admitted queued work;
-                    // actual drain/completion stages still come from its result.
-                    if ("Queued".equals(state.getStatus())) {
-                        state.setStatus("Applying");
-                    }
-                    if (task.getPolicyPlanHash() != null
-                            && task.getPolicyPlanHash().equals(state.getPolicyPlanHash())
-                            && "Queued".equals(state.getPolicyPlanStatus())) {
-                        state.setPolicyPlanStatus("Applying");
-                    }
+                if (task.getPolicyPlanHash() != null
+                        && task.getPolicyPlanHash().equals(state.getPolicyPlanHash())
+                        && "Queued".equals(state.getPolicyPlanStatus())) {
+                    state.setPolicyPlanStatus("Applying");
                 }
-                MemoryTaskVO parent = em.find(MemoryTaskVO.class, task.getParentUuid());
-                if (parent != null) { parent.setStatus("Applying"); }
             }
-            list.removeAll(stale);
+            MemoryTaskVO parent = task.getParentUuid() == null ? null : em.find(MemoryTaskVO.class, task.getParentUuid());
+            if (parent != null) { parent.setStatus("Applying"); }
             em.flush();
-            return list;
-        });
-    }
-
-    /** Claim committed failure intents for at-least-once CloudBus delivery. */
-    public List<MemoryTaskFailureOutboxVO> claimFailureNotifications(String owner) {
-        long now = System.currentTimeMillis();
-        return transaction(em -> {
-            lock(em);
-            List<MemoryTaskFailureOutboxVO> rows = em.createQuery(
-                            "from MemoryTaskFailureOutboxVO o where o.delivered = false "
-                                    + "and (o.leaseUntil is null or o.leaseUntil < :now) order by o.createDate",
-                            MemoryTaskFailureOutboxVO.class)
-                    .setParameter("now", now).setMaxResults(32).getResultList();
-            for (MemoryTaskFailureOutboxVO row : rows) {
-                row.setLeaseOwner(owner);
-                row.setLeaseUntil(now + FAILURE_NOTIFICATION_LEASE_MS);
-                row.setAttempts(row.getAttempts() + 1);
-            }
-            em.flush();
-            return rows;
-        });
-    }
-
-    /** Mark delivered only after the ZWatch consumer confirms its receipt/event transaction. */
-    public void completeFailureNotification(String taskUuid, String owner, boolean delivered, String error) {
-        transaction(em -> {
-            MemoryTaskFailureOutboxVO row = em.find(MemoryTaskFailureOutboxVO.class, taskUuid, LockModeType.PESSIMISTIC_WRITE);
-            if (row == null || row.isDelivered() || !Objects.equals(owner, row.getLeaseOwner())) { return null; }
-            row.setLastError(delivered || error == null ? null
-                    : error.substring(0, Math.min(512, error.length())));
-            if (delivered) {
-                row.setDelivered(true);
-                row.setLeaseOwner(null);
-                row.setLeaseUntil(null);
-            } else {
-                long backoff = Math.min(300_000L, 5_000L * (1L << Math.min(6, Math.max(0, row.getAttempts() - 1))));
-                row.setLeaseOwner(null);
-                row.setLeaseUntil(System.currentTimeMillis() + backoff);
-            }
-            return null;
-        });
-    }
-
-    public void releaseFailureNotifications(String owner) {
-        transaction(em -> {
-            lock(em);
-            List<MemoryTaskFailureOutboxVO> rows = em.createQuery(
-                            "from MemoryTaskFailureOutboxVO o where o.delivered = false and o.leaseOwner = :owner",
-                            MemoryTaskFailureOutboxVO.class)
-                    .setParameter("owner", owner).getResultList();
-            for (MemoryTaskFailureOutboxVO row : rows) {
-                row.setLeaseOwner(null);
-                row.setLeaseUntil(null);
-            }
-            return null;
+            return task;
         });
     }
 
@@ -2642,7 +2353,7 @@ public class MemoryRepository {
 
     public void result(String uuid, String status, String reason, MemoryAgentResponse response,
                        MemoryAgentResponse observation) {
-        transaction(em -> {
+        fireFailure(transaction(em -> {
             lock(em);
             String resultStatus = status;
             String resultReason = reason;
@@ -2972,7 +2683,6 @@ public class MemoryRepository {
                     }
                     host.setAppliedPolicy(applied);
                 }
-                bumpScopeRevision(em, "Host", host.getHostUuid());
             }
             // A proof is only actionable for the currently admitted transition.
             // Duplicate or late callbacks must not mutate a newer fence.
@@ -3040,7 +2750,7 @@ public class MemoryRepository {
                     em.persist(nextMaintenance);
                     host.setDesiredRevision(nextMaintenance.getDesiredRevision());
                     host.setActiveTaskUuid(nextMaintenance.getUuid());
-                    host.setPermitAuthorized(false); host.setStatus("Queued");
+                    host.setStatus("Queued");
                     if (automaticPreparation || automaticActivation) {
                         host.setControlOperationUuid(nextMaintenance.getUuid());
                         host.setReason(automaticActivation ? "Pool activated; retained writeback restoration is queued"
@@ -3076,11 +2786,18 @@ public class MemoryRepository {
             aggregateParent(em, task.getParentUuid());
             // Reconcile closes the original unknown operation. Keep its identity/action
             // for correlation but report the concrete reconcile failure reason.
-            MemoryTaskFailureEvent failureEvent = MemoryTaskFailureEvent.fromTask(
-                    failedTask, failedTask == task ? null : task.getReason());
-            queueFailure(em, failureEvent);
-            return null;
-        });
+            return MemoryTaskFailureEvent.fromTask(failedTask, failedTask == task ? null : task.getReason());
+        }));
+    }
+
+    /** A failed Host task becomes the standard Host event once its result is committed. */
+    private void fireFailure(MemoryTaskFailureEvent failure) {
+        if (failure == null) { return; }
+        try {
+            evtf.fire(MemoryTaskFailureEvent.PATH, failure);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Unable to fire the memory task[%s] failure event", failure.getTaskUuid()), e);
+        }
     }
 
     static boolean isSelectedBackendMaintenance(MemoryTaskVO task, MemoryTaskVO parent) {
@@ -3417,15 +3134,9 @@ public class MemoryRepository {
      * blank (including after a reboot) is activated directly; a withdrawn pool still
      * held in the drain's boot is reset through the existing preparation chain first.
      */
-    public MemoryTaskInventory recoverDrain(String hostUuid, String actor, String requestKey,
-            MemoryAgentResponse observation) {
+    public String recoverDrain(String hostUuid, String actor, MemoryAgentResponse observation) {
         return transaction(em -> {
             lock(em);
-            if (requestKey != null) {
-                List<MemoryTaskVO> previous = em.createQuery("from MemoryTaskVO t where t.requestKey = :key",
-                        MemoryTaskVO.class).setParameter("key", requestKey).getResultList();
-                if (!previous.isEmpty()) { return previous.get(0).toInventory(); }
-            }
             MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
             MemoryTaskVO drain = drainControl(em, state);
             if (drain == null) {
@@ -3466,7 +3177,6 @@ public class MemoryRepository {
             }
             MemoryTaskVO root = configurationTask("Host", hostUuid, "resume", null, null,
                     state.getDesiredRevision(), context.toString(), actor);
-            root.setRequestKey(requestKey); root.setRequestHash(requestKey == null ? null : digest(requestKey));
             em.persist(root);
             long revision = Math.addExact(state.getDesiredRevision(), 1L);
             MemoryTaskVO child;
@@ -3494,9 +3204,9 @@ public class MemoryRepository {
             child.setExpectedControlOperationUuid(drain.getUuid());
             em.persist(child);
             state.setActiveTaskUuid(child.getUuid()); state.setStatus("Queued"); state.setReason(null);
-            state.setDesiredRevision(revision); state.setPermitAuthorized(false);
+            state.setDesiredRevision(revision);
             em.flush();
-            return root.toInventory();
+            return root.getUuid();
         });
     }
 
@@ -3672,7 +3382,7 @@ public class MemoryRepository {
      * No Agent call was made: fail the NEW request and restore the old slot,
      * without pretending the historical activation has a known outcome. */
     public void recoveryLicenseExpiredBeforeDispatch(String uuid) {
-        transaction(em -> {
+        fireFailure(transaction(em -> {
             lock(em);
             MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
             if (task == null || !MemoryUncertainRecoveryRules.ACTION.equals(task.getAction())
@@ -3685,19 +3395,9 @@ public class MemoryRepository {
                     || !Objects.equals(task.getHostUuid(), original.getHostUuid())) { return null; }
             task.setStatus("Failed"); task.setReason("CLOUD_LICENSE_EXPIRED_BEFORE_RECOVERY_DISPATCH");
             host.setActiveTaskUuid(original.getUuid()); host.setStatus("Unknown"); host.setReason(original.getReason());
-            queueFailure(em, MemoryTaskFailureEvent.fromTask(task));
             em.flush(); aggregateParent(em, task.getParentUuid());
-            return null;
-        });
-    }
-
-    private void queueFailure(EntityManager em, MemoryTaskFailureEvent failureEvent) {
-        if (failureEvent == null || em.find(MemoryTaskFailureOutboxVO.class, failureEvent.getTaskUuid()) != null) { return; }
-        MemoryTaskFailureOutboxVO outbox = new MemoryTaskFailureOutboxVO();
-        outbox.setTaskUuid(failureEvent.getTaskUuid()); outbox.setHostUuid(failureEvent.getHostUuid());
-        outbox.setAction(failureEvent.getAction()); outbox.setReason(trim(failureEvent.getReason()));
-        outbox.setCreateDate(new Timestamp(System.currentTimeMillis()));
-        outbox.setAttempts(0); outbox.setDelivered(false); em.persist(outbox);
+            return MemoryTaskFailureEvent.fromTask(task);
+        }));
     }
 
     private static MemoryTaskVO uncertainRecoveryForResult(EntityManager em, MemoryTaskVO task) {
@@ -4027,69 +3727,6 @@ public class MemoryRepository {
         catch (RuntimeException invalid) { return null; }
     }
 
-    public void authorizePermit(String hostUuid, boolean allowed, long deadline) {
-        transaction(em -> {
-            lock(em);
-            MemoryStateVO host = em.find(MemoryStateVO.class, hostUuid);
-            if (host != null) { host.setPermitAuthorized(allowed); host.setPermitDeadline(allowed ? deadline : null); }
-            return null;
-        });
-    }
-
-    /** Persist the first permit issued for a task; retries never replace it. */
-    public boolean recordTaskPermit(String taskUuid, String operationUuid, long deadline) {
-        return transaction(em -> {
-            lock(em);
-            MemoryTaskVO task = em.find(MemoryTaskVO.class, taskUuid, LockModeType.PESSIMISTIC_WRITE);
-            if (task == null || operationUuid == null || deadline <= System.currentTimeMillis()) { return false; }
-            if (task.getIssuedPermitDeadline() != null) {
-                return operationUuid.equals(task.getIssuedPermitOperationUuid())
-                        && task.getIssuedPermitDeadline() == deadline;
-            }
-            task.setIssuedPermitOperationUuid(operationUuid);
-            task.setIssuedPermitDeadline(deadline);
-            em.flush();
-            return true;
-        });
-    }
-
-    /** Authorize only the originally issued permit after a confirmed apply. */
-    public void authorizeTaskPermit(String taskUuid) {
-        transaction(em -> {
-            lock(em);
-            MemoryTaskVO task = em.find(MemoryTaskVO.class, taskUuid, LockModeType.PESSIMISTIC_WRITE);
-            if (task == null || !"Succeeded".equals(task.getStatus())) { return null; }
-            MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());
-            long deadline = task.getIssuedPermitDeadline() == null ? 0 : task.getIssuedPermitDeadline();
-            if (state != null && taskUuid.equals(state.getControlOperationUuid())
-                    && task.getIssuedPermitOperationUuid() != null
-                    && task.getIssuedPermitOperationUuid().equals("managed-" + task.getHostUuid())
-                    && state.getActiveTaskUuid() == null && deadline > System.currentTimeMillis()) {
-                state.setPermitAuthorized(true); state.setPermitDeadline(deadline);
-            }
-            return null;
-        });
-    }
-
-    public void renewPermit(String hostUuid, String operationUuid, long deadline) {
-        transaction(em -> {
-            lock(em);
-            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid);
-            long now = System.currentTimeMillis();
-            if (state != null && state.isPermitAuthorized() && operationUuid != null
-                    && operationUuid.equals(state.getControlOperationUuid()) && state.getActiveTaskUuid() == null
-                    && state.getPermitDeadline() != null && state.getPermitDeadline() > now && deadline > now) {
-                state.setPermitDeadline(Math.max(state.getPermitDeadline(), deadline));
-            }
-            return null;
-        });
-    }
-
-    public List<MemoryTaskVO> outstanding(String owner) {
-        return transaction(em -> em.createQuery("from MemoryTaskVO t where t.ownerManagementNodeUuid = :owner " +
-                "and t.status = 'Draining'", MemoryTaskVO.class).setParameter("owner", owner).getResultList());
-    }
-
     MemoryTaskVO findTask(String uuid) {
         if (uuid == null) { return null; }
         return transaction(em -> em.find(MemoryTaskVO.class, uuid));
@@ -4178,30 +3815,6 @@ public class MemoryRepository {
         } catch (RuntimeException ignored) { return false; }
     }
 
-    /** Known service ownership is durable state, not a transient KSM enabled bit. */
-    public boolean hasManagedOwnership(String hostUuid) {
-        return transaction(em -> {
-            // Use the same global policy fence as submit(). Legacy resource
-            // config writes must not race first takeover.
-            lock(em);
-            MemoryStateVO state = em.find(MemoryStateVO.class, hostUuid, LockModeType.PESSIMISTIC_WRITE);
-            if (state == null) { return false; }
-            try {
-                if (state.getState() != null) {
-                    Map<?, ?> observed = JSONObjectUtil.toObject(state.getState(), Map.class);
-                    if (Boolean.TRUE.equals(observed.get("managed"))) { return true; }
-                }
-            } catch (RuntimeException ignored) { /* inspect task fences below */ }
-            if (state.getActiveTaskUuid() != null) { return true; }
-            if (state.getControlOperationUuid() != null) {
-                MemoryTaskVO task = em.find(MemoryTaskVO.class, state.getControlOperationUuid());
-                return task == null || !("Succeeded".equals(task.getStatus())
-                        || "Failed".equals(task.getStatus()) || "Cancelled".equals(task.getStatus()));
-            }
-            return false;
-        });
-    }
-
     public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
         if (start < 0) { throw error("MEMORY_INVALID_PAGE", "Page start cannot be negative"); }
         int pageSize = MemoryOptimizationGlobalConfig.pageSize(limit);
@@ -4222,32 +3835,80 @@ public class MemoryRepository {
         });
     }
 
-    private static boolean containsOperationReference(String state, Collection<String> taskUuids) {
-        if (state == null || state.trim().isEmpty()) { return false; }
-        final JsonElement parsed;
-        try { parsed = new JsonParser().parse(state); }
-        catch (RuntimeException malformed) {
-            // We cannot establish the absence of a control-operation reference in malformed state.
-            return true;
-        }
-        return containsOperationReference(parsed, taskUuids);
+    private static final long HISTORY_RETENTION_MS = TimeUnit.DAYS.toMillis(7);
+    private static final int HISTORY_PURGE_BATCH = 1000;
+
+    /**
+     * Deletes finished operations older than the retention that no Host state,
+     * Agent evidence or unfinished operation still reaches.
+     */
+    public int purgeHistory(long now) {
+        return transaction(em -> {
+            lock(em);
+            List<MemoryTaskVO> candidates = em.createQuery("from MemoryTaskVO t where t.status in ('Succeeded', 'Failed', 'Cancelled')"
+                    + " and t.lastOpDate < :cutoff order by t.lastOpDate", MemoryTaskVO.class)
+                    .setParameter("cutoff", new Timestamp(now - HISTORY_RETENTION_MS))
+                    .setMaxResults(HISTORY_PURGE_BATCH).getResultList();
+            if (candidates.isEmpty()) { return 0; }
+            Deque<String> pending = new ArrayDeque<>();
+            for (MemoryStateVO state : em.createQuery("from MemoryStateVO s", MemoryStateVO.class).getResultList()) {
+                if (state.getActiveTaskUuid() != null) { pending.add(state.getActiveTaskUuid()); }
+                if (state.getControlOperationUuid() != null) { pending.add(state.getControlOperationUuid()); }
+                if (!collectOperationReferences(state.getState(), pending)) { return 0; }
+            }
+            pending.addAll(em.createQuery("select t.uuid from MemoryTaskVO t"
+                    + " where t.status not in ('Succeeded', 'Failed', 'Cancelled')", String.class).getResultList());
+            Set<String> kept = new HashSet<>();
+            while (!pending.isEmpty()) {
+                String uuid = pending.poll();
+                if (!kept.add(uuid)) { continue; }
+                MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
+                if (task == null) { continue; }
+                for (String reference : Arrays.asList(task.getParentUuid(), task.getExpectedControlOperationUuid(),
+                        task.getReconcileOperationUuid())) {
+                    if (reference != null) { pending.add(reference); }
+                }
+            }
+            // A kept root keeps the steps of its chain.
+            List<String> purged = candidates.stream().map(MemoryTaskVO::getUuid)
+                    .filter(uuid -> !kept.contains(uuid)).collect(Collectors.toList());
+            purged.removeIf(uuid -> {
+                MemoryTaskVO task = em.find(MemoryTaskVO.class, uuid);
+                return task.getParentUuid() != null && kept.contains(task.getParentUuid());
+            });
+            if (!purged.isEmpty()) {
+                em.createQuery("delete from MemoryTaskVO t where t.uuid in (:uuids)")
+                        .setParameter("uuids", purged).executeUpdate();
+            }
+            return purged.size();
+        });
     }
 
-    private static boolean containsOperationReference(JsonElement value, Collection<String> taskUuids) {
-        if (value == null || value.isJsonNull()) { return false; }
+    /** Adds the operation UUIDs a Host observation refers to; false when the state cannot be read. */
+    private static boolean collectOperationReferences(String state, Collection<String> references) {
+        if (state == null || state.trim().isEmpty()) { return true; }
+        try {
+            collectOperationReferences(new JsonParser().parse(state), references);
+            return true;
+        } catch (RuntimeException malformed) {
+            // We cannot establish the absence of a control-operation reference in malformed state.
+            return false;
+        }
+    }
+
+    private static void collectOperationReferences(JsonElement value, Collection<String> references) {
+        if (value == null || value.isJsonNull()) { return; }
         if (value.isJsonObject()) {
             for (Map.Entry<String, JsonElement> entry : value.getAsJsonObject().entrySet()) {
                 if (entry.getKey().toLowerCase(Locale.ROOT).contains("operationuuid")
-                        && entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()
-                        && taskUuids.contains(entry.getValue().getAsString())) { return true; }
-                if (containsOperationReference(entry.getValue(), taskUuids)) { return true; }
+                        && entry.getValue().isJsonPrimitive() && entry.getValue().getAsJsonPrimitive().isString()) {
+                    references.add(entry.getValue().getAsString());
+                }
+                collectOperationReferences(entry.getValue(), references);
             }
         } else if (value.isJsonArray()) {
-            for (JsonElement child : value.getAsJsonArray()) {
-                if (containsOperationReference(child, taskUuids)) { return true; }
-            }
+            for (JsonElement child : value.getAsJsonArray()) { collectOperationReferences(child, references); }
         }
-        return false;
     }
 
     private static String currentStateFilter(List<String> hosts) {
@@ -4371,12 +4032,21 @@ public class MemoryRepository {
         }
     }
 
-    public void expireUnconfirmed(String owner) {
+    /** Hosts whose Agent request is in flight; the management node owning them may have restarted. */
+    public List<String> hostsWithUnconfirmedWork() {
+        return transaction(em -> em.createQuery("select distinct t.hostUuid from MemoryTaskVO t"
+                + " where t.hostUuid is not null and t.status in ('Applying', 'Draining')", String.class)
+                .getResultList());
+    }
+
+    /** No live dispatch exists for these Hosts' in-flight requests; their outcome is Unknown. */
+    public void expireUnconfirmed(Collection<String> hosts) {
+        if (hosts.isEmpty()) { return; }
         transaction(em -> {
             lock(em);
-            List<MemoryTaskVO> tasks = em.createQuery("from MemoryTaskVO t where t.ownerManagementNodeUuid = :owner " +
-                    "and t.hostUuid is not null and t.status in ('Applying', 'Draining')", MemoryTaskVO.class)
-                    .setParameter("owner", owner).getResultList();
+            List<MemoryTaskVO> tasks = em.createQuery("from MemoryTaskVO t where t.hostUuid in (:hosts) " +
+                    "and t.status in ('Applying', 'Draining')", MemoryTaskVO.class)
+                    .setParameter("hosts", new ArrayList<>(hosts)).getResultList();
             for (MemoryTaskVO task : tasks) {
                 task.setStatus("Unknown"); task.setReason("Management node restarted; explicit reconcile required");
                 MemoryStateVO state = em.find(MemoryStateVO.class, task.getHostUuid());

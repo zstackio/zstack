@@ -20,11 +20,6 @@ public class MemoryPolicyVO {
     public String getResourceUuid() { return resourceUuid; }
     public void setResourceUuid(String value) { resourceUuid = value; }
 
-    @Column(nullable = false)
-    private long revision;
-    public long getRevision() { return revision; }
-    public void setRevision(long value) { revision = value; }
-
     @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String policy;
     public String getPolicy() { return policy; }
@@ -50,12 +45,4 @@ public class MemoryPolicyVO {
     @PreUpdate
     private void onUpdate() { lastOpDate = new java.sql.Timestamp(System.currentTimeMillis()); }
 
-    public MemoryPolicyInventory toInventory() {
-        MemoryPolicyInventory result = new MemoryPolicyInventory();
-        result.setScope(scope);
-        result.setResourceUuid(resourceUuid);
-        result.setRevision(revision);
-        result.setPolicy(policy);
-        return result;
-    }
 }

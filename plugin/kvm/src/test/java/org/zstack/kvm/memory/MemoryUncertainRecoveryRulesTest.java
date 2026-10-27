@@ -184,7 +184,6 @@ public class MemoryUncertainRecoveryRulesTest {
         MemoryActionRequest msg = message(); msg.getRecovery().setConfirmed(false); rejects(msg);
         msg = message(); msg.setAction("apply"); rejects(msg);
         msg = message(); msg.setScope("Global"); rejects(msg);
-        msg = message(); msg.setTargetHostUuids(Collections.singletonList("host1")); rejects(msg);
         msg = message(); msg.setPolicy("{\"zram\":{\"enabled\":true}}"); rejects(msg);
         msg = message(); msg.getRecovery().setExpectedPoolGeneration("../path"); rejects(msg);
     }

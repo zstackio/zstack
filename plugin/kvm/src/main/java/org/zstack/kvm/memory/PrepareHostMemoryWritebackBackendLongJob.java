@@ -35,7 +35,7 @@ public class PrepareHostMemoryWritebackBackendLongJob implements LongJob {
         msg.setJobUuid(job.getUuid());
         msg.setAccountUuid(job.getAccountUuid());
         msg.setUserUuid(request.getSession() == null ? null : request.getSession().getUserUuid());
-        bus.makeLocalServiceId(msg, MemoryOptimizationManager.SERVICE_ID);
+        bus.makeTargetServiceIdByResourceUuid(msg, MemoryOptimizationManager.SERVICE_ID, request.getUuid());
         bus.send(msg, new CloudBusCallBack(completion) {
             @Override
             public void run(MessageReply reply) {

@@ -1,7 +1,6 @@
 package org.zstack.kvm.memory;
 
 import org.junit.Test;
-import org.zstack.header.core.Completion;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import java.lang.reflect.Field;
@@ -41,14 +40,14 @@ public class MemoryManagerReconcileTest {
             if (submissionTrace != null) { submissionTrace.add("targets"); }
             return Collections.singletonList("host");
         }
-        @Override MemoryTaskInventory submit(MemoryActionRequest msg, MemoryAgentResponse observation) {
+        @Override String submit(MemoryActionRequest msg, MemoryAgentResponse observation) {
             backendSubmits++; submittedPreparation = msg; submittedBackendObservation = observation;
             if (submissionTrace != null) { submissionTrace.add("submit"); }
-            return new MemoryTaskInventory();
+            return "task";
         }
-        @Override public MemoryTaskInventory submit(MemoryActionRequest msg) {
+        @Override public String submit(MemoryActionRequest msg) {
             unobservedPreparationSubmits++;
-            return new MemoryTaskInventory();
+            return "task";
         }
         @Override public void result(String id, String value, String reason, MemoryAgentResponse response) {
             fourArgResults++; status = value; this.reason = reason; resultResponse = response;
@@ -70,10 +69,6 @@ public class MemoryManagerReconcileTest {
             state.setState("{\"bootId\":\"boot-1\"}");
             return Collections.singletonList(state);
         }
-    }
-    static class Hooks extends MemoryLifecycleHooks {
-        int calls;
-        @Override public void reconcileMigrationHold(String vm, Completion completion) { calls++; completion.success(); }
     }
     static class Manager extends MemoryOptimizationManager {
         String returnedStatus = "Succeeded";
@@ -176,30 +171,6 @@ public class MemoryManagerReconcileTest {
             return response;
         }
     }
-    private void verify(boolean original, String returnedStatus, String expected, int calls, int holds) throws Exception {
-        Manager manager = new Manager(); manager.returnedStatus = returnedStatus;
-        Repository repository = new Repository(); Hooks hooks = new Hooks();
-        for (String name : new String[]{"repository", "lifecycleHooks"}) {
-            Field field = MemoryOptimizationManager.class.getDeclaredField(name); field.setAccessible(true);
-            field.set(manager, "repository".equals(name) ? repository : hooks);
-        }
-        MemoryTaskVO task = new MemoryTaskVO(); task.setUuid("reconcile-operation");
-        task.setHostUuid("host"); task.setResourceUuid("vm"); task.setScope("VM"); task.setAction("reconcile");
-        if (original) task.setReconcileOperationUuid("original-operation");
-        Method dispatch = MemoryOptimizationManager.class.getDeclaredMethod("dispatch", MemoryTaskVO.class, boolean.class);
-        dispatch.setAccessible(true); dispatch.invoke(manager, task, false);
-        assertEquals(expected, repository.status); assertEquals(calls, manager.calls); assertEquals(holds, hooks.calls);
-    }
-    @Test public void originalUnknownOperationCannotSucceedBecauseNoMigrationHoldExists() throws Exception {
-        verify(true, "Unknown", "Unknown", 1, 0);
-    }
-    @Test public void resolvedOriginalOperationAlsoChecksMigrationHold() throws Exception {
-        verify(true, "Succeeded", "Succeeded", 1, 1);
-    }
-    @Test public void standaloneMigrationHoldDoesNotQueryInventedAgentOperation() throws Exception {
-        verify(false, "Succeeded", "Succeeded", 0, 1);
-    }
-
     @Test public void serviceDefaultCapacitySideSurvivesCommandSerialization() throws Exception {
         Manager manager = new Manager(); manager.expectedOperation = "default-capacity";
         inject(manager, "repository", new Repository());
@@ -468,7 +439,7 @@ public class MemoryManagerReconcileTest {
 
         MemoryActionRequest msg = new MemoryActionRequest();
         msg.setScope("Host"); msg.setResourceUuid("host");
-        msg.setAction("prepareWritebackBackend"); msg.setExpectedRevision(4L);
+        msg.setAction("prepareWritebackBackend");
         msg.setPolicy("{}");
         MemoryBackendPreparation preparation = new MemoryBackendPreparation();
         preparation.setCandidateId("candidate:" + String.join("", Collections.nCopies(64, "a")));
@@ -778,54 +749,33 @@ public class MemoryManagerReconcileTest {
         Method submit = MemoryOptimizationManager.class.getDeclaredMethod("submitHostAction",
                 MemoryActionRequest.class, Consumer.class, Consumer.class);
         submit.setAccessible(true);
-        submit.invoke(manager, msg, (Consumer<MemoryTaskInventory>) task -> manager.publishedEvents++,
+        submit.invoke(manager, msg, (Consumer<String>) task -> manager.publishedEvents++,
                 (Consumer<MemoryOperationException>) error -> { throw error; });
     }
 
-    @Test public void recoveryReconcileBindsOriginalRequestAndOnlyExactPreClaimRejection() throws Exception {
-        for (String reason : new String[]{
-                "Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID",
-                "RECOVERY_REQUEST_INVALID in transport stderr", "No confirmed Agent result"}) {
-            Manager manager = new Manager(); Repository repository = new Repository();
-            MemoryTaskVO original = new MemoryTaskVO(); original.setUuid("original-operation");
-            original.setHostUuid("host"); original.setScope("Host"); original.setResourceUuid("host");
-            original.setAction("recoverUncertain"); original.setStatus("Unknown");
-            original.setReason(reason); original.setExpectedControlOperationUuid("original-control");
-            original.setDesiredRevision(9); original.setParentUuid("original-parent");
-            MemoryTaskVO parent = new MemoryTaskVO(); parent.setUuid("original-parent");
-            parent.setScope("Host"); parent.setResourceUuid("host"); parent.setAction("recoverUncertain");
-            parent.setExpectedControlOperationUuid("original-control");
-            String requestHash = String.join("", Collections.nCopies(64, "a"));
-            parent.setRequestHash(requestHash); repository.parent = parent;
-            original.setCreateDate(new Timestamp(System.currentTimeMillis()));
-            original.setPolicy("{\"expectedHostBootId\":\"boot-1\",\"expectedPoolGeneration\":\"generation\",\"confirmed\":true}");
-            repository.original = original; inject(manager, "repository", repository);
-            MemoryTaskVO task = new MemoryTaskVO(); task.setUuid("reconcile-child");
-            task.setHostUuid("host"); task.setResourceUuid("host"); task.setScope("Host");
-            task.setAction("reconcile"); task.setReconcileOperationUuid("original-operation");
-            task.setDesiredRevision(10); // Do not bind the query child's later revision.
-            manager.returnedStatus = "Unknown"; manager.success = false;
-            dispatch(manager, task);
-            assertEquals("original-control", manager.command.get("expectedControlOperationUuid"));
-            assertEquals(9L, manager.command.get("desiredRevision"));
-            assertNull("Host children do not carry the parent admission hash", original.getRequestHash());
-            assertEquals(requestHash, manager.command.get("recoveryRequestHash"));
-            assertEquals("boot-1", ((Map) manager.command.get("recovery")).get("expectedHostBootId"));
-            assertEquals(Collections.emptyMap(), manager.command.get("policy"));
-            assertFalse(manager.command.containsKey("admissionConnected"));
-            if (reason.equals("Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID")) {
-                assertEquals("seal-rejected-recovery", manager.command.get("reconcileAction"));
-                assertEquals("RECOVERY_REQUEST_INVALID", manager.command.get("classification"));
-            } else {
-                assertFalse(manager.command.containsKey("reconcileAction"));
-                assertFalse(manager.command.containsKey("classification"));
-            }
-            parent.setExpectedControlOperationUuid("different-control");
-            dispatch(manager, task);
-            assertNull(manager.command.get("recoveryRequestHash"));
-            assertFalse("an unrelated parent cannot prove the rejected request",
-                    manager.command.containsKey("reconcileAction"));
-        }
+    @Test public void recoveryReconcileBindsOriginalRequest() throws Exception {
+        Manager manager = new Manager(); Repository repository = new Repository();
+        MemoryTaskVO original = new MemoryTaskVO(); original.setUuid("original-operation");
+        original.setHostUuid("host"); original.setScope("Host"); original.setResourceUuid("host");
+        original.setAction("recoverUncertain"); original.setStatus("Unknown");
+        original.setReason("Uncertain recovery is not proven: RECOVERY_REQUEST_INVALID");
+        original.setExpectedControlOperationUuid("original-control"); original.setDesiredRevision(9);
+        original.setCreateDate(new Timestamp(System.currentTimeMillis()));
+        original.setPolicy("{\"expectedHostBootId\":\"boot-1\",\"expectedPoolGeneration\":\"generation\",\"confirmed\":true}");
+        repository.original = original; inject(manager, "repository", repository);
+        MemoryTaskVO task = new MemoryTaskVO(); task.setUuid("reconcile-child");
+        task.setHostUuid("host"); task.setResourceUuid("host"); task.setScope("Host");
+        task.setAction("reconcile"); task.setReconcileOperationUuid("original-operation");
+        task.setDesiredRevision(10); // Do not bind the query child's later revision.
+        manager.returnedStatus = "Unknown"; manager.success = false;
+        dispatch(manager, task);
+        assertEquals("original-control", manager.command.get("expectedControlOperationUuid"));
+        assertEquals(9L, manager.command.get("desiredRevision"));
+        assertEquals("boot-1", ((Map) manager.command.get("recovery")).get("expectedHostBootId"));
+        assertEquals(Collections.emptyMap(), manager.command.get("policy"));
+        assertFalse(manager.command.containsKey("admissionConnected"));
+        assertFalse(manager.command.containsKey("reconcileAction"));
+        assertFalse(manager.command.containsKey("classification"));
     }
 
     private static void inject(Object target, String name, Object value) throws Exception {
@@ -837,7 +787,8 @@ public class MemoryManagerReconcileTest {
     }
 
     private static void dispatch(MemoryOptimizationManager manager, MemoryTaskVO task, boolean poll) throws Exception {
-        Method dispatch = MemoryOptimizationManager.class.getDeclaredMethod("dispatch", MemoryTaskVO.class, boolean.class);
-        dispatch.setAccessible(true); dispatch.invoke(manager, task, poll);
+        Method dispatch = MemoryOptimizationManager.class.getDeclaredMethod("dispatch", MemoryTaskVO.class,
+                boolean.class, Runnable.class);
+        dispatch.setAccessible(true); dispatch.invoke(manager, task, poll, (Runnable) () -> { });
     }
 }

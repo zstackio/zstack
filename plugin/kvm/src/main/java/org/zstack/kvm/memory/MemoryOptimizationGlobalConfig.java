@@ -15,10 +15,6 @@ public class MemoryOptimizationGlobalConfig {
     public static GlobalConfig HOST_BATCH_SIZE = new GlobalConfig(CATEGORY, "host.batchSize");
 
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 2147483648L)
-    @GlobalConfigDef(defaultValue = "10", type = Long.class, description = "Concurrent Host configuration tasks")
-    public static GlobalConfig DISPATCH_CONCURRENCY = new GlobalConfig(CATEGORY, "dispatch.concurrency");
-
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 2147483648L)
     @GlobalConfigDef(defaultValue = "32", type = Long.class, description = "VM binding batch size per Host")
     public static GlobalConfig VM_BIND_BATCH_SIZE = new GlobalConfig(CATEGORY, "vm.bindBatchSize");
 

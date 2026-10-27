@@ -35,14 +35,6 @@ public class MemoryStateVO {
     public String getPolicyBlockedFields() { return policyBlockedFields; }
     public void setPolicyBlockedFields(String value) { policyBlockedFields = value; }
 
-    @Column(nullable = false)
-    private boolean permitAuthorized;
-    public boolean isPermitAuthorized() { return permitAuthorized; }
-    public void setPermitAuthorized(boolean value) { permitAuthorized = value; }
-    @Column
-    private Long permitDeadline;
-    public Long getPermitDeadline() { return permitDeadline; }
-    public void setPermitDeadline(Long value) { permitDeadline = value; }
     @Column(length = 32)
     private String controlOperationUuid;
     public String getControlOperationUuid() { return controlOperationUuid; }
