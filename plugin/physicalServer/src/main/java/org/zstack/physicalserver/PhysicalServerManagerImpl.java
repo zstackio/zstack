@@ -137,18 +137,24 @@ public class PhysicalServerManagerImpl extends AbstractService implements Physic
             bus.publish(event);
             return;
         }
-        new While<>(targets).step((serverUuid, each) -> {
+        List<RefreshPhysicalServerResourceAssignmentResult> results = targets.stream().map(serverUuid -> {
+            RefreshPhysicalServerResourceAssignmentResult result = new RefreshPhysicalServerResourceAssignmentResult();
+            result.setServerUuid(serverUuid);
+            return result;
+        }).collect(Collectors.toList());
+        event.getResults().addAll(results);
+        new While<>(results).step((result, each) -> {
             RefreshPhysicalServerResourceAssignmentsFromProfileMsg request =
                     new RefreshPhysicalServerResourceAssignmentsFromProfileMsg();
-            request.setServerUuid(serverUuid);
+            request.setServerUuid(result.getServerUuid());
             request.setProfileSha256(profileSha256);
             request.setTimeout(RESOURCE_CONTROL_TIMEOUT_MILLIS);
-            bus.makeTargetServiceIdByResourceUuid(request, PhysicalServerConstant.SERVICE_ID, serverUuid);
+            bus.makeTargetServiceIdByResourceUuid(request, PhysicalServerConstant.SERVICE_ID, result.getServerUuid());
             bus.send(request, new CloudBusCallBack(each) {
                 @Override
                 public void run(MessageReply reply) {
                     if (!reply.isSuccess()) {
-                        each.addError(reply.getError());
+                        result.setError(reply.getError());
                     }
                     each.done();
                 }

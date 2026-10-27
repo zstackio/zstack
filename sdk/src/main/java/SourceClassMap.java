@@ -696,6 +696,7 @@ public class SourceClassMap {
 			put("org.zstack.physicalserver.PhysicalServerInventory", "org.zstack.sdk.PhysicalServerInventory");
 			put("org.zstack.physicalserver.PhysicalServerManagedServiceInventory", "org.zstack.sdk.PhysicalServerManagedServiceInventory");
 			put("org.zstack.physicalserver.PhysicalServerResourceAssignmentInventory", "org.zstack.sdk.PhysicalServerResourceAssignmentInventory");
+			put("org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentResult", "org.zstack.sdk.RefreshPhysicalServerResourceAssignmentResult");
 			put("org.zstack.policyRoute.PolicyRouteRuleInventory", "org.zstack.sdk.PolicyRouteRuleInventory");
 			put("org.zstack.policyRoute.PolicyRouteRuleProtocol", "org.zstack.sdk.PolicyRouteRuleProtocol");
 			put("org.zstack.policyRoute.PolicyRouteRuleSetInventory", "org.zstack.sdk.PolicyRouteRuleSetInventory");
@@ -1462,6 +1463,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.RaidControllerInventory", "org.zstack.storage.device.localRaid.RaidControllerInventory");
 			put("org.zstack.sdk.RaidPhysicalDriveInventory", "org.zstack.storage.device.localRaid.RaidPhysicalDriveInventory");
 			put("org.zstack.sdk.RedirectUrlTemplate", "org.zstack.sso.header.RedirectUrlTemplate");
+			put("org.zstack.sdk.RefreshPhysicalServerResourceAssignmentResult", "org.zstack.physicalserver.RefreshPhysicalServerResourceAssignmentResult");
 			put("org.zstack.sdk.RemoteVtepInventory", "org.zstack.network.l2.vxlan.vtep.RemoteVtepInventory");
 			put("org.zstack.sdk.RemovalInstanceRuleInventory", "org.zstack.autoscaling.group.rule.RemovalInstanceRuleInventory");
 			put("org.zstack.sdk.ReplicationDiskStatus", "org.zstack.storage.primary.ministorage.ReplicationDiskStatus");

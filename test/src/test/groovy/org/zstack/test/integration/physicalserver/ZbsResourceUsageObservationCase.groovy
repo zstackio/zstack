@@ -503,9 +503,12 @@ class ZbsResourceUsageObservationCase extends SubCase {
         assert completed.await(30, TimeUnit.SECONDS)
         assert failure.get()?.details?.contains("test provider unavailable") && completions.get() == 1 :
                 "read-only Refresh must report the Provider failure once: actual=${failure.get()}"
-        refreshPhysicalServerResourceAssignmentsFromProfile {
+        def result = refreshPhysicalServerResourceAssignmentsFromProfile {
             serverUuids = [serverUuid]
         }
+        assert result.results.size() == 1 && result.results[0].serverUuid == serverUuid
+        assert !result.results[0].success && result.results[0].error.details.contains("test provider unavailable") :
+                "A successful writable phase must not hide the read-only observation failure"
         retryInSecs {
             List<PhysicalServerResourceAssignmentInventory> current = assignments(serverUuid, "ZBS")
             assert current.size() == 1 && current[0].cpuSet == "0-7" && current[0].state == "Unsynced" :
