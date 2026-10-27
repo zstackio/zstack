@@ -266,6 +266,114 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("an unproven hold is tried again at the next observation", 2 * afterFirst, inspected.size());
     }
 
+    /** Agent replies by Host: the VM instance each Host reports, and the bind, revoke and hold calls made. */
+    private static class PlacementManager extends FakeManager {
+        final Map<String, String> instances = new HashMap<>();
+        final Set<String> listedWithoutGeneration = new HashSet<>();
+        final List<String> calls = new ArrayList<>();
+        @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+            if ("state".equals(action)) {
+                MemoryAgentResponse answer = response(host, instances.get(host));
+                if (listedWithoutGeneration.contains(host)) {
+                    ((Map<String, Object>) answer.state.get("vms")).put("vm-1", new HashMap<>());
+                }
+                callback.accept(answer);
+                return;
+            }
+            calls.add(host + ":" + ("migration-hold".equals(action) ? command.get("holdAction") : command.get("action")));
+            super.call(host, action, command, callback);
+        }
+    }
+
+    private static boolean recover(MemoryLifecycleHooks hooks, String host, String[] failure) {
+        final boolean[] success = {false};
+        hooks.recoverMigrationHold("vm-1", host, new org.zstack.header.core.Completion(new org.zstack.header.core.AsyncBackup() {}) {
+            @Override public void success() { success[0] = true; }
+            @Override public void fail(org.zstack.header.errorcode.ErrorCode errorCode) { failure[0] = errorCode.getDetails(); }
+        });
+        return success[0];
+    }
+
+    @Test public void operatorRecoversAHoldWhoseVmRestartedOnTheSource() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown";
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-a", "instance-restarted");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        String[] failure = {null};
+        assertTrue(failure[0], recover(hooks, "host-a", failure));
+        assertEquals(Arrays.asList("host-a:bind", "host-a:release"), manager.calls);
+        assertEquals("the restarted source instance is bound", "instance-restarted", manager.bindCommand.get("expectedInstanceGeneration"));
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void operatorRecoversAMigratedVmAndAStoppedVm() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown"; repository.vmHost = "host-b";
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-b", "instance-target");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        String[] failure = {null};
+        assertTrue(failure[0], recover(hooks, "host-b", failure));
+        assertEquals(Arrays.asList("host-b:bind", "host-a:revoke", "host-a:release"), manager.calls);
+        assertEquals("Released", repository.hold.status);
+
+        FakeRepository stopped = heldMigration();
+        stopped.hold.status = "Unknown"; stopped.vmState = "Stopped"; stopped.vmHost = null;
+        PlacementManager none = new PlacementManager();
+        inject(hooks, "repository", stopped); inject(hooks, "manager", none);
+        assertTrue(failure[0], recover(hooks, null, failure));
+        assertEquals("a stopped VM only needs the source hold released", Collections.singletonList("host-a:release"), none.calls);
+        assertEquals("Released", stopped.hold.status);
+    }
+
+    @Test public void operatorRecoveryTreatsADeletedHostAsNotHavingTheVm() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown"; repository.deletedHosts.add("host-b");
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-a", "instance-source");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        String[] failure = {null};
+        assertTrue(failure[0], recover(hooks, "host-a", failure));
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void operatorRecoveryNeedsTheGenerationOfTheInstanceItBinds() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown";
+        PlacementManager manager = new PlacementManager();
+        manager.listedWithoutGeneration.add("host-a");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        String[] failure = {null};
+        assertFalse(recover(hooks, "host-a", failure));
+        assertEquals("the recorded generation is kept", "instance-source", repository.hold.sourceInstanceGeneration);
+        assertTrue("nothing is bound without a generation", manager.calls.isEmpty());
+    }
+
+    @Test public void operatorRecoveryChangesNothingUnlessThePlatformAndBothHostsAgree() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown";
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-a", "instance-source"); manager.instances.put("host-b", "instance-target");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        String[] failure = {null};
+        assertFalse("both Hosts still have the VM", recover(hooks, "host-a", failure));
+        assertTrue(failure[0], failure[0].contains("target has it"));
+        assertFalse("the platform places the VM on the source", recover(hooks, "host-b", failure));
+        assertFalse("a running VM needs its Host", recover(hooks, null, failure));
+        assertTrue("nothing is bound, revoked or released", manager.calls.isEmpty());
+        assertEquals("Unknown", repository.hold.status);
+
+        repository.hold.status = "Released";
+        assertFalse(recover(hooks, "host-a", failure));
+        assertTrue(failure[0], failure[0].contains("no unresolved memory migration hold"));
+    }
+
     @Test public void preMigrateRequiresCompleteSourceInventoryBeforeAcquire() throws Exception {
         FakeRepository repository = new FakeRepository() {
             @Override public void captureMigrationParticipation(String vm, String source, String target) { }
@@ -385,7 +493,7 @@ public class MemoryLifecycleHooksCallbackTest {
                     if ("find".equals(method.getName()) && args != null && args.length >= 2
                             && args[0] == MemoryMigrationVO.class) { return hold; }
                     if ("merge".equals(method.getName())) { hold = (MemoryMigrationVO) args[0]; return hold; }
-                    if ("createQuery".equals(method.getName())) { return unknownHolds(); }
+                    if ("createQuery".equals(method.getName())) { return query((String) args[0]); }
                     if ("flush".equals(method.getName())) { return null; }
                     if (method.getReturnType().isPrimitive()) {
                         if (method.getReturnType() == boolean.class) return false;
@@ -393,17 +501,25 @@ public class MemoryLifecycleHooksCallbackTest {
                     }
                     return null;
                 });
-        /** The Unknown hold query of the migration source, answered from the single fixture hold. */
-        private javax.persistence.TypedQuery<?> unknownHolds() {
+        String vmState = "Running";
+        String vmHost = "host-a";
+        final Set<String> deletedHosts = new HashSet<>();
+        /** Answers the VM placement, Host existence and source Unknown hold queries from the fixtures. */
+        private javax.persistence.TypedQuery<?> query(String jpql) {
             Map<String, Object> parameters = new HashMap<>();
             return (javax.persistence.TypedQuery<?>) Proxy.newProxyInstance(javax.persistence.TypedQuery.class.getClassLoader(),
                     new Class[]{javax.persistence.TypedQuery.class}, (proxy, method, args) -> {
                         if ("setParameter".equals(method.getName())) { parameters.put((String) args[0], args[1]); return proxy; }
-                        if ("getResultList".equals(method.getName())) {
-                            return hold != null && "Unknown".equals(hold.status) && hold.sourceHostUuid.equals(parameters.get("host"))
-                                    ? Collections.singletonList(hold) : Collections.emptyList();
+                        if (!"getResultList".equals(method.getName())) { return null; }
+                        if (jpql.contains("VmInstanceVO")) {
+                            return Collections.singletonList(new Object[]{vmState, vmHost});
                         }
-                        return null;
+                        if (jpql.contains("HostVO")) {
+                            return deletedHosts.contains(parameters.get("uuid")) ? Collections.emptyList()
+                                    : Collections.singletonList(parameters.get("uuid"));
+                        }
+                        return hold != null && "Unknown".equals(hold.status) && hold.sourceHostUuid.equals(parameters.get("host"))
+                                ? Collections.singletonList(hold) : Collections.emptyList();
                     });
         }
         @Override protected <T> T transaction(java.util.function.Function<EntityManager, T> function) {
