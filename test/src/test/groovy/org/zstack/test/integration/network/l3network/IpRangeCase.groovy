@@ -449,7 +449,7 @@ class IpRangeCase extends SubCase {
             action.userTags = [duplicateTag, duplicateTag]
             AddReservedIpRangeAction.Result result = action.call()
             assert result.error != null
-            assert result.error.globalErrorCode == "ORG_ZSTACK_TAG_10000"
+            assert result.error.code == "SYS.1006"
             assert Q.New(ReservedIpRangeVO.class)
                     .eq(ReservedIpRangeVO_.l3NetworkUuid, l3.uuid).count() == rangeCount
             assert Q.New(UsedIpVO.class).eq(UsedIpVO_.l3NetworkUuid, l3.uuid).count() == usedIpCount
