@@ -138,6 +138,17 @@ public class SecurityGroupNetworkServiceExtension extends AbstractNetworkService
         if (kvmUserVm) {
             Map<String, List<String>> requested = servedVm.getExtensionData(VmInstanceConstant.Params.RequestedSecurityGroupUuids.toString(), Map.class);
             Map<String, List<String>> inherited = servedVm.getExtensionData(VmInstanceConstant.Params.InheritedSecurityGroupUuids.toString(), Map.class);
+            List<Map<String, List<String>>> selections = Arrays.asList(groups, requested, inherited).stream()
+                    .filter(Objects::nonNull).collect(Collectors.toList());
+            Set<String> groupUuids = selections.stream().flatMap(selection -> selection.values().stream())
+                    .flatMap(Collection::stream).collect(Collectors.toSet());
+            if (!groupUuids.isEmpty()) {
+                // A group saved in JustCreate parameters may be deleted before the first start.
+                Set<String> existingGroupUuids = new HashSet<>(Q.New(SecurityGroupVO.class).select(SecurityGroupVO_.uuid)
+                        .in(SecurityGroupVO_.uuid, groupUuids).listValues());
+                selections.forEach(selection -> selection.replaceAll((l3Uuid, uuids) -> uuids.stream()
+                        .filter(existingGroupUuids::contains).collect(Collectors.toList())));
+            }
             if (!groups.isEmpty() || requested != null || inherited != null) {
                 String accountUuid = acntMgr.getOwnerAccountUuidOfResource(vm.getUuid());
                 // Old JustCreate parameters have neither field and retain their original bindings.
