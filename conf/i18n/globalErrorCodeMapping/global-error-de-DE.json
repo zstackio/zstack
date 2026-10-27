@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "Konnte L3-Netzwerk nicht vom VPC-Router [uuid:%s] trennen, da die Zustände von Master und Slave inkonsistent sind",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "Virtuelles Maschinengerät mit UUID: %s nicht gefunden",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "TPM-/host-file-Operation des VM-Geräts fehlgeschlagen: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM erfordert den UEFI-Startmodus, aber die VM[uuid:%s] verwendet den Startmodus %s; ändern Sie den Startmodus zuerst auf UEFI",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "Der Startmodus der VM[uuid:%s] kann nicht auf %s geändert werden, da die VM ein TPM-Gerät hat, das den UEFI-Startmodus erfordert; entfernen Sie zuerst das TPM",
   "ORG_ZSTACK_KVM_10163": "KVM-vTPM-/host-file-Operation fehlgeschlagen: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "Volume-Protokolloperation fehlgeschlagen: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "Volume-Snapshot-Operation fehlgeschlagen: %s",

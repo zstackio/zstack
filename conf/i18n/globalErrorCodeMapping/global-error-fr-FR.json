@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "impossible de détacher le réseau L3 du routeur VPC [uuid:%s] car les états du maître et de l'esclave sont incohérents",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "impossible de trouver le dispositif de machine virtuelle avec l'uuid : %s",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "échec de l'opération TPM/host-file du périphérique de VM : %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "le TPM nécessite le mode de démarrage UEFI, mais la VM[uuid:%s] est en mode de démarrage %s ; passez d'abord le mode de démarrage à UEFI",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "impossible de changer le mode de démarrage de la VM[uuid:%s] en %s, car la VM possède un périphérique TPM qui nécessite le mode de démarrage UEFI ; supprimez d'abord le TPM",
   "ORG_ZSTACK_KVM_10163": "échec de l'opération KVM vTPM/host-file : %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "échec de l'opération du protocole de volume : %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "échec de l'opération de snapshot de volume : %s",

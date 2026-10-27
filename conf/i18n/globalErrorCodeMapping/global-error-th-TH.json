@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "ไม่พบเครื่องเสมือนที่มี UUID: %s",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "การดำเนินการ TPM/host-file ของอุปกรณ์ VM ล้มเหลว: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM ต้องใช้โหมดบูต UEFI แต่ VM[uuid:%s] ใช้โหมดบูต %s โปรดเปลี่ยนโหมดบูตเป็น UEFI ก่อน",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "ไม่สามารถเปลี่ยนโหมดบูตของ VM[uuid:%s] เป็น %s ได้ เนื่องจาก VM มีอุปกรณ์ TPM ที่ต้องใช้โหมดบูต UEFI โปรดลบ TPM ก่อน",
   "ORG_ZSTACK_KVM_10163": "การดำเนินการ KVM vTPM/host-file ล้มเหลว: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "การดำเนินการโปรโตคอลของโวลุ่มล้มเหลว: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "การดำเนินการสแนปช็อตของโวลุ่มล้มเหลว: %s",

@@ -485,6 +485,8 @@
   "ORG_ZSTACK_VPC_10019": "マスターとスレーブの状態が一致しないため、VPCルーター[uuid:%s]からL3ネットワークをデタッチできませんでした",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10008": "uuid:%sの仮想マシンデバイスが見つかりません",
   "ORG_ZSTACK_COMPUTE_VM_DEVICES_10009": "VMデバイスのTPM/host-file操作に失敗しました: %s",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10010": "TPM には UEFI ブートモードが必要ですが、VM[uuid:%s] のブートモードは %s です。先にブートモードを UEFI に変更してください",
+  "ORG_ZSTACK_COMPUTE_VM_DEVICES_10011": "VM[uuid:%s] のブートモードを %s に変更できません。VM には UEFI ブートモードが必要な TPM デバイスがあります。先に TPM を削除してください",
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file操作に失敗しました: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "ボリュームプロトコル操作に失敗しました: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "ボリュームスナップショット操作に失敗しました: %s",
