@@ -463,8 +463,35 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         });
     }
 
-    /** Explicit MN reconcile entry; never retries a hold without identity evidence. */
-    public void reconcileMigrationHold(String vmUuid, Completion completion) {
+    /** Unknown holds being reconciled on this management node, by hold operation. */
+    private final Set<String> reconcilingHolds = ConcurrentHashMap.newKeySet();
+
+    /**
+     * After a fresh observation of a migration source, reconcile each of its
+     * Unknown holds; an unresolved hold otherwise blocks the VM's next migration.
+     * A hold that cannot be proven yet is tried again at the next observation.
+     */
+    void reconcileUnknownMigrationHolds(String sourceHost) {
+        List<MemoryMigrationVO> holds = repository.transaction(em -> em.createQuery(
+                "from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status = 'Unknown'", MemoryMigrationVO.class)
+                .setParameter("host", sourceHost).getResultList());
+        for (MemoryMigrationVO hold : holds) {
+            if (!reconcilingHolds.add(hold.operationUuid)) { continue; }
+            reconcileMigrationHold(hold.vmUuid, new Completion(null) {
+                @Override public void success() {
+                    reconcilingHolds.remove(hold.operationUuid);
+                    logger.info(String.format("VM[%s] unknown migration hold reconciled", hold.vmUuid));
+                }
+                @Override public void fail(ErrorCode errorCode) {
+                    reconcilingHolds.remove(hold.operationUuid);
+                    logger.warn(String.format("VM[%s] migration hold remains unresolved: %s", hold.vmUuid, errorCode));
+                }
+            });
+        }
+    }
+
+    /** Never retries a hold without identity evidence. */
+    void reconcileMigrationHold(String vmUuid, Completion completion) {
         MemoryMigrationVO hold = repository.transaction(em -> em.find(MemoryMigrationVO.class, vmUuid, LockModeType.PESSIMISTIC_WRITE));
         if (hold == null || "Released".equals(hold.status)) { completion.success(); return; }
         // No pool/instance identity means preflight failed before native

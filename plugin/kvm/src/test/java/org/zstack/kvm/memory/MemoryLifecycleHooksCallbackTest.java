@@ -79,7 +79,7 @@ public class MemoryLifecycleHooksCallbackTest {
     @Test public void unavailableParticipationPolicyFailsClosed() throws Exception {
         MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
         inject(hooks, "repository", new FakeRepository() {
-            @Override public MemoryPolicyInventory getPolicy(String scope, String resource) {
+            @Override String vmPolicy(String vm) {
                 throw new IllegalStateException("database unavailable");
             }
         });
@@ -239,6 +239,33 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("Unknown", repository.hold.status);
     }
 
+    @Test public void observedSourceRetriesAnUnknownHoldUntilItIsProven() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hold.status = "Unknown";
+        List<String> inspected = new ArrayList<>();
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command,
+                                Consumer<MemoryAgentResponse> callback) {
+                if ("state".equals(action)) {
+                    inspected.add(host);
+                    MemoryAgentResponse answer = response(host, "host-b".equals(host) ? "instance-target" : null);
+                    answer.state.put("inventoryComplete", false);
+                    callback.accept(answer);
+                } else { super.call(host, action, command, callback); }
+            }
+        };
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        hooks.reconcileUnknownMigrationHolds("host-b");
+        assertTrue("only the hold's source observation reconciles it", inspected.isEmpty());
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertFalse("the Unknown hold is inspected after its source is observed", inspected.isEmpty());
+        assertEquals("unresolved identities keep the hold Unknown", "Unknown", repository.hold.status);
+        int afterFirst = inspected.size();
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals("an unproven hold is tried again at the next observation", 2 * afterFirst, inspected.size());
+    }
+
     @Test public void preMigrateRequiresCompleteSourceInventoryBeforeAcquire() throws Exception {
         FakeRepository repository = new FakeRepository() {
             @Override public void captureMigrationParticipation(String vm, String source, String target) { }
@@ -298,14 +325,11 @@ public class MemoryLifecycleHooksCallbackTest {
         inject(hooks, "manager", manager);
         inject(hooks, "repository", new FakeRepository() {
             @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
-                MemoryStateVO state = new MemoryStateVO(); state.setPermitAuthorized(true);
+                MemoryStateVO state = new MemoryStateVO();
                 state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
                 return Collections.singletonList(state);
             }
-            @Override public MemoryPolicyInventory getPolicy(String scope, String resource) {
-                MemoryPolicyInventory result = new MemoryPolicyInventory();
-                result.setPolicy("{\"participation\":\"deny\"}"); return result;
-            }
+            @Override String vmPolicy(String vm) { return "{\"participation\":\"deny\"}"; }
         });
         MemoryAgentResponse response = new MemoryAgentResponse();
         Map<String, Object> vm = new HashMap<>(); vm.put("instanceGeneration", "new-instance");
@@ -352,7 +376,7 @@ public class MemoryLifecycleHooksCallbackTest {
 
     private static class FakeRepository extends MemoryRepository {
         @Override public String vmParticipation(String uuid) {
-            String value = MemoryPolicyRules.decode(getPolicy("VM", uuid).getPolicy()).participation;
+            String value = MemoryPolicyRules.decode(vmPolicy(uuid)).participation;
             return value == null ? "inherit" : value;
         }
         MemoryMigrationVO hold;
@@ -361,6 +385,7 @@ public class MemoryLifecycleHooksCallbackTest {
                     if ("find".equals(method.getName()) && args != null && args.length >= 2
                             && args[0] == MemoryMigrationVO.class) { return hold; }
                     if ("merge".equals(method.getName())) { hold = (MemoryMigrationVO) args[0]; return hold; }
+                    if ("createQuery".equals(method.getName())) { return unknownHolds(); }
                     if ("flush".equals(method.getName())) { return null; }
                     if (method.getReturnType().isPrimitive()) {
                         if (method.getReturnType() == boolean.class) return false;
@@ -368,15 +393,23 @@ public class MemoryLifecycleHooksCallbackTest {
                     }
                     return null;
                 });
+        /** The Unknown hold query of the migration source, answered from the single fixture hold. */
+        private javax.persistence.TypedQuery<?> unknownHolds() {
+            Map<String, Object> parameters = new HashMap<>();
+            return (javax.persistence.TypedQuery<?>) Proxy.newProxyInstance(javax.persistence.TypedQuery.class.getClassLoader(),
+                    new Class[]{javax.persistence.TypedQuery.class}, (proxy, method, args) -> {
+                        if ("setParameter".equals(method.getName())) { parameters.put((String) args[0], args[1]); return proxy; }
+                        if ("getResultList".equals(method.getName())) {
+                            return hold != null && "Unknown".equals(hold.status) && hold.sourceHostUuid.equals(parameters.get("host"))
+                                    ? Collections.singletonList(hold) : Collections.emptyList();
+                        }
+                        return null;
+                    });
+        }
         @Override protected <T> T transaction(java.util.function.Function<EntityManager, T> function) {
             return function.apply(entityManager);
         }
-        @Override public MemoryPolicyInventory getPolicy(String scope, String resource) {
-            MemoryPolicyInventory policy = new MemoryPolicyInventory();
-            policy.setScope(scope); policy.setResourceUuid(resource);
-            policy.setPolicy("{\"schemaVersion\":1,\"participation\":\"inherit\"}");
-            return policy;
-        }
+        String vmPolicy(String vm) { return "{\"schemaVersion\":1,\"participation\":\"inherit\"}"; }
         @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host-a");
             state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);

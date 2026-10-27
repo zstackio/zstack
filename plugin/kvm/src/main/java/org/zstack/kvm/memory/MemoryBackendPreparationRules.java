@@ -13,7 +13,7 @@ public final class MemoryBackendPreparationRules {
             if (request != null) { invalid(); }
             return;
         }
-        if (!"Host".equals(message.getScope()) || message.getTargetHostUuids() != null
+        if (!"Host".equals(message.getScope())
                 || request == null || !request.isResetConfirmed()) { invalid(); }
         try {
             if (message.getPolicy() == null || new JsonParser().parse(message.getPolicy()).getAsJsonObject().size() != 0) { invalid(); }

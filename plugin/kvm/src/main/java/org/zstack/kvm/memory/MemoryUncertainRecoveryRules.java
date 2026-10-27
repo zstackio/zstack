@@ -16,7 +16,7 @@ public final class MemoryUncertainRecoveryRules {
             if (request != null) { invalid(); }
             return;
         }
-        if (!"Host".equals(msg.getScope()) || msg.getTargetHostUuids() != null
+        if (!"Host".equals(msg.getScope())
                 || !MemoryTaskRules.isSafetyAction("pause", msg.getPolicy())
                 || request == null || !request.isConfirmed()
                 || !matches(request.getExpectedHostBootId(),

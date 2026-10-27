@@ -12,9 +12,6 @@ final class MemoryPolicyActionParameters {
                 "recoverUncertain", "prepareWritebackBackend").contains(action)) {
             invalid("action");
         }
-        if (!"VM".equals(msg.getScope()) && msg.getExpectedInstanceGeneration() != null) {
-            invalid("expectedInstanceGeneration");
-        }
     }
 
     private static void invalid(String field) {

@@ -42,7 +42,6 @@ public class MemoryBackendPreparationRulesTest {
         message = request(); message.getBackendPreparation().setCandidateId("/dev/vdb"); reject(message);
         message = request(); message.setAction("apply"); reject(message);
         message = request(); message.setBackendPreparation(null); reject(message);
-        message = request(); message.setTargetHostUuids(java.util.Collections.singletonList("host")); reject(message);
     }
 
     private void reject(MemoryActionRequest message) {
