@@ -6,17 +6,10 @@ public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
 			put("org.zstack.kvm.memory.HostMemoryStateInventory", "org.zstack.sdk.HostMemoryStateInventory");
-			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
-			put("org.zstack.kvm.memory.MemoryFieldCapability", "org.zstack.sdk.MemoryFieldCapability");
 			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
-			put("org.zstack.kvm.memory.MemoryPolicyInventory", "org.zstack.sdk.MemoryPolicyInventory");
-			put("org.zstack.kvm.memory.MemoryStateInventory", "org.zstack.sdk.MemoryStateInventory");
 			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
-			put("org.zstack.kvm.memory.MemoryTaskInventory", "org.zstack.sdk.MemoryTaskInventory");
-			put("org.zstack.kvm.memory.MemoryUncertainRecovery", "org.zstack.sdk.MemoryUncertainRecovery");
 			put("org.zstack.kvm.memory.MemoryVmAccountingInventory", "org.zstack.sdk.MemoryVmAccountingInventory");
 			put("org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory", "org.zstack.sdk.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.kvm.memory.MemoryVmExclusionInventory", "org.zstack.sdk.MemoryVmExclusionInventory");
 			put("org.zstack.kvm.memory.MemoryVmIdentityInventory", "org.zstack.sdk.MemoryVmIdentityInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory", "org.zstack.sdk.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.kvm.memory.MemoryWritebackBackendInventory", "org.zstack.sdk.MemoryWritebackBackendInventory");
@@ -1003,17 +996,10 @@ public class SourceClassMap {
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
 			put("org.zstack.sdk.HostMemoryStateInventory", "org.zstack.kvm.memory.HostMemoryStateInventory");
-			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
-			put("org.zstack.sdk.MemoryFieldCapability", "org.zstack.kvm.memory.MemoryFieldCapability");
 			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
-			put("org.zstack.sdk.MemoryPolicyInventory", "org.zstack.kvm.memory.MemoryPolicyInventory");
-			put("org.zstack.sdk.MemoryStateInventory", "org.zstack.kvm.memory.MemoryStateInventory");
 			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
-			put("org.zstack.sdk.MemoryTaskInventory", "org.zstack.kvm.memory.MemoryTaskInventory");
-			put("org.zstack.sdk.MemoryUncertainRecovery", "org.zstack.kvm.memory.MemoryUncertainRecovery");
 			put("org.zstack.sdk.MemoryVmAccountingInventory", "org.zstack.kvm.memory.MemoryVmAccountingInventory");
 			put("org.zstack.sdk.MemoryVmAccountingMetricsInventory", "org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.sdk.MemoryVmExclusionInventory", "org.zstack.kvm.memory.MemoryVmExclusionInventory");
 			put("org.zstack.sdk.MemoryVmIdentityInventory", "org.zstack.kvm.memory.MemoryVmIdentityInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendCandidateInventory", "org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory");
 			put("org.zstack.sdk.MemoryWritebackBackendInventory", "org.zstack.kvm.memory.MemoryWritebackBackendInventory");

@@ -85,8 +85,7 @@ public class MemoryRepositoryTest {
         try { configuration.addAnnotatedClass(Class.forName("org.zstack.kvm.memory.MemoryVmExclusionVO")); }
         catch (ClassNotFoundException ignored) { }
         factory = configuration.addAnnotatedClass(MemoryPolicyVO.class)
-                .addAnnotatedClass(MemoryQueryVersionVO.class)
-                .addAnnotatedClass(MemoryTaskVO.class).addAnnotatedClass(MemoryTaskIdempotencyReceiptVO.class)
+                .addAnnotatedClass(MemoryTaskVO.class)
                 .addAnnotatedClass(MemoryTaskFailureOutboxVO.class)
                 .addAnnotatedClass(MemoryMigrationVO.class)
                 .addAnnotatedClass(MemoryStateVO.class)
@@ -203,54 +202,6 @@ public class MemoryRepositoryTest {
         } else {
             org.zstack.header.vo.ResourceTypeMetadata.concreteBaseTypeMapping.put(ResourceVO.class, previousResourceBaseType);
         }
-    }
-
-    @Test public void memoryStateZqlSubqueryFiltersBeforeHostPagingAndTotal() throws Exception {
-        // Use the product's once-only registration; invoking @StaticInit methods
-        // separately would poison a later Platform initialization in this JVM.
-        Class.forName("org.zstack.core.Platform");
-        repository.transaction(em -> {
-            for (String id : Arrays.asList("zql-a", "zql-b", "zql-c", "zql-d")) {
-                TestHost host = new TestHost(); host.uuid = id; host.hypervisorType = "KVM";
-                host.status = HostStatus.Connected; em.persist(host);
-                if ("zql-d".equals(id)) continue;
-                MemoryStateVO state = new MemoryStateVO(); state.setHostUuid(id);
-                state.setStatus("Succeeded"); state.setPolicyPlanStatus("Applied");
-                if ("zql-b".equals(id)) state.setPolicyPlanStatus("Blocked");
-                if ("zql-c".equals(id)) state.setActiveTaskUuid("running-operation");
-                em.persist(state);
-            }
-            return null;
-        });
-        // Public Unknown contains an unresolved active operation and a Host with no state row.
-        String known = "status in ('Queued','Applying','Draining') or "
-                + "(status in ('Succeeded','Failed','Blocked') and activeTaskUuid is null "
-                + "and (policyPlanStatus is null or policyPlanStatus not in ('Unknown','Queued','Applying','Draining'))) "
-                + "or (status='Blocked' and activeTaskUuid is not null)";
-        String text = "query Host.uuid where uuid like 'zql-%' and uuid not in "
-                + "(query MemoryState.hostUuid where " + known + ") "
-                + "return with (total) order by uuid asc limit 1 offset 1";
-        org.zstack.zql.antlr4.ZQLParser parser = new org.zstack.zql.antlr4.ZQLParser(
-                new org.antlr.v4.runtime.CommonTokenStream(new org.zstack.zql.antlr4.ZQLLexer(
-                        new org.antlr.v4.runtime.ANTLRInputStream(text))));
-        org.zstack.header.zql.ASTNode.Query query = parser.query().accept(
-                new org.zstack.zql.ast.parser.visitors.QueryVisitor());
-        assertEquals(0, parser.getNumberOfSyntaxErrors());
-        org.zstack.zql.ast.visitors.result.QueryResult compiled =
-                new org.zstack.zql.ast.visitors.QueryVisitor(false).visit(query);
-        repository.transaction(em -> {
-            assertEquals(Collections.singletonList("zql-d"), compiled.createJPAQuery.apply(em).getResultList());
-            assertEquals(2L, ((Number) compiled.createSimpleCountQuery.apply(em).getSingleResult()).longValue());
-            MemoryStateVO original = em.find(MemoryStateVO.class, "zql-b");
-            assertEquals("Succeeded", original.getStatus());
-            MemoryStateInventory converted = (MemoryStateInventory) org.zstack.header.vo.ToInventory.toInventory(original);
-            assertEquals("zql-b", converted.getHostUuid());
-            assertEquals("Succeeded", converted.getStatus());
-            assertEquals("Blocked", converted.getPolicyPlanStatus());
-            assertEquals("zql-b", MemoryStateInventory.valueOf(Collections.singletonList(original)).get(0).getHostUuid());
-            assertEquals("Blocked", MemoryMetricsPresentation.inventory(original, null, 100000L).getStatus());
-            return null;
-        });
     }
 
     @Test public void serviceObservationReusesConnectedPolicyAndExistingControlFencesWithoutWrites() {
@@ -385,7 +336,7 @@ public class MemoryRepositoryTest {
 
     @Test public void updateInfersScopeBeforeActionRulesAndNormalizesIdempotencyIdentity() {
         registerPolicyReadResource("host1", "HostVO");
-        APIUpdateMemoryPolicyMsg global = request(0); global.setScope(null);
+        MemoryActionRequest global = request(0); global.setScope(null);
         MemoryTaskInventory first = repository.submit(global);
         assertEquals("Global", global.getScope());
         assertEquals("Global", first.getScope());
@@ -396,7 +347,7 @@ public class MemoryRepositoryTest {
 
         // An omitted scope must be resolved before the Host-only maintenance
         // rules; use a rejected shape to prove that rule, not scope, rejects it.
-        APIUpdateMemoryPolicyMsg preparation = request(0); preparation.setScope(null);
+        MemoryActionRequest preparation = request(0); preparation.setScope(null);
         preparation.setResourceUuid("host1"); preparation.setTargetHostUuids(null);
         preparation.setAction("prepareWritebackBackend"); preparation.setPolicy("{}");
         try { repository.submit(preparation); fail("missing preparation must be rejected"); }
@@ -409,7 +360,7 @@ public class MemoryRepositoryTest {
     @Test public void updateRejectsConflictingOrUnresolvableScopeBeforeAnyNewTask() {
         for (String[] invalid : new String[][]{{"Host", "global"}, {"Cluster", "host1"},
                 {"Global", "host1"}, {null, "unknown"}}) {
-            APIUpdateMemoryPolicyMsg msg = request(0); msg.setScope(invalid[0]);
+            MemoryActionRequest msg = request(0); msg.setScope(invalid[0]);
             msg.setResourceUuid(invalid[1]); msg.setTargetHostUuids(null);
             try { repository.submit(msg); fail("invalid update resource"); }
             catch (MemoryOperationException expected) { assertEquals("MEMORY_INVALID_SCOPE", expected.getCode()); }
@@ -483,7 +434,7 @@ public class MemoryRepositoryTest {
         assertEquals("Unknown", host1State().getStatus());
         assertEquals("Blocked", host1State().getPolicyPlanStatus());
         assertTrue(repository.claim("test-worker").isEmpty());
-        assertEquals(3L, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(3L, taskCount());
     }
 
     @Test public void standardPureKsmCanDispatchFromFreshPartialOnlyWhenBothControlFencesAreClear() {
@@ -530,7 +481,7 @@ public class MemoryRepositoryTest {
                 queued.getActiveTaskUuid());
         assertEquals("Queued", queued.getStatus());
         assertNotNull(queued.getControlOperationUuid());
-        assertEquals(2L, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(2L, taskCount());
 
         final long sample2 = System.currentTimeMillis();
         repository.observePartialKsm("host2", coldKsmPartial(sample2, false));
@@ -545,7 +496,7 @@ public class MemoryRepositoryTest {
                 blocked.getActiveTaskUuid());
         assertEquals("Unknown", blocked.getStatus());
         assertEquals("Blocked", blocked.getPolicyPlanStatus());
-        assertEquals(4L, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(4L, taskCount());
     }
 
     private static MemoryAgentResponse coldKsmPartial(long sampleTime, boolean admissionReady) {
@@ -625,7 +576,7 @@ public class MemoryRepositoryTest {
         standardCommit(Collections.singletonList(standardChange(MemoryStandardField.KSM_ENABLED,
                 null, null, "true")), null, false);
         assertEquals(1L, repository.getPolicy("Global", "global").getRevision());
-        assertEquals(1L, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(1L, taskCount());
         try {
             standardCommit(Collections.singletonList(standardChange(MemoryStandardField.WRITEBACK_BACKEND_RESOURCE,
                     null, null, "0123456789abcdef0123456789abcdef")), null, false);
@@ -953,7 +904,6 @@ public class MemoryRepositoryTest {
                 return null;
             });
         }
-        assertStateCurrentStep("drain");
         Map<String, Object> stableIdentity = new LinkedHashMap<>();
         stableIdentity.put("bootId", boot); stableIdentity.put("device", "/dev/vdb");
         stableIdentity.put("byIdPath", "/dev/disk/by-id/local"); stableIdentity.put("majorMinor", "252:16");
@@ -1016,10 +966,8 @@ public class MemoryRepositoryTest {
         MemoryTaskVO preparation = repository.claim("backend-prepare").stream()
                 .filter(task -> "prepareWritebackBackend".equals(task.getAction())).findFirst().orElse(null);
         assertNotNull(preparation);
-        assertStateCurrentStep("prepareWritebackBackend");
         MemoryTaskVO restore = assertCapacityPreparationQueuesRestore(drain, preparation, queryStage);
         if ("preparation-owner-mismatch".equals(queryStage)) { return; }
-        assertStateCurrentStep("activateZramPool");
         assertTrue(repository.claim("backend-activate").stream().anyMatch(task -> task.getUuid().equals(restore.getUuid())));
         MemoryAgentResponse activated = new MemoryAgentResponse();
         activated.operationUuid = restore.getUuid(); activated.status = "Succeeded"; activated.setSuccess(true);
@@ -1066,7 +1014,6 @@ public class MemoryRepositoryTest {
         assertEquals(writeback.getReason(), "Queued", writeback.getStatus());
         assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(writeback.getPolicy()).writeback.enabled);
         assertEquals(resource, MemoryPolicyRules.decode(writeback.getPolicy()).writeback.backendResourceUuid);
-        assertStateCurrentStep("restoreWriteback");
         assertNotEquals("Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
         repository.result(activationResult.getUuid(), "Succeeded", "duplicate activation", activated, activated);
         assertEquals(writeback.getUuid(), host1State().getActiveTaskUuid());
@@ -1085,7 +1032,6 @@ public class MemoryRepositoryTest {
                         .setParameter("p", drain.getParentUuid()).getResultList()),
                 "Succeeded", repository.findTask(drain.getParentUuid()).getStatus());
         assertEquals(Boolean.TRUE, MemoryPolicyRules.decode(host1State().getAppliedPolicy()).writeback.enabled);
-        assertStateCurrentStep(null);
     }
 
     private void assertCapacityFailureRemainsUnresolved(MemoryTaskVO operation, long children) {
@@ -1100,7 +1046,7 @@ public class MemoryRepositoryTest {
     private MemoryTaskVO capacityResultTask(MemoryTaskVO original, boolean query) {
         if (!query) { return original; }
         repository.result(original.getUuid(), "Unknown", "transport lost after execution", null);
-        APIUpdateMemoryPolicyMsg reconcile = request(repository.getPolicy("Host", "host1").getRevision());
+        MemoryActionRequest reconcile = request(repository.getPolicy("Host", "host1").getRevision());
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
         reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         MemoryTaskInventory accepted = repository.submit(reconcile);
@@ -1205,93 +1151,6 @@ public class MemoryRepositoryTest {
         assertEquals(rootUuid, restore.getParentUuid());
         assertEquals(drain.getUuid(), restore.getExpectedControlOperationUuid());
         return restore;
-    }
-
-    private void assertStateCurrentStep(String expected) {
-        MemoryQueryPage<MemoryStateVO> page = repository.statePage(Collections.singletonList("host1"), 0, 10, null);
-        assertEquals(1, page.items.size());
-        Map<String, Object> inventory = org.zstack.utils.gson.JSONObjectUtil.toObject(
-                new com.google.gson.Gson().toJson(page.items.get(0).toInventory()), Map.class);
-        assertEquals(expected, inventory.get("currentStep"));
-    }
-
-    @Test public void statePageCurrentStepHasNoValueForEmptyPage() {
-        MemoryQueryPage<MemoryStateVO> page = repository.statePage(null, 500, 10, null);
-        assertTrue(page.items.isEmpty());
-    }
-
-    @Test public void statePageCurrentStepIgnoresTerminalOldActivePointer() {
-        repository.transaction(em -> {
-            em.persist(testTask("terminal-old-step", null, "drain", "Succeeded", null));
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setActiveTaskUuid("terminal-old-step");
-            return null;
-        });
-        assertStateCurrentStep(null);
-    }
-
-    @Test public void statePageCurrentStepPreservesKnownUnknownOperation() {
-        repository.transaction(em -> {
-            em.persist(testTask("unknown-step", null, "prepareZramPool", "Unknown", null));
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setStatus("Unknown"); state.setActiveTaskUuid("unknown-step"); state.setDesiredRevision(0L);
-            return null;
-        });
-        assertStateCurrentStep("prepareZramPool");
-        MemoryStateVO state = host1State();
-        assertEquals("Unknown", state.getStatus());
-        assertEquals("unknown-step", state.getActiveTaskUuid());
-        assertEquals(0L, state.getDesiredRevision());
-    }
-
-    @Test public void statePageCurrentStepIgnoresMissingCrossHostAndWrongRevisionBindings() {
-        repository.transaction(em -> {
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setStatus("Unknown"); state.setActiveTaskUuid("missing-active"); state.setDesiredRevision(7L);
-            return null;
-        });
-        MemoryStateVO missing = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
-        assertNull(missing.getCurrentStep());
-        assertEquals("Unknown", missing.getStatus());
-        assertEquals("missing-active", missing.getActiveTaskUuid());
-        assertEquals(7L, missing.getDesiredRevision());
-
-        repository.transaction(em -> {
-            MemoryTaskVO crossHost = testTask("cross-host-step", null, "drain", "Applying", null);
-            crossHost.setHostUuid("host2"); em.persist(crossHost);
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setStatus("Unknown"); state.setActiveTaskUuid("cross-host-step"); state.setDesiredRevision(0L);
-            return null;
-        });
-        MemoryStateVO crossHost = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
-        assertNull(crossHost.getCurrentStep());
-        assertEquals("Unknown", crossHost.getStatus());
-        assertEquals("cross-host-step", crossHost.getActiveTaskUuid());
-        assertEquals(0L, crossHost.getDesiredRevision());
-
-        repository.transaction(em -> {
-            MemoryTaskVO wrongRevision = testTask("wrong-revision-step", null, "drain", "Applying", null);
-            wrongRevision.setDesiredRevision(9L); em.persist(wrongRevision);
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setStatus("Unknown"); state.setActiveTaskUuid("wrong-revision-step"); state.setDesiredRevision(8L);
-            return null;
-        });
-        MemoryStateVO wrongRevision = repository.statePage(Collections.singletonList("host1"), 0, 10, null).items.get(0);
-        assertNull(wrongRevision.getCurrentStep());
-        assertEquals("Unknown", wrongRevision.getStatus());
-        assertEquals("wrong-revision-step", wrongRevision.getActiveTaskUuid());
-        assertEquals(8L, wrongRevision.getDesiredRevision());
-    }
-
-    @Test public void metricsInventoryRetainsTransientCurrentStep() {
-        MemoryStateVO state = host1State();
-        state.setCurrentStep("drain");
-        MemoryStateInventory inventory = MemoryMetricsPresentation.inventory(state, null,
-                System.currentTimeMillis());
-        assertEquals("drain", inventory.getCurrentStep());
-        Map<String, Object> json = org.zstack.utils.gson.JSONObjectUtil.toObject(
-                new com.google.gson.Gson().toJson(inventory), Map.class);
-        assertEquals("drain", json.get("currentStep"));
     }
 
     @Test public void standardZramCapacityChangeWithMatchingEffectiveCapacityDoesNotDrain() {
@@ -1522,44 +1381,6 @@ public class MemoryRepositoryTest {
         return org.zstack.utils.gson.JSONObjectUtil.toObject(requests.get(0).getCommand(), Map.class);
     }
 
-    private void verifyPublishedReplyAdmission(MemoryPolicyInventory read) {
-        String clusterUuid = read.getSourceRevisions().keySet().stream()
-                .filter(key -> key.startsWith("Cluster:")).findFirst().get().substring("Cluster:".length());
-        repository.transaction(em -> {
-            TestCluster cluster = new TestCluster(); cluster.uuid = clusterUuid; cluster.hypervisorType = "KVM";
-            em.persist(cluster);
-            TestHost host = new TestHost(); host.uuid = read.getResourceUuid(); host.clusterUuid = clusterUuid;
-            host.hypervisorType = "KVM"; host.status = HostStatus.Connected; em.persist(host);
-            for (Map.Entry<String, Long> source : read.getSourceRevisions().entrySet()) {
-                MemoryPolicyVO policy = em.find(MemoryPolicyVO.class, source.getKey());
-                if (policy == null) {
-                    policy = new MemoryPolicyVO(); policy.setUuid(source.getKey());
-                    String[] identity = source.getKey().split(":", 2);
-                    policy.setScope(identity[0]); policy.setResourceUuid(identity[1]);
-                    policy.setPolicy("{\"schemaVersion\":1}"); em.persist(policy);
-                }
-                policy.setRevision(source.getValue());
-            }
-            MemoryStateVO state = new MemoryStateVO(); state.setHostUuid(host.uuid); state.setStatus("Succeeded");
-            state.setState("{}"); state.setLastSampleTime(System.currentTimeMillis());
-            state.setCapabilities("{\"supported\":true,\"ksm\":true,\"ksmZeroPages\":true,\"zram\":true,\"writeback\":true}");
-            em.persist(state); return null;
-        });
-        registerPolicyReadResource(read.getResourceUuid(), "HostVO");
-        MemoryPolicyInventory actual = repository.getPolicy(null, read.getResourceUuid());
-        assertEquals(actual.getSourceRevisions(), read.getSourceRevisions());
-        assertEquals(actual.getRevision(), read.getRevision());
-        assertEquals(actual.getSourceRevision(), read.getSourceRevision());
-        assertEquals("Host:" + read.getResourceUuid(), read.getFieldSources().get("ksm.enabled"));
-        APIUpdateMemoryPolicyMsg update = APIUpdateMemoryPolicyMsg.__example__();
-        update.setSession(request(0).getSession());
-        update.setResourceUuid(read.getResourceUuid());
-        update.setExpectedRevision(read.getRevision());
-        update.setExpectedSourceRevisions(read.getSourceRevisions());
-        assertNull("new public example must omit compatibility scope", update.getScope());
-        assertEquals("Queued", repository.submit(update).getStatus());
-    }
-
     @Test public void standardWritesPreservePauseFenceEvenWithUnpausedObservation() {
         registerStandardResources();
         repository.transaction(em -> {
@@ -1645,7 +1466,7 @@ public class MemoryRepositoryTest {
         String policy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,"
                 + "\"zeroPagesEnabled\":true,\"pagesToScan\":3000,\"sleepMillis\":30}}";
         seedConfirmedKsmReconnect(policy);
-        long tasksBefore = repository.taskCount(new APIGetMemoryTasksMsg());
+        long tasksBefore = taskCount();
 
         assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
         MemoryTaskVO restore = repository.claim("mn-ksm-reconnect-restore").stream()
@@ -1667,7 +1488,7 @@ public class MemoryRepositoryTest {
         assertTrue(repository.isConfirmedKsmReconnectTask(restore.getUuid()));
         assertFalse("duplicate reconnect callbacks cannot create another task",
                 repository.applyEffectivePolicyAfterConnect("host1"));
-        assertEquals(tasksBefore + 2, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(tasksBefore + 2, taskCount());
     }
 
     @Test public void reconnectRestoresConfirmedDeltaAgainstTheCompleteAppliedKsmTarget() {
@@ -1688,7 +1509,7 @@ public class MemoryRepositoryTest {
                         + ("scan".equals(drift) ? "100" : "2000") + ",\"sleepMillis\":20}}}");
                 return null;
             });
-            long before = repository.taskCount(new APIGetMemoryTasksMsg());
+            long before = taskCount();
             assertTrue(drift, repository.applyEffectivePolicyAfterConnect("host1"));
             MemoryTaskVO restore = repository.claim("mn-ksm-delta-reconnect").stream()
                     .filter(t -> "host1".equals(t.getHostUuid())).findFirst().get();
@@ -1702,7 +1523,7 @@ public class MemoryRepositoryTest {
             assertFalse(payload.containsKey("writeback"));
             assertTrue(repository.isConfirmedKsmReconnectTask(restore.getUuid()));
             assertFalse(repository.applyEffectivePolicyAfterConnect("host1"));
-            assertEquals(before + 2, repository.taskCount(new APIGetMemoryTasksMsg()));
+            assertEquals(before + 2, taskCount());
             assertEquals(delta, repository.transaction(em -> em.find(MemoryTaskVO.class, "confirmed-ksm-r8").getPolicy()));
         }
     }
@@ -1725,7 +1546,7 @@ public class MemoryRepositoryTest {
             control.setDesiredRevision(2); control.setPolicy(policy); em.persist(control);
             return null;
         });
-        long tasksBefore = repository.taskCount(new APIGetMemoryTasksMsg());
+        long tasksBefore = taskCount();
 
         assertTrue(repository.applyEffectivePolicyAfterConnect("host1"));
         MemoryTaskVO reconfirm = repository.claim("mn-zram-reboot").stream()
@@ -1736,7 +1557,7 @@ public class MemoryRepositoryTest {
         assertEquals(Boolean.TRUE, ((Map<String, Object>) payload.get("zram")).get("enabled"));
         assertFalse(payload.containsKey("ksm"));
         assertFalse("the same boot never re-issues again", repository.applyEffectivePolicyAfterConnect("host1"));
-        assertEquals(tasksBefore + 2, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(tasksBefore + 2, taskCount());
 
         // A same-boot confirmation means there is nothing to re-issue.
         repository.transaction(em -> {
@@ -2224,8 +2045,8 @@ public class MemoryRepositoryTest {
         assertTrue(state.getPolicyBlockedFields().contains("LEGACY_APPLIED_POLICY_UNKNOWN"));
     }
 
-    private APIUpdateMemoryPolicyMsg hostApply(String hostUuid) {
-        APIUpdateMemoryPolicyMsg apply = request(0);
+    private MemoryActionRequest hostApply(String hostUuid) {
+        MemoryActionRequest apply = request(0);
         apply.setScope("Host"); apply.setResourceUuid(hostUuid); apply.setTargetHostUuids(null);
         apply.setExpectedGlobalRevision(0L); apply.setPolicy("{\"ksm\":{\"enabled\":true}}");
         return apply;
@@ -2290,7 +2111,7 @@ public class MemoryRepositoryTest {
 
 
     @Test public void unknownTaskResultDoesNotCreateFailureIntent() {
-        APIUpdateMemoryPolicyMsg msg = request(0);
+        MemoryActionRequest msg = request(0);
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
         msg.setExpectedGlobalRevision(0L);
         repository.submit(msg);
@@ -2307,7 +2128,7 @@ public class MemoryRepositoryTest {
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
             state.setStatus("Succeeded"); state.setControlOperationUuid("completed-drain"); return null;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0);
+        MemoryActionRequest msg = request(0);
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
         msg.setAction(MemoryBackendPreparationRules.ACTION); msg.setPolicy("{}");
         msg.setExpectedGlobalRevision(0L); msg.setExpectedControlOperationUuid("completed-drain");
@@ -2389,7 +2210,6 @@ public class MemoryRepositoryTest {
                 em.persist(parent); em.persist(drain);
                 MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
                 state.setActiveTaskUuid(drain.getUuid()); state.setControlOperationUuid(drain.getUuid());
-                state.setCurrentStep("drain");
                 writeGlobal(em, "writeback.enabled", !zramDisabled);
                 if (zramDisabled) {
                     writeGlobal(em, "ksm.enabled", false);
@@ -2456,7 +2276,7 @@ public class MemoryRepositoryTest {
         observation.state.put("host_zram", hostZram);
         observation.state.put("candidates", Collections.singletonList(candidate));
 
-        APIUpdateMemoryPolicyMsg request = request(0);
+        MemoryActionRequest request = request(0);
         request.setScope("Host"); request.setResourceUuid("host1"); request.setTargetHostUuids(null);
         request.setExpectedRevision(0L);
         request.setExpectedGlobalRevision(repository.getPolicy("Global", "global").getRevision());
@@ -2467,7 +2287,7 @@ public class MemoryRepositoryTest {
         selected.setExpectedPoolGeneration(pool); selected.setBackendCapacityBytes(8192L);
         selected.setResetConfirmed(true); request.setBackendPreparation(selected);
 
-        long beforeInvalid = repository.taskCount(new APIGetMemoryTasksMsg());
+        long beforeInvalid = taskCount();
         if (!manualDrain) {
         String originalHostState = host1State().getState();
         request.setClientRequestUuid(UUID.randomUUID().toString());
@@ -2517,7 +2337,7 @@ public class MemoryRepositoryTest {
         request.setClientRequestUuid(UUID.randomUUID().toString());
         expectSelectedPreparationRejected(request, observation);
         stableIdentity.put("rdev", 64528L);
-        assertEquals(beforeInvalid, repository.taskCount(new APIGetMemoryTasksMsg()));
+        assertEquals(beforeInvalid, taskCount());
         }
 
         MemoryTaskInventory parent = repository.submit(request, observation);
@@ -2557,7 +2377,6 @@ public class MemoryRepositoryTest {
         assertNotNull("successful drain must queue selected backend preparation; host="
                 + host1State().getStatus() + "/" + host1State().getReason() + "/"
                 + host1State().getActiveTaskUuid() + "/" + host1State().getPolicyBlockedFields(), preparation);
-        assertStateCurrentStep("prepareWritebackBackend");
 
         // A first-use candidate has no owner UUID in the original target.  The
         // trusted Agent receipt must therefore be the source of the new owner
@@ -2641,7 +2460,7 @@ public class MemoryRepositoryTest {
             String activeTaskBeforeResult = stateBeforeResult.getActiveTaskUuid();
             String parentStatusBeforeResult = repository.findTask(parent.getUuid()).getStatus();
             String preparationStatusBeforeResult = repository.findTask(preparation.getUuid()).getStatus();
-            long taskCountBeforeResult = repository.taskCount(new APIGetMemoryTasksMsg());
+            long taskCountBeforeResult = taskCount();
             failAfterResourceConfigWrite = true;
             try {
                 repository.result(preparation.getUuid(), "Succeeded", "backend prepared", prepared, fresh);
@@ -2655,7 +2474,7 @@ public class MemoryRepositoryTest {
             assertEquals(activeTaskBeforeResult, host1State().getActiveTaskUuid());
             assertEquals(parentStatusBeforeResult, repository.findTask(parent.getUuid()).getStatus());
             assertEquals(preparationStatusBeforeResult, repository.findTask(preparation.getUuid()).getStatus());
-            assertEquals(taskCountBeforeResult, repository.taskCount(new APIGetMemoryTasksMsg()));
+            assertEquals(taskCountBeforeResult, taskCount());
             assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
             assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
                     em, "writeback.backendResourceUuid", "host1")));
@@ -2674,7 +2493,7 @@ public class MemoryRepositoryTest {
         }
         String appliedPolicyBeforePreparationResult = host1State().getAppliedPolicy();
         String controlBeforePreparationResult = host1State().getControlOperationUuid();
-        long taskCountBeforePrepareResult = repository.taskCount(new APIGetMemoryTasksMsg());
+        long taskCountBeforePrepareResult = taskCount();
         repository.result(preparation.getUuid(), "Succeeded", "backend prepared", prepared, fresh);
         if (targetChangesBeforePrepareResult || staleFreshObservation || wrongFreshBackendIdentity) {
             MemoryTaskVO rejectedPreparation = repository.findTask(preparation.getUuid());
@@ -2688,7 +2507,7 @@ public class MemoryRepositoryTest {
                     em, "writeback.backendResourceUuid", "host1")));
             assertNull(repository.transaction(em -> standardConfigAdapter.readOverrideOwn(
                     em, "writeback.backendCapacityBytes", "host1")));
-            assertEquals(taskCountBeforePrepareResult, repository.taskCount(new APIGetMemoryTasksMsg()));
+            assertEquals(taskCountBeforePrepareResult, taskCount());
             assertEquals(0L, repository.getPolicy("Host", "host1").getRevision());
             assertEquals(new com.google.gson.JsonParser().parse(appliedPolicyBeforePreparationResult),
                     new com.google.gson.JsonParser().parse(host1State().getAppliedPolicy()));
@@ -2728,7 +2547,7 @@ public class MemoryRepositoryTest {
                     + repository.findTask(preparation.getUuid()).getReason() + ", root="
                     + repository.findTask(parent.getUuid()).getStatus() + "/" + repository.findTask(parent.getUuid()).getReason()
                     + ", host=" + host1State().getStatus() + "/" + host1State().getReason() + "/"
-                    + host1State().getCurrentStep() + ", children=" + taskDetails + ", effective="
+                    + ", children=" + taskDetails + ", effective="
                     + repository.getPolicy("Host", "host1").getEffectivePolicy() + ", applied="
                     + postPrepareState.getAppliedPolicy() + ", plan=" + postPrepareState.getPolicyPlanStatus()
                     + ", blocked=" + postPrepareState.getPolicyBlockedFields(),
@@ -2760,10 +2579,10 @@ public class MemoryRepositoryTest {
                     standardConfigAdapter.readOverrideOwn(em, "writeback.backendResourceUuid", "host1"));
             Object capacityBeforeDuplicate = repository.transaction(em ->
                     standardConfigAdapter.readOverrideOwn(em, "writeback.backendCapacityBytes", "host1"));
-            long taskCountBeforeDuplicate = repository.taskCount(new APIGetMemoryTasksMsg());
+            long taskCountBeforeDuplicate = taskCount();
             long revisionBeforeDuplicate = repository.getPolicy("Host", "host1").getRevision();
             repository.result(preparation.getUuid(), "Succeeded", "duplicate backend prepared", prepared, fresh);
-            assertEquals(taskCountBeforeDuplicate, repository.taskCount(new APIGetMemoryTasksMsg()));
+            assertEquals(taskCountBeforeDuplicate, taskCount());
             assertEquals(revisionBeforeDuplicate, repository.getPolicy("Host", "host1").getRevision());
             assertEquals(appliedPolicyBeforeDuplicate, host1State().getAppliedPolicy());
             assertEquals(activeTaskBeforeDuplicate, host1State().getActiveTaskUuid());
@@ -3036,7 +2855,7 @@ public class MemoryRepositoryTest {
         observation.state.put("preparationReasons", activeServiceNotStopped
                 ? Collections.singletonList("MEMORY_SERVICE_NOT_STOPPED") : Collections.emptyList());
         observation.state.put("candidates", Collections.singletonList(candidate));
-        APIUpdateMemoryPolicyMsg request = request(0); request.setScope("Host"); request.setResourceUuid("host1");
+        MemoryActionRequest request = request(0); request.setScope("Host"); request.setResourceUuid("host1");
         request.setTargetHostUuids(null); request.setAction("prepareWritebackBackend"); request.setPolicy("{}");
         request.setExpectedRevision(0L); request.setExpectedGlobalRevision(repository.getPolicy("Global", "global").getRevision());
         request.setExpectedControlOperationUuid(control); request.setClientRequestUuid(UUID.randomUUID().toString());
@@ -3351,7 +3170,7 @@ public class MemoryRepositoryTest {
                         Long.class).setParameter("p", root.getUuid()).getSingleResult() == 0L));
     }
 
-    private void expectSelectedPreparationRejected(APIUpdateMemoryPolicyMsg request,
+    private void expectSelectedPreparationRejected(MemoryActionRequest request,
                                                     MemoryAgentResponse observation) {
         try {
             repository.submit(request, observation);
@@ -3493,7 +3312,7 @@ public class MemoryRepositoryTest {
             return null;
         });
         assertFalse(repository.canResumeControl("host1", "successful-drain"));
-        APIUpdateMemoryPolicyMsg resume = request(0);
+        MemoryActionRequest resume = request(0);
         resume.setScope("Host"); resume.setResourceUuid("host1"); resume.setTargetHostUuids(null);
         resume.setAction("resume"); resume.setPolicy("{}");
         resume.setExpectedControlOperationUuid("successful-drain");
@@ -3524,7 +3343,7 @@ public class MemoryRepositoryTest {
             return null;
         });
         assertTrue(repository.canReconcileRejectedResume("host1", "rejected-resume"));
-        APIUpdateMemoryPolicyMsg reconcile = request(0);
+        MemoryActionRequest reconcile = request(0);
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
         reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         reconcile.setExpectedControlOperationUuid("prior-drain");
@@ -3552,6 +3371,36 @@ public class MemoryRepositoryTest {
                 .get(0).getControlOperationUuid());
     }
 
+    @Test public void rejectedResumeIsReconciledOnceWithoutAnOperatorRequest() {
+        long now = System.currentTimeMillis();
+        repository.transaction(em -> {
+            em.persist(testTask("prior-drain", null, "drain", "Succeeded", null));
+            MemoryTaskVO failed = testTask("rejected-resume", null, "resume", "Failed", null);
+            failed.setExpectedControlOperationUuid("prior-drain");
+            failed.setReason("CONTROL_OPERATION_FENCED");
+            em.persist(failed);
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setStatus("Succeeded"); state.setControlOperationUuid(failed.getUuid());
+            state.setLastSampleTime(now);
+            state.setState("{\"bootId\":\"boot-a\",\"lastConfirmedOperationUuid\":\"prior-drain\","
+                    + "\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}}");
+            return null;
+        });
+        assertTrue(repository.reconcileRejectedResume("host1"));
+        long tasks = taskCount();
+        assertFalse("a repeated observation does not queue another reconcile", repository.reconcileRejectedResume("host1"));
+        assertEquals(tasks, taskCount());
+        MemoryTaskVO child = repository.claim("mn-a").stream()
+                .filter(task -> "reconcile".equals(task.getAction())).findFirst().get();
+        assertEquals("rejected-resume", child.getReconcileOperationUuid());
+        assertEquals("prior-drain", child.getExpectedControlOperationUuid());
+
+        repository.result(child.getUuid(), "Succeeded", null,
+                rejectedResumeProof("host1", "boot-a", "rejected-resume", "prior-drain", "drain"));
+        assertEquals("prior-drain", host1State().getControlOperationUuid());
+        assertFalse(repository.reconcileRejectedResume("host1"));
+    }
+
     @Test public void rejectedResumeRecoveryFailsClosedOnWrongBootOrControlProof() {
         long now = System.currentTimeMillis();
         repository.transaction(em -> {
@@ -3566,7 +3415,7 @@ public class MemoryRepositoryTest {
                     + "\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}}");
             return null;
         });
-        APIUpdateMemoryPolicyMsg reconcile = request(0);
+        MemoryActionRequest reconcile = request(0);
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
         reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         reconcile.setExpectedControlOperationUuid("prior-pause");
@@ -3612,7 +3461,7 @@ public class MemoryRepositoryTest {
             return null;
         });
 
-        APIUpdateMemoryPolicyMsg reconcile = request(0);
+        MemoryActionRequest reconcile = request(0);
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1");
         reconcile.setTargetHostUuids(null); reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         MemoryTaskInventory accepted = repository.submit(reconcile);
@@ -3646,7 +3495,7 @@ public class MemoryRepositoryTest {
             return null;
         });
 
-        APIUpdateMemoryPolicyMsg reconcile = request(0);
+        MemoryActionRequest reconcile = request(0);
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1");
         reconcile.setTargetHostUuids(null); reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         MemoryTaskInventory accepted = repository.submit(reconcile);
@@ -3672,7 +3521,7 @@ public class MemoryRepositoryTest {
             state.setControlOperationUuid("different-control");
             return null;
         });
-        APIUpdateMemoryPolicyMsg reconcile = request(0);
+        MemoryActionRequest reconcile = request(0);
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1");
         reconcile.setTargetHostUuids(null); reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         try { repository.submit(reconcile); fail("must not overwrite an unrelated Host control owner"); }
@@ -3726,7 +3575,7 @@ public class MemoryRepositoryTest {
         observation.state.put("savings", Collections.<String, Object>singletonMap("total", 42L));
         repository.observe("host1", observation);
 
-        APIUpdateMemoryPolicyMsg update = request(0);
+        MemoryActionRequest update = request(0);
         update.setTargetHostUuids(Collections.singletonList("host1"));
         repository.submit(update);
         MemoryTaskVO task = repository.claim("mn").get(0);
@@ -3794,7 +3643,7 @@ public class MemoryRepositoryTest {
             state.setControlOperationUuid(applied.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
             return null;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("drain");
+        MemoryActionRequest msg = request(0); msg.setAction("drain");
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
         repository.submit(msg);
         MemoryTaskVO drain = repository.claim("mn").get(0);
@@ -3804,7 +3653,7 @@ public class MemoryRepositoryTest {
 
     private void assertReconciledDrainWithoutEffectKeepsControl(String reason) {
         MemoryTaskVO drain = unknownDrainOnAppliedControl();
-        APIUpdateMemoryPolicyMsg reconcile = request(repository.getPolicy("Host", "host1").getRevision());
+        MemoryActionRequest reconcile = request(repository.getPolicy("Host", "host1").getRevision());
         reconcile.setScope("Host"); reconcile.setResourceUuid("host1"); reconcile.setTargetHostUuids(null);
         reconcile.setAction("reconcile"); reconcile.setPolicy("{}");
         repository.submit(reconcile);
@@ -3828,19 +3677,6 @@ public class MemoryRepositoryTest {
         MemoryTaskVO reconcile = repository.claim("unknown-control").stream()
                 .filter(task -> "reconcile".equals(task.getAction())).findFirst().get();
         assertEquals(drain.getUuid(), reconcile.getReconcileOperationUuid());
-    }
-
-    @Test public void cancellingAQueuedReconcileReturnsTheHostToTheUnknownDrain() {
-        MemoryTaskVO drain = unknownDrainOnAppliedControl();
-        assertTrue(repository.reconcileUnknownControl("host1"));
-        MemoryTaskVO reconcile = repository.transaction(em -> em.createQuery(
-                "from MemoryTaskVO t where t.action = 'reconcile' and t.reconcileOperationUuid = :drain", MemoryTaskVO.class)
-                .setParameter("drain", drain.getUuid()).getResultList().get(0));
-        repository.cancel(reconcile.getParentUuid() == null ? reconcile.getUuid() : reconcile.getParentUuid());
-        assertEquals(drain.getUuid(), host1State().getActiveTaskUuid());
-        assertEquals("the Agent still holds the control the drain was fenced on",
-                drain.getUuid(), host1State().getControlOperationUuid());
-        assertEquals("Unknown", host1State().getStatus());
     }
 
     @Test public void newerConfigurationSupersedesAnApplyOnlyWaitingForItsPool() {
@@ -4000,7 +3836,7 @@ public class MemoryRepositoryTest {
                 return null;
             });
             manager.observeHostAfterConnect("host1");
-            MemoryStateVO row = repository.statePage(Collections.singletonList("host1"), 0, 1, null).items.get(0);
+            MemoryStateVO row = repository.states(Collections.singletonList("host1"), 0, 1).get(0);
             MemoryStateInventory projected = MemoryMetricsPresentation.inventory(row, null, System.currentTimeMillis());
             assertEquals(new String[]{"Blocked", "Failed", "Unknown"}[i], projected.getStatus());
             assertEquals("NATIVE_POOL_UNQUALIFIED", projected.getReason());
@@ -4083,40 +3919,6 @@ public class MemoryRepositoryTest {
         assertTrue(finished.get());
     }
 
-    @Test public void currentStateSelectionRejectsAnyNonCurrentKvmHostWithoutChangingHistory() {
-        repository.transaction(em -> {
-            TestHost host = em.find(TestHost.class, "host2");
-            host.hypervisorType = "ESX"; em.merge(host); return null;
-        });
-        for (List<String> selected : Arrays.asList(Collections.singletonList("missing"),
-                Arrays.asList("host1", "missing"), Collections.singletonList("host2"),
-                Arrays.asList("host1", "host2"), Collections.singletonList("cluster1"))) {
-            try { repository.statePage(selected, 0, 10, null); fail("invalid current Host selection accepted: " + selected); }
-            catch (MemoryOperationException expected) { assertEquals("MEMORY_INVALID_TARGETS", expected.getCode()); }
-        }
-        assertEquals(repository.statePage(Collections.singletonList("host1"), 0, 10, null).total,
-                repository.statePage(Arrays.asList("host1", "host1"), 0, 10, null).total);
-        assertEquals(repository.statePage(null, 0, 10, null).total,
-                repository.statePage(Collections.emptyList(), 0, 10, null).total);
-        APIGetMemoryTasksMsg history = new APIGetMemoryTasksMsg();
-        history.setHostUuid("missing"); history.setStart(0); history.setLimit(10);
-        assertTrue("historical task filters may name a deleted Host", repository.tasks(history).isEmpty());
-    }
-
-    @Test public void stateSnapshotRejectsMutationBetweenPages() {
-        MemoryAgentResponse response = new MemoryAgentResponse(); response.status = "Succeeded";
-        response.sampleTime = System.currentTimeMillis(); response.state = Collections.singletonMap("managed", false);
-        repository.observe("host1", response); repository.observe("host2", response);
-        MemoryQueryPage<MemoryStateVO> first = repository.statePage(null, 0, 1, null);
-        repository.transaction(em -> { MemoryStateVO state = em.find(MemoryStateVO.class, "host2"); em.remove(state); return null; });
-        try {
-            repository.statePage(null, 1, 1, first.snapshotId);
-            fail("a changed state set must not be paged with an old snapshot");
-        } catch (MemoryOperationException expected) {
-            assertEquals("MEMORY_QUERY_SNAPSHOT_CHANGED", expected.getCode());
-        }
-    }
-
     @Test public void deletedHostsAreNotCurrentStateEvenWhenEvidenceIsRetained() {
         repository.transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
@@ -4126,9 +3928,7 @@ public class MemoryRepositoryTest {
         });
         assertEquals(1L, repository.stateCount(null));
         assertTrue(repository.states(Collections.singletonList("host1"), 0, 10).isEmpty());
-        MemoryQueryPage<MemoryStateVO> page = repository.statePage(null, 0, 10, null);
-        assertEquals(1L, page.total);
-        assertEquals("host2", page.items.get(0).getHostUuid());
+        assertEquals("host2", repository.states(null, 0, 10).get(0).getHostUuid());
         assertNotNull("Unknown evidence is not discarded by a read",
                 repository.transaction(em -> em.find(MemoryStateVO.class, "host1")));
     }
@@ -4194,7 +3994,7 @@ public class MemoryRepositoryTest {
             return null;
         });
         assertEquals("deny", repository.vmParticipation("vm1"));
-        assertEquals(1L, repository.statePage(null, 0, 10, null).total);
+        assertEquals(1L, repository.stateCount(null));
     }
 
     @Test public void finalVmDeletionRetainsUnresolvedMigrationEvidence() {
@@ -4256,21 +4056,6 @@ public class MemoryRepositoryTest {
         Field field = type.getDeclaredField(name); field.setAccessible(true); field.set(target, value);
     }
 
-    @Test public void taskSnapshotRejectsStatusChangeBetweenPages() {
-        repository.submit(request(0));
-        APIGetMemoryTasksMsg query = new APIGetMemoryTasksMsg(); query.setLimit(1); query.setStatus("Queued");
-        MemoryQueryPage<MemoryTaskInventory> first = repository.taskPage(query);
-        assertNotNull(first.snapshotId);
-        repository.transaction(em -> {
-            MemoryTaskVO task = em.createQuery("from MemoryTaskVO t order by t.createDate desc", MemoryTaskVO.class)
-                    .setMaxResults(1).getSingleResult();
-            task.setStatus("Unknown"); return null;
-        });
-        query.setSnapshotId(first.snapshotId);
-        try { repository.taskPage(query); fail("status mutation must invalidate the task snapshot"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_QUERY_SNAPSHOT_CHANGED", expected.getCode()); }
-    }
-
     private void populateQueryScaleFixture() {
         repository.transaction(em -> {
             for (int i = 0; i < 1200; i++) {
@@ -4284,66 +4069,8 @@ public class MemoryRepositoryTest {
         });
     }
 
-    @Test public void statePagesMaterializeOnlyTheRequestedRows() {
-        populateQueryScaleFixture();
-        factory.getStatistics().clear();
-        MemoryQueryPage<MemoryStateVO> states = repository.statePage(null, 500, 7, null);
-        assertEquals(1202L, states.total); assertEquals(7, states.items.size());
-        assertTrue("State page must not materialize all matching UUIDs", queryRows() <= 8);
-    }
-
-    @Test public void taskPagesMaterializeOnlyTheRequestedRows() {
-        populateQueryScaleFixture();
-        APIGetMemoryTasksMsg msg = new APIGetMemoryTasksMsg(); msg.setStart(500); msg.setLimit(7);
-        factory.getStatistics().clear();
-        MemoryQueryPage<MemoryTaskInventory> tasks = repository.taskPage(msg);
-        assertEquals(1200L, tasks.total); assertEquals(7, tasks.items.size());
-        assertTrue("Task page must not materialize all matching UUIDs or dates", queryRows() <= 8);
-        msg.setSnapshotId(tasks.snapshotId); msg.setStart(507);
-        MemoryQueryPage<MemoryTaskInventory> next = repository.taskPage(msg);
-        assertEquals(tasks.snapshotId, next.snapshotId);
-        Set<String> ids = new HashSet<>(); tasks.items.forEach(t -> ids.add(t.getUuid()));
-        assertTrue(next.items.stream().noneMatch(t -> ids.contains(t.getUuid())));
-    }
-
-    @Test public void rejectedSubmissionDoesNotCommitQueryVersion() {
-        repository.submit(request(0));
-        APIGetMemoryTasksMsg query = new APIGetMemoryTasksMsg();
-        String snapshot = repository.taskPage(query).snapshotId;
-        long revision = repository.getPolicy("Global", "global").getRevision();
-        try { repository.submit(request(revision)); fail("Active task must block a second submission"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_HOST_BUSY", expected.getCode()); }
-        query.setSnapshotId(snapshot);
-        assertEquals(snapshot, repository.taskPage(query).snapshotId);
-    }
-
-    private long queryRows() {
-        long rows = 0;
-        for (String query : factory.getStatistics().getQueries()) {
-            rows += factory.getStatistics().getQueryStatistics(query).getExecutionRowCount();
-        }
-        return rows;
-    }
-
-    @Test public void queryVersionDetectsMutationEvenWhenCountAndOrderingAreUnchanged() {
-        repository.submit(request(0));
-        APIGetMemoryTasksMsg query = new APIGetMemoryTasksMsg(); query.setLimit(1);
-        MemoryQueryPage<MemoryTaskInventory> first = repository.taskPage(query);
-        repository.claim("mn"); // Same rows/count/order, but task state changed.
-        query.setSnapshotId(first.snapshotId); query.setStart(1);
-        try { repository.taskPage(query); fail("Old task snapshot must not silently accept changed task data"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_QUERY_SNAPSHOT_CHANGED", expected.getCode()); }
-    }
-
-    @Test public void samplingDoesNotInvalidateStateMembershipSnapshot() {
-        MemoryQueryPage<MemoryStateVO> first = repository.statePage(null, 0, 1, null);
-        MemoryAgentResponse response = new MemoryAgentResponse(); response.status = "Succeeded";
-        response.sampleTime = System.currentTimeMillis(); response.state = Collections.singletonMap("managed", false);
-        repository.observe("host1", response);
-        assertEquals(first.snapshotId, repository.statePage(null, 1, 1, first.snapshotId).snapshotId);
-        repository.cleanupDeletedResources();
-        try { repository.statePage(null, 1, 1, first.snapshotId); fail("Cleanup boundary invalidates old membership snapshots"); }
-        catch (MemoryOperationException expected) { assertEquals("MEMORY_QUERY_SNAPSHOT_CHANGED", expected.getCode()); }
+    private long taskCount() {
+        return repository.transaction(em -> em.createQuery("select count(t) from MemoryTaskVO t", Long.class).getSingleResult());
     }
 
     private String standardDefault(MemoryStandardField field) {
@@ -4354,8 +4081,8 @@ public class MemoryRepositoryTest {
         return "";
     }
 
-    private APIUpdateMemoryPolicyMsg request(long revision) {
-        APIUpdateMemoryPolicyMsg msg = new APIUpdateMemoryPolicyMsg();
+    private MemoryActionRequest request(long revision) {
+        MemoryActionRequest msg = new MemoryActionRequest();
         SessionInventory session = new SessionInventory(); session.setAccountUuid("admin"); session.setUserUuid("actor");
         msg.setSession(session); msg.setScope("Global"); msg.setResourceUuid("global");
         msg.setTargetHostUuids(Arrays.asList("host1", "host2"));
@@ -4370,85 +4097,6 @@ public class MemoryRepositoryTest {
         task.setScope("Global"); task.setResourceUuid("global"); task.setActorUuid("admin:actor");
         task.setAction(action); task.setStatus(status); task.setPolicy("{}"); task.setDesiredRevision(1);
         return task;
-    }
-
-    @Test public void explicitDeleteAcceptsOnlyConsistentPartialAggregateAndRollsBackWithCaller() {
-        String rootUuid = "88888888888888888888888888888888";
-        repository.transaction(em -> {
-            MemoryTaskVO root = taskFixture(rootUuid, null, null, "apply", "Partial"); em.persist(root);
-            em.persist(taskFixture("99999999999999999999999999999999", rootUuid, "host1", "apply", "Succeeded"));
-            em.persist(taskFixture("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaab", rootUuid, "host2", "apply", "Failed"));
-            return null;
-        });
-        try {
-            repository.transaction(em -> {
-                assertTrue(repository.deleteTaskTree(rootUuid).isDeleted());
-                throw new IllegalStateException("force caller rollback after purge");
-            });
-            fail("outer transaction should roll back the deletion and tombstone together");
-        } catch (IllegalStateException expected) { assertEquals("force caller rollback after purge", expected.getMessage()); }
-        assertEquals(3L, (long) repository.transaction(em -> em.createQuery(
-                "select count(t) from MemoryTaskVO t where t.uuid = :uuid or t.parentUuid = :uuid", Long.class)
-                .setParameter("uuid", rootUuid).getSingleResult()));
-        assertNull(repository.transaction(em -> em.find(MemoryTaskIdempotencyReceiptVO.class, rootUuid)));
-    }
-
-    @Test public void explicitDeleteRejectsHostStateTaskAndMigrationReferencesAndPendingOutbox() {
-        repository.transaction(em -> {
-            MemoryTaskVO root = taskFixture("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", null, null, "apply", "Succeeded");
-            root.setRequestKey("admin:actor:11111111-1111-1111-1111-111111111111");
-            root.setRequestHash("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-            em.persist(root);
-            MemoryTaskVO child = taskFixture("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", root.getUuid(), "host1", "apply", "Succeeded");
-            em.persist(child);
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setActiveTaskUuid(child.getUuid()); state.setControlOperationUuid(child.getUuid());
-            return null;
-        });
-        assertReferenced("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        repository.transaction(em -> {
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
-            state.setActiveTaskUuid(null); state.setControlOperationUuid(null);
-            state.setState("{\"lastConfirmedOperationUuid\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\"}");
-            return null;
-        });
-        assertReferenced("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        repository.transaction(em -> {
-            MemoryStateVO state = em.find(MemoryStateVO.class, "host1"); state.setState("{}");
-            MemoryTaskVO outside = taskFixture("cccccccccccccccccccccccccccccccc", null, null, "reconcile", "Succeeded");
-            outside.setExpectedControlOperationUuid("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); em.persist(outside);
-            return null;
-        });
-        assertReferenced("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        repository.transaction(em -> {
-            em.remove(em.find(MemoryTaskVO.class, "cccccccccccccccccccccccccccccccc"));
-            MemoryMigrationVO migration = new MemoryMigrationVO(); migration.vmUuid = "vm1";
-            migration.operationUuid = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"; migration.sourceHostUuid = "host1";
-            migration.targetHostUuid = "host2"; migration.status = "Holding"; em.persist(migration);
-            return null;
-        });
-        assertReferenced("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        repository.transaction(em -> {
-            em.remove(em.find(MemoryMigrationVO.class, "vm1"));
-            MemoryTaskFailureOutboxVO outbox = new MemoryTaskFailureOutboxVO();
-            outbox.setTaskUuid("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"); outbox.setHostUuid("host1");
-            outbox.setAction("apply"); outbox.setDelivered(false); outbox.setAttempts(0); em.persist(outbox);
-            return null;
-        });
-        assertReferenced("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    }
-
-    private void assertReferenced(String taskUuid) {
-        try {
-            repository.deleteTaskTree(taskUuid);
-            fail("referenced history must be retained");
-        } catch (MemoryOperationException expected) {
-            assertEquals("MEMORY_TASK_REFERENCED", expected.getCode());
-        }
-        assertEquals(2L, (long) repository.transaction(em -> em.createQuery(
-                "select count(t) from MemoryTaskVO t where t.uuid = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' "
-                        + "or t.uuid = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'", Long.class).getSingleResult()));
-        assertNull(repository.transaction(em -> em.find(MemoryTaskIdempotencyReceiptVO.class, taskUuid)));
     }
 
     @Test public void configurationRejectsDisconnectedHostBeforePersistingDesiredOrTask() {
@@ -4482,7 +4130,7 @@ public class MemoryRepositoryTest {
                 "vm1", "host1", "host2");
         repository.transaction(em -> { em.find(TestVm.class, "vm1").hostUuid = "host2"; return null; });
         assertEquals("deny", repository.vmParticipation("vm1"));
-        APIUpdateMemoryPolicyMsg empty = request(0);
+        MemoryActionRequest empty = request(0);
         empty.setScope("VM"); empty.setResourceUuid("vm1"); empty.setTargetHostUuids(null);
         empty.setExpectedInstanceGeneration("new-instance"); empty.setPolicy("{}");
         repository.submit(empty);
@@ -4548,37 +4196,6 @@ public class MemoryRepositoryTest {
         repository.result(drain.getUuid(), "Draining", "executor running", null);
         assertEquals("Draining", repository.states(Collections.singletonList("host4"), 0, 1)
                 .get(0).getStatus());
-    }
-
-    @Test public void cancellingQueuedParentRejectsStartedChildWithoutChangingEitherStatus() {
-        MemoryTaskInventory parent = repository.submit(request(0));
-        MemoryTaskVO startedChild = repository.claim("mn").stream()
-                .filter(child -> parent.getUuid().equals(child.getParentUuid())).findFirst().get();
-        assertEquals("Applying", repository.findTask(startedChild.getUuid()).getStatus());
-        assertEquals("Applying", repository.findTask(parent.getUuid()).getStatus());
-        // claim() updates the root and its child atomically. Restore the queued
-        // root fixture to exercise the child-level rejection guard directly.
-        repository.transaction(em -> {
-            em.find(MemoryTaskVO.class, parent.getUuid()).setStatus("Queued");
-            return null;
-        });
-        assertEquals("Queued", repository.findTask(parent.getUuid()).getStatus());
-        try { repository.cancel(parent.getUuid()); fail("must not cancel a parent with started work"); }
-        catch (MemoryOperationException expected) {
-            assertEquals("MEMORY_TASK_NOT_CANCELLABLE", expected.getCode());
-            assertEquals(11028, MemoryErrors.fromBusinessCode(expected.getCode()).getId());
-        }
-        assertEquals("Queued", repository.findTask(parent.getUuid()).getStatus());
-        assertEquals("Applying", repository.findTask(startedChild.getUuid()).getStatus());
-    }
-
-    @Test public void paginationReportsTotalAndReturnsStableDistinctPages() {
-        repository.submit(request(0));
-        APIGetMemoryTasksMsg query = new APIGetMemoryTasksMsg(); query.setLimit(1);
-        assertEquals(3, repository.taskCount(query));
-        String first = repository.tasks(query).get(0).getUuid(); query.setStart(1);
-        assertNotEquals(first, repository.tasks(query).get(0).getUuid());
-        assertEquals(2, repository.stateCount(null));
     }
 
     @Test public void configuredConcurrencyAndPaginationReachTheRepository() throws Exception {
@@ -4648,7 +4265,7 @@ public class MemoryRepositoryTest {
             return null;
         });
 
-        APIUpdateMemoryPolicyMsg apply = request(0);
+        MemoryActionRequest apply = request(0);
         apply.setScope("Host"); apply.setResourceUuid("host1"); apply.setTargetHostUuids(null);
         apply.setExpectedGlobalRevision(0L);
         MemoryTaskInventory submitted = repository.submit(apply);
@@ -4776,7 +4393,7 @@ public class MemoryRepositoryTest {
                 other.setControlOperationUuid(null); other.setActiveTaskUuid(null); other.setStatus("Succeeded");
                 return null;
             });
-            APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction(action);
+            MemoryActionRequest msg = request(0); msg.setAction(action);
             repository.submit(msg);
             Map<String, String> fences = new HashMap<>();
             for (MemoryTaskVO task : repository.claim("mn-" + action)) {
@@ -4803,7 +4420,7 @@ public class MemoryRepositoryTest {
             state.setControlOperationUuid(paused.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
             return null;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("pause");
+        MemoryActionRequest msg = request(0); msg.setAction("pause");
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
         repository.submit(msg);
         MemoryTaskVO second = repository.claim("mn").get(0);
@@ -4823,7 +4440,7 @@ public class MemoryRepositoryTest {
             state.setControlOperationUuid(applied.getUuid()); state.setActiveTaskUuid(null); state.setStatus("Succeeded");
             return null;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0); msg.setAction("drain");
+        MemoryActionRequest msg = request(0); msg.setAction("drain");
         msg.setScope("Host"); msg.setResourceUuid("host1"); msg.setTargetHostUuids(null);
         repository.submit(msg);
         MemoryTaskVO drain = repository.claim("mn").get(0);
@@ -4840,7 +4457,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void successfulResumeFenceWinsOverOneStalePausedSample() {
-        APIUpdateMemoryPolicyMsg pause = request(0); pause.setAction("pause"); pause.setPolicy("{}");
+        MemoryActionRequest pause = request(0); pause.setAction("pause"); pause.setPolicy("{}");
         repository.submit(pause);
         MemoryTaskVO pauseTask = repository.claim("mn").get(0);
         repository.result(pauseTask.getUuid(), "Succeeded", null,
@@ -4856,7 +4473,7 @@ public class MemoryRepositoryTest {
             state.setState("{\"lifecycle\":{\"paused\":true,\"activeState\":\"paused\"}}");
             return null;
         });
-        APIUpdateMemoryPolicyMsg apply = request(0);
+        MemoryActionRequest apply = request(0);
         apply.setScope("Host"); apply.setResourceUuid("host1"); apply.setTargetHostUuids(null);
         apply.setExpectedGlobalRevision(0L);
         assertEquals("Queued", repository.submit(apply).getStatus());
@@ -5124,7 +4741,7 @@ public class MemoryRepositoryTest {
         MemoryAgentResponse ack = ordinaryReconcileFixture("apply", true);
         assertFalse("observation must not apply across an unfinished query alias", repository.applyEffectivePolicyAfterConnect("host1"));
         assertEquals("query", host1State().getControlOperationUuid());
-        APIUpdateMemoryPolicyMsg query = request(0);
+        MemoryActionRequest query = request(0);
         query.setScope("Host"); query.setResourceUuid("host1"); query.setTargetHostUuids(null);
         query.setAction("reconcile"); query.setPolicy("{}");
         MemoryTaskInventory parent = repository.submit(query);
@@ -5155,7 +4772,7 @@ public class MemoryRepositoryTest {
                 if ("hostRevision".equals(invalid)) em.find(MemoryStateVO.class, "host1").setDesiredRevision(9);
                 return null;
             });
-            APIUpdateMemoryPolicyMsg query = request(0);
+            MemoryActionRequest query = request(0);
             query.setScope("Host"); query.setResourceUuid("host1"); query.setTargetHostUuids(null);
             query.setAction("reconcile"); query.setPolicy("{}");
             try { repository.submit(query); fail(invalid); }
@@ -5164,25 +4781,6 @@ public class MemoryRepositoryTest {
             assertNull(host1State().getActiveTaskUuid());
             assertEquals(2L, (long) repository.transaction(em -> em.createQuery("select count(t) from MemoryTaskVO t", Long.class).getSingleResult()));
         }
-    }
-
-    @Test public void completedReconcileCancellationAndContradictionRetainOriginalProof() {
-        MemoryAgentResponse ack = ordinaryReconcileFixture("apply", true);
-        APIUpdateMemoryPolicyMsg query = request(0);
-        query.setScope("Host"); query.setResourceUuid("host1"); query.setTargetHostUuids(null);
-        query.setAction("reconcile"); query.setPolicy("{}");
-        MemoryTaskInventory parent = repository.submit(query);
-        repository.cancel(parent.getUuid());
-        assertEquals("query", host1State().getControlOperationUuid());
-        assertNull(host1State().getActiveTaskUuid());
-        query.setClientRequestUuid(UUID.randomUUID().toString());
-        MemoryTaskVO retry = claimChild(repository.submit(query).getUuid());
-        ack.setSuccess(false); ack.status = "Failed";
-        repository.result(retry.getUuid(), "Failed", "contradictory response", ack);
-        assertEquals("Succeeded", repository.findTask("original").getStatus());
-        assertEquals("Unknown", repository.findTask(retry.getUuid()).getStatus());
-        assertEquals(retry.getUuid(), host1State().getActiveTaskUuid());
-        assertEquals("query", host1State().getControlOperationUuid());
     }
 
     @Test public void historicalReconcileReceiptAndFreshObservationRemainSeparateProofs() throws Exception {
@@ -5357,7 +4955,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void uncertainRecoveryRetainsUnknownHistoryAndRestoresOnlyDrainFence() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         MemoryTaskInventory parent = repository.submit(msg);
         assertEquals(parent.getUuid(), repository.submit(msg).getUuid());
         MemoryTaskVO task = claimChild(parent.getUuid());
@@ -5387,14 +4985,14 @@ public class MemoryRepositoryTest {
         assertNull(host1State().getAppliedRevision());
         assertEquals(MemoryUncertainRecoveryRulesTest.DRAIN, host1State().getControlOperationUuid());
         // A NEW request goes through the ordinary policy path; no old apply is replayed.
-        APIUpdateMemoryPolicyMsg apply = request(0); apply.setScope("Host"); apply.setResourceUuid("host1");
+        MemoryActionRequest apply = request(0); apply.setScope("Host"); apply.setResourceUuid("host1");
         apply.setTargetHostUuids(null); apply.setExpectedGlobalRevision(0L);
         assertNotNull(repository.submit(apply));
         assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
     }
 
     @Test public void partialPolicyRecoveryRetainsOldUnknownAndAppliesOnlyItsConfirmedPolicy() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         msg.getRecovery().setDrainControlOperationUuid(null);
         repository.transaction(em -> {
             MemoryTaskVO old = em.find(MemoryTaskVO.class, MemoryUncertainRecoveryRulesTest.OLD);
@@ -5406,7 +5004,7 @@ public class MemoryRepositoryTest {
         });
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());
         repository.result(task.getUuid(), "Unknown", "response lost", null);
-        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
+        MemoryActionRequest query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
         query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
         MemoryTaskVO reconciliation = claimChild(repository.submit(query).getUuid());
         MemoryAgentResponse proof = MemoryUncertainRecoveryRulesTest.policyProof(task.getUuid());
@@ -5428,7 +5026,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void partialServiceRecoveryLoadsBoundAnchorTaskBeforeAcceptingProof() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         msg.getRecovery().setDrainControlOperationUuid(null);
         String originalPolicy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true},"
                 + "\"writeback\":{\"enabled\":false}}";
@@ -5448,7 +5046,7 @@ public class MemoryRepositoryTest {
         MemoryTaskVO recovery = claimChild(repository.submit(msg).getUuid());
         repository.result(recovery.getUuid(), "Unknown", "response lost", null);
 
-        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
+        MemoryActionRequest query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
         query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
         MemoryTaskVO reconciliation = claimChild(repository.submit(query).getUuid());
         MemoryAgentResponse proof = MemoryUncertainRecoveryRulesTest.partialServicePolicyProof(
@@ -5464,7 +5062,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void partialServiceRecoveryAcceptsOnlyExactReadOnlyConfigurationAlias() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         msg.getRecovery().setDrainControlOperationUuid(null);
         String originalPolicy = "{\"schemaVersion\":1,\"ksm\":{\"enabled\":true,\"zeroPagesEnabled\":true},"
                 + "\"writeback\":{\"enabled\":false}}";
@@ -5581,7 +5179,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void partialPolicyRecoveryPreflightFailureKeepsOriginalOwner() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest(); msg.getRecovery().setDrainControlOperationUuid(null);
+        MemoryActionRequest msg = uncertainRecoveryRequest(); msg.getRecovery().setDrainControlOperationUuid(null);
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());
         MemoryAgentResponse rejected = MemoryUncertainRecoveryRulesTest.notIssued(task.getUuid());
         ((Map<?, ?>) rejected.state.get("recoveryRejectionProof")).remove("drainControlOperationUuid");
@@ -5597,7 +5195,7 @@ public class MemoryRepositoryTest {
         MemoryTaskVO task = claimChild(repository.submit(uncertainRecoveryRequest()).getUuid());
         repository.result(task.getUuid(), "Unknown", "response lost", null);
         assertEquals(task.getUuid(), host1State().getActiveTaskUuid());
-        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
+        MemoryActionRequest query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
         query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
         MemoryTaskVO reconciliation = claimChild(repository.submit(query).getUuid());
         assertEquals(task.getUuid(), reconciliation.getReconcileOperationUuid());
@@ -5626,7 +5224,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void uncertainRecoveryRequiresFreshExactOwnerAndIdempotencyIncludesProofInputs() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         repository.transaction(em -> { em.find(MemoryStateVO.class, "host1").setLastSampleTime(1L); return null; });
         try { repository.submit(msg); fail("stale boot observation must fail"); }
         catch (MemoryOperationException expected) { assertEquals("MEMORY_UNCERTAIN_RECOVERY_FENCED", expected.getCode()); }
@@ -5648,7 +5246,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void recoveryLicenseExpiryBeforeDispatchRestoresOldSlotAndAllowsANewRequest() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());
         repository.recoveryLicenseExpiredBeforeDispatch(task.getUuid());
         assertEquals("Failed", repository.findTask(task.getUuid()).getStatus());
@@ -5664,7 +5262,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void recoveryNotIssuedProofRestoresOldUnknownOwnerAndAllowsNewRecoveryRequest() {
-        APIUpdateMemoryPolicyMsg msg = uncertainRecoveryRequest();
+        MemoryActionRequest msg = uncertainRecoveryRequest();
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());
         String before = host1State().getState();
         repository.result(task.getUuid(), "Failed", "precheck rejected", MemoryUncertainRecoveryRulesTest.notIssued(task.getUuid()));
@@ -5687,7 +5285,7 @@ public class MemoryRepositoryTest {
     @Test public void recoveryNotIssuedResponseLossReconcilesOnlyNewRecoveryAndKeepsOldUnknown() {
         MemoryTaskVO task = claimChild(repository.submit(uncertainRecoveryRequest()).getUuid());
         repository.result(task.getUuid(), "Unknown", "response lost", null);
-        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
+        MemoryActionRequest query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
         query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
         MemoryTaskVO reconciliation = claimChild(repository.submit(query).getUuid());
         repository.result(reconciliation.getUuid(), "Failed", "precheck rejected", MemoryUncertainRecoveryRulesTest.notIssued(task.getUuid()));
@@ -5721,29 +5319,8 @@ public class MemoryRepositoryTest {
         assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
     }
 
-    @Test public void cancellingQueuedRecoveryRestoresUnknownOwnerRatherThanClearingIt() {
-        MemoryTaskInventory parent = repository.submit(uncertainRecoveryRequest());
-        repository.cancel(parent.getUuid());
-        assertEquals("Cancelled", repository.findTask(parent.getUuid()).getStatus());
-        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getActiveTaskUuid());
-        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
-        assertEquals("Unknown", repository.findTask(MemoryUncertainRecoveryRulesTest.OLD).getStatus());
-    }
-
-    @Test public void cancellingQueuedRecoveryQueryRestoresUnresolvedRecoveryRatherThanOldApply() {
-        MemoryTaskVO task = claimChild(repository.submit(uncertainRecoveryRequest()).getUuid());
-        repository.result(task.getUuid(), "Unknown", "response lost", null);
-        APIUpdateMemoryPolicyMsg query = request(0); query.setScope("Host"); query.setResourceUuid("host1");
-        query.setTargetHostUuids(null); query.setPolicy("{}"); query.setAction("reconcile");
-        MemoryTaskInventory parent = repository.submit(query);
-        repository.cancel(parent.getUuid());
-        assertEquals(task.getUuid(), host1State().getActiveTaskUuid());
-        assertEquals("Unknown", repository.findTask(task.getUuid()).getStatus());
-        assertEquals(MemoryUncertainRecoveryRulesTest.OLD, host1State().getControlOperationUuid());
-    }
-
     @Test public void unconfirmedTaskResponsesCannotOverwriteControlProofOrAppliedRevision() {
-        APIUpdateMemoryPolicyMsg msg = request(0); msg.setScope("Host"); msg.setResourceUuid("host1");
+        MemoryActionRequest msg = request(0); msg.setScope("Host"); msg.setResourceUuid("host1");
         msg.setTargetHostUuids(null); msg.setExpectedGlobalRevision(0L);
         MemoryTaskVO task = claimChild(repository.submit(msg).getUuid());
         String before = host1State().getState();
@@ -5806,7 +5383,7 @@ public class MemoryRepositoryTest {
         assertFalse("an apply that followed no drain has none to name", offered.containsKey("drainControlOperationUuid"));
     }
 
-    private APIUpdateMemoryPolicyMsg uncertainRecoveryRequest() {
+    private MemoryActionRequest uncertainRecoveryRequest() {
         repository.transaction(em -> {
             em.persist(testTask("old-uncertain-parent", null, "apply", "Unknown", null));
             MemoryTaskVO old = testTask(MemoryUncertainRecoveryRulesTest.OLD, "old-uncertain-parent", "apply", "Unknown", null);
@@ -5817,7 +5394,7 @@ public class MemoryRepositoryTest {
             state.setState("{\"bootId\":\"" + MemoryUncertainRecoveryRulesTest.BOOT + "\"}");
             state.setLastSampleTime(System.currentTimeMillis()); return null;
         });
-        APIUpdateMemoryPolicyMsg msg = request(0); msg.setScope("Host"); msg.setResourceUuid("host1");
+        MemoryActionRequest msg = request(0); msg.setScope("Host"); msg.setResourceUuid("host1");
         msg.setTargetHostUuids(null); msg.setAction("recoverUncertain"); msg.setPolicy("{}");
         msg.setExpectedControlOperationUuid(MemoryUncertainRecoveryRulesTest.OLD);
         msg.setRecovery(MemoryUncertainRecoveryRulesTest.requestDto()); return msg;
@@ -5841,7 +5418,6 @@ public class MemoryRepositoryTest {
         HostMemoryStateVO stored = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
         MemoryStateInventory expected = MemoryMetricsPresentation.inventory(host1State(), null, now,
                 repository.canResumeControl("host1", host1State().getControlOperationUuid()),
-                repository.canReconcileRejectedResume("host1", host1State().getControlOperationUuid()),
                 repository.uncertainRecoveryRequest("host1"));
         assertEquals("Blocked", stored.getStatus());
         assertEquals(expected.getStatus(), stored.getStatus());

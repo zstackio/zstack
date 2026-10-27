@@ -1,24 +1,6 @@
 package org.zstack.kvm.memory;
 
-/** Public API inventory. Nullable samples represent unknown, never a fabricated zero. */
 public class MemoryTaskInventory {
-    public static MemoryTaskInventory __example__() {
-        MemoryTaskInventory inventory = new MemoryTaskInventory();
-        inventory.setUuid("0123456789abcdef0123456789abcdef");
-        inventory.setParentUuid("abcdef0123456789abcdef0123456789");
-        inventory.setHostUuid("1234567890abcdef1234567890abcdef");
-        inventory.setScope("Host");
-        inventory.setResourceUuid("1234567890abcdef1234567890abcdef");
-        inventory.setAction("apply");
-        inventory.setStatus("Succeeded");
-        inventory.setReason("Native state matches the requested policy");
-        inventory.setDesiredRevision(7L);
-        inventory.setExpectedControlOperationUuid("abcdef0123456789abcdef0123456789");
-        inventory.setCreateDate(java.sql.Timestamp.valueOf("2026-10-09 12:00:00"));
-        inventory.setLastOpDate(java.sql.Timestamp.valueOf("2026-10-09 12:00:01"));
-        return inventory;
-    }
-
     private String expectedControlOperationUuid;
     public String getExpectedControlOperationUuid() { return expectedControlOperationUuid; }
     public void setExpectedControlOperationUuid(String value) { expectedControlOperationUuid = value; }

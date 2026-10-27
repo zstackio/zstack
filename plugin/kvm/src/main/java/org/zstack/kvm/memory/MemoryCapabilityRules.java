@@ -7,44 +7,6 @@ import java.math.BigDecimal;
 /** Display metadata is conservative and never substitutes for Agent validation. */
 final class MemoryCapabilityRules {
     private MemoryCapabilityRules() { }
-    @SuppressWarnings("unchecked")
-    static void restrict(Map<String, MemoryFieldCapability> fields, MemoryStateVO state, long now) {
-        Map<String, Object> capabilities = null;
-        boolean freshFullSample = state != null && state.getLastSampleTime() != null
-                && state.getLastSampleTime() <= now + 5000
-                && now - state.getLastSampleTime() >= 0
-                && now - state.getLastSampleTime() < MemoryOptimizationGlobalConfig.displayTtlMillis();
-        if (state != null && state.getCapabilities() != null) {
-            try { capabilities = JSONObjectUtil.toObject(state.getCapabilities(), Map.class); }
-            catch (RuntimeException ignored) { }
-        }
-        if (capabilities == null) capabilities = Collections.emptyMap();
-        boolean partialKsm = partialObservation(capabilities) != null;
-        for (Map.Entry<String, MemoryFieldCapability> item : fields.entrySet()) {
-            String name = item.getKey();
-            String capability = name.startsWith("ksm.zero") ? "ksmZeroPages"
-                    : name.startsWith("ksm.") ? "ksm" : name.startsWith("writeback.") ? "writeback" : "zram";
-            String partialReason = partialKsm ? partialCapabilityReason(state, capabilities, capability, now) : null;
-            boolean supported = partialKsm ? partialReason == null
-                    : freshFullSample && Boolean.TRUE.equals(capabilities.get("supported"))
-                    && Boolean.TRUE.equals(capabilities.get(capability));
-            if (!supported) {
-                // Writeback settings are durable desired values. Backend
-                // ownership/readiness gates execution, not persistence;
-                // retain writability while exposing the unavailable reason.
-                if (!"writeback".equals(capability)) {
-                    item.getValue().writable = false;
-                }
-                Object reason = partialKsm ? partialReason : capabilities.get(capability + "ReasonCode");
-                if (!(reason instanceof String) || "SUPPORTED".equals(reason)) { reason = capabilities.get("reasonCode"); }
-                item.getValue().reasonCode = reason instanceof String && !"SUPPORTED".equals(reason)
-                        ? (String) reason : "CAPABILITY_UNAVAILABLE";
-            } else if (!item.getValue().writable) {
-                item.getValue().reasonCode = "LICENSE_UNAVAILABLE";
-            }
-        }
-    }
-
     static boolean hasPartialKsmMarker(MemoryStateVO state) {
         if (state == null || state.getCapabilities() == null) { return false; }
         try {

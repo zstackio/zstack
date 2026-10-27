@@ -24,12 +24,12 @@ public class MemoryMetricsPresentationTest {
         assertEquals(-20, ((Number) result.getMetrics().get("totalSavedEstimateBytes")).longValue());
     }
 
-    @Test public void inventoryPreservesSourceControlAndCurrentStepWhileProjectingTrustedNativeFeature() {
+    @Test public void inventoryPreservesSourceControlWhileProjectingTrustedNativeFeature() {
         MemoryStateVO state = new MemoryStateVO();
         state.setHostUuid("host"); state.setStatus("Succeeded"); state.setReason("original");
         state.setPolicyPlanStatus("Blocked"); state.setPolicyPlanHash("plan");
         state.setActiveTaskUuid(null); state.setControlOperationUuid("op");
-        state.setDesiredRevision(31); state.setAppliedRevision(31L); state.setCurrentStep("drain");
+        state.setDesiredRevision(31); state.setAppliedRevision(31L);
         state.setLastSampleTime(100000L);
         String nativeState = "{\"managed\":true,\"ksmOnly\":true,\"mode\":\"observe\","
                 + "\"resource_authorized\":false,\"bootId\":\"boot-1\","
@@ -41,7 +41,6 @@ public class MemoryMetricsPresentationTest {
         state.setState(nativeState);
         String sourceState = state.getState();
         MemoryStateInventory result = MemoryMetricsPresentation.inventory(state, null, 100100L);
-        assertEquals("drain", result.getCurrentStep());
         assertEquals("Active", result.getFeatureState());
         assertEquals("KSM_NATIVE", result.getFeatureStateSource());
         assertEquals(java.util.Collections.singletonList("query"), result.getAllowedActions());
@@ -50,14 +49,12 @@ public class MemoryMetricsPresentationTest {
         assertEquals("original", state.getReason());
         assertEquals("op", state.getControlOperationUuid());
         assertEquals(Long.valueOf(31L), state.getAppliedRevision());
-        assertEquals("drain", state.getCurrentStep());
         assertEquals("Blocked", result.getStatus());
 
         MemoryStateInventory repeat = MemoryMetricsPresentation.inventory(state, null, 100100L);
         assertEquals(result.getStatus(), repeat.getStatus());
         assertEquals(result.getFeatureState(), repeat.getFeatureState());
         assertEquals(result.getAllowedActions(), repeat.getAllowedActions());
-        assertEquals(result.getCurrentStep(), repeat.getCurrentStep());
     }
 
     @Test public void inventoryProjectsSevenValueStatusConservativelyFromPlanAndActivity() {
@@ -107,8 +104,8 @@ public class MemoryMetricsPresentationTest {
         applied.setControlOperationUuid("op"); applied.setDesiredRevision(31); applied.setAppliedRevision(31L);
         applied.setState(nativeState);
 
-        MemoryStateInventory blockedResult = MemoryMetricsPresentation.inventory(blocked, null, 100100L, true, false);
-        MemoryStateInventory appliedResult = MemoryMetricsPresentation.inventory(applied, null, 100100L, true, false);
+        MemoryStateInventory blockedResult = MemoryMetricsPresentation.inventory(blocked, null, 100100L, true);
+        MemoryStateInventory appliedResult = MemoryMetricsPresentation.inventory(applied, null, 100100L, true);
         assertEquals("Blocked", blockedResult.getStatus());
         assertEquals("Succeeded", appliedResult.getStatus());
         assertEquals(appliedResult.getAllowedActions(), blockedResult.getAllowedActions());
@@ -120,8 +117,8 @@ public class MemoryMetricsPresentationTest {
 
     @Test public void uncertainRecoveryIsOfferedOnlyWithItsConfirmationRequest() {
         java.util.Map<String, String> request = java.util.Collections.singletonMap("expectedHostBootId", "boot");
-        MemoryStateInventory offered = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, false, request);
-        MemoryStateInventory plain = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, false, null);
+        MemoryStateInventory offered = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, request);
+        MemoryStateInventory plain = MemoryMetricsPresentation.inventory(state(), null, 100000L, false, null);
         assertTrue(offered.getAllowedActions().contains("recoverUncertain"));
         assertEquals(request, offered.getUncertainRecovery());
         assertFalse(plain.getAllowedActions().contains("recoverUncertain"));

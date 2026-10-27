@@ -1,6 +1,6 @@
 package org.zstack.kvm.memory;
 
-/** One requested Host in GetMemorySummary, projected exactly as GetMemoryStates does. */
+/** One requested Host in GetMemorySummary, from the same projection as QueryHostMemoryState. */
 public class MemoryHostSavingsInventory {
     public static MemoryHostSavingsInventory __example__() {
         MemoryHostSavingsInventory inventory = new MemoryHostSavingsInventory();

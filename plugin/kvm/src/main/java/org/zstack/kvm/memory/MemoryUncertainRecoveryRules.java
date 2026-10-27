@@ -10,7 +10,7 @@ public final class MemoryUncertainRecoveryRules {
     public static final String ACTION = "recoverUncertain";
     private MemoryUncertainRecoveryRules() { }
 
-    public static void validate(APIUpdateMemoryPolicyMsg msg) {
+    public static void validate(MemoryActionRequest msg) {
         MemoryUncertainRecovery request = msg.getRecovery();
         if (!ACTION.equals(msg.getAction())) {
             if (request != null) { invalid(); }

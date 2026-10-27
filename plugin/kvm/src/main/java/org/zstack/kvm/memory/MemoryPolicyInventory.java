@@ -1,28 +1,6 @@
 package org.zstack.kvm.memory;
 
-/** Public API inventory. Nullable samples represent unknown, never a fabricated zero. */
 public class MemoryPolicyInventory {
-    public static MemoryPolicyInventory __example__() {
-        MemoryPolicyInventory inventory = new MemoryPolicyInventory();
-        inventory.setScope("Host");
-        inventory.setResourceUuid("1234567890abcdef1234567890abcdef");
-        inventory.setRevision(7L);
-        inventory.setSourceRevision(3L);
-        inventory.setPolicy("{\"ksm\":{\"enabled\":true}}");
-        inventory.setEffectivePolicy("{\"ksm\":{\"enabled\":true}}");
-        inventory.setSource("Host");
-        java.util.Map<String, Long> revisions = new java.util.LinkedHashMap<>();
-        revisions.put("Global:global", 3L);
-        revisions.put("Cluster:234567890abcdef1234567890abcdef1", 4L);
-        revisions.put("Host:" + inventory.getResourceUuid(), inventory.getRevision());
-        inventory.setSourceRevisions(revisions);
-        inventory.setFieldSources(java.util.Collections.singletonMap("ksm.enabled", "Host:" + inventory.getResourceUuid()));
-        inventory.setFieldCapabilities(java.util.Collections.singletonMap("ksm.enabled",
-                new MemoryFieldCapability(true, true, "Boolean", "", "Enables Kernel Same-page Merging")));
-        inventory.setFieldModes(java.util.Collections.<String, String>emptyMap());
-        return inventory;
-    }
-
     private MemoryVmExclusionInventory migrationExclusion;
     public MemoryVmExclusionInventory getMigrationExclusion() { return migrationExclusion; }
     public void setMigrationExclusion(MemoryVmExclusionInventory value) { migrationExclusion = value; }
@@ -39,12 +17,6 @@ public class MemoryPolicyInventory {
     private long sourceRevision;
     public long getSourceRevision() { return sourceRevision; }
     public void setSourceRevision(long value) { sourceRevision = value; }
-    private java.util.Map<String, MemoryFieldCapability> fieldCapabilities;
-    private String source;
-    public java.util.Map<String, MemoryFieldCapability> getFieldCapabilities() { return fieldCapabilities; }
-    public void setFieldCapabilities(java.util.Map<String, MemoryFieldCapability> value) { fieldCapabilities = value; }
-    public String getSource() { return source; }
-    public void setSource(String value) { source = value; }
     private String scope;
     public String getScope() { return scope; }
     public void setScope(String value) { scope = value; }

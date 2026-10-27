@@ -9,7 +9,7 @@ import java.util.*;
 /** Aggregate complete same-window Host samples; never join independent metric peaks. */
 public final class MemorySummaryRules {
     private MemorySummaryRules() { }
-    /** Per-Host savings use the GetMemoryStates projection; a Host without state stays Unknown. */
+    /** Per-Host savings use the Host state projection; a Host without state stays Unknown. */
     public static List<MemoryHostSavingsInventory> hostDetails(List<String> hosts, List<MemoryStateVO> states,
             Map<String, Map<String, Object>> samples, long now) {
         Map<String, MemoryStateVO> byHost = new HashMap<>();

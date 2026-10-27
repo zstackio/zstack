@@ -5,7 +5,7 @@ import java.sql.Timestamp
 doc {
     title "物理机内存优化状态"
     field { name "hostUuid"; desc "物理机UUID。"; type "String"; since "5.5.48" }
-    field { name "status"; desc "Applied、Applying、Blocked、Failed或Unknown，与GetMemoryStates的status相同。"; type "String"; since "5.5.48" }
+    field { name "status"; desc "Applied、Applying、Blocked、Failed或Unknown。"; type "String"; since "5.5.48" }
     field { name "featureState"; desc "Active、Disabled、Paused、Unknown或Unsupported；观测过期时为Unknown。"; type "String"; since "5.5.48" }
     field { name "reason"; desc "阻塞或失败原因。"; type "String"; since "5.5.48" }
     field { name "capabilities"; desc "ksm、ksmZeroPages、zram、writeback是否支持及不支持的原因。"; type "Map"; since "5.5.48" }

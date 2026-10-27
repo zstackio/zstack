@@ -33,26 +33,14 @@ public class MemoryTaskRulesTest {
         assertEquals(false, call("isSafetyAction", signature, "clearOverride", "{}"));
         assertEquals(false, call("isSafetyAction", signature, "pause", "{\"zram\":{\"enabled\":true}}"));
         assertEquals(false, call("isSafetyAction", signature, "drain", "null"));
-
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "apply", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "clearOverride", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "pause", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "drain", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "resume", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "apply", "{\"participation\":\"deny\"}"));
-        assertEquals(false, call("requiresLicenseForConfiguration", signature, "reconcile", "{}"));
-        assertEquals(true, call("requiresLicenseForConfiguration", signature, "reconcile", "{\"ksm\":{}}"));
     }
 
-    @Test public void unknownBlocksConflictingWorkAndOnlyQueuedCanCancel() throws Exception {
+    @Test public void unknownBlocksConflictingWork() throws Exception {
         Class<?>[] signature = {String.class};
         assertEquals(true, call("blocksHost", signature, "Unknown"));
         assertEquals(true, call("blocksHost", signature, "Draining"));
         assertEquals(true, call("blocksHost", signature, "Blocked"));
         assertEquals(false, call("blocksHost", signature, "Succeeded"));
-        assertEquals(false, call("canCancel", signature, "Unknown"));
-        assertEquals(false, call("canCancel", signature, "Applying"));
-        assertEquals(true, call("canCancel", signature, "Queued"));
     }
 
     @Test public void timeoutIsNeverSuccessAndTerminalCannotBeReplayed() throws Exception {
