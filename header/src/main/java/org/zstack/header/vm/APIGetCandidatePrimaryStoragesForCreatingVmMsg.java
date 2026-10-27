@@ -5,12 +5,16 @@ import org.zstack.header.configuration.DiskOfferingVO;
 import org.zstack.header.configuration.InstanceOfferingVO;
 import org.zstack.header.identity.Action;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.message.APIParam;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.network.l3.L3NetworkVO;
 import org.zstack.header.rest.RestRequest;
+import org.zstack.header.rest.APINoSee;
 
 import java.util.List;
+import java.util.ArrayList;
 
 import static java.util.Arrays.asList;
 
@@ -25,8 +29,31 @@ import static java.util.Arrays.asList;
 )
 
 public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallMessage {
-    @APIParam(resourceType = ImageVO.class, checkAccount = true)
+    @APIParam(required = false, resourceType = ImageVO.class, checkAccount = true)
     private String imageUuid;
+    @APIParam(required = false, resourceType = VolumeSnapshotVO.class, checkAccount = true)
+    private String volumeSnapshotUuid;
+
+    public String getVolumeSnapshotUuid() {
+        return volumeSnapshotUuid;
+    }
+
+    public void setVolumeSnapshotUuid(String volumeSnapshotUuid) {
+        this.volumeSnapshotUuid = volumeSnapshotUuid;
+    }
+
+    @APIParam(required = false, resourceType = VolumeSnapshotGroupVO.class, checkAccount = true)
+    private String volumeSnapshotGroupUuid;
+
+    public String getVolumeSnapshotGroupUuid() {
+        return volumeSnapshotGroupUuid;
+    }
+
+    public void setVolumeSnapshotGroupUuid(String volumeSnapshotGroupUuid) {
+        this.volumeSnapshotGroupUuid = volumeSnapshotGroupUuid;
+    }
+
+
     @APIParam(resourceType = L3NetworkVO.class, nonempty = true, checkAccount = true)
     private List<String> l3NetworkUuids;
     @APIParam(required = false, resourceType = DiskOfferingVO.class, checkAccount = true)
@@ -41,8 +68,20 @@ public class APIGetCandidatePrimaryStoragesForCreatingVmMsg extends APISyncCallM
     private String clusterUuid;
     private String defaultL3NetworkUuid;
 
+
     @APIParam(required = false, resourceType = InstanceOfferingVO.class, checkAccount = true)
     private String instanceOfferingUuid;
+
+    @APINoSee
+    private List<String> possiblePrimaryStorageTypes = new ArrayList<>();
+
+    public List<String> getPossiblePrimaryStorageTypes() {
+        return possiblePrimaryStorageTypes;
+    }
+
+    public void setPossiblePrimaryStorageTypes(List<String> possiblePrimaryStorageTypes) {
+        this.possiblePrimaryStorageTypes = possiblePrimaryStorageTypes;
+    }
 
     public String getInstanceOfferingUuid() {
         return instanceOfferingUuid;

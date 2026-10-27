@@ -438,7 +438,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
             }
         }
 
-        ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        ImageVO image = msg.getImageUuid() == null ? null : dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
         if (image != null && image.getMediaType() == ImageMediaType.ISO) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 if (msg.getRootDiskSize() == null || msg.getRootDiskSize() <= 0) {
@@ -466,6 +466,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
     }
 
     private void validate(final APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
+        if (msg.getImageUuid() == null) {
+            return;
+        }
+
         ImageMediaType mediaType = Q.New(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).select(ImageVO_.mediaType).findValue();
         if (ImageMediaType.ISO == mediaType) {
             if (msg.getRootDiskOfferingUuid() == null) {

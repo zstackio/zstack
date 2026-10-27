@@ -1,6 +1,7 @@
 package org.zstack.storage.snapshot;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
@@ -10,11 +11,15 @@ import org.zstack.core.db.SimpleQuery;
 import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
-import org.zstack.header.apimediator.ApiMessageInterceptor;
+import org.zstack.header.apimediator.GlobalApiMessageInterceptor;
 import org.zstack.header.apimediator.StopRoutingException;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.message.APIMessage;
+import org.zstack.header.storage.primary.*;
 import org.zstack.header.storage.snapshot.*;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
+import org.zstack.header.vm.APIGetCandidatePrimaryStoragesForCreatingVmMsg;
+import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmMsg;
 import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -29,15 +34,14 @@ import static org.zstack.core.Platform.operr;
 import static org.zstack.storage.snapshot.VolumeSnapshotMessageRouter.getResourceIdToRouteMsg;
 
 import javax.persistence.Tuple;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 
 /**
  */
-public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
+public class VolumeSnapshotApiInterceptor implements GlobalApiMessageInterceptor {
     private final static CLogger logger = Utils.getLogger(VolumeSnapshotApiInterceptor.class);
     @Autowired
     private CloudBus bus;
@@ -47,6 +51,9 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
     private ErrorFacade errf;
     @Autowired
     protected PluginRegistry pluginRgty;
+    @Autowired
+    @Qualifier("BackupStoragePrimaryStorageMetrics")
+    private Map<String, List<String>> backupStoragePrimaryStorageMetrics;
 
     private void setServiceId(APIMessage msg) {
         if (msg instanceof VolumeSnapshotMessage) {
@@ -61,7 +68,11 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
 
     @Override
     public APIMessage intercept(APIMessage msg) throws ApiMessageInterceptionException {
-        if (msg instanceof APIDeleteVolumeSnapshotMsg) {
+        if (msg instanceof APIGetCandidatePrimaryStoragesForCreatingVmMsg) {
+            validate((APIGetCandidatePrimaryStoragesForCreatingVmMsg) msg);
+        } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
+            validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
+        } else if (msg instanceof APIDeleteVolumeSnapshotMsg) {
             validate((APIDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIRevertVolumeFromSnapshotMsg) {
             validate((APIRevertVolumeFromSnapshotMsg) msg);
@@ -80,6 +91,97 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
         setServiceId(msg);
 
         return msg;
+    }
+
+    @Override
+    public List<Class> getMessageClassToIntercept() {
+        return Arrays.asList(APIGetCandidatePrimaryStoragesForCreatingVmMsg.class,
+                APIGetCandidateZonesClustersHostsForCreatingVmMsg.class);
+    }
+
+    @Override
+    public InterceptorPosition getPosition() {
+        return InterceptorPosition.DEFAULT;
+    }
+
+    private void validate(APIGetCandidatePrimaryStoragesForCreatingVmMsg msg) {
+        msg.setPossiblePrimaryStorageTypes(new ArrayList<>());
+        VolumeSnapshotVO snapshot = validateCandidateSource(msg.getImageUuid(), msg.getVolumeSnapshotUuid(),
+                msg.getVolumeSnapshotGroupUuid(), msg.getRootDiskOfferingUuid(), msg.getRootDiskSize(),
+                msg.getDataDiskOfferingUuids(), msg.getDataDiskSizes());
+        if (snapshot == null) {
+            return;
+        }
+
+        msg.setRootDiskSize(Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid())
+                .select(VolumeVO_.size).findValue());
+        String psType = Q.New(PrimaryStorageVO.class).eq(PrimaryStorageVO_.uuid, snapshot.getPrimaryStorageUuid())
+                .select(PrimaryStorageVO_.type).findValue();
+        List<String> psTypes = backupStoragePrimaryStorageMetrics.values().stream()
+                .filter(types -> types.contains(psType)).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+        if (psTypes.isEmpty()) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348,
+                    "cannot find compatible primary storage types for snapshot[%s]", snapshot.getUuid()));
+        }
+        msg.setPossiblePrimaryStorageTypes(psTypes);
+    }
+
+    private void validate(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
+        msg.setRequiredPrimaryStorageUuids(new HashSet<>());
+        VolumeSnapshotVO snapshot = validateCandidateSource(msg.getImageUuid(), msg.getVolumeSnapshotUuid(),
+                msg.getVolumeSnapshotGroupUuid(), msg.getRootDiskOfferingUuid(), msg.getRootDiskSize(),
+                msg.getDataDiskOfferingUuids(), null);
+        if (snapshot == null) {
+            return;
+        }
+
+        msg.setRootDiskSize(0L);
+        if (msg.getVolumeSnapshotGroupUuid() != null) {
+            VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getVolumeSnapshotGroupUuid(), VolumeSnapshotGroupVO.class);
+            msg.setRequiredPrimaryStorageUuids(new VolumeSnapshotGroupBase(group).getEffectiveSnapshots().stream()
+                    .filter(it -> VolumeType.Data.toString().equals(it.getVolumeType()))
+                    .map(VolumeSnapshotVO::getPrimaryStorageUuid).collect(Collectors.toSet()));
+        }
+    }
+
+    private VolumeSnapshotVO validateCandidateSource(String imageUuid, String snapshotUuid, String groupUuid,
+                                                     String rootOfferingUuid, Long rootSize, List<String> dataOfferings, List<Long> dataSizes) {
+        long sources = java.util.stream.Stream.of(imageUuid, snapshotUuid, groupUuid).filter(java.util.Objects::nonNull).count();
+        if (sources != 1) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348, "exactly one of imageUuid, volumeSnapshotUuid and volumeSnapshotGroupUuid is required"));
+        }
+        if (imageUuid == null && (rootOfferingUuid != null || rootSize != null || dataOfferings != null || dataSizes != null)) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348, "disk offerings and disk sizes cannot be specified with a snapshot source"));
+        }
+        if (imageUuid != null) {
+            return null;
+        }
+        if (groupUuid != null) {
+            List<String> roots = Q.New(VolumeSnapshotGroupRefVO.class)
+                    .eq(VolumeSnapshotGroupRefVO_.volumeSnapshotGroupUuid, groupUuid)
+                    .eq(VolumeSnapshotGroupRefVO_.volumeType, VolumeType.Root.toString())
+                    .select(VolumeSnapshotGroupRefVO_.volumeSnapshotUuid).listValues();
+            if (roots.size() != 1) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348,
+                        "snapshot group[%s] must contain one root volume snapshot", groupUuid));
+            }
+            snapshotUuid = roots.get(0);
+        }
+        VolumeSnapshotVO snapshot = dbf.findByUuid(snapshotUuid, VolumeSnapshotVO.class);
+        if (snapshot == null || snapshot.getState() != VolumeSnapshotState.Enabled
+                || snapshot.getStatus() != VolumeSnapshotStatus.Ready || snapshot.getPrimaryStorageUuid() == null
+                || VolumeType.Memory.toString().equals(snapshot.getVolumeType())) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348,
+                    "snapshot[%s] is not available for creating a VM", snapshotUuid));
+        }
+        PrimaryStorageVO storage = dbf.findByUuid(snapshot.getPrimaryStorageUuid(), PrimaryStorageVO.class);
+        if (!Q.New(VolumeVO.class).eq(VolumeVO_.uuid, snapshot.getVolumeUuid()).isExists()
+                || storage == null || storage.getState() != PrimaryStorageState.Enabled
+                || storage.getStatus() != PrimaryStorageStatus.Connected) {
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10348,
+                    "source volume or primary storage of snapshot[%s] is unavailable", snapshotUuid));
+        }
+        return snapshot;
     }
 
     private boolean isWithMemoryForSnapshotGroup(VolumeSnapshotGroupVO groupVO) {
