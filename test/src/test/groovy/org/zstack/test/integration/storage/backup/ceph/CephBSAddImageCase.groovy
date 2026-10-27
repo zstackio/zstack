@@ -6,6 +6,7 @@ import org.zstack.core.db.SQL
 import org.zstack.header.image.*
 import org.zstack.header.storage.backup.BackupStorageVO
 import org.zstack.header.storage.backup.BackupStorageVO_
+import org.zstack.image.ImageGlobalConfig
 import org.zstack.sdk.BackupStorageInventory
 import org.zstack.sdk.DiskOfferingInventory
 import org.zstack.sdk.ImageInventory
@@ -18,6 +19,7 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 import org.zstack.utils.gson.JSONObjectUtil
+import java.util.concurrent.atomic.AtomicInteger
 /**
  * Created by lining on 2017/3/31.
  */
@@ -100,6 +102,7 @@ class CephBSAddImageCase extends SubCase{
             simulatorEnv()
             testImageBackupStorageRefVOWhenAddImage()
             testUploadImage()
+            testUploadClockSkewAndIdleTimeout()
             testCreateTemplateFromVolume()
             testAddImageButBSHasNoAvailableCapacity()
         }
@@ -283,6 +286,63 @@ class CephBSAddImageCase extends SubCase{
         assert Q.New(ImageBackupStorageRefVO.class).eq(ImageBackupStorageRefVO_.imageUuid, image.uuid)
                 .select(ImageBackupStorageRefVO_.backupStorageUuid)
                 .findValue() == bs.uuid
+    }
+
+    void testUploadClockSkewAndIdleTimeout() {
+        def oldIdle = ImageGlobalConfig.UPLOAD_MAX_IDLE_IN_SECONDS.value()
+        def path = CephBackupStorageBase.GET_DOWNLOAD_PROGRESS_PATH
+        def oldSimulator = env.getSimulator(path)
+        BackupStorageInventory bs = env.inventoryByName("ceph-bk")
+        try {
+            ImageGlobalConfig.UPLOAD_MAX_IDLE_IN_SECONDS.updateValue("6")
+            for (long offset : [-600000L, 600000L]) {
+                def polls = new AtomicInteger()
+                env.simulator(path) {
+                    int poll = polls.incrementAndGet()
+                    def rsp = new CephBackupStorageBase.GetDownloadProgressRsp()
+                    rsp.actualSize = 2048
+                    rsp.size = 2048
+                    rsp.downloadSize = poll >= 4 ? 2048 : poll
+                    rsp.lastOpTime = System.currentTimeMillis() + offset
+                    rsp.completed = poll >= 4
+                    rsp.installPath = "dummy-pool/clock-skew-${offset}"
+                    return rsp
+                }
+                ImageInventory image = addImage {
+                    name = "clock-skew-${offset}"
+                    url = "upload://clock-skew.iso"
+                    backupStorageUuids = [bs.uuid]
+                    format = ImageConstant.ISO_FORMAT_STRING
+                }
+                retryInSecs(25) {
+                    def current = dbFindByUuid(image.uuid, ImageVO.class)
+                    assert current?.status == ImageStatus.Ready : "active upload with BS clock offset ${offset} must finish, actual=${current?.status}, polls=${polls.get()}"
+                }
+            }
+
+            long lastOperation = System.currentTimeMillis() + 600000L
+            env.simulator(path) {
+                def rsp = new CephBackupStorageBase.GetDownloadProgressRsp()
+                rsp.actualSize = 2048
+                rsp.size = 2048
+                rsp.downloadSize = 1
+                rsp.lastOpTime = lastOperation
+                rsp.completed = false
+                return rsp
+            }
+            ImageInventory stalled = addImage {
+                name = "stalled-ahead-clock"
+                url = "upload://stalled.iso"
+                backupStorageUuids = [bs.uuid]
+                format = ImageConstant.ISO_FORMAT_STRING
+            }
+            retryInSecs(20) {
+                assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, stalled.uuid).isExists() : "stalled upload must expire despite BS clock being ahead"
+            }
+        } finally {
+            ImageGlobalConfig.UPLOAD_MAX_IDLE_IN_SECONDS.updateValue(oldIdle)
+            env.simulator(path, oldSimulator)
+        }
     }
 
     @Override

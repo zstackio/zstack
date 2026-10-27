@@ -109,7 +109,9 @@ public class UploadImageTracker {
 
         thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             private long numError = 0;
-            private long createdTime = System.currentTimeMillis();
+            private long createdTime = System.nanoTime();
+            private long lastOpTime = Long.MIN_VALUE;
+            private long lastProgressTime = createdTime;
 
             private void markCompletion(final GetImageDownloadProgressReply dr) {
                 ImageVO ivo = new SQLBatchWithReturn<ImageVO>() {
@@ -177,9 +179,8 @@ public class UploadImageTracker {
                 evtf.fire(ImageCanonicalEvents.IMAGE_TRACK_RESULT_PATH, data);
             }
 
-            private boolean overMaxIdleTime(long lastOpTimeInMills) {
-                long latestTime = Long.max(lastOpTimeInMills, createdTime);
-                return System.currentTimeMillis() - latestTime > TimeUnit.SECONDS.toMillis(maxIdleSecond);
+            private boolean overMaxIdleTime(long localTimeInNanos) {
+                return System.nanoTime() - localTimeInNanos > TimeUnit.SECONDS.toNanos(maxIdleSecond);
             }
 
             private ErrorCode allocateBackupStorage(long actualSize) {
@@ -213,7 +214,11 @@ public class UploadImageTracker {
                     return true;
                 }
 
-                boolean downloadingImageSuspendedTooLong = !reply.isDownloadComplete() && overMaxIdleTime(reply.getLastOpTime()) ;
+                if (reply.getLastOpTime() != lastOpTime) {
+                    lastOpTime = reply.getLastOpTime();
+                    lastProgressTime = System.nanoTime();
+                }
+                boolean downloadingImageSuspendedTooLong = !reply.isDownloadComplete() && overMaxIdleTime(lastProgressTime);
                 if (downloadingImageSuspendedTooLong && reply.isSupportSuspend()) {
                     markFailure(err(ORG_ZSTACK_IMAGE_10020, ImageErrors.UPLOAD_IMAGE_INTERRUPTED, reply.getError(),
                             "uploading has been inactive more than %d sec", maxIdleSecond));
