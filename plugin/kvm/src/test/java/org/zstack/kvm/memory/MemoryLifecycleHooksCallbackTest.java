@@ -281,6 +281,17 @@ public class MemoryLifecycleHooksCallbackTest {
                 return;
             }
             calls.add(host + ":" + ("migration-hold".equals(action) ? command.get("holdAction") : command.get("action")));
+            if ("vm-efficiency".equals(action)) {
+                // The Agent journals each operation UUID; the hold's UUID was already used by the migration's bind.
+                MemoryAgentResponse answer = response(host, null);
+                answer.operationUuid = String.valueOf(command.get("operationUuid"));
+                if ("op-1".equals(answer.operationUuid)) {
+                    answer.status = "Failed"; answer.setSuccess(false); answer.reasonCode = "OPERATION_UUID_REUSE";
+                }
+                if ("bind".equals(command.get("action"))) { bindCommand = new HashMap<>(command); }
+                callback.accept(answer);
+                return;
+            }
             super.call(host, action, command, callback);
         }
     }

@@ -547,27 +547,43 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 if (!running) { releaseRecoveredHold(hold, done); return; }
                 if (confirmedHost.equals(hold.sourceHostUuid)) {
                     hold.sourceInstanceGeneration = source.generation; record(hold);
-                    rebind(hold, false, rebound -> {
+                    rebind(recoveryOperation(hold), false, rebound -> {
                         if (rebound) { releaseRecoveredHold(hold, done); }
                         else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown")); }
                     });
                     return;
                 }
                 if (target.generation != null) { hold.targetInstanceGeneration = target.generation; record(hold); }
+                MemoryMigrationVO operation = recoveryOperation(hold);
                 Consumer<Boolean> afterBind = rebound -> {
                     if (!rebound) { done.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
                     if (!hostExists(hold.sourceHostUuid)) { releaseRecoveredHold(hold, done); return; }
-                    revoke(hold, revoked -> {
+                    revoke(operation, revoked -> {
                         if (revoked) { releaseRecoveredHold(hold, done); }
                         else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM revocation remains unknown")); }
                     });
                 };
                 // A target without a service-owned pool has nothing to bind.
-                if (managedZram(hold.targetHostUuid)) { rebind(hold, true, afterBind); } else { afterBind.accept(true); }
+                if (managedZram(hold.targetHostUuid)) { rebind(operation, true, afterBind); } else { afterBind.accept(true); }
             });
         } catch (RuntimeException e) {
             done.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold recovery failed: " + e.getMessage()));
         }
+    }
+
+    /**
+     * The recovery's bind and revoke are new Agent operations: the hold's own UUID
+     * may already be journaled for the migration's bind. Only the release uses it.
+     */
+    private static MemoryMigrationVO recoveryOperation(MemoryMigrationVO hold) {
+        MemoryMigrationVO operation = new MemoryMigrationVO();
+        operation.vmUuid = hold.vmUuid; operation.operationUuid = Platform.getUuid();
+        operation.sourceHostUuid = hold.sourceHostUuid; operation.targetHostUuid = hold.targetHostUuid;
+        operation.poolGeneration = hold.poolGeneration;
+        operation.sourceInstanceGeneration = hold.sourceInstanceGeneration;
+        operation.targetInstanceGeneration = hold.targetInstanceGeneration;
+        operation.status = hold.status;
+        return operation;
     }
 
     /** A deleted Host has no VM; any other Host answers from its Agent inventory. */
