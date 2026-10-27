@@ -50,6 +50,15 @@ class UpdateVmNicDriverCase extends SubCase {
                 return rsp
             }
 
+            def volume = createDataVolume {
+                name = "nic-driver-data"
+                diskOfferingUuid = env.inventoryByName("diskOffering").uuid
+            }
+            attachDataVolumeToVm {
+                vmInstanceUuid = vm.uuid
+                volumeUuid = volume.uuid
+            }
+
             testChangePlatformWithVirtioEnabled()
             addSecondNic()
             [
@@ -67,7 +76,7 @@ class UpdateVmNicDriverCase extends SubCase {
         assert VmSystemTags.VIRTIO.hasTag(vm.uuid)
         assert driverOf(nicUuid) == "virtio"
 
-        updateVmInstance {
+        vm = updateVmInstance {
             uuid = vm.uuid
             platform = ImagePlatform.Other.toString()
             guestOsType = "FreeBSD"
@@ -101,7 +110,7 @@ class UpdateVmNicDriverCase extends SubCase {
     }
 
     void testUpdateNicDriver(ImagePlatform targetPlatform, String targetGuestOs) {
-        updateVmInstance {
+        vm = updateVmInstance {
             uuid = vm.uuid
             platform = targetPlatform.toString()
             guestOsType = targetGuestOs
@@ -141,6 +150,14 @@ class UpdateVmNicDriverCase extends SubCase {
         assert driverOf(nicUuid) == "virtio"
         startAndCheck([(nicUuid): "virtio", (secondNicUuid): "e1000"], false)
 
+        updateVmNicDriver {
+            vmInstanceUuid = vm.uuid
+            vmNicUuid = nicUuid
+            driverType = "rtl8139"
+        }
+        assert driverOf(nicUuid) == "rtl8139"
+        startAndCheck([(nicUuid): "rtl8139", (secondNicUuid): "e1000"], false)
+
         createSystemTag {
             resourceType = "VmInstanceVO"
             resourceUuid = vm.uuid
@@ -178,6 +195,7 @@ class UpdateVmNicDriverCase extends SubCase {
 
     void assertStartCommand(Map<String, String> drivers, boolean virtioEnabled) {
         assert startCmd != null
+        assert startCmd.imagePlatform == vm.platform
         assert startCmd.nics.size() == drivers.size()
         drivers.each { uuid, driver ->
             def nic = startCmd.nics.find { it.resourceUuid == uuid }
@@ -185,6 +203,11 @@ class UpdateVmNicDriverCase extends SubCase {
             assert nic.driverType == driver
         }
         assert startCmd.rootVolume.useVirtio == virtioEnabled
+        assert startCmd.dataVolumes.size() == 1
+        if (vm.platform == ImagePlatform.Other.toString()) {
+            assert !startCmd.rootVolume.useVirtioSCSI
+            assert startCmd.dataVolumes.every { !it.useVirtio && !it.useVirtioSCSI }
+        }
         assert VmSystemTags.VIRTIO.hasTag(vm.uuid) == virtioEnabled
     }
 
