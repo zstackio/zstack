@@ -490,6 +490,109 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         }
     }
 
+    /**
+     * The operator's exit for a hold the automatic reconcile cannot prove: the VM
+     * runs on confirmedHost (source or target), or is stopped when it is null.
+     * The platform and both Hosts must agree before the hold is released.
+     */
+    void recoverMigrationHold(String vmUuid, String confirmedHost, Completion completion) {
+        MemoryMigrationVO hold = repository.transaction(em -> em.find(MemoryMigrationVO.class, vmUuid));
+        if (hold == null || "Released".equals(hold.status)) {
+            completion.fail(error("MEMORY_INVALID_REQUEST", "VM has no unresolved memory migration hold")); return;
+        }
+        List<Object[]> vm = repository.transaction(em -> em.createQuery(
+                "select v.state, v.hostUuid from VmInstanceVO v where v.uuid = :uuid", Object[].class)
+                .setParameter("uuid", vmUuid).getResultList());
+        String vmState = vm.isEmpty() ? null : String.valueOf(vm.get(0)[0]);
+        String vmHost = vm.isEmpty() ? null : (String) vm.get(0)[1];
+        boolean running = confirmedHost != null;
+        if (running && (!Arrays.asList(hold.sourceHostUuid, hold.targetHostUuid).contains(confirmedHost)
+                || !VmInstanceState.Running.toString().equals(vmState) || !confirmedHost.equals(vmHost))
+                || !running && !VmInstanceState.Stopped.toString().equals(vmState)) {
+            completion.fail(error("MEMORY_INVALID_REQUEST", String.format("VM is %s on Host[%s]; confirm the migration"
+                    + " source or target it runs on, or none for a stopped VM", vmState, vmHost))); return;
+        }
+        if (!reconcilingHolds.add(hold.operationUuid)) {
+            completion.fail(error("MEMORY_MIGRATION_HOLD_PENDING", "The hold is being reconciled; try again")); return;
+        }
+        Completion done = new Completion(completion) {
+            @Override public void success() { reconcilingHolds.remove(hold.operationUuid); completion.success(); }
+            @Override public void fail(ErrorCode errorCode) { reconcilingHolds.remove(hold.operationUuid); completion.fail(errorCode); }
+        };
+        try {
+            locateVm(hold, (source, target) -> {
+                // The side that is bound needs its instance generation; a target without a pool needs none.
+                boolean onSource = source.present && source.generation != null
+                        && target.authoritative && !target.present;
+                boolean onTarget = target.present && (target.generation != null || !managedZram(hold.targetHostUuid))
+                        && source.authoritative && !source.present;
+                boolean nowhere = source.authoritative && !source.present && target.authoritative && !target.present;
+                boolean confirmed = !running ? nowhere : confirmedHost.equals(hold.sourceHostUuid) ? onSource : onTarget;
+                if (!confirmed) {
+                    done.fail(error("MEMORY_INVALID_REQUEST", String.format("Hosts do not show the VM only %s: source %s,"
+                            + " target %s", running ? "on Host[" + confirmedHost + "]" : "stopped",
+                            describe(source), describe(target))));
+                    return;
+                }
+                if (!running) { releaseRecoveredHold(hold, done); return; }
+                if (confirmedHost.equals(hold.sourceHostUuid)) {
+                    hold.sourceInstanceGeneration = source.generation; record(hold);
+                    rebind(hold, false, rebound -> {
+                        if (rebound) { releaseRecoveredHold(hold, done); }
+                        else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown")); }
+                    });
+                    return;
+                }
+                if (target.generation != null) { hold.targetInstanceGeneration = target.generation; record(hold); }
+                Consumer<Boolean> afterBind = rebound -> {
+                    if (!rebound) { done.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
+                    if (!hostExists(hold.sourceHostUuid)) { releaseRecoveredHold(hold, done); return; }
+                    revoke(hold, revoked -> {
+                        if (revoked) { releaseRecoveredHold(hold, done); }
+                        else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM revocation remains unknown")); }
+                    });
+                };
+                // A target without a service-owned pool has nothing to bind.
+                if (managedZram(hold.targetHostUuid)) { rebind(hold, true, afterBind); } else { afterBind.accept(true); }
+            });
+        } catch (RuntimeException e) {
+            done.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold recovery failed: " + e.getMessage()));
+        }
+    }
+
+    /** A deleted Host has no VM; any other Host answers from its Agent inventory. */
+    private void locateVm(MemoryMigrationVO hold, BiConsumer<VmIdentity, VmIdentity> completion) {
+        identityOn(hold, hold.sourceHostUuid, source -> identityOn(hold, hold.targetHostUuid,
+                target -> completion.accept(source, target)));
+    }
+
+    private void identityOn(MemoryMigrationVO hold, String host, Consumer<VmIdentity> completion) {
+        if (!hostExists(host)) { completion.accept(new VmIdentity(true, false, null)); return; }
+        manager.call(host, "state", command(hold, host), response -> completion.accept(vmIdentity(response, hold.vmUuid)));
+    }
+
+    private boolean hostExists(String host) {
+        return !repository.transaction(em -> em.createQuery("select h.uuid from HostVO h where h.uuid = :uuid", String.class)
+                .setParameter("uuid", host).getResultList()).isEmpty();
+    }
+
+    private static String describe(VmIdentity identity) {
+        return !identity.authoritative ? "unknown" : identity.present ? "has it" : "does not have it";
+    }
+
+    /** No pool generation means the source acquire was never sent; otherwise the source service releases it. */
+    private void releaseRecoveredHold(MemoryMigrationVO hold, Completion completion) {
+        if (hold.poolGeneration == null || !hostExists(hold.sourceHostUuid)) {
+            hold.status = "Released"; hold.reason = "Released by operator recovery"; record(hold);
+            completion.success();
+            return;
+        }
+        hold(hold, "release", released -> {
+            if (released) { completion.success(); }
+            else { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source migration hold release remains unknown")); }
+        });
+    }
+
     /** Never retries a hold without identity evidence. */
     void reconcileMigrationHold(String vmUuid, Completion completion) {
         MemoryMigrationVO hold = repository.transaction(em -> em.find(MemoryMigrationVO.class, vmUuid, LockModeType.PESSIMISTIC_WRITE));

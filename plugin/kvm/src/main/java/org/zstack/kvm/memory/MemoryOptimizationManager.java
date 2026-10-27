@@ -29,6 +29,7 @@ import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
+import org.zstack.header.core.Completion;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostCanonicalEvents;
@@ -201,6 +202,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             } else if (message instanceof APIRecoverHostMemoryOptimizationMsg) {
                 APIRecoverHostMemoryOptimizationEvent event = new APIRecoverHostMemoryOptimizationEvent(message.getId());
                 submitLongJob((APICreateMessage) message, event, event::setInventory);
+            } else if (message instanceof APIRecoverVmMemoryMigrationHoldMsg) {
+                APIRecoverVmMemoryMigrationHoldEvent event = new APIRecoverVmMemoryMigrationHoldEvent(message.getId());
+                submitLongJob((APICreateMessage) message, event, event::setInventory);
+            } else if (message instanceof MemoryVmMigrationHoldRecoveryMsg) {
+                recoverMigrationHold((MemoryVmMigrationHoldRecoveryMsg) message);
             }
             else if (message instanceof APIPauseMemoryOptimizationMsg) {
                 APIPauseMemoryOptimizationEvent event = new APIPauseMemoryOptimizationEvent(message.getId());
@@ -403,6 +409,16 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
         if (reply.isSuccess()) { return "success"; }
         return reply.getError() == null ? "Unknown: no reply" : reply.getError().getCode() + ": " + reply.getError().getDetails();
+    }
+
+    private void recoverMigrationHold(MemoryVmMigrationHoldRecoveryMsg msg) {
+        requireLicense();
+        lifecycleHooks.recoverMigrationHold(msg.getVmUuid(), msg.getConfirmedHostUuid(), new Completion(msg) {
+            @Override public void success() { bus.reply(msg, new MessageReply()); }
+            @Override public void fail(org.zstack.header.errorcode.ErrorCode errorCode) {
+                MessageReply reply = new MessageReply(); reply.setError(errorCode); bus.reply(msg, reply);
+            }
+        });
     }
 
     void reportClusterProgress(int done, int total) {
