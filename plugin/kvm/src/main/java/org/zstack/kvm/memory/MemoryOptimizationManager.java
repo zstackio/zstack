@@ -404,7 +404,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     : DRAIN.equals(msg.getAction()) ? "drained" : null;
             if (control == null) { throw new MemoryOperationException("MEMORY_INVALID_ACTION", "Unknown Host operation " + msg.getAction()); }
             MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, true, true);
-            waiters.put(planned.task, new Waiter(deadline, finish));
+            waiters.put(planned.task, new Waiter(host, deadline, finish));
         } catch (MemoryOperationException e) {
             finish.accept(e.getCode() + ": " + e.getMessage());
             return;
@@ -435,17 +435,20 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     private static final class Waiter {
+        final String host;
         final long deadline;
         final Consumer<String> done;
-        Waiter(long deadline, Consumer<String> done) { this.deadline = deadline; this.done = done; }
+        Waiter(String host, long deadline, Consumer<String> done) { this.host = host; this.deadline = deadline; this.done = done; }
     }
 
     /** Finishes the operations whose task reached a final status. */
     private void completeWaiters() {
         if (waiters.isEmpty()) { return; }
         Map<String, MemoryTaskVO> tasks;
+        Set<String> connected;
         try {
             tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
+            connected = new HashSet<>(repository.connectedHosts());
         } catch (RuntimeException e) {
             logger.warn("Unable to read memory operation status; waiting operations are checked again", e);
             return;
@@ -453,11 +456,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         long now = System.currentTimeMillis();
         for (String uuid : new ArrayList<>(waiters.keySet())) {
             MemoryTaskVO task = tasks.get(uuid);
+            Waiter waiting = waiters.get(uuid);
+            if (waiting == null) { continue; }
+            // A disconnected Host is sent its generation when it reconnects; do not hold the operation for it.
             String outcome = task == null ? "Failed: operation record not found"
                     : MemoryRepository.SUCCEEDED.equals(task.getStatus()) ? "success"
                     : !MemoryRepository.CONVERGING.equals(task.getStatus())
                     ? task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason())
-                    : waiters.get(uuid).deadline <= now ? "MEMORY_RESULT_CONVERGING: " + task.getReason() : null;
+                    : !connected.contains(waiting.host) ? "MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED"
+                    : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + task.getReason() : null;
             if (outcome == null) { continue; }
             Waiter waiter = waiters.remove(uuid);
             if (waiter == null) { continue; }

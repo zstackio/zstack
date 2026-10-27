@@ -27,6 +27,12 @@ public class MemoryClusterOperationTest {
         final List<String> plans = new ArrayList<>();
         final Set<String> rejected = new HashSet<>();
         final Set<String> drained = new HashSet<>();
+        final Set<String> disconnected = new HashSet<>();
+        @Override public List<String> connectedHosts() {
+            List<String> hosts = new ArrayList<>(Arrays.asList("host1", "host2"));
+            hosts.removeAll(disconnected);
+            return hosts;
+        }
         String preparedBackend;
         long preparedCapacity;
 
@@ -192,6 +198,17 @@ public class MemoryClusterOperationTest {
         assertEquals(1, manager.commands.size());
         manager.held.poll().accept(reply("Succeeded", null, null));
         assertEquals(Collections.singletonList("success"), manager.outcomes);
+    }
+
+    @Test public void aDisconnectedHostDoesNotHoldTheClusterOperation() throws Exception {
+        setup();
+        repository.disconnected.add("host2");
+        manager.script("host1", "apply", reply("Succeeded", null, null));
+        invoke(manager, cluster("pause"));
+        Map<String, String> results = ((MemoryClusterOperationReply) replies.get(0)).getResults();
+        assertEquals("success", results.get("host1"));
+        assertEquals("MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED", results.get("host2"));
+        assertEquals("the Host still has its generation to receive", "paused", repository.controls.get("host2"));
     }
 
     @Test public void oneHostRejectedAtSubmissionDoesNotStopTheRest() throws Exception {
