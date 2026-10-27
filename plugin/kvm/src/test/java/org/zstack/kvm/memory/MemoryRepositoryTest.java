@@ -265,9 +265,12 @@ public class MemoryRepositoryTest {
         HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
         assertEquals("Applied", row.getStatus());
         assertTrue(row.getAllowedActions().contains("resume"));
-        // Asking for what is already applied succeeds at once.
+        // Asking again resends the same generation, and finishes when the Host confirms it.
         MemoryRepository.Planned again = repository.plan("host1", "paused", "pause", "test", true, true);
         assertEquals(pause.generation, again.generation);
+        assertEquals("Converging", task(again.task).getStatus());
+        assertEquals(pause.generation, repository.pending("host1").generation);
+        repository.record("host1", pause.generation, reply("Succeeded", null, null));
         assertEquals("Succeeded", task(again.task).getStatus());
     }
 
@@ -338,13 +341,38 @@ public class MemoryRepositoryTest {
         MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", true, true);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", pause.generation);
+        applied.state.put("control", "paused");
         repository.record("host1", pause.generation, applied);
         repository.observe("host1", applied);
         assertEquals("Succeeded", repository.state("host1").getStatus());
         MemoryAgentResponse reinstalled = reply("Succeeded", null, null);
+        reinstalled.state.put("control", "paused");
         repository.observe("host1", reinstalled);
         assertEquals("Converging", repository.state("host1").getStatus());
         assertNotNull(repository.pending("host1"));
+    }
+
+    @Test public void aHostThatStoppedItsWantedZramIsSentItsGenerationAgain() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        applied.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "active")));
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        MemoryAgentResponse stopped = reply("Succeeded", null, null);
+        stopped.state.put("appliedGeneration", plan.generation);
+        stopped.state.put("control", "stopped");
+        stopped.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "inactive")));
+        stopped.state.put("ksm", new LinkedHashMap<>(Collections.singletonMap("enabled", false)));
+        repository.observe("host1", stopped);
+        assertEquals("Converging", repository.state("host1").getStatus());
+        assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+        assertNotNull(repository.pending("host1"));
+        HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("a stopped wanted ZRAM is not reported as Disabled", "Unknown", row.getFeatureState());
+        assertEquals("Converging", row.getStatus());
     }
 
     @Test public void drainedHostIsReported() {

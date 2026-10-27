@@ -271,14 +271,13 @@ public class MemoryRepository {
                 state.setStatus(CONVERGING); state.setReason(null); state.setFailures(0);
                 state.setNextAttemptAt(System.currentTimeMillis());
                 finishTasks(em, host, generation - 1, "Superseded", "Superseded by generation " + generation);
-            } else if (operation && FAILED.equals(state.getStatus())) {
-                // Asking again retries a Host that gave up on this generation.
+            } else if (operation && !CONVERGING.equals(state.getStatus())) {
+                // An operator asking again resends the current generation, also to a Host that gave up.
                 state.setStatus(CONVERGING); state.setFailures(0); state.setNextAttemptAt(System.currentTimeMillis());
             }
             String task = null;
             if (changed || operation) {
-                task = newTask(em, host, action, actor, state.getDesiredRevision(),
-                        changed || !SUCCEEDED.equals(state.getStatus()) ? CONVERGING : SUCCEEDED);
+                task = newTask(em, host, action, actor, state.getDesiredRevision(), CONVERGING);
             }
             em.flush();
             refreshHostState(em, state);
@@ -435,12 +434,14 @@ public class MemoryRepository {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) { return null; }
             observe(state, response, System.currentTimeMillis());
-            Object applied = state.getState() == null ? null
-                    : JSONObjectUtil.toObject(state.getState(), LinkedHashMap.class).get("appliedGeneration");
-            if (SUCCEEDED.equals(state.getStatus()) && response != null && response.isSuccess()
-                    && !(applied instanceof Number && ((Number) applied).longValue() == state.getDesiredRevision())) {
-                // The Host no longer reports the delivered generation (for example it was reinstalled).
-                state.setStatus(CONVERGING); state.setNextAttemptAt(System.currentTimeMillis());
+            Object applied = response == null || response.state == null ? null : response.state.get("appliedGeneration");
+            if (SUCCEEDED.equals(state.getStatus()) && response != null && response.isSuccess() && response.state != null
+                    && (!(applied instanceof Number && ((Number) applied).longValue() == state.getDesiredRevision())
+                    || drifted(desired(state), response.state))) {
+                // The Host no longer reports the delivered generation (e.g. it was reinstalled)
+                // or no longer matches it (e.g. its service stopped): send it again.
+                state.setStatus(CONVERGING); state.setReason("HOST_DRIFTED"); state.setFailures(0);
+                state.setNextAttemptAt(System.currentTimeMillis());
             }
             refreshHostState(em, state);
             return null;
@@ -487,9 +488,9 @@ public class MemoryRepository {
         }
         row.setStatus(publicStatus(state));
         row.setReason(trim(state.getReason()));
-        row.setFeatureState(featureState(observed));
+        row.setFeatureState(featureState(observed, Boolean.TRUE.equals(field(desired(state).get("zram"), "enabled"))));
         row.setCapabilities(state.getCapabilities());
-        row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), observed)));
+        row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), FAILED.equals(state.getStatus()), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
         if (row.getActiveJobUuid() != null && !longJobUnfinished(em, row.getActiveJobUuid())) { row.setActiveJobUuid(null); }
         if (created) { em.persist(row); }
@@ -502,13 +503,35 @@ public class MemoryRepository {
         return state.getReason() == null ? "Applying" : CONVERGING;
     }
 
-    static String featureState(Map<String, Object> observed) {
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> desired(MemoryStateVO state) {
+        if (state.getDesired() == null) { return Collections.emptyMap(); }
+        try { return JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class); }
+        catch (RuntimeException invalid) { return Collections.emptyMap(); }
+    }
+
+    /** The observed Host contradicts its applied desired configuration. */
+    static boolean drifted(Map<String, Object> desired, Map<String, Object> observed) {
+        Object control = desired.get("control"), observedControl = observed.get("control");
+        if ("drained".equals(control)) { return "active".equals(observedControl) || "paused".equals(observedControl); }
+        if ("paused".equals(control)) { return "active".equals(observedControl); }
+        if (!"active".equals(control)) { return false; }
+        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
+                && (Arrays.asList("paused", "drained", "stopped").contains(observedControl)
+                || !"active".equals(field(observed.get("zram"), "serviceState")))) { return true; }
+        Object ksm = field(desired.get("ksm"), "enabled"), observedKsm = field(observed.get("ksm"), "enabled");
+        return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
+    }
+
+    static String featureState(Map<String, Object> observed, boolean zramWanted) {
         if (observed.isEmpty()) { return "Unknown"; }
         Map<?, ?> capabilities = map(observed.get("capabilities"));
         if (capabilities != null && Boolean.FALSE.equals(capabilities.get("supported"))) { return "Unsupported"; }
         Object control = observed.get("control");
         if ("drained".equals(control)) { return "Drained"; }
         if ("paused".equals(control)) { return "Paused"; }
+        // A wanted ZRAM whose service is not running cannot be observed.
+        if (zramWanted && !"active".equals(field(observed.get("zram"), "serviceState"))) { return "Unknown"; }
         Object ksm = field(observed.get("ksm"), "enabled");
         Object zram = field(observed.get("zram"), "efficiencyEnabled");
         if (Boolean.TRUE.equals(ksm) || Boolean.TRUE.equals(zram)) { return "Active"; }
@@ -516,15 +539,16 @@ public class MemoryRepository {
         return "Unknown";
     }
 
-    static List<String> allowedActions(String control, Map<String, Object> observed) {
+    static List<String> allowedActions(String control, boolean failed, Map<String, Object> observed) {
         List<String> actions = new ArrayList<>();
         actions.add("query");
-        if (!"active".equals(control)) {
-            actions.add("resume");
-            return actions;
-        }
         Object observedControl = observed.get("control");
-        if ("active".equals(observedControl) && !"Disabled".equals(featureState(observed))) { actions.add("pause"); }
+        // Resume also retries a Host that gave up or is still observed paused or drained.
+        if (!"active".equals(control) || failed || "paused".equals(observedControl) || "drained".equals(observedControl)) {
+            actions.add("resume");
+        }
+        if (!"active".equals(control)) { return actions; }
+        if ("active".equals(observedControl) && !"Disabled".equals(featureState(observed, false))) { actions.add("pause"); }
         if (field(observed.get("zram"), "poolGeneration") != null) { actions.add("drain"); }
         return actions;
     }
