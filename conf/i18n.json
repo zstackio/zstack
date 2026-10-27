@@ -19427,6 +19427,17 @@
     "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupManagerImpl.java"
   },
   {
+    "raw": "cannot bind %d security groups to a vm nic, the maximum allowed number is %d",
+    "en_US": "cannot bind {0} security groups to a vm nic, the maximum allowed number is {1}",
+    "zh_CN": "无法为网卡绑定 {0} 个安全组，最多允许绑定 {1} 个",
+    "arguments": [
+      "count",
+      "limit"
+    ],
+    "line": 920,
+    "fileName": "src/main/java/org/zstack/network/securitygroup/SecurityGroupApiInterceptor.java"
+  },
+  {
     "raw": "the netwotk service[type:%s] not enabled on the l3Network[uuid:%s] of nic[uuid:%s]",
     "en_US": "the netwotk service[type:{0}] not enabled on the l3Network[uuid:{1}] of nic[uuid:{2}]",
     "zh_CN": "网络服务[类型：{0}]未在NIC[uuid：{2}]的L3网络[uuid：{1}]上启用",
