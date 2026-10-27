@@ -427,6 +427,28 @@ public class MemoryLifecycleHooksCallbackTest {
         assertTrue(done.done);
     }
 
+    @Test public void migrationToATargetWithoutAZramPoolReleasesWithoutATargetInstanceGeneration() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.hostsWithoutPool.add("host-b");
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command,
+                                Consumer<MemoryAgentResponse> callback) {
+                if ("state".equals(action) && "host-b".equals(host)) {
+                    // The target lists the VM from libvirt; its stopped ZRAM service gives no generation.
+                    MemoryAgentResponse answer = response(host, null);
+                    ((Map<String, Object>) answer.state.get("vms")).put("vm-1", new HashMap<>());
+                    answer.capabilities = new HashMap<>();
+                    answer.capabilities.put("zram", false); answer.capabilities.put("zramReasonCode", "SERVICE_UNAVAILABLE");
+                    callback.accept(answer);
+                } else { super.call(host, action, command, callback); }
+            }
+        };
+        migrate(repository, manager);
+        assertEquals("Released", repository.hold.status);
+        assertNull("nothing is bound on a target without a pool", manager.bindCommand);
+        assertNotNull("the source binding is revoked", manager.revokeCommand);
+    }
+
     @Test public void existingVmBindingsRespectStoredDenyAndSkipAlreadyBoundInstances() throws Exception {
         MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
         FakeManager manager = new FakeManager();
@@ -526,10 +548,11 @@ public class MemoryLifecycleHooksCallbackTest {
             return function.apply(entityManager);
         }
         String vmPolicy(String vm) { return "{\"schemaVersion\":1,\"participation\":\"inherit\"}"; }
+        final Set<String> hostsWithoutPool = new HashSet<>();
         @Override public List<MemoryStateVO> states(List<String> hosts, int start, int limit) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host-a");
             state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
-            state.setState("{\"poolGeneration\":\"pool-1\"}");
+            state.setState(hostsWithoutPool.contains(hosts.get(0)) ? "{}" : "{\"poolGeneration\":\"pool-1\"}");
             return Collections.singletonList(state);
         }
     }
