@@ -7,8 +7,10 @@ import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
 import org.zstack.test.unittest.core.DatabaseUpgradeSqlCase
+import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.utils.NetworkUtilsCase
 import org.zstack.test.unittest.utils.OfferingUserConfigUtilsCase
+import org.zstack.test.unittest.utils.SystemTagUtilsCase
 import org.zstack.test.unittest.utils.SizeUnitUtilsCase
 
 import java.util.stream.Collectors
@@ -19,9 +21,11 @@ import java.util.stream.Collectors
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses([
+        MessageTimeoutContextCase.class,
         DatabaseUpgradeSqlCase.class,
         NetworkUtilsCase.class,
         OfferingUserConfigUtilsCase.class,
+        SystemTagUtilsCase.class,
         SizeUnitUtilsCase.class
     ])
 class JUnitTestSuite {

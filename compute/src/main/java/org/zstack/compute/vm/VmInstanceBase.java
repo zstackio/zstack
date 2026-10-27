@@ -6947,6 +6947,7 @@ public class VmInstanceBase extends AbstractVmInstance {
             }
             spec.setAvoidHostUuids(((StartVmInstanceMsg) msg).getAvoidHostUuids());
             spec.setCreatePaused(((StartVmInstanceMsg) msg).isStartPaused());
+            spec.setRequiredClusterUuid(((StartVmInstanceMsg) msg).getClusterUuid());
         } else if (msg instanceof RestoreVmInstanceMsg) {
             spec.setMemorySnapshotUuid(((RestoreVmInstanceMsg) msg).getMemorySnapshotUuid());
         }
