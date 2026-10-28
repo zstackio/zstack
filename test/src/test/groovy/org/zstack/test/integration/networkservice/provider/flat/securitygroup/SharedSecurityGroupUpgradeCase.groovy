@@ -1,6 +1,7 @@
 package org.zstack.test.integration.networkservice.provider.flat.securitygroup
 
 import org.zstack.compute.vm.InstantiateVmFromNewCreatedStruct
+import org.zstack.compute.vm.VmSystemTags
 import org.zstack.core.db.DatabaseFacade
 import org.zstack.core.db.Q
 import org.zstack.core.db.SimpleQuery
@@ -30,7 +31,7 @@ import org.zstack.utils.gson.JSONObjectUtil
 
 /**
  * Scenario: Use persisted private admin bindings and the old JustCreate JSON format after upgrading.
- * Expected: Existing bindings remain hidden and protected; old Created VMs still start, including after admin shares the group.
+ * Expected: Existing bindings remain hidden and protected; old Created VMs start with remaining groups after configured groups are deleted or shared.
  * This case verifies legacy data compatibility, not an upgrade between two installed management-node versions.
  */
 class SharedSecurityGroupUpgradeCase extends SubCase {
@@ -169,14 +170,16 @@ class SharedSecurityGroupUpgradeCase extends SubCase {
     }
 
     void testLegacyAdminGroupOnFirstStart() {
-        List<VmInstanceInventory> created = (1..2).collect { int index ->
+        SecurityGroupInventory deletedGroup = createSecurityGroup { name = "legacy-deleted-admin-group" }
+        List<VmInstanceInventory> created = (1..3).collect { int index ->
+            String groupUuids = index == 3 ? deletedGroup.uuid : "${adminGroup.uuid},${tenantGroup.uuid},${deletedGroup.uuid}"
             VmInstanceInventory vm = createVmInstance {
                 name = "legacy-created-${index}"
                 imageUuid = env.inventoryByName("image").uuid
                 instanceOfferingUuid = env.inventoryByName("instanceOffering").uuid
                 l3NetworkUuids = [l3Uuid]
                 strategy = VmCreationStrategy.JustCreate.toString()
-                systemTags = ["l3::${l3Uuid}::SecurityGroupUuids::${adminGroup.uuid},${tenantGroup.uuid}".toString()]
+                systemTags = ["l3::${l3Uuid}::SecurityGroupUuids::${groupUuids}".toString()]
             }
             changeResourceOwner {
                 resourceUuid = vm.uuid
@@ -191,6 +194,7 @@ class SharedSecurityGroupUpgradeCase extends SubCase {
             bean(DatabaseFacade.class).update(label)
             return vm
         }
+        deleteSecurityGroup { uuid = deletedGroup.uuid }
 
         VmInstanceInventory first = startVmInstance {
             uuid = created[0].uuid
@@ -200,6 +204,7 @@ class SharedSecurityGroupUpgradeCase extends SubCase {
         assert first.state == "Running"
         assert Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, first.vmNics[0].uuid)
                 .orderBy(VmNicSecurityGroupRefVO_.priority, SimpleQuery.Od.ASC).list()*.securityGroupUuid == [adminGroup.uuid, tenantGroup.uuid]
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(first.uuid).isEmpty() : "first start must consume the group configuration tag"
 
         def firstStartGroups = querySecurityGroup {
             conditions = ["uuid=${adminGroup.uuid}"]
@@ -220,6 +225,9 @@ class SharedSecurityGroupUpgradeCase extends SubCase {
         }
 
         assert second.state == "Running"
+        assert Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, second.vmNics[0].uuid)
+                .orderBy(VmNicSecurityGroupRefVO_.priority, SimpleQuery.Od.ASC).list()*.securityGroupUuid == [adminGroup.uuid, tenantGroup.uuid]
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(second.uuid).isEmpty() : "shared first start must consume the group configuration tag"
 
         def sharedGroups = querySecurityGroup {
             conditions = ["uuid=${adminGroup.uuid}"]
@@ -236,5 +244,14 @@ class SharedSecurityGroupUpgradeCase extends SubCase {
 
         assert Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmNicUuid, second.vmNics[0].uuid)
                 .orderBy(VmNicSecurityGroupRefVO_.priority, SimpleQuery.Od.ASC).list()*.securityGroupUuid == [tenantGroup.uuid, adminGroup.uuid]
+
+        VmInstanceInventory withoutGroups = startVmInstance {
+            uuid = created[2].uuid
+            sessionId = tenantSession.uuid
+        }
+
+        assert withoutGroups.state == "Running" : "deleted groups must not block legacy first start"
+        assert !Q.New(VmNicSecurityGroupRefVO.class).eq(VmNicSecurityGroupRefVO_.vmInstanceUuid, withoutGroups.uuid).isExists() : "deleted groups must not create bindings"
+        assert VmSystemTags.L3_NETWORK_SECURITY_GROUP_UUIDS_REF.getTags(withoutGroups.uuid).isEmpty() : "empty group configuration must still consume its tag"
     }
 }
