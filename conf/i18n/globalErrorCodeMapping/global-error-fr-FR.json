@@ -1263,6 +1263,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "Aucune instance trouvée avec l'UUID du volume racine: %s",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "Aucune VM trouvée pour le volume[uuid:%s]",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "Opération non prise en charge sur une pièce jointe de volume partagé",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "Impossible de restaurer la VM depuis la sauvegarde de volume[uuid:%s] : la VM possédait un vTPM à ce point de sauvegarde, et cette version ne prend pas en charge la restauration de l'état vTPM depuis une sauvegarde de VM.",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "Impossible de rétablir la VM[uuid:%s] à la sauvegarde de volume[uuid:%s] : la VM ne possédait pas de vTPM à ce point de sauvegarde mais en possède un actuellement, et cette version ne peut pas retirer le périphérique vTPM pendant le rétablissement.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "aucun stockage de sauvegarde ne peut récupérer l'image[uuid:%s] pour le volume[uuid:%s]",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "Impossible de trouver JoinType dans le package importé ou la classe. Veuillez vous assurer que vous avez importé le bon package et que la classe contient le JoinType défini.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "l'image[uuid: %s] n'a pas de référence à un stockage de sauvegarde[uuid: %s]",

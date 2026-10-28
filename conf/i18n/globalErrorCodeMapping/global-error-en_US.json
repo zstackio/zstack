@@ -1268,6 +1268,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "No instance found with root volume UUID: %s",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "No VM found for volume[uuid:%s]",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "Operation not supported on a shared volume attachment",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "Cannot restore VM from volume backup[uuid:%s]: the VM had a vTPM at that backup point, and this version does not support restoring vTPM state from a VM backup.",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "Cannot revert VM[uuid:%s] to volume backup[uuid:%s]: the VM had no vTPM at that backup point but currently has one, and this version cannot remove the vTPM device during the revert.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "no backup storage can retrieve image[uuid:%s] for volume[uuid:%s]",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "Cannot find JoinType in the imported package or class. Please ensure that you have imported the correct package and the class contains the defined JoinType.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "image[uuid: %s] has no reference to a backup storage[uuid: %s]",

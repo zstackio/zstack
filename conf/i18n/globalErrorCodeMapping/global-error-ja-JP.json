@@ -1263,6 +1263,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "ルートボリュームUUID: %s を持つインスタンスが見つかりません",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "ボリューム[uuid:%s]のVMが見つかりません",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "共有ボリューム attachment でこの操作はサポートされていません",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "ボリュームバックアップ[uuid:%s]からVMを復元できません。このバックアップポイントのVMにはvTPMがありましたが、現在のバージョンはVMバックアップからのvTPM状態の復元に対応していません。",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "VM[uuid:%s]をボリュームバックアップ[uuid:%s]に戻せません。このバックアップポイントにはvTPMがありませんでしたが、VMには現在vTPMがあり、現在のバージョンでは戻し操作中にvTPMデバイスを削除できません。",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "ボリューム[uuid:%s]の画像[uuid:%s]を取得できるバックアップストレージがありません",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "インポートされたパッケージまたはクラスにJoinTypeが見つかりません。正しいパッケージをインポートし、クラスに定義されたJoinTypeが含まれていることを確認してください。",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "画像[uuid: %s]にはバックアップストレージ[uuid: %s]への参照がありません",

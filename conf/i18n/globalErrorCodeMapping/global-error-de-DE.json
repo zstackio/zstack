@@ -1233,6 +1233,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "Keine Instanz mit Volume-UUID gefunden: %s",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "Keine VM gefunden für Volume[uuid:%s]",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "Vorgang wird für eine gemeinsame Volume-Anlage nicht unterstützt",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "VM kann nicht aus Volume-Backup[uuid:%s] wiederhergestellt werden: Die VM besaß an diesem Sicherungspunkt ein vTPM, und diese Version unterstützt die Wiederherstellung des vTPM-Zustands aus einem VM-Backup nicht.",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "VM[uuid:%s] kann nicht auf Volume-Backup[uuid:%s] zurückgesetzt werden: Die VM besaß an diesem Sicherungspunkt kein vTPM, besitzt aber derzeit eines, und diese Version kann das vTPM-Gerät beim Zurücksetzen nicht entfernen.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "Kein Backup-Speicher kann Image[uuid:%s] für Volume[uuid:%s] abrufen",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "JoinType kann im importierten Paket oder der Klasse nicht gefunden werden. Bitte stellen Sie sicher, dass Sie das richtige Paket importiert haben und die Klasse den definierten JoinType enthält.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "Image[uuid: %s] hat keinen Verweis auf einen Backup-Speicher[uuid: %s]",

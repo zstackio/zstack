@@ -1263,6 +1263,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "没有找到带有根卷UUID: %s 的VM",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "在卷[uuid:%s]中未找到对应的VM",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "操作不支持在共享卷上进行",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "無法從雲端硬碟備份[uuid:%s]還原雲主機：該備份點的雲主機帶有 vTPM，目前版本不支援從整機備份還原 vTPM 狀態。",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "無法將雲主機[uuid:%s]還原到雲端硬碟備份[uuid:%s]：該備份點沒有 vTPM，但雲主機目前帶有 vTPM，目前版本無法在還原時移除 vTPM 裝置。",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "没有备份儲儲可以獲取卷[uuid:%s]的镜像[uuid:%s]",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "不能找到 JoinType",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "圖像[uuid: %s]没有与备份儲儲[uuid: %s]相關的镜像引用",

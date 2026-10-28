@@ -1263,6 +1263,8 @@
   "ORG_ZSTACK_STORAGE_BACKUP_10129": "Tidak ditemukan instance dengan UUID volume root: %s",
   "ORG_ZSTACK_STORAGE_BACKUP_10124": "Tidak ditemukan VM untuk volume[uuid:%s]",
   "ORG_ZSTACK_STORAGE_BACKUP_10123": "Operasi tidak didukung pada lampiran volume bersama",
+  "ORG_ZSTACK_STORAGE_BACKUP_10136": "Tidak dapat memulihkan VM dari cadangan volume[uuid:%s]: VM memiliki vTPM pada titik cadangan tersebut, dan versi ini tidak mendukung pemulihan status vTPM dari cadangan VM.",
+  "ORG_ZSTACK_STORAGE_BACKUP_10138": "Tidak dapat mengembalikan VM[uuid:%s] ke cadangan volume[uuid:%s]: VM tidak memiliki vTPM pada titik cadangan tersebut tetapi saat ini memilikinya, dan versi ini tidak dapat menghapus perangkat vTPM selama pengembalian.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10028": "tidak ada penyimpanan cadangan yang dapat mengambil gambar[uuid:%s] untuk volume[uuid:%s]",
   "ORG_ZSTACK_ZQL_AST_PARSER_VISITORS_10005": "Tidak dapat menemukan JoinType dalam paket yang diimpor atau kelas. Pastikan Anda telah mengimpor paket yang benar dan kelas tersebut berisi JoinType yang ditentukan.",
   "ORG_ZSTACK_STORAGE_PRIMARY_MINISTORAGE_10029": "gambar[uuid: %s] tidak memiliki referensi ke penyimpanan cadangan[uuid: %s]",
