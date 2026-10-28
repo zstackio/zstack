@@ -67,6 +67,16 @@ import static org.zstack.network.service.virtualrouter.VirtualRouterNicMetaData.
 public class VirtualRouter extends ApplianceVmBase {
     private static final CLogger logger = Utils.getLogger(VirtualRouter.class);
 
+    private enum GrayscaleUpgradeCheck {
+        REQUIRED,
+        SKIPPED
+    }
+
+    private enum ReconnectSource {
+        INTERNAL,
+        API
+    }
+
     static {
         allowedOperations.addState(VmInstanceState.Running, APIReconnectVirtualRouterMsg.class.getName());
         allowedOperations.addState(VmInstanceState.Running, APIProvisionVirtualRouterConfigMsg.class.getName());
@@ -607,7 +617,7 @@ public class VirtualRouter extends ApplianceVmBase {
             public void run(final SyncTaskChain chain) {
                 final ReconnectVirtualRouterVmReply reply = new ReconnectVirtualRouterVmReply();
 
-                if (upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid())) {
+                if (!msg.isSkipGrayscaleUpgradeCheck() && upgradeChecker.skipInnerDeployOrInitOnCurrentAgent(self.getUuid())) {
                     bus.reply(msg, reply);
                     chain.next();
                     return;
@@ -625,7 +635,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                reconnect(new Completion(msg, chain) {
+                Completion completion = new Completion(msg, chain) {
                     @Override
                     public void success() {
                         bus.reply(msg, reply);
@@ -638,7 +648,13 @@ public class VirtualRouter extends ApplianceVmBase {
                         bus.reply(msg, reply);
                         chain.next();
                     }
-                });
+                };
+
+                if (msg.isSkipGrayscaleUpgradeCheck()) {
+                    reconnectWithoutGrayscaleUpgradeCheck(completion);
+                } else {
+                    reconnect(completion);
+                }
             }
 
             @Override
@@ -848,7 +864,7 @@ public class VirtualRouter extends ApplianceVmBase {
                     return;
                 }
 
-                reconnect(true, new Completion(msg, chain) {
+                reconnectFromApi(new Completion(msg, chain) {
                     @Override
                     public void success() {
                         evt.setInventory((ApplianceVmInventory) getSelfInventory());
@@ -873,10 +889,18 @@ public class VirtualRouter extends ApplianceVmBase {
     }
 
     private void reconnect(final Completion completion) {
-        reconnect(false, completion);
+        reconnect(ReconnectSource.INTERNAL, GrayscaleUpgradeCheck.REQUIRED, completion);
     }
 
-    private void reconnect(Boolean fromApi, final Completion completion) {
+    private void reconnectFromApi(final Completion completion) {
+        reconnect(ReconnectSource.API, GrayscaleUpgradeCheck.REQUIRED, completion);
+    }
+
+    private void reconnectWithoutGrayscaleUpgradeCheck(final Completion completion) {
+        reconnect(ReconnectSource.INTERNAL, GrayscaleUpgradeCheck.SKIPPED, completion);
+    }
+
+    private void reconnect(ReconnectSource source, GrayscaleUpgradeCheck grayscaleUpgradeCheck, final Completion completion) {
         ApplianceVmStatus oldStatus = getSelf().getStatus();
 
         FlowChain chain = getReconnectChain();
@@ -886,7 +910,8 @@ public class VirtualRouter extends ApplianceVmBase {
         chain.getData().put(Params.isReconnect.toString(), Boolean.TRUE.toString());
         chain.getData().put(Params.managementNicIp.toString(), vr.getManagementNic().getIp());
         chain.getData().put(Params.applianceVmUuid.toString(), self.getUuid());
-        chain.getData().put(Params.fromApi.toString(), fromApi.toString());
+        chain.getData().put(Params.fromApi.toString(), Boolean.toString(source == ReconnectSource.API));
+        chain.getData().put(Params.skipGrayscaleUpgradeCheck.toString(), Boolean.toString(grayscaleUpgradeCheck == GrayscaleUpgradeCheck.SKIPPED));
 
         SimpleQuery<ApplianceVmFirewallRuleVO> q = dbf.createQuery(ApplianceVmFirewallRuleVO.class);
         q.add(ApplianceVmFirewallRuleVO_.applianceVmUuid, Op.EQ, getSelf().getUuid());

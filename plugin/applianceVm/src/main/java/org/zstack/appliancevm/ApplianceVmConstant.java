@@ -45,6 +45,7 @@ public class ApplianceVmConstant {
         timeout,
         rebuildSnat,
         fromApi,
+        skipGrayscaleUpgradeCheck,
     }
 
     public static final String REFRESH_FIREWALL_PATH = "/appliancevm/refreshfirewall";
