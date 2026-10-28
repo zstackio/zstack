@@ -13,6 +13,8 @@ public class SourceClassMap {
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck", "org.zstack.sdk.FineTuneExportCheck");
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem", "org.zstack.sdk.FineTuneExportItem");
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult", "org.zstack.sdk.FineTuneExportPreflightResult");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneMergeJob", "org.zstack.sdk.FineTuneMergeJob");
+			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneMergeReport", "org.zstack.sdk.FineTuneMergeReport");
 			put("org.zstack.ai.BentoBasedModelStorageBackend$FineTuneRunLog", "org.zstack.sdk.FineTuneRunLog");
 			put("org.zstack.ai.NginxRedirectRule", "org.zstack.sdk.NginxRedirectRule");
 			put("org.zstack.ai.entity.AIBusinessGatewayInventory", "org.zstack.sdk.AIBusinessGatewayInventory");
@@ -1184,6 +1186,8 @@ public class SourceClassMap {
 			put("org.zstack.sdk.FineTuneExportCheck", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportCheck");
 			put("org.zstack.sdk.FineTuneExportItem", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportItem");
 			put("org.zstack.sdk.FineTuneExportPreflightResult", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneExportPreflightResult");
+			put("org.zstack.sdk.FineTuneMergeJob", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneMergeJob");
+			put("org.zstack.sdk.FineTuneMergeReport", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneMergeReport");
 			put("org.zstack.sdk.FineTuneRunInventory", "org.zstack.ai.entity.FineTuneRunInventory");
 			put("org.zstack.sdk.FineTuneRunLog", "org.zstack.ai.BentoBasedModelStorageBackend$FineTuneRunLog");
 			put("org.zstack.sdk.FineTuneWorkerRegistrationInventory", "org.zstack.ai.entity.FineTuneWorkerRegistrationInventory");

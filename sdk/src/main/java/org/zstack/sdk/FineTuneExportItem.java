@@ -28,4 +28,12 @@ public class FineTuneExportItem  {
         return this.lastModified;
     }
 
+    public java.lang.String kind;
+    public void setKind(java.lang.String kind) {
+        this.kind = kind;
+    }
+    public java.lang.String getKind() {
+        return this.kind;
+    }
+
 }
