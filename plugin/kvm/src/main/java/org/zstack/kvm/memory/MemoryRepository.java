@@ -212,9 +212,10 @@ public class MemoryRepository {
             zram.put("logicalCapacityBytes", effectiveValue(em, MemoryStandardField.ZRAM_LOGICAL_CAPACITY, host, cluster));
             zram.put("ramLimitBytes", effectiveValue(em, MemoryStandardField.ZRAM_RAM_LIMIT, host, cluster));
             Object enabled = effectiveValue(em, MemoryStandardField.WRITEBACK_ENABLED, host, cluster);
-            // Writeback needs the Host's prepared backend; without one it stays off.
+            // Writeback runs inside ZRAM on the Host's prepared backend; without either it stays off.
             boolean prepared = effectiveValue(em, MemoryStandardField.WRITEBACK_BACKEND_RESOURCE, host, cluster) != null;
-            writeback.put("enabled", Boolean.TRUE.equals(enabled) && !prepared ? Boolean.FALSE : enabled);
+            boolean zramOn = Boolean.TRUE.equals(zram.get("enabled"));
+            writeback.put("enabled", Boolean.TRUE.equals(enabled) && !(prepared && zramOn) ? Boolean.FALSE : enabled);
         }
         Map<String, Object> desired = new LinkedHashMap<>();
         desired.put("control", control);

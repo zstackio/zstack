@@ -227,12 +227,18 @@ public class MemoryRepositoryTest {
 
     @Test public void writebackWaitsForAPreparedBackendAndLicenseOnlyGatesOptimization() {
         setGlobal(MemoryStandardField.WRITEBACK_ENABLED, "true");
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
         repository.plan("host1", null, "connect", "test", true, false);
         assertEquals(false, field(desired("host1"), "writeback", "enabled"));
         repository.recordPreparedBackend("host1", BACKEND, 1L << 30);
         repository.plan("host1", null, "prepareWritebackBackend", "test", true, false);
         assertEquals(true, field(desired("host1"), "writeback", "enabled"));
+        // Writeback runs inside ZRAM: turning ZRAM off turns it off too.
+        setOverride("host1", "HostVO", MemoryStandardField.ZRAM_ENABLED, false);
+        repository.plan("host1", null, "configure", "test", true, false);
+        assertEquals(false, field(desired("host1"), "zram", "enabled"));
+        assertEquals(false, field(desired("host1"), "writeback", "enabled"));
         repository.plan("host2", null, "connect", "test", false, false);
         assertEquals(true, field(desired("host2"), "ksm", "enabled"));
         assertTrue(((Map<?, ?>) desired("host2").get("zram")).isEmpty());
