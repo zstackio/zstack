@@ -103,7 +103,7 @@ public class CreateFineTuneModelExportAction extends AbstractAction {
         info.path = "/ai/fine-tuning-groups/{modelServiceInstanceGroupUuid}/exports";
         info.needSession = true;
         info.needPoll = true;
-        info.parameterName = "";
+        info.parameterName = "params";
         return info;
     }
 
