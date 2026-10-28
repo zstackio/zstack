@@ -186,6 +186,7 @@ public class CephOsdGroupCapacityHelper {
         return originAvailableCapacity;
     }
 
+    @Transactional
     public void recalculateAvailableCapacity() {
         List<CephOsdGroupVO> osdGroups = Q.New(CephOsdGroupVO.class)
                 .eq(CephOsdGroupVO_.primaryStorageUuid, primaryStorageUuid)
@@ -195,7 +196,7 @@ public class CephOsdGroupCapacityHelper {
             Long size = calculateAvailableCapacityByRatio(osdGroupVO, primaryStorageUuid);
             logger.info(String.format("ceph[%s] get osd group[%s] available virtual size: %s", primaryStorageUuid, osdGroupVO.getOsds(), size));
             osdGroupVO.setAvailableCapacity(size);
-            dbf.update(osdGroupVO);
+            dbf.getEntityManager().merge(osdGroupVO);
         }
     }
 

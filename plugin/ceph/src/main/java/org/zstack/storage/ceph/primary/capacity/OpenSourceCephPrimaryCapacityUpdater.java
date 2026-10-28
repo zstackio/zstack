@@ -85,6 +85,7 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                     newOsdGroups.add(vo);
                 }
                 newOsdGroups.forEach(this::persist);
+                boolean osdGroupChanged = !newOsdGroups.isEmpty();
 
                 List<CephPrimaryStoragePoolVO> pools = Q.New(CephPrimaryStoragePoolVO.class).eq(CephPrimaryStoragePoolVO_.primaryStorageUuid, cephPs.getUuid()).list();
                 for (CephPrimaryStoragePoolVO poolVO : pools) {
@@ -108,6 +109,7 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                     // ceph pool related osds has changed
                     if (poolVO.getOsdGroup() == null || (poolVO.getOsdGroup() != null &&
                             !poolVO.getOsdGroup().getUuid().equals(osdGroupVO.getUuid()))) {
+                        osdGroupChanged = true;
                         poolVO.setOsdGroup(osdGroupVO);
                     }
 
@@ -125,6 +127,9 @@ public class OpenSourceCephPrimaryCapacityUpdater implements CephPrimaryCapacity
                 }
 
                 osdHelper.fillCapacityFromPool();
+                if (osdGroupChanged) {
+                    osdHelper.recalculateAvailableCapacity();
+                }
             }
         }.execute();
     }
