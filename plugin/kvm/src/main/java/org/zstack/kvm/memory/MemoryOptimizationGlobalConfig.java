@@ -27,14 +27,6 @@ public class MemoryOptimizationGlobalConfig {
     public static GlobalConfig RESPONSE_BYTES = new GlobalConfig(CATEGORY, "agent.responseBytes");
 
     @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 2147483648L)
-    @GlobalConfigDef(defaultValue = "100", type = Long.class, description = "Default query page size")
-    public static GlobalConfig QUERY_DEFAULT_PAGE_SIZE = new GlobalConfig(CATEGORY, "query.defaultPageSize");
-
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 2147483648L)
-    @GlobalConfigDef(defaultValue = "500", type = Long.class, description = "Maximum query page size, not resource count")
-    public static GlobalConfig QUERY_MAX_PAGE_SIZE = new GlobalConfig(CATEGORY, "query.maxPageSize");
-
-    @GlobalConfigValidation(numberGreaterThan = 0, numberLessThan = 2147483648L)
     @GlobalConfigDef(defaultValue = "30", type = Long.class, description = "Agent communication timeout seconds")
     public static GlobalConfig COMMUNICATION_SECONDS = new GlobalConfig(CATEGORY, "agent.communicationSeconds");
 
@@ -58,15 +50,11 @@ public class MemoryOptimizationGlobalConfig {
         return (int) parsed;
     }
 
-    static int pageSize(Integer requested) {
-        int max = positive(QUERY_MAX_PAGE_SIZE, 500);
-        int result = requested == null ? Math.min(positive(QUERY_DEFAULT_PAGE_SIZE, 100), max) : requested;
-        if (result <= 0 || result > max) {
-            throw new MemoryOperationException("MEMORY_INVALID_PAGE_SIZE", "Page size must be between 1 and " + max);
-        }
-        return result;
-    }
-
     static long displayTtlMillis() { return positive(DISPLAY_TTL_SECONDS, 90) * 1000L; }
+
+    /** Hosts observed per 30-second pass: every Host within two passes, so inside the display sample lifetime. */
+    static int observationBatch(int hosts) {
+        return Math.max(positive(HOST_BATCH_SIZE, 100), (hosts + 1) / 2);
+    }
     static long summaryWindowMillis() { return positive(SUMMARY_WINDOW_SECONDS, 30) * 1000L; }
 }

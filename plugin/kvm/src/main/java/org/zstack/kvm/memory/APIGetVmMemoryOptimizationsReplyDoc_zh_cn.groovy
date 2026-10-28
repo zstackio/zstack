@@ -11,14 +11,14 @@ doc {
 		name "success"
 		desc "API调用是否成功。"
 		type "boolean"
-		since "5.5.38"
+		since "5.5.48"
 	}
 	ref {
 		name "error"
 		path "org.zstack.kvm.memory.APIGetVmMemoryOptimizationsReply.error"
 		desc "错误码，若不为null，则表示操作失败；操作成功时该字段为null。",false
 		type "ErrorCode"
-		since "5.5.38"
+		since "5.5.48"
 		clz ErrorCode.class
 	}
 	ref {
@@ -26,7 +26,7 @@ doc {
 		path "org.zstack.kvm.memory.APIGetVmMemoryOptimizationsReply.inventories"
 		desc "按请求VM UUID索引的压缩记账结果；数值不可用时保留质量和原因，不用零替代。"
 		type "Map"
-		since "5.5.38"
+		since "5.5.48"
 		clz MemoryVmAccountingInventory.class
 	}
 }

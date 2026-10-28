@@ -48,4 +48,10 @@ public abstract class MemoryClusterOperationLongJob implements LongJob {
             }
         });
     }
+
+    /** The running Host step finishes; the Hosts not reached yet are left as they are. */
+    @Override
+    public void cancel(LongJobVO job, ReturnValueCompletion<Boolean> completion) {
+        completion.success(false);
+    }
 }

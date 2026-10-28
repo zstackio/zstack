@@ -9,14 +9,14 @@ doc {
         name "success"
         desc "API调用是否成功。"
         type "boolean"
-        since "5.5.38"
+        since "5.5.48"
     }
     ref {
         name "error"
         path "org.zstack.kvm.memory.APIGetHostMemoryWritebackBackendsReply.error"
         desc "错误码，若不为null，则表示操作失败，操作成功时该字段为null。", false
         type "ErrorCode"
-        since "5.5.38"
+        since "5.5.48"
         clz ErrorCode.class
     }
     ref {
@@ -24,7 +24,7 @@ doc {
         path "org.zstack.kvm.memory.APIGetHostMemoryWritebackBackendsReply.inventory"
         desc "Host后端候选清单；只包含已定义的公开字段，容量单位为bytes。"
         type "MemoryWritebackBackendInventory"
-        since "5.5.38"
+        since "5.5.48"
         clz MemoryWritebackBackendInventory.class
     }
 }

@@ -75,8 +75,6 @@ public class MemoryRepositoryTest {
         java.lang.reflect.Method metadataInit = org.zstack.core.db.EntityMetadata.class.getDeclaredMethod("staticInit");
         metadataInit.setAccessible(true); metadataInit.invoke(null);
         Configuration configuration = new Configuration();
-        try { configuration.addAnnotatedClass(Class.forName("org.zstack.kvm.memory.MemoryVmExclusionVO")); }
-        catch (ClassNotFoundException ignored) { }
         factory = configuration.addAnnotatedClass(MemoryTaskVO.class)
                 .addAnnotatedClass(MemoryMigrationVO.class)
                 .addAnnotatedClass(MemoryStateVO.class)
@@ -381,6 +379,45 @@ public class MemoryRepositoryTest {
         assertEquals("Converging", row.getStatus());
     }
 
+    @Test public void aHostThatCannotRunTheWantedZramIsAppliedWithTheReason() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        Map<String, Object> capabilities = new LinkedHashMap<>();
+        capabilities.put("supported", true); capabilities.put("ksm", true); capabilities.put("zram", false);
+        capabilities.put("zramReasonCode", "UNSUPPORTED_CGROUP_MEMORY");
+        applied.state.put("capabilities", capabilities);
+        applied.state.put("ksm", new LinkedHashMap<>(Collections.singletonMap("enabled", true)));
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        // No service runs on such a Host; that is not drift to resend every observation.
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("ZRAM_UNSUPPORTED: UNSUPPORTED_CGROUP_MEMORY", row.getReason());
+        assertEquals("Active", row.getFeatureState());
+        capabilities.remove("zramReasonCode");
+        repository.observe("host1", applied);
+        row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("ZRAM_UNSUPPORTED", row.getReason());
+    }
+
+    @Test public void aHostStillReclaimingAfterZramIsTurnedOffIsSentItsGenerationAgain() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "false");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("serviceState", "active"); zram.put("efficiencyEnabled", false);
+        applied.state.put("zram", zram);
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        zram.put("efficiencyEnabled", true);
+        repository.observe("host1", applied);
+        assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+    }
+
     @Test public void drainedHostIsReported() {
         repository.plan("host1", "drained", "drain", "test", true, true);
         assertTrue(repository.isDrained("host1"));
@@ -396,6 +433,25 @@ public class MemoryRepositoryTest {
         try {
             repository.summaryTargets(Arrays.asList("host1", "absent"), "zone1");
             fail("an invalid Host selection must not become zero coverage");
+        } catch (MemoryOperationException expected) {
+            assertEquals("MEMORY_INVALID_SCOPE", expected.getCode());
+        }
+    }
+
+    @Test public void theLegacyKsmSwitchStaysSettableOnANonKvmHost() {
+        repository.transaction(em -> {
+            TestHost host = new TestHost(); host.uuid = "esx1"; host.hypervisorType = "ESX"; host.status = HostStatus.Connected;
+            em.persist(host);
+            em.persist(new ResourceVO(new Object[]{"esx1", "esx1", "HostVO"}));
+            em.flush();
+            return null;
+        });
+        // 5.5.38 accepted host.ksm on any Host; only the memory optimization settings are KVM-only.
+        repository.validateStandardChange(MemoryStandardField.KSM_ENABLED, "esx1", "true");
+        assertTrue(repository.standardConfigurationTargets("esx1").isEmpty());
+        try {
+            repository.validateStandardChange(MemoryStandardField.ZRAM_ENABLED, "esx1", "true");
+            fail("ZRAM is a KVM Host setting");
         } catch (MemoryOperationException expected) {
             assertEquals("MEMORY_INVALID_SCOPE", expected.getCode());
         }
@@ -420,25 +476,6 @@ public class MemoryRepositoryTest {
         } catch (MemoryOperationException expected) {
             assertEquals("MEMORY_INVALID_SCOPE", expected.getCode());
         }
-    }
-
-    @Test public void migrationFromAHostWithoutZramKeepsTheVmExcluded() {
-        repository.plan("host1", null, "connect", "test", true, false);
-        repository.captureMigrationParticipation("vm1", "host1", "host2");
-        repository.transaction(em -> { em.find(TestVm.class, "vm1").hostUuid = "host2"; return null; });
-        assertEquals("deny", repository.vmParticipation("vm1"));
-        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        repository.plan("host2", null, "configure", "test", true, false);
-        repository.captureMigrationParticipation("vm1", "host2", "host1");
-        assertEquals("deny", repository.vmParticipation("vm1"));
-    }
-
-    @Test public void abortedMigrationDropsTheCapturedExclusion() {
-        repository.plan("host1", null, "connect", "test", true, false);
-        repository.captureMigrationParticipation("vm1", "host1", "host2");
-        repository.abortMigrationParticipation("vm1");
-        repository.transaction(em -> { em.find(TestVm.class, "vm1").hostUuid = "host2"; return null; });
-        assertEquals("inherit", repository.vmParticipation("vm1"));
     }
 
     @Test public void deletedHostRecordsAreRemoved() {

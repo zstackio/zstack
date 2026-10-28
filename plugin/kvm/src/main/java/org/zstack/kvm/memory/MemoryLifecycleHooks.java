@@ -89,10 +89,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     @Override public void preMigrateVm(VmInstanceInventory vm, String target, Completion completion) {
-        try { repository.captureMigrationParticipation(vm.getUuid(), vm.getHostUuid(), target); }
-        catch (RuntimeException e) {
-            completion.fail(error("MEMORY_PARTICIPATION_UNCONFIRMED", "Cannot preserve VM migration participation")); return;
-        }
         if (!managedZram(vm.getHostUuid())) { completion.success(); return; }
         MemoryMigrationVO hold = new MemoryMigrationVO();
         hold.vmUuid = vm.getUuid(); hold.operationUuid = Platform.getUuid();
@@ -132,10 +128,22 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         command.put("resourceUuid", hold.vmUuid); return command;
     }
 
+    /** Attempts at a hold while the Host answers that another change is still in progress. */
+    private static final int HOLD_ATTEMPTS = 6;
+
     private void hold(MemoryMigrationVO hold, String action, Consumer<Boolean> completion) {
+        hold(hold, action, 1, completion);
+    }
+
+    private void hold(MemoryMigrationVO hold, String action, int attempt, Consumer<Boolean> completion) {
         Map<String, Object> command = command(hold);
         command.put("holdAction", action); command.put("poolGeneration", hold.poolGeneration);
         manager.call(hold.sourceHostUuid, "migration-hold", command, response -> {
+            if (response != null && response.isSuccess() && "Converging".equals(response.status) && attempt < HOLD_ATTEMPTS) {
+                manager.later(() -> hold(hold, action, attempt + 1, completion),
+                        response.retryAfterSeconds == null ? 5 : Math.max(1, response.retryAfterSeconds));
+                return;
+            }
             boolean confirmed = MemoryResultRules.succeeded(hold.operationUuid, response);
             hold.status = confirmed ? ("acquire".equals(action) ? "Held" : "Released") : "Unknown";
             hold.reason = confirmed ? null : "Migration hold result must be reconciled";
@@ -150,7 +158,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     @Override public void failedToMigrateVm(VmInstanceInventory vm, String target, ErrorCode error, NoErrorCompletion completion) {
-        repository.abortMigrationParticipation(vm.getUuid());
         releaseAfterIdentityCheck(vm.getUuid(), false, completion);
     }
 
@@ -237,8 +244,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         command.put("action", "bind"); command.put("scope", "VM");
         command.put("expectedInstanceGeneration", target && hold.targetInstanceGeneration != null
                 ? hold.targetInstanceGeneration : hold.sourceInstanceGeneration);
-        String participation = vmParticipation(hold.vmUuid);
-        command.put("participation", participation);
         String host = target ? hold.targetHostUuid : hold.sourceHostUuid;
         if (target && !managedZram(host)) { completion.accept(true); return; }
         if (target) {
@@ -264,16 +269,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 response -> completion.accept(MemoryResultRules.succeeded(hold.operationUuid, response)));
     }
 
-    String vmParticipation(String vmUuid) {
-        try {
-            return repository.vmParticipation(vmUuid);
-        } catch (RuntimeException ignored) {
-            // A failed DB lookup is not permission to discard a stored VM
-            // exclusion and resume reclamation on that instance.
-            return "deny";
-        }
-    }
-
     /** Bind existing/rerun VMs only after a confirmed Host policy and fresh inventory. */
     void reconcileObservedBindings(String host, MemoryAgentResponse response) {
         MemoryStateVO state = state(host);
@@ -290,14 +285,12 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             String uuid = (String) item.getKey();
             String generation = instanceGeneration(response, uuid);
             if (generation == null) { continue; }
-            String participation = vmParticipation(uuid);
-            String mode = "deny".equals(participation) ? "deny" : "auto";
             Map<?, ?> vm = (Map<?, ?>) item.getValue();
-            if (generation.equals(vm.get("bindingGeneration")) && mode.equals(vm.get("bindingMode"))) { continue; }
+            if (generation.equals(vm.get("bindingGeneration")) && "auto".equals(vm.get("bindingMode"))) { continue; }
             Map<String, Object> command = new LinkedHashMap<>();
             command.put("hostUuid", host); command.put("operationUuid", UUID.randomUUID().toString().replace("-", ""));
             command.put("resourceUuid", uuid); command.put("scope", "VM"); command.put("action", "bind");
-            command.put("participation", participation); command.put("expectedInstanceGeneration", generation);
+            command.put("expectedInstanceGeneration", generation);
             candidates.put(uuid, command);
         }
         for (String uuid : bindingCursor.next(host, candidates.keySet(),
@@ -414,18 +407,27 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     /* VM lifecycle hooks are idempotent Agent binding/revocation notifications. */
     @Override public String preStartVm(VmInstanceInventory inv) { return null; }
     @Override public void beforeStartVm(VmInstanceInventory inv) { }
-    @Override public void afterStartVm(VmInstanceInventory inv) { lifecycleBinding(inv, "bind"); }
-    @Override public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) { lifecycleBinding(inv, "revoke"); }
+    @Override public void afterStartVm(VmInstanceInventory inv) { safely(inv, () -> lifecycleBinding(inv, "bind")); }
+    @Override public void failedToStartVm(VmInstanceInventory inv, ErrorCode reason) { safely(inv, () -> lifecycleBinding(inv, "revoke")); }
     @Override public String preStopVm(VmInstanceInventory inv) { return null; }
-    @Override public void beforeStopVm(VmInstanceInventory inv) { snapshotLifecycleGeneration(inv); }
-    @Override public void afterStopVm(VmInstanceInventory inv) { lifecycleBinding(inv, "revoke"); }
+    @Override public void beforeStopVm(VmInstanceInventory inv) { safely(inv, () -> snapshotLifecycleGeneration(inv)); }
+    @Override public void afterStopVm(VmInstanceInventory inv) { safely(inv, () -> lifecycleBinding(inv, "revoke")); }
     @Override public void failedToStopVm(VmInstanceInventory inv, ErrorCode reason) { }
     @Override public void afterFailedToStopVm(VmInstanceInventory inv, ErrorCode reason) { }
     @Override public boolean needStopBeforeDestroy(VmInstanceInventory inv) { return false; }
     @Override public String preDestroyVm(VmInstanceInventory inv) { return null; }
     @Override public void beforeDestroyVm(VmInstanceInventory inv) { }
-    @Override public void afterDestroyVm(VmInstanceInventory inv) { lifecycleBinding(inv, "revoke"); }
+    @Override public void afterDestroyVm(VmInstanceInventory inv) { safely(inv, () -> lifecycleBinding(inv, "revoke")); }
     @Override public void failedToDestroyVm(VmInstanceInventory inv, ErrorCode reason) { }
+
+    /** The VM operation does not depend on its memory binding; the next observation binds it again. */
+    private static void safely(VmInstanceInventory inv, Runnable binding) {
+        try {
+            binding.run();
+        } catch (RuntimeException e) {
+            logger.warn(String.format("VM[%s] memory optimization binding was not updated", inv.getUuid()), e);
+        }
+    }
 
     private void lifecycleBinding(VmInstanceInventory inv, String action) {
         String host = inv.getHostUuid() == null ? inv.getLastHostUuid() : inv.getHostUuid();
@@ -450,11 +452,12 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             command.put("hostUuid", host); command.put("operationUuid", operation);
             command.put("resourceUuid", inv.getUuid()); command.put("scope", "VM");
             command.put("action", action); command.put("expectedInstanceGeneration", generation);
-            String participation = vmParticipation(inv.getUuid());
-            command.put("participation", participation);
             String expected = generation;
-            manager.call(host, "vm-efficiency", command, ignored -> {
-                if ("revoke".equals(action)) { lifecycleGenerations.remove(inv.getUuid(), expected); }
+            manager.call(host, "vm-efficiency", command, reply -> {
+                // A failed revoke keeps the generation, so the next stop or destroy revokes it again.
+                if ("revoke".equals(action) && MemoryResultRules.succeeded(operation, reply)) {
+                    lifecycleGenerations.remove(inv.getUuid(), expected);
+                }
             });
         });
     }
@@ -482,8 +485,10 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
      * A hold that cannot be proven yet is tried again at the next observation.
      */
     void reconcileUnknownMigrationHolds(String sourceHost) {
+        // Also the hold of a deleted VM: no migration callback will ever release it.
         List<MemoryMigrationVO> holds = repository.transaction(em -> em.createQuery(
-                "from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status = 'Unknown'", MemoryMigrationVO.class)
+                "from MemoryMigrationVO m where m.sourceHostUuid = :host and (m.status = 'Unknown' or m.status <> 'Released'"
+                        + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))", MemoryMigrationVO.class)
                 .setParameter("host", sourceHost).getResultList());
         for (MemoryMigrationVO hold : holds) {
             if (!reconcilingHolds.add(hold.operationUuid)) { continue; }
@@ -498,6 +503,14 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 }
             });
         }
+    }
+
+    private boolean vmStoppedOrDeleted(String vmUuid) {
+        List<Object[]> vm = repository.transaction(em -> em.createQuery(
+                "select v.state, v.hostUuid from VmInstanceVO v where v.uuid = :uuid", Object[].class)
+                .setParameter("uuid", vmUuid).getResultList());
+        return vm.isEmpty() || Arrays.asList(VmInstanceState.Stopped.toString(), VmInstanceState.Destroyed.toString())
+                .contains(String.valueOf(vm.get(0)[0]));
     }
 
     /**
@@ -636,7 +649,6 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             if (acquireNotSent && source.present && targetAbsent) {
                 List<String> currentHosts = repository.targets("VM", vmUuid);
                 if (currentHosts.size() == 1 && hold.sourceHostUuid.equals(currentHosts.get(0))) {
-                    repository.abortMigrationParticipation(vmUuid);
                     hold.status = "Released";
                     hold.reason = "Migration preflight failed before native hold acquire";
                     record(hold);
@@ -674,6 +686,12 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                             else completion.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold release remains unknown"));
                         });
                     });
+                });
+            } else if (sourceAbsent && targetAbsent && vmStoppedOrDeleted(vmUuid)) {
+                // No instance is left to protect; the source only needs its hold released.
+                hold(hold, "release", released -> {
+                    if (released) completion.success();
+                    else completion.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold release remains unknown"));
                 });
             } else {
                 hold.status = "Unknown";

@@ -13,18 +13,11 @@ public class MemoryRuntimeSettingsTest {
     private void set(GlobalConfig config, String value) throws Exception {
         Field field = GlobalConfig.class.getDeclaredField("value"); field.setAccessible(true); field.set(config, value);
     }
-    @Test public void configurablePaginationIsNotA500ItemProductCap() throws Exception {
-        Class<?> type = settings();
-        GlobalConfig max = (GlobalConfig) type.getField("QUERY_MAX_PAGE_SIZE").get(null);
-        GlobalConfig def = (GlobalConfig) type.getField("QUERY_DEFAULT_PAGE_SIZE").get(null);
-        String oldMax = max.value(), oldDefault = def.value();
-        try {
-            set(max, "800"); set(def, "600");
-            assertEquals(600, MemoryOptimizationGlobalConfig.pageSize(null));
-            assertEquals(700, MemoryOptimizationGlobalConfig.pageSize(700));
-            try { MemoryOptimizationGlobalConfig.pageSize(801); fail("must reject configured page overflow"); }
-            catch (MemoryOperationException expected) { assertNotNull(expected.getMessage()); }
-        } finally { set(max, oldMax); set(def, oldDefault); }
+    @Test public void everyHostIsObservedWithinTheDisplaySampleLifetime() {
+        // 100 Hosts every 30 seconds left the Hosts beyond 300 per management node Unknown.
+        assertEquals(100, MemoryOptimizationGlobalConfig.observationBatch(40));
+        assertEquals(500, MemoryOptimizationGlobalConfig.observationBatch(1000));
+        assertTrue(2 * 30 * 1000L < MemoryOptimizationGlobalConfig.displayTtlMillis());
     }
     @Test public void displayTtlCanBeConfiguredWithoutAffectingControl() throws Exception {
         GlobalConfig ttl = (GlobalConfig) settings().getField("DISPLAY_TTL_SECONDS").get(null);

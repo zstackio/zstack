@@ -124,7 +124,7 @@ public class MemoryOperationExceptionI18nTest {
                     Pattern.compile("(?i)\\b[a-z]{2,}\\b").matcher(value).find());
             count++;
         }
-        assertEquals("all memory error categories must be checked", 18, count);
+        assertEquals("all memory error categories must be checked", 16, count);
     }
 
     @Test
@@ -177,7 +177,7 @@ public class MemoryOperationExceptionI18nTest {
             assertTrue("metadata id must be unique: " + error, ids.add(error.getId()));
             assertNotNull(errorFacade.instantiateErrorCode(error.toString(), businessCode));
         }
-        assertEquals(17, businessCodes.size());
+        assertEquals(15, businessCodes.size());
     }
 
     @Test

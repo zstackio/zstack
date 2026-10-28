@@ -28,7 +28,7 @@ doc {
 					location "query"
 					type "List"
 					optional false
-					since "5.5.38"
+					since "5.5.48"
 				}
 				column {
 					name "systemTags"
@@ -37,7 +37,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "5.5.38"
+					since "5.5.48"
 				}
 				column {
 					name "userTags"
@@ -46,7 +46,7 @@ doc {
 					location "query"
 					type "List"
 					optional true
-					since "5.5.38"
+					since "5.5.48"
 				}
 			}
         }
