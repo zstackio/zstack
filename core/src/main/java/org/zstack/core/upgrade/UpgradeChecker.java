@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.ThreadContext;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.core.ansible.AnsibleConstant;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfigException;
@@ -311,26 +312,27 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             return;
         }
 
-        if (currentVersion == null) {
-            logger.trace(String.format("Update agent[uuid: %s] version to null is not supported, skip updating", agentUuid));
-            return;
+        String originExpectVersion = agentVersionVO.getExpectVersion();
+        String originCurrentVersion = agentVersionVO.getCurrentVersion();
+        boolean changed = false;
+        if (!Objects.equals(originExpectVersion, expectVersion)) {
+            agentVersionVO.setExpectVersion(expectVersion);
+            changed = true;
         }
 
-        if (Objects.equals(agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion())) {
-            logger.trace(String.format("Agent[uuid: %s] version expected version: %s, current version: %s, not changed", agentUuid, agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
-            return;
-        }
-
-        if (!Objects.equals(agentVersionVO.getCurrentVersion(), currentVersion)) {
-            String originCurrentVersion = agentVersionVO.getCurrentVersion();
+        if (currentVersion != null && !Objects.equals(originCurrentVersion, currentVersion)) {
             agentVersionVO.setCurrentVersion(currentVersion);
+            changed = true;
+        }
+
+        if (changed) {
             logger.trace(String.format("Update agent[uuid: %s] version\n" +
                     "From:\n" +
                     "expected version: %s, current version: %s\n" +
                     "To:\n" +
                     "expected version: %s, current version: %s\n",
                     agentUuid,
-                    agentVersionVO.getExpectVersion(), originCurrentVersion,
+                    originExpectVersion, originCurrentVersion,
                     agentVersionVO.getExpectVersion(), agentVersionVO.getCurrentVersion()));
             dbf.update(agentVersionVO);
         }
@@ -360,6 +362,10 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         AgentVersionVO agentVersionVO = dbf.findByUuid(agentUuid, AgentVersionVO.class);
         if (agentVersionVO == null) {
             return true;
+        }
+
+        if (AnsibleConstant.KVM_AGENT_NAME.equals(agentVersionVO.getAgentType())) {
+            return !Objects.equals(dbf.getDbVersion(), agentVersionVO.getCurrentVersion());
         }
 
         return !agentVersionVO.getExpectVersion().equals(agentVersionVO.getCurrentVersion());
