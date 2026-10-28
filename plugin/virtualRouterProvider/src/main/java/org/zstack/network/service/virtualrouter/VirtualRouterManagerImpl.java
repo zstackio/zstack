@@ -20,6 +20,9 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.ThreadFacade;
+import org.zstack.core.upgrade.AgentVersionVO;
+import org.zstack.core.upgrade.AgentVersionVO_;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.core.workflow.FlowChainBuilder;
 import org.zstack.header.AbstractService;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -2244,6 +2247,10 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
         /* reply message back asap to avoid blocking mn node startup */
         bus.reply(cmsg, reply);
 
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            return;
+        }
+
         VirtualRouterVmVO vrVo = dbf.findByUuid(cmsg.getVirtualRouterVmUuid(), VirtualRouterVmVO.class);
         VirtualRouterVmInventory inv = VirtualRouterVmInventory.valueOf(vrVo);
         if (VirtualRouterConstant.VIRTUAL_ROUTER_VM_TYPE.equals(inv.getApplianceVmType())) {
@@ -2278,6 +2285,20 @@ public class VirtualRouterManagerImpl extends AbstractService implements Virtual
     @Override
     public void managementNodeReady() {
         List<VirtualRouterVmVO> vrVos = Q.New(VirtualRouterVmVO.class).list();
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            String expectedVersion = new VirtualRouterMetadataOperator().getManagementVersion();
+            if (expectedVersion != null) {
+                for (VirtualRouterVmVO vrVo : vrVos) {
+                    if (destMaker.isManagedByUs(vrVo.getUuid())) {
+                        SQL.New(AgentVersionVO.class).eq(AgentVersionVO_.uuid, vrVo.getUuid())
+                                .set(AgentVersionVO_.expectVersion, expectedVersion).update();
+                    }
+                }
+            }
+            logger.debug("skip checking virtual router versions on management node ready because grayscale upgrade is enabled");
+            return;
+        }
+
         for (VirtualRouterVmVO vrVo : vrVos) {
             CheckVirtualRouterVmVersionMsg msg = new CheckVirtualRouterVmVersionMsg();
             msg.setVirtualRouterVmUuid(vrVo.getUuid());
