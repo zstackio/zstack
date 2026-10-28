@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class SpecialDataConverter implements AttributeConverter<String, String> {
     private static final CLogger logger = Utils.getLogger(SpecialDataConverter.class);
+    private static final Pattern MOBILE_NO_PATTERN = Pattern.compile("[1][3456789][0-9]{9}$");
 
     private static EncryptFacade encryptFacade;
 
@@ -65,13 +66,25 @@ public class SpecialDataConverter implements AttributeConverter<String, String> 
 
     public static boolean isMobileNO(String mobiles) {
         try {
-            Pattern p = Pattern
-                    .compile("[1][3456789][0-9]{9}$");
-            Matcher m = p.matcher(mobiles);
+            String mobile = normalizeMobileNO(mobiles);
+            Matcher m = MOBILE_NO_PATTERN.matcher(mobile);
             return m.matches();
         } catch (Exception e) {
             return false;
         }
+    }
+
+    private static String normalizeMobileNO(String mobiles) {
+        String mobile = mobiles.trim().replaceAll("[\\s-]+", "");
+        if (mobile.startsWith("+86")) {
+            return mobile.substring(3);
+        }
+
+        if (mobile.startsWith("86") && mobile.length() == 13) {
+            return mobile.substring(2);
+        }
+
+        return mobile;
     }
 
     public static boolean checkEmail(String email) {
