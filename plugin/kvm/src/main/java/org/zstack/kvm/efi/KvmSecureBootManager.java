@@ -860,7 +860,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
         RestoreVmHostFileReply reply = new RestoreVmHostFileReply();
 
         List<VmHostBackupFileVO> backupFiles = Q.New(VmHostBackupFileVO.class)
-                .eq(VmHostBackupFileVO_.resourceUuid, msg.getSnapshotGroupUuid())
+                .eq(VmHostBackupFileVO_.resourceUuid, msg.getBackupResourceUuid())
                 .list();
 
         Tuple tuple = Q.New(VmInstanceVO.class)
@@ -942,7 +942,7 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                 to.setContentBase64(contentBase64);
 
                 fileList.add(to);
-            } else if (hasCurrentFile) {
+            } else if (hasCurrentFile && !(type == VmHostFileType.NvRam && msg.isSkipDeletingNvRam())) {
                 // Delete operation
                 VmHostFileVO currentFile = currentFilesByType.get(type);
                 to.setPath(currentFile.getPath());
@@ -973,8 +973,8 @@ public class KvmSecureBootManager extends AbstractService implements VmHostFileM
                     }, new ReturnValueCompletion<KvmResponseWrapper>(trigger) {
                         @Override
                         public void success(KvmResponseWrapper wrapper) {
-                            logger.info(String.format("success to restore host files for VM[uuid:%s] from snapshot group[uuid:%s]",
-                                    msg.getVmInstanceUuid(), msg.getSnapshotGroupUuid()));
+                            logger.info(String.format("success to restore host files for VM[uuid:%s] from backup resource[uuid:%s]",
+                                    msg.getVmInstanceUuid(), msg.getBackupResourceUuid()));
                             trigger.next();
                         }
 

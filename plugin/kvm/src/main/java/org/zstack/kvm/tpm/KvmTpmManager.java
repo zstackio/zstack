@@ -20,6 +20,7 @@ import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.workflow.SimpleFlowChain;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.Flow;
 import org.zstack.header.errorcode.ErrorCode;
@@ -52,6 +53,7 @@ import org.zstack.header.tpm.message.RestoreTpmEncryptionKeyReply;
 import org.zstack.header.tpm.message.TpmDeletionMsg;
 import org.zstack.header.tpm.message.TpmDeletionReply;
 import org.zstack.header.vm.VmInstanceConstant;
+import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.additions.ResetVmTpmMsg;
@@ -683,6 +685,8 @@ public class KvmTpmManager extends AbstractService {
     private void handle(RestoreTpmEncryptionKeyMsg msg) {
         RestoreTpmEncryptionKeyReply reply = new RestoreTpmEncryptionKeyReply();
         String tpmKeyBackupUuid = null;
+        Integer keyVersionBeforeRestore = msg.getDstResourceUuid() == null ? null
+                : tpmKeyBackend.findKeyVersionByTpm(msg.getDstResourceUuid());
         try {
             if (msg.isBackupCurrentKey()
                     && msg.getDstResourceUuid() != null
@@ -705,7 +709,6 @@ public class KvmTpmManager extends AbstractService {
             content.srcResourceUuid = msg.getSrcResourceUuid();
             content.dstResourceUuid = msg.getDstResourceUuid();
             tpmKeyBackend.restoreEncryptedResourceKey(content);
-            bus.reply(msg, reply);
         } catch (Exception t) {
             if (tpmKeyBackupUuid != null) {
                 tpmKeyBackend.cleanTpmKeyBackupEncryptedResourceKey(tpmKeyBackupUuid);
@@ -713,6 +716,92 @@ public class KvmTpmManager extends AbstractService {
             }
             throw t;
         }
+
+        // the host secret is keyed by keyVersion only, so a secret defined with the replaced DEK
+        // would otherwise be reused by the next VM start
+        List<SecretHostDeleteMsg> msgs;
+        try {
+            Set<Integer> keyVersions = new HashSet<>();
+            if (keyVersionBeforeRestore != null) {
+                keyVersions.add(keyVersionBeforeRestore);
+            }
+            Integer keyVersionAfterRestore = tpmKeyBackend.findKeyVersionByTpm(msg.getDstResourceUuid());
+            if (keyVersionAfterRestore != null) {
+                keyVersions.add(keyVersionAfterRestore);
+            }
+            msgs = buildHostSecretDeleteMsgs(msg.getDstResourceUuid(), keyVersions);
+        } catch (Exception e) {
+            logger.warn(String.format("failed to prepare host secret deletion after restoring the key of tpm[uuid:%s], "
+                    + "the key is restored, continue: %s", msg.getDstResourceUuid(), e.getMessage()), e);
+            msgs = Collections.emptyList();
+        }
+
+        sendHostSecretDeleteMsgs(msgs, msg.getDstResourceUuid(), new NoErrorCompletion(msg) {
+            @Override
+            public void done() {
+                bus.reply(msg, reply);
+            }
+        });
+    }
+
+    private List<SecretHostDeleteMsg> buildHostSecretDeleteMsgs(String tpmUuid, Set<Integer> keyVersions) {
+        String vmUuid = tpmUuid == null ? null : Q.New(TpmVO.class)
+                .eq(TpmVO_.uuid, tpmUuid)
+                .select(TpmVO_.vmInstanceUuid)
+                .findValue();
+        if (vmUuid == null || keyVersions.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        VmInstanceState state = Q.New(VmInstanceVO.class)
+                .eq(VmInstanceVO_.uuid, vmUuid)
+                .select(VmInstanceVO_.state)
+                .findValue();
+        if (state != VmInstanceState.Stopped) {
+            logger.warn(String.format("skip deleting host secrets of tpm[uuid:%s] after restoring its key, "
+                    + "vm[uuid:%s] is %s rather than Stopped", tpmUuid, vmUuid, state));
+            return Collections.emptyList();
+        }
+
+        Set<String> hostUuids = new HashSet<>(Q.New(VmHostFileVO.class)
+                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
+                .select(VmHostFileVO_.hostUuid)
+                .listValues());
+        addVmCurrentAndLastHostUuidsForSecretDelete(hostUuids, vmUuid);
+
+        List<SecretHostDeleteMsg> msgs = new ArrayList<>();
+        for (String hostUuid : hostUuids) {
+            for (Integer keyVersion : keyVersions) {
+                SecretHostDeleteMsg dmsg = new SecretHostDeleteMsg();
+                dmsg.setHostUuid(hostUuid);
+                dmsg.setVmUuid(vmUuid);
+                dmsg.setPurpose("vtpm");
+                dmsg.setKeyVersion(keyVersion);
+                dmsg.setUsageInstance(KVMConstant.HOST_SECRET_USAGE_INSTANCE_VTPM);
+                bus.makeTargetServiceIdByResourceUuid(dmsg, HostConstant.SERVICE_ID, hostUuid);
+                msgs.add(dmsg);
+            }
+        }
+        return msgs;
+    }
+
+    private void sendHostSecretDeleteMsgs(List<SecretHostDeleteMsg> msgs, String tpmUuid, NoErrorCompletion completion) {
+        new While<>(msgs).each((dmsg, whileCompletion) -> bus.send(dmsg, new CloudBusCallBack(whileCompletion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    logger.warn(String.format("failed to delete host secret[keyVersion:%s] on host[uuid:%s] for vm[uuid:%s] "
+                            + "after restoring the key of tpm[uuid:%s], continue: %s", dmsg.getKeyVersion(), dmsg.getHostUuid(),
+                            dmsg.getVmUuid(), tpmUuid, reply.getError()));
+                }
+                whileCompletion.done();
+            }
+        })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errorCodeList) {
+                completion.done();
+            }
+        });
     }
 
     private void handle(DeleteTpmKeyBackupMsg msg) {
