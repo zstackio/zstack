@@ -490,6 +490,8 @@
   "ORG_ZSTACK_KVM_10163": "KVM vTPM/host-file 작업에 실패했습니다: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "볼륨 프로토콜 작업에 실패했습니다: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "볼륨 스냅샷 작업에 실패했습니다: %s",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "스냅샷 그룹[uuid:%s]에 메모리 스냅샷이 포함되어 있어 VM을 생성할 수 없습니다",
+  "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "스냅샷 그룹[uuid:%s]에 TPM 또는 NVRAM 백업 파일이 있어 그룹 해제할 수 없습니다",
   "ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10030": "준비되고 접근 가능한 이미지가 부족하여 이미지 [%s]를 주 스토리지 [%s]로 다운로드할 백업 스토리지를 찾을 수 없습니다",
   "ORG_ZSTACK_VPC_10018": "VPC 라우터[uuid:%s]의 상태가 실행 중이거나 중지되어 있지 않아 L3 네트워크를 분리할 수 없습니다",
   "ORG_ZSTACK_ALIYUN_CORE_10037": "이미지가 원격지에 존재합니다. 동기화(sync)를 먼저 사용하여 일관성을 확보하세요.",

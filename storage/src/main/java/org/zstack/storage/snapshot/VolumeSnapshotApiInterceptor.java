@@ -18,6 +18,8 @@ import org.zstack.header.storage.snapshot.group.*;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.vm.additions.VmHostBackupFileVO;
+import org.zstack.header.vm.additions.VmHostBackupFileVO_;
 import org.zstack.header.volume.*;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
@@ -72,6 +74,8 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
             validate((APIBatchDeleteVolumeSnapshotMsg) msg);
         } else if (msg instanceof APIRevertVmFromSnapshotGroupMsg) {
             validate((APIRevertVmFromSnapshotGroupMsg) msg);
+        } else if (msg instanceof APIUngroupVolumeSnapshotGroupMsg) {
+            validate((APIUngroupVolumeSnapshotGroupMsg) msg);
         }
 
         setServiceId(msg);
@@ -81,6 +85,17 @@ public class VolumeSnapshotApiInterceptor implements ApiMessageInterceptor {
 
     private boolean isWithMemoryForSnapshotGroup(VolumeSnapshotGroupVO groupVO) {
         return groupVO.getVolumeSnapshotRefs().stream().anyMatch(ref -> ref.getVolumeType().equals(VolumeType.Memory.toString()));
+    }
+
+    private void validate(APIUngroupVolumeSnapshotGroupMsg msg) {
+        boolean hasSecurityAttachment = Q.New(VmHostBackupFileVO.class)
+                .eq(VmHostBackupFileVO_.resourceUuid, msg.getUuid())
+                .isExists();
+        if (hasSecurityAttachment) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001,
+                    "volume snapshot group[uuid:%s] holds TPM or NVRAM backup files, cannot be ungrouped",
+                    msg.getUuid()));
+        }
     }
 
     private void validate(APIRevertVmFromSnapshotGroupMsg msg) {

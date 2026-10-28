@@ -490,6 +490,8 @@
   "ORG_ZSTACK_KVM_10163": "operasi KVM vTPM/host-file gagal: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "operasi protokol volume gagal: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "operasi snapshot volume gagal: %s",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "Grup snapshot[uuid:%s] berisi snapshot memori, tidak dapat membuat VM darinya",
+  "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "Grup snapshot[uuid:%s] menyimpan file cadangan TPM atau NVRAM, tidak dapat dilepas",
   "ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10030": "tidak dapat menemukan penyimpanan cadangan untuk mengunduh gambar [%s] ke penyimpanan primer [%s] karena tidak ada gambar yang siap dan dapat diakses",
   "ORG_ZSTACK_VPC_10018": "tidak dapat melepaskan jaringan L3 dari router VPC [uuid:%s] karena statusnya tidak berjalan atau berhenti",
   "ORG_ZSTACK_ALIYUN_CORE_10037": "gambar sudah ada secara remote; harap gunakan sync terlebih dahulu untuk memastikan konsistensi",

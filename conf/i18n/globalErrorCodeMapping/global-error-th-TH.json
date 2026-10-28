@@ -490,6 +490,8 @@
   "ORG_ZSTACK_KVM_10163": "การดำเนินการ KVM vTPM/host-file ล้มเหลว: %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10101": "การดำเนินการโปรโตคอลของโวลุ่มล้มเหลว: %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_10030": "การดำเนินการสแนปช็อตของโวลุ่มล้มเหลว: %s",
+  "ORG_ZSTACK_COMPUTE_VM_10335": "กลุ่มสแนปช็อต[uuid:%s] มีสแนปช็อตหน่วยความจำ ไม่สามารถสร้าง VM จากกลุ่มนี้ได้",
+  "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "กลุ่มสแนปช็อต[uuid:%s] มีไฟล์สำรอง TPM หรือ NVRAM ไม่สามารถแยกกลุ่มได้",
   "ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10030": "ไม่สามารถถอดเครือขาย L3 จากเราเตอร์ VPC [uuid:%s] ได้เนื่องจากสถานะของ master และ slave ไม่สอดคล้องกัน",
   "ORG_ZSTACK_VPC_10018": "",
   "ORG_ZSTACK_ALIYUN_CORE_10037": "ไม่พบอุปกรณ์เครื่องเสมือนที่มี uuid: %s",
