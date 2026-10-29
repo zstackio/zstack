@@ -18,6 +18,7 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.workflow.*;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
+import org.zstack.header.errorcode.SysErrors;
 import org.zstack.header.rest.JsonAsyncRESTCallback;
 import org.zstack.header.rest.RESTFacade;
 import org.zstack.header.vm.VmInstanceConstant;
@@ -36,13 +37,18 @@ import org.zstack.utils.network.NetworkUtils;
 import org.zstack.utils.ssh.Ssh;
 import org.zstack.utils.ssh.SshResult;
 
+import java.util.AbstractList;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
+import java.util.function.Supplier;
 
 import static org.zstack.core.Platform.operr;
+import static org.zstack.core.Platform.touterr;
 
 /**
  * Created by xing5 on 2016/10/31.
@@ -50,6 +56,11 @@ import static org.zstack.core.Platform.operr;
 @Configurable(preConstruction = true, autowire = Autowire.BY_TYPE)
 public class VyosConnectFlow extends NoRollbackFlow {
     private static final CLogger logger = Utils.getLogger(VyosConnectFlow.class);
+
+    private static final long INIT_RETRY_INITIAL_DELAY_MILLIS = TimeUnit.SECONDS.toMillis(1);
+    private static final long INIT_RETRY_MAX_DELAY_MILLIS = TimeUnit.SECONDS.toMillis(8);
+    private static final Pattern RETRYABLE_INIT_CONNECTION_ERROR =
+            Pattern.compile("connection (?:reset|refused)", Pattern.CASE_INSENSITIVE);
 
     @Autowired
     private VirtualRouterManager vrMgr;
@@ -161,14 +172,23 @@ public class VyosConnectFlow extends NoRollbackFlow {
                         String url = vrMgr.buildUrl(mgmtNic.getIp(), VirtualRouterConstant.VR_INIT);
 
                         int timeoutInSeconds = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value(Integer.class);
-                        int interval = 30 ; /* seonds*/
+                        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(timeoutInSeconds);
+                        Supplier<ErrorCode> timeoutError = () -> touterr("vyos init deadline exceeded for virtual router[uuid:%s], budget: %s seconds",
+                                vrUuid, timeoutInSeconds);
+                        AtomicLong retryDelayMillis = new AtomicLong(INIT_RETRY_INITIAL_DELAY_MILLIS);
+                        List<Integer> attempts = new AbstractList<Integer>() {
+                            @Override
+                            public Integer get(int index) {
+                                return index + 1;
+                            }
 
-                        List<Integer> steps = new ArrayList<>(timeoutInSeconds/interval);
-                        for (int i = 0; i < timeoutInSeconds/interval; i++) {
-                            steps.add(i);
-                        }
+                            @Override
+                            public int size() {
+                                return timeoutInSeconds;
+                            }
+                        };
                         List<ErrorCode> errs = new ArrayList<>();
-                        new While<>(steps).each((s, wcompl) -> {
+                        new While<>(attempts).each((attempt, wcompl) -> {
                             InitCommand cmd = new InitCommand();
                             cmd.setMgtCidr(Platform.getManagementServerCidr());
                             cmd.setTimeServers(CoreGlobalProperty.CHRONY_SERVERS);
@@ -186,15 +206,52 @@ public class VyosConnectFlow extends NoRollbackFlow {
                             cmd.setParms(parms);
 
 
+                            long remainingMillis = TimeUnit.NANOSECONDS.toMillis(deadline - System.nanoTime());
+                            if (remainingMillis <= 1) {
+                                errs.clear();
+                                errs.add(timeoutError.get());
+                                wcompl.allDone();
+                                return;
+                            }
+
                             restf.asyncJsonPost(url, cmd, new JsonAsyncRESTCallback<InitRsp>(trigger) {
                                 @Override
                                 public void fail(ErrorCode err) {
+                                    errs.clear();
                                     errs.add(err);
-                                    wcompl.done();
+                                    if (!err.isError(SysErrors.HTTP_ERROR, SysErrors.IO_ERROR)
+                                            || err.getDetails() == null
+                                            || !RETRYABLE_INIT_CONNECTION_ERROR.matcher(err.getDetails()).find()) {
+                                        wcompl.allDone();
+                                        return;
+                                    }
+
+                                    long remainingNanos = deadline - System.nanoTime();
+                                    if (remainingNanos <= 0) {
+                                        wcompl.allDone();
+                                        return;
+                                    }
+                                    long delayNanos = TimeUnit.MILLISECONDS.toNanos(retryDelayMillis.getAndUpdate(
+                                            delay -> Math.min(delay * 2, INIT_RETRY_MAX_DELAY_MILLIS)));
+                                    logger.debug(String.format("retry vyos init for router[uuid:%s], attempt:%s, remaining:%s ms, error:%s",
+                                            vrUuid, attempt, TimeUnit.NANOSECONDS.toMillis(remainingNanos), err));
+                                    thdf.submitTimeoutTask(() -> {
+                                        if (deadline - System.nanoTime() <= 0) {
+                                            wcompl.allDone();
+                                        } else {
+                                            wcompl.done();
+                                        }
+                                    }, TimeUnit.NANOSECONDS, Math.min(delayNanos, remainingNanos));
                                 }
 
                                 @Override
                                 public void success(InitRsp ret) {
+                                    if (deadline - System.nanoTime() <= 0) {
+                                        errs.clear();
+                                        errs.add(timeoutError.get());
+                                        wcompl.allDone();
+                                        return;
+                                    }
                                     if (ret.isSuccess()) {
                                         VirtualRouterMetadataStruct metadataStruct = new VirtualRouterMetadataStruct();
                                         VirtualRouterSoftwareVersionStruct versionStruct = new VirtualRouterSoftwareVersionStruct();
@@ -211,8 +268,9 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                         errs.clear();
                                         wcompl.allDone();
                                     } else {
+                                        errs.clear();
                                         errs.add(operr("vyos init command failed, because:%s", ret.getError()));
-                                        wcompl.done();
+                                        wcompl.allDone();
                                     }
                                 }
 
@@ -220,14 +278,16 @@ public class VyosConnectFlow extends NoRollbackFlow {
                                 public Class<InitRsp> getReturnClass() {
                                     return InitRsp.class;
                                 }
-                            }, TimeUnit.SECONDS, interval);
+                            }, TimeUnit.MILLISECONDS, remainingMillis);
                         }).run(new WhileDoneCompletion(trigger) {
                             @Override
                             public void done(ErrorCodeList errorCodeList) {
                                 if (errs.isEmpty()) {
                                     trigger.next();
                                 } else {
-                                    trigger.fail(errs.get(errs.size() - 1));
+                                    ErrorCode lastError = errs.get(errs.size() - 1);
+                                    trigger.fail(deadline - System.nanoTime() <= 0 && !lastError.isError(SysErrors.TIMEOUT)
+                                            ? timeoutError.get().causedBy(lastError) : lastError);
                                 }
                             }
                         });
