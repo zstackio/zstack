@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
-import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.cloudbus.ResourceDestinationMaker;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.config.GlobalConfig;
@@ -23,7 +22,6 @@ import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.host.HostAfterConnectedExtensionPoint;
-import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostConstant;
 import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HostVO;
@@ -67,7 +65,6 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         HostAfterConnectedExtensionPoint, GlobalConfigInitExtensionPoint, MarshalZQLASTTreeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(MemoryOptimizationManager.class);
     @Autowired private CloudBus bus;
-    @Autowired private EventFacade evtf;
     @Autowired private ThreadFacade thdf;
     @Autowired private PluginRegistry pluginRgty;
     @Autowired private MemoryRepository repository;
@@ -847,18 +844,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             call(host, "state", command(host, Platform.getUuid()), response -> {
                 try {
                     if (response == null || !response.isSuccess() || response.state == null) { return; }
-                    MemoryStateVO before = repository.state(host);
                     repository.observe(host, response);
-                    MemoryStateVO state = repository.state(host);
-                    try {
-                        for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event :
-                                MemoryObservationRules.serviceEvents(host, response, state,
-                                        before == null ? null : before.getState(), System.currentTimeMillis())) {
-                            evtf.fire(HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, event);
-                        }
-                    } catch (RuntimeException eventFailure) {
-                        logger.warn(String.format("Host[%s] memory service event failed; observation will continue", host), eventFailure);
-                    }
                     lifecycleHooks.reconcileObservedBindings(host, response);
                     lifecycleHooks.reconcileUnknownMigrationHolds(host);
                 } catch (RuntimeException e) {
