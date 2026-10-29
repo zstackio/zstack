@@ -504,6 +504,13 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                         .eq(VmHostFileContentVO_.uuid, contentUuid)
                         .find();
                 if (content == null) {
+                    if (context.vmBackupFileVO != null && StringUtils.isNotBlank(context.backupUuid)
+                            && context.type == VmHostFileType.TpmState) {
+                        trigger.fail(operr(ORG_ZSTACK_KVM_10163,
+                                "TPM state of vm-host backup file[uuid:%s] is not saved, cannot keep the TPM of VM[uuid:%s]",
+                                context.vmBackupFileVO.getUuid(), context.vmUuid));
+                        return;
+                    }
                     logger.debug(String.format("skip to write vm host file for VM[vmUuid=%s]: file content is not saved in MN",
                             context.vmUuid));
                     trigger.next();

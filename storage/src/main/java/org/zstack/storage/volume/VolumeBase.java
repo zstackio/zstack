@@ -3388,7 +3388,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 .filter(it -> it.isDisk() || msg.getConsistentType() == ConsistentType.Application
                         && it.getType().equals(VolumeType.Memory.toString()))
                 .collect(Collectors.toMap(VolumeInventory::getUuid, it -> it));
-        boolean withMemory = msg.getConsistentType() == ConsistentType.Application;
 
         for (VolumeInventory vol : vols.values()) {
             CreateVolumesSnapshotsJobStruct volumesSnapshotsJob = new CreateVolumesSnapshotsJobStruct();
@@ -3515,7 +3514,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 })
                 .build())
             .then(Flow.of("backup-encrypted-resource-key-ref-for-snapshot-group")
-                .skipIf(data -> CollectionUtils.isEmpty(hostBackupFileUuidList) || !withMemory)
+                .skipIf(data -> CollectionUtils.isEmpty(hostBackupFileUuidList))
                 .handle(trigger -> {
                     String tpmUuid = Q.New(TpmVO.class)
                             .eq(TpmVO_.vmInstanceUuid, vm.getUuid())
