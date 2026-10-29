@@ -31,6 +31,9 @@ import org.zstack.core.thread.AsyncThread;
 import org.zstack.core.thread.PeriodicTask;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.timeout.TimeHelper;
+import org.zstack.core.upgrade.AgentVersionVO;
+import org.zstack.core.upgrade.AgentVersionVO_;
+import org.zstack.core.upgrade.UpgradeGlobalConfig;
 import org.zstack.header.AbstractService;
 import org.zstack.header.Component;
 import org.zstack.header.apimediator.ApiMessageInterceptionException;
@@ -248,7 +251,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         return new KVMHost(kvo, context);
     }
 
-    private List<String> getHostManagedByUs() {
+    private List<String> getHostManagedByUs(boolean connectedOnly) {
         int qun = 10000;
         long amount = dbf.count(HostVO.class);
         int times = (int) (amount / qun) + (amount % qun != 0 ? 1 : 0);
@@ -257,8 +260,9 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         for (int i = 0; i < times; i++) {
             SimpleQuery<KVMHostVO> q = dbf.createQuery(KVMHostVO.class);
             q.select(HostVO_.uuid);
-            // disconnected host will be handled by HostManager
-            q.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+            if (connectedOnly) {
+                q.add(HostVO_.status, SimpleQuery.Op.EQ, HostStatus.Connected);
+            }
             q.setLimit(qun);
             q.setStart(start);
             List<String> lst = q.listValue();
@@ -1047,6 +1051,16 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             return;
         }
 
+        if (UpgradeGlobalConfig.GRAYSCALE_UPGRADE.value(Boolean.class)) {
+            String expectedVersion = dbf.getDbVersion();
+            for (String hostUuid : getHostManagedByUs(false)) {
+                SQL.New(AgentVersionVO.class).eq(AgentVersionVO_.uuid, hostUuid)
+                        .set(AgentVersionVO_.expectVersion, expectedVersion).update();
+            }
+            logger.debug("skip connecting kvm hosts on management node ready because grayscale upgrade is enabled");
+            return;
+        }
+
         if (!asf.isModuleChanged(KVMConstant.ANSIBLE_PLAYBOOK_NAME)) {
             return;
         }
@@ -1054,7 +1068,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
         // KVM hosts need to deploy new agent
         // connect hosts even if they are ConnectionState is Connected
 
-        List<String> hostUuids = getHostManagedByUs();
+        List<String> hostUuids = getHostManagedByUs(true);
         if (hostUuids.isEmpty()) {
             return;
         }
