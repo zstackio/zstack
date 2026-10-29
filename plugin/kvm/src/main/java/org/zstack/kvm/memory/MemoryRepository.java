@@ -71,6 +71,14 @@ public class MemoryRepository {
         } else { throw error("MEMORY_INVALID_SCOPE", "Unknown memory scope"); }
     }
 
+    private static boolean nonKvm(EntityManager em, String scope, String resource) {
+        String entity = "Host".equals(scope) ? "HostVO h" : "Cluster".equals(scope) ? "ClusterVO h" : null;
+        if (entity == null) { return false; }
+        List<String> types = em.createQuery("select h.hypervisorType from " + entity + " where h.uuid = :uuid", String.class)
+                .setParameter("uuid", resource).getResultList();
+        return !types.isEmpty() && !"KVM".equals(types.get(0));
+    }
+
     private List<String> targets(EntityManager em, String scope, String resource) {
         validateResource(em, scope, resource);
         if ("Global".equals(scope)) {
@@ -173,7 +181,10 @@ public class MemoryRepository {
             if (!field.allows(scopeOf(scope))) {
                 throw error("MEMORY_INVALID_SCOPE", field.path() + " does not support " + scope);
             }
-            validateResource(em, scope, resourceUuid == null ? "global" : resourceUuid);
+            // The legacy host.ksm switch was settable on any Host or Cluster before memory optimization.
+            if (field != MemoryStandardField.KSM_ENABLED || !nonKvm(em, scope, resourceUuid)) {
+                validateResource(em, scope, resourceUuid == null ? "global" : resourceUuid);
+            }
             return null;
         });
     }
@@ -182,6 +193,7 @@ public class MemoryRepository {
     public List<String> standardConfigurationTargets(String resourceUuid) {
         return transaction(em -> {
             String scope = standardScope(em, resourceUuid);
+            if (nonKvm(em, scope, resourceUuid)) { return Collections.<String>emptyList(); }
             return targets(em, scope, resourceUuid == null ? "global" : resourceUuid);
         });
     }
@@ -317,6 +329,12 @@ public class MemoryRepository {
     public boolean isDrained(String host) {
         MemoryStateVO state = state(host);
         return state != null && "drained".equals(state.getControl());
+    }
+
+    /** Whether the Host's last observation reports a service-owned ZRAM pool. */
+    public boolean hasPool(String host) {
+        MemoryStateVO state = state(host);
+        return state != null && MemoryLifecycleHooks.hasPoolGeneration(state.getState());
     }
 
     static long retryDelay(int failures) {
@@ -487,9 +505,16 @@ public class MemoryRepository {
             try { observed = JSONObjectUtil.toObject(state.getState(), LinkedHashMap.class); }
             catch (RuntimeException ignored) { observed = Collections.emptyMap(); }
         }
+        boolean zramWanted = Boolean.TRUE.equals(field(desired(state).get("zram"), "enabled"));
         row.setStatus(publicStatus(state));
-        row.setReason(trim(state.getReason()));
-        row.setFeatureState(featureState(observed, Boolean.TRUE.equals(field(desired(state).get("zram"), "enabled"))));
+        String reason = state.getReason();
+        if (reason == null && zramWanted && !zramSupported(observed)) {
+            // The Host leaves a ZRAM it cannot run unmanaged; say why it is not running.
+            Object code = field(observed.get("capabilities"), "zramReasonCode");
+            reason = code == null || "".equals(code) ? "ZRAM_UNSUPPORTED" : "ZRAM_UNSUPPORTED: " + code;
+        }
+        row.setReason(trim(reason));
+        row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed)));
         row.setCapabilities(state.getCapabilities());
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), FAILED.equals(state.getStatus()), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
@@ -511,15 +536,23 @@ public class MemoryRepository {
         catch (RuntimeException invalid) { return Collections.emptyMap(); }
     }
 
+    /** A Host that reports it cannot run ZRAM runs without it; the Agent leaves it unmanaged. */
+    static boolean zramSupported(Map<String, Object> observed) {
+        return !Boolean.FALSE.equals(field(observed.get("capabilities"), "zram"));
+    }
+
     /** The observed Host contradicts its applied desired configuration. */
     static boolean drifted(Map<String, Object> desired, Map<String, Object> observed) {
         Object control = desired.get("control"), observedControl = observed.get("control");
         if ("drained".equals(control)) { return "active".equals(observedControl) || "paused".equals(observedControl); }
         if ("paused".equals(control)) { return "active".equals(observedControl); }
         if (!"active".equals(control)) { return false; }
-        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
+        if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled")) && zramSupported(observed)
                 && (Arrays.asList("paused", "drained", "stopped").contains(observedControl)
                 || !"active".equals(field(observed.get("zram"), "serviceState")))) { return true; }
+        // ZRAM turned off must also stop reclaiming.
+        if (Boolean.FALSE.equals(field(desired.get("zram"), "enabled"))
+                && Boolean.TRUE.equals(field(observed.get("zram"), "efficiencyEnabled"))) { return true; }
         Object ksm = field(desired.get("ksm"), "enabled"), observedKsm = field(observed.get("ksm"), "enabled");
         return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
     }
@@ -593,66 +626,11 @@ public class MemoryRepository {
         });
     }
 
-    // -------------------------------------------------- VM participation
-
-    private MemoryVmExclusionVO retainedExclusion(EntityManager em, String vm) {
-        MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, vm);
-        if (exclusion == null) { return null; }
-        if (!exclusion.retained) {
-            List<String> hosts = em.createQuery("select v.hostUuid from VmInstanceVO v where v.uuid = :uuid", String.class)
-                    .setParameter("uuid", vm).getResultList();
-            if (hosts.isEmpty() || !exclusion.targetHostUuid.equals(hosts.get(0))) { return null; }
-            exclusion.retained = true;
-        }
-        return exclusion;
-    }
-
-    /** Before a migration, a VM the source does not optimize keeps that exclusion on the target. */
-    public void captureMigrationParticipation(String vm, String source, String target) {
-        transaction(em -> {
-            validateResource(em, "VM", vm);
-            if (retainedExclusion(em, vm) != null) { return null; }
-            MemoryStateVO state = em.find(MemoryStateVO.class, source);
-            Map<?, ?> desired = state == null || state.getDesired() == null ? null
-                    : JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class);
-            MemoryVmExclusionVO previous = em.find(MemoryVmExclusionVO.class, vm);
-            if (desired != null && Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))) {
-                if (previous != null && !previous.retained) { em.remove(previous); }
-                return null;
-            }
-            MemoryVmExclusionVO capture = new MemoryVmExclusionVO();
-            capture.vmUuid = vm; capture.sourceHostUuid = source; capture.targetHostUuid = target;
-            if (state != null && state.getState() != null) {
-                try {
-                    MemoryAgentResponse response = new MemoryAgentResponse();
-                    response.state = JSONObjectUtil.toObject(state.getState(), Map.class);
-                    capture.sourceInstanceGeneration = MemoryLifecycleHooks.instanceGeneration(response, vm);
-                } catch (RuntimeException ignored) { /* No native instance sample is required. */ }
-            }
-            em.merge(capture); return null;
-        });
-    }
-
-    public void abortMigrationParticipation(String vm) {
-        transaction(em -> {
-            MemoryVmExclusionVO exclusion = em.find(MemoryVmExclusionVO.class, vm);
-            if (exclusion != null && !exclusion.retained) { em.remove(exclusion); }
-            return null;
-        });
-    }
-
-    public String vmParticipation(String vm) {
-        return transaction(em -> retainedExclusion(em, vm) != null ? "deny" : "inherit");
-    }
-
     // ------------------------------------------------------------ cleanup
 
     /** Removes memory records of deleted Hosts and VMs that hold no unreleased migration. */
     public void cleanupDeletedResources() {
         transaction(em -> {
-            String releasedVm = "not exists (select m.vmUuid from MemoryMigrationVO m where m.vmUuid = e.vmUuid and m.status <> 'Released')";
-            em.createQuery("delete from MemoryVmExclusionVO e where not exists"
-                    + " (select v.uuid from VmInstanceVO v where v.uuid = e.vmUuid) and " + releasedVm).executeUpdate();
             em.createQuery("delete from MemoryMigrationVO m where m.status = 'Released'"
                     + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid)").executeUpdate();
             String deletedHost = "not exists (select h.uuid from HostVO h where h.uuid = %s)";

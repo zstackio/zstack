@@ -31,8 +31,12 @@ public final class MemoryStandardConfigurationCoordinator {
         for (MemoryStandardField field : MemoryStandardField.values()) {
             GlobalConfig global = field.config();
             // ResourceConfig also runs the GlobalConfig validators, so keep them scope-free.
-            global.installValidateExtension((category, name, oldValue, newValue) -> validateScalar(field, newValue));
-            global.installLocalBeforeUpdateExtension((oldConfig, newValue) -> validateChange(field, null, newValue));
+            global.installValidateExtension((category, name, oldValue, newValue) -> {
+                if (!restoresDefault(field, newValue)) { validateScalar(field, newValue); }
+            });
+            global.installLocalBeforeUpdateExtension((oldConfig, newValue) -> {
+                if (!restoresDefault(field, newValue)) { validateChange(field, null, newValue); }
+            });
             global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null, reenablesZram(field, newConfig.value())));
             ResourceConfig resource = rcf.getResourceConfig(global.getIdentity());
             resource.installValidatorExtension((resourceUuid, oldValue, newValue) -> validateChange(field, resourceUuid, newValue));
@@ -40,6 +44,12 @@ public final class MemoryStandardConfigurationCoordinator {
                     changed(resourceUuid, reenablesZram(field, newValue)));
             resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid, false));
         }
+    }
+
+    /** Resetting a global setting to its default is always allowed, also when the default is blank or unlicensed. */
+    static boolean restoresDefault(MemoryStandardField field, String value) {
+        String defaultValue = field.config().getDefaultValue();
+        return defaultValue != null && defaultValue.equals(value);
     }
 
     /** Pure scalar validation. Cross-field rules are checked against the stored candidate in validateChange. */

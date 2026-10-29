@@ -22,11 +22,12 @@ public final class MemoryObservationRules {
     }
 
     /**
-     * Service failures and recoveries of a fresh sample on an active Host. A
-     * paused or drained Host stops its services on purpose.
+     * Service failures and recoveries of a fresh sample on an active Host, as
+     * changes from the previous sample. A paused or drained Host stops its
+     * services on purpose.
      */
     static List<HostMemoryOptimizationServiceStateChangedData> serviceEvents(String host,
-            MemoryAgentResponse response, MemoryStateVO current, long now) {
+            MemoryAgentResponse response, MemoryStateVO current, String previousSample, long now) {
         List<HostMemoryOptimizationServiceStateChangedData> result = new ArrayList<>();
         if (current == null || current.getDesired() == null || response == null || !response.isSuccess()
                 || response.state == null || response.hostUuid != null && !host.equals(response.hostUuid)) { return result; }
@@ -40,10 +41,14 @@ public final class MemoryObservationRules {
         try { desired = org.zstack.utils.gson.JSONObjectUtil.toObject(current.getDesired(), java.util.LinkedHashMap.class); }
         catch (RuntimeException invalid) { return result; }
         if (!"active".equals(desired.get("control"))) { return result; }
+        Map<?, ?> previous;
+        try { previous = previousSample == null ? null : org.zstack.utils.gson.JSONObjectUtil.toObject(previousSample, java.util.LinkedHashMap.class); }
+        catch (RuntimeException invalid) { previous = null; }
         Map<?, ?> ksm = map(state.get("ksm"));
+        Map<?, ?> previousKsm = previous == null ? null : map(previous.get("ksm"));
         if (Boolean.TRUE.equals(field(desired.get("ksm"), "enabled")) && ksm != null) {
-            nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"));
-            nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"));
+            nativeServiceEvent(result, host, "ksm", ksm.get("serviceState"), field(previousKsm, "serviceState"));
+            nativeServiceEvent(result, host, "ksmtuned", ksm.get("tunedServiceState"), field(previousKsm, "tunedServiceState"));
         }
         Map<?, ?> status = map(field(state.get("zram"), "status"));
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled"))
@@ -51,11 +56,12 @@ public final class MemoryObservationRules {
                 && status != null && Boolean.TRUE.equals(status.get("resource_authorized"))
                 && observationFailure(status.get("observed_at"), now, ttl) == null) {
             Map<?, ?> health = map(status.get("backend_health"));
-            if (health != null && "DEGRADED".equals(health.get("state"))
-                    && "NATIVE_BACKEND_IO_ERROR_BACKOFF".equals(health.get("reason"))
-                    && Boolean.FALSE.equals(health.get("new_io_permitted_by_backend_health"))) {
+            Map<?, ?> previousStatus = map(field(previous == null ? null : previous.get("zram"), "status"));
+            Map<?, ?> previousHealth = previousStatus == null ? null : map(previousStatus.get("backend_health"));
+            if (writebackFailed(health) && !writebackFailed(previousHealth)) {
                 result.add(serviceEvent(host, "zram-writeback", "Failed", "NATIVE_BACKEND_IO_ERROR_BACKOFF"));
-            } else if (health != null && writebackRecovered(status, health)) {
+            } else if (health != null && writebackRecovered(status, health)
+                    && !(previousHealth != null && writebackRecovered(previousStatus, previousHealth))) {
                 result.add(serviceEvent(host, "zram-writeback", "Recovered", "WRITEBACK_IO_SUCCEEDED_AFTER_BACKOFF"));
             }
         }
@@ -67,9 +73,9 @@ public final class MemoryObservationRules {
     }
 
     private static void nativeServiceEvent(List<HostMemoryOptimizationServiceStateChangedData> events,
-                                           String host, String service, Object state) {
-        if ("failed".equals(state)) { events.add(serviceEvent(host, service, "Failed", "SYSTEMD_FAILED")); }
-        else if ("active".equals(state)) { events.add(serviceEvent(host, service, "Recovered", "SYSTEMD_ACTIVE")); }
+                                           String host, String service, Object state, Object before) {
+        if ("failed".equals(state) && !"failed".equals(before)) { events.add(serviceEvent(host, service, "Failed", "SYSTEMD_FAILED")); }
+        else if ("active".equals(state) && "failed".equals(before)) { events.add(serviceEvent(host, service, "Recovered", "SYSTEMD_ACTIVE")); }
     }
 
     private static HostMemoryOptimizationServiceStateChangedData serviceEvent(String host, String service,
@@ -77,6 +83,12 @@ public final class MemoryObservationRules {
         HostMemoryOptimizationServiceStateChangedData result = new HostMemoryOptimizationServiceStateChangedData();
         result.setHostUuid(host); result.setService(service); result.setStatus(status); result.setReason(reason);
         return result;
+    }
+
+    private static boolean writebackFailed(Map<?, ?> health) {
+        return health != null && "DEGRADED".equals(health.get("state"))
+                && "NATIVE_BACKEND_IO_ERROR_BACKOFF".equals(health.get("reason"))
+                && Boolean.FALSE.equals(health.get("new_io_permitted_by_backend_health"));
     }
 
     private static boolean writebackRecovered(Map<?, ?> state, Map<?, ?> health) {

@@ -66,6 +66,21 @@ public class MemoryStandardConfigAdapterTest {
         });
     }
 
+    @Test public void resettingAGlobalSettingToItsDefaultIsAlwaysAllowed() throws Exception {
+        MemoryStandardField field = MemoryStandardField.forPath("zram.logicalCapacityBytes");
+        Field defaultValue = org.zstack.core.config.GlobalConfig.class.getDeclaredField("defaultValue");
+        defaultValue.setAccessible(true);
+        Object previous = defaultValue.get(field.config());
+        defaultValue.set(field.config(), "");
+        try {
+            // ResetGlobalConfig writes the blank default; validating it would stop the reset half way.
+            assertTrue(MemoryStandardConfigurationCoordinator.restoresDefault(field, ""));
+            assertFalse(MemoryStandardConfigurationCoordinator.restoresDefault(field, "8589934592"));
+        } finally {
+            defaultValue.set(field.config(), previous);
+        }
+    }
+
     @Test public void typedBlankWritesRejectButFeatureNoneIsAccepted() {
         MemoryStandardField field = MemoryStandardField.forPath("ksm.enabled");
         assertThrows(org.zstack.core.config.GlobalConfigException.class,

@@ -40,6 +40,7 @@ import org.zstack.identity.AccountManager;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostAsyncHttpCallMsg;
+import org.zstack.longjob.LongJobUtils;
 import org.zstack.kvm.KVMHostAsyncHttpCallReply;
 import org.zstack.utils.FieldUtils;
 import org.zstack.utils.Utils;
@@ -338,7 +339,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         List<String> hosts = msg.getHostUuid() != null ? Collections.singletonList(msg.getHostUuid()) : members;
         Map<String, String> results = new LinkedHashMap<>();
         reply.setResults(results);
+        long deadline = System.currentTimeMillis() + msg.getTimeout();
         new While<>(hosts).each((host, next) -> {
+            // A canceled or timed-out job leaves the Hosts it has not reached as they are.
+            if (msg.getJobUuid() != null && jobCanceled(msg.getJobUuid())) {
+                results.put(host, "Canceled"); next.done(); return;
+            }
+            if (System.currentTimeMillis() >= deadline) {
+                results.put(host, "Skipped: the job timed out"); next.done(); return;
+            }
             MemoryHostOperationMsg operation = new MemoryHostOperationMsg();
             operation.setHostUuid(host); operation.setAction(msg.getAction()); operation.setJobUuid(msg.getJobUuid());
             operation.setAccountUuid(msg.getAccountUuid()); operation.setUserUuid(msg.getUserUuid());
@@ -376,6 +385,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         });
     }
 
+    boolean jobCanceled(String job) {
+        return LongJobUtils.jobCanceled(job);
+    }
+
     void reportClusterProgress(int done, int total) {
         ProgressReportService.reportProgress(String.valueOf(100 * done / total));
     }
@@ -403,6 +416,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             String control = PAUSE.equals(msg.getAction()) ? "paused" : RESUME.equals(msg.getAction()) ? "active"
                     : DRAIN.equals(msg.getAction()) ? "drained" : null;
             if (control == null) { throw new MemoryOperationException("MEMORY_INVALID_ACTION", "Unknown Host operation " + msg.getAction()); }
+            // A Host without a pool has nothing to drain; holding it paused keeps one from forming.
+            if ("drained".equals(control) && !repository.hasPool(host)) { control = "paused"; }
             MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, true, true);
             waiters.put(planned.task, new Waiter(host, deadline, finish));
         } catch (MemoryOperationException e) {
@@ -478,7 +493,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
      * can and reports Succeeded, Converging (send again later) or Failed.
      */
     private void deliver(String host) {
-        if (preparing.contains(host) || !delivering.add(host)) { return; }
+        // Registered before looking at preparing, as a preparation registers before looking at delivering.
+        if (!delivering.add(host)) { return; }
+        if (preparing.contains(host)) { delivering.remove(host); return; }
         MemoryRepository.Delivery delivery;
         try {
             delivery = repository.pending(host);
@@ -542,7 +559,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         command.put("expectedPoolGeneration", preparation.getExpectedPoolGeneration());
         command.put("backendCapacityBytes", preparation.getBackendCapacityBytes());
         command.put("resetConfirmed", preparation.isResetConfirmed());
-        sendPrepare(host, command, preparation.getBackendCapacityBytes(), actor, deadline, 0, done);
+        afterApplyInFlight(host, deadline,
+                () -> sendPrepare(host, command, preparation.getBackendCapacityBytes(), actor, deadline, 0, done), done);
+    }
+
+    /** An apply sent before the preparation registered finishes first; the Agent would interleave the two. */
+    private void afterApplyInFlight(String host, long deadline, Runnable then, Consumer<String> done) {
+        if (!delivering.contains(host)) { then.run(); return; }
+        if (System.currentTimeMillis() > deadline) { done.accept("MEMORY_RESULT_CONVERGING: APPLY_IN_FLIGHT"); return; }
+        later(() -> afterApplyInFlight(host, deadline, then, done), 1);
     }
 
     private void sendPrepare(String host, Map<String, Object> command, long capacity, String actor, long deadline,
@@ -795,7 +820,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (now - lastObservation >= TimeUnit.SECONDS.toMillis(30)) {
                 lastObservation = now;
                 observeRuntime(connected);
-                repository.refreshHostStates(repository.hostsWithState());
+                // Each management node keeps the public state of the Hosts it manages, as it observes them.
+                repository.refreshHostStates(repository.hostsWithState().stream()
+                        .filter(destMaker::isManagedByUs).collect(Collectors.toList()));
             }
             if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
                 lastHistoryPurge = now;
@@ -808,8 +835,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     private void observeRuntime(Set<String> connected) {
         List<String> hosts = connected.stream().filter(destMaker::isManagedByUs).collect(Collectors.toList());
-        for (String host : observationCursor.next("global", hosts,
-                MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.HOST_BATCH_SIZE, 100))) {
+        for (String host : observationCursor.next("global", hosts, MemoryOptimizationGlobalConfig.observationBatch(hosts.size()))) {
             observe(host);
         }
     }
@@ -821,11 +847,13 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             call(host, "state", command(host, Platform.getUuid()), response -> {
                 try {
                     if (response == null || !response.isSuccess() || response.state == null) { return; }
+                    MemoryStateVO before = repository.state(host);
                     repository.observe(host, response);
                     MemoryStateVO state = repository.state(host);
                     try {
                         for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event :
-                                MemoryObservationRules.serviceEvents(host, response, state, System.currentTimeMillis())) {
+                                MemoryObservationRules.serviceEvents(host, response, state,
+                                        before == null ? null : before.getState(), System.currentTimeMillis())) {
                             evtf.fire(HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, event);
                         }
                     } catch (RuntimeException eventFailure) {
@@ -848,6 +876,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private Map<String, Object> command(String host, String operation) {
         Map<String, Object> command = new LinkedHashMap<>();
         command.put("hostUuid", host); command.put("operationUuid", operation); return command;
+    }
+
+    /** Runs a follow-up step off the callback thread after the given delay. */
+    void later(Runnable task, long seconds) {
+        thdf.submitTimeoutTask(task::run, TimeUnit.SECONDS, seconds);
     }
 
     void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> completion) {

@@ -48,6 +48,8 @@ public class MemoryClusterOperationTest {
         }
         @Override public List<String> standardConfigurationTargets(String resource) { return Arrays.asList("host1", "host2"); }
         @Override public boolean isDrained(String host) { return drained.contains(host); }
+        final Set<String> withoutPool = new HashSet<>();
+        @Override public boolean hasPool(String host) { return !withoutPool.contains(host); }
         @Override public Planned plan(String host, String control, String action, String actor, boolean licensed, boolean operation) {
             plans.add(host + ":" + action + ":" + control);
             long generation = generations.getOrDefault(host, 0L);
@@ -108,7 +110,15 @@ public class MemoryClusterOperationTest {
             reply.setResults(Collections.singletonMap(msg.getHostUuid(), outcome));
             hostBus.reply(msg, reply);
         }
-        @Override void reportClusterProgress(int done, int total) { progress.add(100 * done / total); }
+        @Override void reportClusterProgress(int done, int total) {
+            progress.add(100 * done / total);
+            if (cancelAfter == done) { canceled = true; }
+        }
+        final Deque<Runnable> deferred = new ArrayDeque<>();
+        @Override void later(Runnable task, long seconds) { deferred.add(task); }
+        int cancelAfter = -1;
+        boolean canceled;
+        @Override boolean jobCanceled(String job) { return canceled; }
         @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> completion) {
             Map<String, Object> recorded = new LinkedHashMap<>(command); recorded.put("path", action);
             commands.add(recorded);
@@ -187,6 +197,29 @@ public class MemoryClusterOperationTest {
         assertEquals("drained", ((Map<?, ?>) manager.commands.get(1).get("desired")).get("control"));
     }
 
+    @Test public void aCanceledClusterOperationLeavesTheRemainingHostsAlone() throws Exception {
+        setup();
+        manager.cancelAfter = 1;
+        manager.script("host1", "apply", reply("Succeeded", null, null));
+        MemoryClusterOperationMsg msg = cluster("drain"); msg.setJobUuid("job");
+        invoke(manager, msg);
+        assertEquals(Collections.singletonList("host1:drain:drained"), repository.plans);
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("host1", "success"); expected.put("host2", "Canceled");
+        assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
+    }
+
+    @Test public void aHostWithoutAPoolIsHeldPausedInsteadOfDrained() throws Exception {
+        setup();
+        repository.withoutPool.add("host2");
+        manager.script("host1", "apply", reply("Succeeded", null, null));
+        manager.script("host2", "apply", reply("Succeeded", null, null));
+        invoke(manager, cluster("drain"));
+        assertEquals("drained", repository.controls.get("host1"));
+        // Nothing to withdraw, and no pool forms while it is paused.
+        assertEquals("paused", repository.controls.get("host2"));
+    }
+
     @Test public void aHostWithAnApplyInFlightIsNotSentASecondOne() throws Exception {
         setup();
         MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
@@ -263,6 +296,23 @@ public class MemoryClusterOperationTest {
         assertTrue(repository.plans.contains("host1:prepareWritebackBackend:null"));
         assertEquals("the prepared backend reaches the Host in its next generation", "apply",
                 manager.commands.get(manager.commands.size() - 1).get("path"));
+    }
+
+    @Test public void aPreparationWaitsForTheApplyInFlight() throws Exception {
+        setup();
+        MemoryHostOperationMsg pause = new MemoryHostOperationMsg();
+        pause.setHostUuid("host1"); pause.setAction("pause"); pause.setAccountUuid("account"); pause.setUserUuid("user");
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, pause);
+        assertEquals(1, manager.commands.size());
+        MemoryAgentResponse prepared = reply("Succeeded", null, null);
+        prepared.state.put("maintenance", Collections.singletonMap("backend_resource_uuid", BACKEND));
+        manager.script("host1", "writeback-backends", prepared);
+        invokeHostOperation(manager, preparation());
+        assertEquals("nothing is prepared while an apply is in flight", 1, manager.commands.size());
+        manager.held.poll().accept(reply("Succeeded", null, null));
+        manager.deferred.poll().run();
+        assertEquals("prepare", manager.commands.get(1).get("action"));
     }
 
     @Test public void preparationWithoutAReportedBackendFails() throws Exception {

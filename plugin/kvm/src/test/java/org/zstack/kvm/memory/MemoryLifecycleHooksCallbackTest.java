@@ -76,21 +76,11 @@ public class MemoryLifecycleHooksCallbackTest {
         field.setAccessible(true); field.set(target, value);
     }
 
-    @Test public void unavailableParticipationPolicyFailsClosed() throws Exception {
-        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
-        inject(hooks, "repository", new FakeRepository() {
-            @Override String vmPolicy(String vm) {
-                throw new IllegalStateException("database unavailable");
-            }
-        });
-        assertEquals("deny", hooks.vmParticipation("vm-1"));
-    }
-
     @Test public void expiredLicenseDoesNotPreventConfirmedMigrationRebind() throws Exception {
         FakeRepository repository = heldMigration();
         FakeManager manager = new FakeManager();
         migrate(repository, manager);
-        assertEquals("inherit", manager.bindCommand.get("participation"));
+        assertFalse(manager.bindCommand.containsKey("participation"));
         assertFalse(manager.bindCommand.containsKey("licensePermit"));
         assertEquals("Released", repository.hold.status);
     }
@@ -181,7 +171,6 @@ public class MemoryLifecycleHooksCallbackTest {
             @Override public List<String> targets(String scope, String resource) {
                 return Collections.singletonList("host-a");
             }
-            @Override public void abortMigrationParticipation(String vm) { }
         };
         MemoryMigrationVO hold = new MemoryMigrationVO();
         hold.vmUuid = "vm-1"; hold.operationUuid = "op-1"; hold.sourceHostUuid = "host-a";
@@ -264,6 +253,18 @@ public class MemoryLifecycleHooksCallbackTest {
         int afterFirst = inspected.size();
         hooks.reconcileUnknownMigrationHolds("host-a");
         assertEquals("an unproven hold is tried again at the next observation", 2 * afterFirst, inspected.size());
+    }
+
+    @Test public void theHoldOfADeletedVmIsReleased() throws Exception {
+        FakeRepository repository = heldMigration();
+        repository.vmDeleted = true;
+        PlacementManager manager = new PlacementManager();
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        // The VM went away mid-migration; its hold would keep the source's reclaim paused for good.
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals(Collections.singletonList("host-a:release"), manager.calls);
+        assertEquals("Released", repository.hold.status);
     }
 
     /** Agent replies by Host: the VM instance each Host reports, and the bind, revoke and hold calls made. */
@@ -386,9 +387,7 @@ public class MemoryLifecycleHooksCallbackTest {
     }
 
     @Test public void preMigrateRequiresCompleteSourceInventoryBeforeAcquire() throws Exception {
-        FakeRepository repository = new FakeRepository() {
-            @Override public void captureMigrationParticipation(String vm, String source, String target) { }
-        };
+        FakeRepository repository = new FakeRepository();
         FakeManager manager = new FakeManager() {
             @Override void call(String host, String action, Map<String, Object> command,
                                 Consumer<MemoryAgentResponse> callback) {
@@ -417,6 +416,49 @@ public class MemoryLifecycleHooksCallbackTest {
         });
         assertTrue(failed[0]);
         assertEquals("Unknown", repository.hold.status);
+    }
+
+    @Test public void aHoldTheBusyHostIsStillDecidingIsAskedAgain() throws Exception {
+        FakeRepository repository = heldMigration();
+        List<String> holds = new ArrayList<>();
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if (!"migration-hold".equals(action)) { super.call(host, action, command, callback); return; }
+                holds.add(String.valueOf(command.get("holdAction")));
+                MemoryAgentResponse answer = response(host, null);
+                if (holds.size() == 1) { answer.status = "Converging"; answer.reasonCode = "HOST_OPERATION_IN_PROGRESS"; }
+                callback.accept(answer);
+            }
+        };
+        migrate(repository, manager);
+        assertEquals(Arrays.asList("release", "release"), holds);
+        assertEquals("Released", repository.hold.status);
+    }
+
+    @Test public void aFailedRevokeKeepsTheGenerationToRevokeAgain() throws Exception {
+        List<Object> revoked = new ArrayList<>();
+        FakeManager manager = new FakeManager() {
+            @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
+                if ("state".equals(action)) {
+                    // Present before the stop, then authoritatively gone.
+                    MemoryAgentResponse answer = response(host, revoked.isEmpty() && bindCommand == null ? "instance-1" : null);
+                    bindCommand = new HashMap<>();
+                    callback.accept(answer);
+                    return;
+                }
+                revoked.add(command.get("expectedInstanceGeneration"));
+                MemoryAgentResponse answer = response(host, null);
+                if (revoked.size() == 1) { answer.status = "Failed"; }
+                callback.accept(answer);
+            }
+        };
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", new FakeRepository()); inject(hooks, "manager", manager);
+        VmInstanceInventory vm = new VmInstanceInventory(); vm.setUuid("vm-1"); vm.setHostUuid("host-a");
+        hooks.beforeStopVm(vm);
+        hooks.afterStopVm(vm);
+        hooks.afterStopVm(vm);
+        assertEquals(Arrays.asList("instance-1", "instance-1"), revoked);
     }
 
     private static FakeRepository heldMigration() {
@@ -460,7 +502,7 @@ public class MemoryLifecycleHooksCallbackTest {
         assertNotNull("the source binding is revoked", manager.revokeCommand);
     }
 
-    @Test public void existingVmBindingsRespectStoredDenyAndSkipAlreadyBoundInstances() throws Exception {
+    @Test public void existingVmBindingsSkipAlreadyBoundInstances() throws Exception {
         MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
         FakeManager manager = new FakeManager();
         inject(hooks, "manager", manager);
@@ -470,17 +512,16 @@ public class MemoryLifecycleHooksCallbackTest {
                 state.setStatus("Succeeded"); state.setDesiredRevision(1L); state.setAppliedRevision(1L);
                 return state;
             }
-            @Override String vmPolicy(String vm) { return "{\"participation\":\"deny\"}"; }
         });
         MemoryAgentResponse response = new MemoryAgentResponse();
         Map<String, Object> vm = new HashMap<>(); vm.put("instanceGeneration", "new-instance");
         Map<String, Object> state = new HashMap<>(); state.put("inventoryComplete", true);
         state.put("vms", Collections.singletonMap("vm-1", vm)); response.state = state;
         hooks.reconcileObservedBindings("host-a", response);
-        assertEquals("deny", manager.bindCommand.get("participation"));
+        assertFalse(manager.bindCommand.containsKey("participation"));
         assertEquals("new-instance", manager.bindCommand.get("expectedInstanceGeneration"));
         manager.bindCommand = null;
-        vm.put("bindingGeneration", "new-instance"); vm.put("bindingMode", "deny");
+        vm.put("bindingGeneration", "new-instance"); vm.put("bindingMode", "auto");
         hooks.reconcileObservedBindings("host-a", response);
         assertNull(manager.bindCommand);
         vm.remove("bindingGeneration"); state.put("inventoryComplete", false);
@@ -502,6 +543,7 @@ public class MemoryLifecycleHooksCallbackTest {
     private static class FakeManager extends MemoryOptimizationManager {
         Map<String, Object> bindCommand;
         Map<String, Object> revokeCommand;
+        @Override void later(Runnable task, long seconds) { task.run(); }
         @Override void call(String host, String action, Map<String, Object> command, Consumer<MemoryAgentResponse> callback) {
             if ("state".equals(action)) {
                 callback.accept(response(host, "host-b".equals(host) ? "instance-target" : null));
@@ -516,9 +558,6 @@ public class MemoryLifecycleHooksCallbackTest {
     }
 
     private static class FakeRepository extends MemoryRepository {
-        @Override public String vmParticipation(String uuid) {
-            return vmPolicy(uuid).contains("\"deny\"") ? "deny" : "inherit";
-        }
         MemoryMigrationVO hold;
         private final EntityManager entityManager = (EntityManager) Proxy.newProxyInstance(
                 EntityManager.class.getClassLoader(), new Class[]{EntityManager.class}, (proxy, method, args) -> {
@@ -535,6 +574,7 @@ public class MemoryLifecycleHooksCallbackTest {
                 });
         String vmState = "Running";
         String vmHost = "host-a";
+        boolean vmDeleted;
         final Set<String> deletedHosts = new HashSet<>();
         /** Answers the VM placement, Host existence and source Unknown hold queries from the fixtures. */
         private javax.persistence.TypedQuery<?> query(String jpql) {
@@ -543,7 +583,13 @@ public class MemoryLifecycleHooksCallbackTest {
                     new Class[]{javax.persistence.TypedQuery.class}, (proxy, method, args) -> {
                         if ("setParameter".equals(method.getName())) { parameters.put((String) args[0], args[1]); return proxy; }
                         if (!"getResultList".equals(method.getName())) { return null; }
+                        if (jpql.startsWith("from MemoryMigrationVO")) {
+                            boolean listed = hold != null && ("Unknown".equals(hold.status) || vmDeleted && !"Released".equals(hold.status));
+                            return listed && hold.sourceHostUuid.equals(parameters.get("host"))
+                                    ? Collections.singletonList(hold) : Collections.emptyList();
+                        }
                         if (jpql.contains("VmInstanceVO")) {
+                            if (vmDeleted) { return Collections.emptyList(); }
                             return Collections.singletonList(new Object[]{vmState, vmHost});
                         }
                         if (jpql.contains("HostVO")) {
@@ -557,7 +603,6 @@ public class MemoryLifecycleHooksCallbackTest {
         @Override protected <T> T transaction(java.util.function.Function<EntityManager, T> function) {
             return function.apply(entityManager);
         }
-        String vmPolicy(String vm) { return "{\"schemaVersion\":1,\"participation\":\"inherit\"}"; }
         final Set<String> hostsWithoutPool = new HashSet<>();
         @Override public MemoryStateVO state(String host) {
             MemoryStateVO state = new MemoryStateVO(); state.setHostUuid("host-a");

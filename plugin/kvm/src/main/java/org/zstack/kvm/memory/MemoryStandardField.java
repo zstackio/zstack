@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Explicit ownership map between ordinary scalar policy fields and standard config identities.
  * Selection mode plus selectedVmUuids remain the dedicated, atomic list policy;
- * VM participation and migration/restore lifecycle state are also specialized.
+ * Migration/restore lifecycle state is also specialized.
  */
 public enum MemoryStandardField {
     KSM_ENABLED("ksm.enabled", KVMGlobalConfig.HOST_KSM, Kind.BOOLEAN, Scope.HOST, Scope.CLUSTER, Scope.GLOBAL),
