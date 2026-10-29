@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import org.zstack.core.db.Q
 import org.zstack.network.service.virtualrouter.VirtualRouterCommands
 import org.zstack.network.service.virtualrouter.VirtualRouterGlobalConfig
+import org.zstack.network.service.virtualrouter.VirtualRouterPingTracker
 import org.zstack.sdk.ReconnectVirtualRouterAction
 import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.network.service.virtualrouter.VirtualRouterVmVO
@@ -107,6 +108,7 @@ class ReconnectVrApplyDnsServiceCase extends SubCase {
         String oldSshPort = VirtualRouterGlobalConfig.SSH_PORT.value()
         String oldTimeout = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.value()
         RESTFacadeImpl rest = bean(RESTFacadeImpl.class)
+        VirtualRouterPingTracker tracker = bean(VirtualRouterPingTracker.class)
         List<Long> timeouts = Collections.synchronizedList(new ArrayList<Long>())
         Runnable removeInterceptor = rest.installBeforeAsyncJsonPostInterceptor(new BeforeAsyncJsonPostInterceptor() {
             void beforeAsyncJsonPost(String url, Object body, TimeUnit unit, long timeout) {
@@ -120,6 +122,11 @@ class ReconnectVrApplyDnsServiceCase extends SubCase {
         })
         AtomicInteger calls = new AtomicInteger()
         try {
+            // A failed manual reconnect must not trigger an independent heartbeat reconnect in these scenarios.
+            tracker.untrack(vrUuid)
+            retryInSecs {
+                assert !FieldUtils.getFieldValue("resourceInTracking", tracker).contains(vrUuid)
+            }
             // Failure diagnostics must not attempt SSH to the local test machine.
             updateGlobalConfig {
                 category = VirtualRouterGlobalConfig.CATEGORY
@@ -220,6 +227,7 @@ class ReconnectVrApplyDnsServiceCase extends SubCase {
                 name = ApplianceVmGlobalConfig.CONNECT_TIMEOUT.name
                 value = oldTimeout
             }
+            tracker.track(vrUuid)
         }
     }
 
