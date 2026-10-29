@@ -87,6 +87,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private final MemoryBatchCursor observationCursor = new MemoryBatchCursor();
     private Future<?> poller;
     private long lastObservation;
+    private Boolean lastLicensed;
     private long lastHistoryPurge;
 
     static final String SERVICE_ID = "memoryOptimization";
@@ -642,6 +643,17 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     /** A committed configuration change is planned by the next scans, not left for a Host reconnect. */
+    void planLicenseChange() {
+        boolean now = licensed();
+        Boolean before = lastLicensed;
+        lastLicensed = now;
+        if (before == null || before == now) { return; }
+        // A plan carries the license; an expired or renewed one is planned again for the Hosts this node manages.
+        for (String host : repository.hostsWithState()) {
+            if (destMaker.isManagedByUs(host)) { planConfiguration(host, false); }
+        }
+    }
+
     void planUnplanned() {
         new HashMap<>(unplannedResources).forEach((key, reenabled) ->
                 standardConfigurationChanged(GLOBAL_RESOURCE.equals(key) ? null : key, reenabled));
@@ -841,6 +853,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             completeWaiters();
             if (now - lastObservation >= TimeUnit.SECONDS.toMillis(30)) {
                 lastObservation = now;
+                planLicenseChange();
                 observeRuntime(connected);
                 // Each management node keeps the public state of the Hosts it manages, as it observes them.
                 repository.refreshHostStates(repository.hostsWithState().stream()
