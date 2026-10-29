@@ -71,7 +71,9 @@ import org.zstack.utils.logging.CLogger;
 
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,19 +248,29 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                List<String> keySources = new ArrayList<>();
                 String srcTpmUuid = findSourceTpmUuidFromSnapshotTpmBackupFile(context.backupFileUuid);
-                if (StringUtils.isBlank(srcTpmUuid)) {
-                    trigger.next();
-                    return;
+                if (StringUtils.isNotBlank(srcTpmUuid)) {
+                    keySources.add(srcTpmUuid);
                 }
-                CloneEncryptedResourceKeyContext cloneCtx = new CloneEncryptedResourceKeyContext();
-                cloneCtx.srcTpmUuid = srcTpmUuid;
-                cloneCtx.dstTpmUuid = context.tpmUuid;
-                cloneCtx.resetTpm = false;
-                resourceKeyBackend.cloneEncryptedResourceKey(cloneCtx, new Completion(trigger) {
+                // the TpmState backup file carries the key of the snapshot point and must win
+                // over the source VM's current key, which may have been rekeyed or replaced since
+                if (StringUtils.isNotBlank(context.backupFileUuid)) {
+                    if (resourceKeyBackend.findKeyProviderNameByTpm(context.backupFileUuid) != null) {
+                        keySources.add(context.backupFileUuid);
+                    } else if (StringUtils.isNotBlank(srcTpmUuid)) {
+                        logger.warn(String.format(
+                                "no resource key saved on TPM backup file[uuid:%s], use the current key of source tpm[uuid:%s] for tpm[uuid:%s]",
+                                context.backupFileUuid, srcTpmUuid, context.tpmUuid));
+                    }
+                }
+                cloneTpmKeyFromSources(keySources.iterator(), context.tpmUuid, new Completion(trigger) {
                     @Override
                     public void success() {
                         context.providerUuid = resourceKeyBackend.findKeyProviderUuidByTpm(context.tpmUuid);
+                        if (StringUtils.isBlank(context.providerUuid)) {
+                            repairClonedTpmKeyProvider(context, tpmSpec);
+                        }
                         trigger.next();
                     }
 
@@ -532,6 +544,52 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
         }
         spec.getDevicesSpec().getTpm().setResourceKeyCreatedNew(false);
         spec.getDevicesSpec().getTpm().setResourceKeyProviderUuid(null);
+    }
+
+    // the provider of a saved key ref can be gone (FK ON DELETE SET NULL, restore on another
+    // site); rebind it by the saved provider name first, then by the provider chosen for the TPM
+    private void repairClonedTpmKeyProvider(PrepareTpmResourceContext context, TpmSpec tpmSpec) {
+        String providerName = resourceKeyBackend.findKeyProviderNameByTpm(context.tpmUuid);
+        if (providerName == null) {
+            return;
+        }
+
+        String providerUuid = resourceKeyBackend.findKeyProviderUuidByName(providerName);
+        if (StringUtils.isBlank(providerUuid)) {
+            providerUuid = tpmSpec.getKeyProviderUuid();
+        }
+        if (StringUtils.isBlank(providerUuid)) {
+            return;
+        }
+
+        if (resourceKeyBackend.applyKeyProviderWithKek(context.tpmUuid, providerUuid) > 0) {
+            context.providerUuid = providerUuid;
+            logger.info(String.format("rebound key provider of tpm[uuid:%s] to provider[uuid:%s, savedName:%s]",
+                    context.tpmUuid, providerUuid, providerName));
+        }
+    }
+
+    private void cloneTpmKeyFromSources(Iterator<String> it, String dstTpmUuid, Completion completion) {
+        if (!it.hasNext()) {
+            completion.success();
+            return;
+        }
+
+        CloneEncryptedResourceKeyContext cloneCtx = new CloneEncryptedResourceKeyContext();
+        cloneCtx.srcTpmUuid = it.next();
+        cloneCtx.dstTpmUuid = dstTpmUuid;
+        cloneCtx.resetTpm = false;
+        resourceKeyBackend.cloneEncryptedResourceKey(cloneCtx, new Completion(completion) {
+            @Override
+            public void success() {
+                cloneTpmKeyFromSources(it, dstTpmUuid, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
     }
 
     private String findSourceTpmUuidFromSnapshotTpmBackupFile(String tpmBackupFileUuid) {
