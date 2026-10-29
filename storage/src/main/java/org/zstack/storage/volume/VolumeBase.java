@@ -2993,7 +2993,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 volume = Q.New(VolumeVO.class)
                         .eq(VolumeVO_.vmInstanceUuid, msg.getVmInstance().getUuid())
                         .eq(VolumeVO_.type, VolumeType.Memory).find();
-                return volume == null || volume.getStatus().equals(VolumeStatus.Ready);
+                return volume == null || (volume.getStatus().equals(VolumeStatus.Ready)
+                        && volume.getInstallPath() != null && !volume.getInstallPath().isEmpty());
             }
 
             @Override
