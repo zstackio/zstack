@@ -7,6 +7,8 @@ import org.zstack.compute.vm.VmGlobalConfig
 import org.zstack.core.Platform
 import org.zstack.core.cloudbus.CloudBus
 import org.zstack.core.db.Q
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
 import org.zstack.core.db.SQL
 import org.zstack.core.singleflight.MultiNodeSingleFlightImpl
 import org.zstack.expon.ExponApiHelper
@@ -213,6 +215,7 @@ class ExponPrimaryStorageCase extends SubCase {
             testCreateDataVolume()
             testCreateSnapshot()
             testCreateTemplate()
+            testReimageWithoutImage()
             testClean()
             testImageCacheClean()
 
@@ -855,7 +858,7 @@ class ExponPrimaryStorageCase extends SubCase {
         assert apiHelper.queryVhostController("volume-" + vol.uuid) == null
     }
 
-    void testImageCacheClean() {
+    void testReimageWithoutImage() {
         deleteImage {
             uuid = image.uuid
         }
@@ -864,6 +867,18 @@ class ExponPrimaryStorageCase extends SubCase {
             imageUuid = image.uuid
         }
 
+        assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid).isExists() : "the image must be expunged before reinit"
+        assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid)
+                .eq(ImageCacheVO_.primaryStorageUuid, ps.uuid).isExists() : "the in-use cache must remain on the single-space storage"
+        reimageVmInstance {
+            vmInstanceUuid = vm.uuid
+        }
+        reimageVmInstance {
+            vmInstanceUuid = vm.uuid
+        }
+    }
+
+    void testImageCacheClean() {
         cleanUpImageCacheOnPrimaryStorage {
             uuid = ps.uuid
         }

@@ -525,7 +525,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        downloadImageCache(msg.getTemplateSpec().getInventory(), spec.getAllocatedUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                        downloadImageCache(msg.getTemplateSpec().getInventory().getUuid(), spec.getAllocatedUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
                                 pathInCache = ImageCacheUtil.getImageCachePath(returnValue);
@@ -1365,16 +1365,16 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void downloadImageCache(ImageInventory image, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
+    private void downloadImageCache(String imageUuid, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
         thdf.chainSubmit(new ChainTask(completion) {
             @Override
             public String getSyncSignature() {
-                return String.format("download-image-cache-%s-to-%s", image.getUuid(), self.getUuid());
+                return String.format("download-image-cache-%s-to-%s", imageUuid, self.getUuid());
             }
 
             @Override
             public void run(SyncTaskChain chain) {
-                doDownloadImageCache(image, allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(chain) {
+                doDownloadImageCache(imageUuid, allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(chain) {
                     @Override
                     public void success(ImageCacheInventory returnValue) {
                         completion.success(returnValue);
@@ -1396,15 +1396,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
         });
     }
 
-    private void doDownloadImageCache(ImageInventory image, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
-        CreateVolumeSpec spec = new CreateVolumeSpec();
-        spec.setUuid(image.getUuid());
-        spec.setName(buildImageName(image.getUuid()));
-        spec.setAllocatedUrl(allocatedUrl);
-
+    private void doDownloadImageCache(String imageUuid, String allocatedUrl, ReturnValueCompletion<ImageCacheInventory> completion) {
         List<ImageCacheVO> caches = Q.New(ImageCacheVO.class)
                 .eq(ImageCacheVO_.primaryStorageUuid, self.getUuid())
-                .eq(ImageCacheVO_.imageUuid, image.getUuid())
+                .eq(ImageCacheVO_.imageUuid, imageUuid)
                 .list();
 
         if (!controller.reportCapabilities().isSupportMultiSpace() && !caches.isEmpty()) {
@@ -1422,6 +1417,19 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
             }
         }
 
+        ImageVO ivo = dbf.findByUuid(imageUuid, ImageVO.class);
+        if (ivo == null) {
+            completion.fail(operr(ORG_ZSTACK_IMAGE_10025,
+                    "cannot download image [%s] because it has been deleted and no image cache matches the target storage space",
+                    imageUuid));
+            return;
+        }
+
+        ImageInventory image = ImageInventory.valueOf(ivo);
+        CreateVolumeSpec spec = new CreateVolumeSpec();
+        spec.setUuid(imageUuid);
+        spec.setName(buildImageName(imageUuid));
+        spec.setAllocatedUrl(allocatedUrl);
         downloadImageTo(image, spec, ImageCacheVO.class.getSimpleName(), new ReturnValueCompletion<VolumeStats>(completion) {
             @Override
             public void success(VolumeStats volStats) {
@@ -1848,7 +1856,7 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
                 ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL.getTokenByTag(urlTag,
                         ExternalPrimaryStorageSystemTags.REQUIRED_INSTALL_URL_TOKEN);
 
-        downloadImageCache(msg.getIsoSpec().getInventory(), allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(msg) {
+        downloadImageCache(msg.getIsoSpec().getInventory().getUuid(), allocatedUrl, new ReturnValueCompletion<ImageCacheInventory>(msg) {
             @Override
             public void success(ImageCacheInventory cache) {
                 String isoProtocol = controller.reportCapabilities().getDefaultIsoActiveProtocol() != null
@@ -2057,17 +2065,10 @@ public class ExternalPrimaryStorage extends PrimaryStorageBase {
 
                     @Override
                     public void run(final FlowTrigger trigger, Map data) {
-                        ImageVO ivo = dbf.findByUuid(msg.getVolume().getRootImageUuid(), ImageVO.class);
-                        if (ivo == null) {
-                            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_ADDON_PRIMARY_10011, "cannot reinit rootvolume [%s] because image [%s] has been deleted and imagecache cannot be found",
-                                    msg.getVolume().getUuid(), msg.getVolume().getRootImageUuid()));
-                        }
-
-                        ImageInventory image = ImageInventory.valueOf(ivo);
-                        downloadImageCache(image, msg.getAllocatedInstallUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
+                        downloadImageCache(msg.getVolume().getRootImageUuid(), msg.getAllocatedInstallUrl(), new ReturnValueCompletion<ImageCacheInventory>(trigger) {
                             @Override
                             public void success(ImageCacheInventory returnValue) {
-                                installUrl = returnValue.getInstallUrl();
+                                installUrl = ImageCacheUtil.getImageCachePath(returnValue);
                                 trigger.next();
                             }
 

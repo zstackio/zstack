@@ -2,6 +2,13 @@ package org.zstack.test.integration.storage.snapshot
 
 
 import org.zstack.core.db.Q
+import org.springframework.http.HttpEntity
+import org.zstack.header.image.ImageVO
+import org.zstack.header.image.ImageVO_
+import org.zstack.storage.primary.local.LocalStorageKvmBackend
+import org.zstack.storage.primary.local.LocalStorageKvmSftpBackupStorageMediatorImpl
+import org.zstack.storage.primary.local.LocalStorageUtils
+import org.zstack.utils.gson.JSONObjectUtil
 import org.zstack.header.network.service.NetworkServiceType
 import org.zstack.header.storage.primary.ImageCacheVO
 import org.zstack.header.storage.primary.ImageCacheVO_
@@ -14,6 +21,7 @@ import org.zstack.network.service.virtualrouter.VirtualRouterConstant
 import org.zstack.sdk.*
 import org.zstack.test.integration.storage.StorageTest
 import org.zstack.testlib.EnvSpec
+import org.zstack.testlib.LocalStorageSpec
 import org.zstack.testlib.SubCase
 import org.zstack.utils.data.SizeUnit
 
@@ -293,8 +301,55 @@ class ReimageVmSaveSnapshotCase extends SubCase {
             testReimageVmSaveSnapshotCeph()
             testReimageVmSaveSnapshotSmp()
             testReimageVmSaveSnapshotNfs()
+            testLocalReimageWithMissingImageOrCache()
         }
 
+    }
+
+    void testLocalReimageWithMissingImageOrCache() {
+        def vm = env.inventoryByName("local-vm") as VmInstanceInventory
+        def image = env.inventoryByName("image1") as ImageInventory
+        def cache = Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid)
+                .like(ImageCacheVO_.installUrl, String.format("%%hostUuid://%s%%", vm.hostUuid)).find() as ImageCacheVO
+        assert cache != null : "the root volume must have an image cache on its host"
+        String cachePath = new LocalStorageUtils.InstallPath(fullPath: cache.installUrl).disassemble().installPath
+        def ps = queryPrimaryStorage { conditions = ["uuid=${cache.primaryStorageUuid}".toString()] }[0] as PrimaryStorageInventory
+        def vfs = LocalStorageSpec.vfs(vm.hostUuid, ps.url, env)
+        vfs.delete(cachePath)
+        int downloads = 0
+        int reinits = 0
+        env.hijackSimulator(LocalStorageKvmSftpBackupStorageMediatorImpl.DOWNLOAD_BIT_PATH) { rsp ->
+            downloads++
+            return rsp
+        }
+        env.hijackSimulator(LocalStorageKvmBackend.REINIT_IMAGE_PATH) { rsp, HttpEntity<String> e ->
+            def cmd = JSONObjectUtil.toObject(e.body, LocalStorageKvmBackend.ReinitImageCmd.class)
+            assert vfs.exists(cachePath) : "reinit must wait for the missing cache to be downloaded"
+            assert cmd.imagePath == cachePath : "reinit must use the actual cache path"
+            reinits++
+            return rsp
+        }
+        try {
+            reimageVmInstance { vmInstanceUuid = vm.uuid }
+            assert downloads == 1 : "a missing cache file must be downloaded before reinit"
+            assert reinits == 1 : "reinit must run after cache download"
+
+            deleteImage { uuid = image.uuid }
+            expungeImage { imageUuid = image.uuid }
+            assert !Q.New(ImageVO.class).eq(ImageVO_.uuid, image.uuid).isExists() : "the image must be expunged"
+            assert Q.New(ImageCacheVO.class).eq(ImageCacheVO_.imageUuid, image.uuid).isExists() : "the in-use cache must remain"
+
+            reimageVmInstance { vmInstanceUuid = vm.uuid }
+            assert downloads == 1 : "a usable cache must not require the deleted image"
+            assert reinits == 2 : "cache-only reinit must reach the agent"
+
+            vfs.delete(cachePath)
+            def action = new ReimageVmInstanceAction(vmInstanceUuid: vm.uuid, sessionId: adminSession())
+            assert action.call().error != null : "reinit must fail when both the image and cache file are unavailable"
+            assert reinits == 2 : "reinit must not reach the agent without usable source bits"
+        } finally {
+            env.cleanFinalSimulatorHandlers()
+        }
     }
 
     void testReimageVmfailCase() {
