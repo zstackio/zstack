@@ -244,8 +244,12 @@ public class MemoryRepositoryTest {
         assertEquals(false, field(desired("host1"), "writeback", "enabled"));
         repository.plan("host2", null, "connect", "test", false, false);
         assertEquals(true, field(desired("host2"), "ksm", "enabled"));
-        assertTrue(((Map<?, ?>) desired("host2").get("zram")).isEmpty());
+        assertEquals("without a license ZRAM stops reclaiming", Collections.singletonMap("enabled", false),
+                desired("host2").get("zram"));
         assertTrue(((Map<?, ?>) desired("host2").get("writeback")).isEmpty());
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "none");
+        repository.plan("host2", null, "configure", "test", true, false);
+        assertNull("none leaves a licensed ZRAM unmanaged", field(desired("host2"), "zram", "enabled"));
     }
 
     @Test public void onlyAChangedConfigurationStartsAGenerationAndSupersedesTheOldOne() {

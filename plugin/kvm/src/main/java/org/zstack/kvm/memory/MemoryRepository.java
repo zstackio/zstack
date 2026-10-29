@@ -231,6 +231,9 @@ public class MemoryRepository {
             boolean prepared = effectiveValue(em, MemoryStandardField.WRITEBACK_BACKEND_RESOURCE, host, cluster) != null;
             boolean zramOn = Boolean.TRUE.equals(zram.get("enabled"));
             writeback.put("enabled", Boolean.TRUE.equals(enabled) && !(prepared && zramOn) ? Boolean.FALSE : enabled);
+        } else {
+            // Without a license ZRAM stops reclaiming; only a licensed none leaves it unmanaged.
+            zram.put("enabled", Boolean.FALSE);
         }
         Map<String, Object> desired = new LinkedHashMap<>();
         desired.put("control", control);

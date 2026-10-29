@@ -53,6 +53,7 @@ public class MemoryClusterOperationTest {
             return Arrays.asList("host1", "host2");
         }
         @Override public boolean wantsZram(String host) { return !zramOff.contains(host); }
+        @Override public List<String> hostsWithState() { return Arrays.asList("host1", "host2"); }
         @Override public boolean isDrained(String host) { return drained.contains(host); }
         final Set<String> withoutPool = new HashSet<>();
         @Override public boolean hasPool(String host) { return !withoutPool.contains(host); }
@@ -150,13 +151,15 @@ public class MemoryClusterOperationTest {
     private Manager manager;
     private Repository repository;
     private final List<MessageReply> replies = new ArrayList<>();
+    private long licenseDeadline;
 
     private void setup() throws Exception {
         manager = new Manager(); repository = new Repository();
         inject(manager, "repository", repository);
         inject(manager, "bus", bus(replies, manager));
         inject(manager, "thdf", synchronousThreads());
-        inject(manager, "pluginRgty", licensedRegistry());
+        licenseDeadline = Long.MAX_VALUE;
+        inject(manager, "pluginRgty", licensedRegistry(() -> licenseDeadline));
         inject(manager, "destMaker", Proxy.newProxyInstance(ResourceDestinationMaker.class.getClassLoader(),
                 new Class<?>[]{ResourceDestinationMaker.class}, (proxy, method, args) -> true));
     }
@@ -394,6 +397,21 @@ public class MemoryClusterOperationTest {
         assertEquals(Collections.singletonList("host1:configure:null"), repository.plans);
     }
 
+    @Test public void anExpiredOrRenewedLicenseIsPlannedAtTheNextScan() throws Exception {
+        setup();
+        manager.planLicenseChange();
+        assertTrue("the first scan only notes the license", repository.plans.isEmpty());
+        licenseDeadline = 0;
+        manager.planLicenseChange();
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+        repository.plans.clear();
+        manager.planLicenseChange();
+        assertTrue(repository.plans.isEmpty());
+        licenseDeadline = Long.MAX_VALUE;
+        manager.planLicenseChange();
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+    }
+
     @Test public void aHostOutsideTheClusterIsRejectedBeforeAnyPlan() throws Exception {
         setup();
         MemoryClusterOperationMsg msg = cluster("pause"); msg.setHostUuid("elsewhere");
@@ -411,8 +429,8 @@ public class MemoryClusterOperationTest {
         method.setAccessible(true); method.invoke(manager, msg);
     }
 
-    private static PluginRegistry licensedRegistry() {
-        MemoryLicenseExtensionPoint license = () -> System.currentTimeMillis() + 3600000L;
+    private static PluginRegistry licensedRegistry(java.util.function.LongSupplier deadline) {
+        MemoryLicenseExtensionPoint license = deadline::getAsLong;
         return (PluginRegistry) Proxy.newProxyInstance(PluginRegistry.class.getClassLoader(), new Class<?>[]{PluginRegistry.class},
                 (proxy, method, args) -> "getExtensionList".equals(method.getName()) && args != null && args.length == 1
                         && args[0] == MemoryLicenseExtensionPoint.class
