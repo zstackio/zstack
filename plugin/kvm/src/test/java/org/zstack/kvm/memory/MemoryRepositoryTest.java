@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.zstack.header.longjob.LongJobState;
 import org.zstack.header.longjob.LongJobVO;
 import org.zstack.header.identity.SessionInventory;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostStatus;
 import javax.persistence.*;
 import java.util.*;
@@ -372,6 +373,43 @@ public class MemoryRepositoryTest {
         repository.observe("host1", applied);
         assertEquals("Converging", repository.state("host1").getStatus());
         assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+    }
+
+    @Test public void aServiceStartedAgainByAnApplyIsReportedRecovered() {
+        setGlobal(MemoryStandardField.KSM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse running = ksmSample(plan.generation, "active");
+        repository.record("host1", plan.generation, running);
+        repository.observe("host1", running);
+        firedEvents.clear();
+        // An observation of the failure and the reply of the resend that started ksmtuned again,
+        // each compared with the sample it replaces.
+        repository.observe("host1", ksmSample(plan.generation, "failed"));
+        repository.record("host1", plan.generation, ksmSample(plan.generation, "active"));
+        assertEquals(Arrays.asList("Failed", "Recovered"), serviceEventStatuses());
+        // A reply that is not stored, such as one for an older generation, reports nothing.
+        repository.record("host1", plan.generation - 1, ksmSample(plan.generation, "failed"));
+        assertEquals(Arrays.asList("Failed", "Recovered"), serviceEventStatuses());
+    }
+
+    private static MemoryAgentResponse ksmSample(long generation, String tunedState) {
+        MemoryAgentResponse response = reply("Succeeded", null, null);
+        response.state.put("appliedGeneration", generation);
+        Map<String, Object> ksm = new LinkedHashMap<>();
+        ksm.put("enabled", "active".equals(tunedState) ? Boolean.TRUE : null);
+        ksm.put("serviceState", "active"); ksm.put("tunedServiceState", tunedState);
+        response.state.put("ksm", ksm);
+        return response;
+    }
+
+    private List<String> serviceEventStatuses() {
+        List<String> statuses = new ArrayList<>();
+        for (Object[] fired : firedEvents) {
+            if (fired[1] instanceof HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData) {
+                statuses.add(((HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData) fired[1]).getStatus());
+            }
+        }
+        return statuses;
     }
 
     @Test public void aHostWithoutKsmIsNotSentKsmAgainAndAgain() {

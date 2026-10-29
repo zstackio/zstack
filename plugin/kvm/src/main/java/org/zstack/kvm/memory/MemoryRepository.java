@@ -6,6 +6,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.EventFacade;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatchWithReturn;
+import org.zstack.header.host.HostCanonicalEvents;
 import org.zstack.header.host.HostStatus;
 import org.zstack.header.host.HostVO;
 import org.zstack.utils.Utils;
@@ -385,11 +386,13 @@ public class MemoryRepository {
      */
     public Outcome record(String host, long generation, MemoryAgentResponse response) {
         List<MemoryTaskFailureEvent> events = new ArrayList<>();
+        List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents = new ArrayList<>();
         Outcome outcome = transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null || state.getDesiredRevision() != generation) { return null; }
             long now = System.currentTimeMillis();
-            observe(state, response, now);
+            // An apply reply is a sample too: a service the apply started again is reported like an observed one.
+            serviceEvents.addAll(observe(state, response, now));
             String status = response == null ? null : response.status;
             String reason = response == null ? "AGENT_UNREACHABLE"
                     : response.reasonCode != null ? response.reasonCode : response.reason;
@@ -422,6 +425,7 @@ public class MemoryRepository {
             refreshHostState(em, state);
             return new Outcome(state.getStatus(), state.getReason(), generation);
         });
+        fire(serviceEvents);
         for (MemoryTaskFailureEvent event : events) {
             try {
                 evtf.fire(MemoryTaskFailureEvent.PATH, event);
@@ -449,10 +453,11 @@ public class MemoryRepository {
 
     /** Stores a read-only Agent observation; a newer generation on the Host triggers a resend. */
     public void observe(String host, MemoryAgentResponse response) {
+        List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents = new ArrayList<>();
         transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) { return null; }
-            observe(state, response, System.currentTimeMillis());
+            serviceEvents.addAll(observe(state, response, System.currentTimeMillis()));
             Object applied = response == null || response.state == null ? null : response.state.get("appliedGeneration");
             if (SUCCEEDED.equals(state.getStatus()) && response != null && response.isSuccess() && response.state != null
                     && (!(applied instanceof Number && ((Number) applied).longValue() == state.getDesiredRevision())
@@ -465,15 +470,35 @@ public class MemoryRepository {
             refreshHostState(em, state);
             return null;
         });
+        fire(serviceEvents);
     }
 
-    private static void observe(MemoryStateVO state, MemoryAgentResponse response, long now) {
-        if (response == null || response.state == null || response.state.isEmpty()) { return; }
+    /** Stores the sample and returns the service changes from the sample it replaces, under the Host's row lock. */
+    private static List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> observe(
+            MemoryStateVO state, MemoryAgentResponse response, long now) {
+        if (response == null || response.state == null || response.state.isEmpty()) { return Collections.emptyList(); }
+        String previous = state.getState();
         state.setState(GSON.toJson(response.state));
         Object sampled = response.state.get("sampleTime");
         state.setLastSampleTime(sampled instanceof Number ? ((Number) sampled).longValue() : now);
         Object capabilities = response.state.get("capabilities");
         if (capabilities instanceof Map) { state.setCapabilities(GSON.toJson(capabilities)); }
+        try {
+            return MemoryObservationRules.serviceEvents(state.getHostUuid(), response, state, previous, now);
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Host[%s] memory service events failed; the sample is kept", state.getHostUuid()), e);
+            return Collections.emptyList();
+        }
+    }
+
+    private void fire(List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents) {
+        for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event : serviceEvents) {
+            try {
+                evtf.fire(HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, event);
+            } catch (RuntimeException e) {
+                logger.warn(String.format("Unable to fire the Host[%s] memory service event", event.getHostUuid()), e);
+            }
+        }
     }
 
     // ------------------------------------------------------ public state
