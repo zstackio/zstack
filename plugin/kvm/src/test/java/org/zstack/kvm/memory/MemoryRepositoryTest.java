@@ -60,6 +60,8 @@ public class MemoryRepositoryTest {
     private Object previousRegistry;
     private Class<?> previousResourceBaseType;
     private final List<Object[]> firedEvents = new ArrayList<>();
+    private final java.util.concurrent.atomic.AtomicReference<RuntimeException> nextTransactionFailure =
+            new java.util.concurrent.atomic.AtomicReference<>();
 
     @Before public void setup() throws Exception {
         previousResourceBaseType = org.zstack.header.vo.ResourceTypeMetadata.concreteBaseTypeMapping.get(ResourceVO.class);
@@ -95,6 +97,8 @@ public class MemoryRepositoryTest {
             @Override protected <T> T transaction(Function<EntityManager, T> function) {
                 EntityManager existing = activeEm.get();
                 if (existing != null) { return function.apply(existing); }
+                RuntimeException failure = nextTransactionFailure.getAndSet(null);
+                if (failure != null) { throw failure; }
                 EntityManager em = factory.createEntityManager();
                 boolean synchronize = !org.springframework.transaction.support.TransactionSynchronizationManager.isSynchronizationActive();
                 try {
@@ -410,6 +414,26 @@ public class MemoryRepositoryTest {
             }
         }
         return statuses;
+    }
+
+    @Test public void aFirstPlanThatLostTheInsertToAnotherPlansAgain() {
+        // Two first plans of a Host both insert its state row; the later commit fails on the key.
+        nextTransactionFailure.set(integrity("Duplicate entry 'host1' for key 'PRIMARY'", 1062));
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        assertEquals(plan.generation, repository.state("host1").getDesiredRevision());
+        for (RuntimeException other : Arrays.asList(new IllegalStateException("database unavailable"),
+                integrity("Column 'actorUuid' cannot be null", 1048))) {
+            nextTransactionFailure.set(other);
+            try {
+                repository.plan("host1", null, "connect", "test", true, true);
+                fail("only a lost insert is planned again: " + other);
+            } catch (RuntimeException expected) { assertSame(other, expected); }
+        }
+    }
+
+    /** The MySQL driver's integrity error, as Hibernate wraps it. */
+    private static RuntimeException integrity(String message, int code) {
+        return new PersistenceException(new java.sql.SQLIntegrityConstraintViolationException(message, "23000", code));
     }
 
     @Test public void aHostWithoutKsmIsNotSentKsmAgainAndAgain() {
