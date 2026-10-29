@@ -538,7 +538,10 @@ public class MemoryRepository {
 
     /** A Host that reports it cannot run ZRAM runs without it; the Agent leaves it unmanaged. */
     static boolean zramSupported(Map<String, Object> observed) {
-        return !Boolean.FALSE.equals(field(observed.get("capabilities"), "zram"));
+        Object capabilities = observed.get("capabilities");
+        // A stopped service cannot report its qualification; only a known verdict makes ZRAM unsupported.
+        return !Boolean.FALSE.equals(field(capabilities, "zram"))
+                || "SERVICE_RECLAIM_CAPABILITY_UNKNOWN".equals(field(capabilities, "zramReasonCode"));
     }
 
     /** The observed Host contradicts its applied desired configuration. */
