@@ -40,6 +40,13 @@ public class MemorySummaryRulesTest {
         assertTrue(hosts.get(2).getMetrics().isEmpty());
         assertNull(hosts.get(2).getSampleTime());
     }
+    @Test public void aHostWhoseSampleCannotBeReadIsCountedOnceAsUnknown() {
+        // Paused is seen before the unreadable sample time; the Host is not counted twice.
+        String state = "{\"control\":\"paused\",\"ksm\":{\"enabled\":true},"
+                + "\"savings\":{\"quality\":\"Fresh\",\"sampleTime\":\"soon\",\"totalSavedEstimateBytes\":1}}";
+        assertEquals(Collections.singletonMap("unknown", 1), reasons(current("a", now, state)));
+    }
+
     @Test public void currentReasonsUseActualSwitchesNotZeroOrDesiredConfiguration() {
         String zero = "\"savings\":{\"quality\":\"Fresh\",\"sampleTime\":300000,\"totalSavedEstimateBytes\":0}";
         Map<String, Integer> unknown = reasons(current("a", now, "{" + zero + "}"));

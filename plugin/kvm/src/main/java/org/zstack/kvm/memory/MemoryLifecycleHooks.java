@@ -295,8 +295,14 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         }
         for (String uuid : bindingCursor.next(host, candidates.keySet(),
                 MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.VM_BIND_BATCH_SIZE, 32))) {
-            manager.call(host, "vm-efficiency", candidates.get(uuid), ignored -> { });
-            // Advance even on a failure; the next authoritative sample confirms the result.
+            Map<String, Object> command = candidates.get(uuid);
+            // Advance even on a failure; the next authoritative sample binds it again.
+            manager.call(host, "vm-efficiency", command, reply -> {
+                if (!MemoryResultRules.succeeded((String) command.get("operationUuid"), reply)) {
+                    logger.warn(String.format("Host[%s] VM[%s] memory optimization binding failed: %s", host, uuid,
+                            reply == null ? "AGENT_UNREACHABLE" : reply.reasonCode));
+                }
+            });
         }
     }
 

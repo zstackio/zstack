@@ -46,11 +46,19 @@ public class MemoryClusterOperationTest {
             assertEquals("Cluster", scope); assertEquals("cluster", resource);
             return Arrays.asList("host1", "host2");
         }
-        @Override public List<String> standardConfigurationTargets(String resource) { return Arrays.asList("host1", "host2"); }
+        int failingTargets;
+        final Set<String> zramOff = new HashSet<>();
+        @Override public List<String> standardConfigurationTargets(String resource) {
+            if (failingTargets > 0) { failingTargets--; throw new RuntimeException("database unavailable"); }
+            return Arrays.asList("host1", "host2");
+        }
+        @Override public boolean wantsZram(String host) { return !zramOff.contains(host); }
         @Override public boolean isDrained(String host) { return drained.contains(host); }
         final Set<String> withoutPool = new HashSet<>();
         @Override public boolean hasPool(String host) { return !withoutPool.contains(host); }
+        final Set<String> failingPlans = new HashSet<>();
         @Override public Planned plan(String host, String control, String action, String actor, boolean licensed, boolean operation) {
+            if (failingPlans.contains(host)) { throw new RuntimeException("database unavailable"); }
             plans.add(host + ":" + action + ":" + control);
             long generation = generations.getOrDefault(host, 0L);
             if (generation == 0 || control != null && !control.equals(controls.get(host))) {
@@ -340,6 +348,50 @@ public class MemoryClusterOperationTest {
         repository.plans.clear();
         manager.standardConfigurationChanged("cluster", false);
         assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+    }
+
+    @Test public void aConfigurationChangeAHostCouldNotPlanIsPlannedByTheNextScan() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        repository.failingPlans.add("host1");
+        manager.standardConfigurationChanged("cluster", true);
+        assertEquals(Collections.singletonList("host2:configure:null"), repository.plans);
+        repository.failingPlans.clear(); repository.plans.clear();
+        // A connected Host does not wait for a reconnect; the retry still resumes the drained Host.
+        manager.planUnplanned();
+        assertEquals(Collections.singletonList("host1:resume:active"), repository.plans);
+        repository.plans.clear();
+        manager.planUnplanned();
+        assertTrue(repository.plans.isEmpty());
+    }
+
+    @Test public void aGlobalChangeIsPlannedAndRetriedLikeAnyOther() throws Exception {
+        setup();
+        repository.failingTargets = 1;
+        manager.standardConfigurationChanged(null, false);
+        assertTrue(repository.plans.isEmpty());
+        manager.planUnplanned();
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+    }
+
+    @Test public void aWaitingReenableOfTheResourceIsCarriedByItsNextChange() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        repository.failingTargets = 1;
+        manager.standardConfigurationChanged("cluster", true);
+        manager.standardConfigurationChanged("cluster", false);
+        assertEquals(Arrays.asList("host1:resume:active", "host2:configure:null"), repository.plans);
+    }
+
+    @Test public void aLaterZramDisableKeepsTheDrainedHostDrained() throws Exception {
+        setup();
+        repository.drained.add("host1");
+        repository.failingPlans.add("host1");
+        manager.standardConfigurationChanged("cluster", true);
+        repository.failingPlans.clear(); repository.plans.clear();
+        repository.zramOff.add("host1");
+        manager.planUnplanned();
+        assertEquals(Collections.singletonList("host1:configure:null"), repository.plans);
     }
 
     @Test public void aHostOutsideTheClusterIsRejectedBeforeAnyPlan() throws Exception {

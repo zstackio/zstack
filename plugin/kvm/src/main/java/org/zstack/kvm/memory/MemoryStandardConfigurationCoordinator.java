@@ -93,8 +93,7 @@ public final class MemoryStandardConfigurationCoordinator {
                 try {
                     changed.accept(resourceUuid, zramEnabled);
                 } catch (RuntimeException e) {
-                    logger.warn(String.format("unable to plan the memory configuration for resource[%s]; "
-                            + "the next Host connect plans it", resourceUuid), e);
+                    logger.error(String.format("unable to plan the memory configuration for resource[%s]", resourceUuid), e);
                 }
                 return null;
             }
