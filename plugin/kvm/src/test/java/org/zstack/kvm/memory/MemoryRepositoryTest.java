@@ -356,6 +356,36 @@ public class MemoryRepositoryTest {
         assertNotNull(repository.pending("host1"));
     }
 
+    @Test public void aHostWhoseWantedKsmtunedFailedIsSentItsGenerationAgain() {
+        setGlobal(MemoryStandardField.KSM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        Map<String, Object> ksm = new LinkedHashMap<>();
+        ksm.put("enabled", true); ksm.put("serviceState", "active"); ksm.put("tunedServiceState", "active");
+        applied.state.put("ksm", ksm);
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        // ksm still merges, but its tuning daemon died: restart it like a stopped ZRAM service.
+        ksm.put("enabled", null); ksm.put("tunedServiceState", "failed");
+        repository.observe("host1", applied);
+        assertEquals("Converging", repository.state("host1").getStatus());
+        assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+    }
+
+    @Test public void aHostWithoutKsmIsNotSentKsmAgainAndAgain() {
+        setGlobal(MemoryStandardField.KSM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        applied.state.put("capabilities", new LinkedHashMap<>(Collections.singletonMap("ksm", false)));
+        applied.state.put("ksm", new LinkedHashMap<>(Collections.singletonMap("serviceState", "unknown")));
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+    }
+
     @Test public void aHostThatStoppedItsWantedZramIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
         MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);

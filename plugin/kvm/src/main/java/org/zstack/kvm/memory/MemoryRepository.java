@@ -554,6 +554,9 @@ public class MemoryRepository {
         if (Boolean.FALSE.equals(field(desired.get("zram"), "enabled"))
                 && Boolean.TRUE.equals(field(observed.get("zram"), "efficiencyEnabled"))) { return true; }
         Object ksm = field(desired.get("ksm"), "enabled"), observedKsm = field(observed.get("ksm"), "enabled");
+        // A wanted KSM whose ksm or ksmtuned stopped is started again, like a stopped ZRAM service.
+        if (Boolean.TRUE.equals(ksm) && !Boolean.FALSE.equals(field(observed.get("capabilities"), "ksm"))
+                && observed.get("ksm") instanceof Map && !Boolean.TRUE.equals(observedKsm)) { return true; }
         return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
     }
 
