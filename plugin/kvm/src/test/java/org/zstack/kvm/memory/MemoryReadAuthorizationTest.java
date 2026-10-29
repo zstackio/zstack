@@ -45,6 +45,20 @@ public class MemoryReadAuthorizationTest {
         }
     }
 
+    @Test public void aFailedAccessQueryIsReportedAsItselfNotAsDenied() throws Exception {
+        MemoryOptimizationManager manager = new MemoryOptimizationManager();
+        Field field = MemoryOptimizationManager.class.getDeclaredField("accountManager");
+        field.setAccessible(true);
+        field.set(manager, Proxy.newProxyInstance(AccountManager.class.getClassLoader(), new Class<?>[]{AccountManager.class},
+                (proxy, method, args) -> { throw new IllegalStateException("database unavailable"); }));
+        try {
+            manager.checkReadAuthorization(batch(Collections.singletonList(OWN_VM), "tenant"));
+            fail("a failed access query must not pass the check");
+        } catch (IllegalStateException expected) {
+            assertEquals("database unavailable", expected.getMessage());
+        }
+    }
+
     private static List<APIMessage> adminReadMessages(String account) {
         SessionInventory session = session(account);
         APIQueryHostMemoryStateMsg state = new APIQueryHostMemoryStateMsg(); state.setSession(session);

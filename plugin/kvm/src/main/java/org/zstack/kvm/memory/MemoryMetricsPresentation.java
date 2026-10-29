@@ -6,19 +6,27 @@ import com.google.gson.JsonParser;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /** Replace cached Agent savings, never mutate the persisted observation. */
 final class MemoryMetricsPresentation {
+    private static final CLogger logger = Utils.getLogger(MemoryMetricsPresentation.class);
+
     private MemoryMetricsPresentation() { }
 
     static MemoryStateVO withSavings(MemoryStateVO source, Map<String, Object> savings) {
         Gson gson = new Gson();
         MemoryStateVO copy = gson.fromJson(gson.toJson(source), MemoryStateVO.class);
-        JsonObject state;
-        try {
-            state = new JsonParser().parse(source.getState()).getAsJsonObject();
-        } catch (RuntimeException invalid) {
-            state = new JsonObject();
+        JsonObject state = new JsonObject();
+        if (source.getState() != null) {
+            try {
+                state = new JsonParser().parse(source.getState()).getAsJsonObject();
+            } catch (RuntimeException invalid) {
+                // The savings come from Prometheus and still count; the damaged observation is reported.
+                logger.error(String.format("Host[%s] memory observation is unreadable; only its savings are used",
+                        source.getHostUuid()), invalid);
+            }
         }
         state.add("savings", gson.toJsonTree(savings == null ? Collections.emptyMap() : savings));
         copy.setState(gson.toJson(state));

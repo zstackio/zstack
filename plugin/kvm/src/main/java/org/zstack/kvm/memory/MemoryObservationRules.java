@@ -6,9 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.zstack.header.host.HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData;
+import org.zstack.utils.Utils;
+import org.zstack.utils.logging.CLogger;
 
 /** Export only the requested VM. Missing or stale attribution never becomes zero. */
 public final class MemoryObservationRules {
+    private static final CLogger logger = Utils.getLogger(MemoryObservationRules.class);
     private static final long MAX_SAFE_DOUBLE_INTEGER = 9007199254740991L;
     private static final int MAX_SAFE_FLOAT_INTEGER = 16777215;
     private static final BigInteger UINT64_MAX = new BigInteger("18446744073709551615");
@@ -39,11 +42,17 @@ public final class MemoryObservationRules {
         }
         Map<?, ?> desired;
         try { desired = org.zstack.utils.gson.JSONObjectUtil.toObject(current.getDesired(), java.util.LinkedHashMap.class); }
-        catch (RuntimeException invalid) { return result; }
+        catch (RuntimeException invalid) {
+            logger.error(String.format("Host[%s] stored memory configuration is unreadable; its service events are not reported", host), invalid);
+            return result;
+        }
         if (!"active".equals(desired.get("control"))) { return result; }
         Map<?, ?> previous;
         try { previous = previousSample == null ? null : org.zstack.utils.gson.JSONObjectUtil.toObject(previousSample, java.util.LinkedHashMap.class); }
-        catch (RuntimeException invalid) { previous = null; }
+        catch (RuntimeException invalid) {
+            logger.warn(String.format("Host[%s] previous memory sample is unreadable; this sample is compared with none", host), invalid);
+            previous = null;
+        }
         Map<?, ?> ksm = map(state.get("ksm"));
         Map<?, ?> previousKsm = previous == null ? null : map(previous.get("ksm"));
         if (Boolean.TRUE.equals(field(desired.get("ksm"), "enabled")) && ksm != null) {

@@ -7,14 +7,12 @@ public final class MemoryBackendPreparationRules {
 
     public static void validate(MemoryBackendPreparation request) {
         if (request == null || !request.isResetConfirmed()) { invalid(); }
-        try {
-            if (request.getCandidateId() == null || !request.getCandidateId().matches("candidate:[a-f0-9]{64}")) { invalid(); }
-            if (request.getExpectedHostBootId() == null || !request.getExpectedHostBootId().matches("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")) { invalid(); }
-            if (request.getExpectedPoolGeneration() == null || !request.getExpectedPoolGeneration().matches("none|[a-f0-9]{64}")) { invalid(); }
-            long bytes = request.getBackendCapacityBytes();
-            // The GraphQL/JSON UI path must carry the exact integer, not a rounded IEEE double.
-            if (bytes < 8192 || bytes > 9007199254740991L || bytes % 4096 != 0) { invalid(); }
-        } catch (RuntimeException error) { invalid(); }
+        if (request.getCandidateId() == null || !request.getCandidateId().matches("candidate:[a-f0-9]{64}")) { invalid(); }
+        if (request.getExpectedHostBootId() == null || !request.getExpectedHostBootId().matches("[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}")) { invalid(); }
+        if (request.getExpectedPoolGeneration() == null || !request.getExpectedPoolGeneration().matches("none|[a-f0-9]{64}")) { invalid(); }
+        long bytes = request.getBackendCapacityBytes();
+        // The GraphQL/JSON UI path must carry the exact integer, not a rounded IEEE double.
+        if (bytes < 8192 || bytes > 9007199254740991L || bytes % 4096 != 0) { invalid(); }
     }
 
     private static void invalid() {

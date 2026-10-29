@@ -77,6 +77,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Hosts preparing a writeback backend; their apply waits for it. */
     private final Set<String> preparing = ConcurrentHashMap.newKeySet();
     private final Set<String> observingHosts = ConcurrentHashMap.newKeySet();
+    // Hosts and resources whose configuration change is committed but not yet planned; true keeps a ZRAM re-enable.
+    private final Map<String, Boolean> unplannedHosts = new ConcurrentHashMap<>();
+    private final Map<String, Boolean> unplannedResources = new ConcurrentHashMap<>();
+    // A global change has no resource; the maps take no null key.
+    private static final String GLOBAL_RESOURCE = "";
     /** Operations waiting for their Host generation, by task. */
     private final Map<String, Waiter> waiters = new ConcurrentHashMap<>();
     private final MemoryBatchCursor observationCursor = new MemoryBatchCursor();
@@ -230,15 +235,10 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
 
         if (api instanceof APIGetVmMemoryOptimizationsMsg) {
-            List<String> accessible;
-            try {
-                // Reuse owner/public/private sharing semantics without running
-                // legacy UserVO policy evaluation on an IAM2 VirtualID session.
-                accessible = accountManager.getResourceUuidsCanAccessByAccount(
-                        api.getSession().getAccountUuid(), VmInstanceVO.class);
-            } catch (RuntimeException e) {
-                throw new MemoryOperationException("MEMORY_PERMISSION_DENIED", "The account cannot access the requested VM memory statistics");
-            }
+            // Reuse owner/public/private sharing semantics without running
+            // legacy UserVO policy evaluation on an IAM2 VirtualID session.
+            List<String> accessible = accountManager.getResourceUuidsCanAccessByAccount(
+                    api.getSession().getAccountUuid(), VmInstanceVO.class);
             List<String> requested = ((APIGetVmMemoryOptimizationsMsg) api).getVmUuids();
             if (accessible != null && (requested == null || requested.isEmpty()
                     || !new HashSet<>(accessible).containsAll(requested))) {
@@ -610,18 +610,42 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
      * a drained Host.
      */
     public void standardConfigurationChanged(String resourceUuid, boolean zramReenabled) {
-        boolean licensed = licensed();
-        for (String host : repository.standardConfigurationTargets(resourceUuid)) {
-            try {
-                boolean resume = zramReenabled && repository.isDrained(host);
-                repository.plan(host, resume ? "active" : null, resume ? RESUME : "configure",
-                        "system:standard-config", licensed, false);
-                if (destMaker.isManagedByUs(host)) { deliver(host); }
-            } catch (RuntimeException e) {
-                logger.warn(String.format("Unable to plan the memory configuration of Host[%s]; the next Host connect plans it",
-                        host), e);
-            }
+        String key = resourceUuid == null ? GLOBAL_RESOURCE : resourceUuid;
+        // A re-enable of the same resource still waiting for its Hosts is carried by this change.
+        boolean reenabled = zramReenabled || Boolean.TRUE.equals(unplannedResources.remove(key));
+        List<String> hosts;
+        try {
+            hosts = repository.standardConfigurationTargets(resourceUuid);
+        } catch (RuntimeException e) {
+            unplannedResources.merge(key, reenabled, Boolean::logicalOr);
+            logger.error(String.format("Unable to list the Hosts of resource[%s] for its memory configuration; the next scan retries",
+                    resourceUuid), e);
+            return;
         }
+        for (String host : hosts) { planConfiguration(host, reenabled); }
+    }
+
+    private void planConfiguration(String host, boolean zramReenabled) {
+        // A retry keeps an earlier re-enable, so a drained Host still resumes.
+        boolean reenabled = zramReenabled || Boolean.TRUE.equals(unplannedHosts.get(host));
+        try {
+            // Only while its configuration still wants ZRAM: a later disable keeps the Host drained.
+            boolean resume = reenabled && repository.isDrained(host) && repository.wantsZram(host);
+            repository.plan(host, resume ? "active" : null, resume ? RESUME : "configure",
+                    "system:standard-config", licensed(), false);
+            unplannedHosts.remove(host);
+            if (destMaker.isManagedByUs(host)) { deliver(host); }
+        } catch (RuntimeException e) {
+            unplannedHosts.merge(host, reenabled, Boolean::logicalOr);
+            logger.error(String.format("Unable to plan the memory configuration of Host[%s]; the next scan retries", host), e);
+        }
+    }
+
+    /** A committed configuration change is planned by the next scans, not left for a Host reconnect. */
+    void planUnplanned() {
+        new HashMap<>(unplannedResources).forEach((key, reenabled) ->
+                standardConfigurationChanged(GLOBAL_RESOURCE.equals(key) ? null : key, reenabled));
+        new HashMap<>(unplannedHosts).forEach(this::planConfiguration);
     }
 
     /** One read-only Prometheus snapshot per Host, then expose only requested VMs. */
@@ -810,6 +834,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         try {
             long now = System.currentTimeMillis();
             Set<String> connected = new HashSet<>(repository.connectedHosts());
+            planUnplanned();
             for (String host : repository.dueHosts(now)) {
                 if (connected.contains(host) && destMaker.isManagedByUs(host)) { deliver(host); }
             }

@@ -16,6 +16,17 @@ public class MemoryMetricsPresentationTest {
         assertTrue("the persisted observation is unchanged", state.getState().contains("1234"));
     }
 
+    @Test public void savingsStillCountWhenTheObservationIsDamagedOrMissing() {
+        MemoryStateVO state = new MemoryStateVO();
+        state.setHostUuid("host"); state.setState("{\"control\":");
+        Map<String, Object> savings = new HashMap<>();
+        savings.put("totalSavedEstimateBytes", 4096L);
+        assertTrue(MemoryMetricsPresentation.withSavings(state, savings).getState().contains("4096"));
+        assertEquals("the persisted observation is unchanged", "{\"control\":", state.getState());
+        state.setState(null);
+        assertTrue(MemoryMetricsPresentation.withSavings(state, savings).getState().contains("4096"));
+    }
+
     @Test public void originalMetricTimeSurvivesFreshControlPoll() {
         Map<String, Object> savings = new HashMap<>();
         savings.put("sampleTime", 10000L); savings.put("quality", "Fresh");

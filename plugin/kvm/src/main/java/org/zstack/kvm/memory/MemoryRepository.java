@@ -327,6 +327,15 @@ public class MemoryRepository {
                 .collect(java.util.stream.Collectors.toMap(MemoryTaskVO::getUuid, t -> t)));
     }
 
+    /** Whether the Host's effective configuration turns ZRAM on now. */
+    public boolean wantsZram(String host) {
+        return transaction(em -> {
+            String cluster = em.createQuery("select h.clusterUuid from HostVO h where h.uuid = :uuid", String.class)
+                    .setParameter("uuid", host).getResultList().stream().findFirst().orElse(null);
+            return Boolean.TRUE.equals(effectiveValue(em, MemoryStandardField.ZRAM_ENABLED, host, cluster));
+        });
+    }
+
     public boolean isDrained(String host) {
         MemoryStateVO state = state(host);
         return state != null && "drained".equals(state.getControl());
@@ -528,7 +537,11 @@ public class MemoryRepository {
                 && System.currentTimeMillis() - state.getLastSampleTime() < MemoryOptimizationGlobalConfig.displayTtlMillis();
         if (fresh && state.getState() != null) {
             try { observed = JSONObjectUtil.toObject(state.getState(), LinkedHashMap.class); }
-            catch (RuntimeException ignored) { observed = Collections.emptyMap(); }
+            catch (RuntimeException invalid) {
+                logger.error(String.format("Host[%s] stored memory observation is unreadable; it is shown as Unknown",
+                        state.getHostUuid()), invalid);
+                observed = Collections.emptyMap();
+            }
         }
         boolean zramWanted = Boolean.TRUE.equals(field(desired(state).get("zram"), "enabled"));
         row.setStatus(publicStatus(state));
@@ -558,7 +571,10 @@ public class MemoryRepository {
     private static Map<String, Object> desired(MemoryStateVO state) {
         if (state.getDesired() == null) { return Collections.emptyMap(); }
         try { return JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class); }
-        catch (RuntimeException invalid) { return Collections.emptyMap(); }
+        catch (RuntimeException invalid) {
+            logger.error(String.format("Host[%s] stored memory configuration is unreadable", state.getHostUuid()), invalid);
+            return Collections.emptyMap();
+        }
     }
 
     /** A Host that reports it cannot run ZRAM runs without it; the Agent leaves it unmanaged. */
