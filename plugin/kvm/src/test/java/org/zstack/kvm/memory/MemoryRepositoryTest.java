@@ -424,6 +424,30 @@ public class MemoryRepositoryTest {
         assertEquals("Succeeded", repository.state("host1").getStatus());
     }
 
+    @Test public void aStoppedZramServiceWhoseCapabilityIsUnknownIsStartedAgain() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        applied.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "active")));
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        // A stopped service cannot report its qualification; the Agent says unknown, not unsupported.
+        MemoryAgentResponse stopped = reply("Succeeded", null, null);
+        stopped.state.put("appliedGeneration", plan.generation);
+        stopped.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "inactive")));
+        Map<String, Object> capabilities = new LinkedHashMap<>();
+        capabilities.put("supported", true); capabilities.put("zram", false);
+        capabilities.put("zramReasonCode", "SERVICE_RECLAIM_CAPABILITY_UNKNOWN");
+        stopped.state.put("capabilities", capabilities);
+        repository.observe("host1", stopped);
+        assertEquals("Converging", repository.state("host1").getStatus());
+        assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+        HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("Unknown", row.getFeatureState());
+    }
+
     @Test public void aHostThatStoppedItsWantedZramIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
         MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
