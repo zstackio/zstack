@@ -81,6 +81,17 @@ public class MemoryStandardConfigAdapterTest {
         }
     }
 
+    @Test public void thePreparedBackendIsRecordedNotConfigured() {
+        // Only a successful PrepareHostMemoryWritebackBackend records the backend the Host really claimed.
+        for (String path : Arrays.asList("writeback.backendResourceUuid", "writeback.backendCapacityBytes")) {
+            assertThrows(org.zstack.core.config.GlobalConfigException.class,
+                    () -> MemoryStandardConfigurationCoordinator.requireConfigurable(MemoryStandardField.forPath(path)));
+        }
+        for (String path : Arrays.asList("writeback.enabled", "zram.enabled", "zram.logicalCapacityBytes")) {
+            MemoryStandardConfigurationCoordinator.requireConfigurable(MemoryStandardField.forPath(path));
+        }
+    }
+
     @Test public void typedBlankWritesRejectButFeatureNoneIsAccepted() {
         MemoryStandardField field = MemoryStandardField.forPath("ksm.enabled");
         assertThrows(org.zstack.core.config.GlobalConfigException.class,

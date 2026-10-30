@@ -44,7 +44,7 @@ public class PrepareHostMemoryWritebackBackendLongJob implements LongJob {
                     return;
                 }
                 LongJobUtils.setJobResult(job.getUuid(),
-                        JSONObjectUtil.toJsonString(Collections.singletonMap(request.getUuid(), "success")));
+                        MemoryClusterOperationReply.jobResult(Collections.singletonMap(request.getUuid(), "success")));
                 completion.success(null);
             }
         });

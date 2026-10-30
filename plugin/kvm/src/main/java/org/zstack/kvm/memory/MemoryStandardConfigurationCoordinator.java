@@ -65,7 +65,15 @@ public final class MemoryStandardConfigurationCoordinator {
         } catch (IllegalArgumentException invalid) { throw new GlobalConfigException(invalid.getMessage(), invalid); }
     }
 
+    /** The prepared backend is recorded by PrepareHostMemoryWritebackBackend, not set as configuration. */
+    public static void requireConfigurable(MemoryStandardField field) {
+        if (field == MemoryStandardField.WRITEBACK_BACKEND_RESOURCE || field == MemoryStandardField.WRITEBACK_BACKEND_CAPACITY) {
+            throw new GlobalConfigException(field.path() + " is recorded by PrepareHostMemoryWritebackBackend and cannot be changed");
+        }
+    }
+
     private void validateChange(MemoryStandardField field, String resourceUuid, String newValue) {
+        requireConfigurable(field);
         validateScalar(field, newValue);
         // The legacy host.ksm switch predates memory optimization and stays license-free.
         if (field.config() != KVMGlobalConfig.HOST_KSM) {

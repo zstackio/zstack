@@ -2830,6 +2830,8 @@
   "ORG_ZSTACK_MEMORY_11045": "Memory optimization service has not stopped: %s",
   "ORG_ZSTACK_MEMORY_11047": "Host memory optimization operation failed: %s",
   "ORG_ZSTACK_MEMORY_11048": "Memory optimization result is still converging; the management node keeps resending: %s",
+  "ORG_ZSTACK_MEMORY_11049": "Host memory optimization operation was canceled: %s",
+  "ORG_ZSTACK_MEMORY_11050": "Host memory optimization operation was skipped: %s",
   "ORG_ZSTACK_MEMORY_11999": "Unknown memory optimization error: %s",
   "ORG_ZSTACK_PCIDEVICE_10036": "cannot SR-IOV virtualize PCI devices on host [UUID:%s] that are attached to a VM",
   "ORG_ZSTACK_PCIDEVICE_10035": "PCI devices in the host [UUID:%s] are already SRIOV virtualized.",
