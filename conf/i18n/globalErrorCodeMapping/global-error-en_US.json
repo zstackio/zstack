@@ -4815,6 +4815,7 @@
   "ORG_ZSTACK_AI_10210": "modelUuid[%s] refers to a non-existent or inaccessible model",
   "ORG_ZSTACK_AI_10211": "modelUuid[%s] is not in zone[uuid:%s]",
   "ORG_ZSTACK_AI_10212": "LLaMA Factory does not support diffusion model[uuid:%s, architecture:%s, pipeline:%s]; use an image training template",
+  "ORG_ZSTACK_AI_10213": "container cluster[uuid:%s] is Unhealthy, cannot deploy model service; check the cluster control plane before deploying",
   "ORG_ZSTACK_NETWORK_ZNS_10043": "failed to allocate DHCPv4 server IP for ZNS L3[uuid:%s]",
   "ORG_ZSTACK_NETWORK_ZNS_10044": "cannot enable DHCP: L3[uuid:%s] has no eligible IpRange (SLAAC excluded)",
   "ORG_ZSTACK_NETWORK_ZNS_10045": "cannot enable DHCP: L3[uuid:%s] has no Cloud-reserved DHCPv4 server IP",
