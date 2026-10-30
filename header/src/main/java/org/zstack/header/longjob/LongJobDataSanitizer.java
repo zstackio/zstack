@@ -65,7 +65,8 @@ final class LongJobDataSanitizer {
         String key = name.replace("_", "").replace("-", "").toLowerCase(Locale.ROOT);
         return key.equals("session") || key.equals("sessionuuid") || key.equals("sessionid")
                 || key.contains("password") || key.contains("secret") || key.contains("credential")
-                || key.endsWith("token") || key.equals("accesskey") || key.equals("privatekey")
+                || key.endsWith("token") || key.endsWith("accesskey") || key.endsWith("privatekey")
+                || key.endsWith("apikey")
                 || key.equals("authorization") || key.equals("cookie");
     }
 }

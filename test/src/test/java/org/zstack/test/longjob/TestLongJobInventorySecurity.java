@@ -59,6 +59,70 @@ public class TestLongJobInventorySecurity {
     }
 
     @Test
+    public void credentialSuffixesAreRemovedFromPublicMappingAndProjection() throws Exception {
+        JsonObject credentials = new JsonObject();
+        String[] fields = {"apiKey", "sshPrivateKey", "userAccessKey", "secretAccessKey",
+                "API_KEY", "ssh-private-key", "USER_ACCESS_KEY"};
+        for (String field : fields) {
+            credentials.addProperty(field, "fixture-" + field);
+        }
+        JsonObject payload = new JsonObject();
+        payload.add("nested", credentials);
+        payload.addProperty("serialized", credentials.toString());
+        String raw = payload.toString();
+        LongJobVO vo = new LongJobVO();
+        vo.setJobData(raw);
+        LongJobInventory mapped = LongJobInventory.valueOf(vo);
+        LongJobInventory projected = new LongJobInventory();
+        PropertyUtils.setProperty(projected, "jobData", raw);
+        for (String field : fields) {
+            assertFalse(field, mapped.getJobData().contains("fixture-" + field));
+            assertFalse(field, projected.getJobData().contains("fixture-" + field));
+        }
+        assertEquals(raw, vo.getJobData());
+    }
+
+    @Test
+    public void nonCredentialKeysAndOrdinaryTextRemainVisible() {
+        JsonObject data = new JsonObject();
+        String[] fields = {"monkey", "hockey", "key", "publicKey", "sshPublicKey", "lookupKey"};
+        for (String field : fields) {
+            data.addProperty(field, "visible-" + field);
+        }
+        data.addProperty("message", "training [phase 1] {waiting}");
+        LongJobInventory inv = new LongJobInventory();
+        inv.setJobData(data.toString());
+        JsonObject safe = new JsonParser().parse(inv.getJobData()).getAsJsonObject();
+        for (String field : fields) {
+            assertEquals("visible-" + field, safe.get(field).getAsString());
+        }
+        assertEquals("training [phase 1] {waiting}", safe.get("message").getAsString());
+    }
+
+    @Test
+    public void malformedNestedJsonStringsFailClosed() {
+        JsonObject data = new JsonObject();
+        data.addProperty("message", "{not-json");
+        data.addProperty("array", "[unterminated");
+        data.addProperty("payload", "{\"apiKey\":\"fixture-malformed-credential\"");
+        LongJobInventory inv = new LongJobInventory();
+        inv.setJobData(data.toString());
+        JsonObject safe = new JsonParser().parse(inv.getJobData()).getAsJsonObject();
+        assertEquals("{}", safe.get("message").getAsString());
+        assertEquals("{}", safe.get("array").getAsString());
+        assertEquals("{}", safe.get("payload").getAsString());
+        assertFalse(inv.getJobData().contains("fixture-malformed-credential"));
+    }
+
+    @Test
+    public void defaultJUnitSuiteIncludesSecurityRegression() throws Exception {
+        Class<?> suite = Class.forName("org.zstack.test.unittest.JUnitTestSuite");
+        Class<?>[] cases = suite.getAnnotation(org.junit.runners.Suite.SuiteClasses.class).value();
+        assertTrue("default JUnit entry must execute the public-data security contract",
+                java.util.Arrays.asList(cases).contains(TestLongJobInventorySecurity.class));
+    }
+
+    @Test
     public void nullAndUnparseablePayloadsFailClosed() {
         LongJobInventory inv = new LongJobInventory();
         inv.setJobData(null);
