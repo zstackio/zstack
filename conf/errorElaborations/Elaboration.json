@@ -1718,5 +1718,13 @@
     "regex": "The creation of the log server failed, incorrect newly passed configuration parameters may have caused the Fluent Bit service to be in an inactive state. Please double-check the configuration for accuracy",
     "message_cn": "创建日志服务器失败，新传入配置参数有误会导致fluent-bit服务处于非活跃状态，请再次检查配置是否正确。",
     "message_en": "The creation of the log server failed, incorrect newly passed configuration parameters may have caused the Fluent Bit service to be in an inactive state. Please double-check the configuration for accuracy"
+  },
+  {
+    "category": "AI",
+    "code": "1000",
+    "method": "regex",
+    "regex": "^源文件已更新，需重新下载$",
+    "message_cn": "源文件已更新，需重新下载",
+    "message_en": "The source file has been updated. Download it again."
   }
 ]
