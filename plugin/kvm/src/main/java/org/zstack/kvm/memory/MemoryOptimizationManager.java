@@ -433,7 +433,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         MemoryClusterOperationReply reply = new MemoryClusterOperationReply();
         reply.setResults(Collections.singletonMap(msg.getHostUuid(), outcome));
         if (!"success".equals(outcome)) {
-            reply.setError(new MemoryOperationException("MEMORY_HOST_OPERATION_FAILED",
+            reply.setError(new MemoryOperationException(MemoryClusterOperationReply.hostError(outcome).getCode(),
                     "Host[" + msg.getHostUuid() + "] " + msg.getAction() + ": " + outcome).toErrorCode());
         }
         bus.reply(msg, reply);
@@ -587,7 +587,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 boolean converging = response != null && response.isSuccess() && MemoryRepository.CONVERGING.equals(response.status);
                 boolean unreachable = response == null || response.status == null;
                 if (!converging && !(unreachable && failures + 1 < MemoryRepository.FAILURES_BEFORE_FAILED)) {
-                    done.accept("Failed: " + (response == null ? "AGENT_UNREACHABLE"
+                    // The Agent refused this request on this Host; a step it could not complete is a failure.
+                    boolean refused = !unreachable && MemoryRepository.FAILED.equals(response.status)
+                            && response.reasonCode != null && !"BACKEND_MAINTENANCE_FAILED".equals(response.reasonCode);
+                    done.accept(refused ? "MEMORY_BACKEND_PREPARATION_INVALID: " + response.reasonCode
+                            : "Failed: " + (response == null ? "AGENT_UNREACHABLE"
                             : response.reasonCode != null ? response.reasonCode : response.reason));
                     return;
                 }

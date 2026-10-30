@@ -22,6 +22,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -124,7 +127,39 @@ public class MemoryOperationExceptionI18nTest {
                     Pattern.compile("(?i)\\b[a-z]{2,}\\b").matcher(value).find());
             count++;
         }
-        assertEquals("all memory error categories must be checked", 16, count);
+        assertEquals("all memory error categories must be checked", 18, count);
+    }
+
+    @Test
+    public void eachHostOutcomeIsReportedAsAPlatformBatchResult() {
+        Map<String, String> outcomes = new LinkedHashMap<>();
+        outcomes.put("host1", "success");
+        outcomes.put("host2", "Failed: KSM_NATIVE_PROFILE_UNSUPPORTED");
+        outcomes.put("host3", "MEMORY_HOST_BUSY: An operation is running");
+        outcomes.put("host4", "MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED");
+        outcomes.put("host5", "Canceled");
+        outcomes.put("host6", "Skipped: the job timed out");
+        // The UI reads the LongJob results of every resource the same way, a failed Host included.
+        Map<?, ?> job = JSONObjectUtil.toObject(MemoryClusterOperationReply.jobResult(outcomes), LinkedHashMap.class);
+        List<?> results = (List<?>) job.get("results");
+        assertEquals(6, results.size());
+        String[][] expected = {
+                {"host1", null, null},
+                {"host2", "MEMORY_HOST_OPERATION_FAILED", "KSM_NATIVE_PROFILE_UNSUPPORTED"},
+                {"host3", "MEMORY_HOST_BUSY", "An operation is running"},
+                {"host4", "MEMORY_RESULT_CONVERGING", "HOST_DISCONNECTED"},
+                {"host5", "MEMORY_HOST_OPERATION_CANCELED", "the job was canceled before this Host"},
+                {"host6", "MEMORY_HOST_OPERATION_SKIPPED", "the job timed out"}};
+        for (int i = 0; i < expected.length; i++) {
+            Map<?, ?> result = (Map<?, ?>) results.get(i);
+            assertEquals(expected[i][0], result.get("uuid"));
+            assertEquals(expected[i][1] == null, result.get("success"));
+            Map<?, ?> error = (Map<?, ?>) result.get("error");
+            if (expected[i][1] == null) { assertNull(error); continue; }
+            assertEquals(expected[i][1], error.get("code"));
+            assertEquals(expected[i][2], error.get("details"));
+            assertNotNull(error.get("description"));
+        }
     }
 
     @Test
@@ -177,7 +212,7 @@ public class MemoryOperationExceptionI18nTest {
             assertTrue("metadata id must be unique: " + error, ids.add(error.getId()));
             assertNotNull(errorFacade.instantiateErrorCode(error.toString(), businessCode));
         }
-        assertEquals(15, businessCodes.size());
+        assertEquals(17, businessCodes.size());
     }
 
     @Test

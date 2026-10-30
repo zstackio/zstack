@@ -17,5 +17,7 @@
     <code><id>11045</id><description>Memory Optimization Service Has Not Stopped</description></code>
     <code><id>11047</id><description>Host Operation Failed in memory optimization</description></code>
     <code><id>11048</id><description>Result Converging in memory optimization</description></code>
+    <code><id>11049</id><description>Host Operation Canceled in memory optimization</description></code>
+    <code><id>11050</id><description>Host Operation Skipped in memory optimization</description></code>
     <code><id>11999</id><description>Unknown memory optimization error</description></code>
 </error>

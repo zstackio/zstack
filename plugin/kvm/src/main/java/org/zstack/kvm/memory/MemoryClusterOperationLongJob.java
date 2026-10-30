@@ -43,7 +43,7 @@ public abstract class MemoryClusterOperationLongJob implements LongJob {
                     return;
                 }
                 MemoryClusterOperationReply result = reply.castReply();
-                LongJobUtils.setJobResult(job.getUuid(), JSONObjectUtil.toJsonString(result.getResults()));
+                LongJobUtils.setJobResult(job.getUuid(), MemoryClusterOperationReply.jobResult(result.getResults()));
                 completion.success(null);
             }
         });
