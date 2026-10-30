@@ -335,12 +335,21 @@ public class MemoryClusterOperationTest {
         assertNull(repository.preparedBackend);
     }
 
-    @Test public void rejectedPreparationReportsTheAgentReason() throws Exception {
+    @Test public void aPreparationTheAgentRejectsIsAnInvalidPreparation() throws Exception {
         setup();
-        manager.script("host1", "writeback-backends", reply("Failed", "MEMORY_SERVICE_NOT_STOPPED", null));
+        manager.script("host1", "writeback-backends", reply("Failed", "WRITEBACK_CANDIDATE_NOT_UNIQUE", null));
         manager.hostBus = bus(replies, manager);
         invokeHostOperation(manager, preparation());
-        assertEquals(Collections.singletonList("Failed: MEMORY_SERVICE_NOT_STOPPED"), manager.outcomes);
+        assertEquals(Collections.singletonList("MEMORY_BACKEND_PREPARATION_INVALID: WRITEBACK_CANDIDATE_NOT_UNIQUE"),
+                manager.outcomes);
+    }
+
+    @Test public void aPreparationTheAgentCouldNotCompleteIsAFailedOperation() throws Exception {
+        setup();
+        manager.script("host1", "writeback-backends", reply("Failed", "BACKEND_MAINTENANCE_FAILED", null));
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, preparation());
+        assertEquals(Collections.singletonList("Failed: BACKEND_MAINTENANCE_FAILED"), manager.outcomes);
     }
 
     @Test public void reenablingZramResumesOnlyDrainedHosts() throws Exception {

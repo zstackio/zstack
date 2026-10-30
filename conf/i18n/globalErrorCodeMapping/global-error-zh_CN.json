@@ -2830,6 +2830,8 @@
   "ORG_ZSTACK_MEMORY_11045": "内存优化服务尚未停止：%s",
   "ORG_ZSTACK_MEMORY_11047": "物理机内存优化操作失败：%s",
   "ORG_ZSTACK_MEMORY_11048": "物理机内存优化结果仍在同步中，管理节点会继续重发：%s",
+  "ORG_ZSTACK_MEMORY_11049": "物理机内存优化操作已取消：%s",
+  "ORG_ZSTACK_MEMORY_11050": "物理机内存优化操作未执行：%s",
   "ORG_ZSTACK_MEMORY_11999": "未知的内存优化错误：%s",
   "ORG_ZSTACK_PCIDEVICE_10036": "无法在主机[uuid:%s]中为附加到VM的PCI设备进行SR-IOV虚拟化",
   "ORG_ZSTACK_PCIDEVICE_10035": "主机[uuid:%s]中的PCI设备已SRIOV虚拟化",
