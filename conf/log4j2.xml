@@ -60,12 +60,20 @@
             <DefaultRolloverStrategy max="50"/>
         </RollingFile>
 
-        <Async name="Async" ignoreExceptions="false" bufferSize="512">
+        <LogDropCounter name="DiagnosticLogDrops"/>
+        <LogDropCounter name="ImportantLogDrops"/>
+        <NonBlockingAsync name="Async" errorRef="DiagnosticLogDrops" bufferSize="512">
+            <ThresholdFilter level="WARN" onMatch="DENY" onMismatch="NEUTRAL"/>
             <AppenderRef ref="RollingFile"/>
-        </Async>
+        </NonBlockingAsync>
+        <NonBlockingAsync name="AsyncImportant" errorRef="ImportantLogDrops" bufferSize="512">
+            <ThresholdFilter level="WARN" onMatch="NEUTRAL" onMismatch="DENY"/>
+            <AppenderRef ref="RollingFile"/>
+        </NonBlockingAsync>
         <Rewrite name="Rewrite">
             <MaskSensitiveInfoRewritePolicy/>
             <AppenderRef ref="Async"/>
+            <AppenderRef ref="AsyncImportant"/>
         </Rewrite>
     </Appenders>
 
