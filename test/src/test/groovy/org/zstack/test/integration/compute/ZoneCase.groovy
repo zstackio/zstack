@@ -10,12 +10,13 @@ import org.zstack.testlib.EnvSpec
 import org.zstack.testlib.SubCase
 
 /**
- * 1. test create zone as default zone
- * 2. test batch create zone as default zone
- * 3. test update zone to default zone
- * 4. test batch update zone to default zone
- * 5. test query default zone
- * 6. test delete default zone
+ * 1. test first created zone defaults to default zone
+ * 2. test create zone as default zone
+ * 3. test batch create zone as default zone
+ * 4. test update zone to default zone
+ * 5. test batch update zone to default zone
+ * 6. test query default zone
+ * 7. test delete default zone
  */
 class ZoneCase extends SubCase {
     EnvSpec env
@@ -33,6 +34,7 @@ class ZoneCase extends SubCase {
     @Override
     void test() {
         env.create {
+            testFirstCreatedZoneDefaultsToDefaultZone()
             testCreateZoneAsDefaultZone()
             testBatchCreateZoneAsDefaultZone()
             testUpdateZoneToDefaultZone()
@@ -46,6 +48,22 @@ class ZoneCase extends SubCase {
     @Override
     void clean() {
         env.delete()
+    }
+
+    void testFirstCreatedZoneDefaultsToDefaultZone() {
+        ZoneInventory zone = createZone {
+            name = "first-zone"
+            description = "first-zone"
+        } as ZoneInventory
+
+        assert zone.isDefault
+        assert Q.New(ZoneVO.class)
+                .eq(ZoneVO_.uuid, zone.uuid)
+                .eq(ZoneVO_.isDefault, true)
+                .isExists()
+        assert Q.New(ZoneVO.class)
+                .eq(ZoneVO_.isDefault, true)
+                .count() == 1
     }
 
     void testCreateZoneAsDefaultZone() {
