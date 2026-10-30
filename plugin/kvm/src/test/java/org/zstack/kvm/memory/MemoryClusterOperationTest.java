@@ -80,8 +80,14 @@ public class MemoryClusterOperationTest {
             desired.put("control", controls.getOrDefault(host, "active"));
             return new Delivery(host, generations.get(host), desired);
         }
+        final Map<String, String> reasons = new HashMap<>();
+        @Override public MemoryStateVO state(String host) {
+            MemoryStateVO state = new MemoryStateVO(); state.setHostUuid(host); state.setReason(reasons.get(host));
+            return state;
+        }
         @Override public Outcome record(String host, long generation, MemoryAgentResponse response) {
             String status = response == null || response.status == null ? CONVERGING : response.status;
+            reasons.put(host, response == null ? null : response.reasonCode);
             if (!CONVERGING.equals(status)) {
                 for (MemoryTaskVO task : tasks.values()) {
                     if (host.equals(task.getHostUuid()) && CONVERGING.equals(task.getStatus())) {
@@ -281,6 +287,26 @@ public class MemoryClusterOperationTest {
         assertEquals("success", results.get("host1"));
         assertEquals("MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED", results.get("host2"));
         assertEquals("the Host still has its generation to receive", "paused", repository.controls.get("host2"));
+    }
+
+    @Test public void aHostStillConvergingAtItsDeadlineReportsWhyItIsConverging() throws Exception {
+        setup();
+        manager.script("host1", "apply", reply("Converging", "WAITING_FOR_POOL", 5L));
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("resume"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setTimeout(7200000L);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        assertTrue("a converging Host has not finished the operation", manager.outcomes.isEmpty());
+
+        Field waiters = MemoryOptimizationManager.class.getDeclaredField("waiters"); waiters.setAccessible(true);
+        for (Object waiter : ((Map<?, ?>) waiters.get(manager)).values()) {
+            Field deadline = waiter.getClass().getDeclaredField("deadline"); deadline.setAccessible(true);
+            deadline.setLong(waiter, 0);
+        }
+        Method complete = MemoryOptimizationManager.class.getDeclaredMethod("completeWaiters");
+        complete.setAccessible(true); complete.invoke(manager);
+        assertEquals(Collections.singletonList("MEMORY_RESULT_CONVERGING: WAITING_FOR_POOL"), manager.outcomes);
     }
 
     @Test public void oneHostRejectedAtSubmissionDoesNotStopTheRest() throws Exception {

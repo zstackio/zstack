@@ -480,12 +480,23 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     : !MemoryRepository.CONVERGING.equals(task.getStatus())
                     ? task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason())
                     : !connected.contains(waiting.host) ? "MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED"
-                    : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + task.getReason() : null;
+                    : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + convergingReason(waiting.host) : null;
             if (outcome == null) { continue; }
             Waiter waiter = waiters.remove(uuid);
             if (waiter == null) { continue; }
             try { waiter.done.accept(outcome); }
             catch (RuntimeException e) { logger.warn(String.format("Unable to reply memory operation[%s]", uuid), e); }
+        }
+    }
+
+    /** A converging task has no reason until it finishes; the Host state records why it is still converging. */
+    private String convergingReason(String host) {
+        try {
+            MemoryStateVO state = repository.state(host);
+            return state == null || state.getReason() == null ? "APPLYING" : state.getReason();
+        } catch (RuntimeException e) {
+            logger.warn(String.format("Unable to read why Host[%s] is still converging", host), e);
+            return "APPLYING";
         }
     }
 
