@@ -1293,40 +1293,64 @@ public class L3BasicNetwork implements L3Network {
     }
     
     private void handle(APIDetachNetworkServiceFromL3NetworkMsg msg) {
-        APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
-
-        List<NetworkServiceL3NetworkRefVO> refs = new ArrayList<>();
-        L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
-
-        for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
-            SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
-            q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
-            q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
-            q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
-            refs.addAll(q.list());
-        }
-
-        if (refs.isEmpty()) {
-            self = dbf.reload(self);
-            evt.setInventory(L3NetworkInventory.valueOf(self));
-            bus.publish(evt);
-            return;
-        }
-
-        ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(L3NetworkInventory inventory) {
-                evt.setInventory(inventory);
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return syncThreadName;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void run(final SyncTaskChain chain) {
+                APIDetachNetworkServiceFromL3NetworkEvent evt = new APIDetachNetworkServiceFromL3NetworkEvent(msg.getId());
+
+                List<NetworkServiceL3NetworkRefVO> refs = new ArrayList<>();
+                L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
+
+                for (Map.Entry<String, List<String>> e : msg.getNetworkServices().entrySet()) {
+                    SimpleQuery<NetworkServiceL3NetworkRefVO> q = dbf.createQuery(NetworkServiceL3NetworkRefVO.class);
+                    q.add(NetworkServiceL3NetworkRefVO_.networkServiceProviderUuid, Op.EQ, e.getKey());
+                    q.add(NetworkServiceL3NetworkRefVO_.l3NetworkUuid, Op.EQ, self.getUuid());
+                    q.add(NetworkServiceL3NetworkRefVO_.networkServiceType, Op.IN, e.getValue());
+                    refs.addAll(q.list());
+                }
+
+                if (refs.isEmpty()) {
+                    self = dbf.reload(self);
+                    evt.setInventory(L3NetworkInventory.valueOf(self));
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+
+                ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg, chain) {
+                    @Override
+                    public void success(L3NetworkInventory inventory) {
+                        try {
+                            evt.setInventory(inventory);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        try {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+                };
+                detachNetworkServicesLocally(l3VO, refs, msg, completion);
             }
-        };
-        detachNetworkServicesLocally(l3VO, refs, msg, completion);
+
+            @Override
+            public String getName() {
+                return "detach-network-service-from-l3-" + msg.getL3NetworkUuid();
+            }
+        });
     }
 
     private void detachNetworkServicesLocally(L3NetworkVO l3VO,
@@ -1637,22 +1661,45 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(final APIRemoveDnsFromL3NetworkMsg msg) {
-        msg.setDns(normalizeDns(msg.getDns()));
-        final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
-        ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(L3NetworkInventory inventory) {
-                evt.setInventory(inventory);
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return syncThreadName;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void run(final SyncTaskChain chain) {
+                msg.setDns(normalizeDns(msg.getDns()));
+                final APIRemoveDnsFromL3NetworkEvent evt = new APIRemoveDnsFromL3NetworkEvent(msg.getId());
+                ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg, chain) {
+                    @Override
+                    public void success(L3NetworkInventory inventory) {
+                        try {
+                            evt.setInventory(inventory);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        try {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+                };
+                removeDns(msg, completion);
             }
-        };
-        removeDns(msg, completion);
+
+            @Override
+            public String getName() {
+                return String.format("remove-dns-%s-from-l3-%s", msg.getDns(), msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void removeDns(final APIRemoveDnsFromL3NetworkMsg msg,
@@ -1805,29 +1852,53 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(final APIAddDnsToL3NetworkMsg msg) {
-        msg.setDns(normalizeDns(msg.getDns()));
-        final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
-        if (!findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
-            evt.setError(Platform.operr(
-                    NetworkUtils.isIpv4Address(msg.getDns()) ? ORG_ZSTACK_NETWORK_L3_10067 : ORG_ZSTACK_NETWORK_L3_10068,
-                    "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
-            bus.publish(evt);
-            return;
-        }
-        ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
             @Override
-            public void success(L3NetworkInventory inventory) {
-                evt.setInventory(inventory);
-                bus.publish(evt);
+            public String getSyncSignature() {
+                return syncThreadName;
             }
 
             @Override
-            public void fail(ErrorCode errorCode) {
-                evt.setError(errorCode);
-                bus.publish(evt);
+            public void run(final SyncTaskChain chain) {
+                msg.setDns(normalizeDns(msg.getDns()));
+                final APIAddDnsToL3NetworkEvent evt = new APIAddDnsToL3NetworkEvent(msg.getId());
+                if (!findMatchingDnsVOs(msg.getL3NetworkUuid(), msg.getDns()).isEmpty()) {
+                    evt.setError(Platform.operr(
+                            NetworkUtils.isIpv4Address(msg.getDns()) ? ORG_ZSTACK_NETWORK_L3_10067 : ORG_ZSTACK_NETWORK_L3_10068,
+                            "there has been a DNS[%s] on L3 network[uuid:%s]", msg.getDns(), msg.getL3NetworkUuid()));
+                    bus.publish(evt);
+                    chain.next();
+                    return;
+                }
+                ReturnValueCompletion<L3NetworkInventory> completion = new ReturnValueCompletion<L3NetworkInventory>(msg, chain) {
+                    @Override
+                    public void success(L3NetworkInventory inventory) {
+                        try {
+                            evt.setInventory(inventory);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        try {
+                            evt.setError(errorCode);
+                            bus.publish(evt);
+                        } finally {
+                            chain.next();
+                        }
+                    }
+                };
+                addDns(msg, completion);
             }
-        };
-        addDns(msg, completion);
+
+            @Override
+            public String getName() {
+                return String.format("add-dns-%s-to-l3-%s", msg.getDns(), msg.getL3NetworkUuid());
+            }
+        });
     }
 
     private void addDns(final APIAddDnsToL3NetworkMsg msg,
@@ -1997,7 +2068,33 @@ public class L3BasicNetwork implements L3Network {
     }
 
     private void handle(final AttachNetworkServiceToL3Msg msg) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return syncThreadName;
+            }
+
+            @Override
+            public void run(final SyncTaskChain chain) {
+                doAttachNetworkServiceToL3(msg, chain);
+            }
+
+            @Override
+            public String getName() {
+                return "attach-network-service-to-l3-" + msg.getL3NetworkUuid();
+            }
+        });
+    }
+
+    private void doAttachNetworkServiceToL3(final AttachNetworkServiceToL3Msg msg, final SyncTaskChain chain) {
         MessageReply reply = new MessageReply();
+        Runnable replyAndNext = () -> {
+            try {
+                bus.reply(msg, reply);
+            } finally {
+                chain.next();
+            }
+        };
         L3NetworkVO l3VO = dbf.findByUuid(msg.getL3NetworkUuid(), L3NetworkVO.class);
         List<NetworkServiceProviderVO> networkServiceProviderVOS = Q.New(NetworkServiceProviderVO.class).list();
         Map<String, String> providerUuidTypeMap = new HashMap<>();
@@ -2049,21 +2146,21 @@ public class L3BasicNetwork implements L3Network {
                 @Override
                 public void done(ErrorCodeList errorCodeList) {
                     if (errorCodeList.getCauses().isEmpty()) {
-                        bus.reply(msg, reply);
+                        replyAndNext.run();
                     } else {
                         detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, msg.getNetworkOperation(), false, new Completion(msg) {
                             @Override
                             public void success() {
                                 dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
                                 reply.setError(errorCodeList.getCauses().get(0));
-                                bus.reply(msg, reply);
+                                replyAndNext.run();
                             }
 
                             @Override
                             public void fail(ErrorCode errorCode) {
                                 dbf.removeCollection(refVOS, NetworkServiceL3NetworkRefVO.class);
                                 reply.setError(errorCodeList.getCauses().get(0));
-                                bus.reply(msg, reply);
+                                replyAndNext.run();
                             }
                         });
                     }
@@ -2120,7 +2217,7 @@ public class L3BasicNetwork implements L3Network {
                         reply.setError(errf.throwableToInternalError(e));
                     } finally {
                         finishNetworkServiceChange(sdnL3, msg.getNetworkOperation());
-                        bus.reply(msg, reply);
+                        replyAndNext.run();
                     }
                 } else {
                     detachNetworkServiceFromL3NetworkMsg(l3VO, refVOS, msg.getNetworkOperation(), false, new Completion(msg) {
@@ -2130,7 +2227,7 @@ public class L3BasicNetwork implements L3Network {
                                 finishNetworkServiceChange(sdnL3, msg.getNetworkOperation());
                             }
                             reply.setError(errorCodeList.getCauses().get(0));
-                            bus.reply(msg, reply);
+                            replyAndNext.run();
                         }
 
                         @Override
@@ -2139,7 +2236,7 @@ public class L3BasicNetwork implements L3Network {
                                 finishNetworkServiceChange(sdnL3, msg.getNetworkOperation());
                             }
                             reply.setError(errorCodeList.getCauses().get(0));
-                            bus.reply(msg, reply);
+                            replyAndNext.run();
                         }
                     });
                 }
@@ -2156,7 +2253,7 @@ public class L3BasicNetwork implements L3Network {
             public void fail(ErrorCode errorCode) {
                 finishNetworkServiceChange(sdnL3, msg.getNetworkOperation());
                 reply.setError(errorCode);
-                bus.reply(msg, reply);
+                replyAndNext.run();
             }
         });
     }
