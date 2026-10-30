@@ -215,7 +215,7 @@ doc {
 				column {
 					name "resetTpm"
 					enclosedIn "params"
-					desc "是否重置 TPM 状态"
+					desc "是否重置 TPM 状态，默认 false（保留快照点的 TPM 状态）"
 					location "body"
 					type "Boolean"
 					optional true
