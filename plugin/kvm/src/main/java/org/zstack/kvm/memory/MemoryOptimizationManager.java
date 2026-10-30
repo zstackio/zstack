@@ -92,6 +92,9 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     static final String SERVICE_ID = "memoryOptimization";
     static final String PAUSE = "pause", RESUME = "resume", DRAIN = "drain";
+    /** A Host step replies this long before its timeout, and waits at least HOST_STEP_MIN_WAIT. */
+    private static final long HOST_STEP_REPLY_MARGIN = TimeUnit.SECONDS.toMillis(30);
+    private static final long HOST_STEP_MIN_WAIT = TimeUnit.MINUTES.toMillis(1);
 
     @Override public String getId() { return bus.makeLocalServiceId(SERVICE_ID); }
     @Override public boolean start() { return true; }
@@ -343,14 +346,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (msg.getJobUuid() != null && jobCanceled(msg.getJobUuid())) {
                 results.put(host, "Canceled"); next.done(); return;
             }
-            if (System.currentTimeMillis() >= deadline) {
+            long left = deadline - System.currentTimeMillis();
+            if (left < HOST_STEP_MIN_WAIT + HOST_STEP_REPLY_MARGIN) {
                 results.put(host, "Skipped: the job timed out"); next.done(); return;
             }
             MemoryHostOperationMsg operation = new MemoryHostOperationMsg();
             operation.setHostUuid(host); operation.setAction(msg.getAction()); operation.setJobUuid(msg.getJobUuid());
             operation.setAccountUuid(msg.getAccountUuid()); operation.setUserUuid(msg.getUserUuid());
-            // A Host step lasts as long as the job may, including its Draining polls.
-            operation.setTimeout(msg.getTimeout());
+            // A Host step, including its Draining polls, replies within the time the job has left.
+            operation.setTimeout(left);
             bus.makeTargetServiceIdByResourceUuid(operation, SERVICE_ID, host);
             bus.send(operation, new CloudBusCallBack(next) {
                 @Override public void run(MessageReply hostReply) {
@@ -401,8 +405,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         };
         if (msg.getJobUuid() != null) { markActiveJob(host, msg.getJobUuid(), null); }
         // Reply before the caller times out; the Host keeps converging afterwards.
-        long deadline = System.currentTimeMillis() + Math.max(msg.getTimeout() - TimeUnit.SECONDS.toMillis(30),
-                TimeUnit.MINUTES.toMillis(1));
+        long deadline = System.currentTimeMillis() + Math.max(msg.getTimeout() - HOST_STEP_REPLY_MARGIN, HOST_STEP_MIN_WAIT);
         try {
             requireLicense();
             repository.targets("Host", host);

@@ -178,7 +178,6 @@ public class MemoryClusterOperationTest {
         manager.script("host2", "apply", reply("Failed", "KSM_NATIVE_PROFILE_UNSUPPORTED", null));
         invoke(manager, cluster("pause"));
 
-        assertEquals("each Host step may last as long as the job", Arrays.asList(7200000L, 7200000L), manager.hostTimeouts);
         assertEquals(Arrays.asList("host1:pause:paused", "host2:pause:paused"), repository.plans);
         Map<String, Object> apply = manager.commands.get(0);
         assertEquals("apply", apply.get("path"));
@@ -189,6 +188,32 @@ public class MemoryClusterOperationTest {
         expected.put("host1", "success"); expected.put("host2", "Failed: KSM_NATIVE_PROFILE_UNSUPPORTED");
         assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
         assertEquals(Arrays.asList(50, 100), manager.progress);
+    }
+
+    @Test public void aLaterHostStepLastsOnlyAsLongAsTheJobHasLeft() throws Exception {
+        setup();
+        manager.script("host2", "apply", reply("Succeeded", null, null));
+        invoke(manager, cluster("resume"));
+        Thread.sleep(50);
+        manager.held.poll().accept(reply("Succeeded", null, null));
+
+        assertEquals(2, manager.hostTimeouts.size());
+        assertTrue("host2 starts after host1 has used part of the job time: " + manager.hostTimeouts,
+                manager.hostTimeouts.get(1) <= 7200000L - 50);
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("host1", "success"); expected.put("host2", "success");
+        assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
+    }
+
+    @Test public void hostsTheJobHasTooLittleTimeLeftForAreSkipped() throws Exception {
+        setup();
+        MemoryClusterOperationMsg msg = cluster("drain"); msg.setTimeout(TimeUnit.SECONDS.toMillis(80));
+        invoke(manager, msg);
+
+        assertTrue("a Host step could not reply before the job times out", repository.plans.isEmpty());
+        Map<String, String> expected = new LinkedHashMap<>();
+        expected.put("host1", "Skipped: the job timed out"); expected.put("host2", "Skipped: the job timed out");
+        assertEquals(expected, ((MemoryClusterOperationReply) replies.get(0)).getResults());
     }
 
     @Test public void convergingHostIsSentTheSameGenerationAgainUntilApplied() throws Exception {
