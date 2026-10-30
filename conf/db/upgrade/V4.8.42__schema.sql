@@ -29,3 +29,5 @@ DELIMITER ;
 
 CALL backfill_default_zone_if_absent();
 DROP PROCEDURE IF EXISTS backfill_default_zone_if_absent;
+
+ALTER TABLE `zstack`.`DRSVmMigrationActivityVO` MODIFY COLUMN `result` TEXT DEFAULT NULL;
