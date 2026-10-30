@@ -460,16 +460,23 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Finishes the operations whose task reached a final status. */
     private void completeWaiters() {
         if (waiters.isEmpty()) { return; }
+        long now = System.currentTimeMillis();
         Map<String, MemoryTaskVO> tasks;
         Set<String> connected;
+        // A converging task has no reason until it finishes; the Host state records why it is still converging.
+        Map<String, String> reasons = new HashMap<>();
         try {
             tasks = repository.tasks(new ArrayList<>(waiters.keySet()));
             connected = new HashSet<>(repository.connectedHosts());
+            List<String> expired = waiters.values().stream().filter(w -> w.deadline <= now).map(w -> w.host)
+                    .distinct().collect(Collectors.toList());
+            for (MemoryStateVO state : repository.allStates(expired)) {
+                if (state.getReason() != null) { reasons.put(state.getHostUuid(), state.getReason()); }
+            }
         } catch (RuntimeException e) {
             logger.warn("Unable to read memory operation status; waiting operations are checked again", e);
             return;
         }
-        long now = System.currentTimeMillis();
         for (String uuid : new ArrayList<>(waiters.keySet())) {
             MemoryTaskVO task = tasks.get(uuid);
             Waiter waiting = waiters.get(uuid);
@@ -480,7 +487,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     : !MemoryRepository.CONVERGING.equals(task.getStatus())
                     ? task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason())
                     : !connected.contains(waiting.host) ? "MEMORY_RESULT_CONVERGING: HOST_DISCONNECTED"
-                    : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + task.getReason() : null;
+                    : waiting.deadline <= now ? "MEMORY_RESULT_CONVERGING: " + reasons.getOrDefault(waiting.host, "APPLYING") : null;
             if (outcome == null) { continue; }
             Waiter waiter = waiters.remove(uuid);
             if (waiter == null) { continue; }
