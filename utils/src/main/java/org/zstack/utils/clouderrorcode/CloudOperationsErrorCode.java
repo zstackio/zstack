@@ -10193,6 +10193,7 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_COMPUTE_VM_10344 = "ORG_ZSTACK_COMPUTE_VM_10344";
 
     public static final String ORG_ZSTACK_COMPUTE_VM_10345 = "ORG_ZSTACK_COMPUTE_VM_10345";
+    public static final String ORG_ZSTACK_COMPUTE_VM_10346 = "ORG_ZSTACK_COMPUTE_VM_10346";
 
     public static final String ORG_ZSTACK_IDENTITY_LOGIN_10000 = "ORG_ZSTACK_IDENTITY_LOGIN_10000";
 
@@ -15831,6 +15832,12 @@ public class CloudOperationsErrorCode {
     public static final String ORG_ZSTACK_AI_10208 = "ORG_ZSTACK_AI_10208";
 
     public static final String ORG_ZSTACK_AI_10209 = "ORG_ZSTACK_AI_10209";
+
+    public static final String ORG_ZSTACK_AI_10210 = "ORG_ZSTACK_AI_10210";
+
+    public static final String ORG_ZSTACK_AI_10211 = "ORG_ZSTACK_AI_10211";
+
+    public static final String ORG_ZSTACK_AI_10212 = "ORG_ZSTACK_AI_10212";
 
     public static final String ORG_ZSTACK_CORE_CLOUDBUS_10000 = "ORG_ZSTACK_CORE_CLOUDBUS_10000";
 
