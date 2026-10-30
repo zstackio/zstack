@@ -20,22 +20,30 @@ class TestDocTemplateLocationOverrideCase {
                 'header/src/main/java/org/zstack/header/volume/APIDeleteDataVolumeMsg.java')]
         Class templateClass = generatorClass.classLoader.loadClass('scripts.RestDocumentationGenerator$ApiRequestDocTemplate')
         def template = templateClass.getDeclaredConstructor(generatorClass, Class).newInstance(generator, APIDeleteDataVolumeMsg)
+        def parseDoc = { String text ->
+            String packageLine = 'package ' + APIDeleteDataVolumeMsg.package.name
+            assert text.startsWith(packageLine + '\n') || text.startsWith(packageLine + '\r\n')
+            // Temporary DSL scripts are fixtures, not product classes for JaCoCo's class dump.
+            String fixture = 'package dataset.docfixture\n\nimport ' + APIDeleteDataVolumeMsg.name +
+                    text.substring(packageLine.length())
+            generator.createDocFromString(fixture)
+        }
         String generated = template.generate()
         assert generated.contains('name "deleteMode"')
 
         [false, true].each { boolean values ->
-            String canonicalDefault = template.generate(generator.createDocFromString(
+            String canonicalDefault = template.generate(parseDoc(
                     replaceDeleteMode(generated, null, values).replace('location "query"', 'location "body"')))
             [null, false, true].each { Boolean override ->
                 String original = replaceDeleteMode(generated, override, values)
-                def originalDoc = generator.createDocFromString(original)
-                originalDoc.merge(generator.createDocFromString(generated))
+                def originalDoc = parseDoc(original)
+                originalDoc.merge(parseDoc(generated))
                 String once = template.generate(originalDoc)
                 String expected = override == true ? 'query' : 'body'
                 assert deleteMode(once).contains('location "' + expected + '"' +
                         (override == null ? '' : ', ' + override))
-                def reparsed = generator.createDocFromString(once)
-                reparsed.merge(generator.createDocFromString(generated))
+                def reparsed = parseDoc(once)
+                reparsed.merge(parseDoc(generated))
                 String twice = template.generate(reparsed)
                 assert twice == once
                 if (override == null) {
