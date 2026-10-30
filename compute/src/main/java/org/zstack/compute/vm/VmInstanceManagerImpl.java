@@ -666,10 +666,14 @@ public class VmInstanceManagerImpl extends AbstractService implements
     private void handle(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
         DesignatedAllocateHostMsg amsg = new DesignatedAllocateHostMsg();
 
-        ImageVO image = dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
-        amsg.setImage(ImageInventory.valueOf(image));
+        ImageVO image = msg.getImageUuid() == null ? null : dbf.findByUuid(msg.getImageUuid(), ImageVO.class);
+        if (image != null) {
+            amsg.setImage(ImageInventory.valueOf(image));
+        }
         amsg.setZoneUuid(msg.getZoneUuid());
         amsg.setClusterUuid(msg.getClusterUuid());
+        amsg.setRequiredPrimaryStorageUuids(msg.getRequiredPrimaryStorageUuids());
+        amsg.setHostUuid(msg.getRequiredHostUuid());
 
         InstanceOfferingVO insvo = null;
         if (msg.getInstanceOfferingUuid() == null) {
@@ -690,7 +694,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
             diskOfferings.addAll(DiskOfferingInventory.valueOf(dvos));
         }
 
-        if (image.getMediaType() == ImageMediaType.ISO) {
+        if (image == null || image.getMediaType() == ImageMediaType.ISO) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 diskSize = msg.getRootDiskSize();
             } else {
@@ -709,9 +713,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         amsg.setListAllHosts(true);
         amsg.setAllocatorStrategy(HostAllocatorConstant.DESIGNATED_HOST_ALLOCATOR_STRATEGY_TYPE);
 
-        if (image.getBackupStorageRefs().size() == 1) {
+        if (image != null && image.getBackupStorageRefs().size() == 1) {
             amsg.setRequiredBackupStorageUuid(image.getBackupStorageRefs().iterator().next().getBackupStorageUuid());
-        } else {
+        } else if (image != null) {
             if (msg.getZoneUuid() == null) {
                 throw new OperationFailureException(argerr(ORG_ZSTACK_COMPUTE_VM_10237, "zoneUuid must be set because the image[name:%s, uuid:%s] is on multiple backup storage",
                                 image.getName(), image.getUuid()));
@@ -725,7 +729,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
 
         VmInstanceInventory vm = new VmInstanceInventory();
         vm.setUuid(Platform.FAKE_UUID);
-        vm.setImageUuid(image.getUuid());
+        vm.setImageUuid(msg.getImageUuid());
         if (insvo == null) {
             vm.setCpuNum(msg.getCpuNum());
             vm.setMemorySize(msg.getMemorySize());
@@ -788,13 +792,20 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 List<String> dataOfferingUuids = msg.getDataDiskOfferingUuids() == null ? new ArrayList<>() :
                         msg.getDataDiskOfferingUuids();
 
-                sql("select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
+                if (msg.getImageUuid() != null) {
+                    sql("select bs.type from BackupStorageVO bs, ImageBackupStorageRefVO ref" +
                         " where ref.imageUuid =:imageUuid" +
                         " and bs.uuid = ref.backupStorageUuid", String.class)
                         .param("imageUuid", msg.getImageUuid())
                         .list().forEach(it ->
                         psTypes.addAll(hostAllocatorMgr.getPrimaryStorageTypesByBackupStorageTypeFromMetrics((String)it)
                         ));
+                } else {
+                    psTypes.addAll(PrimaryStorageType.getAllTypeNames());
+                }
+                if (!CollectionUtils.isEmpty(msg.getPossiblePrimaryStorageTypes())) {
+                    psTypes.retainAll(msg.getPossiblePrimaryStorageTypes());
+                }
 
                 clusterUuids.addAll(sql("select distinct ref.clusterUuid" +
                         " from L2NetworkClusterRefVO ref, L3NetworkVO l3" +
@@ -811,8 +822,8 @@ public class VmInstanceManagerImpl extends AbstractService implements
                     ));
                 }
 
-                ImageVO imageVO = q(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
-                return ImageInventory.valueOf(imageVO);
+                ImageVO imageVO = msg.getImageUuid() == null ? null : q(ImageVO.class).eq(ImageVO_.uuid, msg.getImageUuid()).find();
+                return imageVO == null ? null : ImageInventory.valueOf(imageVO);
             }
         }.execute();
 
@@ -822,7 +833,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
         rmsg.setDryRun(true);
         rmsg.setImageUuid(msg.getImageUuid());
         rmsg.setRequiredClusterUuids(clusterUuids);
-        if (ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
+        if (imageInv == null || ImageMediaType.ISO.toString().equals(imageInv.getMediaType())) {
             if (msg.getRootDiskOfferingUuid() == null) {
                 rmsg.setSize(msg.getRootDiskSize());
             } else {
@@ -856,7 +867,9 @@ public class VmInstanceManagerImpl extends AbstractService implements
         rmsg.setPurpose(PrimaryStorageAllocationPurpose.CreateNewVm.toString());
         rmsg.setPossiblePrimaryStorageTypes(new ArrayList<>(psTypes));
         bus.makeLocalServiceId(rmsg, PrimaryStorageConstant.SERVICE_ID);
-        msgs.add(rmsg);
+        if (!psTypes.isEmpty()) {
+            msgs.add(rmsg);
+        }
 
         // allocate ps for data volumes
         for (DiskOfferingInventory dinv : dataOfferings) {
@@ -895,7 +908,7 @@ public class VmInstanceManagerImpl extends AbstractService implements
                 public void run(MessageReply r) {
                     if (r.isSuccess()){
                         AllocatePrimaryStorageDryRunReply re = r.castReply();
-                        if (amsg.getImageUuid() != null){
+                        if (amsg == rmsg) {
                             reply.setRootVolumePrimaryStorages(re.getPrimaryStorageInventories());
                         } else if (amsg.getDiskOfferingUuid() != null) {
                             reply.getDataVolumePrimaryStorages().put(amsg.getDiskOfferingUuid(), re.getPrimaryStorageInventories());

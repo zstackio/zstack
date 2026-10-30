@@ -22,12 +22,30 @@ doc {
 			params {
 
 				column {
+					name "volumeSnapshotUuid"
+					enclosedIn ""
+					desc "云盘快照uuid"
+					location "query"
+					type "String"
+					optional true
+					since "5.6.0"
+				}
+				column {
+					name "volumeSnapshotGroupUuid"
+					enclosedIn ""
+					desc "快照组uuid"
+					location "query"
+					type "String"
+					optional true
+					since "5.6.0"
+				}
+				column {
 					name "imageUuid"
 					enclosedIn ""
 					desc "镜像UUID"
 					location "query"
 					type "String"
-					optional false
+					optional true
 					since "2.1"
 				}
 				column {

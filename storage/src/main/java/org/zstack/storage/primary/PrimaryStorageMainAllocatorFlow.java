@@ -154,7 +154,7 @@ public class PrimaryStorageMainAllocatorFlow extends NoRollbackFlow {
 
 
         List<PrimaryStorageVO> res = new ArrayList<>();
-        if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose())) {
+        if (PrimaryStorageAllocationPurpose.CreateNewVm.toString().equals(spec.getPurpose()) && spec.getImageUuid() != null) {
             res.addAll(considerImageCache(spec, vos));
             res = considerImageBackupStorageRef(spec, vos);
         } else {

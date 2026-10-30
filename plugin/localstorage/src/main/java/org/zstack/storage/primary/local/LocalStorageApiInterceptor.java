@@ -18,15 +18,21 @@ import org.zstack.header.message.APIMessage;
 import org.zstack.header.storage.primary.PrimaryStorageState;
 import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
+import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmMsg;
+import org.zstack.header.vm.APIGetCandidateZonesClustersHostsForCreatingVmReply;
 import org.zstack.header.vm.VmInstanceState;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.volume.*;
 import org.zstack.storage.primary.PrimaryStoragePhysicalCapacityManager;
+import org.zstack.storage.snapshot.group.VolumeSnapshotGroupBase;
 import org.zstack.utils.CollectionDSL;
 
 import javax.persistence.Tuple;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -57,9 +63,43 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor, Global
             validate((APILocalStorageGetVolumeMigratableHostsMsg) msg);
         } else if (msg instanceof APIAttachDataVolumeToVmMsg) {
             validate((APIAttachDataVolumeToVmMsg) msg);
+        } else if (msg instanceof APIGetCandidateZonesClustersHostsForCreatingVmMsg) {
+            validate((APIGetCandidateZonesClustersHostsForCreatingVmMsg) msg);
         }
 
         return msg;
+    }
+
+    private void validate(APIGetCandidateZonesClustersHostsForCreatingVmMsg msg) {
+        msg.setRequiredHostUuid(null);
+        if (msg.getVolumeSnapshotGroupUuid() == null) {
+            return;
+        }
+
+        VolumeSnapshotGroupVO group = dbf.findByUuid(msg.getVolumeSnapshotGroupUuid(), VolumeSnapshotGroupVO.class);
+        List<String> dataVolumeUuids = new VolumeSnapshotGroupBase(group).getEffectiveSnapshots().stream()
+                .filter(it -> VolumeType.Data.toString().equals(it.getVolumeType()))
+                .map(VolumeSnapshotVO::getVolumeUuid).collect(Collectors.toList());
+        if (dataVolumeUuids.isEmpty()) {
+            return;
+        }
+
+        List<String> hostUuids = Q.New(LocalStorageResourceRefVO.class)
+                .eq(LocalStorageResourceRefVO_.resourceType, VolumeVO.class.getSimpleName())
+                .in(LocalStorageResourceRefVO_.resourceUuid, dataVolumeUuids)
+                .select(LocalStorageResourceRefVO_.hostUuid).listValues();
+        hostUuids = hostUuids.stream().distinct().collect(Collectors.toList());
+        if (hostUuids.size() > 1) {
+            APIGetCandidateZonesClustersHostsForCreatingVmReply reply = new APIGetCandidateZonesClustersHostsForCreatingVmReply();
+            reply.setZones(Collections.emptyList());
+            reply.setClusters(Collections.emptyList());
+            reply.setHosts(Collections.emptyList());
+            bus.reply(msg, reply);
+            throw new StopRoutingException();
+        }
+        if (!hostUuids.isEmpty()) {
+            msg.setRequiredHostUuid(hostUuids.get(0));
+        }
     }
 
     private void validate(APILocalStorageGetVolumeMigratableHostsMsg msg) {
@@ -246,7 +286,7 @@ public class LocalStorageApiInterceptor implements ApiMessageInterceptor, Global
 
     @Override
     public List<Class> getMessageClassToIntercept() {
-        return CollectionDSL.list(APIAttachDataVolumeToVmMsg.class);
+        return CollectionDSL.list(APIAttachDataVolumeToVmMsg.class, APIGetCandidateZonesClustersHostsForCreatingVmMsg.class);
     }
 
     @Override
