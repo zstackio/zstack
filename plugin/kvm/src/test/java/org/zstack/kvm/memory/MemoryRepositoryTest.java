@@ -522,6 +522,37 @@ public class MemoryRepositoryTest {
         assertEquals("ZRAM_UNSUPPORTED", row.getReason());
     }
 
+    @Test public void aHostWhoseZramServiceOnlyObservesIsSentItsGenerationAgain() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("serviceState", "active"); zram.put("mode", "reclaim");
+        applied.state.put("zram", zram);
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+        // A reinstalled package brings back its observe-only config; the restarted service no longer reclaims.
+        zram.put("mode", "observe");
+        repository.observe("host1", applied);
+        assertEquals("Converging", repository.state("host1").getStatus());
+        assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
+    }
+
+    @Test public void anObservingZramServiceIsNotDriftWhenZramIsOff() {
+        setGlobal(MemoryStandardField.ZRAM_ENABLED, "false");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse applied = reply("Succeeded", null, null);
+        applied.state.put("appliedGeneration", plan.generation);
+        Map<String, Object> zram = new LinkedHashMap<>();
+        zram.put("serviceState", "active"); zram.put("mode", "observe"); zram.put("efficiencyEnabled", false);
+        applied.state.put("zram", zram);
+        repository.record("host1", plan.generation, applied);
+        repository.observe("host1", applied);
+        assertEquals("Succeeded", repository.state("host1").getStatus());
+    }
+
     @Test public void aHostStillReclaimingAfterZramIsTurnedOffIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "false");
         MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
