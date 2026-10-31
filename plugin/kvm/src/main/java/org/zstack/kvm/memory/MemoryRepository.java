@@ -615,11 +615,13 @@ public class MemoryRepository {
         if ("drained".equals(control)) { return "active".equals(observedControl) || "paused".equals(observedControl); }
         if ("paused".equals(control)) { return "active".equals(observedControl); }
         if (!"active".equals(control)) { return false; }
-        // A service back on its packaged observe-only config, e.g. after a reinstall, no longer reclaims.
+        // A service back on its packaged observe-only config (e.g. after a reinstall) or with reclaim
+        // turned off on the Host no longer reclaims.
         if (Boolean.TRUE.equals(field(desired.get("zram"), "enabled")) && zramSupported(observed)
                 && (Arrays.asList("paused", "drained", "stopped").contains(observedControl)
                 || !"active".equals(field(observed.get("zram"), "serviceState"))
-                || "observe".equals(field(observed.get("zram"), "mode")))) { return true; }
+                || "observe".equals(field(observed.get("zram"), "mode"))
+                || Boolean.FALSE.equals(field(observed.get("zram"), "efficiencyEnabled")))) { return true; }
         // ZRAM turned off must also stop reclaiming.
         if (Boolean.FALSE.equals(field(desired.get("zram"), "enabled"))
                 && Boolean.TRUE.equals(field(observed.get("zram"), "efficiencyEnabled"))) { return true; }
