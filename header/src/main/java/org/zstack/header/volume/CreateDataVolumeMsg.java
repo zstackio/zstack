@@ -12,6 +12,15 @@ public class CreateDataVolumeMsg extends NeedReplyMessage implements VolumeCreat
     private String resourceUuid;
     private String protocol;
     private APICreateDataVolumeMsg apiMsg;
+    private VolumeEncryptionState targetEncryptionState = VolumeEncryptionState.Unencrypted;
+
+    public VolumeEncryptionState getTargetEncryptionState() {
+        return targetEncryptionState;
+    }
+
+    public void setTargetEncryptionState(VolumeEncryptionState targetEncryptionState) {
+        this.targetEncryptionState = targetEncryptionState;
+    }
 
     public String getPrimaryStorageUuid() {
         return primaryStorageUuid;

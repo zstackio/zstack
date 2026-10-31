@@ -7,11 +7,29 @@ import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+
 import static org.zstack.core.Platform.operr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 
 public class DummyEncryptedResourceKeyManager implements EncryptedResourceKeyManager {
     private static final CLogger logger = Utils.getLogger(DummyEncryptedResourceKeyManager.class);
+
+    @Override
+    public KeyBinding findKeyBinding(String resourceType, String resourceUuid) {
+        return null;
+    }
+
+    @Override
+    public Map<String, KeyBinding> findKeyBindings(String resourceType, Collection<String> resourceUuids) {
+        return Collections.emptyMap();
+    }
+
+    @Override
+    public void removeKeyBinding(String resourceType, String resourceUuid) {
+    }
 
     @Override
     public void getOrCreateKey(GetOrCreateResourceKeyContext ctx,

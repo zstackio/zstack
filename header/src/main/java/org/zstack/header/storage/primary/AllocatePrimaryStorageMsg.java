@@ -2,6 +2,7 @@ package org.zstack.header.storage.primary;
 
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.utils.CollectionDSL;
+import org.zstack.header.volume.VolumePrimaryStorageAllocationContext;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +24,15 @@ public class AllocatePrimaryStorageMsg extends NeedReplyMessage {
     private List<String> possiblePrimaryStorageTypes;
     private List<String> excludePrimaryStorageTypes;
     private Set<PrimaryStorageFeature> requiredFeatures;
+    private VolumePrimaryStorageAllocationContext volumePrimaryStorageAllocationContext;
+
+    public VolumePrimaryStorageAllocationContext getVolumePrimaryStorageAllocationContext() {
+        return volumePrimaryStorageAllocationContext;
+    }
+
+    public void setVolumePrimaryStorageAllocationContext(VolumePrimaryStorageAllocationContext volumePrimaryStorageAllocationContext) {
+        this.volumePrimaryStorageAllocationContext = volumePrimaryStorageAllocationContext;
+    }
 
     private Long totalSize = null;
     private long size;

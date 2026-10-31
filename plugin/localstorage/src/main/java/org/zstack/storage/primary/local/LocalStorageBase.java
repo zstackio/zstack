@@ -1,5 +1,6 @@
 package org.zstack.storage.primary.local;
 
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.compute.host.VolumeMigrationTargetHostFilter;
@@ -855,9 +856,35 @@ public class LocalStorageBase extends PrimaryStorageBase {
             handle((CommitVolumeSnapshotOnPrimaryStorageMsg) msg);
         } else if (msg instanceof PullVolumeSnapshotOnPrimaryStorageMsg) {
             handle((PullVolumeSnapshotOnPrimaryStorageMsg) msg);
+        } else if (msg instanceof EncryptVolumeBitsOnPrimaryStorageMsg) {
+            handle((EncryptVolumeBitsOnPrimaryStorageMsg) msg);
         } else {
             super.handleLocalMessage(msg);
         }
+    }
+
+    private void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg) {
+        EncryptVolumeBitsOnPrimaryStorageReply reply = new EncryptVolumeBitsOnPrimaryStorageReply();
+        if (StringUtils.isBlank(msg.getHostUuid()) || StringUtils.isBlank(msg.getVolumeUuid()) ||
+                StringUtils.isBlank(msg.getEncryptedDek())) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_ENCRYPTION_10000, "encrypt volume[uuid:%s] requires host and encrypted DEK", msg.getVolumeUuid()));
+            bus.reply(msg, reply);
+            return;
+        }
+        LocalStorageHypervisorBackend backend =
+                getHypervisorBackendFactoryByHostUuid(msg.getHostUuid()).getHypervisorBackend(self);
+        backend.handle(msg, new ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply>(msg) {
+            @Override
+            public void success(EncryptVolumeBitsOnPrimaryStorageReply result) {
+                bus.reply(msg, result);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                reply.setError(errorCode);
+                bus.reply(msg, reply);
+            }
+        });
     }
 
     private void handle(DownloadBitsFromKVMHostToPrimaryStorageMsg msg) {

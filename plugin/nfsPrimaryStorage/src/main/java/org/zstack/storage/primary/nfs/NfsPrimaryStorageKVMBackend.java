@@ -11,6 +11,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.cloudbus.EventFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -99,10 +100,13 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
     protected ApiTimeoutManager timeoutManager;
     @Autowired
     private UpgradeChecker upgradeChecker;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     public static final String MOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/mount";
     public static final String UNMOUNT_PRIMARY_STORAGE_PATH = "/nfsprimarystorage/unmount";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/nfsprimarystorage/createemptyvolume";
+    public static final String ENCRYPT_VOLUME_BITS_PATH = "/nfsprimarystorage/volume/encryptinplace";
     public static final String CREATE_FOLDER_PATH = "/nfsprimarystorage/createfolder";
     public static final String GET_CAPACITY_PATH = "/nfsprimarystorage/getcapacity";
     public static final String DELETE_PATH = "/nfsprimarystorage/delete";
@@ -1127,6 +1131,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         }
 
         final HostInventory host = hostInventory == null ? nfsFactory.getConnectedHostForOperation(pinv).get(0) : hostInventory;
+        if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+            cmd.setEncryptedDek(sealVolumeDekForHost(volume.getUuid(), host.getUuid()));
+        }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
         msg.setCommand(cmd);
@@ -1381,6 +1388,9 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
         cmd.setUuid(primaryStorage.getUuid());
         if (image.getSize() < volume.getSize()) {
             cmd.setVirtualSize(volume.getSize());
+        }
+        if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+            cmd.setEncryptedDek(sealVolumeDekForHost(volume.getUuid(), host.getUuid()));
         }
 
         KVMHostAsyncHttpCallMsg msg = new KVMHostAsyncHttpCallMsg();
@@ -2075,6 +2085,46 @@ public class NfsPrimaryStorageKVMBackend implements NfsPrimaryStorageBackend,
                 CommitVolumeSnapshotOnPrimaryStorageReply reply = new CommitVolumeSnapshotOnPrimaryStorageReply();
                 reply.setSize(rsp.getActualSize());
                 completion.success(reply);
+            }
+        });
+    }
+
+    private String sealVolumeDekForHost(String volumeUuid, String hostUuid) {
+        List<VolumeEncryptionSecretExtensionPoint> extensions =
+                pluginRgty.getExtensionList(VolumeEncryptionSecretExtensionPoint.class);
+        if (extensions.size() != 1) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_ENCRYPTION_10000, "encrypted volume[uuid:%s] requires one volume secret provider", volumeUuid));
+        }
+        return extensions.get(0).sealVolumeDekForHost(volumeUuid, hostUuid);
+    }
+
+    @Override
+    public void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg,
+                       ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply> completion) {
+        EncryptVolumeBitsCmd cmd = new EncryptVolumeBitsCmd();
+        cmd.setUuid(msg.getPrimaryStorageUuid());
+        cmd.installPath = msg.getInstallPath();
+        cmd.encryptedDek = msg.getEncryptedDek();
+
+        KVMHostAsyncHttpCallMsg hmsg = new KVMHostAsyncHttpCallMsg();
+        hmsg.setCommand(cmd);
+        hmsg.setPath(ENCRYPT_VOLUME_BITS_PATH);
+        hmsg.setHostUuid(msg.getHostUuid());
+        bus.makeTargetServiceIdByResourceUuid(hmsg, HostConstant.SERVICE_ID, msg.getHostUuid());
+        bus.send(hmsg, new CloudBusCallBack(completion) {
+            @Override
+            public void run(MessageReply reply) {
+                if (!reply.isSuccess()) {
+                    completion.fail(reply.getError());
+                    return;
+                }
+                EncryptVolumeBitsRsp rsp = ((KVMHostAsyncHttpCallReply) reply).toResponse(EncryptVolumeBitsRsp.class);
+                if (!rsp.isSuccess()) {
+                    completion.fail(operr(ORG_ZSTACK_STORAGE_PRIMARY_NFS_ENCRYPTION_10000, "failed to encrypt volume[uuid:%s] on host[uuid:%s]: %s",
+                            msg.getVolumeUuid(), msg.getHostUuid(), rsp.getError()));
+                    return;
+                }
+                completion.success(new EncryptVolumeBitsOnPrimaryStorageReply());
             }
         });
     }

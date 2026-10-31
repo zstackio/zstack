@@ -11,6 +11,7 @@ public interface VolumeConstant {
     String VOLUME_FORMAT_VMDK = "vmdk";
     int DEFAULT_MAX_DATA_VOLUME_NUMBER = 24;
     String BLOCK_VOLUME_TYPE = "blockVolume";
+    String ENCRYPTED_VOLUME_TAG = "volume::encrypted";
 
     enum Capability {
         MigrationInCurrentPrimaryStorage,

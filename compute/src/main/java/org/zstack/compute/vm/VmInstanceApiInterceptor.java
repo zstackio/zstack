@@ -3,6 +3,7 @@ package org.zstack.compute.vm;
 import com.google.gson.JsonSyntaxException;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.Platform;
@@ -1226,6 +1227,7 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         }
 
         validateDataDiskSizes(msg);
+        validateDataVolumeSystemTagsOnIndex(msg);
 
         List<String> allDiskOfferingUuids = new ArrayList<String>();
         if (msg.getRootDiskOfferingUuid() != null) {
@@ -1250,6 +1252,23 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         validateDataDiskAOs(msg);
     }
 
+    private void validateDataVolumeSystemTagsOnIndex(APICreateVmInstanceMsg msg) {
+        if (msg.getDataVolumeSystemTagsOnIndex() == null) {
+            return;
+        }
+
+        int dataDiskCount = (msg.getDataDiskOfferingUuids() == null ? 0 : msg.getDataDiskOfferingUuids().size()) +
+                (msg.getDataDiskSizes() == null ? 0 : msg.getDataDiskSizes().size());
+        for (String key : msg.getDataVolumeSystemTagsOnIndex().keySet()) {
+            int index = NumberUtils.toInt(key, -1);
+            if (index >= 0 && index < dataDiskCount && String.valueOf(index).equals(key)) {
+                continue;
+            }
+            throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10185,
+                    "dataVolumeSystemTagsOnIndex index[%s] is invalid for %s data disks", key, dataDiskCount));
+        }
+    }
+
     private void validateDataDiskAOs(APICreateVmInstanceMsg msg) {
         if (CollectionUtils.isEmpty(msg.getDiskAOs())) {
             return;
@@ -1257,6 +1276,10 @@ public class VmInstanceApiInterceptor implements ApiMessageInterceptor {
         for (APICreateVmInstanceMsg.DiskAO diskAO : msg.getDiskAOs()) {
             if (diskAO.isBoot()) {
                 continue;
+            }
+            if (diskAO.getSourceUuid() != null && VmInstanceSpec.isEncryptedDisk(diskAO)) {
+                throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_COMPUTE_VM_10196,
+                        "encryption tag cannot change an existing volume[uuid:%s]", diskAO.getSourceUuid()));
             }
             checkMutualExclusion(diskAO);
         }

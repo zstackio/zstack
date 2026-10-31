@@ -704,6 +704,25 @@ public class VolumeBase extends AbstractVolume implements Volume {
             ext.preInstantiateVolume(msg);
         }
 
+        VolumeEncryptionState targetEncryptionState = VolumeSystemTags.ENCRYPTED.hasTag(self.getUuid())
+                ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted;
+        if (targetEncryptionState == VolumeEncryptionState.Encrypted && self.isShareable()) {
+            reply.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", self.getUuid()));
+            bus.reply(msg, reply);
+            completion.done();
+            return;
+        }
+        VolumeCreationContext creationContext = VolumeCreationContext.builder()
+                .volumeUuid(self.getUuid())
+                .volumeType(self.getType())
+                .source(self.getRootImageUuid() == null ? null : ImageVO.class.getSimpleName(), self.getRootImageUuid())
+                .targetEncryptionState(targetEncryptionState)
+                .hostUuid(msg.getHostUuid())
+                .primaryStorageUuid(msg.getPrimaryStorageUuid())
+                .build();
+        creationContext.setAllocatedInstallUrl(msg.getAllocatedInstallUrl());
+        List<VolumeCreationFlowExtensionPoint> creationExts = pluginRgty.getExtensionList(VolumeCreationFlowExtensionPoint.class);
+
         FlowChain chain = FlowChainBuilder.newShareFlowChain();
         chain.setName(String.format("instantiate-volume-%s", self.getUuid()));
         chain.then(new ShareFlow() {
@@ -712,9 +731,18 @@ public class VolumeBase extends AbstractVolume implements Volume {
             String protocol;
             Long actualSize;
             Long virtualSize;
+            VolumeStatus oldStatus = self.getStatus();
 
             @Override
             public void setup() {
+                if (creationContext.isTargetEncrypted() && creationExts.isEmpty()) {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] has no creation flow", self.getUuid()));
+                        }
+                    });
+                }
                 if (!msg.isPrimaryStorageAllocated()) {
                     flow(new Flow() {
                         String __name__ = "allocate-primary-storage";
@@ -735,6 +763,14 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
                             }
                             amsg.setDiskOfferingUuid(self.getDiskOfferingUuid());
+                            VolumePrimaryStorageAllocationContext allocationContext = VolumePrimaryStorageAllocationContext.builder()
+                                    .volumeUuid(self.getUuid())
+                                    .source(self.getRootImageUuid() == null ? null : "ImageVO", self.getRootImageUuid())
+                                    .targetEncryptionState(targetEncryptionState)
+                                    .hostUuid(msg.getHostUuid())
+                                    .primaryStorageUuid(msg.getPrimaryStorageUuid())
+                                    .build();
+                            amsg.setVolumePrimaryStorageAllocationContext(allocationContext);
 
                             if (msg.getPrimaryStorageUuid() != null) {
                                 bus.makeTargetServiceIdByResourceUuid(amsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
@@ -751,6 +787,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                         if (msg.getPrimaryStorageUuid() == null) {
                                             msg.setPrimaryStorageUuid(ar.getPrimaryStorageInventory().getUuid());
                                         }
+                                        creationContext.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
                                         // set the primary storage uuid in advance to make the leastVolumeFirstAllocateStrategy allocation more balanced
                                         SQL.New(VolumeVO.class).eq(VolumeVO_.uuid, self.getUuid())
                                                 .set(VolumeVO_.primaryStorageUuid, msg.getPrimaryStorageUuid())
@@ -758,6 +795,7 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                         success = true;
                                         allocateInstallUrl = ar.getAllocatedInstallUrl();
                                         msg.setAllocatedInstallUrl(allocateInstallUrl);
+                                        creationContext.setAllocatedInstallUrl(allocateInstallUrl);
                                         trigger.next();
                                     }
                                 }
@@ -781,6 +819,13 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             trigger.rollback();
                         }
                     });
+                }
+
+                for (VolumeCreationFlowExtensionPoint ext : creationExts) {
+                    List<Flow> steps = ext.beforeStorageWrite(creationContext);
+                    if (steps != null) {
+                        steps.forEach(this::flow);
+                    }
                 }
 
                 flow(new Flow() {
@@ -808,6 +853,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                     format = ret.getFormat();
                                     actualSize = ret.getActualSize();
                                     virtualSize = ret.getSize();
+                                    creationContext.setInstallPath(installPath);
+                                    creationContext.setFormat(format);
 
                                     buildSnapshotRefFromTemplateIfNeed(ret);
 
@@ -905,6 +952,8 @@ public class VolumeBase extends AbstractVolume implements Volume {
                                 actualSize = ir.getVolume().getActualSize();
                                 virtualSize = ir.getVolume().getSize();
                                 protocol = ir.getVolume().getProtocol();
+                                creationContext.setInstallPath(installPath);
+                                creationContext.setFormat(format);
 
                                 List<AfterInstantiateVolumeExtensionPoint> exts = pluginRgty.getExtensionList(AfterInstantiateVolumeExtensionPoint.class);
                                 for (AfterInstantiateVolumeExtensionPoint ext : exts) {
@@ -923,7 +972,11 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         if (success) {
                             DeleteVolumeOnPrimaryStorageMsg dmsg = new DeleteVolumeOnPrimaryStorageMsg();
                             dmsg.setUuid(msg.getPrimaryStorageUuid());
-                            dmsg.setVolume(getSelfInventory());
+                            VolumeInventory volume = getSelfInventory();
+                            volume.setPrimaryStorageUuid(creationContext.getPrimaryStorageUuid());
+                            volume.setInstallPath(creationContext.getInstallPath());
+                            volume.setFormat(creationContext.getFormat());
+                            dmsg.setVolume(volume);
                             bus.makeTargetServiceIdByResourceUuid(dmsg, PrimaryStorageConstant.SERVICE_ID, msg.getPrimaryStorageUuid());
                             bus.send(dmsg);
                         }
@@ -936,17 +989,26 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     }
                 });
 
-                done(new FlowDoneHandler(msg, completion) {
+                for (VolumeCreationFlowExtensionPoint ext : creationExts) {
+                    List<Flow> steps = ext.beforeReady(creationContext);
+                    if (steps != null) {
+                        steps.forEach(this::flow);
+                    }
+                }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "commit-instantiated-volume";
+
                     @Override
-                    public void handle(Map data) {
-                        VolumeStatus oldStatus = self.getStatus();
+                    public void run(FlowTrigger trigger, Map data) {
                         self.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
-                        self.setInstallPath(installPath);
-                        DebugUtils.Assert(format != null, "format cannot be null");
-                        self.setFormat(format);
+                        self.setInstallPath(creationContext.getInstallPath());
+                        DebugUtils.Assert(creationContext.getFormat() != null, "format cannot be null");
+                        self.setFormat(creationContext.getFormat());
                         self.setStatus(VolumeStatus.Ready);
-                        if (actualSize != null) {
-                            self.setActualSize(actualSize);
+                        Long finalActualSize = creationContext.getActualSize() == null ? actualSize : creationContext.getActualSize();
+                        if (finalActualSize != null) {
+                            self.setActualSize(finalActualSize);
                         }
                         if (virtualSize != 0 && virtualSize != self.getSize()) {
                             self.setSize(virtualSize);
@@ -955,11 +1017,15 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             self.setProtocol(protocol);
                         }
                         self = dbf.updateAndRefresh(self);
+                        reply.setVolume(getSelfInventory());
+                        trigger.next();
+                    }
+                });
 
-                        VolumeInventory vol = getSelfInventory();
-                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, vol);
-
-                        reply.setVolume(vol);
+                done(new FlowDoneHandler(msg, completion) {
+                    @Override
+                    public void handle(Map data) {
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, reply.getVolume());
                         bus.reply(msg, reply);
                     }
                 });
@@ -1238,13 +1304,22 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         }
                     });
                 }
+
+                flow(new NoRollbackFlow() {
+                    String __name__ = "prepare-expunged-volume-removal";
+
+                    @Override
+                    public void run(FlowTrigger trigger, Map data) {
+                        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class),
+                                ext -> ext.volumeAfterExpunge(inv));
+                        trigger.next();
+                    }
+                });
+                flow(volumeDeleteHooksFlow());
             }
         }).done(new FlowDoneHandler(completion) {
             @Override
             public void handle(Map data) {
-                CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeAfterExpungeExtensionPoint.class), arg -> arg.volumeAfterExpunge(inv));
-
-                callVolumeJustBeforeDeleteFromDbExtensionPoint();
                 VolumeInventory volumeInventory = getSelfInventory();
                 dbf.remove(self);
                 cleanupVolumeEO(self.getUuid());
@@ -1590,6 +1665,10 @@ public class VolumeBase extends AbstractVolume implements Volume {
                 });
 
 
+                if (deletionPolicy == VolumeDeletionPolicy.Direct || deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                    flow(volumeDeleteHooksFlow());
+                }
+
                 done(new FlowDoneHandler(msg) {
                     @Override
                     public void handle(Map data) {
@@ -1597,7 +1676,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                         String accountUuid = self.getAccountUuid();
 
                         if (deletionPolicy == VolumeDeletionPolicy.Direct) {
-                            callVolumeJustBeforeDeleteFromDbExtensionPoint();
                             self.setStatus(VolumeStatus.Deleted);
                             self = dbf.updateAndRefresh(self);
                             VolumeInventory volumeInventory = getSelfInventory();
@@ -1613,7 +1691,6 @@ public class VolumeBase extends AbstractVolume implements Volume {
                             self = dbf.updateAndRefresh(self);
                             new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(oldStatus, getSelfInventory());
                         } else if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                            callVolumeJustBeforeDeleteFromDbExtensionPoint();
                             VolumeInventory inventory = getSelfInventory();
                             inventory.setStatus(VolumeStatus.Deleted.toString());
                             dbf.remove(self);
@@ -1798,9 +1875,66 @@ public class VolumeBase extends AbstractVolume implements Volume {
         }).start();
     }
 
-    private void callVolumeJustBeforeDeleteFromDbExtensionPoint() {
+    private Flow volumeDeleteHooksFlow() {
+        return new NoRollbackFlow() {
+            String __name__ = "run-volume-delete-hooks";
+
+            @Override
+            public void run(FlowTrigger trigger, Map data) {
+                runVolumeDeleteHooks(new Completion(trigger) {
+                    @Override
+                    public void success() {
+                        trigger.next();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        trigger.fail(errorCode);
+                    }
+                });
+            }
+        };
+    }
+
+    private void runVolumeDeleteHooks(Completion completion) {
         VolumeInventory inv = getSelfInventory();
-        CollectionUtils.safeForEach(pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class), p -> p.volumeJustBeforeDeleteFromDb(inv));
+        List<String> optionalFailures = new ArrayList<>();
+        new While<>(pluginRgty.getExtensionList(VolumeJustBeforeDeleteFromDbExtensionPoint.class))
+                .each((ext, next) -> invokeVolumeDeleteHook(ext, inv, new Completion(next) {
+                    @Override
+                    public void success() {
+                        next.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        if (ext.abortDeletionOnFailure() || SysErrors.INTERNAL.toString().equals(errorCode.getCode())) {
+                            next.addError(errorCode);
+                            next.allDone();
+                            return;
+                        }
+                        optionalFailures.add(String.format("%s: %s", ext.getClass().getName(), errorCode));
+                        next.done();
+                    }
+                })).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (!optionalFailures.isEmpty()) {
+                    logger.error(String.format("optional cleanup failure summary for volume[uuid:%s], failed hooks[%s]: %s",
+                            inv.getUuid(), optionalFailures.size(), optionalFailures));
+                }
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    private void invokeVolumeDeleteHook(VolumeJustBeforeDeleteFromDbExtensionPoint ext, VolumeInventory inv, Completion completion) {
+        ext.volumeJustBeforeDeleteFromDb(inv);
+        completion.success();
     }
 
     private void handle(final VolumeDeletionMsg msg) {
@@ -1820,12 +1954,27 @@ public class VolumeBase extends AbstractVolume implements Volume {
                     } else if (msg.getDeletionPolicy() != null){
                         deletionPolicy = VolumeDeletionPolicy.valueOf(msg.getDeletionPolicy());
                     }
-                    if (deletionPolicy == VolumeDeletionPolicy.DBOnly) {
-                        callVolumeJustBeforeDeleteFromDbExtensionPoint();
-                        VolumeInventory inventory = getSelfInventory();
-                        String accountUuid = self.getAccountUuid();
-                        dbf.remove(self);
-                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(self.getStatus(), inventory, accountUuid);
+                    if (self != null && deletionPolicy == VolumeDeletionPolicy.DBOnly) {
+                        VolumeDeletionReply reply = new VolumeDeletionReply();
+                        runVolumeDeleteHooks(new Completion(msg, chain) {
+                            @Override
+                            public void success() {
+                                VolumeInventory inventory = getSelfInventory();
+                                String accountUuid = self.getAccountUuid();
+                                dbf.remove(self);
+                                new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(self.getStatus(), inventory, accountUuid);
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+
+                            @Override
+                            public void fail(ErrorCode errorCode) {
+                                reply.setError(errorCode);
+                                bus.reply(msg, reply);
+                                chain.next();
+                            }
+                        });
+                        return;
                     }
 
                     // the volume has been deleted

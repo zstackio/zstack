@@ -5,6 +5,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.header.Component;
 import org.zstack.header.core.Completion;
+import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 public class KVMExtensionEmitter implements Component {
     private static final CLogger logger = Utils.getLogger(KVMExtensionEmitter.class);
@@ -72,10 +74,10 @@ public class KVMExtensionEmitter implements Component {
         });
     }
 
-    public void beforeStartVmOnKvm(final KVMHostInventory host, final VmInstanceSpec spec, final StartVmCmd cmd) {
-        for (KVMStartVmExtensionPoint extp : startVmExts) {
-            extp.beforeStartVmOnKvm(host, spec, cmd);
-        }
+    public void beforeStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd, Completion completion) {
+        runExtensionsInOrder(startVmExts.iterator(),
+                (extension, extensionCompletion) -> extension.beforeStartVmOnKvm(host, spec, cmd, extensionCompletion),
+                completion);
     }
 
 
@@ -95,6 +97,13 @@ public class KVMExtensionEmitter implements Component {
                 arg.startVmOnKvmFailed(host, spec, err);
             }
         });
+    }
+
+    public void notifyStartVmFailure(KVMHostInventory host, VmInstanceSpec spec, ErrorCode err, NoErrorCompletion completion) {
+        String operation = String.format("VM start [vmUuid=%s, hostUuid=%s]", spec.getVmInventory().getUuid(), host.getUuid());
+        notifyFailureInOrder(operation, startVmExts.iterator(),
+                (extension, extensionCompletion) -> extension.startVmOnKvmFailed(host, spec, err, extensionCompletion),
+                new ArrayList<>(), completion);
     }
 
     public void beforeDestroyVmOnKvm(KVMHostInventory host, VmInstanceInventory vm, KVMAgentCommands.DestroyVmCmd cmd) throws KVMException {
@@ -392,10 +401,20 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, Map data) {
-        for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
-            ext.beforeAttachVolume(host, vm, vol, cmd, data);
-        }
+    public void beforeAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol,
+                                   AttachDataVolumeCmd cmd, Map data, Completion completion) {
+        runExtensionsInOrder(attachVolumeExts.iterator(),
+                (extension, extensionCompletion) -> extension.beforeAttachVolume(host, vm, vol, cmd, data, extensionCompletion),
+                completion);
+    }
+
+    public void rollbackAttachVolumePreparation(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol,
+                                                 Map data, ErrorCode err, NoErrorCompletion completion) {
+        String operation = String.format("volume attach preparation [vmUuid=%s, hostUuid=%s, volumeUuid=%s]",
+                vm.getUuid(), host.getUuid(), vol.getUuid());
+        notifyFailureInOrder(operation, attachVolumeExts.iterator(),
+                (extension, extensionCompletion) -> extension.rollbackAttachVolumePreparation(data, err, extensionCompletion),
+                new ArrayList<>(), completion);
     }
 
     public void afterAttachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd) {
@@ -404,10 +423,66 @@ public class KVMExtensionEmitter implements Component {
         }
     }
 
-    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, AttachDataVolumeCmd cmd, ErrorCode err, Map data) {
-        for (KVMAttachVolumeExtensionPoint ext : attachVolumeExts) {
-            ext.attachVolumeFailed(host, vm, vol, cmd, err, data);
+    public void attachVolumeFailed(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol,
+                                   AttachDataVolumeCmd cmd, ErrorCode err, Map data, NoErrorCompletion completion) {
+        String operation = String.format("volume attach [vmUuid=%s, hostUuid=%s, volumeUuid=%s]",
+                vm.getUuid(), host.getUuid(), vol.getUuid());
+        notifyFailureInOrder(operation, attachVolumeExts.iterator(),
+                (extension, extensionCompletion) -> extension.attachVolumeFailed(host, vm, vol, cmd, err, data, extensionCompletion),
+                new ArrayList<>(), completion);
+    }
+
+    private <T> void runExtensionsInOrder(Iterator<T> extensions, BiConsumer<T, Completion> extensionCall,
+                                          Completion completion) {
+        if (!extensions.hasNext()) {
+            completion.success();
+            return;
         }
+
+        T extension = extensions.next();
+        invokeExtension(extension, extensionCall, new Completion(completion) {
+            @Override
+            public void success() {
+                runExtensionsInOrder(extensions, extensionCall, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                completion.fail(errorCode);
+            }
+        });
+    }
+
+    private <T> void invokeExtension(T extension, BiConsumer<T, Completion> action, Completion completion) {
+        action.accept(extension, completion);
+    }
+
+    private <T> void notifyFailureInOrder(String operation, Iterator<T> extensions,
+                                         BiConsumer<T, Completion> extensionCall, List<String> failures,
+                                         NoErrorCompletion completion) {
+        if (!extensions.hasNext()) {
+            if (!failures.isEmpty()) {
+                logger.error(String.format("KVM compensation failure summary for %s: %s", operation, failures));
+            }
+            completion.done();
+            return;
+        }
+
+        T extension = extensions.next();
+        invokeExtension(extension, extensionCall, new Completion(completion) {
+            @Override
+            public void success() {
+                notifyFailureInOrder(operation, extensions, extensionCall, failures, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                String failure = String.format("%s: %s", extension.getClass().getName(), errorCode);
+                failures.add(failure);
+                logger.error(String.format("KVM compensation failed for %s, extension %s", operation, failure));
+                notifyFailureInOrder(operation, extensions, extensionCall, failures, completion);
+            }
+        });
     }
 
     public void beforeDetachVolume(KVMHostInventory host, VmInstanceInventory vm, VolumeInventory vol, DetachDataVolumeCmd cmd) {

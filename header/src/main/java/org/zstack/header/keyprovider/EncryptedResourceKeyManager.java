@@ -3,12 +3,39 @@ package org.zstack.header.keyprovider;
 import org.zstack.header.core.ReturnValueCompletion;
 import org.zstack.header.core.Completion;
 
+import java.util.Collection;
+import java.util.Map;
+
 /**
  * Unified resource key management service.
  * Business layers (TPM, volume encryption, etc.) call this to create/retrieve DEKs
  * without knowing gRPC/key-tools protocol details.
  */
 public interface EncryptedResourceKeyManager {
+
+    KeyBinding findKeyBinding(String resourceType, String resourceUuid);
+
+    Map<String, KeyBinding> findKeyBindings(String resourceType, Collection<String> resourceUuids);
+
+    void removeKeyBinding(String resourceType, String resourceUuid);
+
+    class KeyBinding {
+        private final String providerUuid;
+        private final Integer keyVersion;
+
+        public KeyBinding(String providerUuid, Integer keyVersion) {
+            this.providerUuid = providerUuid;
+            this.keyVersion = keyVersion;
+        }
+
+        public String getProviderUuid() {
+            return providerUuid;
+        }
+
+        public Integer getKeyVersion() {
+            return keyVersion;
+        }
+    }
 
     /**
      * Get or create a resource encryption key.

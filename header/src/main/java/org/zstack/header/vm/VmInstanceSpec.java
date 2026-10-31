@@ -14,8 +14,11 @@ import org.zstack.header.network.l3.L3NetworkInventory;
 import org.zstack.header.storage.primary.PrimaryStorageInventory;
 import org.zstack.header.vm.VmInstanceConstant.VmOperation;
 import org.zstack.header.vm.devices.VmDevicesSpec;
+import org.zstack.header.volume.VolumeEncryptionState;
+import org.zstack.header.volume.VolumeConstant;
 import org.zstack.header.volume.VolumeFormat;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumePrimaryStorageAllocationContext;
 import org.zstack.header.volume.VolumeType;
 import org.zstack.utils.JsonWrapper;
 
@@ -24,6 +27,11 @@ import java.util.*;
 
 
 public class VmInstanceSpec implements Serializable {
+    public static final String ENCRYPTED_VOLUME_TAG = VolumeConstant.ENCRYPTED_VOLUME_TAG;
+
+    public static boolean isEncryptedDisk(APICreateVmInstanceMsg.DiskAO disk) {
+        return disk != null && disk.getSystemTags() != null && disk.getSystemTags().contains(ENCRYPTED_VOLUME_TAG);
+    }
 
     public List<String> getDataVolumeTemplateUuids() {
         return dataVolumeTemplateUuids;
@@ -50,6 +58,15 @@ public class VmInstanceSpec implements Serializable {
         private List<String> tags;
         private String allocatedInstallUrl;
         private String associatedVolumeUuid;
+        private VolumeEncryptionState targetEncryptionState = VolumeEncryptionState.Unencrypted;
+
+        public VolumeEncryptionState getTargetEncryptionState() {
+            return targetEncryptionState;
+        }
+
+        public void setTargetEncryptionState(VolumeEncryptionState targetEncryptionState) {
+            this.targetEncryptionState = targetEncryptionState;
+        }
 
         public String getAssociatedVolumeUuid() {
             return associatedVolumeUuid;
@@ -415,6 +432,25 @@ public class VmInstanceSpec implements Serializable {
 
     public void setDiskAOs(List<APICreateVmInstanceMsg.DiskAO> diskAOs) {
         this.diskAOs = diskAOs;
+    }
+
+    public VolumePrimaryStorageAllocationContext getRootVolumePrimaryStorageAllocationContext() {
+        boolean encrypted = (diskAOs != null && diskAOs.stream()
+                .anyMatch(disk -> disk != null && disk.isBoot() && isEncryptedDisk(disk))) ||
+                (rootVolumeSystemTags != null && rootVolumeSystemTags.contains(ENCRYPTED_VOLUME_TAG));
+        ImageInventory image = imageSpec == null ? null : imageSpec.getInventory();
+        return VolumePrimaryStorageAllocationContext.builder()
+                .source(image == null ? null : "ImageVO", image == null ? null : image.getUuid())
+                .targetEncryptionState(encrypted ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                .hostUuid(destHost == null ? null : destHost.getUuid())
+                .primaryStorageUuid(getRequiredPrimaryStorageUuidForRootVolume())
+                .build();
+    }
+
+    public boolean isDataVolumeEncrypted(int index) {
+        List<String> tags = dataVolumeSystemTagsOnIndex == null ? null :
+                dataVolumeSystemTagsOnIndex.get(String.valueOf(index));
+        return tags != null && tags.contains(ENCRYPTED_VOLUME_TAG);
     }
 
     public VmDevicesSpec getDevicesSpec() {

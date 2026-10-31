@@ -131,6 +131,12 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         amsg.setDiskOfferingUuid(diskAO.getDiskOfferingUuid());
                         amsg.setRequiredPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         amsg.setPurpose(PrimaryStorageAllocationPurpose.CreateDataVolume.toString());
+                        VolumePrimaryStorageAllocationContext allocationContext = VolumePrimaryStorageAllocationContext.builder()
+                                .targetEncryptionState(VmInstanceSpec.isEncryptedDisk(diskAO) ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                                .hostUuid(hostUuid)
+                                .primaryStorageUuid(diskAO.getPrimaryStorageUuid())
+                                .build();
+                        amsg.setVolumePrimaryStorageAllocationContext(allocationContext);
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(innerTrigger) {
                             @Override
@@ -182,6 +188,9 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         msg.setDiskOfferingUuid(diskAO.getDiskOfferingUuid());
                         msg.setPrimaryStorageUuid(allocatedPrimaryStorageUuid);
                         msg.setDescription(String.format("vm-%s-data-volume", vmUuid));
+                        if (VmInstanceSpec.isEncryptedDisk(diskAO)) {
+                            msg.setTargetEncryptionState(VolumeEncryptionState.Encrypted);
+                        }
                         bus.makeLocalServiceId(msg, VolumeConstant.SERVICE_ID);
                         bus.send(msg, new CloudBusCallBack(innerTrigger) {
                             @Override
@@ -278,6 +287,12 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         List<String> bsUuids = template.getBackupStorageRefs().stream()
                                 .map(ImageBackupStorageRefVO::getBackupStorageUuid).collect(Collectors.toList());
                         amsg.setPossiblePrimaryStorageTypes(possiblePrimaryStorageTypes(bsUuids));
+                        VolumePrimaryStorageAllocationContext allocationContext = VolumePrimaryStorageAllocationContext.builder()
+                                .source(ImageVO.class.getSimpleName(), template.getUuid())
+                                .targetEncryptionState(VmInstanceSpec.isEncryptedDisk(diskAO) ? VolumeEncryptionState.Encrypted : VolumeEncryptionState.Unencrypted)
+                                .hostUuid(hostUuid)
+                                .build();
+                        amsg.setVolumePrimaryStorageAllocationContext(allocationContext);
 
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(innerTrigger) {
@@ -319,6 +334,9 @@ public class VmInstantiateOtherDiskFlow implements Flow {
                         cmsg.setAccountUuid(accountUuid);
                         cmsg.setSystemTags(diskAO.getSystemTags());
                         cmsg.setDescription(String.format("vm-%s-data-volume", vmUuid));
+                        if (VmInstanceSpec.isEncryptedDisk(diskAO)) {
+                            cmsg.setTargetEncryptionState(VolumeEncryptionState.Encrypted);
+                        }
                         if (diskAO.getPrimaryStorageUuid() != null) {
                             cmsg.setPrimaryStorageUuid(diskAO.getPrimaryStorageUuid());
                         } else {

@@ -9,6 +9,7 @@ import org.zstack.header.storage.primary.PrimaryStorageVO;
 import org.zstack.header.storage.primary.PrimaryStorageVO_;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
+import org.zstack.header.volume.VolumeEncryptionState;
 import org.zstack.header.volume.VolumeInventory;
 import org.zstack.resourceconfig.ResourceConfigFacade;
 import org.zstack.header.volume.VolumeProtocol;
@@ -58,6 +59,9 @@ public class VolumeTO extends BaseVirtualDeviceTO {
     private int ioThreads;
     private int controllerIndex;
     private CacheTO cache;
+    private String luksSecretUuid;
+    private String primaryStorageUuid;
+    private boolean encrypted;
 
 
     static {
@@ -91,6 +95,9 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         this.ioThreads = other.ioThreads;
         this.controllerIndex = other.controllerIndex;
         this.cache = other.cache;
+        this.luksSecretUuid = other.luksSecretUuid;
+        this.primaryStorageUuid = other.primaryStorageUuid;
+        this.encrypted = other.encrypted;
     }
 
     public static List<VolumeTO> valueOf(List<VolumeInventory> vols, KVMHostInventory host) {
@@ -141,6 +148,7 @@ public class VolumeTO extends BaseVirtualDeviceTO {
         to.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(vol.getUuid()));
         to.setWwn(KVMHost.computeWwnIfAbsent(vol.getUuid()));
         to.setShareable(vol.isShareable());
+        to.setPrimaryStorageUuid(vol.getPrimaryStorageUuid());
         ResourceConfigFacade rcf = Platform.getComponentLoader().getComponent(ResourceConfigFacade.class);
         to.setCacheMode(rcf.getResourceConfigValue(KVMGlobalConfig.LIBVIRT_CACHE_MODE, vol.getUuid(), String.class));
 
@@ -341,5 +349,29 @@ public class VolumeTO extends BaseVirtualDeviceTO {
 
     public void setCache(CacheTO cache) {
         this.cache = cache;
+    }
+
+    public String getLuksSecretUuid() {
+        return luksSecretUuid;
+    }
+
+    public void setLuksSecretUuid(String luksSecretUuid) {
+        this.luksSecretUuid = luksSecretUuid;
+    }
+
+    public String getPrimaryStorageUuid() {
+        return primaryStorageUuid;
+    }
+
+    public void setPrimaryStorageUuid(String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+
+    public boolean isEncrypted() {
+        return encrypted;
+    }
+
+    public void setEncryptionState(VolumeEncryptionState state) {
+        encrypted = state == VolumeEncryptionState.Encrypted;
     }
 }

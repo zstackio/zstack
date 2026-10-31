@@ -64,6 +64,27 @@ public class HostManagerImpl extends AbstractService implements HostManager, Man
         ManagementNodeReadyExtensionPoint, FindSameNodeExtensionPoint {
     private static final CLogger logger = Utils.getLogger(HostManagerImpl.class);
 
+    @Override
+    public List<String> getHostUuidsByHypervisorType(String hypervisorType) {
+        return Q.New(HostVO.class).eq(HostVO_.hypervisorType, hypervisorType)
+                .select(HostVO_.uuid).listValues();
+    }
+
+    @Override
+    public String findConnectedEnabledHost(String hypervisorType, List<String> clusterUuids, List<String> hostUuids) {
+        Q hosts = Q.New(HostVO.class)
+                .eq(HostVO_.hypervisorType, hypervisorType)
+                .eq(HostVO_.status, HostStatus.Connected)
+                .eq(HostVO_.state, HostState.Enabled);
+        if (!clusterUuids.isEmpty()) {
+            hosts.in(HostVO_.clusterUuid, clusterUuids);
+        }
+        if (!hostUuids.isEmpty()) {
+            hosts.in(HostVO_.uuid, hostUuids);
+        }
+        return hosts.select(HostVO_.uuid).limit(1).findValue();
+    }
+
     @Autowired
     private CloudBus bus;
     @Autowired

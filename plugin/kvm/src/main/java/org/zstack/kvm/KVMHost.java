@@ -3944,31 +3944,66 @@ public class KVMHost extends HostBase implements Host {
         cmd.setVmUuid(msg.getVmInventory().getUuid());
         cmd.getAddons().put("attachedDataVolumes", VolumeTO.valueOf(msg.getAttachedDataVolumes(), host));
         Map data = new HashMap();
-        extEmitter.beforeAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd, data);
+        extEmitter.beforeAttachVolume(host, vm, vol, cmd, data, new Completion(completion) {
+            @Override
+            public void success() {
+                sendAttachVolumeRequest(msg, cmd, data, reply, completion);
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                extEmitter.rollbackAttachVolumePreparation(host, vm, vol, data, errorCode,
+                        attachFailureReplyCompletion(msg, reply, errorCode, completion));
+            }
+        });
+    }
+
+    private void sendAttachVolumeRequest(AttachVolumeToVmOnHypervisorMsg msg, AttachDataVolumeCmd cmd,
+                                         Map data, AttachVolumeToVmOnHypervisorReply reply,
+                                         NoErrorCompletion completion) {
+        VolumeInventory vol = msg.getInventory();
+        VmInstanceInventory vm = msg.getVmInventory();
         new Http<>(attachDataVolumePath, cmd, AttachDataVolumeResponse.class).call(new ReturnValueCompletion<AttachDataVolumeResponse>(msg, completion) {
             @Override
             public void success(AttachDataVolumeResponse ret) {
                 if (!ret.isSuccess()) {
-                    reply.setError(operr(ORG_ZSTACK_KVM_10069, "failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
+                    ErrorCode error = operr(ORG_ZSTACK_KVM_10069, "failed to attach data volume[uuid:%s, installPath:%s] to vm[uuid:%s, name:%s]" +
                                     " on kvm host[uuid:%s, ip:%s], because %s", vol.getUuid(), vol.getInstallPath(), vm.getUuid(), vm.getName(),
-                            getSelf().getUuid(), getSelf().getManagementIp(), ret.getError()));
-                    extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, reply.getError(), data);
-                } else {
-                    extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
-                    reply.setVirtualDeviceInfoList(ret.getVirtualDeviceInfoList());
+                            getSelf().getUuid(), getSelf().getManagementIp(), ret.getError());
+                    finishAttachVolumeFailure(msg, cmd, data, reply, error, completion);
+                    return;
                 }
+                extEmitter.afterAttachVolume((KVMHostInventory) getSelfInventory(), vm, vol, cmd);
+                reply.setVirtualDeviceInfoList(ret.getVirtualDeviceInfoList());
                 bus.reply(msg, reply);
                 completion.done();
             }
 
             @Override
             public void fail(ErrorCode err) {
-                extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), vm, vol, cmd, err, data);
-                reply.setError(err);
+                finishAttachVolumeFailure(msg, cmd, data, reply, err, completion);
+            }
+        });
+    }
+
+    private void finishAttachVolumeFailure(AttachVolumeToVmOnHypervisorMsg msg, AttachDataVolumeCmd cmd,
+                                           Map data, AttachVolumeToVmOnHypervisorReply reply,
+                                           ErrorCode error, NoErrorCompletion completion) {
+        extEmitter.attachVolumeFailed((KVMHostInventory) getSelfInventory(), msg.getVmInventory(), msg.getInventory(), cmd, error, data,
+                attachFailureReplyCompletion(msg, reply, error, completion));
+    }
+
+    private NoErrorCompletion attachFailureReplyCompletion(AttachVolumeToVmOnHypervisorMsg msg,
+                                                            AttachVolumeToVmOnHypervisorReply reply,
+                                                            ErrorCode error, NoErrorCompletion completion) {
+        return new NoErrorCompletion(completion) {
+            @Override
+            public void done() {
+                reply.setError(error);
                 bus.reply(msg, reply);
                 completion.done();
             }
-        });
+        };
     }
 
     private void handle(final DestroyVmOnHypervisorMsg msg) {
@@ -4750,6 +4785,7 @@ public class KVMHost extends HostBase implements Host {
         rootVolume.setDeviceType(getVolumeTOType(spec.getDestRootVolume()));
         rootVolume.setFormat(spec.getDestRootVolume().getFormat());
         rootVolume.setVolumeUuid(spec.getDestRootVolume().getUuid());
+        rootVolume.setPrimaryStorageUuid(spec.getDestRootVolume().getPrimaryStorageUuid());
         rootVolume.setUseVirtio(VmSystemTags.VIRTIO.hasTag(spec.getVmInventory().getUuid()));
         rootVolume.setUseVirtioSCSI(!ImagePlatform.Other.toString().equals(platform) && KVMSystemTags.VOLUME_VIRTIO_SCSI.hasTag(spec.getDestRootVolume().getUuid()));
         rootVolume.setWwn(computeWwnIfAbsent(spec.getDestRootVolume().getUuid()));
@@ -4899,12 +4935,43 @@ public class KVMHost extends HostBase implements Host {
 
         addons(spec, cmd);
         KVMHostInventory khinv = KVMHostInventory.valueOf(getSelf());
-        extEmitter.beforeStartVmOnKvm(khinv, spec, cmd);
+        prepareStartVmOnKvm(khinv, spec, cmd, new Completion(completion) {
+            @Override
+            public void success() {
+                sendStartVmRequest(spec, msg, cmd, completion);
+            }
 
-        extEmitter.addOn(khinv, spec, cmd);
-        //Set account uuid for kvm agent call vrouter agent api
-        cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
+            @Override
+            public void fail(ErrorCode errorCode) {
+                extEmitter.notifyStartVmFailure(khinv, spec, errorCode, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        bus.replyErrorByMessageType(msg, errorCode);
+                        completion.done();
+                    }
+                });
+            }
+        });
+    }
 
+    private void prepareStartVmOnKvm(KVMHostInventory host, VmInstanceSpec spec, StartVmCmd cmd, Completion ready) {
+        extEmitter.beforeStartVmOnKvm(host, spec, cmd, new Completion(ready) {
+            @Override
+            public void success() {
+                extEmitter.addOn(host, spec, cmd);
+                //Set account uuid for kvm agent call vrouter agent api
+                cmd.setAccountUuid(accountMgr.getOwnerAccountUuidOfResource(cmd.getVmInstanceUuid()));
+                ready.success();
+            }
+
+            @Override
+            public void fail(ErrorCode errorCode) {
+                ready.fail(errorCode);
+            }
+        });
+    }
+
+    private void sendStartVmRequest(VmInstanceSpec spec, NeedReplyMessage msg, StartVmCmd cmd, NoErrorCompletion completion) {
         new Http<>(startVmPath, cmd, StartVmResponse.class).call(new ReturnValueCompletion<StartVmResponse>(msg, completion) {
             @Override
             public void success(StartVmResponse ret) {
@@ -4922,30 +4989,17 @@ public class KVMHost extends HostBase implements Host {
                             spec.getVmInventory().getUuid(), spec.getVmInventory().getName(),
                             self.getUuid(), self.getManagementIp(), ret.getError()));
                     logger.warn(reply.getError().getDetails());
-                    extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, reply.getError());
+                    extEmitter.notifyStartVmFailure(KVMHostInventory.valueOf(getSelf()), spec, reply.getError(),
+                            new NoErrorCompletion(completion) {
+                                @Override
+                                public void done() {
+                                    finishStartVmResponse(spec, msg, ret, reply, completion);
+                                }
+                            });
+                    return;
                 }
 
-                if (ret.getNicInfos() != null && !ret.getNicInfos().isEmpty()) {
-                    Map<String, VmNicInventory> macNicMap = new HashMap<>();
-                    for (VmNicInventory nic : spec.getDestNics()) {
-                        macNicMap.put(nic.getMac(), nic);
-                    }
-
-                    for (VmNicInfo vmNicInfo : ret.getNicInfos()) {
-                        VmNicInventory nic = macNicMap.get(vmNicInfo.getMacAddress());
-                        if (nic == null) {
-                            continue;
-                        }
-
-                        SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
-                        creator.inherent = true;
-                        creator.recreate = true;
-                        creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getDeviceAddress().toString())));
-                        creator.create();
-                    }
-                }
-                bus.reply(msg, reply);
-                completion.done();
+                finishStartVmResponse(spec, msg, ret, reply, completion);
             }
 
             @Override
@@ -4953,11 +5007,40 @@ public class KVMHost extends HostBase implements Host {
                 StartVmOnHypervisorReply reply = new StartVmOnHypervisorReply();
                 reply.setError(err(ORG_ZSTACK_KVM_10082, HostErrors.FAILED_TO_START_VM_ON_HYPERVISOR, "failed to start vm[uuid: %s] on kvm host[uuid: %s], because %s",
                         spec.getVmInventory().getUuid(), self.getUuid(), err));
-                extEmitter.startVmOnKvmFailed(KVMHostInventory.valueOf(getSelf()), spec, err);
-                bus.reply(msg, reply);
-                completion.done();
+                extEmitter.notifyStartVmFailure(KVMHostInventory.valueOf(getSelf()), spec, err, new NoErrorCompletion(completion) {
+                    @Override
+                    public void done() {
+                        bus.reply(msg, reply);
+                        completion.done();
+                    }
+                });
             }
         });
+    }
+
+    private void finishStartVmResponse(VmInstanceSpec spec, NeedReplyMessage msg, StartVmResponse ret,
+                                       StartVmOnHypervisorReply reply, NoErrorCompletion completion) {
+        if (ret.getNicInfos() != null && !ret.getNicInfos().isEmpty()) {
+            Map<String, VmNicInventory> macNicMap = new HashMap<>();
+            for (VmNicInventory nic : spec.getDestNics()) {
+                macNicMap.put(nic.getMac(), nic);
+            }
+
+            for (VmNicInfo vmNicInfo : ret.getNicInfos()) {
+                VmNicInventory nic = macNicMap.get(vmNicInfo.getMacAddress());
+                if (nic == null) {
+                    continue;
+                }
+
+                SystemTagCreator creator = KVMSystemTags.VMNIC_PCI_ADDRESS.newSystemTagCreator(nic.getUuid());
+                creator.inherent = true;
+                creator.recreate = true;
+                creator.setTagByTokens(map(e(KVMSystemTags.VMNIC_PCI_ADDRESS_TOKEN, vmNicInfo.getDeviceAddress().toString())));
+                creator.create();
+            }
+        }
+        bus.reply(msg, reply);
+        completion.done();
     }
 
     private void addons(final VmInstanceSpec spec, StartVmCmd cmd) {

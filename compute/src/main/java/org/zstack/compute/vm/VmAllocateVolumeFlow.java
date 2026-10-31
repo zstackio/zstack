@@ -93,6 +93,7 @@ public class VmAllocateVolumeFlow implements Flow {
             DebugUtils.Assert(vspec.getType() != null, "VolumeType can not be null!");
 
             if (VolumeType.Root.toString().equals(vspec.getType())) {
+                msg.setTargetEncryptionState(spec.getRootVolumePrimaryStorageAllocationContext().getTargetEncryptionState());
                 msg.setResourceUuid((String) ctx.get("uuid"));
                 msg.setName("ROOT-for-" + spec.getVmInventory().getName());
                 msg.setDescription(String.format("Root volume for VM[uuid:%s]", spec.getVmInventory().getUuid()));
@@ -107,6 +108,7 @@ public class VmAllocateVolumeFlow implements Flow {
                     tags.addAll(spec.getRootVolumeSystemTags());
                 }
             } else if (VolumeType.Data.toString().equals(vspec.getType())) {
+                msg.setTargetEncryptionState(vspec.getTargetEncryptionState());
                 msg.setName(String.format("DATA-for-%s", spec.getVmInventory().getName()));
                 msg.setDescription(String.format("DataVolume-%s", spec.getVmInventory().getUuid()));
                 msg.setFormat(VolumeFormat.getVolumeFormatByMasterHypervisorType(spec.getDestHost().getHypervisorType()).toString());

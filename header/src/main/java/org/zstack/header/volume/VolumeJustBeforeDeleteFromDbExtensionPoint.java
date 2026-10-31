@@ -5,4 +5,8 @@ package org.zstack.header.volume;
  */
 public interface VolumeJustBeforeDeleteFromDbExtensionPoint {
     void volumeJustBeforeDeleteFromDb(VolumeInventory inv);
+
+    default boolean abortDeletionOnFailure() {
+        return false;
+    }
 }

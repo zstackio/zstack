@@ -40,6 +40,7 @@ import org.zstack.header.image.ImageConstant.ImageMediaType;
 import org.zstack.header.image.ImageInventory;
 import org.zstack.header.image.ImageStatus;
 import org.zstack.header.image.ImageVO;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.rest.RESTFacade;
@@ -67,6 +68,7 @@ import org.zstack.utils.path.PathUtil;
 
 import javax.persistence.Tuple;
 import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -204,7 +206,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    public static class CreateEmptyVolumeCmd extends AgentCommand {
+    public static class CreateEmptyVolumeCmd extends AgentCommand implements Serializable {
         @GrayVersion(value = "5.0.0")
         private String installUrl;
         @GrayVersion(value = "5.0.0")
@@ -218,6 +220,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         @GrayVersion(value = "5.0.0")
         private String backingFile;
         private String volumeFormat;
+        @NoLogging
+        private String encryptedDek;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
 
         public String getBackingFile() {
             return backingFile;
@@ -281,6 +293,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         public Long size;
     }
 
+    public static class EncryptVolumeBitsCmd extends AgentCommand implements Serializable {
+        public String installPath;
+        @NoLogging
+        public String encryptedDek;
+    }
+
+    public static class EncryptVolumeBitsRsp extends AgentResponse {
+    }
+
     public static class GetPhysicalCapacityCmd extends AgentCommand {
         @GrayVersion(value = "5.0.0")
         private String hostUuid;
@@ -294,7 +315,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         }
     }
 
-    public static class CreateVolumeFromCacheCmd extends AgentCommand {
+    public static class CreateVolumeFromCacheCmd extends AgentCommand implements Serializable {
         @GrayVersion(value = "5.0.0")
         private String templatePathInCache;
         @GrayVersion(value = "5.0.0")
@@ -303,6 +324,16 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         private String volumeUuid;
         @GrayVersion(value = "5.0.0")
         private long virtualSize;
+        @NoLogging
+        private String encryptedDek;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
 
         public String getTemplatePathInCache() {
             return templatePathInCache;
@@ -1005,6 +1036,7 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
     public static final String INIT_PATH = "/localstorage/init";
     public static final String GET_PHYSICAL_CAPACITY_PATH = "/localstorage/getphysicalcapacity";
     public static final String CREATE_EMPTY_VOLUME_PATH = "/localstorage/volume/createempty";
+    public static final String ENCRYPT_VOLUME_BITS_PATH = "/localstorage/volume/encryptinplace";
     public static final String CREATE_FOLDER_PATH = "/localstorage/volume/createfolder";
     public static final String CREATE_VOLUME_FROM_CACHE_PATH = "/localstorage/volume/createvolumefromcache";
     public static final String CREATE_VOLUME_WITH_BACKING_PATH = "/localstorage/volume/createwithbacking";
@@ -1380,6 +1412,15 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         createEmptyVolumeWithBackingFile(volume, hostUuid, null, completion);
     }
 
+    private String sealVolumeDekForHost(String volumeUuid, String hostUuid) {
+        List<VolumeEncryptionSecretExtensionPoint> extensions =
+                pluginRgty.getExtensionList(VolumeEncryptionSecretExtensionPoint.class);
+        if (extensions.size() != 1) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_PRIMARY_LOCAL_ENCRYPTION_10000, "encrypted volume[uuid:%s] requires one volume secret provider", volumeUuid));
+        }
+        return extensions.get(0).sealVolumeDekForHost(volumeUuid, hostUuid);
+    }
+
     public void createEmptyVolumeWithBackingFile(final VolumeInventory volume, final String hostUuid, final String backingFile, final ReturnValueCompletion<VolumeStats> completion) {
         final CreateEmptyVolumeCmd cmd = new CreateEmptyVolumeCmd();
         cmd.setAccountUuid(acntMgr.getOwnerAccountUuidOfResource(volume.getUuid()));
@@ -1402,6 +1443,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
         cmd.setSize(volume.getSize());
         cmd.setVolumeUuid(volume.getUuid());
         cmd.setBackingFile(backingFile);
+        if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+            cmd.setEncryptedDek(sealVolumeDekForHost(volume.getUuid(), hostUuid));
+        }
 
         httpCall(CREATE_EMPTY_VOLUME_PATH, hostUuid, cmd, CreateEmptyVolumeRsp.class, new ReturnValueCompletion<CreateEmptyVolumeRsp>(completion) {
             @Override
@@ -1824,6 +1868,9 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                         cmd.setVolumeUuid(volume.getUuid());
                         if (image.getSize() < volume.getSize()) {
                             cmd.setVirtualSize(volume.getSize());
+                        }
+                        if (VolumeSystemTags.ENCRYPTED.hasTag(volume.getUuid())) {
+                            cmd.setEncryptedDek(sealVolumeDekForHost(volume.getUuid(), hostUuid));
                         }
 
                         httpCall(CREATE_VOLUME_FROM_CACHE_PATH, hostUuid, cmd, CreateVolumeFromCacheRsp.class, new ReturnValueCompletion<CreateVolumeFromCacheRsp>(trigger) {
@@ -3931,5 +3978,25 @@ public class LocalStorageKvmBackend extends LocalStorageHypervisorBackend {
                 completion.fail(errorCode);
             }
         });
+    }
+
+    @Override
+    void handle(EncryptVolumeBitsOnPrimaryStorageMsg msg,
+                ReturnValueCompletion<EncryptVolumeBitsOnPrimaryStorageReply> completion) {
+        EncryptVolumeBitsCmd cmd = new EncryptVolumeBitsCmd();
+        cmd.installPath = msg.getInstallPath();
+        cmd.encryptedDek = msg.getEncryptedDek();
+        httpCall(ENCRYPT_VOLUME_BITS_PATH, msg.getHostUuid(), cmd, EncryptVolumeBitsRsp.class,
+                new ReturnValueCompletion<EncryptVolumeBitsRsp>(completion) {
+                    @Override
+                    public void success(EncryptVolumeBitsRsp rsp) {
+                        completion.success(new EncryptVolumeBitsOnPrimaryStorageReply());
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        completion.fail(errorCode);
+                    }
+                });
     }
 }

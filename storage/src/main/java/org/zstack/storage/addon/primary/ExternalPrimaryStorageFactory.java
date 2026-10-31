@@ -367,6 +367,20 @@ public class ExternalPrimaryStorageFactory implements PrimaryStorageFactory, Com
         return ExternalPrimaryStorageInventory.valueOf(dbf.findByUuid(uuid, ExternalPrimaryStorageVO.class));
     }
 
+    public Set<String> findStorageUuids(Collection<String> candidateUuids, String identity, String defaultProtocol) {
+        if (candidateUuids.isEmpty()) {
+            return Collections.emptySet();
+        }
+
+        Q query = Q.New(ExternalPrimaryStorageVO.class).select(ExternalPrimaryStorageVO_.uuid)
+                .in(ExternalPrimaryStorageVO_.uuid, candidateUuids)
+                .eq(ExternalPrimaryStorageVO_.identity, identity);
+        if (defaultProtocol != null) {
+            query.eq(ExternalPrimaryStorageVO_.defaultProtocol, defaultProtocol);
+        }
+        return new HashSet<>(query.listValues());
+    }
+
     @Override
     public void validateStorageProtocol(String protocol) {
         if (!SUPPORT_PROTOCOL.contains(protocol)) {

@@ -180,4 +180,28 @@ public class VolumeTO extends org.zstack.sdk.BaseVirtualDeviceTO {
         return this.cache;
     }
 
+    public java.lang.String luksSecretUuid;
+    public void setLuksSecretUuid(java.lang.String luksSecretUuid) {
+        this.luksSecretUuid = luksSecretUuid;
+    }
+    public java.lang.String getLuksSecretUuid() {
+        return this.luksSecretUuid;
+    }
+
+    public java.lang.String primaryStorageUuid;
+    public void setPrimaryStorageUuid(java.lang.String primaryStorageUuid) {
+        this.primaryStorageUuid = primaryStorageUuid;
+    }
+    public java.lang.String getPrimaryStorageUuid() {
+        return this.primaryStorageUuid;
+    }
+
+    public boolean encrypted;
+    public void setEncrypted(boolean encrypted) {
+        this.encrypted = encrypted;
+    }
+    public boolean getEncrypted() {
+        return this.encrypted;
+    }
+
 }

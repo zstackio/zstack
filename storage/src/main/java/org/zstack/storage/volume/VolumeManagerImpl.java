@@ -240,6 +240,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vol.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         vol.setAccountUuid(msg.getAccountUuid());
         vol.setShareable(getShareableCapabilityFromMsg(msg));
+        if (msg.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && vol.isShareable()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", vol.getUuid()));
+        }
 
         if (msg.getSystemTags() != null) {
             Iterator<String> iterators = msg.getSystemTags().iterator();
@@ -281,9 +284,26 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
             String volumeFormat;
             String volumeProtocol;
             String allocatedInstallUrl;
+            VolumeCreationContext creationContext = VolumeCreationContext.builder()
+                    .volumeUuid(vol.getUuid())
+                    .volumeType(VolumeType.Data)
+                    .source(ImageVO.class.getSimpleName(), template.getUuid())
+                    .targetEncryptionState(msg.getTargetEncryptionState())
+                    .hostUuid(msg.getHostUuid())
+                    .primaryStorageUuid(msg.getPrimaryStorageUuid())
+                    .build();
+            List<VolumeCreationFlowExtensionPoint> creationExts = pluginRgty.getExtensionList(VolumeCreationFlowExtensionPoint.class);
 
             @Override
             public void setup() {
+                if (creationContext.isTargetEncrypted() && creationExts.isEmpty()) {
+                    flow(new NoRollbackFlow() {
+                        @Override
+                        public void run(FlowTrigger trigger, Map data) {
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] has no creation flow", vol.getUuid()));
+                        }
+                    });
+                }
                 flow(new NoRollbackFlow() {
                     String __name__ = "select-backup-storage";
 
@@ -353,6 +373,14 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         if (vvo.isShareable()) {
                             amsg.setRequiredFeatures(Collections.singleton(PrimaryStorageFeature.SHARED_VOLUME));
                         }
+                        VolumePrimaryStorageAllocationContext allocationContext = VolumePrimaryStorageAllocationContext.builder()
+                                .volumeUuid(vvo.getUuid())
+                                .source(ImageVO.class.getSimpleName(), template.getUuid())
+                                .targetEncryptionState(msg.getTargetEncryptionState())
+                                .hostUuid(msg.getHostUuid())
+                                .primaryStorageUuid(msg.getPrimaryStorageUuid())
+                                .build();
+                        amsg.setVolumePrimaryStorageAllocationContext(allocationContext);
 
                         bus.makeLocalServiceId(amsg, PrimaryStorageConstant.SERVICE_ID);
                         bus.send(amsg, new CloudBusCallBack(trigger) {
@@ -365,6 +393,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                 AllocatePrimaryStorageSpaceReply ar = (AllocatePrimaryStorageSpaceReply) reply;
                                 allocatedInstallUrl = ar.getAllocatedInstallUrl();
                                 targetPrimaryStorage = ar.getPrimaryStorageInventory();
+                                creationContext.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
+                                creationContext.setAllocatedInstallUrl(allocatedInstallUrl);
                                 trigger.next();
                             }
                         });
@@ -383,6 +413,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         trigger.rollback();
                     }
                 });
+
+                for (VolumeCreationFlowExtensionPoint ext : creationExts) {
+                    List<Flow> steps = ext.beforeStorageWrite(creationContext);
+                    if (steps != null) {
+                        steps.forEach(this::flow);
+                    }
+                }
 
                 flow(new NoRollbackFlow() {
                     String __name__ = "get-download-data-volume-template-to-primary-storage-for-garbage";
@@ -439,6 +476,8 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                                     primaryStorageInstallPath = r.getInstallPath();
                                     volumeFormat = r.getFormat();
                                     volumeProtocol = r.getProtocol();
+                                    creationContext.setInstallPath(primaryStorageInstallPath);
+                                    creationContext.setFormat(volumeFormat);
                                     trigger.next();
                                 }
                             }
@@ -450,7 +489,7 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                         if (primaryStorageInstallPath != null) {
                             // if primaryStorageInstallPath != null, then delete it directly
                             DeleteVolumeBitsOnPrimaryStorageMsg delMsg = new DeleteVolumeBitsOnPrimaryStorageMsg();
-                            delMsg.setInstallPath(primaryStorageInstallPath);
+                            delMsg.setInstallPath(creationContext.getInstallPath());
                             delMsg.setBitsUuid(vol.getUuid());
                             delMsg.setBitsType(VolumeVO.class.getSimpleName());
                             delMsg.setPrimaryStorageUuid(targetPrimaryStorage.getUuid());
@@ -471,6 +510,13 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
+                for (VolumeCreationFlowExtensionPoint ext : creationExts) {
+                    List<Flow> steps = ext.beforeReady(creationContext);
+                    if (steps != null) {
+                        steps.forEach(this::flow);
+                    }
+                }
+
                 flow(new NoRollbackFlow() {
                     String __name__ = String.format("sync volume %s size", vol.getUuid());
 
@@ -481,13 +527,19 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                             trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10089, "target volume is expunged during volume creation"));
                             return;
                         }
-                        vo.setInstallPath(primaryStorageInstallPath);
-                        vo.setStatus(VolumeStatus.Ready);
-                        if (volumeFormat != null) {
-                            vo.setFormat(volumeFormat);
+                        vo.setInstallPath(creationContext.getInstallPath());
+                        if (creationContext.getFormat() != null) {
+                            vo.setFormat(creationContext.getFormat());
                         }
                         if (volumeProtocol != null) {
                             vo.setProtocol(volumeProtocol);
+                        }
+                        if (creationContext.getActualSize() != null) {
+                            vo.setActualSize(creationContext.getActualSize());
+                            vol.setActualSize(creationContext.getActualSize());
+                            dbf.updateAndRefresh(vo);
+                            trigger.next();
+                            return;
                         }
                         dbf.updateAndRefresh(vo);
 
@@ -509,21 +561,28 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
                     }
                 });
 
-                done(new FlowDoneHandler(msg) {
+                flow(new NoRollbackFlow() {
+                    String __name__ = "commit-data-volume-from-template";
+
                     @Override
-                    public void handle(Map data) {
+                    public void run(FlowTrigger trigger, Map data) {
                         VolumeVO vo = dbf.reload(vol);
                         if (vo == null) {
-                            reply.setError(operr(ORG_ZSTACK_STORAGE_VOLUME_10090, "target volume is expunged during volume creation"));
-                            bus.reply(msg, reply);
+                            trigger.fail(operr(ORG_ZSTACK_STORAGE_VOLUME_10090, "target volume is expunged during volume creation"));
                             return;
                         }
                         vo.setActualSize(vol.getActualSize());
+                        vo.setStatus(VolumeStatus.Ready);
                         vo = dbf.updateAndRefresh(vo);
-
-                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, VolumeInventory.valueOf(vo));
-
                         reply.setInventory(VolumeInventory.valueOf(vo));
+                        trigger.next();
+                    }
+                });
+
+                done(new FlowDoneHandler(msg) {
+                    @Override
+                    public void handle(Map data) {
+                        new FireVolumeCanonicalEvent().fireVolumeStatusChangedEvent(VolumeStatus.Creating, reply.getInventory());
                         bus.reply(msg, reply);
                     }
                 });
@@ -602,6 +661,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         vo.setAccountUuid(msg.getAccountUuid());
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
+        }
+        if (msg.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && vo.isShareable()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", vo.getUuid()));
         }
 
         if (msg.getSystemTags() != null) {
@@ -1060,6 +1122,9 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         if (msg.hasSystemTag(VolumeSystemTags.SHAREABLE.getTagFormat())) {
             vo.setShareable(true);
         }
+        if (msg.getTargetEncryptionState() == VolumeEncryptionState.Encrypted && vo.isShareable()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_STORAGE_VOLUME_ENCRYPTION_10000, "encrypted volume[uuid:%s] cannot be shareable", vo.getUuid()));
+        }
         List<CreateDataVolumeExtensionPoint> exts = pluginRgty.getExtensionList(CreateDataVolumeExtensionPoint.class);
         for (CreateDataVolumeExtensionPoint ext : exts) {
             ext.beforeCreateVolume(VolumeInventory.valueOf(vo));
@@ -1138,15 +1203,18 @@ public class VolumeManagerImpl extends AbstractService implements VolumeManager,
         cmsg.setPrimaryStorageUuid(msg.getPrimaryStorageUuid());
         cmsg.setDescription(msg.getDescription());
         cmsg.setProtocol(msg.getProtocol());
+        if (msg.getSystemTags() != null && msg.getSystemTags().contains(VolumeSystemTags.ENCRYPTED.getTagFormat())) {
+            cmsg.setTargetEncryptionState(VolumeEncryptionState.Encrypted);
+        }
         cmsg.setApiMsg(msg);
         bus.makeLocalServiceId(cmsg, VolumeConstant.SERVICE_ID);
         bus.send(cmsg, new CloudBusCallBack(msg) {
             @Override
             public void run(MessageReply reply) {
-                CreateVolumeReply cr = reply.castReply();
                 if (!reply.isSuccess()) {
                     evt.setError(reply.getError());
                 } else {
+                    CreateVolumeReply cr = reply.castReply();
                     evt.setInventory(cr.getInventory());
                 }
                 bus.publish(evt);

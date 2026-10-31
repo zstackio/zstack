@@ -2,12 +2,14 @@ package org.zstack.storage.primary.nfs;
 
 import org.zstack.core.upgrade.GrayVersion;
 import org.zstack.header.HasThreadContext;
+import org.zstack.header.log.NoLogging;
 import org.zstack.header.core.validation.Validation;
 import org.zstack.header.volume.VolumeConstant;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.AgentCommand;
 import org.zstack.kvm.KVMAgentCommands.AgentResponse;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -363,7 +365,7 @@ public class NfsPrimaryStorageKVMBackendCommands {
         }
     }
 
-    public abstract static class CreateVolumeCmd extends NfsPrimaryStorageAgentCommand {
+    public abstract static class CreateVolumeCmd extends NfsPrimaryStorageAgentCommand implements Serializable {
         @GrayVersion(value = "5.0.0")
         private String installUrl;
         @GrayVersion(value = "5.0.0")
@@ -375,6 +377,16 @@ public class NfsPrimaryStorageKVMBackendCommands {
         @GrayVersion(value = "5.0.0")
         private String volumeUuid;
         private String volumeFormat = VolumeConstant.VOLUME_FORMAT_QCOW2;
+        @NoLogging
+        private String encryptedDek;
+
+        public String getEncryptedDek() {
+            return encryptedDek;
+        }
+
+        public void setEncryptedDek(String encryptedDek) {
+            this.encryptedDek = encryptedDek;
+        }
 
         public String getInstallUrl() {
             return installUrl;
@@ -479,6 +491,15 @@ public class NfsPrimaryStorageKVMBackendCommands {
             return size;
         }
 
+    }
+
+    public static class EncryptVolumeBitsCmd extends NfsPrimaryStorageAgentCommand implements Serializable {
+        public String installPath;
+        @NoLogging
+        public String encryptedDek;
+    }
+
+    public static class EncryptVolumeBitsRsp extends NfsPrimaryStorageAgentResponse {
     }
 
     public static class CreateEmptyVolumeCmd extends CreateVolumeCmd {
