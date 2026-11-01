@@ -2,6 +2,10 @@ package org.zstack.test.integration.network
 
 import org.zstack.header.network.NetworkOperationContext
 import org.springframework.http.HttpEntity
+import org.springframework.web.client.RestTemplate
+import org.zstack.core.cloudbus.CloudBus
+import org.zstack.core.cloudbus.CloudBusGson
+import org.zstack.header.identity.SessionInventory
 import org.zstack.compute.vm.VmFactoryManagerImpl
 import org.zstack.compute.vm.VmNicQosConfigBackend
 import org.zstack.core.Platform
@@ -65,6 +69,53 @@ class NetworkMutationFailureCase extends SubCase {
             testDnsCleanupPreservesResult()
             testNetworkServiceDetachCleanupPreservesResult()
             testNicTransactionRetryAndFailure()
+            testHttpApiCannotSupplyNetworkOperation()
+            testHttpInternalMessagePreservesNetworkOperation()
+        }
+    }
+
+    void testHttpApiCannotSupplyNetworkOperation() {
+        verifyHttpNetworkOperation(false)
+    }
+
+    void testHttpInternalMessagePreservesNetworkOperation() {
+        verifyHttpNetworkOperation(true)
+    }
+
+    private void verifyHttpNetworkOperation(boolean internal) {
+        def l2 = env.inventoryByName('l2')
+        def l3 = createL3Network { name = 'http-operation'; l2NetworkUuid = l2.uuid }
+        def range = addIpRange {
+            name = 'http-operation'; l3NetworkUuid = l3.uuid
+            startIp = '198.51.100.10'; endIp = '198.51.100.20'
+            gateway = '198.51.100.1'; netmask = '255.255.255.0'
+        }
+        def context = new NetworkOperationContext(fenceToken: Platform.uuid,
+                operationOrigin: 'ZNS_PROJECTION', segmentRefUuid: Platform.uuid)
+        def msg = internal ? new IpRangeDeletionMsg(ipRangeUuid: range.uuid, l3NetworkUuid: l3.uuid) :
+                new APIDeleteIpRangeMsg(uuid: range.uuid, l3NetworkUuid: l3.uuid,
+                        session: new SessionInventory(uuid: adminSession()))
+        msg.setNetworkOperation(context.copyForRequest())
+        def controller = new FailingL3(l2Uuid: l2.uuid)
+        def extensions = registry.getExtensionList(GetSdnControllerExtensionPoint)
+        extensions.add(0, controller)
+        try {
+            bean(CloudBus).makeTargetServiceIdByResourceUuid(msg, L3NetworkConstant.SERVICE_ID, l3.uuid)
+            def response = new RestTemplate().postForEntity('http://localhost:8989/cloudbus',
+                    new HttpEntity<String>(CloudBusGson.toJson(msg)), String)
+            assert response.statusCode.value() == 200
+            retryInSecs {
+                assert controller.deleteOperation != null
+                assert !dbf.isExist(range.uuid, IpRangeVO)
+            }
+            assert controller.deleteOperation.operationOrigin == (internal ? context.operationOrigin : null)
+            assert controller.deleteOperation.fenceToken == (internal ? context.fenceToken : null)
+            assert controller.deleteOperation.segmentRefUuid == (internal ? context.segmentRefUuid : null)
+            assert !controller.deleteOperation.cascadeIpRangeDelete
+            assert controller.deleteOperation.standaloneIpRangeDelete == !internal
+        } finally {
+            extensions.remove(controller)
+            deleteL3Network { uuid = l3.uuid }
         }
     }
 
@@ -601,7 +652,9 @@ class NetworkMutationFailureCase extends SubCase {
         void deleteL3Network(L3NetworkInventory inv, Completion completion) { completion.success() }
         void createIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
         void deleteIpRange(IpRangeInventory inv, Completion completion) { completion.success() }
+        NetworkOperationContext deleteOperation
         void beforeDeleteIpRange(IpRangeInventory inv, boolean last, NetworkOperationContext operation, Completion completion) {
+            deleteOperation = operation.copyForRequest()
             if (rejectDelete) { completion.fail(new ErrorCode('TEST.RANGE.DELETE', 'range delete rejected')) }
             else { completion.success() }
         }
