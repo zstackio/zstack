@@ -31,6 +31,9 @@ import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
+import org.zstack.core.plugin.FeaturePlugins;
+import org.zstack.header.core.external.plugin.FeaturePluginInventory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.*;
@@ -159,22 +162,23 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
             throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", grayUpgradeFile.getAbsolutePath(), e.getMessage()));
         }
 
-        // feature plugins put grayUpgrade/<plugin id>.json beside the platform file
-        for (String path : PathUtil.scanFolderOnClassPath("grayUpgrade")) {
-            File file = new File(path);
-            if (!path.endsWith(".json") || file.getName().equals(grayUpgradeFile.getName())) {
+        // feature plugins put grayUpgrade/<plugin id>.json beside the platform file; other files there,
+        // like the backup of the previous platform file, are not read
+        for (FeaturePluginInventory plugin : FeaturePlugins.installed()) {
+            File file = PathUtil.findFileOnClassPath(String.format("grayUpgrade/%s.json", plugin.getId()));
+            if (file == null) {
                 continue;
             }
             try {
-                Map<String, Map<String, String>> plugin = objectMapper.readValue(file, new TypeReference<Map<String, Map<String, String>>>() {
+                Map<String, Map<String, String>> configs = objectMapper.readValue(file, new TypeReference<Map<String, Map<String, String>>>() {
                 });
-                plugin.forEach((command, fields) -> {
+                configs.forEach((command, fields) -> {
                     if (grayUpgradeConfigMap.putIfAbsent(command, fields) != null) {
-                        logger.warn(String.format("grayUpgrade config of %s in %s is ignored, the platform defines it", command, path));
+                        logger.warn(String.format("grayUpgrade config of %s in %s is ignored, the platform defines it", command, file.getAbsolutePath()));
                     }
                 });
             } catch (IOException e) {
-                throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", path, e.getMessage()));
+                throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", file.getAbsolutePath(), e.getMessage()));
             }
         }
     }
