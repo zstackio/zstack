@@ -66,6 +66,11 @@
         </property>
         <property name="persistenceUnitName" value="zstack.jpa"/>
         <property name="dataSource" ref="DbFacadeDataSource"/>
+        <property name="persistenceUnitPostProcessors">
+            <list>
+                <bean class="org.zstack.core.db.JpaUnitPostProcessor"/>
+            </list>
+        </property>
         <property name="jpaProperties">
             <props>
                 <prop key="hibernate.dialect">org.hibernate.dialect.MySQLInnoDBDialect</prop>

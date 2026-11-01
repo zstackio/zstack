@@ -13,6 +13,16 @@ public class RBACInfo implements RBACDescription {
                         APIRefreshPluginDriversMsg.class,
                         APIDeletePluginDriversMsg.class
                 ).build();
+
+        permissionBuilder()
+                .name("feature-plugin")
+                .normalAPIs(APIGetFeaturePluginsMsg.class.getName())
+                .adminOnlyAPIs(
+                        APIGetFeaturePluginPackagesMsg.class,
+                        APIAddFeaturePluginPackageMsg.class,
+                        APIInstallFeaturePluginMsg.class,
+                        APIUninstallFeaturePluginMsg.class
+                ).build();
     }
 
     @Override

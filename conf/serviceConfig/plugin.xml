@@ -15,4 +15,19 @@
     <message>
         <name>org.zstack.header.core.external.plugin.APIDeletePluginDriversMsg</name>
     </message>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIGetFeaturePluginsMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIGetFeaturePluginPackagesMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIAddFeaturePluginPackageMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIInstallFeaturePluginMsg</name>
+    </message>
+    <message>
+        <name>org.zstack.header.core.external.plugin.APIUninstallFeaturePluginMsg</name>
+    </message>
 </service>

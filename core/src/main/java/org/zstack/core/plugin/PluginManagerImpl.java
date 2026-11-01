@@ -1,5 +1,6 @@
 package org.zstack.core.plugin;
 
+import org.apache.commons.io.FileUtils;
 import org.reflections.Reflections;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
@@ -30,9 +31,13 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIDeleteMessage;
+import org.zstack.header.message.APIEvent;
+import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.utils.Bash;
+import org.zstack.utils.ShellResult;
+import org.zstack.utils.ShellUtils;
 import org.zstack.utils.Utils;
 import org.zstack.utils.gson.JSONObjectUtil;
 import org.zstack.utils.logging.CLogger;
@@ -45,6 +50,7 @@ import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -60,6 +66,8 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class PluginManagerImpl extends AbstractService implements PluginManager {
     private static final CLogger logger = Utils.getLogger(PluginManagerImpl.class);
     private static final long PLUGIN_DRIVER_REGISTRATION_LOCK_TIMEOUT = TimeUnit.MINUTES.toSeconds(2);
+    private static final String FEATURE_PLUGIN_OPERATION_SIGNATURE = "feature-plugin-operation";
+    private static final int FEATURE_PLUGIN_RESTART_DELAY_SECONDS = 10;
 
     @Autowired
     private DatabaseFacade dbf;
@@ -78,6 +86,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             pluginValidators = new HashMap<>();
     private final Map<String, URLClassLoader> pluginClassLoaders = new ConcurrentHashMap<>();
     private String fileDirPath = PathUtil.join(CoreGlobalProperty.DATA_DIR, "/plugins/");
+    private volatile boolean featurePluginRestartPending;
 
     public String getFileDirPath() {
         return fileDirPath;
@@ -350,6 +359,16 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             handle((APIRefreshPluginDriversMsg) msg);
         } else if (msg instanceof APIDeletePluginDriversMsg) {
             handle((APIDeletePluginDriversMsg) msg);
+        } else if (msg instanceof APIGetFeaturePluginsMsg) {
+            handle((APIGetFeaturePluginsMsg) msg);
+        } else if (msg instanceof APIGetFeaturePluginPackagesMsg) {
+            handle((APIGetFeaturePluginPackagesMsg) msg);
+        } else if (msg instanceof APIAddFeaturePluginPackageMsg) {
+            handle((APIAddFeaturePluginPackageMsg) msg);
+        } else if (msg instanceof APIInstallFeaturePluginMsg) {
+            handle((APIInstallFeaturePluginMsg) msg);
+        } else if (msg instanceof APIUninstallFeaturePluginMsg) {
+            handle((APIUninstallFeaturePluginMsg) msg);
         } else {
             handleLocalMessage(msg);
         }
@@ -570,6 +589,130 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
                 bus.publish(event);
             }
+        });
+    }
+
+    private void handle(APIGetFeaturePluginsMsg msg) {
+        APIGetFeaturePluginsReply reply = new APIGetFeaturePluginsReply();
+        reply.setInventories(FeaturePlugins.installed());
+        bus.reply(msg, reply);
+    }
+
+    private interface FeaturePluginOperation {
+        // returns true if the management node needs a restart to apply the change
+        boolean run() throws Exception;
+    }
+
+    private String runFeaturePluginCtl(String args) {
+        ShellResult ret = ShellUtils.runAndReturn(String.format("zstack-ctl plugin %s", args));
+        if (ret.getRetCode() != 0) {
+            String output = ret.getStderr() == null || ret.getStderr().trim().isEmpty() ? ret.getStdout() : ret.getStderr();
+            // zstack-ctl colors its error output
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
+                    output.replaceAll("\u001B\\[[;\\d]*m", "").trim()));
+        }
+        return ret.getStdout();
+    }
+
+    private List<FeaturePluginPackageInventory> listFeaturePluginPackages() {
+        return JSONObjectUtil.toCollection(runFeaturePluginCtl("list --json").trim(), ArrayList.class, FeaturePluginPackageInventory.class);
+    }
+
+    private void restartManagementNodeLater() {
+        // leave time for the caller to fetch the API result before the management node stops
+        ShellUtils.runAndReturn(String.format("bash -c 'nohup sh -c \"sleep %d; zstack-ctl restart_node\" >/dev/null 2>&1 &'",
+                FEATURE_PLUGIN_RESTART_DELAY_SECONDS));
+    }
+
+    private void submitFeaturePluginOperation(APIMessage msg, APIEvent event, String name, FeaturePluginOperation operation) {
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return FEATURE_PLUGIN_OPERATION_SIGNATURE;
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                boolean restart = false;
+                try {
+                    if (featurePluginRestartPending) {
+                        event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
+                                "the management node is restarting to apply a previous feature plugin change"));
+                    } else {
+                        restart = operation.run();
+                    }
+                } catch (OperationFailureException e) {
+                    event.setError(e.getErrorCode());
+                } catch (Exception e) {
+                    event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
+                }
+
+                bus.publish(event);
+                if (restart) {
+                    featurePluginRestartPending = true;
+                    restartManagementNodeLater();
+                }
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return name;
+            }
+        });
+    }
+
+    private void handle(APIGetFeaturePluginPackagesMsg msg) {
+        APIGetFeaturePluginPackagesReply reply = new APIGetFeaturePluginPackagesReply();
+        try {
+            reply.setInventories(listFeaturePluginPackages());
+        } catch (OperationFailureException e) {
+            reply.setError(e.getErrorCode());
+        }
+        bus.reply(msg, reply);
+    }
+
+    private void handle(APIAddFeaturePluginPackageMsg msg) {
+        APIAddFeaturePluginPackageEvent event = new APIAddFeaturePluginPackageEvent(msg.getId());
+        submitFeaturePluginOperation(msg, event, String.format("add-feature-plugin-package-%s", msg.getName()), () -> {
+            File dir = Files.createTempDirectory("feature-plugin").toFile();
+            try {
+                File pkg = new File(dir, msg.getName());
+                FileUtils.writeByteArrayToFile(pkg, Base64.getDecoder().decode(msg.getContent()));
+                runFeaturePluginCtl(String.format("add %s", pkg.getAbsolutePath()));
+            } finally {
+                FileUtils.deleteQuietly(dir);
+            }
+
+            event.setInventory(listFeaturePluginPackages().stream()
+                    .filter(p -> FeaturePluginPackageInventory.SOURCE_UPLOAD.equals(p.getSource())
+                            && msg.getName().equals(new File(p.getPath()).getName()))
+                    .findFirst().orElse(null));
+            return false;
+        });
+    }
+
+    private void handle(APIInstallFeaturePluginMsg msg) {
+        APIInstallFeaturePluginEvent event = new APIInstallFeaturePluginEvent(msg.getId());
+        submitFeaturePluginOperation(msg, event, String.format("install-feature-plugin-%s", msg.getPackagePath()), () -> {
+            // only packages in the plugin repositories can be installed
+            FeaturePluginPackageInventory pkg = listFeaturePluginPackages().stream()
+                    .filter(p -> p.getPath().equals(msg.getPackagePath()))
+                    .findFirst()
+                    .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
+                            "feature plugin package[%s] is not found in the plugin repositories", msg.getPackagePath())));
+            runFeaturePluginCtl(String.format("install %s", pkg.getPath()));
+            pkg.setInstalled(true);
+            event.setInventory(pkg);
+            return true;
+        });
+    }
+
+    private void handle(APIUninstallFeaturePluginMsg msg) {
+        APIUninstallFeaturePluginEvent event = new APIUninstallFeaturePluginEvent(msg.getId());
+        submitFeaturePluginOperation(msg, event, String.format("uninstall-feature-plugin-%s", msg.getPluginId()), () -> {
+            runFeaturePluginCtl(String.format("uninstall %s%s", msg.getPluginId(), msg.isForce() ? " --force" : ""));
+            return true;
         });
     }
 
