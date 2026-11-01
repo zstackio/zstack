@@ -1,0 +1,2 @@
+Public keys (*.pem) of trusted feature plugin publishers. The release
+process puts the ZStack key here; development keys must not be committed.
