@@ -141,7 +141,21 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         thdf.submit(new Task<Void>() {
             @Override
             public Void call() throws Exception {
-                List<ManagementNodeVO> peers = Q.New(ManagementNodeVO.class).in(ManagementNodeVO_.uuid, peerUuids).list();
+                try {
+                    restartPeersInOrder();
+                } catch (Throwable t) {
+                    // this node still applies its own change, it would otherwise refuse plugin operations until restarted
+                    logger.error("failed to restart the other management nodes for feature plugins", t);
+                    if (restartSelf) {
+                        restartLater();
+                    }
+                }
+                return null;
+            }
+
+            private void restartPeersInOrder() throws InterruptedException {
+                List<ManagementNodeVO> peers = peerUuids.isEmpty() ? new ArrayList<>()
+                        : Q.New(ManagementNodeVO.class).in(ManagementNodeVO_.uuid, peerUuids).list();
                 peers.sort(Comparator.comparing(ManagementNodeVO::getUuid));
                 for (ManagementNodeVO peer : peers) {
                     Timestamp before = dbf.getCurrentSqlTime();
@@ -151,14 +165,13 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                     if (!reply.isSuccess() || !waitForRestart(peer.getHostName(), before)) {
                         logger.error(String.format("management node[%s] did not restart in %s seconds for feature plugins," +
                                 " stop restarting the other management nodes", peer.getHostName(), PEER_RESTART_TIMEOUT_SECONDS));
-                        return null;
+                        return;
                     }
                 }
 
                 if (restartSelf) {
                     restartLater();
                 }
-                return null;
             }
 
             @Override
