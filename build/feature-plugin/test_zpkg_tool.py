@@ -163,5 +163,30 @@ class TestPack(CheckCase):
                                             stdout=subprocess.DEVNULL))
 
 
+class TestStaging(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.project = os.path.join(self.tmp, 'hsm')
+        os.makedirs(os.path.join(self.project, 'target'))
+        open(os.path.join(self.project, 'pom.xml'), 'w').close()
+        open(os.path.join(self.project, 'target', 'hsm-test-1.0.0.jar'), 'w').close()
+
+    def tearDown(self):
+        shutil.rmtree(self.tmp)
+
+    def stage(self, desc):
+        with open(os.path.join(self.project, 'plugin.yaml'), 'w') as f:
+            yaml.safe_dump(desc, f)
+        stage = zpkg_tool.staging(self.project, self.tmp)
+        return sorted(os.path.relpath(os.path.join(d, n), stage) for d, _, ns in os.walk(stage) for n in ns)
+
+    def test_project_jar_goes_to_lib(self):
+        self.assertEqual(['lib/hsm-test-1.0.0.jar', 'plugin.yaml'], self.stage({'id': 'hsm-test', 'version': '1.0.0'}))
+
+    def test_project_jar_declared_as_driver_goes_to_drivers(self):
+        desc = {'id': 'hsm-test', 'version': '1.0.0', 'drivers': ['drivers/hsm-test-1.0.0.jar']}
+        self.assertEqual(['drivers/hsm-test-1.0.0.jar', 'plugin.yaml'], self.stage(desc))
+
+
 if __name__ == '__main__':
     unittest.main()

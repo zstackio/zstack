@@ -163,9 +163,13 @@ def staging(plugin_dir, tmp):
             if not j.endswith('-sources.jar') and not j.endswith('-tests.jar')]
     if not jars:
         raise SystemExit('no jar in %s/target, build the project first' % plugin_dir)
-    os.makedirs(os.path.join(stage, 'lib'), exist_ok=True)
+    with open(os.path.join(plugin_dir, DESCRIPTOR)) as f:
+        drivers = (yaml.safe_load(f) or {}).get('drivers') or []
     for jar in jars:
-        shutil.copy(jar, os.path.join(stage, 'lib'))
+        # a jar declared in drivers is hot loaded as a plugin driver, the others go to WEB-INF/lib
+        folder = 'drivers' if 'drivers/%s' % os.path.basename(jar) in drivers else 'lib'
+        os.makedirs(os.path.join(stage, folder), exist_ok=True)
+        shutil.copy(jar, os.path.join(stage, folder))
     return stage
 
 
