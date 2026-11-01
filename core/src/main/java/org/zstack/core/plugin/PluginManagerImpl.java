@@ -15,6 +15,7 @@ import org.zstack.core.asyncbatch.While;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.GLock;
 import org.zstack.core.db.Q;
 import org.zstack.core.db.SQL;
@@ -28,6 +29,7 @@ import org.zstack.header.core.external.plugin.*;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.plugin.sdk.PluginUsageChecker;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
 import org.zstack.header.message.APIDeleteMessage;
@@ -78,6 +80,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private ErrorFacade errf;
     @Autowired
     private FeaturePluginCoordinator coordinator;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     private final Set<Class<? extends PluginDriver>> pluginMetadata = new HashSet<>();
     private final Map<String, PluginDriver> pluginInstances = new ConcurrentHashMap<>();
@@ -721,11 +725,47 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         });
     }
 
+    /**
+     * the checks that need the management node; zstack-ctl then checks the in-use tables of plugin.yaml
+     */
+    @SuppressWarnings("unchecked")
+    private void checkUninstallable(String pluginId) {
+        FeaturePluginVO vo = Q.New(FeaturePluginVO.class).eq(FeaturePluginVO_.id, pluginId).find();
+        if (vo == null) {
+            return;
+        }
+
+        Map<String, Object> lifecycle = (Map<String, Object>) JSONObjectUtil.toObject(vo.getDescriptor(), LinkedHashMap.class).get("lifecycle");
+        if (lifecycle != null && "forbidden".equals(lifecycle.get("uninstall"))) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10005,
+                    "feature plugin[%s] declares that it cannot be uninstalled once loaded", pluginId));
+        }
+
+        List<String> reasons = new ArrayList<>();
+        for (PluginUsageChecker checker : pluginRgty.getExtensionList(PluginUsageChecker.class)) {
+            if (!pluginId.equals(FeaturePlugins.pluginIdOf(checker.getClass()))) {
+                continue;
+            }
+            try {
+                List<String> r = checker.inUseReasons();
+                if (r != null) {
+                    reasons.addAll(r);
+                }
+            } catch (Throwable t) {
+                reasons.add(String.format("cannot tell whether the plugin is in use: %s", t.getMessage()));
+            }
+        }
+        if (!reasons.isEmpty()) {
+            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10006,
+                    "feature plugin[%s] is in use: %s", pluginId, String.join("; ", reasons)));
+        }
+    }
+
     private void handle(APIUninstallFeaturePluginMsg msg) {
         APIUninstallFeaturePluginEvent event = new APIUninstallFeaturePluginEvent(msg.getId());
         submitFeaturePluginOperation(msg, event, String.format("uninstall-feature-plugin-%s", msg.getPluginId()), () -> {
-            Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json%s",
-                    msg.getPluginId(), msg.isForce() ? " --force" : ""));
+            checkUninstallable(msg.getPluginId());
+            Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json", msg.getPluginId()));
             List<String> peers = coordinator.syncToPeers(null);
             return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
         });

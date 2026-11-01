@@ -8,7 +8,9 @@ import org.zstack.utils.logging.CLogger;
 import org.zstack.utils.path.PathUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.CodeSource;
 import java.util.*;
 
 public class FeaturePlugins {
@@ -17,6 +19,8 @@ public class FeaturePlugins {
 
     private static List<FeaturePluginInventory> installed;
     private static final Map<String, List<String>> entitiesByPlugin = new HashMap<>();
+    // canonical paths of the files zstack-ctl installed for each plugin
+    private static final Map<String, Set<String>> filesByPlugin = new HashMap<>();
 
     public static synchronized List<FeaturePluginInventory> installed() {
         if (installed == null) {
@@ -35,11 +39,55 @@ public class FeaturePlugins {
         return ret;
     }
 
+    /**
+     * @return the id of the feature plugin whose jar contains the class, null if the class does not come from a plugin
+     */
+    public static String pluginIdOf(Class<?> clz) {
+        installed();
+        CodeSource source = clz.getProtectionDomain().getCodeSource();
+        if (source == null || source.getLocation() == null) {
+            return null;
+        }
+
+        String path;
+        try {
+            path = new File(source.getLocation().toURI()).getCanonicalPath();
+        } catch (Exception e) {
+            return null;
+        }
+        for (Map.Entry<String, Set<String>> e : filesByPlugin.entrySet()) {
+            if (e.getValue().contains(path)) {
+                return e.getKey();
+            }
+        }
+        return null;
+    }
+
+    private static Set<String> loadFiles(File record) {
+        Set<String> ret = new HashSet<>();
+        File files = new File(record.getParentFile(), record.getName().replaceAll("\\.yaml$", ".files"));
+        if (!files.exists()) {
+            return ret;
+        }
+        try {
+            for (String line : FileUtils.readLines(files, StandardCharsets.UTF_8)) {
+                if (!line.trim().isEmpty()) {
+                    ret.add(new File(line.trim()).getCanonicalPath());
+                }
+            }
+        } catch (IOException e) {
+            logger.warn(String.format("failed to read installed files of feature plugin %s", files.getAbsolutePath()), e);
+        }
+        return ret;
+    }
+
     private static List<FeaturePluginInventory> load() {
         List<FeaturePluginInventory> ret = new ArrayList<>();
         for (String path : PathUtil.scanFolderOnClassPath(FOLDER)) {
             if (path.endsWith(".yaml")) {
-                ret.add(loadDescriptor(new File(path)));
+                FeaturePluginInventory inv = loadDescriptor(new File(path));
+                filesByPlugin.put(inv.getId(), loadFiles(new File(path)));
+                ret.add(inv);
             }
         }
         ret.sort(Comparator.comparing(FeaturePluginInventory::getId));
