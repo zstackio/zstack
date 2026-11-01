@@ -88,6 +88,12 @@ doc {
 		since "5.5.48"
 	}
 	field {
+		name "reason"
+		desc "监控查询只得到部分结果时的原因码，例如 MONITORING_QUERY_PARTIAL（部分管理节点的监控查询失败）；完整时为空。"
+		type "String"
+		since "5.5.48"
+	}
+	field {
 		name "metricCoverage"
 		desc "各指标覆盖质量细节。"
 		type "Map"

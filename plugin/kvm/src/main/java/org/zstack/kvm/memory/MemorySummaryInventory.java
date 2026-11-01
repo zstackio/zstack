@@ -78,6 +78,11 @@ public class MemorySummaryInventory {
     private String quality;
     public String getQuality() { return quality; }
     public void setQuality(String value) { quality = value; }
+
+    /** Why the monitoring answer behind this summary is incomplete, e.g. MONITORING_QUERY_PARTIAL. */
+    private String reason;
+    public String getReason() { return reason; }
+    public void setReason(String value) { reason = value; }
     private Map<String, Map<String, Object>> metricCoverage = new LinkedHashMap<>();
     public Map<String, Map<String, Object>> getMetricCoverage() { return metricCoverage; }
     public void setMetricCoverage(Map<String, Map<String, Object>> value) {

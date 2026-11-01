@@ -7,6 +7,7 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
 import org.zstack.core.componentloader.ComponentLoader;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.core.errorcode.ErrorFacadeImpl;
 import org.zstack.header.errorcode.ErrorCode;
@@ -111,10 +112,69 @@ public class MemoryWritebackManagerCallbackTest {
         }
     }
 
+    @Test
+    public void summaryNamesAPartialMonitoringAnswerAndKeepsItsSamples() throws Exception {
+        // A recovered query answers without the reason again.
+        for (String reason : new String[]{"MONITORING_QUERY_PARTIAL", null}) {
+            Capture capture = new Capture();
+            MemoryOptimizationManager manager = manager(capture);
+            monitoring(manager, now -> new MemoryHostSavingsSamples(
+                    java.util.Collections.singletonMap(HOST, savings(now)), reason));
+            invokeSummary(manager);
+            assertEquals(0, capture.errors.get());
+            MemorySummaryInventory summary = capture.summary.get().getSummary();
+            assertEquals(reason, summary.getReason());
+            assertEquals(Long.valueOf(4096L), summary.getTotalSavedEstimateBytes());
+            assertEquals(1, summary.getCoveredHosts());
+        }
+    }
+
+    @Test
+    public void summaryFailsWhenNoMonitoringNodeAnswers() throws Exception {
+        Capture capture = new Capture();
+        MemoryOptimizationManager manager = manager(capture);
+        monitoring(manager, now -> { throw new IllegalStateException("MEMORY_PROMETHEUS_QUERY_UNAVAILABLE"); });
+        invokeSummary(manager);
+        assertEquals(1, capture.errors.get());
+        assertEquals("MEMORY_MONITORING_QUERY_UNAVAILABLE", capture.error.get().getCode());
+        assertNull(capture.summary.get());
+    }
+
+    private static Map<String, Object> savings(long now) {
+        Map<String, Object> savings = new LinkedHashMap<>();
+        savings.put("ksmOrdinaryBytes", 1024L); savings.put("ksmZeroBytes", 0L); savings.put("ksmTotalBytes", 1024L);
+        savings.put("zramBytes", 3072L); savings.put("zramNormalBytes", 3072L); savings.put("zramWritebackBytes", 0L);
+        savings.put("totalSavedEstimateBytes", 4096L); savings.put("formulaVersion", "mechanism-estimate-v1");
+        savings.put("sampleTime", now); savings.put("quality", "Fresh");
+        return savings;
+    }
+
+    private static void monitoring(MemoryOptimizationManager manager,
+                                   java.util.function.LongFunction<MemoryHostSavingsSamples> answer) throws Exception {
+        MemoryMetricsExtensionPoint metrics = new MemoryMetricsExtensionPoint() {
+            @Override public MemoryHostSavingsSamples hostSavings(java.util.List<String> hosts, long now, long ttl) {
+                return answer.apply(now);
+            }
+            @Override public Map<String, Object> vmAccounting(String host, java.util.List<String> vms, long now, long ttl) {
+                throw new AssertionError("not a VM accounting query");
+            }
+        };
+        set(manager, "pluginRgty", Proxy.newProxyInstance(PluginRegistry.class.getClassLoader(),
+                new Class<?>[]{PluginRegistry.class}, (proxy, method, args) -> "getExtensionList".equals(method.getName())
+                        ? java.util.Collections.singletonList(metrics) : null));
+    }
+
+    private static void invokeSummary(MemoryOptimizationManager manager) throws Exception {
+        Method method = MemoryOptimizationManager.class.getDeclaredMethod("summary", APIGetMemorySummaryMsg.class);
+        method.setAccessible(true);
+        method.invoke(manager, new APIGetMemorySummaryMsg());
+    }
+
     private static class Capture {
         final AtomicReference<CloudBusCallBack> callback = new AtomicReference<>();
         final AtomicReference<KVMHostAsyncHttpCallMsg> request = new AtomicReference<>();
         final AtomicReference<APIGetHostMemoryWritebackBackendsReply> reply = new AtomicReference<>();
+        final AtomicReference<APIGetMemorySummaryReply> summary = new AtomicReference<>();
         final AtomicReference<ErrorCode> error = new AtomicReference<>();
         final AtomicInteger sends = new AtomicInteger();
         final AtomicInteger replies = new AtomicInteger();
@@ -126,6 +186,14 @@ public class MemoryWritebackManagerCallbackTest {
         MemoryRepository repository = new MemoryRepository() {
             @Override public java.util.List<String> targets(String scope, String resource) {
                 return java.util.Collections.singletonList(resource);
+            }
+            @Override public java.util.List<String> summaryTargets(java.util.List<String> requested, String zone) {
+                return java.util.Collections.singletonList(HOST);
+            }
+            @Override public java.util.List<MemoryStateVO> allStates(java.util.List<String> hosts) {
+                MemoryStateVO state = new MemoryStateVO();
+                state.setHostUuid(HOST);
+                return java.util.Collections.singletonList(state);
             }
         };
         set(manager, "repository", repository);
@@ -141,6 +209,9 @@ public class MemoryWritebackManagerCallbackTest {
                             && args[1] instanceof APIGetHostMemoryWritebackBackendsReply) {
                         capture.replies.incrementAndGet();
                         capture.reply.set((APIGetHostMemoryWritebackBackendsReply) args[1]);
+                    } else if ("reply".equals(method.getName()) && args != null && args.length == 2
+                            && args[1] instanceof APIGetMemorySummaryReply) {
+                        capture.summary.set((APIGetMemorySummaryReply) args[1]);
                     } else if ("replyErrorByMessageType".equals(method.getName())) {
                         capture.errors.incrementAndGet();
                         capture.error.set((ErrorCode) args[1]);
