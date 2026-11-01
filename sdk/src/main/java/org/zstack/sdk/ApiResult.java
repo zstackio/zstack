@@ -2,7 +2,10 @@ package org.zstack.sdk;
 
 import org.apache.commons.beanutils.PropertyUtils;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URL;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -92,6 +95,36 @@ public class ApiResult {
         }
     }
 
+    private static volatile Map<String, String> classMapping;
+
+    // the SDK of a feature plugin brings its mappings in META-INF/zstack-sdk/source-class-map.properties
+    private static Map<String, String> classMapping() {
+        if (classMapping == null) {
+            synchronized (ApiResult.class) {
+                if (classMapping == null) {
+                    Map<String, String> mapping = new HashMap<>(SourceClassMap.srcToDstMapping);
+                    try {
+                        Enumeration<URL> urls = ApiResult.class.getClassLoader()
+                                .getResources("META-INF/zstack-sdk/source-class-map.properties");
+                        while (urls.hasMoreElements()) {
+                            Properties plugin = new Properties();
+                            try (InputStream in = urls.nextElement().openStream()) {
+                                plugin.load(in);
+                            }
+                            for (String src : plugin.stringPropertyNames()) {
+                                mapping.putIfAbsent(src, plugin.getProperty(src));
+                            }
+                        }
+                    } catch (IOException e) {
+                        // keep the mappings of the platform
+                    }
+                    classMapping = mapping;
+                }
+            }
+        }
+        return classMapping;
+    }
+
     public  <T> T getResult(Class<T> clz) {
         if (resultString == null || resultString.isEmpty()) {
             return null;
@@ -107,7 +140,7 @@ public class ApiResult {
         try {
             for (String path : schema.keySet()) {
                 String src = schema.get(path);
-                String dst = org.zstack.sdk.SourceClassMap.srcToDstMapping.get(src);
+                String dst = classMapping().get(src);
 
                 if (dst == null) {
                     //TODO: warning

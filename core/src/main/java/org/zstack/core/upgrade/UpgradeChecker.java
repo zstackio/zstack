@@ -158,6 +158,25 @@ public class UpgradeChecker implements Component, GlobalApiMessageInterceptor {
         } catch (IOException e) {
             throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", grayUpgradeFile.getAbsolutePath(), e.getMessage()));
         }
+
+        // feature plugins put grayUpgrade/<plugin id>.json beside the platform file
+        for (String path : PathUtil.scanFolderOnClassPath("grayUpgrade")) {
+            File file = new File(path);
+            if (!path.endsWith(".json") || file.getName().equals(grayUpgradeFile.getName())) {
+                continue;
+            }
+            try {
+                Map<String, Map<String, String>> plugin = objectMapper.readValue(file, new TypeReference<Map<String, Map<String, String>>>() {
+                });
+                plugin.forEach((command, fields) -> {
+                    if (grayUpgradeConfigMap.putIfAbsent(command, fields) != null) {
+                        logger.warn(String.format("grayUpgrade config of %s in %s is ignored, the platform defines it", command, path));
+                    }
+                });
+            } catch (IOException e) {
+                throw new RuntimeException(String.format("unable to parse grayUpgrade json file[%s], exception: %s", path, e.getMessage()));
+            }
+        }
     }
 
     private List<Map<String, String>> findCommandAndResponseFields(String commandName) {

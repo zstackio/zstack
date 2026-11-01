@@ -39,6 +39,9 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
     }
 
     private void loadAllJsonFiles() {
+        // global-error-<locale>.json comes from the platform, global-error-<locale>.<plugin id>.json from feature plugins
+        Map<String, Map<String, String>> platformMessages = new HashMap<>();
+        Map<String, Map<String, String>> pluginMessages = new HashMap<>();
         try {
             List<String> paths = PathUtil.scanFolderOnClassPath(I18N_FOLDER);
             for (String path : paths) {
@@ -52,22 +55,38 @@ public class GlobalErrorCodeI18nServiceImpl implements GlobalErrorCodeI18nServic
                     continue;
                 }
 
-                String locale = fileName.substring(FILE_PREFIX.length(),
+                String name = fileName.substring(FILE_PREFIX.length(),
                         fileName.length() - FILE_SUFFIX.length());
+                boolean fromPlugin = name.contains(".");
+                String locale = fromPlugin ? name.substring(0, name.indexOf('.')) : name;
 
                 try {
                     String content = new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
                     @SuppressWarnings("unchecked")
                     Map<String, String> messages = JSONObjectUtil.toObject(content, LinkedHashMap.class);
-                    localeMessages.put(locale, Collections.unmodifiableMap(messages));
-                    logger.info(String.format("loaded %d i18n error messages for locale [%s]",
-                            messages.size(), locale));
+                    (fromPlugin ? pluginMessages : platformMessages)
+                            .computeIfAbsent(locale, k -> new LinkedHashMap<>()).putAll(messages);
+                    logger.info(String.format("loaded %d i18n error messages for locale [%s] from %s",
+                            messages.size(), locale, fileName));
                 } catch (Exception e) {
                     logger.warn(String.format("failed to load i18n file [%s]: %s", path, e.getMessage()), e);
                 }
             }
         } catch (Exception e) {
             logger.warn(String.format("failed to scan i18n folder: %s", e.getMessage()));
+        }
+
+        Set<String> locales = new HashSet<>(platformMessages.keySet());
+        locales.addAll(pluginMessages.keySet());
+        for (String locale : locales) {
+            Map<String, String> merged = new LinkedHashMap<>(platformMessages.getOrDefault(locale, Collections.emptyMap()));
+            pluginMessages.getOrDefault(locale, Collections.emptyMap()).forEach((code, message) -> {
+                if (merged.putIfAbsent(code, message) != null) {
+                    logger.warn(String.format("i18n error message of %s for locale [%s] from a feature plugin is ignored," +
+                            " the platform defines it", code, locale));
+                }
+            });
+            localeMessages.put(locale, Collections.unmodifiableMap(merged));
         }
 
         logger.info(String.format("GlobalErrorCodeI18nService loaded %d locales: %s",
