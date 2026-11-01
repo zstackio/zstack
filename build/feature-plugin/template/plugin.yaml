@@ -1,0 +1,18 @@
+# Descriptor of the feature plugin, see docs/2026-11-01-plugin-sdk-v1-spec.md section 8.
+id: example                      # lowercase letters, digits and hyphens; error codes start with ORG_ZSTACK_PLUGIN_EXAMPLE_
+name: Example
+version: 1.0.0
+category: compute
+vendor: zstack
+requires:
+  sdk: ">=1.0 <2"
+  plugins: []
+applicability:
+  arch: [x86_64, aarch64]
+lifecycle:
+  uninstall: whenUnused          # whenUnused | forbidden
+  inUse: []                      # tables whose rows mean the plugin is in use, e.g. [ExampleVO]
+mn:
+  jars: [lib/example-1.0.0.jar]
+  config: [classes/pluginSpringConfigXml/example.xml]
+  entities: []                   # every @Entity class of the plugin

@@ -1,0 +1,131 @@
+# Platform classes a feature plugin may reference, plugin SDK 1.x.
+# One fnmatch pattern of a class name per line ('*' also matches dots); a line starting with '!' denies.
+# A denied class is rejected even if an allow pattern matches it. Only additions within SDK 1.x.
+
+# plugin SDK and driver SDK
+org.zstack.header.plugin.sdk.*
+org.zstack.abstraction.*
+
+# frozen extension points (spec 3.1 - 3.5)
+org.zstack.header.apimediator.GlobalApiMessageInterceptor*
+org.zstack.header.apimediator.ApiMessageInterceptor
+org.zstack.header.apimediator.ApiMessageInterceptionException
+org.zstack.header.identity.RenewSessionPreAuthExtensionPoint
+org.zstack.header.identity.SessionLogoutExtensionPoint
+org.zstack.header.vm.VmInstanceStartExtensionPoint
+org.zstack.header.vm.VmInstanceStartNewCreatedVmExtensionPoint
+org.zstack.header.vm.VmInstanceStopExtensionPoint
+org.zstack.header.vm.VmInstanceDestroyExtensionPoint
+org.zstack.header.vm.VmInstanceMigrateExtensionPoint
+org.zstack.header.vm.AfterReleaseVmNicExtensionPoint
+org.zstack.header.vm.VmNicLifecycleExtensionPoint
+org.zstack.header.vm.VmNicLifecycleContext
+org.zstack.header.vm.VmAttachVolumeExtensionPoint
+org.zstack.header.vm.VmDetachVolumeExtensionPoint
+org.zstack.header.storage.snapshot.VolumeSnapshotAfterCreateExtensionPoint
+org.zstack.header.storage.snapshot.VolumeSnapshotAfterDeleteExtensionPoint
+org.zstack.header.network.l2.L2NetworkRealizationExtensionPoint
+org.zstack.header.network.l2.L2NetworkCreateExtensionPoint
+org.zstack.header.network.l2.L2NetworkDeleteExtensionPoint
+org.zstack.header.network.l2.L2NetworkUpdateExtensionPoint
+org.zstack.header.network.l3.L3NetworkCreateExtensionPoint
+org.zstack.header.network.l3.L3NetworkDeleteExtensionPoint
+org.zstack.header.network.l3.AfterAddIpRangeExtensionPoint
+org.zstack.header.network.l3.AfterDeleteIpRangeExtensionPoint
+org.zstack.network.securitygroup.SecurityGroupRuleFilterExtensionPoint
+org.zstack.network.securitygroup.SecurityGroupGetDefaultRuleExtensionPoint
+org.zstack.header.storage.addon.primary.PrimaryStorageControllerSvc
+org.zstack.header.storage.addon.primary.PrimaryStorageNodeSvc
+
+# data types: inventories, API messages, type registries, errors, callbacks
+org.zstack.header.*Inventory
+org.zstack.header.*.API*Msg
+org.zstack.header.*.API*Event
+org.zstack.header.*.API*Reply
+org.zstack.header.message.*
+org.zstack.header.errorcode.*
+org.zstack.header.core.*Completion
+org.zstack.header.core.*Completion$*
+org.zstack.header.core.workflow.*
+org.zstack.header.vo.*
+org.zstack.header.rest.RestRequest
+org.zstack.header.rest.SyncHttpCallHandler
+org.zstack.header.rest.RESTFacade
+org.zstack.header.identity.Action
+org.zstack.header.identity.rbac.RBACDescription
+org.zstack.header.identity.rbac.RBAC*
+org.zstack.header.AbstractService
+org.zstack.header.Component
+org.zstack.header.Service
+org.zstack.header.vm.VmNicType
+org.zstack.header.network.l2.L2NetworkType
+org.zstack.header.network.l2.VSwitchType
+org.zstack.header.storage.primary.PrimaryStorageType
+org.zstack.header.tag.TagDefinition
+org.zstack.header.log.NoLogging
+# what a plugin needs to define its own APIs (spec M2)
+org.zstack.header.query.APIQueryMessage
+org.zstack.header.query.APIQueryReply
+org.zstack.header.query.AutoQuery
+org.zstack.header.rest.RestResponse
+org.zstack.header.other.APIAuditor*
+org.zstack.header.identity.OwnedByAccount
+org.zstack.header.tag.TagResourceType
+org.zstack.header.configuration.PythonClass*
+org.zstack.header.exception.CloudRuntimeException
+# resource states used by the inventories
+org.zstack.header.*State
+
+# core services (spec 3.7)
+org.zstack.core.Platform
+org.zstack.core.cloudbus.CloudBus
+org.zstack.core.cloudbus.CloudBusCallBack
+org.zstack.core.cloudbus.EventFacade
+org.zstack.core.cloudbus.EventCallback
+org.zstack.core.db.DatabaseFacade
+org.zstack.core.db.Q
+org.zstack.core.db.SQL
+org.zstack.core.db.SQLBatch
+org.zstack.core.db.SQLBatchWithReturn
+org.zstack.core.db.GLock
+org.zstack.core.thread.ThreadFacade
+org.zstack.core.thread.ChainTask
+org.zstack.core.thread.SyncTaskChain
+org.zstack.core.thread.Task
+org.zstack.core.thread.PeriodicTask
+org.zstack.core.workflow.SimpleFlowChain
+org.zstack.core.workflow.FlowChainBuilder
+org.zstack.core.config.GlobalConfig
+org.zstack.core.config.GlobalConfigDefinition
+org.zstack.core.config.GlobalConfigValidation
+org.zstack.core.config.GlobalConfigUpdateExtensionPoint
+org.zstack.resourceconfig.ResourceConfigFacade
+org.zstack.tag.SystemTag
+org.zstack.tag.PatternedSystemTag
+org.zstack.kvm.KVMHostAsyncHttpCallMsg
+org.zstack.kvm.KVMHostAsyncHttpCallReply
+org.zstack.kvm.KVMAgentCommands$AgentCommand
+org.zstack.kvm.KVMAgentCommands$AgentResponse
+org.zstack.utils.Utils
+org.zstack.utils.logging.CLogger
+org.zstack.utils.gson.JSONObjectUtil
+org.zstack.utils.DebugUtils
+org.zstack.utils.CollectionUtils
+org.zstack.utils.function.*
+
+# third-party libraries the platform provides
+org.springframework.*
+javax.persistence.*
+com.google.gson.*
+org.apache.commons.lang.*
+org.apache.commons.lang3.*
+# compiled Groovy and AspectJ code needs their runtimes
+groovy.*
+org.codehaus.groovy.*
+org.aspectj.*
+
+# internal classes, even where a pattern above matches
+!*Impl
+!*Base
+!org.zstack.header.vm.VmInstanceSpec*
+!org.zstack.kvm.KVMAgentCommands$StartVmCmd
