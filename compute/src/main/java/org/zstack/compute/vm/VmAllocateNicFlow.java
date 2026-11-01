@@ -10,6 +10,7 @@ import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.SQLBatch;
+import org.zstack.core.db.SQLBatchWithReturn;
 import org.zstack.core.errorcode.ErrorFacade;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.WhileDoneCompletion;
@@ -159,10 +160,6 @@ public class VmAllocateNicFlow implements Flow {
                             nic.setDriverType(nicManager.getDefaultNicDriver(current, VmSystemTags.VIRTIO.hasTag(vmVO.getUuid())));
                         }
                         nicManager.validateNicDriver(nic, current, !StringUtils.isEmpty(nicSpec.getNicDriverType()));
-                        ErrorCode guardError = checkNetworkDeleteGuards(nw.getUuid(), true);
-                        if (guardError != null) {
-                            throw new OperationFailureException(guardError);
-                        }
                         return vnicFactory.createVmNic(nic, spec);
                     }
                 }.execute();
