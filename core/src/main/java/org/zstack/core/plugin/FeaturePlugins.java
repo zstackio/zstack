@@ -57,7 +57,8 @@ public class FeaturePlugins {
             inv.setCategory(String.valueOf(desc.get("category")));
             inv.setVersion(String.valueOf(desc.get("version")));
 
-            List<String> entities = desc.get("entities") == null ? new ArrayList<>() : (List<String>) desc.get("entities");
+            Map<String, Object> mn = desc.get("mn") == null ? new HashMap<>() : (Map<String, Object>) desc.get("mn");
+            List<String> entities = mn.get("entities") == null ? new ArrayList<>() : (List<String>) mn.get("entities");
             for (String entity : entities) {
                 Class.forName(entity);
             }
