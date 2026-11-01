@@ -75,7 +75,7 @@ public class MemoryVmAccountingBatchCoordinatorTest {
                         return null;
                     }));
             MemoryMetricsExtensionPoint metrics = new MemoryMetricsExtensionPoint() {
-                @Override public Map<String, Map<String, Object>> hostSavings(List<String> hosts, long now, long ttl) {
+                @Override public MemoryHostSavingsSamples hostSavings(List<String> hosts, long now, long ttl) {
                     throw new AssertionError("not a Host savings query");
                 }
                 @Override public Map<String, Object> vmAccounting(String host, List<String> vms, long now, long ttl) {

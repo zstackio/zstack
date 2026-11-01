@@ -108,6 +108,14 @@ public class MemorySummaryInventory  {
         return this.quality;
     }
 
+    public java.lang.String reason;
+    public void setReason(java.lang.String reason) {
+        this.reason = reason;
+    }
+    public java.lang.String getReason() {
+        return this.reason;
+    }
+
     public java.util.Map metricCoverage;
     public void setMetricCoverage(java.util.Map metricCoverage) {
         this.metricCoverage = metricCoverage;

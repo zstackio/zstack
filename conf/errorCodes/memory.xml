@@ -19,5 +19,6 @@
     <code><id>11048</id><description>Result Converging in memory optimization</description></code>
     <code><id>11049</id><description>Host Operation Canceled in memory optimization</description></code>
     <code><id>11050</id><description>Host Operation Skipped in memory optimization</description></code>
+    <code><id>11051</id><description>Monitoring Query Unavailable in memory optimization</description></code>
     <code><id>11999</id><description>Unknown memory optimization error</description></code>
 </error>

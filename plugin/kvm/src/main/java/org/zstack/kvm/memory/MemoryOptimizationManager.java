@@ -805,12 +805,23 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         APIGetMemorySummaryReply reply = new APIGetMemorySummaryReply();
         List<String> hosts = repository.summaryTargets(msg.getHostUuids(), msg.getZoneUuid());
         long now = System.currentTimeMillis();
-        Map<String, Map<String, Object>> samples = hostMetricSamples(hosts, now);
+        MemoryHostSavingsSamples measured;
+        try {
+            measured = hostMetricSamples(hosts, now);
+        } catch (RuntimeException e) {
+            // Cached Agent metrics are not a fallback.
+            logger.warn("Memory monitoring query failed on every management node", e);
+            bus.replyErrorByMessageType(msg, new MemoryOperationException("MEMORY_MONITORING_QUERY_UNAVAILABLE",
+                    "No management node answered the memory monitoring query").toErrorCode());
+            return;
+        }
+        Map<String, Map<String, Object>> samples = measured.getHosts();
         List<MemoryStateVO> current = repository.allStates(hosts);
         List<MemoryStateVO> states = current.stream()
                 .map(state -> MemoryMetricsPresentation.withSavings(state, samples.get(state.getHostUuid())))
                 .collect(Collectors.toList());
         reply.setSummary(MemorySummaryRules.summarize(hosts, states, now));
+        reply.getSummary().setReason(measured.getReason());
         if (msg.getHostUuids() != null) {
             reply.getSummary().setHosts(MemorySummaryRules.hostDetails(hosts, current, samples, now));
         }
@@ -822,17 +833,11 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         return providers.size() == 1 ? providers.get(0) : null;
     }
 
-    private Map<String, Map<String, Object>> hostMetricSamples(List<String> hosts, long now) {
-        if (hosts.isEmpty()) { return Collections.emptyMap(); }
-        try {
-            MemoryMetricsExtensionPoint provider = metricProvider();
-            Map<String, Map<String, Object>> samples = provider == null ? null
-                    : provider.hostSavings(hosts, now, MemoryOptimizationGlobalConfig.displayTtlMillis());
-            return samples == null ? Collections.emptyMap() : samples;
-        } catch (RuntimeException e) {
-            logger.warn("Memory monitoring query unavailable; cached Agent metrics are not a fallback", e);
-            return Collections.emptyMap();
-        }
+    private MemoryHostSavingsSamples hostMetricSamples(List<String> hosts, long now) {
+        MemoryMetricsExtensionPoint provider = hosts.isEmpty() ? null : metricProvider();
+        MemoryHostSavingsSamples samples = provider == null ? null
+                : provider.hostSavings(hosts, now, MemoryOptimizationGlobalConfig.displayTtlMillis());
+        return samples == null ? new MemoryHostSavingsSamples(null, null) : samples;
     }
 
     private void callVmMetrics(String host, List<String> vms, Consumer<MemoryAgentResponse> callback) {
