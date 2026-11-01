@@ -67,7 +67,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private static final CLogger logger = Utils.getLogger(PluginManagerImpl.class);
     private static final long PLUGIN_DRIVER_REGISTRATION_LOCK_TIMEOUT = TimeUnit.MINUTES.toSeconds(2);
     private static final String FEATURE_PLUGIN_OPERATION_SIGNATURE = "feature-plugin-operation";
-    private static final int FEATURE_PLUGIN_RESTART_DELAY_SECONDS = 10;
 
     @Autowired
     private DatabaseFacade dbf;
@@ -77,6 +76,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private ThreadFacade thdf;
     @Autowired
     private ErrorFacade errf;
+    @Autowired
+    private FeaturePluginCoordinator coordinator;
 
     private final Set<Class<? extends PluginDriver>> pluginMetadata = new HashSet<>();
     private final Map<String, PluginDriver> pluginInstances = new ConcurrentHashMap<>();
@@ -377,6 +378,12 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     private void handleLocalMessage(Message msg) {
         if (msg instanceof RefreshPluginDriversMsg) {
             handle((RefreshPluginDriversMsg) msg);
+        } else if (msg instanceof SyncFeaturePluginPackageMsg) {
+            coordinator.handle((SyncFeaturePluginPackageMsg) msg);
+        } else if (msg instanceof FetchFeaturePluginPackageMsg) {
+            coordinator.handle((FetchFeaturePluginPackageMsg) msg);
+        } else if (msg instanceof RestartManagementNodeForFeaturePluginMsg) {
+            coordinator.handle((RestartManagementNodeForFeaturePluginMsg) msg);
         } else if (msg instanceof DeletePluginDriversMsg) {
             handle((DeletePluginDriversMsg) msg);
         } else {
@@ -599,29 +606,20 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
     }
 
     private interface FeaturePluginOperation {
-        // returns true if the management node needs a restart to apply the change
-        boolean run() throws Exception;
-    }
-
-    private String runFeaturePluginCtl(String args) {
-        ShellResult ret = ShellUtils.runAndReturn(String.format("zstack-ctl plugin %s", args));
-        if (ret.getRetCode() != 0) {
-            String output = ret.getStderr() == null || ret.getStderr().trim().isEmpty() ? ret.getStdout() : ret.getStderr();
-            // zstack-ctl colors its error output
-            throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
-                    output.replaceAll("\u001B\\[[;\\d]*m", "").trim()));
-        }
-        return ret.getStdout();
+        // returns what to run after the API result is published, null if nothing
+        Runnable run() throws Exception;
     }
 
     private List<FeaturePluginPackageInventory> listFeaturePluginPackages() {
-        return JSONObjectUtil.toCollection(runFeaturePluginCtl("list --json").trim(), ArrayList.class, FeaturePluginPackageInventory.class);
+        return JSONObjectUtil.toCollection(coordinator.runCtl("list --json").trim(), ArrayList.class, FeaturePluginPackageInventory.class);
     }
 
-    private void restartManagementNodeLater() {
-        // leave time for the caller to fetch the API result before the management node stops
-        ShellUtils.runAndReturn(String.format("bash -c 'nohup sh -c \"sleep %d; zstack-ctl restart_node\" >/dev/null 2>&1 &'",
-                FEATURE_PLUGIN_RESTART_DELAY_SECONDS));
+    private Runnable restartAfter(List<String> peers, boolean restartSelf) {
+        if (peers.isEmpty() && !restartSelf) {
+            return null;
+        }
+        featurePluginRestartPending = restartSelf;
+        return () -> coordinator.restartInOrder(peers, restartSelf);
     }
 
     private void submitFeaturePluginOperation(APIMessage msg, APIEvent event, String name, FeaturePluginOperation operation) {
@@ -633,24 +631,38 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
 
             @Override
             public void run(SyncTaskChain chain) {
-                boolean restart = false;
+                Runnable after = null;
+                // all management nodes share the desired plugins, one plugin operation at a time in the cluster
+                GLock lock = new GLock(FEATURE_PLUGIN_OPERATION_SIGNATURE, 0);
+                boolean locked = false;
                 try {
+                    lock.lock();
+                    locked = true;
                     if (featurePluginRestartPending) {
                         event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
                                 "the management node is restarting to apply a previous feature plugin change"));
                     } else {
-                        restart = operation.run();
+                        after = operation.run();
+                    }
+                } catch (CloudRuntimeException e) {
+                    if (locked) {
+                        event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
+                    } else {
+                        event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10004, "another feature plugin operation is in progress, try again later"));
                     }
                 } catch (OperationFailureException e) {
                     event.setError(e.getErrorCode());
                 } catch (Exception e) {
                     event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
+                } finally {
+                    if (locked) {
+                        lock.unlock();
+                    }
                 }
 
                 bus.publish(event);
-                if (restart) {
-                    featurePluginRestartPending = true;
-                    restartManagementNodeLater();
+                if (after != null) {
+                    after.run();
                 }
                 chain.next();
             }
@@ -679,7 +691,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             try {
                 File pkg = new File(dir, msg.getName());
                 FileUtils.writeByteArrayToFile(pkg, Base64.getDecoder().decode(msg.getContent()));
-                runFeaturePluginCtl(String.format("add %s", pkg.getAbsolutePath()));
+                coordinator.runCtl(String.format("add %s", pkg.getAbsolutePath()));
             } finally {
                 FileUtils.deleteQuietly(dir);
             }
@@ -688,7 +700,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     .filter(p -> FeaturePluginPackageInventory.SOURCE_UPLOAD.equals(p.getSource())
                             && msg.getName().equals(new File(p.getPath()).getName()))
                     .findFirst().orElse(null));
-            return false;
+            return null;
         });
     }
 
@@ -701,18 +713,21 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     .findFirst()
                     .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
                             "feature plugin package[%s] is not found in the plugin repositories", msg.getPackagePath())));
-            runFeaturePluginCtl(String.format("install %s", pkg.getPath()));
+            Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
+            List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
             pkg.setInstalled(true);
             event.setInventory(pkg);
-            return true;
+            return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
         });
     }
 
     private void handle(APIUninstallFeaturePluginMsg msg) {
         APIUninstallFeaturePluginEvent event = new APIUninstallFeaturePluginEvent(msg.getId());
         submitFeaturePluginOperation(msg, event, String.format("uninstall-feature-plugin-%s", msg.getPluginId()), () -> {
-            runFeaturePluginCtl(String.format("uninstall %s%s", msg.getPluginId(), msg.isForce() ? " --force" : ""));
-            return true;
+            Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json%s",
+                    msg.getPluginId(), msg.isForce() ? " --force" : ""));
+            List<String> peers = coordinator.syncToPeers(null);
+            return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
         });
     }
 

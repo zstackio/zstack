@@ -2385,6 +2385,7 @@
   "ORG_ZSTACK_CORE_PLUGIN_10001": "插件[%s]的名称、产品密钥和供应商不能为null",
   "ORG_ZSTACK_CORE_PLUGIN_10002": "功能插件操作失败：%s",
   "ORG_ZSTACK_CORE_PLUGIN_10003": "插件仓库中找不到功能插件包[%s]",
+  "ORG_ZSTACK_CORE_PLUGIN_10004": "另一个功能插件操作正在进行，请稍后再试",
   "ORG_ZSTACK_STORAGE_VOLUME_10055": "为了分离可共享数据卷[uuid:%s]，需要提供虚拟机的uuid。",
   "ORG_ZSTACK_STORAGE_VOLUME_10050": "图像[uuid:%s] 不处于就绪状态，它处于%s",
   "ORG_ZSTACK_STORAGE_VOLUME_10052": "卷[uuid:%s]处于状态[%s]，只有在状态为%s时才能挂载数据卷",

@@ -3,6 +3,9 @@ package org.zstack.header.core.external.plugin;
 public class FeaturePluginInventory {
     public static final String STATUS_LOADED = "Loaded";
     public static final String STATUS_FAILED = "Failed";
+    // set by zstack-ctl plugin reconcile when it cannot bring a plugin to its desired state
+    public static final String STATUS_INCOMPATIBLE = "Incompatible";
+    public static final String STATUS_PACKAGE_MISSING = "PackageMissing";
 
     private String id;
     private String name;
@@ -10,6 +13,7 @@ public class FeaturePluginInventory {
     private String version;
     private String status;
     private String error;
+    private String sha256;
 
     public String getId() {
         return id;
@@ -57,5 +61,13 @@ public class FeaturePluginInventory {
 
     public void setError(String error) {
         this.error = error;
+    }
+
+    public String getSha256() {
+        return sha256;
+    }
+
+    public void setSha256(String sha256) {
+        this.sha256 = sha256;
     }
 }

@@ -11,6 +11,8 @@ public class FeaturePluginPackageInventory {
     private String category;
     private String version;
     private Boolean installed;
+    private String sha256;
+    private Boolean desired;
     private String error;
 
     public String getPath() {
@@ -87,5 +89,21 @@ public class FeaturePluginPackageInventory {
         inv.setVersion("5.5.48-1");
         inv.setInstalled(false);
         return inv;
+    }
+
+    public String getSha256() {
+        return sha256;
+    }
+
+    public void setSha256(String sha256) {
+        this.sha256 = sha256;
+    }
+
+    public Boolean getDesired() {
+        return desired;
+    }
+
+    public void setDesired(Boolean desired) {
+        this.desired = desired;
     }
 }
