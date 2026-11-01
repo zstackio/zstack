@@ -15,6 +15,7 @@
         <class>org.zstack.core.config.GlobalConfigVO</class>
         <class>org.zstack.core.eventlog.EventLogVO</class>
         <class>org.zstack.header.core.external.plugin.PluginDriverVO</class>
+        <class>org.zstack.header.core.external.plugin.FeaturePluginVO</class>
         <class>org.zstack.resourceconfig.ResourceConfigVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeVO</class>
         <class>org.zstack.header.managementnode.ManagementNodeContextVO</class>

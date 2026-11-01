@@ -57,6 +57,14 @@ public class FeaturePlugins {
             inv.setCategory(String.valueOf(desc.get("category")));
             inv.setVersion(String.valueOf(desc.get("version")));
 
+            // zstack-ctl leaves a record without files when a plugin cannot be brought to its desired state
+            Map<String, Object> skip = (Map<String, Object>) desc.get("skip");
+            if (skip != null) {
+                inv.setStatus(String.valueOf(skip.get("status")));
+                inv.setError(String.valueOf(skip.get("reason")));
+                return inv;
+            }
+
             Map<String, Object> mn = desc.get("mn") == null ? new HashMap<>() : (Map<String, Object>) desc.get("mn");
             List<String> entities = mn.get("entities") == null ? new ArrayList<>() : (List<String>) mn.get("entities");
             for (String entity : entities) {
