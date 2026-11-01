@@ -1,10 +1,26 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.message.NeedReplyMessage;
 import org.zstack.header.network.sdncontroller.SdnControllerMessage;
 import org.zstack.utils.network.IPv6Constants;
 
-public class SdnControllerUpdateDHCPMsg extends NeedReplyMessage implements SdnControllerMessage {
+public class SdnControllerUpdateDHCPMsg extends NeedReplyMessage implements SdnControllerMessage, NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String dhcpServerIp;
     private String dhcpv6ServerIp;
     private String l3NetworkUuid;

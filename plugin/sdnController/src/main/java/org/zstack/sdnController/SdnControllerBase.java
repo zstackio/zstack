@@ -35,7 +35,6 @@ import org.zstack.header.network.l3.SdnControllerL3;
 import org.zstack.header.network.sdncontroller.*;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO;
 import org.zstack.network.hostNetworkInterface.HostNetworkInterfaceVO_;
-import org.zstack.network.l2.L2NetworkCascadeExtension;
 import org.zstack.sdnController.header.*;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2Commands;
 import org.zstack.sdnController.h3cVcfc.H3cVcfcV2SdnController;
@@ -75,8 +74,6 @@ public class SdnControllerBase {
     private PluginRegistry pluginRgty;
     @Autowired
     private SdnControllerPingTracker sdnPingTracker;
-    @Autowired
-    private L2NetworkCascadeExtension l2NetworkCascadeExtension;
 
     public SdnControllerVO self;
 
@@ -988,34 +985,13 @@ public class SdnControllerBase {
         final String issuer = SdnControllerVO.class.getSimpleName();
         SdnControllerVO vo = dbf.findByUuid(msg.getUuid(), SdnControllerVO.class);
         final List<SdnControllerInventory> ctx = asList(SdnControllerInventory.valueOf(vo));
-        final CascadeAction cascadeAction = new CascadeAction().setRootIssuer(issuer)
-                .setRootIssuerContext(ctx).setParentIssuer(issuer).setParentIssuerContext(ctx);
         FlowChain chain = FlowChainBuilder.newSimpleFlowChain();
         chain.setName(String.format("delete-sdn-controller-%s-name-%s", msg.getUuid(), vo.getName()));
-        chain.then(new NoRollbackFlow() {
-            @Override
-            public void run(FlowTrigger trigger, Map data) {
-                cascadeAction.setActionCode(msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Enforcing
-                        ? CascadeConstant.DELETION_FORCE_DELETE_CODE
-                        : CascadeConstant.DELETION_CHECK_CODE);
-                l2NetworkCascadeExtension.prepareConfirmedDelete(cascadeAction, new Completion(trigger) {
-                    @Override
-                    public void success() {
-                        trigger.next();
-                    }
-
-                    @Override
-                    public void fail(ErrorCode errorCode) {
-                        trigger.fail(errorCode);
-                    }
-                });
-            }
-        });
         if (msg.getDeletionMode() == APIDeleteMessage.DeletionMode.Permissive) {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_CHECK_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_CHECK_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1023,25 +999,14 @@ public class SdnControllerBase {
 
                         @Override
                         public void fail(ErrorCode errorCode) {
-                            l2NetworkCascadeExtension.cancelConfirmedDelete(cascadeAction,
-                                    new Completion(trigger) {
-                                        @Override
-                                        public void success() {
-                                            trigger.fail(errorCode);
-                                        }
-
-                                        @Override
-                                        public void fail(ErrorCode cancelError) {
-                                            trigger.fail(errorCode);
-                                        }
-                                    });
+                            trigger.fail(errorCode);
                         }
                     });
                 }
             }).then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();
@@ -1058,7 +1023,7 @@ public class SdnControllerBase {
             chain.then(new NoRollbackFlow() {
                 @Override
                 public void run(final FlowTrigger trigger, Map data) {
-                    casf.asyncCascade(cascadeAction.setActionCode(CascadeConstant.DELETION_FORCE_DELETE_CODE), new Completion(trigger) {
+                    casf.asyncCascade(CascadeConstant.DELETION_FORCE_DELETE_CODE, issuer, ctx, new Completion(trigger) {
                         @Override
                         public void success() {
                             trigger.next();

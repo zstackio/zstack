@@ -48,6 +48,8 @@ import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.APIEvent;
 import org.zstack.header.message.APIMessage;
 import org.zstack.header.message.APIReply;
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.message.APISyncCallMessage;
 import org.zstack.header.message.BeforeDeliveryMessageInterceptor;
 import org.zstack.header.message.BeforePublishEventInterceptor;
@@ -1484,6 +1486,9 @@ public class CloudBusImpl3 implements CloudBus, CloudBusIN {
                 throw new CloudRuntimeException(e1);
             }
 
+            if (msg instanceof APIMessage && msg instanceof NetworkOperationMessage) {
+                ((NetworkOperationMessage) msg).setNetworkOperation(new NetworkOperationContext());
+            }
             new MessageSender(msg).localSend();
             rsp.setStatus(HttpStatus.OK.value());
         } catch (Throwable t) {

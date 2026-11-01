@@ -72,7 +72,7 @@ class FlatAddDnsCase extends SubCase {
             prefixLen = 64
             gateway = "1000::1"
             addressMode = IPv6Constants.Stateful_DHCP
-            systemTags = [String.format("flatNetwork::DhcpServer::%s::ipUuid::null", "1000--2")]
+            systemTags = [String.format("flatNetwork::Dhcp6Server::%s::ipUuid::null", "1000--2")]
         }
 
         addDnsToL3Network {

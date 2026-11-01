@@ -5,6 +5,11 @@ import com.google.common.collect.Range;
 import com.google.common.collect.RangeSet;
 import com.google.common.collect.TreeRangeSet;
 import org.zstack.core.Platform;
+import org.zstack.header.errorcode.ErrorCode;
+
+import static org.zstack.core.Platform.argerr;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10037;
+import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L3_10060;
 import org.zstack.header.exception.CloudRuntimeException;
 
 import javax.persistence.Tuple;
@@ -31,6 +36,20 @@ import static org.junit.runner.Request.aClass;
 
 
 public class IpRangeHelper {
+    public static ErrorCode checkOverlap(IpRangeInventory ipr, List<? extends IpRangeVO> ranges) {
+        for (IpRangeVO r : ranges) {
+            if (ipr.getIpVersion() == IPv6Constants.IPv4) {
+                if (NetworkUtils.isIpv4RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
+                    return argerr(ORG_ZSTACK_NETWORK_L3_10060, "overlap with ip range[uuid:%s, start ip:%s, end ip: %s]", r.getUuid(), r.getStartIp(), r.getEndIp());
+                }
+            } else if (IPv6NetworkUtils.isIpv6RangeOverlap(ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp())) {
+                return argerr(ORG_ZSTACK_NETWORK_L3_10037, "new ip range [startip :%s, endip :%s] is overlaped with old ip range[startip :%s, endip :%s]",
+                        ipr.getStartIp(), ipr.getEndIp(), r.getStartIp(), r.getEndIp());
+            }
+        }
+        return null;
+    }
+
     public static List<IpRangeInventory> getNormalIpRanges(L3NetworkInventory l3inv) {
         if (l3inv.getIpRanges().isEmpty()) {
             return new ArrayList<>();
@@ -97,12 +116,19 @@ public class IpRangeHelper {
 
     public static void updateL3NetworkIpversion(IpRangeInventory ipr) {
         L3NetworkVO l3VO = Q.New(L3NetworkVO.class).eq(L3NetworkVO_.uuid, ipr.getL3NetworkUuid()).find();
+        if (l3VO == null) {
+            return;
+        }
+        List<Integer> versions = Q.New(IpRangeVO.class)
+                .select(IpRangeVO_.ipVersion)
+                .eq(IpRangeVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
+                .listValues();
         boolean ipv4 = false;
         boolean ipv6 = false;
-        for (IpRangeVO vo : l3VO.getIpRanges()) {
-            if (vo.getIpVersion() == IPv6Constants.IPv4) {
+        for (Integer ver : versions) {
+            if (ver != null && ver == IPv6Constants.IPv4) {
                 ipv4 = true;
-            } else if (vo.getIpVersion() == IPv6Constants.IPv6) {
+            } else if (ver != null && ver == IPv6Constants.IPv6) {
                 ipv6 = true;
             }
         }
@@ -200,6 +226,10 @@ public class IpRangeHelper {
         BigInteger queryStart = ipToNumber(start, ipv6);
         List<String> usedIps = Q.New(UsedIpVO.class).select(UsedIpVO_.ip).eq(UsedIpVO_.ipRangeUuid, ipr.getUuid()).listValues();
         usedIps = usedIps.stream().distinct().collect(Collectors.toList());
+        if (ipr instanceof NormalIpRangeVO && ipr.getGateway() != null
+                && NetworkUtils.isInRange(ipr.getGateway(), ipr.getStartIp(), ipr.getEndIp())) {
+            usedIps.add(ipr.getGateway());
+        }
         List<String> spareIps = new ArrayList<>();
         for (Range<BigInteger> range : availableRanges.asRanges()) {
             ContiguousSet<BigInteger> addresses = ContiguousSet.create(range, DiscreteDomain.bigIntegers());

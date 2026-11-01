@@ -1,10 +1,5 @@
 package org.zstack.compute.vm;
 
-import org.zstack.network.l2.NetworkDeletionContexts;
-import org.zstack.header.network.l2.NetworkDeletionContext;
-import static org.zstack.core.Platform.operr;
-import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_COMPUTE_VM_10341;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.transaction.annotation.Transactional;
 import org.zstack.core.asyncbatch.While;
@@ -127,19 +122,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
 
     @Override
     public void asyncCascade(CascadeAction action, Completion completion) {
-        NetworkDeletionContext projectionDelete = NetworkDeletionContexts.projectionDelete(action);
-        if (projectionDelete != null && projectionDelete.isZnsSegmentProjectionDelete()) {
-            List<String> l3Uuids = Q.New(L3NetworkVO.class)
-                    .select(L3NetworkVO_.uuid)
-                    .eq(L3NetworkVO_.l2NetworkUuid, projectionDelete.getL2NetworkUuid()).listValues();
-            if (!l3Uuids.isEmpty() && Q.New(VmNicVO.class)
-                    .in(VmNicVO_.l3NetworkUuid, l3Uuids).isExists()) {
-                completion.fail(operr(ORG_ZSTACK_COMPUTE_VM_10341,
-                        "ZNS Segment deletion cannot cascade VM NICs on L2 network[uuid:%s]",
-                        projectionDelete.getL2NetworkUuid()));
-                return;
-            }
-        }
         if (action.isActionCode(CascadeConstant.DELETION_CHECK_CODE)) {
             handleDeletionCheck(action, completion);
         } else if (action.isActionCode(CascadeConstant.DELETION_DELETE_CODE, CascadeConstant.DELETION_FORCE_DELETE_CODE)) {
@@ -325,20 +307,6 @@ public class VmCascadeExtension extends AbstractAsyncCascadeExtension {
                     msg.setVmNicUuid(nic.getUuid());
                     bus.makeTargetServiceIdByResourceUuid(msg, VmInstanceConstant.SERVICE_ID, vm.getInventory().getUuid());
                     msgs.add(msg);
-                } else {
-                    boolean deleteIp4 = false, hasIp6 = false;
-                    if (ip4 != null && ip4.getIpRangeUuid() != null && uuids.contains(ip4.getIpRangeUuid())) {
-                        deleteIp4 = true;
-                    }
-                    if (ip6 != null && (ip6.getIpRangeUuid() == null || !uuids.contains(ip6.getIpRangeUuid()))) {
-                        hasIp6 = true;
-                    }
-
-                    /* ipv4 is deleted and ipv6 is not deleted, move ipv6 address to nic ip */
-                    if (deleteIp4 && hasIp6) {
-                        SQL.New(VmNicVO.class).eq(VmNicVO_.uuid, nic.getUuid())
-                                .set(VmNicVO_.ip, ip6.getIp()).set(VmNicVO_.gateway, ip6.getGateway()).update();
-                    }
                 }
             }
         }

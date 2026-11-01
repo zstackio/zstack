@@ -1,5 +1,6 @@
 package org.zstack.header.network.service;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.zstack.header.core.Completion;
 import org.zstack.header.core.NoErrorCompletion;
 import org.zstack.header.network.l3.L3NetworkVO;
@@ -30,5 +31,13 @@ public interface NetworkServiceExtensionPoint {
 
     void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, Completion completion);
 
+    default void enableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, List<String> systemTags, NetworkOperationContext operation, Completion completion) {
+        enableNetworkService(l3VO, providerType, systemTags, completion);
+    }
+
     void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, Completion completion);
+
+    default void disableNetworkService(L3NetworkVO l3VO, NetworkServiceProviderType providerType, NetworkOperationContext operation, Completion completion) {
+        disableNetworkService(l3VO, providerType, completion);
+    }
 }

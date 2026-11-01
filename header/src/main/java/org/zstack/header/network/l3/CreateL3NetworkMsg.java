@@ -1,11 +1,26 @@
 package org.zstack.header.network.l3;
 
+import org.zstack.header.network.NetworkOperationContext;
+import org.zstack.header.network.NetworkOperationMessage;
 import org.zstack.header.identity.SessionInventory;
 import org.zstack.header.message.NeedReplyMessage;
-import org.zstack.header.network.l2.NetworkCreateContext;
 
 /** Internal typed L3 create request for ZNS projection and recovery. */
-public class CreateL3NetworkMsg extends NeedReplyMessage {
+public class CreateL3NetworkMsg extends NeedReplyMessage implements NetworkOperationMessage {
+    @org.zstack.header.rest.APINoSee
+    @org.zstack.header.message.NoJsonSchema
+    private NetworkOperationContext networkOperation = new NetworkOperationContext();
+
+    @Override
+    public NetworkOperationContext getNetworkOperation() {
+        return networkOperation;
+    }
+
+    @Override
+    public void setNetworkOperation(NetworkOperationContext networkOperation) {
+        this.networkOperation = networkOperation == null ? new NetworkOperationContext() : networkOperation;
+    }
+
     private String name;
     private String description;
     private String type = L3NetworkConstant.L3_BASIC_NETWORK_TYPE;
@@ -16,11 +31,10 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
     private String dnsDomain;
     private Boolean enableIPAM = Boolean.TRUE;
     private String resourceUuid;
+    private String accountUuid;
     private SessionInventory session;
-    private NetworkCreateContext context;
 
-    public static CreateL3NetworkMsg fromApi(APICreateL3NetworkMsg api,
-                                             NetworkCreateContext context) {
+    public static CreateL3NetworkMsg fromApi(APICreateL3NetworkMsg api) {
         CreateL3NetworkMsg msg = new CreateL3NetworkMsg();
         msg.setName(api.getName());
         msg.setDescription(api.getDescription());
@@ -35,7 +49,6 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
         msg.setSession(api.getSession());
         msg.setSystemTags(api.getSystemTags());
         msg.setUserTags(api.getUserTags());
-        msg.setContext(context);
         msg.setId(api.getId());
         return msg;
     }
@@ -60,8 +73,8 @@ public class CreateL3NetworkMsg extends NeedReplyMessage {
     public void setEnableIPAM(Boolean value) { enableIPAM = value; }
     public String getResourceUuid() { return resourceUuid; }
     public void setResourceUuid(String value) { resourceUuid = value; }
+    public String getAccountUuid() { return accountUuid; }
+    public void setAccountUuid(String value) { accountUuid = value; }
     public SessionInventory getSession() { return session; }
     public void setSession(SessionInventory value) { session = value; }
-    public NetworkCreateContext getContext() { return context; }
-    public void setContext(NetworkCreateContext value) { context = value; }
 }

@@ -1,5 +1,6 @@
 package org.zstack.network.l2;
 
+import org.zstack.header.network.NetworkOperationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.asyncbatch.While;
 import org.zstack.core.componentloader.PluginRegistry;
@@ -18,7 +19,9 @@ import org.zstack.utils.Utils;
 import org.zstack.utils.function.ForEachFunction;
 import org.zstack.utils.logging.CLogger;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.zstack.core.Platform.inerr;
 import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.ORG_ZSTACK_NETWORK_L2_10024;
@@ -36,8 +39,8 @@ public class L2NetworkExtensionPointEmitter implements Component {
         for (L2NetworkDeleteExtensionPoint ext : extensions) {
             try {
                 ext.preDeleteL2Network(inv);
-            } catch (L2NetworkException l2e) {
-                throw l2e;
+            } catch (L2NetworkException | OperationFailureException e) {
+                throw e;
             } catch (Exception e) {
                 logger.warn(String.format("Unhandled exception happened while calling L2NetworkDeleteExtensionPoint.preDeleteL2Network of %s", ext.getClass().getCanonicalName()), e);
             }
@@ -112,6 +115,57 @@ public class L2NetworkExtensionPointEmitter implements Component {
                 }
             }
         });
+    }
+
+    public void beforeUpdateL2Network(final L2NetworkInventory inv, final NetworkOperationContext operation, Completion completion) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
+        new While<>(updateExtensions).each((extension, extensionCompletion) -> {
+            try {
+                extension.beforeUpdateL2Network(inv, safeOperation, new Completion(extensionCompletion) {
+                    @Override
+                    public void success() {
+                        extensionCompletion.done();
+                    }
+
+                    @Override
+                    public void fail(ErrorCode errorCode) {
+                        extensionCompletion.addError(errorCode);
+                        extensionCompletion.allDone();
+                    }
+                });
+            } catch (OperationFailureException e) {
+                extensionCompletion.addError(e.getErrorCode());
+                extensionCompletion.allDone();
+            } catch (RuntimeException e) {
+                logger.warn(String.format("exception in L2NetworkUpdateExtensionPoint.beforeUpdateL2Network of %s",
+                        extension.getClass().getCanonicalName()), e);
+                extensionCompletion.addError(inerr(ORG_ZSTACK_NETWORK_L2_10024,
+                        "l2 network update extension[%s] failed before updating l2 network: %s",
+                        extension.getClass().getCanonicalName(), e.getMessage()));
+                extensionCompletion.allDone();
+            }
+        }).run(new WhileDoneCompletion(completion) {
+            @Override
+            public void done(ErrorCodeList errors) {
+                if (errors.getCauses().isEmpty()) {
+                    completion.success();
+                } else {
+                    completion.fail(errors.getCauses().get(0));
+                }
+            }
+        });
+    }
+
+    public void beforeCommitUpdateInDb(final L2NetworkInventory inv, final NetworkOperationContext operation) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
+        for (L2NetworkUpdateExtensionPoint ext : updateExtensions) {
+            ext.beforeCommitUpdateL2NetworkInDb(inv, safeOperation);
+        }
+    }
+
+    public void afterUpdateFinally(final L2NetworkInventory inv, final NetworkOperationContext operation) {
+        final NetworkOperationContext safeOperation = operation == null ? new NetworkOperationContext() : operation;
+        CollectionUtils.safeForEach(updateExtensions, arg -> arg.afterUpdateL2NetworkFinally(inv, safeOperation));
     }
 
     public void afterUpdate(final L2NetworkInventory inv) {
