@@ -491,6 +491,7 @@ public class MemoryRepository {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) { return null; }
             serviceEvents.addAll(observe(state, response, System.currentTimeMillis()));
+            followPreparedBackend(em, host, response);
             Object applied = response == null || response.state == null ? null : response.state.get("appliedGeneration");
             if (SUCCEEDED.equals(state.getStatus()) && response != null && response.isSuccess() && response.state != null
                     && (!(applied instanceof Number && ((Number) applied).longValue() == state.getDesiredRevision())
@@ -693,12 +694,41 @@ public class MemoryRepository {
     /** Binds the backend prepared by the Agent to the Host's standard writeback settings. */
     public void recordPreparedBackend(String host, String resourceUuid, long capacityBytes) {
         transaction(em -> {
-            Map<String, Object> values = new LinkedHashMap<>();
-            values.put(MemoryStandardField.WRITEBACK_BACKEND_RESOURCE.path(), resourceUuid);
-            values.put(MemoryStandardField.WRITEBACK_BACKEND_CAPACITY.path(), capacityBytes);
-            standardConfigs.writeOverrides(em, host, HostVO.class.getSimpleName(), values);
+            recordPreparedBackend(em, host, resourceUuid, capacityBytes);
             return null;
         });
+    }
+
+    private void recordPreparedBackend(EntityManager em, String host, String resourceUuid, long capacityBytes) {
+        Map<String, Object> values = new LinkedHashMap<>();
+        values.put(MemoryStandardField.WRITEBACK_BACKEND_RESOURCE.path(), resourceUuid);
+        values.put(MemoryStandardField.WRITEBACK_BACKEND_CAPACITY.path(), capacityBytes);
+        standardConfigs.writeOverrides(em, host, HostVO.class.getSimpleName(), values);
+    }
+
+    /**
+     * A reboot prepares the recorded disk again, and the service names the new
+     * preparation with a new resource UUID. Follow it once that disk is the
+     * active backend with the recorded capacity.
+     */
+    private void followPreparedBackend(EntityManager em, String host, MemoryAgentResponse response) {
+        Object writeback = response == null || response.state == null ? null : response.state.get("writeback");
+        Object backend = writeback instanceof Map ? ((Map<?, ?>) writeback).get("backend") : null;
+        if (!(backend instanceof Map)) { return; }
+        Map<?, ?> observed = (Map<?, ?>) backend;
+        Object resource = observed.get("resource_uuid");
+        Object recorded = standardConfigs.readOverrideOwn(em, MemoryStandardField.WRITEBACK_BACKEND_RESOURCE.path(), host);
+        Object recordedCapacity = standardConfigs.readOverrideOwn(em, MemoryStandardField.WRITEBACK_BACKEND_CAPACITY.path(), host);
+        if (!"ACTIVE".equals(observed.get("state")) || !Boolean.TRUE.equals(observed.get("active"))
+                || !(resource instanceof String) || !(recorded instanceof String) || resource.equals(recorded)
+                || !(recordedCapacity instanceof Long)) { return; }
+        try {
+            if (!recordedCapacity.equals(MemoryWritebackBackendInventory.exactLong(observed.get("capacity_bytes")))) { return; }
+            recordPreparedBackend(em, host, (String) resource, (Long) recordedCapacity);
+            logger.info(String.format("Host[%s] writeback backend %s is now %s", host, recorded, resource));
+        } catch (IllegalArgumentException invalid) {
+            logger.warn(String.format("Host[%s] reported an invalid writeback backend %s", host, observed), invalid);
+        }
     }
 
     // ------------------------------------------------------------ cleanup

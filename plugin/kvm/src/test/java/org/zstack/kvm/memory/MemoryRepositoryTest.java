@@ -587,6 +587,35 @@ public class MemoryRepositoryTest {
         assertEquals("HOST_DRIFTED", repository.state("host1").getReason());
     }
 
+    @Test public void aBackendPreparedAgainAfterARebootIsFollowedOnceTheSameDiskIsActive() {
+        repository.plan("host1", null, "connect", "test", true, true);
+        repository.recordPreparedBackend("host1", BACKEND, 1L << 30);
+        String rebooted = "cccccccccccccccccccccccccccccccc";
+        MemoryAgentResponse observed = reply("Succeeded", null, null);
+        Map<String, Object> backend = new LinkedHashMap<>();
+        backend.put("resource_uuid", rebooted); backend.put("capacity_bytes", (double) (1L << 30));
+        backend.put("state", "PREPARED"); backend.put("active", false);
+        observed.state.put("writeback", Collections.singletonMap("backend", backend));
+        repository.observe("host1", observed);
+        assertEquals("not yet the active backend", BACKEND, backendResource("host1"));
+        backend.put("state", "ACTIVE"); backend.put("active", true); backend.put("capacity_bytes", (double) (2L << 30));
+        repository.observe("host1", observed);
+        assertEquals("a disk of another size is not the recorded one", BACKEND, backendResource("host1"));
+        backend.put("capacity_bytes", (1L << 30) + 0.5);
+        repository.observe("host1", observed);
+        assertEquals("a capacity that is not a whole byte count is not the recorded one", BACKEND, backendResource("host1"));
+        backend.put("capacity_bytes", (double) (1L << 30));
+        repository.observe("host1", observed);
+        assertEquals(rebooted, backendResource("host1"));
+        assertEquals(1L << 30, standardConfig("host1", MemoryStandardField.WRITEBACK_BACKEND_CAPACITY));
+    }
+
+    private Object backendResource(String host) { return standardConfig(host, MemoryStandardField.WRITEBACK_BACKEND_RESOURCE); }
+
+    private Object standardConfig(String host, MemoryStandardField field) {
+        return repository.transaction(em -> standardConfigAdapter.readOverrideOwn(em, field.path(), host));
+    }
+
     @Test public void drainedHostIsReported() {
         repository.plan("host1", "drained", "drain", "test", true, true);
         assertTrue(repository.isDrained("host1"));
