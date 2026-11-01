@@ -7,6 +7,8 @@ import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.Q;
+import org.zstack.core.thread.ChainTask;
+import org.zstack.core.thread.SyncTaskChain;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.core.external.plugin.*;
@@ -71,6 +73,19 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         // leave time for the caller to fetch the API result before the management node stops
         ShellUtils.runAndReturn(String.format("bash -c 'nohup sh -c \"sleep %d; zstack-ctl restart_node\" >/dev/null 2>&1 &'",
                 RESTART_DELAY_SECONDS));
+    }
+
+    /**
+     * Loads the plugin drivers zstack-ctl put into the driver folder, which needs no restart.
+     * A driver that fails to load is logged; it is loaded again when the management node restarts.
+     */
+    void refreshDrivers() {
+        RefreshPluginDriversMsg msg = new RefreshPluginDriversMsg();
+        bus.makeLocalServiceId(msg, PluginManager.SERVICE_ID);
+        MessageReply reply = bus.call(msg);
+        if (!reply.isSuccess()) {
+            logger.warn(String.format("failed to load plugin drivers of feature plugins: %s", reply.getError()));
+        }
     }
 
     private List<ManagementNodeVO> runningPeers() {
@@ -179,6 +194,27 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     void handle(SyncFeaturePluginPackageMsg msg) {
+        // zstack-ctl runs for a while, keep it off the message thread and one sync at a time
+        thdf.chainSubmit(new ChainTask(msg) {
+            @Override
+            public String getSyncSignature() {
+                return "sync-feature-plugins";
+            }
+
+            @Override
+            public void run(SyncTaskChain chain) {
+                syncFromPeer(msg);
+                chain.next();
+            }
+
+            @Override
+            public String getName() {
+                return getSyncSignature();
+            }
+        });
+    }
+
+    private void syncFromPeer(SyncFeaturePluginPackageMsg msg) {
         SyncFeaturePluginPackageReply reply = new SyncFeaturePluginPackageReply();
         try {
             if (msg.getContent() != null) {
@@ -190,6 +226,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 addPackage(msg.getPackageName(), content);
             }
             reply.setNeedRestart(Boolean.TRUE.equals(runCtlJson("reconcile --json").get("needRestart")));
+            refreshDrivers();
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());
         } catch (Exception e) {

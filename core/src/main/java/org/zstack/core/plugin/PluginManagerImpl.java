@@ -753,6 +753,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 throw new OperationFailureException(licenseError);
             }
             Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
+            coordinator.refreshDrivers();
             List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
             pkg.setInstalled(true);
             event.setInventory(pkg);
@@ -801,6 +802,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         submitFeaturePluginOperation(msg, event, String.format("uninstall-feature-plugin-%s", msg.getPluginId()), () -> {
             checkUninstallable(msg.getPluginId());
             Map<String, Object> ret = coordinator.runCtlJson(String.format("uninstall %s --json", msg.getPluginId()));
+            coordinator.refreshDrivers();
             List<String> peers = coordinator.syncToPeers(null);
             return restartAfter(peers, Boolean.TRUE.equals(ret.get("needRestart")));
         });
