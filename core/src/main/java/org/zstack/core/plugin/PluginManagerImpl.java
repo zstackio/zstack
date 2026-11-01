@@ -26,9 +26,13 @@ import org.zstack.core.thread.ThreadFacade;
 import org.zstack.header.AbstractService;
 import org.zstack.header.core.WhileDoneCompletion;
 import org.zstack.header.core.external.plugin.*;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
+import org.zstack.header.plugin.sdk.LicenseCheckPoint;
+import org.zstack.header.plugin.sdk.PluginDescriptor;
+import org.zstack.header.plugin.sdk.PluginLicenseChecker;
 import org.zstack.header.plugin.sdk.PluginUsageChecker;
 import org.zstack.header.managementnode.ManagementNodeVO;
 import org.zstack.header.managementnode.ManagementNodeVO_;
@@ -269,7 +273,33 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             }
         }.execute();
         scanAndLoadPlugins(fileDirPath);
+        checkFeaturePluginLicenses();
         return true;
+    }
+
+    private ErrorCode checkLicense(PluginDescriptor plugin, LicenseCheckPoint point) {
+        for (PluginLicenseChecker checker : pluginRgty.getExtensionList(PluginLicenseChecker.class)) {
+            ErrorCode err = checker.check(plugin, point);
+            if (err != null) {
+                return err;
+            }
+        }
+        return null;
+    }
+
+    private void checkFeaturePluginLicenses() {
+        // what to do with an unlicensed plugin beyond marking it waits for the licensing decision
+        for (FeaturePluginInventory inv : FeaturePlugins.installed()) {
+            if (!FeaturePluginInventory.STATUS_LOADED.equals(inv.getStatus())) {
+                continue;
+            }
+            ErrorCode err = checkLicense(new PluginDescriptor(inv.getId(), inv.getVersion(), inv.getLicenseAddon()), LicenseCheckPoint.LOAD);
+            if (err != null) {
+                logger.warn(String.format("feature plugin[%s] is not licensed: %s", inv.getId(), err));
+                inv.setStatus(FeaturePluginInventory.STATUS_UNLICENSED);
+                inv.setError(err.getReadableDetails());
+            }
+        }
     }
 
     @Override
@@ -717,6 +747,11 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     .findFirst()
                     .orElseThrow(() -> new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10003,
                             "feature plugin package[%s] is not found in the plugin repositories", msg.getPackagePath())));
+            // installing with zstack-ctl on the command line skips this check, the check when loading covers it
+            ErrorCode licenseError = checkLicense(new PluginDescriptor(pkg.getId(), pkg.getVersion(), pkg.getLicenseAddon()), LicenseCheckPoint.INSTALL);
+            if (licenseError != null) {
+                throw new OperationFailureException(licenseError);
+            }
             Map<String, Object> ret = coordinator.runCtlJson(String.format("install %s --json", pkg.getPath()));
             List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
             pkg.setInstalled(true);

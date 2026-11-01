@@ -13,6 +13,7 @@ public class FeaturePluginPackageInventory {
     private Boolean installed;
     private String sha256;
     private Boolean desired;
+    private String licenseAddon;
     private String error;
 
     public String getPath() {
@@ -105,5 +106,13 @@ public class FeaturePluginPackageInventory {
 
     public void setDesired(Boolean desired) {
         this.desired = desired;
+    }
+
+    public String getLicenseAddon() {
+        return licenseAddon;
+    }
+
+    public void setLicenseAddon(String licenseAddon) {
+        this.licenseAddon = licenseAddon;
     }
 }

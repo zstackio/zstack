@@ -6,6 +6,8 @@ public class FeaturePluginInventory {
     // set by zstack-ctl plugin reconcile when it cannot bring a plugin to its desired state
     public static final String STATUS_INCOMPATIBLE = "Incompatible";
     public static final String STATUS_PACKAGE_MISSING = "PackageMissing";
+    // a license checker refused the plugin when the management node started
+    public static final String STATUS_UNLICENSED = "Unlicensed";
 
     private String id;
     private String name;
@@ -14,6 +16,7 @@ public class FeaturePluginInventory {
     private String status;
     private String error;
     private String sha256;
+    private String licenseAddon;
 
     public String getId() {
         return id;
@@ -69,5 +72,13 @@ public class FeaturePluginInventory {
 
     public void setSha256(String sha256) {
         this.sha256 = sha256;
+    }
+
+    public String getLicenseAddon() {
+        return licenseAddon;
+    }
+
+    public void setLicenseAddon(String licenseAddon) {
+        this.licenseAddon = licenseAddon;
     }
 }

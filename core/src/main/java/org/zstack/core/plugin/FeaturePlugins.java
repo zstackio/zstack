@@ -105,6 +105,8 @@ public class FeaturePlugins {
             inv.setCategory(String.valueOf(desc.get("category")));
             inv.setVersion(String.valueOf(desc.get("version")));
             inv.setSha256((String) desc.get("sha256"));
+            Map<String, Object> license = (Map<String, Object>) desc.get("license");
+            inv.setLicenseAddon(license == null ? null : (String) license.get("addon"));
 
             // zstack-ctl leaves a record without files when a plugin cannot be brought to its desired state
             Map<String, Object> skip = (Map<String, Object>) desc.get("skip");
