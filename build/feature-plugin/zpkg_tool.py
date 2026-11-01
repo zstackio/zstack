@@ -142,8 +142,8 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
         m = JAR_VERSION.match(jar)
         return m.group(1) if m else jar[:-len('.jar')]
     platform_bases = set(base(j) for j in platform_jars if j.endswith('.jar'))
-    for jar in sorted(os.listdir(os.path.join(stage, 'lib'))):
-        if jar.endswith('.jar') and base(jar) in platform_bases:
+    for jar in sorted(os.path.basename(j) for j in plugin_jars(stage)):
+        if base(jar) in platform_bases:
             problems.append('jar-conflict: %s' % jar)
     return problems
 

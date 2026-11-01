@@ -103,6 +103,18 @@ class TestCheck(CheckCase):
         problems = self.run_check(classes=classes, desc={'mn': {'entities': ['org.zstack.tpm.VmTpmVO']}})
         self.assertEqual(['undeclared-entity: org.zstack.tpm.TpmKeyVO'], problems)
 
+    def test_check_package_without_lib(self):
+        stage = os.path.join(self.tmp, 'drivers-only')
+        os.makedirs(os.path.join(stage, 'drivers'))
+        with open(os.path.join(stage, 'plugin.yaml'), 'w') as f:
+            yaml.safe_dump({'id': 'hsm-test', 'version': '1.0.0', 'drivers': ['drivers/hsm.jar']}, f)
+        with zipfile.ZipFile(os.path.join(stage, 'drivers', 'hsm.jar'), 'w') as jar:
+            jar.writestr('org/zstack/hsm/Driver.class', make_class('org.zstack.hsm.Driver'))
+        jdeps = os.path.join(self.tmp, 'jdeps.txt')
+        with open(jdeps, 'w') as f:
+            f.write('      -> org.zstack.abstraction.crypto.CryptoClientDriver    header-5.5.0.jar\n')
+        self.assertEqual([], zpkg_tool.check(stage, self.platform, ALLOWLIST, jdeps))
+
     def test_jar_conflict(self):
         self.assertIn('jar-conflict: gson-2.8.9.jar', self.run_check(plugin_jars=['gson-2.8.9.jar']))
 
