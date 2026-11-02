@@ -46,6 +46,10 @@ org.zstack.header.message.*
 org.zstack.header.errorcode.*
 org.zstack.header.core.*Completion
 org.zstack.header.core.*Completion$*
+# the parameter type of the Completion and CloudBusCallBack constructors
+org.zstack.header.core.AsyncBackup
+# SERVICE_ID, to send a message to a host
+org.zstack.header.host.HostConstant
 org.zstack.header.core.workflow.*
 org.zstack.header.vo.*
 org.zstack.header.rest.RestRequest
@@ -104,6 +108,8 @@ org.zstack.tag.SystemTag
 org.zstack.tag.PatternedSystemTag
 org.zstack.kvm.KVMHostAsyncHttpCallMsg
 org.zstack.kvm.KVMHostAsyncHttpCallReply
+# referenced as the outer class of the two below; its other nested classes stay disallowed
+org.zstack.kvm.KVMAgentCommands
 org.zstack.kvm.KVMAgentCommands$AgentCommand
 org.zstack.kvm.KVMAgentCommands$AgentResponse
 org.zstack.utils.Utils

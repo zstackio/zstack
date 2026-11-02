@@ -81,6 +81,18 @@ class TestCheck(CheckCase):
         self.assertFalse(zpkg_tool.allowed('org.zstack.header.vm.VmInstanceSpec', allow, deny))
         self.assertTrue(zpkg_tool.allowed('org.zstack.header.vm.VmNicInventory', allow, deny))
 
+    def test_calling_kvmagent_is_allowed(self):
+        # what javac emits for sending KVMHostAsyncHttpCallMsg to a host with a callback and an AgentResponse subclass
+        refs = ['org.zstack.core.cloudbus.CloudBusCallBack', 'org.zstack.header.core.AsyncBackup',
+                'org.zstack.header.host.HostConstant', 'org.zstack.kvm.KVMHostAsyncHttpCallMsg',
+                'org.zstack.kvm.KVMAgentCommands', 'org.zstack.kvm.KVMAgentCommands$AgentCommand',
+                'org.zstack.kvm.KVMAgentCommands$AgentResponse']
+        self.assertEqual([], self.run_check(refs=refs))
+
+    def test_other_agent_commands_stay_disallowed(self):
+        self.assertIn('disallowed-reference: org.zstack.kvm.KVMAgentCommands$AttachNicCommand',
+                      self.run_check(refs=['org.zstack.kvm.KVMAgentCommands$AttachNicCommand']))
+
     def test_jdk_reference_is_not_checked(self):
         self.assertEqual([], self.run_check())
 
