@@ -649,6 +649,7 @@ public class HostAllocatorManagerImpl extends AbstractService implements HostAll
                     } else {
                         throw new CloudRuntimeException("should not be here");
                     }
+                    cap.availCpu -= rc.getReservedCpuCapacity();
                     cap.availMem = Math.max(0, cap.availMem - rc.getReservedMemoryCapacity());
                     res.totalCpu += cap.totalCpu;
                     res.availCpu += cap.availCpu;
