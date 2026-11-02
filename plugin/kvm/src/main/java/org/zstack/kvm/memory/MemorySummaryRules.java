@@ -105,16 +105,12 @@ public final class MemorySummaryRules {
             }
             if (sample.zramSplitDisabled) { zramNormalDisabled++; zramWritebackDisabled++; }
         }
-        boolean totalOverflow = false;
+        Aggregate aSaved = new Aggregate();
         for (HostMetrics sample : samples.values()) {
-                if (sample.sampleTime / windowMillis != bucket) { continue; }
-                if (sample.totalSeries) {
-                    count++;
-                    try { total = Math.addExact(total, sample.saved); } catch (ArithmeticException e) { totalOverflow = true; }
-                }
+            if (sample.sampleTime / windowMillis == bucket && sample.totalSeries) { aSaved.add(sample.saved); }
         }
         zramNormal = aZramNormal.value; zramWriteback = aZramWriteback.value;
-        if (totalOverflow) { total = 0; count = 0; }
+        total = aSaved.value; count = aSaved.count;
         result.setCoveredHosts(count);
         if (ordinaryCount > 0 && !aOrdinary.overflow) result.setKsmOrdinaryBytes(ordinary);
         if (zeroCount > 0 && !aZero.overflow) result.setKsmZeroBytes(zero);
@@ -134,22 +130,31 @@ public final class MemorySummaryRules {
         if ((aZramNormal.count > 0 || zramNormalDisabled > 0) && !aZramNormal.overflow) result.setZramNormalBytes(zramNormal);
         if ((aZramWriteback.count > 0 || zramWritebackDisabled > 0) && !aZramWriteback.overflow) result.setZramWritebackBytes(zramWriteback);
         Map<String, Map<String, Object>> coverage = new LinkedHashMap<>();
-        coverage.put("ksmOrdinaryBytes", coverage(expected.size(), ordinaryCount, ordinaryCount, 0, aOrdinary.overflow));
+        coverage.put("ksmOrdinaryBytes", coverage(expected.size(), ordinaryCount, ordinaryCount, 0, aOrdinary));
         coverage.put("ksmZeroBytes", coverage(expected.size(), zeroCount + (aZero.overflow ? 0 : zeroDisabledWithValue),
-                zeroCount, zeroDisabledWithValue, aZero.overflow));
-        coverage.put("ksmTotalBytes", coverage(expected.size(), totalCount, totalCount, 0, aTotal.overflow));
+                zeroCount, zeroDisabledWithValue, aZero));
+        coverage.put("ksmTotalBytes", coverage(expected.size(), totalCount, totalCount, 0, aTotal));
         coverage.put("zramBytes", coverage(expected.size(), zramCount + (aZram.overflow ? 0 : zramDisabledWithValue),
-                zramCount, zramDisabledWithValue, aZram.overflow));
+                zramCount, zramDisabledWithValue, aZram));
         coverage.put("zramNormalBytes", coverage(expected.size(), aZramNormal.count + zramNormalDisabled,
-                aZramNormal.count, zramNormalDisabled, aZramNormal.overflow));
+                aZramNormal.count, zramNormalDisabled, aZramNormal));
         coverage.put("zramWritebackBytes", coverage(expected.size(), aZramWriteback.count + zramWritebackDisabled,
-                aZramWriteback.count, zramWritebackDisabled, aZramWriteback.overflow));
-        coverage.put("totalSavedEstimateBytes", coverage(expected.size(), count, count, 0, totalOverflow));
+                aZramWriteback.count, zramWritebackDisabled, aZramWriteback));
+        coverage.put("totalSavedEstimateBytes", coverage(expected.size(), count, count, 0, aSaved));
         result.setMetricCoverage(coverage);
         return result;
     }
 
-    private static final class Aggregate { long value; int count; boolean overflow; }
+    private static final class Aggregate {
+        long value; int count; boolean overflow;
+
+        /** A sum that overflows is unknown: it reports no value and no covered Host. */
+        void add(long next) {
+            if (overflow) { return; }
+            try { value = Math.addExact(value, next); count++; }
+            catch (ArithmeticException e) { value = 0; count = 0; overflow = true; }
+        }
+    }
     private static Aggregate aggregate(Map<String, HostMetrics> samples, long bucket, int metric) {
         Aggregate result = new Aggregate();
         for (HostMetrics sample : samples.values()) {
@@ -162,18 +167,15 @@ public final class MemorySummaryRules {
             // KSM counters cannot be negative. ZRAM estimates (including
             // resident savings) can be negative when allocation exceeds data.
             if (value == null || !observed || (metric < 3 && value < 0)) continue;
-            if (!result.overflow) {
-                try { result.value = Math.addExact(result.value, value); result.count++; }
-                catch (ArithmeticException overflow) { result.value = 0; result.count = 0; result.overflow = true; }
-            }
+            result.add(value);
         }
         return result;
     }
 
-    private static Map<String, Object> coverage(int expected, int covered, int observed, int disabled, boolean overflow) {
+    private static Map<String, Object> coverage(int expected, int covered, int observed, int disabled, Aggregate sum) {
         Map<String, Object> value = new LinkedHashMap<>(); value.put("expectedHosts", expected);
         value.put("coveredHosts", covered);
-        String quality = overflow ? "Unknown" : covered == 0 ? "Missing"
+        String quality = sum.overflow ? "Unknown" : covered == 0 ? "Missing"
                 : covered < expected ? "Partial" : observed == 0 && disabled > 0 ? "Disabled" : "Fresh";
         value.put("quality", quality);
         return value;
@@ -201,18 +203,18 @@ public final class MemorySummaryRules {
         m.total = number(s, "ksmTotalBytes"); m.zram = number(s, "zramBytes");
         m.zramNormal = number(s, "zramNormalBytes"); m.zramWriteback = number(s, "zramWritebackBytes");
         m.metricQualityPresent = s.has("metricQuality");
-        m.ordinaryObserved = usable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent);
-        m.zeroObserved = usable(q, "ksm_zero", m.zero, m.metricQualityPresent);
-        m.totalObserved = usable(q, "ksm_total", m.total, m.metricQualityPresent);
-        m.zramObserved = usable(q, "zram", m.zram, m.metricQualityPresent);
+        m.ordinaryObserved = usable(s, "ksm_ordinary", m.ordinary);
+        m.zeroObserved = usable(s, "ksm_zero", m.zero);
+        m.totalObserved = usable(s, "ksm_total", m.total);
+        m.zramObserved = usable(s, "zram", m.zram);
         m.zeroDisabled = "disabled".equalsIgnoreCase(quality(q, "ksm_zero"));
         m.zramDisabled = "disabled".equalsIgnoreCase(quality(q, "zram"));
         m.totalSeries = "mechanism-estimate-v1".equals(string(s, "formulaVersion"))
                 && "Fresh".equals(string(s, "quality"))
-                && seriesUsable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent)
-                && seriesUsable(q, "ksm_zero", m.zero, m.metricQualityPresent)
-                && seriesUsable(q, "ksm_total", m.total, m.metricQualityPresent)
-                && seriesUsable(q, "zram", m.zram, m.metricQualityPresent)
+                && seriesUsable(s, "ksm_ordinary", m.ordinary)
+                && seriesUsable(s, "ksm_zero", m.zero)
+                && seriesUsable(s, "ksm_total", m.total)
+                && seriesUsable(s, "zram", m.zram)
                 && m.ordinary >= 0 && m.zero >= 0 && m.total >= 0;
         if (m.totalSeries) {
             try {
@@ -242,13 +244,14 @@ public final class MemorySummaryRules {
         } catch (RuntimeException e) { return null; }
     }
     private static String quality(JsonObject q, String key) { return q == null ? null : string(q, key); }
-    private static boolean usable(JsonObject q, String key, Long value, boolean qualityPresent) {
-        String quality = quality(q, key);
-        return value != null && (!qualityPresent || "observed".equalsIgnoreCase(quality));
+    /** A value is usable without a metricQuality, or with its quality observed; a metricQuality that is not an object observes nothing. */
+    private static boolean usable(JsonObject sample, String key, Long value) {
+        String quality = quality(object(sample, "metricQuality"), key);
+        return value != null && (!sample.has("metricQuality") || "observed".equalsIgnoreCase(quality));
     }
-    private static boolean seriesUsable(JsonObject q, String key, Long value, boolean qualityPresent) {
-        String quality = quality(q, key);
-        return value != null && (!qualityPresent || "observed".equalsIgnoreCase(quality)
+    private static boolean seriesUsable(JsonObject sample, String key, Long value) {
+        String quality = quality(object(sample, "metricQuality"), key);
+        return value != null && (!sample.has("metricQuality") || "observed".equalsIgnoreCase(quality)
                 || ("disabled".equalsIgnoreCase(quality) && value == 0));
     }
 
