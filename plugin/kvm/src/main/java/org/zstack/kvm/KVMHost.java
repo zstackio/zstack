@@ -39,6 +39,7 @@ import org.zstack.core.db.SimpleQuery.Op;
 import org.zstack.core.jsonlabel.JsonLabel;
 import org.zstack.core.thread.*;
 import org.zstack.core.timeout.ApiTimeoutManager;
+import org.zstack.core.timeout.ApiTimeoutManagerImpl;
 import org.zstack.core.timeout.TimeHelper;
 import org.zstack.core.upgrade.UpgradeChecker;
 import org.zstack.core.upgrade.UpgradeGlobalConfig;
@@ -601,6 +602,18 @@ public class KVMHost extends HostBase implements Host {
             if (commandStr != null) {
                 long overall = timeoutManager.getTimeout();
                 long effectiveTimeout = timeout > 0 ? Math.min(timeout, overall) : overall;
+                long agentTimeout = factory.getAgentHttpShortTimeout(URI.create(path).getPath());
+                if (agentTimeout > 0) {
+                    effectiveTimeout = Math.min(effectiveTimeout, agentTimeout);
+                    if (TaskContext.containsTaskContext(ApiTimeoutManagerImpl.TASK_CONTEXT_MESSAGE_DEADLINE)) {
+                        long deadline = Long.parseLong((String) TaskContext.getTaskContext()
+                                .get(ApiTimeoutManagerImpl.TASK_CONTEXT_MESSAGE_DEADLINE));
+                        if (deadline != -1) {
+                            effectiveTimeout = Math.min(effectiveTimeout,
+                                    Math.max(1L, deadline - System.currentTimeMillis()));
+                        }
+                    }
+                }
                 restf.asyncJsonPost(path, commandStr, header, new JsonAsyncRESTCallback<T>(completion) {
                     @Override
                     public void fail(ErrorCode err) {
