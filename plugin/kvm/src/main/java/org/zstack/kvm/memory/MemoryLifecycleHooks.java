@@ -17,6 +17,8 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Never changes CPU controller, multipath, VM XML or the migration data path. */
 public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, HostDeleteExtensionPoint,
@@ -293,16 +295,38 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             command.put("expectedInstanceGeneration", generation);
             candidates.put(uuid, command);
         }
-        for (String uuid : bindingCursor.next(host, candidates.keySet(),
-                MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.VM_BIND_BATCH_SIZE, 32))) {
+        List<String> batch = new ArrayList<>(bindingCursor.next(host, candidates.keySet(),
+                MemoryOptimizationGlobalConfig.positive(MemoryOptimizationGlobalConfig.VM_BIND_BATCH_SIZE, 32)));
+        Round round = new Round(String.format("Host[%s] VM memory optimization bindings", host), batch.size());
+        for (String uuid : batch) {
             Map<String, Object> command = candidates.get(uuid);
+            String operation = (String) command.get("operationUuid");
             // Advance even on a failure; the next authoritative sample binds it again.
-            manager.call(host, "vm-efficiency", command, reply -> {
-                if (!MemoryResultRules.succeeded((String) command.get("operationUuid"), reply)) {
-                    logger.warn(String.format("Host[%s] VM[%s] memory optimization binding failed: %s", host, uuid,
-                            reply == null ? "AGENT_UNREACHABLE" : reply.reasonCode));
-                }
-            });
+            manager.call(host, "vm-efficiency", command, reply -> round.finished(uuid,
+                    MemoryResultRules.succeeded(operation, reply) ? null : String.format("%s (operation %s)",
+                            reply == null ? "AGENT_UNREACHABLE" : reply.reasonCode, operation)));
+        }
+    }
+
+    /** One round of Agent calls; its failures are logged once, as an error, when the last call returns. */
+    static final class Round {
+        private final String what;
+        private final AtomicInteger pending;
+        private final Map<String, String> failures = new ConcurrentHashMap<>();
+        private final Consumer<String> errors;
+
+        Round(String what, int calls) { this(what, calls, logger::error); }
+
+        Round(String what, int calls, Consumer<String> errors) {
+            this.what = what; this.pending = new AtomicInteger(calls); this.errors = errors;
+        }
+
+        void finished(String resource, String failure) {
+            if (failure != null) { failures.put(resource, failure); }
+            if (pending.decrementAndGet() == 0 && !failures.isEmpty()) {
+                errors.accept(String.format("%s: %d failed and are tried again at the next observation: %s",
+                        what, failures.size(), new TreeMap<>(failures)));
+            }
         }
     }
 
@@ -431,7 +455,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         try {
             binding.run();
         } catch (RuntimeException e) {
-            logger.warn(String.format("VM[%s] memory optimization binding was not updated", inv.getUuid()), e);
+            logger.error(String.format("VM[%s] memory optimization binding was not updated; the next observation binds it again",
+                    inv.getUuid()), e);
         }
     }
 
@@ -484,6 +509,10 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
 
     /** Unknown holds being reconciled on this management node, by hold operation. */
     private final Set<String> reconcilingHolds = ConcurrentHashMap.newKeySet();
+    /** Preparing or Held holds whose VM is not migrating: when this node first saw each so, by source and operation. */
+    private final Map<String, Long> settledHolds = new ConcurrentHashMap<>();
+    /** The migration callback releases a hold seconds after its VM settles; one still held later was left behind. */
+    private long settledHoldGraceMillis = TimeUnit.MINUTES.toMillis(5);
 
     /**
      * After a fresh observation of a migration source, reconcile each of its
@@ -496,19 +525,50 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 "from MemoryMigrationVO m where m.sourceHostUuid = :host and (m.status = 'Unknown' or m.status <> 'Released'"
                         + " and not exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid))", MemoryMigrationVO.class)
                 .setParameter("host", sourceHost).getResultList());
+        holds = new ArrayList<>(holds);
+        holds.addAll(settledHoldsLeftBehind(sourceHost));
+        List<MemoryMigrationVO> started = new ArrayList<>();
         for (MemoryMigrationVO hold : holds) {
-            if (!reconcilingHolds.add(hold.operationUuid)) { continue; }
+            if (reconcilingHolds.add(hold.operationUuid)) { started.add(hold); }
+        }
+        Round round = new Round(String.format("Host[%s] migration holds", sourceHost), started.size());
+        for (MemoryMigrationVO hold : started) {
             reconcileMigrationHold(hold.vmUuid, new Completion(null) {
                 @Override public void success() {
                     reconcilingHolds.remove(hold.operationUuid);
-                    logger.info(String.format("VM[%s] unknown migration hold reconciled", hold.vmUuid));
+                    settledHolds.remove(sourceHost + "/" + hold.operationUuid);
+                    logger.info(String.format("VM[%s] migration hold reconciled", hold.vmUuid));
+                    round.finished(hold.vmUuid, null);
                 }
                 @Override public void fail(ErrorCode errorCode) {
                     reconcilingHolds.remove(hold.operationUuid);
-                    logger.warn(String.format("VM[%s] migration hold remains unresolved: %s", hold.vmUuid, errorCode));
+                    round.finished(hold.vmUuid, String.format("hold %s unresolved: %s", hold.operationUuid, errorCode.getDetails()));
                 }
             });
         }
+    }
+
+    /**
+     * A management node that restarts during a migration leaves its Preparing or Held hold with no
+     * callback to release it. The VM is Migrating for as long as any node migrates it, so a hold whose
+     * VM has been out of Migrating for the grace period is reconciled like an Unknown one.
+     */
+    private List<MemoryMigrationVO> settledHoldsLeftBehind(String sourceHost) {
+        List<MemoryMigrationVO> settled = repository.transaction(em -> em.createQuery(
+                "from MemoryMigrationVO m where m.sourceHostUuid = :host and m.status in ('Preparing', 'Held')"
+                        + " and exists (select v.uuid from VmInstanceVO v where v.uuid = m.vmUuid and v.state <> :migrating)",
+                MemoryMigrationVO.class).setParameter("host", sourceHost)
+                .setParameter("migrating", VmInstanceState.Migrating).getResultList());
+        long now = System.currentTimeMillis();
+        Set<String> current = new HashSet<>();
+        List<MemoryMigrationVO> leftBehind = new ArrayList<>();
+        for (MemoryMigrationVO hold : settled) {
+            String key = sourceHost + "/" + hold.operationUuid;
+            current.add(key);
+            if (now - settledHolds.computeIfAbsent(key, ignored -> now) >= settledHoldGraceMillis) { leftBehind.add(hold); }
+        }
+        settledHolds.keySet().removeIf(key -> key.startsWith(sourceHost + "/") && !current.contains(key));
+        return leftBehind;
     }
 
     private boolean vmStoppedOrDeleted(String vmUuid) {
@@ -591,8 +651,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     /**
-     * The recovery's bind and revoke are new Agent operations: the hold's own UUID
-     * may already be journaled for the migration's bind. Only the release uses it.
+     * The bind and revoke of a recovery or reconcile are new Agent operations: the hold's own
+     * UUID may already be journaled for the migration's bind. Only the release uses it.
      */
     private static MemoryMigrationVO recoveryOperation(MemoryMigrationVO hold) {
         MemoryMigrationVO operation = new MemoryMigrationVO();
@@ -670,7 +730,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 // Reconcile found the original source instance still running;
                 // restore its binding rather than revoking the VM that must
                 // continue to be optimized.
-                rebind(hold, false, rebound -> {
+                rebind(recoveryOperation(hold), false, rebound -> {
                     if (!rebound) {
                         completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown"));
                         return;
@@ -683,9 +743,10 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             } else if (targetExpected && sourceAbsent) {
                 // The target is the only VM instance. Rebind it before removing
                 // the source hold; an unknown/both-present state stays held.
-                rebind(hold, true, rebound -> {
+                MemoryMigrationVO operation = recoveryOperation(hold);
+                rebind(operation, true, rebound -> {
                     if (!rebound) { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
-                    revoke(hold, revoked -> {
+                    revoke(operation, revoked -> {
                         if (!revoked) { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM revocation remains unknown")); return; }
                         hold(hold, "release", released -> {
                             if (released) completion.success();

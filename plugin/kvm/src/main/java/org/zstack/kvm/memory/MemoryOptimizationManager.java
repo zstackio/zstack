@@ -168,7 +168,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                         repository.resend(hostUuid);
                         deliver(hostUuid);
                     } catch (RuntimeException e) {
-                        logger.warn(String.format("Unable to plan memory configuration of connected Host[%s]", hostUuid), e);
+                        // The Host keeps its last applied configuration; the next observation sends it again.
+                        logger.error(String.format("Unable to plan memory configuration of connected Host[%s]", hostUuid), e);
                     }
                     observe(hostUuid);
                     return null;
@@ -461,8 +462,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private void completeWaiters() {
         if (waiters.isEmpty()) { return; }
         long now = System.currentTimeMillis();
-        Map<String, MemoryTaskVO> tasks;
-        Set<String> connected;
+        Map<String, MemoryTaskVO> tasks = null;
+        Set<String> connected = Collections.emptySet();
         // A converging task has no reason until it finishes; the Host state records why it is still converging.
         Map<String, String> reasons = new HashMap<>();
         try {
@@ -474,15 +475,17 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 if (state.getReason() != null) { reasons.put(state.getHostUuid(), state.getReason()); }
             }
         } catch (RuntimeException e) {
-            logger.warn("Unable to read memory operation status; waiting operations are checked again", e);
-            return;
+            // An operation past its deadline is still answered: its caller must not wait for the database.
+            logger.error("Unable to read memory operation status; operations past their deadline are answered as unknown", e);
         }
         for (String uuid : new ArrayList<>(waiters.keySet())) {
-            MemoryTaskVO task = tasks.get(uuid);
+            MemoryTaskVO task = tasks == null ? null : tasks.get(uuid);
             Waiter waiting = waiters.get(uuid);
             if (waiting == null) { continue; }
             // A disconnected Host is sent its generation when it reconnects; do not hold the operation for it.
-            String outcome = task == null ? "Failed: operation record not found"
+            String outcome = tasks == null
+                    ? (waiting.deadline <= now ? "MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE" : null)
+                    : task == null ? "Failed: operation record not found"
                     : MemoryRepository.SUCCEEDED.equals(task.getStatus()) ? "success"
                     : !MemoryRepository.CONVERGING.equals(task.getStatus())
                     ? task.getStatus() + (task.getReason() == null ? "" : ": " + task.getReason())
@@ -520,7 +523,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             try {
                 repository.record(host, delivery.generation, response);
             } catch (RuntimeException e) {
-                logger.warn(String.format("Unable to record the memory apply result of Host[%s]; it is sent again", host), e);
+                logger.error(String.format("Unable to record the memory apply result of Host[%s] or report its events", host), e);
             } finally {
                 delivering.remove(host);
                 completeWaiters();
@@ -661,11 +664,12 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** A committed configuration change is planned by the next scans, not left for a Host reconnect. */
     void planLicenseChange() {
         boolean now = licensed();
-        Boolean before = lastLicensed;
-        lastLicensed = now;
-        if (before == null || before == now) { return; }
+        if (lastLicensed == null || lastLicensed == now) { lastLicensed = now; return; }
         // A plan carries the license; an expired or renewed one is planned again for the Hosts this node manages.
-        for (String host : repository.hostsWithState()) {
+        // The change is taken only once its Hosts are known, so a failed read is retried at the next scan.
+        List<String> hosts = repository.hostsWithState();
+        lastLicensed = now;
+        for (String host : hosts) {
             if (destMaker.isManagedByUs(host)) { planConfiguration(host, false); }
         }
     }
@@ -872,20 +876,25 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 if (connected.contains(host) && destMaker.isManagedByUs(host)) { deliver(host); }
             }
             completeWaiters();
-            if (now - lastObservation >= TimeUnit.SECONDS.toMillis(30)) {
+            boolean observation = now - lastObservation >= TimeUnit.SECONDS.toMillis(30);
+            if (observation) {
                 lastObservation = now;
-                planLicenseChange();
                 observeRuntime(connected);
                 // Each management node keeps the public state of the Hosts it manages, as it observes them.
-                repository.refreshHostStates(repository.hostsWithState().stream()
-                        .filter(destMaker::isManagedByUs).collect(Collectors.toList()));
+                // A Host whose stored configuration cannot be read gets it written again by a new plan.
+                for (String unreadable : repository.refreshHostStates(repository.hostsWithState().stream()
+                        .filter(destMaker::isManagedByUs).collect(Collectors.toList()))) {
+                    planConfiguration(unreadable, false);
+                }
             }
             if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {
                 lastHistoryPurge = now;
                 repository.purgeHistory(now);
             }
+            // Last: a license that cannot be read skips only this scan's license change.
+            if (observation) { planLicenseChange(); }
         } catch (Exception e) {
-            logger.warn("Memory optimization scan failed; the next scan retries", e);
+            logger.error("Memory optimization scan failed; the next scan retries", e);
         } finally { ticking.set(false); }
     }
 
@@ -907,7 +916,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     lifecycleHooks.reconcileObservedBindings(host, response);
                     lifecycleHooks.reconcileUnknownMigrationHolds(host);
                 } catch (RuntimeException e) {
-                    logger.warn(String.format("Host[%s] memory observation failed; periodic scan will retry", host), e);
+                    logger.error(String.format("Host[%s] memory observation failed; periodic scan will retry", host), e);
                 } finally {
                     observingHosts.remove(host);
                 }

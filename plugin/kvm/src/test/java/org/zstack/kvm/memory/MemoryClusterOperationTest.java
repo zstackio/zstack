@@ -29,6 +29,12 @@ public class MemoryClusterOperationTest {
         final Set<String> rejected = new HashSet<>();
         final Set<String> drained = new HashSet<>();
         final Set<String> disconnected = new HashSet<>();
+        final List<String> refreshed = new ArrayList<>();
+        @Override public List<String> refreshHostStates(java.util.Collection<String> hosts) {
+            refreshed.addAll(hosts); return Collections.emptyList();
+        }
+        @Override public List<String> dueHosts(long now) { return Collections.emptyList(); }
+        @Override public void purgeHistory(long now) { }
         @Override public List<String> connectedHosts() {
             List<String> hosts = new ArrayList<>(Arrays.asList("host1", "host2"));
             hosts.removeAll(disconnected);
@@ -54,7 +60,11 @@ public class MemoryClusterOperationTest {
             return Arrays.asList("host1", "host2");
         }
         @Override public boolean wantsZram(String host) { return !zramOff.contains(host); }
-        @Override public List<String> hostsWithState() { return Arrays.asList("host1", "host2"); }
+        int failingHostLists;
+        @Override public List<String> hostsWithState() {
+            if (failingHostLists > 0) { failingHostLists--; throw new RuntimeException("database unavailable"); }
+            return Arrays.asList("host1", "host2");
+        }
         @Override public boolean isDrained(String host) { return drained.contains(host); }
         final Set<String> withoutPool = new HashSet<>();
         @Override public boolean hasPool(String host) { return !withoutPool.contains(host); }
@@ -101,7 +111,9 @@ public class MemoryClusterOperationTest {
             }
             return new Outcome(status, response == null ? null : response.reasonCode, generation);
         }
+        boolean failingTaskReads;
         @Override public Map<String, MemoryTaskVO> tasks(Collection<String> uuids) {
+            if (failingTaskReads) { throw new RuntimeException("database unavailable"); }
             Map<String, MemoryTaskVO> result = new HashMap<>();
             for (String uuid : uuids) { if (tasks.containsKey(uuid)) { result.put(uuid, tasks.get(uuid)); } }
             return result;
@@ -526,6 +538,54 @@ public class MemoryClusterOperationTest {
         licenseDeadline = Long.MAX_VALUE;
         manager.planLicenseChange();
         assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+    }
+
+    @Test public void aLicenseChangeIsPlannedAgainAfterTheHostListFails() throws Exception {
+        setup();
+        manager.planLicenseChange();
+        licenseDeadline = 0;
+        repository.failingHostLists = 1;
+        try {
+            manager.planLicenseChange();
+            fail("the host list failure reaches the scan");
+        } catch (RuntimeException expected) {
+            assertTrue(repository.plans.isEmpty());
+        }
+        manager.planLicenseChange();
+        assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
+    }
+
+    @Test public void aLicenseThatCannotBeReadSkipsOnlyTheLicenseChangeOfTheScan() throws Exception {
+        setup();
+        inject(manager, "pluginRgty", licensedRegistry(() -> { throw new IllegalStateException("license unreadable"); }));
+        Method tick = MemoryOptimizationManager.class.getDeclaredMethod("tick"); tick.setAccessible(true);
+        tick.invoke(manager);
+        assertEquals("the public state is still refreshed", Arrays.asList("host1", "host2"), repository.refreshed);
+        assertTrue(repository.plans.isEmpty());
+    }
+
+    @Test public void anExpiredWaiterIsAnsweredWhileItsStatusCannotBeRead() throws Exception {
+        setup();
+        MemoryHostOperationMsg msg = new MemoryHostOperationMsg();
+        msg.setHostUuid("host1"); msg.setAction("resume"); msg.setAccountUuid("account"); msg.setUserUuid("user");
+        msg.setTimeout(7200000L);
+        manager.hostBus = bus(replies, manager);
+        invokeHostOperation(manager, msg);
+        assertTrue(manager.outcomes.isEmpty());
+        repository.failingTaskReads = true;
+        Method complete = MemoryOptimizationManager.class.getDeclaredMethod("completeWaiters");
+        complete.setAccessible(true);
+        complete.invoke(manager);
+        assertTrue("a waiter before its deadline keeps waiting", manager.outcomes.isEmpty());
+        Field waiters = MemoryOptimizationManager.class.getDeclaredField("waiters"); waiters.setAccessible(true);
+        for (Object waiter : ((Map<?, ?>) waiters.get(manager)).values()) {
+            Field deadline = waiter.getClass().getDeclaredField("deadline"); deadline.setAccessible(true);
+            deadline.setLong(waiter, 0);
+        }
+        complete.invoke(manager);
+        complete.invoke(manager);
+        assertEquals(Collections.singletonList("MEMORY_RESULT_UNKNOWN: OPERATION_STATUS_UNREADABLE"), manager.outcomes);
+        assertTrue(((Map<?, ?>) waiters.get(manager)).isEmpty());
     }
 
     @Test public void aHostOutsideTheClusterIsRejectedBeforeAnyPlan() throws Exception {

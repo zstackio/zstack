@@ -9,7 +9,7 @@ doc {
 
 	field {
 		name "success"
-		desc ""
+		desc "恢复请求是否已作为长任务提交；各物理机的恢复结果见长任务结果（jobResult）"
 		type "boolean"
 		since "5.5.48"
 	}

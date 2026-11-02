@@ -6,6 +6,7 @@ import org.zstack.resourceconfig.ResourceConfigVO;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Same-transaction reader/writer for standard memory config values.
@@ -60,11 +61,22 @@ public final class MemoryStandardConfigAdapter {
         if (resourceUuid == null || resourceUuid.trim().isEmpty()) { throw new IllegalArgumentException("resource UUID is required"); }
         MemoryStandardField.Scope scope = MemoryStandardField.scope(resourceType);
         if (scope == MemoryStandardField.Scope.GLOBAL) { throw new IllegalArgumentException("resource override requires Host or Cluster"); }
+        // The resource's rows of these categories are read once, not per field.
+        Map<String, ResourceConfigVO> rows = new HashMap<>();
+        Set<String> categories = values.keySet().stream().map(path -> MemoryStandardField.forPath(path).category())
+                .collect(Collectors.toSet());
+        if (!categories.isEmpty()) {
+            for (ResourceConfigVO row : em.createQuery("select r from ResourceConfigVO r where r.resourceUuid = :resourceUuid"
+                    + " and r.category in (:categories)", ResourceConfigVO.class)
+                    .setParameter("resourceUuid", resourceUuid).setParameter("categories", categories).getResultList()) {
+                rows.put(row.getCategory() + "/" + row.getName(), row);
+            }
+        }
         for (Map.Entry<String, ?> entry : values.entrySet()) {
             MemoryStandardField field = MemoryStandardField.forPath(entry.getKey());
             requireScope(field, scope);
             String encoded = MemoryStandardConfigCodec.encode(field.path(), entry.getValue());
-            ResourceConfigVO row = resourceRow(em, field, resourceUuid);
+            ResourceConfigVO row = rows.get(field.category() + "/" + field.configName());
             if (encoded == null) {
                 if (row != null) { em.remove(row); }
             } else if (row == null) {
