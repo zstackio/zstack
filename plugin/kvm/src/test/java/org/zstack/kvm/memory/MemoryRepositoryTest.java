@@ -29,6 +29,8 @@ import org.zstack.resourceconfig.ResourceConfig;
 import org.zstack.resourceconfig.ResourceConfigVO;
 import org.zstack.header.vo.ResourceVO;
 import static org.junit.Assert.*;
+import static org.zstack.kvm.memory.MemoryRepository.License.*;
+import static org.zstack.kvm.memory.MemoryRepository.Origin.*;
 
 /** Actual transactions and unique/row-lock schema, isolated from any product database. */
 public class MemoryRepositoryTest {
@@ -215,8 +217,8 @@ public class MemoryRepositoryTest {
         setOverride("cluster1", "ClusterVO", MemoryStandardField.ZRAM_LOGICAL_CAPACITY, 1L << 30);
         setOverride("host1", "HostVO", MemoryStandardField.KSM_ENABLED, false);
         setOverride("host1", "HostVO", MemoryStandardField.ZRAM_LOGICAL_CAPACITY, 2L << 30);
-        repository.plan("host1", null, "connect", "test", true, false);
-        repository.plan("host2", null, "connect", "test", true, false);
+        repository.plan("host1", null, "connect", "test", VALID, SYSTEM);
+        repository.plan("host2", null, "connect", "test", VALID, SYSTEM);
         Map<String, Object> host1 = desired("host1"), host2 = desired("host2");
         assertEquals("active", host1.get("control"));
         assertEquals(false, field(host1, "ksm", "enabled"));
@@ -228,7 +230,7 @@ public class MemoryRepositoryTest {
         setOverride("host1", "HostVO", MemoryStandardField.ZRAM_ENABLED, true);
         repository.transaction(em -> em.createQuery("update ResourceConfigVO r set r.value = 'none' where r.resourceUuid = 'host1'"
                 + " and r.name = :name").setParameter("name", MemoryStandardField.ZRAM_ENABLED.configName()).executeUpdate());
-        repository.plan("host1", null, "configure", "test", true, false);
+        repository.plan("host1", null, "configure", "test", VALID, SYSTEM);
         assertNull(field(desired("host1"), "zram", "enabled"));
     }
 
@@ -236,32 +238,32 @@ public class MemoryRepositoryTest {
         setGlobal(MemoryStandardField.WRITEBACK_ENABLED, "true");
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
-        repository.plan("host1", null, "connect", "test", true, false);
+        repository.plan("host1", null, "connect", "test", VALID, SYSTEM);
         assertEquals(false, field(desired("host1"), "writeback", "enabled"));
         repository.recordPreparedBackend("host1", BACKEND, 1L << 30);
-        repository.plan("host1", null, "prepareWritebackBackend", "test", true, false);
+        repository.plan("host1", null, "prepareWritebackBackend", "test", VALID, SYSTEM);
         assertEquals(true, field(desired("host1"), "writeback", "enabled"));
         // Writeback runs inside ZRAM: turning ZRAM off turns it off too.
         setOverride("host1", "HostVO", MemoryStandardField.ZRAM_ENABLED, false);
-        repository.plan("host1", null, "configure", "test", true, false);
+        repository.plan("host1", null, "configure", "test", VALID, SYSTEM);
         assertEquals(false, field(desired("host1"), "zram", "enabled"));
         assertEquals(false, field(desired("host1"), "writeback", "enabled"));
-        repository.plan("host2", null, "connect", "test", false, false);
+        repository.plan("host2", null, "connect", "test", MISSING, SYSTEM);
         assertEquals(true, field(desired("host2"), "ksm", "enabled"));
         assertEquals("without a license ZRAM stops reclaiming", Collections.singletonMap("enabled", false),
                 desired("host2").get("zram"));
         assertTrue(((Map<?, ?>) desired("host2").get("writeback")).isEmpty());
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "none");
-        repository.plan("host2", null, "configure", "test", true, false);
+        repository.plan("host2", null, "configure", "test", VALID, SYSTEM);
         assertNull("none leaves a licensed ZRAM unmanaged", field(desired("host2"), "zram", "enabled"));
     }
 
     @Test public void onlyAChangedConfigurationStartsAGenerationAndSupersedesTheOldOne() {
-        MemoryRepository.Planned first = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned first = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         assertEquals(1, first.generation);
-        assertEquals(1, repository.plan("host1", null, "connect", "test", true, false).generation);
-        assertNull(repository.plan("host1", null, "connect", "test", true, false).task);
-        MemoryRepository.Planned second = repository.plan("host1", "active", "resume", "test", true, true);
+        assertEquals(1, repository.plan("host1", null, "connect", "test", VALID, SYSTEM).generation);
+        assertNull(repository.plan("host1", null, "connect", "test", VALID, SYSTEM).task);
+        MemoryRepository.Planned second = repository.plan("host1", "active", "resume", "test", VALID, OPERATOR);
         assertEquals(2, second.generation);
         assertEquals("Superseded", task(first.task).getStatus());
         assertEquals("Converging", task(second.task).getStatus());
@@ -271,7 +273,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void appliedGenerationFinishesItsOperationAndIgnoresAStaleResult() {
-        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         assertNull(repository.record("host1", 7, reply("Succeeded", null, null)));
         assertEquals("Converging", repository.state("host1").getStatus());
         MemoryRepository.Outcome outcome = repository.record("host1", pause.generation, reply("Succeeded", null, null));
@@ -283,7 +285,7 @@ public class MemoryRepositoryTest {
         assertEquals("Applied", row.getStatus());
         assertTrue(row.getAllowedActions().contains("resume"));
         // Asking again resends the same generation, and finishes when the Host confirms it.
-        MemoryRepository.Planned again = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned again = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         assertEquals(pause.generation, again.generation);
         assertEquals("Converging", task(again.task).getStatus());
         assertEquals(pause.generation, repository.pending("host1").generation);
@@ -292,7 +294,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void convergingIsResentAfterTheAgentDelay() {
-        MemoryRepository.Planned drain = repository.plan("host1", "drained", "drain", "test", true, true);
+        MemoryRepository.Planned drain = repository.plan("host1", "drained", "drain", "test", VALID, OPERATOR);
         long before = System.currentTimeMillis();
         MemoryRepository.Outcome outcome = repository.record("host1", drain.generation, reply("Converging", "DRAINING", 30L));
         assertEquals("Converging", outcome.status);
@@ -308,7 +310,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void failuresBackOffAndBecomeFailedAfterFive() {
-        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         long[] delays = {30000, 60000, 120000, 240000};
         for (int i = 0; i < 4; i++) {
             long before = System.currentTimeMillis();
@@ -334,7 +336,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void aHostAheadOfTheRecordedGenerationIsSentAHigherOne() {
-        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         MemoryAgentResponse stale = reply("Failed", "STALE_GENERATION", null);
         stale.appliedGeneration = 7L;
         MemoryRepository.Outcome outcome = repository.record("host1", pause.generation, stale);
@@ -355,7 +357,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void observationResendsWhenTheHostNoLongerReportsTheGeneration() {
-        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", true, true);
+        MemoryRepository.Planned pause = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", pause.generation);
         applied.state.put("control", "paused");
@@ -371,7 +373,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostWhoseWantedKsmtunedFailedIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> ksm = new LinkedHashMap<>();
@@ -389,7 +391,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aServiceStartedAgainByAnApplyIsReportedRecovered() {
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse running = ksmSample(plan.generation, "active");
         repository.record("host1", plan.generation, running);
         repository.observe("host1", running);
@@ -426,7 +428,7 @@ public class MemoryRepositoryTest {
 
     @Test public void anEventThatCannotBeFiredReachesTheCallerAndKeepsTheSample() {
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse running = ksmSample(plan.generation, "active");
         repository.record("host1", plan.generation, running);
         repository.observe("host1", running);
@@ -440,7 +442,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void anUnreadableStoredConfigurationIsShownAndPlannedAgain() {
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         repository.record("host1", plan.generation, reply("Succeeded", null, null));
         repository.transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
@@ -450,14 +452,14 @@ public class MemoryRepositoryTest {
         HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
         assertEquals("Converging", row.getStatus());
         assertEquals("CONFIGURATION_UNREADABLE", row.getReason());
-        repository.plan("host1", null, "configure", "test", true, false);
+        repository.plan("host1", null, "configure", "test", VALID, SYSTEM);
         assertTrue(repository.refreshHostStates(Collections.singletonList("host1")).isEmpty());
         assertNotEquals("CONFIGURATION_UNREADABLE",
                 repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")).getReason());
     }
 
     @Test public void anUnreadableObservationIsShownAsUnknownWithItsReason() {
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         repository.record("host1", plan.generation, reply("Succeeded", null, null));
         repository.transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
@@ -472,13 +474,13 @@ public class MemoryRepositoryTest {
     @Test public void aFirstPlanThatLostTheInsertToAnotherPlansAgain() {
         // Two first plans of a Host both insert its state row; the later commit fails on the key.
         nextTransactionFailure.set(integrity("Duplicate entry 'host1' for key 'PRIMARY'", 1062));
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         assertEquals(plan.generation, repository.state("host1").getDesiredRevision());
         for (RuntimeException other : Arrays.asList(new IllegalStateException("database unavailable"),
                 integrity("Column 'actorUuid' cannot be null", 1048))) {
             nextTransactionFailure.set(other);
             try {
-                repository.plan("host1", null, "connect", "test", true, true);
+                repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
                 fail("only a lost insert is planned again: " + other);
             } catch (RuntimeException expected) { assertSame(other, expected); }
         }
@@ -491,7 +493,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostWithoutKsmIsNotSentKsmAgainAndAgain() {
         setGlobal(MemoryStandardField.KSM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         applied.state.put("capabilities", new LinkedHashMap<>(Collections.singletonMap("ksm", false)));
@@ -503,7 +505,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aStoppedZramServiceWhoseCapabilityIsUnknownIsStartedAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         applied.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "active")));
@@ -527,7 +529,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostThatStoppedItsWantedZramIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         applied.state.put("zram", new LinkedHashMap<>(Collections.singletonMap("serviceState", "active")));
@@ -550,7 +552,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostThatCannotRunTheWantedZramIsAppliedWithTheReason() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> capabilities = new LinkedHashMap<>();
@@ -573,7 +575,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostWhoseZramServiceOnlyObservesIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> zram = new LinkedHashMap<>();
@@ -591,7 +593,7 @@ public class MemoryRepositoryTest {
 
     @Test public void anObservingZramServiceIsNotDriftWhenZramIsOff() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "false");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> zram = new LinkedHashMap<>();
@@ -604,7 +606,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostStillReclaimingAfterZramIsTurnedOffIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "false");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> zram = new LinkedHashMap<>();
@@ -620,7 +622,7 @@ public class MemoryRepositoryTest {
 
     @Test public void aHostNoLongerReclaimingWhileZramIsOnIsSentItsGenerationAgain() {
         setGlobal(MemoryStandardField.ZRAM_ENABLED, "true");
-        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         MemoryAgentResponse applied = reply("Succeeded", null, null);
         applied.state.put("appliedGeneration", plan.generation);
         Map<String, Object> zram = new LinkedHashMap<>();
@@ -637,7 +639,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void aBackendPreparedAgainAfterARebootIsFollowedOnceTheSameDiskIsActive() {
-        repository.plan("host1", null, "connect", "test", true, true);
+        repository.plan("host1", null, "connect", "test", VALID, OPERATOR);
         repository.recordPreparedBackend("host1", BACKEND, 1L << 30);
         String rebooted = "cccccccccccccccccccccccccccccccc";
         MemoryAgentResponse observed = reply("Succeeded", null, null);
@@ -666,7 +668,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void drainedHostIsReported() {
-        repository.plan("host1", "drained", "drain", "test", true, true);
+        repository.plan("host1", "drained", "drain", "test", VALID, OPERATOR);
         assertTrue(repository.isDrained("host1"));
         assertFalse(repository.isDrained("host2"));
     }
@@ -726,7 +728,7 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void deletedHostRecordsAreRemoved() {
-        repository.plan("host2", "paused", "pause", "test", true, true);
+        repository.plan("host2", "paused", "pause", "test", VALID, OPERATOR);
         repository.transaction(em -> { em.remove(em.find(TestHost.class, "host2")); return null; });
         repository.cleanupDeletedResources();
         assertNull(repository.state("host2"));
@@ -736,8 +738,8 @@ public class MemoryRepositoryTest {
     }
 
     @Test public void finishedOperationsArePurgedAfterAWeek() {
-        MemoryRepository.Planned first = repository.plan("host1", "paused", "pause", "test", true, true);
-        MemoryRepository.Planned second = repository.plan("host1", "active", "resume", "test", true, true);
+        MemoryRepository.Planned first = repository.plan("host1", "paused", "pause", "test", VALID, OPERATOR);
+        MemoryRepository.Planned second = repository.plan("host1", "active", "resume", "test", VALID, OPERATOR);
         repository.purgeHistory(System.currentTimeMillis() + MemoryRepository.HISTORY_MILLIS + 1000);
         assertNull(task(first.task));
         assertNotNull(task(second.task));

@@ -77,18 +77,18 @@ public class MemoryReadApisTest {
         observed.put("control", "active");
         observed.put("ksm", Collections.singletonMap("enabled", true));
         observed.put("zram", Collections.singletonMap("poolGeneration", "pool"));
-        assertEquals("Active", MemoryRepository.featureState(observed, false));
-        assertEquals(java.util.Arrays.asList("query", "pause", "drain"), MemoryRepository.allowedActions("active", false, observed));
-        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("paused", false, observed));
-        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("drained", false, observed));
+        assertEquals("Active", MemoryRepository.featureState(observed, MemoryRepository.ZramExpectation.NONE));
+        assertEquals(java.util.Arrays.asList("query", "pause", "drain"), MemoryRepository.allowedActions("active", MemoryRepository.SUCCEEDED, observed));
+        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("paused", MemoryRepository.SUCCEEDED, observed));
+        assertEquals(java.util.Arrays.asList("query", "resume"), MemoryRepository.allowedActions("drained", MemoryRepository.SUCCEEDED, observed));
         observed.put("control", "drained");
-        assertEquals("Drained", MemoryRepository.featureState(observed, false));
-        assertEquals("Unknown", MemoryRepository.featureState(Collections.emptyMap(), false));
-        assertEquals(Collections.singletonList("query"), MemoryRepository.allowedActions("active", false, Collections.emptyMap()));
+        assertEquals("Drained", MemoryRepository.featureState(observed, MemoryRepository.ZramExpectation.NONE));
+        assertEquals("Unknown", MemoryRepository.featureState(Collections.emptyMap(), MemoryRepository.ZramExpectation.NONE));
+        assertEquals(Collections.singletonList("query"), MemoryRepository.allowedActions("active", MemoryRepository.SUCCEEDED, Collections.emptyMap()));
         // A Host that gave up, or is still observed drained, can be retried with resume.
         assertEquals(java.util.Arrays.asList("query", "resume"),
-                MemoryRepository.allowedActions("active", true, Collections.emptyMap()));
+                MemoryRepository.allowedActions("active", MemoryRepository.FAILED, Collections.emptyMap()));
         assertEquals(java.util.Arrays.asList("query", "resume"),
-                MemoryRepository.allowedActions("active", false, Collections.singletonMap("control", "drained")));
+                MemoryRepository.allowedActions("active", MemoryRepository.SUCCEEDED, Collections.singletonMap("control", "drained")));
     }
 }

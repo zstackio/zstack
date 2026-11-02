@@ -20,10 +20,10 @@ public final class MemoryStandardConfigurationCoordinator {
     private final MemoryRepository repository;
     private final PluginRegistry registry;
     private final ThreadFacade thdf;
-    private final BiConsumer<String, Boolean> changed;
+    private final BiConsumer<String, ZramChange> changed;
 
     public MemoryStandardConfigurationCoordinator(MemoryRepository repository, PluginRegistry registry, ThreadFacade thdf,
-                                                  BiConsumer<String, Boolean> changed) {
+                                                  BiConsumer<String, ZramChange> changed) {
         this.repository = repository; this.registry = registry; this.thdf = thdf; this.changed = changed;
     }
 
@@ -37,12 +37,12 @@ public final class MemoryStandardConfigurationCoordinator {
             global.installLocalBeforeUpdateExtension((oldConfig, newValue) -> {
                 if (!restoresDefault(field, newValue)) { validateChange(field, null, newValue); }
             });
-            global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null, reenablesZram(field, newConfig.value())));
+            global.installLocalUpdateExtension((oldConfig, newConfig) -> changed(null, zramChange(field, newConfig.value())));
             ResourceConfig resource = rcf.getResourceConfig(global.getIdentity());
             resource.installValidatorExtension((resourceUuid, oldValue, newValue) -> validateChange(field, resourceUuid, newValue));
             resource.installLocalUpdateExtension((config, resourceUuid, resourceType, oldValue, newValue) ->
-                    changed(resourceUuid, reenablesZram(field, newValue)));
-            resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid, false));
+                    changed(resourceUuid, zramChange(field, newValue)));
+            resource.installLocalDeleteExtension((config, resourceUuid, resourceType, originValue) -> changed(resourceUuid, ZramChange.NONE));
         }
     }
 
@@ -89,17 +89,26 @@ public final class MemoryStandardConfigurationCoordinator {
         }
     }
 
-    private static boolean reenablesZram(MemoryStandardField field, String value) {
-        return field == MemoryStandardField.ZRAM_ENABLED && "true".equalsIgnoreCase(value == null ? null : value.trim());
+    /** Whether a committed change turns ZRAM back on: a drained Host resumes only for such a change. */
+    public enum ZramChange {
+        REENABLED, NONE;
+
+        /** A re-enable still waiting for its Hosts is carried by a later change. */
+        ZramChange or(ZramChange pending) { return this == REENABLED || pending == REENABLED ? REENABLED : NONE; }
+    }
+
+    private static ZramChange zramChange(MemoryStandardField field, String value) {
+        return field == MemoryStandardField.ZRAM_ENABLED && "true".equalsIgnoreCase(value == null ? null : value.trim())
+                ? ZramChange.REENABLED : ZramChange.NONE;
     }
 
     /** The value is already committed; per-Host application is queued off the API thread. */
-    private void changed(String resourceUuid, boolean zramEnabled) {
+    private void changed(String resourceUuid, ZramChange zram) {
         thdf.submit(new Task<Void>() {
             @Override public String getName() { return "memory-standard-config-changed"; }
             @Override public Void call() {
                 try {
-                    changed.accept(resourceUuid, zramEnabled);
+                    changed.accept(resourceUuid, zram);
                 } catch (RuntimeException e) {
                     logger.error(String.format("unable to plan the memory configuration for resource[%s]", resourceUuid), e);
                 }

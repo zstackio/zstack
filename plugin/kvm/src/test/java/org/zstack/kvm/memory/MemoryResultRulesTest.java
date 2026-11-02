@@ -4,18 +4,26 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class MemoryResultRulesTest {
-    private static MemoryAgentResponse response(String operation, boolean success, String status) {
+    /** A reply the Agent call delivered, with the operation's status. */
+    private static MemoryAgentResponse reply(String operation, String status) {
         MemoryAgentResponse response = new MemoryAgentResponse();
-        response.operationUuid = operation; response.setSuccess(success); response.status = status;
+        response.operationUuid = operation; response.setSuccess(true); response.status = status;
+        return response;
+    }
+
+    /** A reply whose Agent call failed, whatever status it carries. */
+    private static MemoryAgentResponse failedCall(String operation, String status) {
+        MemoryAgentResponse response = reply(operation, status);
+        response.setSuccess(false);
         return response;
     }
 
     @Test public void onlyASuccessfulReplyToTheSameOperationSucceeds() {
-        assertTrue(MemoryResultRules.succeeded("op", response("op", true, "Succeeded")));
+        assertTrue(MemoryResultRules.succeeded("op", reply("op", "Succeeded")));
         assertFalse(MemoryResultRules.succeeded("op", null));
-        assertFalse(MemoryResultRules.succeeded("op", response("other", true, "Succeeded")));
-        assertFalse(MemoryResultRules.succeeded("op", response("op", false, "Succeeded")));
-        assertFalse(MemoryResultRules.succeeded("op", response("op", true, "Converging")));
-        assertFalse(MemoryResultRules.succeeded("op", response("op", true, null)));
+        assertFalse(MemoryResultRules.succeeded("op", reply("other", "Succeeded")));
+        assertFalse(MemoryResultRules.succeeded("op", failedCall("op", "Succeeded")));
+        assertFalse(MemoryResultRules.succeeded("op", reply("op", "Converging")));
+        assertFalse(MemoryResultRules.succeeded("op", reply("op", null)));
     }
 }

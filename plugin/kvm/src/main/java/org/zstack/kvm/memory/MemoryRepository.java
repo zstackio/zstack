@@ -35,6 +35,15 @@ public class MemoryRepository {
     static final String CONVERGING = "Converging";
     static final String FAILED = "Failed";
     static final int FAILURES_BEFORE_FAILED = 5;
+
+    /** Whether a valid Cloud License allows the optimization that a plan configures. */
+    public enum License { VALID, MISSING }
+
+    /** Who asked for a plan: an operator's request is recorded as a task even when nothing changed. */
+    public enum Origin { OPERATOR, SYSTEM }
+
+    /** Whether the Host is expected to run the ZRAM service: wanted by its configuration and supported. */
+    enum ZramExpectation { RUNNING, NONE }
     /** Public state reasons for stored data that cannot be read. */
     static final String CONFIGURATION_UNREADABLE = "CONFIGURATION_UNREADABLE";
     static final String OBSERVATION_UNREADABLE = "OBSERVATION_UNREADABLE";
@@ -221,7 +230,7 @@ public class MemoryRepository {
         return MemoryStandardConfigAdapter.isUnmanaged(value) ? null : value;
     }
 
-    Map<String, Object> desired(EntityManager em, String host, String control, boolean licensed) {
+    Map<String, Object> desired(EntityManager em, String host, String control, License license) {
         String cluster = em.createQuery("select h.clusterUuid from HostVO h where h.uuid = :uuid", String.class)
                 .setParameter("uuid", host).getResultList().stream().findFirst().orElse(null);
         Map<String, Object> ksm = new LinkedHashMap<>();
@@ -229,7 +238,7 @@ public class MemoryRepository {
         Map<String, Object> zram = new LinkedHashMap<>();
         Map<String, Object> writeback = new LinkedHashMap<>();
         // The legacy host.ksm switch stays license-free; memory optimization does not.
-        if (licensed) {
+        if (license == License.VALID) {
             ksm.put("zeroPagesEnabled", effectiveValue(em, MemoryStandardField.KSM_ZERO_PAGES, host, cluster));
             zram.put("enabled", effectiveValue(em, MemoryStandardField.ZRAM_ENABLED, host, cluster));
             zram.put("logicalCapacityBytes", effectiveValue(em, MemoryStandardField.ZRAM_LOGICAL_CAPACITY, host, cluster));
@@ -285,13 +294,13 @@ public class MemoryRepository {
      * An operator operation is always recorded as a task carrying its
      * generation, also when the configuration is already the desired one.
      */
-    public Planned plan(String host, String control, String action, String actor, boolean licensed, boolean operation) {
+    public Planned plan(String host, String control, String action, String actor, License license, Origin origin) {
         try {
-            return planOnce(host, control, action, actor, licensed, operation);
+            return planOnce(host, control, action, actor, license, origin);
         } catch (RuntimeException e) {
             // Two first plans of a Host may both insert its state; the later one plans again on the row the first made.
             if (!duplicatePrimaryKey(e)) { throw e; }
-            return planOnce(host, control, action, actor, licensed, operation);
+            return planOnce(host, control, action, actor, license, origin);
         }
     }
 
@@ -304,12 +313,12 @@ public class MemoryRepository {
                 && String.valueOf(violation.getMessage()).contains("PRIMARY");
     }
 
-    private Planned planOnce(String host, String control, String action, String actor, boolean licensed, boolean operation) {
+    private Planned planOnce(String host, String control, String action, String actor, License license, Origin origin) {
         return transaction(em -> {
             validateResource(em, "Host", host);
             MemoryStateVO state = lockState(em, host);
             if (control != null) { state.setControl(control); }
-            String desired = GSON.toJson(desired(em, host, state.getControl(), licensed));
+            String desired = GSON.toJson(desired(em, host, state.getControl(), license));
             boolean changed = !desired.equals(state.getDesired());
             if (changed) {
                 long generation = state.getDesiredRevision() + 1;
@@ -317,12 +326,12 @@ public class MemoryRepository {
                 state.setStatus(CONVERGING); state.setReason(null); state.setFailures(0);
                 state.setNextAttemptAt(System.currentTimeMillis());
                 finishTasks(em, host, generation - 1, "Superseded", "Superseded by generation " + generation);
-            } else if (operation && !CONVERGING.equals(state.getStatus())) {
+            } else if (origin == Origin.OPERATOR && !CONVERGING.equals(state.getStatus())) {
                 // An operator asking again resends the current generation, also to a Host that gave up.
                 state.setStatus(CONVERGING); state.setFailures(0); state.setNextAttemptAt(System.currentTimeMillis());
             }
             String task = null;
-            if (changed || operation) {
+            if (changed || origin == Origin.OPERATOR) {
                 task = newTask(em, host, action, actor, state.getDesiredRevision(), CONVERGING);
             }
             em.flush();
@@ -603,9 +612,9 @@ public class MemoryRepository {
             reason = code == null || "".equals(code) ? "ZRAM_UNSUPPORTED" : "ZRAM_UNSUPPORTED: " + code;
         }
         row.setReason(trim(reason));
-        row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed)));
+        row.setFeatureState(featureState(observed, zramWanted && zramSupported(observed) ? ZramExpectation.RUNNING : ZramExpectation.NONE));
         row.setCapabilities(state.getCapabilities());
-        row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), FAILED.equals(state.getStatus()), observed)));
+        row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), state.getStatus(), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
         if (row.getActiveJobUuid() != null && !(unfinishedJobs == null ? longJobUnfinished(em, row.getActiveJobUuid())
                 : unfinishedJobs.contains(row.getActiveJobUuid()))) { row.setActiveJobUuid(null); }
@@ -668,7 +677,7 @@ public class MemoryRepository {
         return ksm instanceof Boolean && observedKsm instanceof Boolean && !ksm.equals(observedKsm);
     }
 
-    static String featureState(Map<String, Object> observed, boolean zramWanted) {
+    static String featureState(Map<String, Object> observed, ZramExpectation zram) {
         if (observed.isEmpty()) { return "Unknown"; }
         Map<?, ?> capabilities = map(observed.get("capabilities"));
         if (capabilities != null && Boolean.FALSE.equals(capabilities.get("supported"))) { return "Unsupported"; }
@@ -676,24 +685,24 @@ public class MemoryRepository {
         if ("drained".equals(control)) { return "Drained"; }
         if ("paused".equals(control)) { return "Paused"; }
         // A wanted ZRAM whose service is not running cannot be observed.
-        if (zramWanted && !"active".equals(field(observed.get("zram"), "serviceState"))) { return "Unknown"; }
+        if (zram == ZramExpectation.RUNNING && !"active".equals(field(observed.get("zram"), "serviceState"))) { return "Unknown"; }
         Object ksm = field(observed.get("ksm"), "enabled");
-        Object zram = field(observed.get("zram"), "efficiencyEnabled");
-        if (Boolean.TRUE.equals(ksm) || Boolean.TRUE.equals(zram)) { return "Active"; }
-        if (Boolean.FALSE.equals(ksm) && !Boolean.TRUE.equals(zram)) { return "Disabled"; }
+        Object zramEnabled = field(observed.get("zram"), "efficiencyEnabled");
+        if (Boolean.TRUE.equals(ksm) || Boolean.TRUE.equals(zramEnabled)) { return "Active"; }
+        if (Boolean.FALSE.equals(ksm) && !Boolean.TRUE.equals(zramEnabled)) { return "Disabled"; }
         return "Unknown";
     }
 
-    static List<String> allowedActions(String control, boolean failed, Map<String, Object> observed) {
+    static List<String> allowedActions(String control, String status, Map<String, Object> observed) {
         List<String> actions = new ArrayList<>();
         actions.add("query");
         Object observedControl = observed.get("control");
         // Resume also retries a Host that gave up or is still observed paused or drained.
-        if (!"active".equals(control) || failed || "paused".equals(observedControl) || "drained".equals(observedControl)) {
+        if (!"active".equals(control) || FAILED.equals(status) || "paused".equals(observedControl) || "drained".equals(observedControl)) {
             actions.add("resume");
         }
         if (!"active".equals(control)) { return actions; }
-        if ("active".equals(observedControl) && !"Disabled".equals(featureState(observed, false))) { actions.add("pause"); }
+        if ("active".equals(observedControl) && !"Disabled".equals(featureState(observed, ZramExpectation.NONE))) { actions.add("pause"); }
         if (field(observed.get("zram"), "poolGeneration") != null) { actions.add("drain"); }
         return actions;
     }

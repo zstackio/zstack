@@ -156,21 +156,27 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     @Override public void beforeMigrateVm(VmInstanceInventory vm, String target) { }
 
     @Override public void afterMigrateVm(VmInstanceInventory vm, String source, NoErrorCompletion completion) {
-        releaseAfterIdentityCheck(vm.getUuid(), true, completion);
+        releaseAfterIdentityCheck(vm.getUuid(), MigrationResult.MIGRATED, completion);
     }
 
     @Override public void failedToMigrateVm(VmInstanceInventory vm, String target, ErrorCode error, NoErrorCompletion completion) {
-        releaseAfterIdentityCheck(vm.getUuid(), false, completion);
+        releaseAfterIdentityCheck(vm.getUuid(), MigrationResult.FAILED, completion);
     }
 
-    private void releaseAfterIdentityCheck(String vm, boolean migrated, NoErrorCompletion completion) {
+    /** Where the platform's migration left the VM: on the target, or still on the source. */
+    private enum MigrationResult { MIGRATED, FAILED }
+
+    /** The source or target Host of a migration hold. */
+    private enum Side { SOURCE, TARGET }
+
+    private void releaseAfterIdentityCheck(String vm, MigrationResult result, NoErrorCompletion completion) {
         MemoryMigrationVO hold = repository.transaction(em ->
                 em.find(MemoryMigrationVO.class, vm, LockModeType.PESSIMISTIC_WRITE));
         if (hold == null || "Released".equals(hold.status)) { completion.done(); return; }
-        verifyMigrationIdentities(hold, migrated, safe -> {
+        verifyMigrationIdentities(hold, result, safe -> {
             if (!safe) { completion.done(); return; }
-            if (migrated) {
-                rebind(hold, true, rebound -> {
+            if (result == MigrationResult.MIGRATED) {
+                rebind(hold, Side.TARGET, rebound -> {
                     if (!rebound) { completion.done(); return; }
                     revoke(hold, revoked -> { if (!revoked) { completion.done(); return; } hold(hold, "release", ignored -> completion.done()); });
                 });
@@ -178,7 +184,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 // The source VM is still the verified instance after a failed
                 // migration. Restore its VM binding; revoking it here would
                 // silently drop optimization for the still-running VM.
-                rebind(hold, false, rebound -> {
+                rebind(hold, Side.SOURCE, rebound -> {
                     if (rebound) { hold(hold, "release", ignored -> completion.done()); }
                     else { completion.done(); }
                 });
@@ -186,7 +192,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         });
     }
 
-    private void verifyMigrationIdentities(MemoryMigrationVO hold, boolean migrated, Consumer<Boolean> completion) {
+    private void verifyMigrationIdentities(MemoryMigrationVO hold, MigrationResult result, Consumer<Boolean> completion) {
         inspectMigrationIdentities(hold, (source, target) -> {
             if (target.present) {
                 hold.targetInstanceGeneration = target.generation;
@@ -197,7 +203,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             boolean targetExpected = targetExpected(hold, target);
             boolean sourceAbsent = source.authoritative && !source.present;
             boolean targetAbsent = target.authoritative && !target.present;
-            boolean safe = migrated ? targetExpected && sourceAbsent : sourceExpected && targetAbsent;
+            boolean safe = result == MigrationResult.MIGRATED ? targetExpected && sourceAbsent : sourceExpected && targetAbsent;
             if (!safe) { hold.status = "Unknown"; hold.reason = "Source/target VM instance identity was not conclusively verified"; record(hold); }
             completion.accept(safe);
         });
@@ -213,22 +219,20 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 || !managedZram(hold.targetHostUuid));
     }
 
+    /** What a Host's VM inventory proves about one VM: nothing, its absence or its presence. */
+    private enum Presence { UNKNOWN, ABSENT, PRESENT }
+
     private static final class VmIdentity {
         final boolean authoritative;
         final boolean present;
         final String generation;
+        /** The inventory says the Host has no ZRAM to bind the VM to. */
         final boolean featureAbsent;
-        VmIdentity(boolean authoritative, boolean present, String generation) {
-            this.authoritative = authoritative;
-            this.present = present;
+        VmIdentity(Presence presence, String generation, MemoryAgentResponse inventory) {
+            this.authoritative = presence != Presence.UNKNOWN;
+            this.present = presence == Presence.PRESENT;
             this.generation = generation;
-            this.featureAbsent = false;
-        }
-        VmIdentity(boolean authoritative, boolean present, String generation, boolean featureAbsent) {
-            this.authoritative = authoritative;
-            this.present = present;
-            this.generation = generation;
-            this.featureAbsent = featureAbsent;
+            this.featureAbsent = inventory != null && targetHasNoZram(inventory);
         }
     }
 
@@ -241,7 +245,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
         });
     }
 
-    private void rebind(MemoryMigrationVO hold, boolean target, Consumer<Boolean> completion) {
+    private void rebind(MemoryMigrationVO hold, Side side, Consumer<Boolean> completion) {
+        boolean target = side == Side.TARGET;
         Map<String, Object> command = command(hold, target ? hold.targetHostUuid : hold.sourceHostUuid);
         command.put("action", "bind"); command.put("scope", "VM");
         command.put("expectedInstanceGeneration", target && hold.targetInstanceGeneration != null
@@ -382,20 +387,20 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     private static VmIdentity vmIdentity(MemoryAgentResponse response, String vm) {
-        if (response == null || response.state == null) { return new VmIdentity(false, false, null); }
+        if (response == null || response.state == null) { return new VmIdentity(Presence.UNKNOWN, null, null); }
         Object raw = response.state.get("vms");
         // An empty vms map is only proof of absence when the Agent explicitly
         // declares that the inventory is complete. A partial/failed snapshot
         // must remain Unknown.
         if (!(raw instanceof Map) || !Boolean.TRUE.equals(response.state.get("inventoryComplete"))) {
-            return new VmIdentity(false, false, null);
+            return new VmIdentity(Presence.UNKNOWN, null, null);
         }
         Object value = ((Map<?, ?>) raw).get(vm);
-        if (!(value instanceof Map)) { return new VmIdentity(true, false, null, targetHasNoZram(response)); }
+        if (!(value instanceof Map)) { return new VmIdentity(Presence.ABSENT, null, response); }
         Object generation = ((Map<?, ?>) value).get("instanceGeneration");
         if (generation == null) { generation = ((Map<?, ?>) value).get("instance_generation"); }
-        return new VmIdentity(true, true, generation instanceof String && !((String) generation).trim().isEmpty()
-                ? (String) generation : null, targetHasNoZram(response));
+        return new VmIdentity(Presence.PRESENT, generation instanceof String && !((String) generation).trim().isEmpty()
+                ? (String) generation : null, response);
     }
 
     private static boolean targetHasNoZram(MemoryAgentResponse response) {
@@ -626,7 +631,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 if (!running) { releaseRecoveredHold(hold, done); return; }
                 if (confirmedHost.equals(hold.sourceHostUuid)) {
                     hold.sourceInstanceGeneration = source.generation; record(hold);
-                    rebind(recoveryOperation(hold), false, rebound -> {
+                    rebind(recoveryOperation(hold), Side.SOURCE, rebound -> {
                         if (rebound) { releaseRecoveredHold(hold, done); }
                         else { done.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown")); }
                     });
@@ -643,7 +648,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                     });
                 };
                 // A target without a service-owned pool has nothing to bind.
-                if (managedZram(hold.targetHostUuid)) { rebind(operation, true, afterBind); } else { afterBind.accept(true); }
+                if (managedZram(hold.targetHostUuid)) { rebind(operation, Side.TARGET, afterBind); } else { afterBind.accept(true); }
             });
         } catch (RuntimeException e) {
             done.fail(error("MEMORY_RESULT_UNKNOWN", "Migration hold recovery failed: " + e.getMessage()));
@@ -672,7 +677,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
     }
 
     private void identityOn(MemoryMigrationVO hold, String host, Consumer<VmIdentity> completion) {
-        if (!hostExists(host)) { completion.accept(new VmIdentity(true, false, null)); return; }
+        if (!hostExists(host)) { completion.accept(new VmIdentity(Presence.ABSENT, null, null)); return; }
         manager.call(host, "state", command(hold, host), response -> completion.accept(vmIdentity(response, hold.vmUuid)));
     }
 
@@ -730,7 +735,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 // Reconcile found the original source instance still running;
                 // restore its binding rather than revoking the VM that must
                 // continue to be optimized.
-                rebind(recoveryOperation(hold), false, rebound -> {
+                rebind(recoveryOperation(hold), Side.SOURCE, rebound -> {
                     if (!rebound) {
                         completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM rebinding remains unknown"));
                         return;
@@ -744,7 +749,7 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
                 // The target is the only VM instance. Rebind it before removing
                 // the source hold; an unknown/both-present state stays held.
                 MemoryMigrationVO operation = recoveryOperation(hold);
-                rebind(operation, true, rebound -> {
+                rebind(operation, Side.TARGET, rebound -> {
                     if (!rebound) { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Target VM binding remains unknown")); return; }
                     revoke(operation, revoked -> {
                         if (!revoked) { completion.fail(error("MEMORY_RESULT_UNKNOWN", "Source VM revocation remains unknown")); return; }

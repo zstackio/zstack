@@ -1,6 +1,9 @@
 package org.zstack.kvm.memory;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.zstack.kvm.memory.MemoryRepository.License;
+import org.zstack.kvm.memory.MemoryRepository.Origin;
+import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator.ZramChange;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -77,8 +80,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     private final Set<String> preparing = ConcurrentHashMap.newKeySet();
     private final Set<String> observingHosts = ConcurrentHashMap.newKeySet();
     // Hosts and resources whose configuration change is committed but not yet planned; true keeps a ZRAM re-enable.
-    private final Map<String, Boolean> unplannedHosts = new ConcurrentHashMap<>();
-    private final Map<String, Boolean> unplannedResources = new ConcurrentHashMap<>();
+    private final Map<String, ZramChange> unplannedHosts = new ConcurrentHashMap<>();
+    private final Map<String, ZramChange> unplannedResources = new ConcurrentHashMap<>();
     // A global change has no resource; the maps take no null key.
     private static final String GLOBAL_RESOURCE = "";
     /** Operations waiting for their Host generation, by task. */
@@ -87,7 +90,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Set when the service stops; the delivery task then cancels itself. */
     private volatile boolean stopped;
     private long lastObservation;
-    private Boolean lastLicensed;
+    private License lastLicense;
     private long lastHistoryPurge;
 
     static final String SERVICE_ID = "memoryOptimization";
@@ -164,7 +167,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 @Override public Void call() {
                     try {
                         // The Host may have rebooted or been reinstalled: send its generation again.
-                        repository.plan(hostUuid, null, "connect", "system:memory-host-connect", licensed(), false);
+                        repository.plan(hostUuid, null, "connect", "system:memory-host-connect", license(), Origin.SYSTEM);
                         repository.resend(hostUuid);
                         deliver(hostUuid);
                     } catch (RuntimeException e) {
@@ -300,13 +303,14 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         }
     }
 
-    private boolean licensed() {
+    private License license() {
         List<MemoryLicenseExtensionPoint> providers = pluginRgty.getExtensionList(MemoryLicenseExtensionPoint.class);
-        return providers.size() == 1 && providers.get(0).licenseDeadlineMillis() > System.currentTimeMillis();
+        return providers.size() == 1 && providers.get(0).licenseDeadlineMillis() > System.currentTimeMillis()
+                ? License.VALID : License.MISSING;
     }
 
     private void requireLicense() {
-        if (!licensed()) {
+        if (license() != License.VALID) {
             throw new MemoryOperationException("MEMORY_LICENSE_UNAVAILABLE", "A valid Cloud License is required for memory configuration changes");
         }
     }
@@ -424,7 +428,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
             if (control == null) { throw new MemoryOperationException("MEMORY_INVALID_ACTION", "Unknown Host operation " + msg.getAction()); }
             // A Host without a pool has nothing to drain; holding it paused keeps one from forming.
             if ("drained".equals(control) && !repository.hasPool(host)) { control = "paused"; }
-            MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, true, true);
+            MemoryRepository.Planned planned = repository.plan(host, control, msg.getAction(), actor, License.VALID, Origin.OPERATOR);
             waiters.put(planned.task, new Waiter(host, deadline, finish));
         } catch (MemoryOperationException e) {
             finish.accept(e.getCode() + ": " + e.getMessage());
@@ -549,7 +553,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
         long generation;
         String task;
         try {
-            generation = repository.plan(host, null, "connect", actor, true, false).generation;
+            generation = repository.plan(host, null, "connect", actor, License.VALID, Origin.SYSTEM).generation;
             task = repository.startTask(host, MemoryBackendPreparationRules.ACTION, actor, generation);
         } catch (RuntimeException e) {
             preparing.remove(host);
@@ -599,7 +603,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                     repository.recordPreparedBackend(host, (String) resource, capacity);
                     // The preparation reset the drained pool; a Host whose configuration still wants ZRAM activates it.
                     boolean resume = repository.isDrained(host) && repository.wantsZram(host);
-                    repository.plan(host, resume ? "active" : null, MemoryBackendPreparationRules.ACTION, actor, licensed(), false);
+                    repository.plan(host, resume ? "active" : null, MemoryBackendPreparationRules.ACTION, actor, license(), Origin.SYSTEM);
                     done.accept("success");
                     return;
                 }
@@ -633,54 +637,54 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
      * new generation. Re-enabling ZRAM is the configuration form of resuming
      * a drained Host.
      */
-    public void standardConfigurationChanged(String resourceUuid, boolean zramReenabled) {
+    public void standardConfigurationChanged(String resourceUuid, ZramChange change) {
         String key = resourceUuid == null ? GLOBAL_RESOURCE : resourceUuid;
         // A re-enable of the same resource still waiting for its Hosts is carried by this change.
-        boolean reenabled = zramReenabled || Boolean.TRUE.equals(unplannedResources.remove(key));
+        ZramChange zram = change.or(unplannedResources.remove(key));
         List<String> hosts;
         try {
             hosts = repository.standardConfigurationTargets(resourceUuid);
         } catch (RuntimeException e) {
-            unplannedResources.merge(key, reenabled, Boolean::logicalOr);
+            unplannedResources.merge(key, zram, ZramChange::or);
             logger.error(String.format("Unable to list the Hosts of resource[%s] for its memory configuration; the next scan retries",
                     resourceUuid), e);
             return;
         }
-        for (String host : hosts) { planConfiguration(host, reenabled); }
+        for (String host : hosts) { planConfiguration(host, zram); }
     }
 
-    private void planConfiguration(String host, boolean zramReenabled) {
+    private void planConfiguration(String host, ZramChange change) {
         // A retry keeps an earlier re-enable, so a drained Host still resumes.
-        boolean reenabled = zramReenabled || Boolean.TRUE.equals(unplannedHosts.get(host));
+        ZramChange zram = change.or(unplannedHosts.get(host));
         try {
             // Only while its configuration still wants ZRAM: a later disable keeps the Host drained.
-            boolean resume = reenabled && repository.isDrained(host) && repository.wantsZram(host);
+            boolean resume = zram == ZramChange.REENABLED && repository.isDrained(host) && repository.wantsZram(host);
             repository.plan(host, resume ? "active" : null, resume ? RESUME : "configure",
-                    "system:standard-config", licensed(), false);
+                    "system:standard-config", license(), Origin.SYSTEM);
             unplannedHosts.remove(host);
             if (destMaker.isManagedByUs(host)) { deliver(host); }
         } catch (RuntimeException e) {
-            unplannedHosts.merge(host, reenabled, Boolean::logicalOr);
+            unplannedHosts.merge(host, zram, ZramChange::or);
             logger.error(String.format("Unable to plan the memory configuration of Host[%s]; the next scan retries", host), e);
         }
     }
 
     /** A committed configuration change is planned by the next scans, not left for a Host reconnect. */
     void planLicenseChange() {
-        boolean now = licensed();
-        if (lastLicensed == null || lastLicensed == now) { lastLicensed = now; return; }
+        License now = license();
+        if (lastLicense == null || lastLicense == now) { lastLicense = now; return; }
         // A plan carries the license; an expired or renewed one is planned again for the Hosts this node manages.
         // The change is taken only once its Hosts are known, so a failed read is retried at the next scan.
         List<String> hosts = repository.hostsWithState();
-        lastLicensed = now;
+        lastLicense = now;
         for (String host : hosts) {
-            if (destMaker.isManagedByUs(host)) { planConfiguration(host, false); }
+            if (destMaker.isManagedByUs(host)) { planConfiguration(host, ZramChange.NONE); }
         }
     }
 
     void planUnplanned() {
-        new HashMap<>(unplannedResources).forEach((key, reenabled) ->
-                standardConfigurationChanged(GLOBAL_RESOURCE.equals(key) ? null : key, reenabled));
+        new HashMap<>(unplannedResources).forEach((key, zram) ->
+                standardConfigurationChanged(GLOBAL_RESOURCE.equals(key) ? null : key, zram));
         new HashMap<>(unplannedHosts).forEach(this::planConfiguration);
     }
 
@@ -888,7 +892,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
                 // A Host whose stored configuration cannot be read gets it written again by a new plan.
                 for (String unreadable : repository.refreshHostStates(repository.hostsWithState().stream()
                         .filter(destMaker::isManagedByUs).collect(Collectors.toList()))) {
-                    planConfiguration(unreadable, false);
+                    planConfiguration(unreadable, ZramChange.NONE);
                 }
             }
             if (now - lastHistoryPurge >= TimeUnit.HOURS.toMillis(1)) {

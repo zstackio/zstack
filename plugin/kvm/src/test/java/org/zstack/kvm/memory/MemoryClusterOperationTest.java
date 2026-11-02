@@ -1,5 +1,6 @@
 package org.zstack.kvm.memory;
 
+import org.zstack.kvm.memory.MemoryStandardConfigurationCoordinator.ZramChange;
 import org.junit.Test;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.cloudbus.CloudBusCallBack;
@@ -69,7 +70,7 @@ public class MemoryClusterOperationTest {
         final Set<String> withoutPool = new HashSet<>();
         @Override public boolean hasPool(String host) { return !withoutPool.contains(host); }
         final Set<String> failingPlans = new HashSet<>();
-        @Override public Planned plan(String host, String control, String action, String actor, boolean licensed, boolean operation) {
+        @Override public Planned plan(String host, String control, String action, String actor, License license, Origin origin) {
             if (failingPlans.contains(host)) { throw new RuntimeException("database unavailable"); }
             plans.add(host + ":" + action + ":" + control);
             long generation = generations.getOrDefault(host, 0L);
@@ -474,10 +475,10 @@ public class MemoryClusterOperationTest {
     @Test public void reenablingZramResumesOnlyDrainedHosts() throws Exception {
         setup();
         repository.drained.add("host1");
-        manager.standardConfigurationChanged("cluster", true);
+        manager.standardConfigurationChanged("cluster", ZramChange.REENABLED);
         assertEquals(Arrays.asList("host1:resume:active", "host2:configure:null"), repository.plans);
         repository.plans.clear();
-        manager.standardConfigurationChanged("cluster", false);
+        manager.standardConfigurationChanged("cluster", ZramChange.NONE);
         assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
     }
 
@@ -485,7 +486,7 @@ public class MemoryClusterOperationTest {
         setup();
         repository.drained.add("host1");
         repository.failingPlans.add("host1");
-        manager.standardConfigurationChanged("cluster", true);
+        manager.standardConfigurationChanged("cluster", ZramChange.REENABLED);
         assertEquals(Collections.singletonList("host2:configure:null"), repository.plans);
         repository.failingPlans.clear(); repository.plans.clear();
         // A connected Host does not wait for a reconnect; the retry still resumes the drained Host.
@@ -499,7 +500,7 @@ public class MemoryClusterOperationTest {
     @Test public void aGlobalChangeIsPlannedAndRetriedLikeAnyOther() throws Exception {
         setup();
         repository.failingTargets = 1;
-        manager.standardConfigurationChanged(null, false);
+        manager.standardConfigurationChanged(null, ZramChange.NONE);
         assertTrue(repository.plans.isEmpty());
         manager.planUnplanned();
         assertEquals(Arrays.asList("host1:configure:null", "host2:configure:null"), repository.plans);
@@ -509,8 +510,8 @@ public class MemoryClusterOperationTest {
         setup();
         repository.drained.add("host1");
         repository.failingTargets = 1;
-        manager.standardConfigurationChanged("cluster", true);
-        manager.standardConfigurationChanged("cluster", false);
+        manager.standardConfigurationChanged("cluster", ZramChange.REENABLED);
+        manager.standardConfigurationChanged("cluster", ZramChange.NONE);
         assertEquals(Arrays.asList("host1:resume:active", "host2:configure:null"), repository.plans);
     }
 
@@ -518,7 +519,7 @@ public class MemoryClusterOperationTest {
         setup();
         repository.drained.add("host1");
         repository.failingPlans.add("host1");
-        manager.standardConfigurationChanged("cluster", true);
+        manager.standardConfigurationChanged("cluster", ZramChange.REENABLED);
         repository.failingPlans.clear(); repository.plans.clear();
         repository.zramOff.add("host1");
         manager.planUnplanned();
