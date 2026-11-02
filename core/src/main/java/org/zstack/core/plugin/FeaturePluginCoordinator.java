@@ -45,6 +45,8 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     private static final long PEER_RESTART_TIMEOUT_SECONDS = TimeUnit.MINUTES.toSeconds(15);
     private static final long PEER_POLL_INTERVAL_SECONDS = 10;
 
+    private volatile boolean restartPending;
+
     @Autowired
     private CloudBus bus;
     @Autowired
@@ -72,6 +74,18 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         // the json result is the last line, warnings may come before it
         String out = runCtl(args).trim();
         return JSONObjectUtil.toObject(out.substring(out.lastIndexOf('\n') + 1), LinkedHashMap.class);
+    }
+
+    /**
+     * True once this management node is going to restart to apply a feature plugin change; it refuses plugin
+     * operations until then.
+     */
+    boolean isRestartPending() {
+        return restartPending;
+    }
+
+    void markRestartPending() {
+        restartPending = true;
     }
 
     void restartLater() {
@@ -139,51 +153,41 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     /**
-     * Restarts the given management nodes one after another in the background, this node last. Stops when a node
+     * Restarts the given management nodes one after another, this node last. Runs in the plugin operation that
+     * holds the cluster lock, so no other plugin operation starts while the nodes restart. Stops when a node
      * does not come back in time, so that the cluster is never restarted as a whole.
      */
     void restartInOrder(List<String> peerUuids, boolean restartSelf) {
-        thdf.submit(new Task<Void>() {
-            @Override
-            public Void call() throws Exception {
-                try {
-                    restartPeersInOrder();
-                } catch (Throwable t) {
-                    // this node still applies its own change, it would otherwise refuse plugin operations until restarted
-                    logger.error("failed to restart the other management nodes for feature plugins", t);
-                    if (restartSelf) {
-                        restartLater();
-                    }
-                }
-                return null;
+        try {
+            if (!restartPeersInOrder(peerUuids)) {
+                return;
             }
+        } catch (Throwable t) {
+            // this node still applies its own change, it would otherwise refuse plugin operations until restarted
+            logger.error("failed to restart the other management nodes for feature plugins", t);
+        }
 
-            private void restartPeersInOrder() throws InterruptedException {
-                List<ManagementNodeVO> peers = peerUuids.isEmpty() ? new ArrayList<>()
-                        : Q.New(ManagementNodeVO.class).in(ManagementNodeVO_.uuid, peerUuids).list();
-                peers.sort(Comparator.comparing(ManagementNodeVO::getUuid));
-                for (ManagementNodeVO peer : peers) {
-                    Timestamp before = dbf.getCurrentSqlTime();
-                    RestartManagementNodeForFeaturePluginMsg msg = new RestartManagementNodeForFeaturePluginMsg();
-                    bus.makeServiceIdByManagementNodeId(msg, PluginManager.SERVICE_ID, peer.getUuid());
-                    MessageReply reply = bus.call(msg);
-                    if (!reply.isSuccess() || !waitForRestart(peer.getHostName(), before)) {
-                        logger.error(String.format("management node[%s] did not restart in %s seconds for feature plugins," +
-                                " stop restarting the other management nodes", peer.getHostName(), PEER_RESTART_TIMEOUT_SECONDS));
-                        return;
-                    }
-                }
+        if (restartSelf) {
+            restartLater();
+        }
+    }
 
-                if (restartSelf) {
-                    restartLater();
-                }
+    private boolean restartPeersInOrder(List<String> peerUuids) throws InterruptedException {
+        List<ManagementNodeVO> peers = peerUuids.isEmpty() ? new ArrayList<>()
+                : Q.New(ManagementNodeVO.class).in(ManagementNodeVO_.uuid, peerUuids).list();
+        peers.sort(Comparator.comparing(ManagementNodeVO::getUuid));
+        for (ManagementNodeVO peer : peers) {
+            Timestamp before = dbf.getCurrentSqlTime();
+            RestartManagementNodeForFeaturePluginMsg msg = new RestartManagementNodeForFeaturePluginMsg();
+            bus.makeServiceIdByManagementNodeId(msg, PluginManager.SERVICE_ID, peer.getUuid());
+            MessageReply reply = bus.call(msg);
+            if (!reply.isSuccess() || !waitForRestart(peer.getHostName(), before)) {
+                logger.error(String.format("management node[%s] did not restart in %s seconds for feature plugins," +
+                        " stop restarting the other management nodes", peer.getHostName(), PEER_RESTART_TIMEOUT_SECONDS));
+                return false;
             }
-
-            @Override
-            public String getName() {
-                return "restart-management-nodes-for-feature-plugins";
-            }
-        });
+        }
+        return true;
     }
 
     private boolean waitForRestart(String hostName, Timestamp before) throws InterruptedException {
@@ -244,6 +248,10 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 addPackage(msg.getPackageName(), content);
             }
             reply.setNeedRestart(Boolean.TRUE.equals(runCtlJson("reconcile --json").get("needRestart")));
+            if (reply.isNeedRestart()) {
+                // the node that synced restarts this node later
+                markRestartPending();
+            }
             refreshDrivers();
         } catch (OperationFailureException e) {
             reply.setError(e.getErrorCode());
@@ -276,6 +284,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     void handle(RestartManagementNodeForFeaturePluginMsg msg) {
+        markRestartPending();
         bus.reply(msg, new MessageReply());
         restartLater();
     }
@@ -324,6 +333,7 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         // restart only if this really changed the plugins, a package no node has does not cause restarts
         if (Boolean.TRUE.equals(runCtlJson("reconcile --json").get("needRestart"))) {
             logger.info("fetched missing feature plugin packages from other management nodes, restart to load them");
+            markRestartPending();
             restartLater();
         }
     }

@@ -95,7 +95,6 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
             pluginValidators = new HashMap<>();
     private final Map<String, URLClassLoader> pluginClassLoaders = new ConcurrentHashMap<>();
     private String fileDirPath = PathUtil.join(CoreGlobalProperty.DATA_DIR, "/plugins/");
-    private volatile boolean featurePluginRestartPending;
 
     public String getFileDirPath() {
         return fileDirPath;
@@ -652,7 +651,9 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
         if (peers.isEmpty() && !restartSelf) {
             return null;
         }
-        featurePluginRestartPending = restartSelf;
+        if (restartSelf) {
+            coordinator.markRestartPending();
+        }
         return () -> coordinator.restartInOrder(peers, restartSelf);
     }
 
@@ -672,7 +673,7 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 try {
                     lock.lock();
                     locked = true;
-                    if (featurePluginRestartPending) {
+                    if (coordinator.isRestartPending()) {
                         event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
                                 "the management node is restarting to apply a previous feature plugin change"));
                     } else {
@@ -688,17 +689,20 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                     event.setError(e.getErrorCode());
                 } catch (Exception e) {
                     event.setError(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s", e.getMessage()));
+                }
+
+                try {
+                    bus.publish(event);
+                    // the lock is kept while the management nodes restart, no other plugin operation runs in between
+                    if (after != null) {
+                        after.run();
+                    }
                 } finally {
                     if (locked) {
                         lock.unlock();
                     }
+                    chain.next();
                 }
-
-                bus.publish(event);
-                if (after != null) {
-                    after.run();
-                }
-                chain.next();
             }
 
             @Override
