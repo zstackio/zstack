@@ -42,15 +42,17 @@ public final class MemoryObservationRules {
         }
         Map<?, ?> desired;
         try { desired = org.zstack.utils.gson.JSONObjectUtil.toObject(current.getDesired(), java.util.LinkedHashMap.class); }
-        catch (RuntimeException invalid) {
+        catch (com.google.gson.JsonParseException invalid) {
+            // The unreadable configuration is planned again; until then its services are not compared.
             logger.error(String.format("Host[%s] stored memory configuration is unreadable; its service events are not reported", host), invalid);
             return result;
         }
         if (!"active".equals(desired.get("control"))) { return result; }
         Map<?, ?> previous;
         try { previous = previousSample == null ? null : org.zstack.utils.gson.JSONObjectUtil.toObject(previousSample, java.util.LinkedHashMap.class); }
-        catch (RuntimeException invalid) {
-            logger.warn(String.format("Host[%s] previous memory sample is unreadable; this sample is compared with none", host), invalid);
+        catch (com.google.gson.JsonParseException invalid) {
+            // This sample replaces the unreadable one, so the next comparison is exact again.
+            logger.error(String.format("Host[%s] previous memory sample is unreadable; this sample is compared with none", host), invalid);
             previous = null;
         }
         Map<?, ?> ksm = map(state.get("ksm"));

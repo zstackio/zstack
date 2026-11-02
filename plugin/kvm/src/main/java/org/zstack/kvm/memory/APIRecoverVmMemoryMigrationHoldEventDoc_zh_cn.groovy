@@ -9,7 +9,7 @@ doc {
 
 	field {
 		name "success"
-		desc ""
+		desc "解除请求是否已作为长任务提交；迁移锁是否解除见长任务结果"
 		type "boolean"
 		since "5.5.48"
 	}

@@ -60,6 +60,7 @@ public class MemoryRepositoryTest {
     private Object previousRegistry;
     private Class<?> previousResourceBaseType;
     private final List<Object[]> firedEvents = new ArrayList<>();
+    private boolean failingFire;
     private final java.util.concurrent.atomic.AtomicReference<RuntimeException> nextTransactionFailure =
             new java.util.concurrent.atomic.AtomicReference<>();
 
@@ -134,7 +135,10 @@ public class MemoryRepositoryTest {
         Field eventField = MemoryRepository.class.getDeclaredField("evtf"); eventField.setAccessible(true);
         eventField.set(repository, Proxy.newProxyInstance(EventFacade.class.getClassLoader(), new Class<?>[]{EventFacade.class},
                 (proxy, method, args) -> {
-                    if ("fire".equals(method.getName())) { firedEvents.add(args); }
+                    if ("fire".equals(method.getName())) {
+                        if (failingFire) { throw new IllegalStateException("event bus stopped"); }
+                        firedEvents.add(args);
+                    }
                     return null;
                 }));
         repository.transaction(em -> {
@@ -418,6 +422,51 @@ public class MemoryRepositoryTest {
             }
         }
         return statuses;
+    }
+
+    @Test public void anEventThatCannotBeFiredReachesTheCallerAndKeepsTheSample() {
+        setGlobal(MemoryStandardField.KSM_ENABLED, "true");
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        MemoryAgentResponse running = ksmSample(plan.generation, "active");
+        repository.record("host1", plan.generation, running);
+        repository.observe("host1", running);
+        failingFire = true;
+        try {
+            repository.observe("host1", ksmSample(plan.generation, "failed"));
+            fail("an event that cannot be fired is an error for the caller");
+        } catch (IllegalStateException expected) {
+            assertTrue(repository.state("host1").getState().contains("\"tunedServiceState\":\"failed\""));
+        }
+    }
+
+    @Test public void anUnreadableStoredConfigurationIsShownAndPlannedAgain() {
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        repository.record("host1", plan.generation, reply("Succeeded", null, null));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setDesired("{broken"); em.merge(state); return null;
+        });
+        assertEquals(Collections.singletonList("host1"), repository.refreshHostStates(Collections.singletonList("host1")));
+        HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("Converging", row.getStatus());
+        assertEquals("CONFIGURATION_UNREADABLE", row.getReason());
+        repository.plan("host1", null, "configure", "test", true, false);
+        assertTrue(repository.refreshHostStates(Collections.singletonList("host1")).isEmpty());
+        assertNotEquals("CONFIGURATION_UNREADABLE",
+                repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1")).getReason());
+    }
+
+    @Test public void anUnreadableObservationIsShownAsUnknownWithItsReason() {
+        MemoryRepository.Planned plan = repository.plan("host1", null, "connect", "test", true, true);
+        repository.record("host1", plan.generation, reply("Succeeded", null, null));
+        repository.transaction(em -> {
+            MemoryStateVO state = em.find(MemoryStateVO.class, "host1");
+            state.setState("{broken"); state.setLastSampleTime(System.currentTimeMillis()); em.merge(state); return null;
+        });
+        assertTrue(repository.refreshHostStates(Collections.singletonList("host1")).isEmpty());
+        HostMemoryStateVO row = repository.transaction(em -> em.find(HostMemoryStateVO.class, "host1"));
+        assertEquals("Unknown", row.getFeatureState());
+        assertEquals("OBSERVATION_UNREADABLE", row.getReason());
     }
 
     @Test public void aFirstPlanThatLostTheInsertToAnotherPlansAgain() {

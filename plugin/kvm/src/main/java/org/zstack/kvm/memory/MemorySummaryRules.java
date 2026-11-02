@@ -37,6 +37,17 @@ public final class MemorySummaryRules {
     }
 
     public static MemorySummaryInventory summarize(List<String> hosts, List<MemoryStateVO> states, long now) {
+        Map<String, String> unreadable = new LinkedHashMap<>();
+        MemorySummaryInventory summary = summarize(hosts, states, now, unreadable);
+        if (!unreadable.isEmpty()) {
+            logger.error(String.format("%d Host memory sample(s) could not be read for the summary and count as missing: %s",
+                    unreadable.size(), unreadable));
+        }
+        return summary;
+    }
+
+    /** As summarize, naming each Host whose sample could not be read in unreadable. */
+    static MemorySummaryInventory summarize(List<String> hosts, List<MemoryStateVO> states, long now, Map<String, String> unreadable) {
         Set<String> expected = new HashSet<>(hosts);
         Map<String, HostMetrics> samples = new HashMap<>();
         Map<String, Integer> currentStatus = new LinkedHashMap<>();
@@ -57,13 +68,16 @@ public final class MemorySummaryRules {
                 if (sample == null) { continue; }
                 bucket = Math.max(bucket, sample.sampleTime / windowMillis);
                 samples.put(host.getHostUuid(), sample);
-            } catch (RuntimeException e) { /* Malformed/unavailable samples remain missing. */ }
+            } catch (RuntimeException e) {
+                // A sample that cannot be read stays missing; the Host is named once for the summary's error.
+                unreadable.putIfAbsent(host.getHostUuid(), String.valueOf(e));
+            }
         }
         MemorySummaryInventory result = new MemorySummaryInventory();
         result.setExpectedHosts(expected.size()); result.setQuality("Unknown");
         for (String host : expected) {
             if (!byHost.containsKey(host)) { increment(currentStatus, "unknown"); }
-            else { classifyCurrentStatus(byHost.get(host), now, currentStatus); }
+            else { classifyCurrentStatus(byHost.get(host), now, currentStatus, unreadable); }
         }
         result.setCurrentStatus(currentStatus);
         result.setCurrentStatusSampleTime(now);
@@ -174,53 +188,51 @@ public final class MemorySummaryRules {
     }
 
     private static HostMetrics parseMetrics(JsonObject s, long now) {
-        try {
-            if (!"mechanism-estimate-v1".equals(string(s, "formulaVersion"))
-                    || !s.has("sampleTime") || !s.get("sampleTime").isJsonPrimitive()
-                    || !s.has("quality") || !("Fresh".equals(s.get("quality").getAsString())
-                    || "Partial".equals(s.get("quality").getAsString()))) return null;
-            HostMetrics m = new HostMetrics(); Long timestamp = number(s, "sampleTime");
-            if (timestamp == null) return null;
-            m.sampleTime = timestamp;
-            if (m.sampleTime > now + 5000 || now - m.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()) return null;
-            JsonObject q = object(s, "metricQuality");
-            m.ordinary = number(s, "ksmOrdinaryBytes"); m.zero = number(s, "ksmZeroBytes");
-            m.total = number(s, "ksmTotalBytes"); m.zram = number(s, "zramBytes");
-            m.zramNormal = number(s, "zramNormalBytes"); m.zramWriteback = number(s, "zramWritebackBytes");
-            m.metricQualityPresent = s.has("metricQuality");
-            m.ordinaryObserved = usable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent);
-            m.zeroObserved = usable(q, "ksm_zero", m.zero, m.metricQualityPresent);
-            m.totalObserved = usable(q, "ksm_total", m.total, m.metricQualityPresent);
-            m.zramObserved = usable(q, "zram", m.zram, m.metricQualityPresent);
-            m.zeroDisabled = "disabled".equalsIgnoreCase(quality(q, "ksm_zero"));
-            m.zramDisabled = "disabled".equalsIgnoreCase(quality(q, "zram"));
-            m.totalSeries = "mechanism-estimate-v1".equals(string(s, "formulaVersion"))
-                    && "Fresh".equals(string(s, "quality"))
-                    && seriesUsable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent)
-                    && seriesUsable(q, "ksm_zero", m.zero, m.metricQualityPresent)
-                    && seriesUsable(q, "ksm_total", m.total, m.metricQualityPresent)
-                    && seriesUsable(q, "zram", m.zram, m.metricQualityPresent)
-                    && m.ordinary >= 0 && m.zero >= 0 && m.total >= 0;
-            if (m.totalSeries) {
-                try {
-                    if (Math.addExact(m.ordinary, m.zero) != m.total || s.get("totalSavedEstimateBytes") == null
-                            || s.get("zramBytes") == null) m.totalSeries = false;
-                    else { Long saved = number(s, "totalSavedEstimateBytes"); if (saved == null || Math.addExact(m.total, m.zram) != saved) m.totalSeries = false; else m.saved = saved; }
-                } catch (ArithmeticException overflow) { m.totalSeries = false; }
-            }
+        if (!"mechanism-estimate-v1".equals(string(s, "formulaVersion"))
+                || !s.has("sampleTime") || !s.get("sampleTime").isJsonPrimitive()
+                || !s.has("quality") || !("Fresh".equals(s.get("quality").getAsString())
+                || "Partial".equals(s.get("quality").getAsString()))) return null;
+        HostMetrics m = new HostMetrics(); Long timestamp = number(s, "sampleTime");
+        if (timestamp == null) return null;
+        m.sampleTime = timestamp;
+        if (m.sampleTime > now + 5000 || now - m.sampleTime >= MemoryOptimizationGlobalConfig.displayTtlMillis()) return null;
+        JsonObject q = object(s, "metricQuality");
+        m.ordinary = number(s, "ksmOrdinaryBytes"); m.zero = number(s, "ksmZeroBytes");
+        m.total = number(s, "ksmTotalBytes"); m.zram = number(s, "zramBytes");
+        m.zramNormal = number(s, "zramNormalBytes"); m.zramWriteback = number(s, "zramWritebackBytes");
+        m.metricQualityPresent = s.has("metricQuality");
+        m.ordinaryObserved = usable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent);
+        m.zeroObserved = usable(q, "ksm_zero", m.zero, m.metricQualityPresent);
+        m.totalObserved = usable(q, "ksm_total", m.total, m.metricQualityPresent);
+        m.zramObserved = usable(q, "zram", m.zram, m.metricQualityPresent);
+        m.zeroDisabled = "disabled".equalsIgnoreCase(quality(q, "ksm_zero"));
+        m.zramDisabled = "disabled".equalsIgnoreCase(quality(q, "zram"));
+        m.totalSeries = "mechanism-estimate-v1".equals(string(s, "formulaVersion"))
+                && "Fresh".equals(string(s, "quality"))
+                && seriesUsable(q, "ksm_ordinary", m.ordinary, m.metricQualityPresent)
+                && seriesUsable(q, "ksm_zero", m.zero, m.metricQualityPresent)
+                && seriesUsable(q, "ksm_total", m.total, m.metricQualityPresent)
+                && seriesUsable(q, "zram", m.zram, m.metricQualityPresent)
+                && m.ordinary >= 0 && m.zero >= 0 && m.total >= 0;
+        if (m.totalSeries) {
             try {
-                boolean splitMatches = m.zramNormal != null && m.zramWriteback != null && m.zram != null
-                        && Math.addExact(m.zramNormal, m.zramWriteback) == m.zram;
-                m.zramSplitObserved = splitMatches
-                        && (!m.metricQualityPresent || "observed".equalsIgnoreCase(quality(q, "zram")));
-                m.zramSplitDisabled = splitMatches && m.zramNormal == 0 && m.zramWriteback == 0 && m.zram == 0
-                        && "disabled".equalsIgnoreCase(quality(q, "zram"));
-            } catch (ArithmeticException overflow) {
-                m.zramSplitObserved = false;
-                m.zramSplitDisabled = false;
-            }
-            return m;
-        } catch (RuntimeException e) { return null; }
+                if (Math.addExact(m.ordinary, m.zero) != m.total || s.get("totalSavedEstimateBytes") == null
+                        || s.get("zramBytes") == null) m.totalSeries = false;
+                else { Long saved = number(s, "totalSavedEstimateBytes"); if (saved == null || Math.addExact(m.total, m.zram) != saved) m.totalSeries = false; else m.saved = saved; }
+            } catch (ArithmeticException overflow) { m.totalSeries = false; }
+        }
+        try {
+            boolean splitMatches = m.zramNormal != null && m.zramWriteback != null && m.zram != null
+                    && Math.addExact(m.zramNormal, m.zramWriteback) == m.zram;
+            m.zramSplitObserved = splitMatches
+                    && (!m.metricQualityPresent || "observed".equalsIgnoreCase(quality(q, "zram")));
+            m.zramSplitDisabled = splitMatches && m.zramNormal == 0 && m.zramWriteback == 0 && m.zram == 0
+                    && "disabled".equalsIgnoreCase(quality(q, "zram"));
+        } catch (ArithmeticException overflow) {
+            m.zramSplitObserved = false;
+            m.zramSplitDisabled = false;
+        }
+        return m;
     }
     private static Long number(JsonObject o, String key) {
         if (o == null || !o.has(key) || !o.get(key).isJsonPrimitive() || !o.getAsJsonPrimitive(key).isNumber()) return null;
@@ -241,7 +253,8 @@ public final class MemorySummaryRules {
     }
 
     @SuppressWarnings("unchecked")
-    private static void classifyCurrentStatus(MemoryStateVO host, long now, Map<String, Integer> counts) {
+    private static void classifyCurrentStatus(MemoryStateVO host, long now, Map<String, Integer> counts,
+                                              Map<String, String> unreadable) {
         if (host == null || host.getState() == null || host.getLastSampleTime() == null) {
             increment(counts, "unknown"); return;
         }
@@ -312,7 +325,7 @@ public final class MemorySummaryRules {
             // Counted only once the whole sample is classified.
             hostCounts.forEach((key, value) -> counts.merge(key, value, Integer::sum));
         } catch (RuntimeException e) {
-            logger.warn(String.format("Host[%s] memory sample cannot be classified; it is counted as unknown", host.getHostUuid()), e);
+            unreadable.putIfAbsent(host.getHostUuid(), String.valueOf(e));
             increment(counts, "unknown");
         }
     }

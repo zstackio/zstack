@@ -47,6 +47,15 @@ public class MemorySummaryRulesTest {
         assertEquals(Collections.singletonMap("unknown", 1), reasons(current("a", now, state)));
     }
 
+    @Test public void theHostsWhoseSamplesCannotBeReadAreNamedOnceForTheSummaryError() {
+        String state = "{\"control\":\"paused\",\"ksm\":{\"enabled\":true},"
+                + "\"savings\":{\"quality\":\"Fresh\",\"sampleTime\":\"soon\",\"totalSavedEstimateBytes\":1}}";
+        Map<String, String> unreadable = new LinkedHashMap<>();
+        MemorySummaryRules.summarize(Arrays.asList("a", "b", "c"),
+                Arrays.asList(current("a", now, state), current("b", now, "{broken"), current("c", now, "{}")), now, unreadable);
+        assertEquals(new HashSet<>(Arrays.asList("a", "b")), unreadable.keySet());
+    }
+
     @Test public void currentReasonsUseActualSwitchesNotZeroOrDesiredConfiguration() {
         String zero = "\"savings\":{\"quality\":\"Fresh\",\"sampleTime\":300000,\"totalSavedEstimateBytes\":0}";
         Map<String, Integer> unknown = reasons(current("a", now, "{" + zero + "}"));

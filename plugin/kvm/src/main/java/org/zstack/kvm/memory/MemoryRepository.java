@@ -1,6 +1,7 @@
 package org.zstack.kvm.memory;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.NestedExceptionUtils;
 import org.zstack.core.Platform;
@@ -20,6 +21,8 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Each Host has one desired configuration: the effective standard configs and
@@ -32,6 +35,11 @@ public class MemoryRepository {
     static final String CONVERGING = "Converging";
     static final String FAILED = "Failed";
     static final int FAILURES_BEFORE_FAILED = 5;
+    /** Public state reasons for stored data that cannot be read. */
+    static final String CONFIGURATION_UNREADABLE = "CONFIGURATION_UNREADABLE";
+    static final String OBSERVATION_UNREADABLE = "OBSERVATION_UNREADABLE";
+    /** Hosts refreshed in one transaction. */
+    private static final int REFRESH_BATCH = 200;
     static final long FIRST_RETRY_MILLIS = TimeUnit.SECONDS.toMillis(30);
     static final long MAX_RETRY_MILLIS = TimeUnit.MINUTES.toMillis(10);
     static final long HISTORY_MILLIS = TimeUnit.DAYS.toMillis(7);
@@ -419,13 +427,13 @@ public class MemoryRepository {
      */
     public Outcome record(String host, long generation, MemoryAgentResponse response) {
         List<MemoryTaskFailureEvent> events = new ArrayList<>();
-        List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents = new ArrayList<>();
+        List<Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>>> serviceEvents = new ArrayList<>();
         Outcome outcome = transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null || state.getDesiredRevision() != generation) { return null; }
             long now = System.currentTimeMillis();
             // An apply reply is a sample too: a service the apply started again is reported like an observed one.
-            serviceEvents.addAll(observe(state, response, now));
+            serviceEvents.add(observe(state, response, now));
             String status = response == null ? null : response.status;
             String reason = response == null ? "AGENT_UNREACHABLE"
                     : response.reasonCode != null ? response.reasonCode : response.reason;
@@ -459,13 +467,7 @@ public class MemoryRepository {
             return new Outcome(state.getStatus(), state.getReason(), generation);
         });
         fire(serviceEvents);
-        for (MemoryTaskFailureEvent event : events) {
-            try {
-                evtf.fire(MemoryTaskFailureEvent.PATH, event);
-            } catch (RuntimeException e) {
-                logger.warn(String.format("Unable to fire the memory task[%s] failure event", event.getTaskUuid()), e);
-            }
-        }
+        for (MemoryTaskFailureEvent event : events) { evtf.fire(MemoryTaskFailureEvent.PATH, event); }
         return outcome;
     }
 
@@ -486,11 +488,11 @@ public class MemoryRepository {
 
     /** Stores a read-only Agent observation; a newer generation on the Host triggers a resend. */
     public void observe(String host, MemoryAgentResponse response) {
-        List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents = new ArrayList<>();
+        List<Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>>> serviceEvents = new ArrayList<>();
         transaction(em -> {
             MemoryStateVO state = em.find(MemoryStateVO.class, host, LockModeType.PESSIMISTIC_WRITE);
             if (state == null) { return null; }
-            serviceEvents.addAll(observe(state, response, System.currentTimeMillis()));
+            serviceEvents.add(observe(state, response, System.currentTimeMillis()));
             followPreparedBackend(em, host, response);
             Object applied = response == null || response.state == null ? null : response.state.get("appliedGeneration");
             if (SUCCEEDED.equals(state.getStatus()) && response != null && response.isSuccess() && response.state != null
@@ -507,30 +509,26 @@ public class MemoryRepository {
         fire(serviceEvents);
     }
 
-    /** Stores the sample and returns the service changes from the sample it replaces, under the Host's row lock. */
-    private static List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> observe(
+    /**
+     * Stores the sample under the Host's row lock. The service changes from the sample it replaces are worked
+     * out after the commit, so a failure there or in sending them reaches the caller and keeps the sample.
+     */
+    private static Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>> observe(
             MemoryStateVO state, MemoryAgentResponse response, long now) {
-        if (response == null || response.state == null || response.state.isEmpty()) { return Collections.emptyList(); }
+        if (response == null || response.state == null || response.state.isEmpty()) { return Collections::emptyList; }
         String previous = state.getState();
         state.setState(GSON.toJson(response.state));
         Object sampled = response.state.get("sampleTime");
         state.setLastSampleTime(sampled instanceof Number ? ((Number) sampled).longValue() : now);
         Object capabilities = response.state.get("capabilities");
         if (capabilities instanceof Map) { state.setCapabilities(GSON.toJson(capabilities)); }
-        try {
-            return MemoryObservationRules.serviceEvents(state.getHostUuid(), response, state, previous, now);
-        } catch (RuntimeException e) {
-            logger.warn(String.format("Host[%s] memory service events failed; the sample is kept", state.getHostUuid()), e);
-            return Collections.emptyList();
-        }
+        return () -> MemoryObservationRules.serviceEvents(state.getHostUuid(), response, state, previous, now);
     }
 
-    private void fire(List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData> serviceEvents) {
-        for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event : serviceEvents) {
-            try {
+    private void fire(List<Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>>> serviceEvents) {
+        for (Supplier<List<HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData>> changes : serviceEvents) {
+            for (HostCanonicalEvents.HostMemoryOptimizationServiceStateChangedData event : changes.get()) {
                 evtf.fire(HostCanonicalEvents.HOST_MEMORY_OPTIMIZATION_SERVICE_STATE_CHANGED_PATH, event);
-            } catch (RuntimeException e) {
-                logger.warn(String.format("Unable to fire the Host[%s] memory service event", event.getHostUuid()), e);
             }
         }
     }
@@ -541,36 +539,64 @@ public class MemoryRepository {
         return transaction(em -> em.createQuery("select s.hostUuid from MemoryStateVO s", String.class).getResultList());
     }
 
-    /** Recompute the public state from freshness; observation writes refresh it as they happen. */
-    public void refreshHostStates(Collection<String> hosts) {
-        for (String host : new LinkedHashSet<>(hosts)) {
-            transaction(em -> {
-                MemoryStateVO state = em.find(MemoryStateVO.class, host);
-                if (state != null) { refreshHostState(em, state); }
-                return null;
-            });
+    /**
+     * Recompute the public state from freshness; observation writes refresh it as they happen.
+     * Returns the Hosts whose stored configuration cannot be read; the caller plans them again.
+     */
+    public List<String> refreshHostStates(Collection<String> hosts) {
+        List<String> all = new ArrayList<>(new LinkedHashSet<>(hosts));
+        List<String> unreadable = new ArrayList<>();
+        for (int from = 0; from < all.size(); from += REFRESH_BATCH) {
+            List<String> batch = all.subList(from, Math.min(all.size(), from + REFRESH_BATCH));
+            unreadable.addAll(transaction(em -> refreshHostStates(em, batch)));
         }
+        return unreadable;
     }
 
-    @SuppressWarnings("unchecked")
+    private List<String> refreshHostStates(EntityManager em, List<String> hosts) {
+        Map<String, HostMemoryStateVO> rows = new HashMap<>();
+        for (HostMemoryStateVO row : em.createQuery("select r from HostMemoryStateVO r where r.hostUuid in (:hosts)",
+                HostMemoryStateVO.class).setParameter("hosts", hosts).getResultList()) {
+            rows.put(row.getHostUuid(), row);
+        }
+        Set<String> unfinished = unfinishedLongJobs(em, rows.values().stream().map(HostMemoryStateVO::getActiveJobUuid)
+                .filter(Objects::nonNull).collect(Collectors.toSet()));
+        List<String> unreadable = new ArrayList<>();
+        for (MemoryStateVO state : em.createQuery("select s from MemoryStateVO s where s.hostUuid in (:hosts)",
+                MemoryStateVO.class).setParameter("hosts", hosts).getResultList()) {
+            if (!refreshHostState(em, state, rows.get(state.getHostUuid()), unfinished)) { unreadable.add(state.getHostUuid()); }
+        }
+        return unreadable;
+    }
+
     private void refreshHostState(EntityManager em, MemoryStateVO state) {
-        HostMemoryStateVO row = em.find(HostMemoryStateVO.class, state.getHostUuid());
+        refreshHostState(em, state, em.find(HostMemoryStateVO.class, state.getHostUuid()), null);
+    }
+
+    /** Returns false when the stored configuration cannot be read. */
+    @SuppressWarnings("unchecked")
+    private boolean refreshHostState(EntityManager em, MemoryStateVO state, HostMemoryStateVO existing, Set<String> unfinishedJobs) {
+        HostMemoryStateVO row = existing;
         boolean created = row == null;
         if (created) { row = new HostMemoryStateVO(); row.setHostUuid(state.getHostUuid()); }
         Map<String, Object> observed = Collections.emptyMap();
+        boolean observationUnreadable = false;
         boolean fresh = state.getLastSampleTime() != null
                 && System.currentTimeMillis() - state.getLastSampleTime() < MemoryOptimizationGlobalConfig.displayTtlMillis();
         if (fresh && state.getState() != null) {
             try { observed = JSONObjectUtil.toObject(state.getState(), LinkedHashMap.class); }
-            catch (RuntimeException invalid) {
+            catch (JsonParseException invalid) {
                 logger.error(String.format("Host[%s] stored memory observation is unreadable; it is shown as Unknown",
                         state.getHostUuid()), invalid);
-                observed = Collections.emptyMap();
+                observationUnreadable = true;
             }
         }
-        boolean zramWanted = Boolean.TRUE.equals(field(desired(state).get("zram"), "enabled"));
-        row.setStatus(publicStatus(state));
-        String reason = state.getReason();
+        Map<String, Object> desired = storedDesired(state);
+        boolean zramWanted = desired != null && Boolean.TRUE.equals(field(desired.get("zram"), "enabled"));
+        // An unreadable configuration is planned again; until then the Host is not shown as Applied.
+        row.setStatus(desired == null ? CONVERGING : publicStatus(state));
+        String reason = desired == null ? CONFIGURATION_UNREADABLE : state.getReason();
+        if (reason == null && observationUnreadable) { reason = OBSERVATION_UNREADABLE; }
         if (reason == null && zramWanted && !zramSupported(observed)) {
             // The Host leaves a ZRAM it cannot run unmanaged; say why it is not running.
             Object code = field(observed.get("capabilities"), "zramReasonCode");
@@ -581,8 +607,10 @@ public class MemoryRepository {
         row.setCapabilities(state.getCapabilities());
         row.setAllowedActions(JSONObjectUtil.toJsonString(allowedActions(state.getControl(), FAILED.equals(state.getStatus()), observed)));
         row.setLastObservedAt(state.getLastSampleTime());
-        if (row.getActiveJobUuid() != null && !longJobUnfinished(em, row.getActiveJobUuid())) { row.setActiveJobUuid(null); }
+        if (row.getActiveJobUuid() != null && !(unfinishedJobs == null ? longJobUnfinished(em, row.getActiveJobUuid())
+                : unfinishedJobs.contains(row.getActiveJobUuid()))) { row.setActiveJobUuid(null); }
         if (created) { em.persist(row); }
+        return desired != null;
     }
 
     /** Applied, Applying (sent, no answer yet), Converging (waiting or retrying) or Failed. */
@@ -592,13 +620,20 @@ public class MemoryRepository {
         return state.getReason() == null ? "Applying" : CONVERGING;
     }
 
-    @SuppressWarnings("unchecked")
     private static Map<String, Object> desired(MemoryStateVO state) {
+        Map<String, Object> desired = storedDesired(state);
+        return desired == null ? Collections.emptyMap() : desired;
+    }
+
+    /** The stored desired configuration, empty before the first plan, or null when it cannot be read. */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> storedDesired(MemoryStateVO state) {
         if (state.getDesired() == null) { return Collections.emptyMap(); }
         try { return JSONObjectUtil.toObject(state.getDesired(), LinkedHashMap.class); }
-        catch (RuntimeException invalid) {
-            logger.error(String.format("Host[%s] stored memory configuration is unreadable", state.getHostUuid()), invalid);
-            return Collections.emptyMap();
+        catch (JsonParseException invalid) {
+            logger.error(String.format("Host[%s] stored memory configuration is unreadable; it is planned again",
+                    state.getHostUuid()), invalid);
+            return null;
         }
     }
 
@@ -667,11 +702,18 @@ public class MemoryRepository {
     private static Object field(Object value, String key) { Map<?, ?> map = map(value); return map == null ? null : map.get(key); }
 
     private static boolean longJobUnfinished(EntityManager em, String job) {
-        List<?> states = em.createQuery("select j.state from LongJobVO j where j.uuid = :uuid")
-                .setParameter("uuid", job).getResultList();
-        if (states.isEmpty()) { return false; }
-        String state = String.valueOf(states.get(0));
-        return !"Succeeded".equals(state) && !"Failed".equals(state) && !"Canceled".equals(state);
+        return unfinishedLongJobs(em, Collections.singleton(job)).contains(job);
+    }
+
+    private static Set<String> unfinishedLongJobs(EntityManager em, Collection<String> jobs) {
+        if (jobs.isEmpty()) { return Collections.emptySet(); }
+        Set<String> unfinished = new HashSet<>();
+        for (Object[] job : em.createQuery("select j.uuid, j.state from LongJobVO j where j.uuid in (:jobs)", Object[].class)
+                .setParameter("jobs", jobs).getResultList()) {
+            String state = String.valueOf(job[1]);
+            if (!"Succeeded".equals(state) && !"Failed".equals(state) && !"Canceled".equals(state)) { unfinished.add((String) job[0]); }
+        }
+        return unfinished;
     }
 
     /** Records the LongJob operating on a Host; clearing applies only to the job that set it. */

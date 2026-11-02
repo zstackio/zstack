@@ -267,6 +267,24 @@ public class MemoryLifecycleHooksCallbackTest {
         assertEquals("Released", repository.hold.status);
     }
 
+    @Test public void aHoldLeftByARestartedManagementNodeIsReconciledOnceItsVmSettles() throws Exception {
+        FakeRepository repository = heldMigration();
+        PlacementManager manager = new PlacementManager();
+        manager.instances.put("host-a", "instance-source");
+        MemoryLifecycleHooks hooks = new MemoryLifecycleHooks();
+        inject(hooks, "repository", repository); inject(hooks, "manager", manager);
+        repository.vmState = "Migrating";
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals("a migration in progress keeps its hold", "Held", repository.hold.status);
+        repository.vmState = "Running";
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals("the migration callback may still release it", "Held", repository.hold.status);
+        inject(hooks, "settledHoldGraceMillis", 0L);
+        hooks.reconcileUnknownMigrationHolds("host-a");
+        assertEquals("Released", repository.hold.status);
+        assertTrue(manager.calls.toString(), manager.calls.contains("host-a:release"));
+    }
+
     /** Agent replies by Host: the VM instance each Host reports, and the bind, revoke and hold calls made. */
     private static class PlacementManager extends FakeManager {
         final Map<String, String> instances = new HashMap<>();
@@ -583,6 +601,12 @@ public class MemoryLifecycleHooksCallbackTest {
                     new Class[]{javax.persistence.TypedQuery.class}, (proxy, method, args) -> {
                         if ("setParameter".equals(method.getName())) { parameters.put((String) args[0], args[1]); return proxy; }
                         if (!"getResultList".equals(method.getName())) { return null; }
+                        if (jpql.startsWith("from MemoryMigrationVO") && jpql.contains("m.status in ('Preparing', 'Held')")) {
+                            boolean settled = hold != null && ("Preparing".equals(hold.status) || "Held".equals(hold.status))
+                                    && !vmDeleted && !String.valueOf(parameters.get("migrating")).equals(vmState);
+                            return settled && hold.sourceHostUuid.equals(parameters.get("host"))
+                                    ? Collections.singletonList(hold) : Collections.emptyList();
+                        }
                         if (jpql.startsWith("from MemoryMigrationVO")) {
                             boolean listed = hold != null && ("Unknown".equals(hold.status) || vmDeleted && !"Released".equals(hold.status));
                             return listed && hold.sourceHostUuid.equals(parameters.get("host"))
