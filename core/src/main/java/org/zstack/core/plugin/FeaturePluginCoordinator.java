@@ -5,6 +5,7 @@ import org.apache.commons.io.FileUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
+import org.zstack.core.componentloader.PluginRegistry;
 import org.zstack.core.db.DatabaseFacade;
 import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
@@ -53,6 +54,8 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     private ThreadFacade thdf;
     @Autowired
     private DatabaseFacade dbf;
+    @Autowired
+    private PluginRegistry pluginRgty;
 
     String runCtl(String args) {
         ShellResult ret = ShellUtils.runAndReturn(String.format("zstack-ctl plugin %s", args));
@@ -74,6 +77,20 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         // the json result is the last line, warnings may come before it
         String out = runCtl(args).trim();
         return JSONObjectUtil.toObject(out.substring(out.lastIndexOf('\n') + 1), LinkedHashMap.class);
+    }
+
+    /**
+     * Lets the hypervisor modules deploy the changed agent parts of feature plugins; a failure is only logged,
+     * the hosts get the change when they reconnect.
+     */
+    void agentPartsChanged(boolean reconnectHosts) {
+        for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
+            try {
+                ext.agentPartsChanged(reconnectHosts);
+            } catch (Throwable t) {
+                logger.warn(String.format("%s failed to deploy the agent parts of feature plugins", ext.getClass().getSimpleName()), t);
+            }
+        }
     }
 
     /**
@@ -247,7 +264,11 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
                 }
                 addPackage(msg.getPackageName(), content);
             }
-            reply.setNeedRestart(Boolean.TRUE.equals(runCtlJson("reconcile --json").get("needRestart")));
+            Map<String, Object> result = runCtlJson("reconcile --json");
+            reply.setNeedRestart(Boolean.TRUE.equals(result.get("needRestart")));
+            if (Boolean.TRUE.equals(result.get("agentChanged"))) {
+                agentPartsChanged(!reply.isNeedRestart());
+            }
             if (reply.isNeedRestart()) {
                 // the node that synced restarts this node later
                 markRestartPending();
@@ -334,7 +355,13 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         }
 
         // restart only if this really changed the plugins, a package no node has does not cause restarts
-        if (Boolean.TRUE.equals(runCtlJson("reconcile --json").get("needRestart"))) {
+        Map<String, Object> result = runCtlJson("reconcile --json");
+        boolean needRestart = Boolean.TRUE.equals(result.get("needRestart"));
+        // the hosts were reconnected on boot with the old agent parts
+        if (Boolean.TRUE.equals(result.get("agentChanged"))) {
+            agentPartsChanged(!needRestart);
+        }
+        if (needRestart) {
             logger.info("fetched missing feature plugin packages from other management nodes, restart to load them");
             markRestartPending();
             restartLater();

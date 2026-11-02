@@ -25,6 +25,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmFeaturePluginAgentDeployer" class="org.zstack.kvm.KvmFeaturePluginAgentDeployer">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.core.plugin.FeaturePluginAgentExtensionPoint" />
+            <zstack:extension interface="org.zstack.kvm.KVMHostAddSshFileMd5CheckerExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KVMHostFactory" class="org.zstack.kvm.KVMHostFactory">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.header.host.HypervisorFactory" />
