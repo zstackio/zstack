@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 
 /**
  * Responsible for handling the replication or reset of encryption resource keys
@@ -46,6 +47,19 @@ public interface TpmEncryptedResourceKeyBackend {
     String defaultKeyProviderUuid();
 
     /**
+     * @return null if no default key provider is set or the default key provider is available,
+     * otherwise the reason why the default key provider cannot be used by new resource keys
+     */
+    ErrorCode checkDefaultKeyProviderAvailable();
+
+    /**
+     * Admission check for a new TPM key provider: an explicit provider must be the default one,
+     * and the default provider must be available.
+     * @return null if the key provider can be used by the new TPM
+     */
+    ErrorCode checkNewTpmKeyProvider(String keyProviderUuid, String field);
+
+    /**
      * Repair providerUuid on existing TPM key ref row where wrapped material already exists.
      * @return updated rows
      */
@@ -55,6 +69,12 @@ public interface TpmEncryptedResourceKeyBackend {
      * Whether an EncryptedResourceKeyRef row exists for this TPM.
      */
     boolean checkTpmKeyProviderAttached(String tpmUuid);
+
+    /**
+     * Drop the key material of the TPM but keep its key provider binding,
+     * so that a new key will be created on next VM start.
+     */
+    void resetEncryptedResourceKey(String tpmUuid);
 
     static class CloneEncryptedResourceKeyContext {
         public String srcTpmUuid;

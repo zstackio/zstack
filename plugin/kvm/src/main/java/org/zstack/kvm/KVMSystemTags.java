@@ -3,6 +3,8 @@ package org.zstack.kvm;
 import org.zstack.header.cluster.ClusterVO;
 import org.zstack.header.host.HostVO;
 import org.zstack.header.network.l2.L2NetworkVO;
+import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
+import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupVO;
 import org.zstack.header.tag.TagDefinition;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmNicVO;
@@ -85,4 +87,10 @@ public class KVMSystemTags {
     public static final String TPM_KEY_PROVIDER_NAME_TOKEN = "keyProviderName";
     public static PatternedSystemTag TPM_KEY_PROVIDER_NAME =
             new PatternedSystemTag(String.format("tpm::keyProvider::{%s}", TPM_KEY_PROVIDER_NAME_TOKEN), VmHostBackupFileVO.class);
+
+    public static final String SECURE_BOOT_TOKEN = "secureBoot";
+    public static PatternedSystemTag SNAPSHOT_GROUP_SECURE_BOOT =
+            new PatternedSystemTag(String.format("snapshotGroup::secureBoot::{%s}", SECURE_BOOT_TOKEN), VolumeSnapshotGroupVO.class);
+    public static PatternedSystemTag VOLUME_SNAPSHOT_SECURE_BOOT =
+            new PatternedSystemTag(String.format("volumeSnapshot::secureBoot::{%s}", SECURE_BOOT_TOKEN), VolumeSnapshotVO.class);
 }

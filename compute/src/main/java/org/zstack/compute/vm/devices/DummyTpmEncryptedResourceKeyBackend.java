@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 import org.zstack.utils.Utils;
 import org.zstack.utils.logging.CLogger;
 
@@ -44,6 +45,16 @@ public class DummyTpmEncryptedResourceKeyBackend implements TpmEncryptedResource
     }
 
     @Override
+    public ErrorCode checkDefaultKeyProviderAvailable() {
+        return null;
+    }
+
+    @Override
+    public ErrorCode checkNewTpmKeyProvider(String keyProviderUuid, String field) {
+        return null;
+    }
+
+    @Override
     public int applyKeyProviderWithKek(String tpmUuid, String providerUuid) {
         return 0;
     }
@@ -51,6 +62,11 @@ public class DummyTpmEncryptedResourceKeyBackend implements TpmEncryptedResource
     @Override
     public boolean checkTpmKeyProviderAttached(String tpmUuid) {
         return false;
+    }
+
+    @Override
+    public void resetEncryptedResourceKey(String tpmUuid) {
+        logger.debug("ignore reset encrypted resource key request for TPM uuid " + tpmUuid);
     }
 
     @Override

@@ -19,6 +19,7 @@ import org.zstack.header.core.workflow.FlowErrorHandler;
 import org.zstack.header.core.workflow.FlowTrigger;
 import org.zstack.header.core.workflow.NoRollbackFlow;
 import org.zstack.header.errorcode.ErrorCode;
+import org.zstack.header.errorcode.ErrorCodeList;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.tpm.entity.TpmVO;
@@ -28,7 +29,6 @@ import org.zstack.header.vm.PreVmInstantiateResourceExtensionPoint;
 import org.zstack.header.vm.VmInstanceVO;
 import org.zstack.header.vm.VmInstanceVO_;
 import org.zstack.header.vm.VmInstanceConstant;
-import org.zstack.header.vm.AfterReimageVmInstanceExtensionPoint;
 import org.zstack.header.vm.BeforeHaStartVmInstanceExtensionPoint;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceMigrateExtensionPoint;
@@ -53,11 +53,15 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.VolumeTO;
@@ -92,7 +96,6 @@ import static org.zstack.utils.clouderrorcode.CloudOperationsErrorCode.*;
 public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         PreVmInstantiateResourceExtensionPoint,
         VmPreMigrationExtensionPoint,
-        AfterReimageVmInstanceExtensionPoint,
         VmReleaseResourceExtensionPoint,
         VmInstanceMigrateExtensionPoint,
         VolumeSnapshotCreationExtensionPoint,
@@ -327,7 +330,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     @Override
     public void preInstantiateVmResource(VmInstanceSpec spec, Completion completion) {
         final NvRamSpec nvRamSpec = spec.getDevicesSpec() == null ? null : spec.getDevicesSpec().getNvRam();
-        if (nvRamSpec == null) {
+        if (nvRamSpec == null || !nvRamSpec.isNeedRegister()) {
             completion.success();
             return;
         }
@@ -352,6 +355,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         // whether the NvRam is on the same host as before
         private boolean sameHost = false;
         private boolean syncFromOriginHostSuccess = false;
+        private ErrorCode syncFromOriginHostError;
         private boolean writeSuccess = false;
         private VmHostFileVO vmHostFile;
         private VmHostBackupFileVO vmBackupFileVO;
@@ -360,6 +364,23 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         //             > VmHostFileVO (read success)
         //             > VmHostFileVO (read fail, but has content)
         //             > VmHostBackupFileVO (vmInstanceUuid matched)  <-  read this only if VmHostFileVO is not exist
+    }
+
+    private static boolean isFileLevelReadError(ErrorCode error) {
+        if (error == null) {
+            return false;
+        }
+        if (error.getFromOpaque("path") != null) {
+            return true;
+        }
+        if (error instanceof ErrorCodeList && ((ErrorCodeList) error).getCauses() != null) {
+            for (ErrorCode cause : ((ErrorCodeList) error).getCauses()) {
+                if (isFileLevelReadError(cause)) {
+                    return true;
+                }
+            }
+        }
+        return isFileLevelReadError(error.getCause());
     }
 
     @SuppressWarnings("rawtypes")
@@ -417,6 +438,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
                         logger.warn(String.format("failed to read vm host file for VM[vmUuid=%s] but still continue: %s",
                                 context.vmUuid, reply.getError().getReadableDetails()));
+                        context.syncFromOriginHostError = reply.getError();
                         trigger.next();
                     }
                 });
@@ -431,6 +453,18 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
 
             @Override
             public void run(FlowTrigger trigger, Map data) {
+                boolean hasContent = Q.New(VmHostFileContentVO.class)
+                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
+                        .isExists();
+                if (hasContent && (context.sameHost || isFileLevelReadError(context.syncFromOriginHostError))) {
+                    trigger.fail(operr(ORG_ZSTACK_KVM_10164,
+                            "%s file[path:%s] of VM[uuid:%s] cannot be read on host[uuid:%s], it may be missing or corrupted; "
+                                    + "restore the original file before starting the VM",
+                            context.type, context.path, context.vmUuid, context.vmHostFile.getHostUuid())
+                            .causedBy(context.syncFromOriginHostError));
+                    return;
+                }
+
                 Timestamp latestChangeDate = Q.New(VmHostFileVO.class)
                         .select(VmHostFileVO_.changeDate)
                         .eq(VmHostFileVO_.uuid, context.vmHostFile.getUuid())
@@ -443,9 +477,7 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                     return;
                 }
 
-                if (!Q.New(VmHostFileContentVO.class)
-                        .eq(VmHostFileContentVO_.uuid, context.vmHostFile.getUuid())
-                        .isExists()) {
+                if (!hasContent) {
                     logger.debug(String.format(
                             "VmHostFileVO[vmUuid=%s, hostUuid=%s, type=%s] has no content",
                             context.vmUuid, context.hostUuid, context.type));
@@ -600,22 +632,6 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
         VmInstanceSpec spec;
 
         VolumeInventory inventory;
-    }
-
-    @Override
-    public void afterReimageVmInstance(VolumeInventory inventory) {
-        String vmUuid = inventory.getVmInstanceUuid();
-        if (vmUuid == null) {
-            return;
-        }
-
-        SQL.New(VmHostFileVO.class)
-                .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
-                .delete();
-        secureBootManager.cleanVmHostBackupFile(vmUuid);
-
-        logger.debug(String.format("reset TPM state for VM[uuid:%s] after reimage: " +
-                "deleted all VmHostFileVO and VmHostBackupFileVO records", vmUuid));
     }
 
     @Override
@@ -815,10 +831,10 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
                 .eq(VmInstanceVO_.uuid, vmUuid)
                 .findValue();
 
-        List<VmHostFileVO> hostFiles = Q.New(VmHostFileVO.class)
+        List<VmHostFileVO> hostFiles = vmHostFileFactory.filterHostFilesNeedRegister(vmUuid, Q.New(VmHostFileVO.class)
                 .eq(VmHostFileVO_.vmInstanceUuid, vmUuid)
                 .eq(VmHostFileVO_.hostUuid, hostUuid)
-                .list();
+                .list());
 
         if (hostFiles.isEmpty()) {
             completion.success();
@@ -869,11 +885,24 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     public void afterVolumeSnapshotGroupCreated(VolumeSnapshotGroupInventory snapshotGroup,
                                                  ConsistentType consistentType,
                                                  Completion completion) {
+        if (snapshotGroup.getVmInstanceUuid() != null
+                && SecureBootRecordHelper.secureBootEnabled(snapshotGroup.getVmInstanceUuid(), resourceConfigFacade)) {
+            SecureBootRecordHelper.recordSecureBoot(KVMSystemTags.SNAPSHOT_GROUP_SECURE_BOOT, snapshotGroup.getUuid());
+        }
         completion.success();
     }
 
     @Override
     public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
+        if (VolumeType.Root.toString().equals(snapshot.getVolumeType())) {
+            String vmUuid = Q.New(VolumeVO.class)
+                    .select(VolumeVO_.vmInstanceUuid)
+                    .eq(VolumeVO_.uuid, snapshot.getVolumeUuid())
+                    .findValue();
+            if (vmUuid != null && SecureBootRecordHelper.secureBootEnabled(vmUuid, resourceConfigFacade)) {
+                SecureBootRecordHelper.recordSecureBoot(KVMSystemTags.VOLUME_SNAPSHOT_SECURE_BOOT, snapshot.getUuid());
+            }
+        }
         completion.success();
     }
 }

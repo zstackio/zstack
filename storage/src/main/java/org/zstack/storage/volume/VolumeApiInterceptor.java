@@ -54,6 +54,8 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotTreeVO_;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO;
 import org.zstack.header.storage.snapshot.VolumeSnapshotVO_;
 import org.zstack.header.storage.snapshot.group.MemorySnapshotValidatorExtensionPoint;
+import org.zstack.header.tpm.entity.TpmVO;
+import org.zstack.header.tpm.entity.TpmVO_;
 import org.zstack.header.vm.APICreateVmInstanceMsg;
 import org.zstack.header.vm.VmInstanceInventory;
 import org.zstack.header.vm.VmInstanceState;
@@ -232,6 +234,11 @@ public class VolumeApiInterceptor implements ApiMessageInterceptor, Component, G
         if (msg.isWithMemory() && !(vmvo.getState().equals(VmInstanceState.Running) || (vmvo.getState().equals(VmInstanceState.Paused)))) {
             throw new ApiMessageInterceptionException(argerr(ORG_ZSTACK_STORAGE_VOLUME_10044, "Can not take memory snapshot, vm current state[%s], but expect state are [%s, %s]",
                     vmvo.getState().toString(), VmInstanceState.Running.toString(), VmInstanceState.Paused.toString()));
+        }
+
+        if (msg.isWithMemory() && Q.New(TpmVO.class).eq(TpmVO_.vmInstanceUuid, vmvo.getUuid()).isExists()) {
+            throw new ApiMessageInterceptionException(operr(ORG_ZSTACK_STORAGE_VOLUME_10102,
+                    "VM[uuid:%s] has a TPM device, cannot create a volume snapshot group with memory", vmvo.getUuid()));
         }
 
         for (VolumeVO vol : vmvo.getAllVolumes()) {

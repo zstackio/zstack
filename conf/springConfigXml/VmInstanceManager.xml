@@ -293,6 +293,13 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="SecureBootResourceConfigGuard" class="org.zstack.compute.vm.SecureBootResourceConfigGuard">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.header.Component" />
+            <zstack:extension interface="org.zstack.header.apimediator.GlobalApiMessageInterceptor" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="VmTpmManager" class="org.zstack.compute.vm.devices.VmTpmManager"/>
 
     <bean id="VmTpmExtensions" class="org.zstack.compute.vm.devices.VmTpmExtensions">
