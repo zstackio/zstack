@@ -6,7 +6,7 @@
   sign  --package PKG --key PRIVATE_KEY_PEM
 
 DIR is either a plugin project made from template/ (plugin.yaml, pom.xml, target/*.jar, src/main/zpkg/)
-or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/, agent/).
+or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/, agent/, ui/).
 """
 import argparse
 import ast
@@ -14,6 +14,7 @@ import fnmatch
 import glob
 import hashlib
 import io
+import json
 import os
 import re
 import shutil
@@ -31,7 +32,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MANIFEST = 'META-INF/MANIFEST.sha256'
 SIGNATURE = 'META-INF/zpkg.sig'
 DESCRIPTOR = 'plugin.yaml'
-PACKAGE_ROOTS = ('lib/', 'classes/', 'db/', 'drivers/', 'agent/')
+PACKAGE_ROOTS = ('lib/', 'classes/', 'db/', 'drivers/', 'agent/', 'ui/')
+# the ui part has fixed paths so that zstack-ctl and the BFF read it without a path table (SDK spec 7.1, P4 design 5.1)
+UI_PATHS = {'remote': 'ui/remote/', 'bff': 'ui/bff/', 'routes': 'ui/routes.json', 'menus': 'ui/menus.json',
+            'slots': 'ui/slots.json', 'i18n': 'ui/locale/'}
+UI_LOCALES = ('zh-CN', 'en-US')
+UI_SLOTS = (('detail.tab', 'Host'),)
 # what the kvmagent part of a plugin may import besides the standard library; its own modules are imported
 # relatively (SDK spec 5.3)
 AGENT_ALLOWED_MODULES = ('zstacklib.utils.jsonobject', 'zstacklib.utils.http', 'zstacklib.utils.log', 'zstacklib.utils.shell',
@@ -182,6 +188,41 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
     for f, module in agent_imports(stage):
         if not _agent_import_allowed(module):
             problems.append('disallowed-agent-import: %s in %s' % (module, f))
+    return problems + ui_problems(stage, desc)
+
+
+def ui_problems(stage, desc):
+    """Format problems of the ui part, the same rules zstack-ctl applies before installing."""
+    ui = desc.get('ui') or {}
+    if not ui:
+        return []
+    pid = desc['id']
+    problems = ['ui-field: %s' % k for k in sorted(ui) if UI_PATHS.get(k) != ui[k]]
+
+    def load(name, default):
+        path = os.path.join(stage, *name.split('/'))
+        if not os.path.exists(path):
+            return default
+        with open(path) as f:
+            return json.load(f)
+
+    required = ['ui/remote/mf-manifest.json'] + ['ui/locale/%s.json' % l for l in UI_LOCALES]
+    if 'bff' in ui:
+        required.append('ui/bff/index.js')
+    problems += ['ui-missing: %s' % n for n in required if not os.path.exists(os.path.join(stage, *n.split('/')))]
+
+    routes = load('ui/routes.json', [])
+    problems += ['ui-route: %s' % r['path'] for r in routes if not r['path'].startswith('/plugin/%s/' % pid)]
+    paths = set(r['path'] for r in routes)
+    problems += ['ui-menu: %s' % m['key'] for m in load('ui/menus.json', [])
+                 if not m['key'].startswith(pid + '.') or m['route'] not in paths]
+    problems += ['ui-slot: %s %s' % (s['slot'], s['resource']) for s in load('ui/slots.json', [])
+                 if (s['slot'], s['resource']) not in UI_SLOTS]
+
+    messages = [load('ui/locale/%s.json' % l, {}) for l in UI_LOCALES]
+    keys = set().union(*messages)
+    problems += ['ui-i18n: %s' % k for k in sorted(keys)
+                 if not k.startswith(pid + '.') or any(k not in m for m in messages)]
     return problems
 
 

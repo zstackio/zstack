@@ -171,6 +171,81 @@ class TestAgentCheck(CheckCase):
                          self.agent_stage({'tpm.py': 'import helpers\n', 'helpers.py': ''}))
 
 
+UI_PART = {'remote': 'ui/remote/', 'routes': 'ui/routes.json', 'menus': 'ui/menus.json', 'slots': 'ui/slots.json',
+           'i18n': 'ui/locale/'}
+
+
+class TestUiCheck(CheckCase):
+    def ui_stage(self, ui=None, files=None):
+        stage = os.path.join(self.tmp, 'ui-stage')
+        with open(os.path.join(self.tmp, 'plugin.yaml'), 'w') as f:
+            yaml.safe_dump({'id': 'tpm', 'version': '1.0.0', 'requires': {'sdk': '>=1.0 <2'},
+                            'ui': ui if ui is not None else dict(UI_PART)}, f)
+        content = {
+            'ui/remote/mf-manifest.json': '{}',
+            'ui/routes.json': '[{"path": "/plugin/tpm/x", "module": "./X"}]',
+            'ui/menus.json': '[{"key": "tpm.x", "parent": "network.service", "title": "tpm.menu", "route": "/plugin/tpm/x", "order": 1}]',
+            'ui/slots.json': '[{"slot": "detail.tab", "resource": "Host", "module": "./Tab", "title": "tpm.tab"}]',
+            'ui/locale/zh-CN.json': '{"tpm.menu": "x", "tpm.tab": "y"}',
+            'ui/locale/en-US.json': '{"tpm.menu": "x", "tpm.tab": "y"}',
+        }
+        content.update(files or {})
+        for name, text in content.items():
+            if text is None:
+                continue
+            path = os.path.join(stage, *name.split('/'))
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, 'w') as f:
+                f.write(text)
+        shutil.copy(os.path.join(self.tmp, 'plugin.yaml'), stage)
+        jdeps = os.path.join(self.tmp, 'jdeps.txt')
+        open(jdeps, 'w').close()
+        return zpkg_tool.check(stage, self.platform, ALLOWLIST, jdeps)
+
+    def test_valid_ui_part(self):
+        self.assertEqual([], self.ui_stage())
+
+    def test_privileges_rejected(self):
+        self.assertIn('ui-field: privileges', self.ui_stage(ui=dict(UI_PART, privileges='ui/privileges.json'),
+                                                          files={'ui/privileges.json': '[]'}))
+
+    def test_nonstandard_path_rejected(self):
+        self.assertIn('ui-field: routes', self.ui_stage(ui=dict(UI_PART, routes='ui/r.json'), files={'ui/r.json': '[]'}))
+
+    def test_route_prefix(self):
+        self.assertIn('ui-route: /tpm/x', self.ui_stage(files={
+            'ui/routes.json': '[{"path": "/tpm/x", "module": "./X"}]',
+            'ui/menus.json': '[]'}))
+
+    def test_menu_key_prefix(self):
+        self.assertIn('ui-menu: x.tasks', self.ui_stage(files={
+            'ui/menus.json': '[{"key": "x.tasks", "parent": "network.service", "title": "tpm.menu", "route": "/plugin/tpm/x", "order": 1}]'}))
+
+    def test_menu_route_must_exist(self):
+        self.assertIn('ui-menu: tpm.x', self.ui_stage(files={
+            'ui/menus.json': '[{"key": "tpm.x", "parent": "network.service", "title": "tpm.menu", "route": "/plugin/tpm/y", "order": 1}]'}))
+
+    def test_unsupported_slot(self):
+        self.assertIn('ui-slot: detail.tab VmInstance', self.ui_stage(files={
+            'ui/slots.json': '[{"slot": "detail.tab", "resource": "VmInstance", "module": "./Tab", "title": "tpm.tab"}]'}))
+
+    def test_locales_must_match(self):
+        self.assertIn('ui-i18n: tpm.a', self.ui_stage(files={
+            'ui/locale/zh-CN.json': '{"tpm.menu": "x", "tpm.tab": "y", "tpm.a": "z"}'}))
+
+    def test_locale_keys_must_be_prefixed(self):
+        self.assertIn('ui-i18n: menu', self.ui_stage(files={
+            'ui/locale/zh-CN.json': '{"tpm.menu": "x", "tpm.tab": "y", "menu": "z"}',
+            'ui/locale/en-US.json': '{"tpm.menu": "x", "tpm.tab": "y", "menu": "z"}'}))
+
+    def test_missing_manifest(self):
+        self.assertIn('ui-missing: ui/remote/mf-manifest.json', self.ui_stage(files={'ui/remote/mf-manifest.json': None}))
+
+    def test_declared_bff_needs_index(self):
+        self.assertIn('ui-missing: ui/bff/index.js', self.ui_stage(ui=dict(UI_PART, bff='ui/bff/'),
+                                                                 files={'ui/bff/other.js': ''}))
+
+
 class TestAllowlist(unittest.TestCase):
     def test_allowlist_entries_exist(self):
         allow, deny = zpkg_tool.load_allowlist(ALLOWLIST)
@@ -220,6 +295,20 @@ class TestPack(CheckCase):
         with tarfile.open(pkg, 'r:gz') as tar:
             manifest = tar.extractfile(zpkg_tool.MANIFEST).read().decode('utf-8')
         self.assertIn('  agent/kvmagent/a.py\n', manifest)
+
+    def test_pack_includes_ui_files(self):
+        stage = self.make_stage()
+        os.makedirs(os.path.join(stage, 'ui', 'remote'))
+        for name in ('ui/remote/mf-manifest.json', 'ui/routes.json'):
+            with open(os.path.join(stage, *name.split('/')), 'w') as f:
+                f.write('{}')
+        pkg = zpkg_tool.pack(stage, self.tmp)
+        with tarfile.open(pkg, 'r:gz') as tar:
+            names = [m.name for m in tar.getmembers() if m.isfile()]
+            manifest = tar.extractfile(zpkg_tool.MANIFEST).read().decode('utf-8')
+        for name in ('ui/remote/mf-manifest.json', 'ui/routes.json'):
+            self.assertIn(name, names)
+            self.assertIn('  %s\n' % name, manifest)
 
     def test_sign_then_openssl_verifies(self):
         key, pub = os.path.join(self.tmp, 'key.pem'), os.path.join(self.tmp, 'pub.pem')
