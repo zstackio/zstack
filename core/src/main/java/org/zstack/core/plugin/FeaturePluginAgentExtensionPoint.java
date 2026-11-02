@@ -5,10 +5,9 @@ package org.zstack.core.plugin;
  */
 public interface FeaturePluginAgentExtensionPoint {
     /**
-     * The agent parts of feature plugins on this management node changed.
-     *
-     * @param reconnectHosts reconnect the hosts this management node manages so that they get the change;
-     *                       false when this management node restarts and reconnects them on boot
+     * The agent parts of feature plugins on this management node changed while it keeps running: deploy them to
+     * the hosts it manages now. A management node that restarts instead finds its agent module changed on boot
+     * and reconnects its hosts then.
      */
-    void agentPartsChanged(boolean reconnectHosts);
+    void agentPartsChanged();
 }

@@ -763,8 +763,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 FeaturePlugins.refresh();
             }
             List<String> peers = coordinator.syncToPeers((String) ret.get("package"));
-            if (Boolean.TRUE.equals(ret.get("agentChanged"))) {
-                coordinator.agentPartsChanged(!restartSelf);
+            if (Boolean.TRUE.equals(ret.get("agentChanged")) && !restartSelf) {
+                coordinator.agentPartsChanged();
             }
             pkg.setInstalled(true);
             event.setInventory(pkg);
@@ -819,8 +819,8 @@ public class PluginManagerImpl extends AbstractService implements PluginManager 
                 FeaturePlugins.refresh();
             }
             List<String> peers = coordinator.syncToPeers(null);
-            if (Boolean.TRUE.equals(ret.get("agentChanged"))) {
-                coordinator.agentPartsChanged(!restartSelf);
+            if (Boolean.TRUE.equals(ret.get("agentChanged")) && !restartSelf) {
+                coordinator.agentPartsChanged();
             }
             return restartAfter(peers, restartSelf);
         });

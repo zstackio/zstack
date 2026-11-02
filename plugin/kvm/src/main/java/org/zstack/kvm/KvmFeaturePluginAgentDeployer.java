@@ -60,12 +60,8 @@ public class KvmFeaturePluginAgentDeployer implements FeaturePluginAgentExtensio
     }
 
     @Override
-    public void agentPartsChanged(boolean reconnectHosts) {
+    public void agentPartsChanged() {
         asf.deployModule(KVMConstant.ANSIBLE_MODULE_PATH, KVMConstant.ANSIBLE_PLAYBOOK_NAME);
-        if (!reconnectHosts) {
-            return;
-        }
-
         List<String> hostUuids = Q.New(HostVO.class).select(HostVO_.uuid)
                 .eq(HostVO_.hypervisorType, KVMConstant.KVM_HYPERVISOR_TYPE)
                 .eq(HostVO_.status, HostStatus.Connected)

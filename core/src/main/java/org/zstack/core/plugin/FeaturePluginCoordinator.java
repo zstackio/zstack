@@ -80,13 +80,14 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
     }
 
     /**
-     * Lets the hypervisor modules deploy the changed agent parts of feature plugins; a failure is only logged,
-     * the hosts get the change when they reconnect.
+     * Lets the hypervisor modules deploy the changed agent parts of feature plugins to their hosts now, when this
+     * management node does not restart for the change; a failure is only logged, the hosts get the change when
+     * they reconnect.
      */
-    void agentPartsChanged(boolean reconnectHosts) {
+    void agentPartsChanged() {
         for (FeaturePluginAgentExtensionPoint ext : pluginRgty.getExtensionList(FeaturePluginAgentExtensionPoint.class)) {
             try {
-                ext.agentPartsChanged(reconnectHosts);
+                ext.agentPartsChanged();
             } catch (Throwable t) {
                 logger.warn(String.format("%s failed to deploy the agent parts of feature plugins", ext.getClass().getSimpleName()), t);
             }
@@ -266,8 +267,9 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
             }
             Map<String, Object> result = runCtlJson("reconcile --json");
             reply.setNeedRestart(Boolean.TRUE.equals(result.get("needRestart")));
-            if (Boolean.TRUE.equals(result.get("agentChanged"))) {
-                agentPartsChanged(!reply.isNeedRestart());
+            // a node that restarts deploys them on boot
+            if (Boolean.TRUE.equals(result.get("agentChanged")) && !reply.isNeedRestart()) {
+                agentPartsChanged();
             }
             if (reply.isNeedRestart()) {
                 // the node that synced restarts this node later
@@ -358,8 +360,8 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         Map<String, Object> result = runCtlJson("reconcile --json");
         boolean needRestart = Boolean.TRUE.equals(result.get("needRestart"));
         // the hosts were reconnected on boot with the old agent parts
-        if (Boolean.TRUE.equals(result.get("agentChanged"))) {
-            agentPartsChanged(!needRestart);
+        if (Boolean.TRUE.equals(result.get("agentChanged")) && !needRestart) {
+            agentPartsChanged();
         }
         if (needRestart) {
             logger.info("fetched missing feature plugin packages from other management nodes, restart to load them");
