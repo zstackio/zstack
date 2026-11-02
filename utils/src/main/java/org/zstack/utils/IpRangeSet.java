@@ -31,6 +31,7 @@ public class IpRangeSet {
         } else if (cidrMatcher.matches() && NetworkUtils.isCidr(cidrMatcher.group(1))) {
             String cidr = cidrMatcher.group(1);
             SubnetUtils utils = new SubnetUtils(cidr);
+            utils.setInclusiveHostCount(true);
             SubnetUtils.SubnetInfo subnet = utils.getInfo();
             Long start = NetworkUtils.ipv4StringToLong(subnet.getLowAddress());
             Long end = NetworkUtils.ipv4StringToLong(subnet.getHighAddress());
