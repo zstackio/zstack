@@ -495,7 +495,7 @@ public final class MemoryObservationRules {
                 sampled = java.time.OffsetDateTime.parse((String) value).toInstant().toEpochMilli();
             }
             if (sampled > now + 5000) {
-                return "SAMPLE_TIME_IN_FUTURE";
+                return "SAMPLE_TIME_AHEAD";
             }
             return now - sampled >= ttl ? "SAMPLE_EXPIRED" : null;
         } catch (java.time.DateTimeException | ArithmeticException invalid) {

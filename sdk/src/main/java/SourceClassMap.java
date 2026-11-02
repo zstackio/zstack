@@ -5,38 +5,6 @@ import java.util.HashMap;
 public class SourceClassMap {
     public final static HashMap<String, String> srcToDstMapping = new HashMap() {
         {
-			put("org.zstack.kvm.memory.HostMemoryStateInventory", "org.zstack.sdk.HostMemoryStateInventory");
-			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
-			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
-			put("org.zstack.kvm.memory.MemoryVmAccountingInventory", "org.zstack.sdk.MemoryVmAccountingInventory");
-			put("org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory", "org.zstack.sdk.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.kvm.memory.MemoryVmIdentityInventory", "org.zstack.sdk.MemoryVmIdentityInventory");
-			put("org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory", "org.zstack.sdk.MemoryWritebackBackendCandidateInventory");
-			put("org.zstack.kvm.memory.MemoryWritebackBackendInventory", "org.zstack.sdk.MemoryWritebackBackendInventory");
-			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory", "org.zstack.sdk.MemoryWritebackMaintenanceInventory");
-			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory");
-			put("org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory", "org.zstack.sdk.MemoryWritebackStableIdentityInventory");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			put("org.zstack.abstraction.OptionType", "org.zstack.sdk.OptionType");
 			put("org.zstack.abstraction.OptionType$InputType", "org.zstack.sdk.InputType");
 			put("org.zstack.accessKey.AccessKeyInventory", "org.zstack.sdk.AccessKeyInventory");
@@ -565,6 +533,18 @@ public class SourceClassMap {
 			put("org.zstack.kvm.hypervisor.datatype.HypervisorVersionState", "org.zstack.sdk.HypervisorVersionState");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHostHypervisorMetadataInventory", "org.zstack.sdk.KvmHostHypervisorMetadataInventory");
 			put("org.zstack.kvm.hypervisor.datatype.KvmHypervisorInfoInventory", "org.zstack.sdk.KvmHypervisorInfoInventory");
+			put("org.zstack.kvm.memory.HostMemoryStateInventory", "org.zstack.sdk.HostMemoryStateInventory");
+			put("org.zstack.kvm.memory.MemoryBackendPreparation", "org.zstack.sdk.MemoryBackendPreparation");
+			put("org.zstack.kvm.memory.MemoryHostSavingsInventory", "org.zstack.sdk.MemoryHostSavingsInventory");
+			put("org.zstack.kvm.memory.MemorySummaryInventory", "org.zstack.sdk.MemorySummaryInventory");
+			put("org.zstack.kvm.memory.MemoryVmAccountingInventory", "org.zstack.sdk.MemoryVmAccountingInventory");
+			put("org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory", "org.zstack.sdk.MemoryVmAccountingMetricsInventory");
+			put("org.zstack.kvm.memory.MemoryVmIdentityInventory", "org.zstack.sdk.MemoryVmIdentityInventory");
+			put("org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory", "org.zstack.sdk.MemoryWritebackBackendCandidateInventory");
+			put("org.zstack.kvm.memory.MemoryWritebackBackendInventory", "org.zstack.sdk.MemoryWritebackBackendInventory");
+			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory", "org.zstack.sdk.MemoryWritebackMaintenanceInventory");
+			put("org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory");
+			put("org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory", "org.zstack.sdk.MemoryWritebackStableIdentityInventory");
 			put("org.zstack.kvm.xmlhook.XmlHookInventory", "org.zstack.sdk.XmlHookInventory");
 			put("org.zstack.kvm.xmlhook.XmlHookType", "org.zstack.sdk.XmlHookType");
 			put("org.zstack.ldap.LdapAccountRefInventory", "org.zstack.sdk.LdapAccountRefInventory");
@@ -995,38 +975,6 @@ public class SourceClassMap {
 
     public final static HashMap<String, String> dstToSrcMapping = new HashMap() {
         {
-			put("org.zstack.sdk.HostMemoryStateInventory", "org.zstack.kvm.memory.HostMemoryStateInventory");
-			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
-			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
-			put("org.zstack.sdk.MemoryVmAccountingInventory", "org.zstack.kvm.memory.MemoryVmAccountingInventory");
-			put("org.zstack.sdk.MemoryVmAccountingMetricsInventory", "org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory");
-			put("org.zstack.sdk.MemoryVmIdentityInventory", "org.zstack.kvm.memory.MemoryVmIdentityInventory");
-			put("org.zstack.sdk.MemoryWritebackBackendCandidateInventory", "org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory");
-			put("org.zstack.sdk.MemoryWritebackBackendInventory", "org.zstack.kvm.memory.MemoryWritebackBackendInventory");
-			put("org.zstack.sdk.MemoryWritebackMaintenanceInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory");
-			put("org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory");
-			put("org.zstack.sdk.MemoryWritebackStableIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 			put("org.zstack.sdk.AIBusinessGatewayInventory", "org.zstack.ai.entity.AIBusinessGatewayInventory");
 			put("org.zstack.sdk.AIBusinessGatewayOfferingInventory", "org.zstack.ai.entity.AIBusinessGatewayOfferingInventory");
 			put("org.zstack.sdk.AccessControlListEntryInventory", "org.zstack.header.acl.AccessControlListEntryInventory");
@@ -1286,6 +1234,7 @@ public class SourceClassMap {
 			put("org.zstack.sdk.HostIommuStatusType", "org.zstack.pciDevice.HostIommuStatusType");
 			put("org.zstack.sdk.HostIpmiInventory", "org.zstack.header.host.HostIpmiInventory");
 			put("org.zstack.sdk.HostLoad", "org.zstack.drs.api.HostLoad");
+			put("org.zstack.sdk.HostMemoryStateInventory", "org.zstack.kvm.memory.HostMemoryStateInventory");
 			put("org.zstack.sdk.HostNUMANode", "org.zstack.header.host.HostNUMANode");
 			put("org.zstack.sdk.HostNetworkBondingInventory", "org.zstack.network.hostNetworkInterface.HostNetworkBondingInventory");
 			put("org.zstack.sdk.HostNetworkBondingServiceRefInventory", "org.zstack.header.host.HostNetworkBondingServiceRefInventory");
@@ -1408,6 +1357,17 @@ public class SourceClassMap {
 			put("org.zstack.sdk.MdevDeviceStatus", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceStatus");
 			put("org.zstack.sdk.MdevDeviceType", "org.zstack.pciDevice.virtual.vfio_mdev.MdevDeviceType");
 			put("org.zstack.sdk.MediaInventory", "org.zstack.monitoring.media.MediaInventory");
+			put("org.zstack.sdk.MemoryBackendPreparation", "org.zstack.kvm.memory.MemoryBackendPreparation");
+			put("org.zstack.sdk.MemoryHostSavingsInventory", "org.zstack.kvm.memory.MemoryHostSavingsInventory");
+			put("org.zstack.sdk.MemorySummaryInventory", "org.zstack.kvm.memory.MemorySummaryInventory");
+			put("org.zstack.sdk.MemoryVmAccountingInventory", "org.zstack.kvm.memory.MemoryVmAccountingInventory");
+			put("org.zstack.sdk.MemoryVmAccountingMetricsInventory", "org.zstack.kvm.memory.MemoryVmAccountingMetricsInventory");
+			put("org.zstack.sdk.MemoryVmIdentityInventory", "org.zstack.kvm.memory.MemoryVmIdentityInventory");
+			put("org.zstack.sdk.MemoryWritebackBackendCandidateInventory", "org.zstack.kvm.memory.MemoryWritebackBackendCandidateInventory");
+			put("org.zstack.sdk.MemoryWritebackBackendInventory", "org.zstack.kvm.memory.MemoryWritebackBackendInventory");
+			put("org.zstack.sdk.MemoryWritebackMaintenanceInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceInventory");
+			put("org.zstack.sdk.MemoryWritebackMaintenanceTargetIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackMaintenanceTargetIdentityInventory");
+			put("org.zstack.sdk.MemoryWritebackStableIdentityInventory", "org.zstack.kvm.memory.MemoryWritebackStableIdentityInventory");
 			put("org.zstack.sdk.MetaServerService", "org.zstack.ai.message.ModelCenterServiceInventory$MetaServerService");
 			put("org.zstack.sdk.MiniCandidateHostStruct", "org.zstack.header.bootstrap.MiniCandidateHostStruct");
 			put("org.zstack.sdk.MiniHostInfo", "org.zstack.header.bootstrap.MiniHostInfo");

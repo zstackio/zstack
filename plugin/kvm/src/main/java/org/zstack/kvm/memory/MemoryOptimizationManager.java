@@ -12,7 +12,7 @@ import org.zstack.core.config.GlobalConfigVO;
 import org.zstack.core.config.GlobalConfigVO_;
 import org.zstack.core.db.Q;
 import org.zstack.core.progress.ProgressReportService;
-import org.zstack.core.thread.PeriodicTask;
+import org.zstack.core.thread.CancelablePeriodicTask;
 import org.zstack.core.thread.Task;
 import org.zstack.core.thread.ThreadFacade;
 import org.zstack.core.asyncbatch.While;
@@ -50,7 +50,6 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
@@ -85,7 +84,8 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     /** Operations waiting for their Host generation, by task. */
     private final Map<String, Waiter> waiters = new ConcurrentHashMap<>();
     private final MemoryBatchCursor observationCursor = new MemoryBatchCursor();
-    private Future<?> poller;
+    /** Set when the service stops; the delivery task then cancels itself. */
+    private volatile boolean stopped;
     private long lastObservation;
     private Boolean lastLicensed;
     private long lastHistoryPurge;
@@ -98,7 +98,7 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
 
     @Override public String getId() { return bus.makeLocalServiceId(SERVICE_ID); }
     @Override public boolean start() { return true; }
-    @Override public boolean stop() { if (poller != null) { poller.cancel(false); } return true; }
+    @Override public boolean stop() { stopped = true; return true; }
 
     /**
      * Supplies memory defaults during GlobalConfig initialization on management
@@ -182,11 +182,15 @@ public class MemoryOptimizationManager extends AbstractService implements Manage
     }
 
     @Override public void managementNodeReady() {
-        poller = thdf.submitPeriodicTask(new PeriodicTask() {
+        thdf.submitCancelablePeriodicTask(new CancelablePeriodicTask() {
             @Override public TimeUnit getTimeUnit() { return TimeUnit.SECONDS; }
             @Override public long getInterval() { return 5; }
             @Override public String getName() { return "memory-optimization-delivery"; }
-            @Override public void run() { tick(); }
+            @Override public boolean run() {
+                if (stopped) { return true; }
+                tick();
+                return false;
+            }
         });
     }
 
