@@ -293,7 +293,8 @@ public class MemoryLifecycleHooks implements VmInstanceMigrateExtensionPoint, Ho
             String generation = instanceGeneration(response, uuid);
             if (generation == null) { continue; }
             Map<?, ?> vm = (Map<?, ?>) item.getValue();
-            if (generation.equals(vm.get("bindingGeneration")) && "auto".equals(vm.get("bindingMode"))) { continue; }
+            // The service reports its binding as binding_generation and binding_mode.
+            if (generation.equals(vm.get("binding_generation")) && "auto".equals(vm.get("binding_mode"))) { continue; }
             Map<String, Object> command = new LinkedHashMap<>();
             command.put("hostUuid", host); command.put("operationUuid", UUID.randomUUID().toString().replace("-", ""));
             command.put("resourceUuid", uuid); command.put("scope", "VM"); command.put("action", "bind");

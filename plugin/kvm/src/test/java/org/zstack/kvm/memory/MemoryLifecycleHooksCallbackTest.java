@@ -539,10 +539,11 @@ public class MemoryLifecycleHooksCallbackTest {
         assertFalse(manager.bindCommand.containsKey("participation"));
         assertEquals("new-instance", manager.bindCommand.get("expectedInstanceGeneration"));
         manager.bindCommand = null;
-        vm.put("bindingGeneration", "new-instance"); vm.put("bindingMode", "auto");
+        // The service reports a bound VM with these wire names; such a VM is not bound again.
+        vm.put("binding_generation", "new-instance"); vm.put("binding_mode", "auto");
         hooks.reconcileObservedBindings("host-a", response);
-        assertNull(manager.bindCommand);
-        vm.remove("bindingGeneration"); state.put("inventoryComplete", false);
+        assertNull("a VM already bound at its instance generation is not bound again", manager.bindCommand);
+        vm.remove("binding_generation"); state.put("inventoryComplete", false);
         hooks.reconcileObservedBindings("host-a", response);
         assertNull(manager.bindCommand);
     }
