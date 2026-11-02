@@ -6,9 +6,10 @@
   sign  --package PKG --key PRIVATE_KEY_PEM
 
 DIR is either a plugin project made from template/ (plugin.yaml, pom.xml, target/*.jar, src/main/zpkg/)
-or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/).
+or an unpacked package (plugin.yaml, lib/, classes/, db/, drivers/, agent/).
 """
 import argparse
+import ast
 import fnmatch
 import glob
 import hashlib
@@ -30,7 +31,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 MANIFEST = 'META-INF/MANIFEST.sha256'
 SIGNATURE = 'META-INF/zpkg.sig'
 DESCRIPTOR = 'plugin.yaml'
-PACKAGE_ROOTS = ('lib/', 'classes/', 'db/', 'drivers/')
+PACKAGE_ROOTS = ('lib/', 'classes/', 'db/', 'drivers/', 'agent/')
+# what the kvmagent part of a plugin may import besides the standard library and its own modules (SDK spec 5.3)
+AGENT_ALLOWED_MODULES = ('zstacklib.utils.jsonobject', 'zstacklib.utils.http', 'zstacklib.utils.log', 'zstacklib.utils.shell',
+                         'zstacklib.utils.bash', 'zstacklib.utils.linux', 'zstacklib.utils.lock', 'zstacklib.utils.thread',
+                         'kvmagent.kvmagent', 'kvmagent.sdk')
 ERROR_CODE = re.compile(r'^ORG_ZSTACK_[A-Z0-9_]+_\d{5}$')
 JAR_VERSION = re.compile(r'^(.*?)-\d[\w.]*\.jar$')
 ENTITY = 'Ljavax/persistence/Entity;'
@@ -108,6 +113,33 @@ def run_jdeps(stage, platform_lib):
     return '\n'.join(out)
 
 
+def agent_imports(stage):
+    """(file, module) of each absolute import in the kvmagent part; 'from a import b' gives a.b."""
+    found = []
+    for dirpath, _, names in sorted(os.walk(os.path.join(stage, 'agent', 'kvmagent'))):
+        for n in sorted(names):
+            if not n.endswith('.py'):
+                continue
+            path = os.path.join(dirpath, n)
+            with open(path) as f:
+                tree = ast.parse(f.read(), path)
+            rel = os.path.relpath(path, stage).replace(os.sep, '/')
+            for node in ast.walk(tree):
+                if isinstance(node, ast.Import):
+                    found += [(rel, a.name) for a in node.names]
+                elif isinstance(node, ast.ImportFrom) and not node.level:
+                    found += [(rel, '%s.%s' % (node.module, a.name)) for a in node.names]
+    return found
+
+
+def _agent_import_allowed(module, own):
+    top = module.split('.')[0]
+    # sys.stdlib_module_names needs python 3.10
+    if top in own or top in sys.stdlib_module_names:
+        return True
+    return any(module == m or module.startswith(m + '.') for m in AGENT_ALLOWED_MODULES)
+
+
 def check(stage, platform_lib, allowlist, jdeps_output=None):
     with open(os.path.join(stage, DESCRIPTOR)) as f:
         desc = yaml.safe_load(f)
@@ -145,6 +177,12 @@ def check(stage, platform_lib, allowlist, jdeps_output=None):
     for jar in sorted(os.path.basename(j) for j in plugin_jars(stage)):
         if base(jar) in platform_bases:
             problems.append('jar-conflict: %s' % jar)
+
+    agent_root = os.path.join(stage, 'agent', 'kvmagent')
+    own = set(os.path.splitext(n)[0] for n in os.listdir(agent_root)) if os.path.isdir(agent_root) else set()
+    for f, module in agent_imports(stage):
+        if not _agent_import_allowed(module, own):
+            problems.append('disallowed-agent-import: %s in %s' % (module, f))
     return problems
 
 

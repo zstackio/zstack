@@ -119,6 +119,31 @@ class TestCheck(CheckCase):
         self.assertIn('jar-conflict: gson-2.8.9.jar', self.run_check(plugin_jars=['gson-2.8.9.jar']))
 
 
+class TestAgentCheck(CheckCase):
+    def agent_stage(self, files):
+        stage = os.path.join(self.tmp, 'agent-stage')
+        os.makedirs(os.path.join(stage, 'agent', 'kvmagent'))
+        with open(os.path.join(stage, 'plugin.yaml'), 'w') as f:
+            yaml.safe_dump({'id': 'tpm', 'version': '1.0.0', 'requires': {'sdk': '>=1.0 <2'},
+                            'kvmagent': {'plugins': 'agent/kvmagent/'}}, f)
+        for name, content in files.items():
+            with open(os.path.join(stage, 'agent', 'kvmagent', name), 'w') as f:
+                f.write(content)
+        jdeps = os.path.join(self.tmp, 'jdeps.txt')
+        open(jdeps, 'w').close()
+        return zpkg_tool.check(stage, self.platform, ALLOWLIST, jdeps)
+
+    def test_disallowed_agent_import(self):
+        self.assertEqual(['disallowed-agent-import: kvmagent.plugins.vm_plugin in agent/kvmagent/tpm.py'],
+                         self.agent_stage({'tpm.py': 'from kvmagent.plugins import vm_plugin\n'}))
+
+    def test_allowed_agent_imports(self):
+        self.assertEqual([], self.agent_stage({
+            'tpm.py': 'import os\nfrom zstacklib.utils import http, jsonobject\nfrom kvmagent import kvmagent, sdk\n'
+                      'import helpers\nfrom . import helpers as h\n',
+            'helpers.py': 'import json\n'}))
+
+
 class TestAllowlist(unittest.TestCase):
     def test_allowlist_entries_exist(self):
         allow, deny = zpkg_tool.load_allowlist(ALLOWLIST)
@@ -158,6 +183,16 @@ class TestPack(CheckCase):
                         for n in names if n != zpkg_tool.MANIFEST]
         self.assertEqual(['META-INF/MANIFEST.sha256', 'classes/serviceConfig/tpm.xml', 'lib/tpm-1.0.0.jar', 'plugin.yaml'], names)
         self.assertEqual(expected, manifest)
+
+    def test_pack_includes_agent_files(self):
+        stage = self.make_stage()
+        os.makedirs(os.path.join(stage, 'agent', 'kvmagent'))
+        with open(os.path.join(stage, 'agent', 'kvmagent', 'a.py'), 'w') as f:
+            f.write('import os\n')
+        pkg = zpkg_tool.pack(stage, self.tmp)
+        with tarfile.open(pkg, 'r:gz') as tar:
+            manifest = tar.extractfile(zpkg_tool.MANIFEST).read().decode('utf-8')
+        self.assertIn('  agent/kvmagent/a.py\n', manifest)
 
     def test_sign_then_openssl_verifies(self):
         key, pub = os.path.join(self.tmp, 'key.pem'), os.path.join(self.tmp, 'pub.pem')
