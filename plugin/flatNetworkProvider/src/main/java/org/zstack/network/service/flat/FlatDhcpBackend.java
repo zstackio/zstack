@@ -1019,7 +1019,7 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         /* dhcp server IP uuid in L3_NETWORK_DHCP_IP is not used any more, to be compatible with old version,
          * keep the format of L3_NETWORK_DHCP_IP unchanged, so set it be null temporary, it will be optimized later */
         String dhcpServerIpUuid = "null";
-        if (allocate_ip && (ipVersion != IPv6Constants.IPv6 || isAllocateDhcpv6ServerIp(l3Uuid))) {
+        if (allocate_ip) {
             AllocateIpMsg amsg = new AllocateIpMsg();
             amsg.setL3NetworkUuid(l3Uuid);
             if (requiredIp != null) {
@@ -1286,16 +1286,6 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
         return type.isAllocateDhcpServerIp()
                 && (ipVersion != IPv6Constants.IPv6 || type.isAllocateDhcpv6ServerIp()
                 || type.isDhcpServerIpManagedByController());
-    }
-
-    private boolean isAllocateDhcpv6ServerIp(String l3Uuid) {
-        String providerType = new NetworkProviderFinder().getNetworkProviderTypeByNetworkServiceType(l3Uuid, NetworkServiceType.DHCP.toString());
-        if (providerType == null) {
-            return false;
-        }
-
-        NetworkServiceProviderType type = NetworkServiceProviderType.valueOf(providerType);
-        return type.isAllocateDhcpv6ServerIp();
     }
 
     private boolean isDhcpServerIpManagedByController(String l3Uuid) {
@@ -2724,14 +2714,13 @@ public class FlatDhcpBackend extends AbstractService implements NetworkServiceDh
 
             Map.Entry<String, String> entry = oldDhcpServerIpMap.entrySet().iterator().next();
             if (NetworkUtils.isInRange(entry.getKey(), ipr.getStartIp(), ipr.getEndIp())) {
-                if ((ipr.getIpVersion() == IPv6Constants.IPv6 && !isAllocateDhcpv6ServerIp(ipr.getL3NetworkUuid()))
-                        || (ipr.getIpVersion() == IPv6Constants.IPv4 && Q.New(UsedIpVO.class)
+                if (Q.New(UsedIpVO.class)
                         .eq(UsedIpVO_.uuid, entry.getValue())
                         .eq(UsedIpVO_.l3NetworkUuid, ipr.getL3NetworkUuid())
                         .eq(UsedIpVO_.ipRangeUuid, ipr.getUuid())
-                        .eq(UsedIpVO_.ipVersion, IPv6Constants.IPv4)
+                        .eq(UsedIpVO_.ipVersion, ipr.getIpVersion())
                         .eq(UsedIpVO_.ip, entry.getKey())
-                        .isNull(UsedIpVO_.vmNicUuid).isNull(UsedIpVO_.usedFor).isExists())) {
+                        .isNull(UsedIpVO_.vmNicUuid).isNull(UsedIpVO_.usedFor).isExists()) {
                     return;
                 }
                 /* case #2.3 */
