@@ -6,6 +6,7 @@ import org.junit.runner.RunWith
 import org.junit.runner.notification.Failure
 import org.junit.runners.Suite
 import org.zstack.configuration.OfferingUserConfigUtils
+import org.zstack.test.longjob.TestLongJobInventorySecurity
 import org.zstack.test.unittest.compute.MigrateVmFinalizeCompletionCase
 import org.zstack.test.unittest.core.MessageTimeoutContextCase
 import org.zstack.test.unittest.network.sdncontroller.ZnsProxyAnsibleDeployerTest
@@ -34,7 +35,8 @@ import java.util.stream.Collectors
         OfferingUserConfigUtilsCase.class,
         SizeUnitUtilsCase.class,
         SystemTagUtilsCase.class,
-        VFSMetadataReadWriteTest.class
+        VFSMetadataReadWriteTest.class,
+        TestLongJobInventorySecurity.class
     ])
 class JUnitTestSuite {
 
