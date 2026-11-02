@@ -140,8 +140,13 @@ class TestAgentCheck(CheckCase):
     def test_allowed_agent_imports(self):
         self.assertEqual([], self.agent_stage({
             'tpm.py': 'import os\nfrom zstacklib.utils import http, jsonobject\nfrom kvmagent import kvmagent, sdk\n'
-                      'import helpers\nfrom . import helpers as h\n',
+                      'from . import helpers as h\n',
             'helpers.py': 'import json\n'}))
+
+    def test_own_module_must_be_imported_relatively(self):
+        # the loader gives each plugin a package of its own, absolute imports of its modules do not resolve
+        self.assertEqual(['disallowed-agent-import: helpers in agent/kvmagent/tpm.py'],
+                         self.agent_stage({'tpm.py': 'import helpers\n', 'helpers.py': ''}))
 
 
 class TestAllowlist(unittest.TestCase):
