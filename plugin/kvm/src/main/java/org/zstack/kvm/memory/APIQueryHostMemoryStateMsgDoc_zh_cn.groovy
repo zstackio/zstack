@@ -19,7 +19,7 @@ doc {
             clz APIQueryHostMemoryStateMsg.class
 
             desc """查询物理机内存优化状态"""
-
+            
 			params APIQueryMessage.class
         }
 

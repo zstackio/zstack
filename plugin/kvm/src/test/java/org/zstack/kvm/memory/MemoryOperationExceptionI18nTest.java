@@ -165,8 +165,8 @@ public class MemoryOperationExceptionI18nTest {
     @Test
     public void unknownBusinessCodeRetainsCodeAndDiagnostic() {
         String diagnostic = "unrecognized backend rejection detail";
-        ErrorCode code = new MemoryOperationException("MEMORY_FUTURE_REASON", diagnostic).toErrorCode();
-        assertEquals("MEMORY_FUTURE_REASON", code.getCode());
+        ErrorCode code = new MemoryOperationException("MEMORY_UNDECLARED_REASON", diagnostic).toErrorCode();
+        assertEquals("MEMORY_UNDECLARED_REASON", code.getCode());
         assertEquals(diagnostic, code.getDetails());
         assertEquals("ORG_ZSTACK_MEMORY_11999", code.getGlobalErrorCode());
         assertArrayEquals(new String[]{diagnostic}, code.getFormatArgs());
@@ -177,7 +177,7 @@ public class MemoryOperationExceptionI18nTest {
         assertTrue(code.getMessage().contains("未知的内存优化错误"));
         assertTrue(code.getMessage().contains(diagnostic));
         ErrorCode serialized = JSONObjectUtil.toObject(JSONObjectUtil.toJsonString(code), ErrorCode.class);
-        assertEquals("MEMORY_FUTURE_REASON", serialized.getCode());
+        assertEquals("MEMORY_UNDECLARED_REASON", serialized.getCode());
         assertEquals(diagnostic, serialized.getDetails());
         assertEquals("ORG_ZSTACK_MEMORY_11999", serialized.getGlobalErrorCode());
         assertArrayEquals(new String[]{diagnostic}, serialized.getFormatArgs());
@@ -224,7 +224,7 @@ public class MemoryOperationExceptionI18nTest {
     @Test public void lifecycleErrorsUseTheSameRegisteredMetadataAndFallback() throws Exception {
         Method method = MemoryLifecycleHooks.class.getDeclaredMethod("error", String.class, String.class);
         method.setAccessible(true);
-        for (String businessCode : new String[]{"MEMORY_RESULT_UNKNOWN", "MEMORY_FUTURE_LIFECYCLE_ERROR"}) {
+        for (String businessCode : new String[]{"MEMORY_RESULT_UNKNOWN", "MEMORY_UNDECLARED_LIFECYCLE_ERROR"}) {
             ErrorCode expected = new MemoryOperationException(businessCode, "same-boot identity unresolved").toErrorCode();
             ErrorCode actual = (ErrorCode) method.invoke(new MemoryLifecycleHooks(), businessCode, "same-boot identity unresolved");
             assertEquals(expected.getCode(), actual.getCode());

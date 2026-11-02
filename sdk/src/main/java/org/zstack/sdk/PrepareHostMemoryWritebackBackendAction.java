@@ -38,10 +38,10 @@ public class PrepareHostMemoryWritebackBackendAction extends AbstractAction {
     public java.lang.String expectedPoolGeneration;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public long backendCapacityBytes;
+    public long backendCapacityBytes = 0L;
 
     @Param(required = true, nonempty = false, nullElements = false, emptyString = true, noTrim = false)
-    public boolean resetConfirmed;
+    public boolean resetConfirmed = false;
 
     @Param(required = false)
     public java.lang.String resourceUuid;

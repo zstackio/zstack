@@ -45,7 +45,7 @@ public class MemoryArbiterBoundaryTest {
     }
 
     @Test public void unknownFormulaDoesNotMakeOrdinaryCounterTrustworthy() {
-        String savings = "\"formulaVersion\":\"future-formula\",\"quality\":\"Partial\","
+        String savings = "\"formulaVersion\":\"unknown-formula\",\"quality\":\"Partial\","
                 + "\"sampleTime\":" + NOW + ",\"ksmOrdinaryBytes\":100";
         MemorySummaryInventory result = MemorySummaryRules.summarize(
                 Collections.singletonList("a"),

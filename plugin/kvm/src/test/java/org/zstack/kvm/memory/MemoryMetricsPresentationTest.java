@@ -39,6 +39,6 @@ public class MemoryMetricsPresentationTest {
         savings.put("sampleTime", 99000L);
         assertEquals("Fresh", MemoryMetricsPresentation.quality(savings, 100000));
         savings.put("sampleTime", 106000L);
-        assertEquals("a sample from the future is not trusted", "Unknown", MemoryMetricsPresentation.quality(savings, 100000));
+        assertEquals("a sample ahead of now is not trusted", "Unknown", MemoryMetricsPresentation.quality(savings, 100000));
     }
 }

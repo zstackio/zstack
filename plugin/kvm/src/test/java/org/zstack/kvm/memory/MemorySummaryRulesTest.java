@@ -372,17 +372,17 @@ public class MemorySummaryRulesTest {
         assertNull(result.getKsmZeroBytes()); assertNull(result.getKsmTotalBytes());
     }
 
-    @Test public void futureAndBoundarySamplesCannotExpandPerMetricCoverage() {
+    @Test public void aheadAndBoundarySamplesCannotExpandPerMetricCoverage() {
         MemoryStateVO valid = current("a", now,
                 "{\"savings\":{\"formulaVersion\":\"mechanism-estimate-v1\","
                         + "\"quality\":\"Partial\",\"sampleTime\":300000,"
                         + "\"ksmOrdinaryBytes\":100}}");
-        MemoryStateVO future = current("b", now + 6000,
+        MemoryStateVO ahead = current("b", now + 6000,
                 "{\"savings\":{\"formulaVersion\":\"mechanism-estimate-v1\","
                         + "\"quality\":\"Partial\",\"sampleTime\":306000,"
                         + "\"ksmOrdinaryBytes\":200}}");
         MemorySummaryInventory result = MemorySummaryRules.summarize(
-                Arrays.asList("a", "b"), Arrays.asList(valid, future), now);
+                Arrays.asList("a", "b"), Arrays.asList(valid, ahead), now);
         assertEquals(Long.valueOf(100), result.getKsmOrdinaryBytes());
         assertNull(result.getKsmZeroBytes()); assertEquals(0, result.getCoveredHosts());
     }
