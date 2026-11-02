@@ -25,6 +25,12 @@
         </zstack:plugin>
     </bean>
 
+    <bean id="KvmHostConnectHookAdapter" class="org.zstack.kvm.KvmHostConnectHookAdapter">
+        <zstack:plugin>
+            <zstack:extension interface="org.zstack.kvm.KVMHostConnectExtensionPoint" />
+        </zstack:plugin>
+    </bean>
+
     <bean id="KvmFeaturePluginAgentDeployer" class="org.zstack.kvm.KvmFeaturePluginAgentDeployer">
         <zstack:plugin>
             <zstack:extension interface="org.zstack.core.plugin.FeaturePluginAgentExtensionPoint" />

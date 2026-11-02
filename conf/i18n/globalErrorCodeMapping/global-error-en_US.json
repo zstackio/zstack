@@ -2388,6 +2388,7 @@
   "ORG_ZSTACK_CORE_PLUGIN_10004": "another feature plugin operation is in progress, try again later",
   "ORG_ZSTACK_CORE_PLUGIN_10005": "feature plugin[%s] declares that it cannot be uninstalled once loaded",
   "ORG_ZSTACK_CORE_PLUGIN_10006": "feature plugin[%s] is in use: %s",
+  "ORG_ZSTACK_PLUGIN_SDK_10001": "feature plugin[%s] failed in %s",
   "ORG_ZSTACK_STORAGE_VOLUME_10055": "To detach a shareable data volume with UUID [%s], the UUID of the virtual machine is required.",
   "ORG_ZSTACK_STORAGE_VOLUME_10050": "image[uuid:%s] is not Ready, it\u0027s in %s state",
   "ORG_ZSTACK_STORAGE_VOLUME_10052": "volume[uuid:%s] is in state[%s], a data volume can only be attached when its state is %s",

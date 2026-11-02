@@ -566,6 +566,13 @@ public class KVMAgentCommands {
         private String iscsiInitiatorName;
         @GrayVersion("5.5.6")
         private String cpuFeatureMd5;
+        // reported by feature plugins on the host, by plugin id
+        @GrayVersion("5.5.48")
+        private Map<String, Object> pluginFacts;
+        @GrayVersion("5.5.48")
+        private Map<String, Map<String, String>> featurePlugins;
+        @GrayVersion("5.5.48")
+        private String featurePluginSdkVersion;
 
         public String getOsDistribution() {
             return osDistribution;
@@ -846,6 +853,30 @@ public class KVMAgentCommands {
 
         public void setCpuFeatureMd5(String cpuFeatureMd5) {
             this.cpuFeatureMd5 = cpuFeatureMd5;
+        }
+
+        public Map<String, Object> getPluginFacts() {
+            return pluginFacts;
+        }
+
+        public void setPluginFacts(Map<String, Object> pluginFacts) {
+            this.pluginFacts = pluginFacts;
+        }
+
+        public Map<String, Map<String, String>> getFeaturePlugins() {
+            return featurePlugins;
+        }
+
+        public void setFeaturePlugins(Map<String, Map<String, String>> featurePlugins) {
+            this.featurePlugins = featurePlugins;
+        }
+
+        public String getFeaturePluginSdkVersion() {
+            return featurePluginSdkVersion;
+        }
+
+        public void setFeaturePluginSdkVersion(String featurePluginSdkVersion) {
+            this.featurePluginSdkVersion = featurePluginSdkVersion;
         }
     }
 

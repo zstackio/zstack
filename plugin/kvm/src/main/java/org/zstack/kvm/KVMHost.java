@@ -255,6 +255,9 @@ public class KVMHost extends HostBase implements Host {
     private ResourceDestinationMaker destMaker;
 
     private KVMHostContext context;
+    // host facts of feature plugins collected while connecting
+    private Map<String, Object> pluginFacts;
+    private Map<String, Map<String, String>> featurePlugins;
 
     // ///////////////////// REST URL //////////////////////////
     private String baseUrl;
@@ -5666,6 +5669,8 @@ public class KVMHost extends HostBase implements Host {
             ctx.setNewAddedHost(info.isNewAdded());
             ctx.setBaseUrl(baseUrl);
             ctx.setSkipPackages(info.getSkipPackages());
+            ctx.setPluginFacts(pluginFacts);
+            ctx.setFeaturePlugins(featurePlugins);
 
             chain.then(extp.createKvmHostConnectingFlow(ctx));
         }
@@ -6657,6 +6662,9 @@ public class KVMHost extends HostBase implements Host {
 
                                 saveKvmHostRelatedFacts(ret);
                                 saveGeneralHostHardwareFacts(ret);
+                                // for the host connect hooks of feature plugins, called later in this connection
+                                pluginFacts = ret.getPluginFacts();
+                                featurePlugins = ret.getFeaturePlugins();
 
                                 ret.getVirtualizerInfo().setUuid(self.getUuid());
                                 hypervisorManager.saveHostInfo(ret.getVirtualizerInfo());

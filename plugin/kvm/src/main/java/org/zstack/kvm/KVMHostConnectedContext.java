@@ -1,5 +1,7 @@
 package org.zstack.kvm;
 
+import java.util.Map;
+
 /**
  */
 public class KVMHostConnectedContext {
@@ -7,6 +9,24 @@ public class KVMHostConnectedContext {
     private boolean newAddedHost;
     private String baseUrl;
     private String skipPackages;
+    private Map<String, Object> pluginFacts;
+    private Map<String, Map<String, String>> featurePlugins;
+
+    public Map<String, Object> getPluginFacts() {
+        return pluginFacts;
+    }
+
+    public void setPluginFacts(Map<String, Object> pluginFacts) {
+        this.pluginFacts = pluginFacts;
+    }
+
+    public Map<String, Map<String, String>> getFeaturePlugins() {
+        return featurePlugins;
+    }
+
+    public void setFeaturePlugins(Map<String, Map<String, String>> featurePlugins) {
+        this.featurePlugins = featurePlugins;
+    }
 
     public boolean isNewAddedHost() {
         return newAddedHost;
