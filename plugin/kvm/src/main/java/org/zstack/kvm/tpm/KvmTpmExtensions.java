@@ -470,6 +470,13 @@ public class KvmTpmExtensions implements KVMStartVmExtensionPoint,
             return;
         }
 
+        // a new key always has keyVersion 1 and the host secret is keyed by keyVersion only,
+        // so the secret defined with the rolled back DEK would be reused by the next start
+        if (spec.getDestHost() != null) {
+            deleteHostSecretBestEffort(spec.getDestHost().getUuid(), spec.getVmInventory().getUuid(), 1,
+                    "start-rollback");
+        }
+
         ResourceKeyResult result = new ResourceKeyResult();
         result.setResourceUuid(tpmSpec.getTpmUuid());
         result.setResourceType(TpmVO.class.getSimpleName());
