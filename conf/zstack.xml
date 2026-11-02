@@ -45,7 +45,9 @@
     <import resource="springConfigXml/vhost.xml"/>
     <import resource="springConfigXml/iscsi.xml"/>
     <import resource="springConfigXml/expon.xml"/>
+    <import resource="springConfigXml/zbs.xml"/>
     <import resource="springConfigXml/cbd.xml"/>
+    <import resource="springConfigXml/xinfini.xml"/>
     <import resource="springConfigXml/ExternalPrimaryStorage.xml"/>
     <import resource="springConfigXml/ExternalBackupStorage.xml"/>
     <import resource="springConfigXml/CloudBus.xml"/>
@@ -113,6 +115,7 @@
     <import resource="springConfigXml/sdnController.xml"/>
     <import resource="springConfigXml/cas.xml"/>
     <import resource="springConfigXml/directoryManager.xml"/>
+    <import resource="springConfigXml/sshKeyPair.xml"/>
     <import resource="springConfigXml/sugonSdnController.xml"/>
     <import resource="springConfigXml/TfPortAllocator.xml"/>
     <import resource="springConfigXml/HostNetworkManager.xml"/>

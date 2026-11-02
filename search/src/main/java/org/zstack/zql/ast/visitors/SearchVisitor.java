@@ -62,13 +62,7 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
                 if (index.isBaseClass()) {
                     continue;
                 }
-                Class entityClass;
-                try {
-                    entityClass = Class.forName(index.getName());
-                } catch (ClassNotFoundException ignored) {
-                    // the index is optional when the corresponding plugin is absent
-                    continue;
-                }
+                Class entityClass = Class.forName(index.getName());
                 List<String> props = index.getProp().stream().map(IndexType.Prop::getName).collect(Collectors.toList());
                 props.add(DocumentId);
                 String[] fieldArray = props.toArray(new String[0]);
@@ -78,6 +72,8 @@ public class SearchVisitor implements ASTVisitor<SearchResult, ASTNode.Search> {
             indexedEntities = indexFieldsMap.keySet();
         } catch (JAXBException e) {
             throw new CloudRuntimeException(e);
+        } catch (ClassNotFoundException e) {
+            throw new CloudRuntimeException(String.format("build search mapping failed, %s", e));
         }
     }
 

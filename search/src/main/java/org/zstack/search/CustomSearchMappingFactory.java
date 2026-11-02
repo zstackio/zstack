@@ -47,13 +47,7 @@ public class CustomSearchMappingFactory {
             }
 
             for (IndexType index : indexes) {
-                Class entityClass;
-                try {
-                    entityClass = Class.forName(index.getName());
-                } catch (ClassNotFoundException ignored) {
-                    // the index is optional when the corresponding plugin is absent
-                    continue;
-                }
+                Class entityClass = Class.forName(index.getName());
                 if (index.isBaseClass()) {
                     constructBaseIndex(mapping, entityClass, index.getProp());
                 } else {
