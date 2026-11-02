@@ -52,11 +52,15 @@ import org.zstack.header.storage.snapshot.VolumeSnapshotInventory;
 import org.zstack.header.storage.snapshot.group.VolumeSnapshotGroupInventory;
 import org.zstack.header.vm.devices.NvRamSpec;
 import org.zstack.header.volume.VolumeInventory;
+import org.zstack.header.volume.VolumeType;
+import org.zstack.header.volume.VolumeVO;
+import org.zstack.header.volume.VolumeVO_;
 import org.zstack.kvm.KVMAgentCommands;
 import org.zstack.kvm.KVMAgentCommands.*;
 import org.zstack.kvm.KVMGlobalConfig;
 import org.zstack.kvm.KVMHostInventory;
 import org.zstack.kvm.KVMStartVmExtensionPoint;
+import org.zstack.kvm.KVMSystemTags;
 import org.zstack.kvm.KvmCommandSender;
 import org.zstack.kvm.KvmResponseWrapper;
 import org.zstack.kvm.VolumeTO;
@@ -851,11 +855,24 @@ public class KvmSecureBootExtensions implements KVMStartVmExtensionPoint,
     public void afterVolumeSnapshotGroupCreated(VolumeSnapshotGroupInventory snapshotGroup,
                                                  ConsistentType consistentType,
                                                  Completion completion) {
+        if (snapshotGroup.getVmInstanceUuid() != null
+                && SecureBootRecordHelper.secureBootEnabled(snapshotGroup.getVmInstanceUuid(), resourceConfigFacade)) {
+            SecureBootRecordHelper.recordSecureBoot(KVMSystemTags.SNAPSHOT_GROUP_SECURE_BOOT, snapshotGroup.getUuid());
+        }
         completion.success();
     }
 
     @Override
     public void afterVolumeSnapshotCreated(VolumeSnapshotInventory snapshot, Completion completion) {
+        if (VolumeType.Root.toString().equals(snapshot.getVolumeType())) {
+            String vmUuid = Q.New(VolumeVO.class)
+                    .select(VolumeVO_.vmInstanceUuid)
+                    .eq(VolumeVO_.uuid, snapshot.getVolumeUuid())
+                    .findValue();
+            if (vmUuid != null && SecureBootRecordHelper.secureBootEnabled(vmUuid, resourceConfigFacade)) {
+                SecureBootRecordHelper.recordSecureBoot(KVMSystemTags.VOLUME_SNAPSHOT_SECURE_BOOT, snapshot.getUuid());
+            }
+        }
         completion.success();
     }
 }
