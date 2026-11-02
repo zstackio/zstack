@@ -7386,7 +7386,7 @@ public class VmInstanceBase extends AbstractVmInstance {
                         @Override
                         public void done(ErrorCodeList errorCodeList) {
                             if (!errorCodeList.getCauses().isEmpty()) {
-                                trigger.fail(errorCodeList);
+                                trigger.fail(errorCodeList.getCauses().get(0));
                                 return;
                             }
                             trigger.next();

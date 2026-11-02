@@ -27,8 +27,10 @@ import org.zstack.utils.logging.CLogger;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static org.zstack.compute.vm.VmGlobalConfig.ENABLE_UEFI_SECURE_BOOT;
 import static org.zstack.header.vm.additions.VmHostFileType.NvRam;
@@ -128,5 +130,24 @@ public class VmTpmManager {
                 }
             }
         });
+    }
+
+    public Set<VmHostFileType> vmHostFileTypeToSaveForVm(String vmUuid) {
+        Set<VmHostFileType> types = new HashSet<>(vmHostFileTypeNeedRegisterForVm(vmUuid));
+        if (findTpmUuidForVmOrNull(vmUuid) != null) {
+            types.add(TpmState);
+        }
+        return types;
+    }
+
+    public List<VmHostFileVO> filterHostFilesNeedRegister(String vmUuid, List<VmHostFileVO> hostFiles) {
+        if (hostFiles.isEmpty()) {
+            return hostFiles;
+        }
+
+        Set<VmHostFileType> types = vmHostFileTypeToSaveForVm(vmUuid);
+        return hostFiles.stream()
+                .filter(it -> types.contains(it.getType()))
+                .collect(Collectors.toList());
     }
 }

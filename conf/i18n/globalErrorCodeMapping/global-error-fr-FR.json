@@ -494,6 +494,8 @@
   "ORG_ZSTACK_COMPUTE_VM_10335": "Le groupe de snapshots[uuid:%s] contient un snapshot de mémoire ; impossible d'en créer une VM",
   "ORG_ZSTACK_COMPUTE_VM_10336": "impossible de supprimer %s de la VM[uuid:%s] dans l'état %s, la VM doit être dans l'état %s",
   "ORG_ZSTACK_STORAGE_SNAPSHOT_GROUP_10001": "Le groupe de snapshots[uuid:%s] contient des fichiers de sauvegarde TPM ou NVRAM ; impossible de le dissocier",
+  "ORG_ZSTACK_STORAGE_VOLUME_10102": "La VM[uuid:%s] possède un périphérique TPM ; impossible de créer un groupe de snapshots avec mémoire",
+  "ORG_ZSTACK_STORAGE_CDP_10122": "La VM[uuid:%s] possède un périphérique TPM ; la restauration depuis une sauvegarde CDP n'est pas prise en charge",
   "ORG_ZSTACK_STORAGE_CEPH_PRIMARY_10030": "impossible de trouver un stockage de sauvegarde pour télécharger l'image [%s] vers le stockage principal [%s] en raison de l'absence d'image prête et accessible",
   "ORG_ZSTACK_VPC_10018": "impossible de détacher le réseau L3 du routeur VPC [uuid:%s] car son état n'est pas en cours d'exécution ou arrêté",
   "ORG_ZSTACK_ALIYUN_CORE_10037": "L'image existe déjà à distance ; veuillez d'abord utiliser sync pour assurer la cohérence.",
