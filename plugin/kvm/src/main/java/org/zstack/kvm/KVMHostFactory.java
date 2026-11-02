@@ -42,6 +42,7 @@ import org.zstack.header.errorcode.OperationFailureException;
 import org.zstack.header.exception.CloudRuntimeException;
 import org.zstack.header.host.*;
 import org.zstack.header.managementnode.ManagementNodeReadyExtensionPoint;
+import org.zstack.header.message.AbstractBeforeSendMessageInterceptor;
 import org.zstack.header.message.Message;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.message.NeedReplyMessage;
@@ -101,6 +102,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -130,6 +132,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public static final VolumeFormat VMDK_FORMAT = new VolumeFormat(VolumeConstant.VOLUME_FORMAT_VMDK, hypervisorType);
     private List<KVMHostConnectExtensionPoint> connectExtensions = new ArrayList<>();
     private final Map<L2NetworkType, KVMCompleteNicInformationExtensionPoint> completeNicInfoExtensions = new HashMap<>();
+    private final Set<String> agentHttpPathsWithShortTimeout = new HashSet<>();
     private int maxDataVolumeNum;
 
     private final Map<SocketChannel, Long> socketTimeoutMap = new ConcurrentHashMap<>();
@@ -369,6 +372,41 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
             }
             completeNicInfoExtensions.put(ext.getL2NetworkTypeVmNicOn(), ext);
         }
+        for (KVMAgentHttpTimeoutExtensionPoint ext : pluginRgty.getExtensionList(KVMAgentHttpTimeoutExtensionPoint.class)) {
+            Set<String> paths = ext.agentHttpPathsWithShortTimeout();
+            if (paths != null) {
+                agentHttpPathsWithShortTimeout.addAll(paths);
+            }
+        }
+    }
+
+    private void installAgentHttpShortTimeoutInterceptor() {
+        bus.installBeforeSendMessageInterceptor(new AbstractBeforeSendMessageInterceptor() {
+            @Override
+            public void beforeSendMessage(Message message) {
+                KVMHostAsyncHttpCallMsg msg = (KVMHostAsyncHttpCallMsg) message;
+                long timeout = getAgentHttpShortTimeout(msg.getPath());
+                if (timeout == -1) {
+                    return;
+                }
+
+                if (msg.getTimeout() > 0) {
+                    timeout = Math.min(timeout, msg.getTimeout());
+                }
+                if (msg.getMessageDeadline() != -1) {
+                    timeout = Math.min(timeout,
+                            Math.max(1L, msg.getMessageDeadline() - System.currentTimeMillis()));
+                }
+                msg.setTimeout(timeout);
+            }
+        }, KVMHostAsyncHttpCallMsg.class);
+    }
+
+    public long getAgentHttpShortTimeout(String path) {
+        if (agentHttpPathsWithShortTimeout.contains(path)) {
+            return TimeUnit.SECONDS.toMillis(KVMGlobalConfig.AGENT_CONNECTIVITY_CHECK_TIMEOUT.value(Long.class));
+        }
+        return -1;
     }
 
     public KVMCompleteNicInformationExtensionPoint getCompleteNicInfoExtension(L2NetworkType type) {
@@ -465,6 +503,7 @@ public class KVMHostFactory extends AbstractService implements HypervisorFactory
     public boolean start() {
         deployAnsibleModule();
         populateExtensions();
+        installAgentHttpShortTimeoutInterceptor();
         configKVMDeviceType();
 
         if (KVMGlobalConfig.ENABLE_HOST_TCP_CONNECTION_CHECK.value(Boolean.class)) {

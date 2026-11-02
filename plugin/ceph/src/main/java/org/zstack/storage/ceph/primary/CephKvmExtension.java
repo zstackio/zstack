@@ -20,6 +20,7 @@ import org.zstack.header.host.HostInventory;
 import org.zstack.header.host.HypervisorType;
 import org.zstack.header.message.MessageReply;
 import org.zstack.header.storage.primary.PrimaryStorageConstant;
+import org.zstack.kvm.KVMAgentHttpTimeoutExtensionPoint;
 import org.zstack.kvm.KVMConstant;
 import org.zstack.kvm.KVMHostConnectExtensionPoint;
 import org.zstack.kvm.KVMHostConnectedContext;
@@ -30,15 +31,24 @@ import org.zstack.utils.CollectionUtils;
 import org.zstack.utils.function.Function;
 
 import javax.persistence.TypedQuery;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.zstack.utils.CollectionDSL.list;
 
 /**
  * Created by frank on 8/17/2015.
  */
-public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint {
+public class CephKvmExtension implements KVMHostConnectExtensionPoint, HostConnectionReestablishExtensionPoint,
+        KVMAgentHttpTimeoutExtensionPoint {
+
+    @Override
+    public Set<String> agentHttpPathsWithShortTimeout() {
+        return Collections.singleton(CephPrimaryStorageBase.CHECK_HOST_STORAGE_CONNECTION_PATH);
+    }
+
     @Autowired
     private CloudBus bus;
     @Autowired
