@@ -4743,5 +4743,9 @@
   "ORG_ZSTACK_AI_10163": "La VM[nom:%s, uuid:%s] ne s'exécute sur aucun hôte",
   "ORG_ZSTACK_AI_10164": "Le modèle[nom:%s, uuid:%s] n'est pas partagé avec le compte propriétaire de cette VM (ni public). Le montage exige que le modèle soit accessible selon les mêmes règles de partage.",
   "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] introuvable pour le modèle[nom:%s, uuid:%s]",
-  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "champ[%s] invalide, le fournisseur de clés natif[uuid:%s, name:%s] n'est pas connecté ; vérifiez d'abord le service du fournisseur de clés natif",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "champ[%s] invalide, le service de gestion des clés[uuid:%s, name:%s] n'est pas connecté ; vérifiez d'abord la connexion au service de gestion des clés",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "champ[%s] invalide, le service de gestion des clés[uuid:%s, name:%s] n'a pas de confiance mutuelle[trustState:%s] ; établissez d'abord la confiance mutuelle avec le service de gestion des clés",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "aucune référence de clé de ressource chiffrée pouvant être renouvelée n'a été trouvée pour les ressources[type:%s, uuids:%s]"
 }

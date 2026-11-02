@@ -4743,5 +4743,9 @@
   "ORG_ZSTACK_AI_10163": "虛擬機「%s」(UUID: %s) 未運行在任何主機上",
   "ORG_ZSTACK_AI_10164": "模型「%s」(UUID: %s) 與該虛擬機所屬帳戶的共享規則不匹配，無法掛載。\n請確認模型已共享給該帳戶或設為公開。",
   "ORG_ZSTACK_AI_10165": "模型中心 (UUID: %s) 未找到（關聯模型: 「%s」UUID: %s）。\n請檢查模型中心是否已被刪除。",
-  "ORG_ZSTACK_AI_10167": "推理服務實例組[uuid:%s]正在刪除，停止等待服務啟動"
+  "ORG_ZSTACK_AI_10167": "推理服務實例組[uuid:%s]正在刪除，停止等待服務啟動",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "參數[%s]無效，本地金鑰提供程式[uuid:%s, name:%s]未連線，請先檢查本地金鑰提供程式服務",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "參數[%s]無效，金鑰管理服務[uuid:%s, name:%s]未連線，請先檢查與金鑰管理服務的連線",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "參數[%s]無效，金鑰管理服務[uuid:%s, name:%s]未完成雙向信任[trustState:%s]，請先完成與金鑰管理服務的雙向信任",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "所選資源[type:%s, uuids:%s]沒有可更新金鑰的加密資源金鑰參照"
 }

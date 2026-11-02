@@ -1,6 +1,7 @@
 package org.zstack.compute.vm.devices;
 
 import org.zstack.header.core.Completion;
+import org.zstack.header.errorcode.ErrorCode;
 
 /**
  * Responsible for handling the replication or reset of encryption resource keys
@@ -44,6 +45,19 @@ public interface TpmEncryptedResourceKeyBackend {
      * maybe null (when crypto module is not installed)
      */
     String defaultKeyProviderUuid();
+
+    /**
+     * @return null if no default key provider is set or the default key provider is available,
+     * otherwise the reason why the default key provider cannot be used by new resource keys
+     */
+    ErrorCode checkDefaultKeyProviderAvailable();
+
+    /**
+     * Admission check for a new TPM key provider: an explicit provider must be the default one,
+     * and the default provider must be available.
+     * @return null if the key provider can be used by the new TPM
+     */
+    ErrorCode checkNewTpmKeyProvider(String keyProviderUuid, String field);
 
     /**
      * Repair providerUuid on existing TPM key ref row where wrapped material already exists.

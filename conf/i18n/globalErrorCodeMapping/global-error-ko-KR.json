@@ -4743,5 +4743,9 @@
   "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s)는 어떤 호스트에서도 실행되고 있지 않습니다",
   "ORG_ZSTACK_AI_10164": "모델「%s」(UUID: %s)이(가) 이 VM이 속한 계정에 공유되어 있지 않습니다(또는 공개되지 않음). 마운트하려면 동일한 공유 규칙을 따르세요.",
   "ORG_ZSTACK_AI_10165": "모델 센터 (UUID: %s)를 찾을 수 없습니다 (관련 모델: 「%s」UUID: %s)",
-  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "필드[%s]가 유효하지 않습니다. 네이티브 키 공급자[uuid:%s, name:%s]가 연결되어 있지 않습니다. 먼저 네이티브 키 공급자 서비스를 확인하세요",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "필드[%s]가 유효하지 않습니다. 키 관리 서비스[uuid:%s, name:%s]가 연결되어 있지 않습니다. 먼저 키 관리 서비스와의 연결을 확인하세요",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "필드[%s]가 유효하지 않습니다. 키 관리 서비스[uuid:%s, name:%s]와 상호 신뢰가 완료되지 않았습니다[trustState:%s]. 먼저 키 관리 서비스와 상호 신뢰를 완료하세요",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "리소스[type:%s, uuids:%s]에 대해 키를 갱신할 수 있는 암호화 리소스 키 참조를 찾을 수 없습니다"
 }

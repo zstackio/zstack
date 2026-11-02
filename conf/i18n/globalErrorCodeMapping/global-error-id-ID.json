@@ -4743,5 +4743,9 @@
   "ORG_ZSTACK_AI_10163": "VM[nama:%s, uuid:%s] tidak berjalan pada host manapun",
   "ORG_ZSTACK_AI_10164": "Model[nama:%s, uuid:%s] tidak dibagikan ke akun pemilik VM ini (atau ke publik). Mount membutuhkan model yang dapat diakses dengan aturan berbagi yang sama dengan VM.",
   "ORG_ZSTACK_AI_10165": "ModelCenter[uuid:%s] tidak ditemukan untuk Model[nama:%s, uuid:%s]",
-  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "field[%s] tidak valid, penyedia kunci native[uuid:%s, name:%s] tidak terhubung; periksa layanan penyedia kunci native terlebih dahulu",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "field[%s] tidak valid, layanan manajemen kunci[uuid:%s, name:%s] tidak terhubung; periksa koneksi ke layanan manajemen kunci terlebih dahulu",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "field[%s] tidak valid, layanan manajemen kunci[uuid:%s, name:%s] belum saling percaya[trustState:%s]; selesaikan kepercayaan timbal balik dengan layanan manajemen kunci terlebih dahulu",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "tidak ditemukan referensi kunci sumber daya terenkripsi yang dapat diperbarui untuk sumber daya[type:%s, uuids:%s]"
 }

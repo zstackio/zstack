@@ -4769,5 +4769,9 @@
   "ORG_ZSTACK_NETWORK_ZNS_10045": "无法启用 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
   "ORG_ZSTACK_NETWORK_ZNS_10046": "网段[uuid:%s]上已存在 DHCP 服务，但 GET 返回为空",
   "ORG_ZSTACK_NETWORK_ZNS_10047": "无法更新 DHCP：三层网络[uuid:%s]没有云端预留的 DHCPv4 服务 IP",
-  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败"
+  "ORG_ZSTACK_NETWORK_ZNS_10048": "为 ZNS 三层网络[uuid:%s]分配 DHCPv4 服务 IP 失败",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "参数[%s]无效，本地密钥提供程序[uuid:%s, name:%s]未连接，请先检查本地密钥提供程序服务",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "参数[%s]无效，密钥管理服务[uuid:%s, name:%s]未连接，请先检查与密钥管理服务的连接",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "参数[%s]无效，密钥管理服务[uuid:%s, name:%s]未完成双向信任[trustState:%s]，请先完成与密钥管理服务的双向信任",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "所选资源[type:%s, uuids:%s]没有可更新密钥的加密资源密钥引用"
 }

@@ -4743,5 +4743,9 @@
   "ORG_ZSTACK_AI_10163": "VM「%s」(UUID: %s) ไม่ได้ทำงานอยู่บนโฮสต์ใด ๆ",
   "ORG_ZSTACK_AI_10164": "โมเดล「%s」(UUID: %s) ไม่ได้แชร์ให้บัญชีของ VM นี้ (หรือสาธารณะ) การ mount ต้องเข้าถึงได้ตามกฎการแชร์เดียวกับ VM",
   "ORG_ZSTACK_AI_10165": "ไม่พบ ModelCenter[uuid:%s] สำหรับโมเดล[name:%s, uuid:%s]",
-  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up"
+  "ORG_ZSTACK_AI_10167": "Model service instance group[uuid:%s] is being deleted; stop waiting for service boot up",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10003": "ฟิลด์[%s]ไม่ถูกต้อง ผู้ให้บริการคีย์เนทีฟ[uuid:%s, name:%s]ไม่ได้เชื่อมต่อ โปรดตรวจสอบบริการผู้ให้บริการคีย์เนทีฟก่อน",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10004": "ฟิลด์[%s]ไม่ถูกต้อง บริการจัดการคีย์[uuid:%s, name:%s]ไม่ได้เชื่อมต่อ โปรดตรวจสอบการเชื่อมต่อกับบริการจัดการคีย์ก่อน",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10005": "ฟิลด์[%s]ไม่ถูกต้อง บริการจัดการคีย์[uuid:%s, name:%s]ยังไม่มีความไว้วางใจร่วมกัน[trustState:%s] โปรดสร้างความไว้วางใจร่วมกันกับบริการจัดการคีย์ก่อน",
+  "ORG_ZSTACK_CRYPTO_KEYPROVIDER_10006": "ไม่พบการอ้างอิงคีย์ทรัพยากรที่เข้ารหัสซึ่งสามารถเปลี่ยนคีย์ได้สำหรับทรัพยากร[type:%s, uuids:%s]"
 }
