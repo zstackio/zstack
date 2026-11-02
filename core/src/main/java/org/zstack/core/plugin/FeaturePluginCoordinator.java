@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.zstack.core.Platform;
 import org.zstack.core.cloudbus.CloudBus;
 import org.zstack.core.db.DatabaseFacade;
+import org.zstack.core.db.DatabaseGlobalProperty;
 import org.zstack.core.db.Q;
 import org.zstack.core.thread.ChainTask;
 import org.zstack.core.thread.SyncTaskChain;
@@ -55,6 +56,10 @@ public class FeaturePluginCoordinator implements ManagementNodeReadyExtensionPoi
         ShellResult ret = ShellUtils.runAndReturn(String.format("zstack-ctl plugin %s", args));
         if (ret.getRetCode() != 0) {
             String output = ret.getStderr() == null || ret.getStderr().trim().isEmpty() ? ret.getStdout() : ret.getStderr();
+            // a failed mysql or flyway command line printed by zstack-ctl carries the database password
+            if (DatabaseGlobalProperty.DbPassword != null && !DatabaseGlobalProperty.DbPassword.isEmpty()) {
+                output = output.replace(DatabaseGlobalProperty.DbPassword, "******");
+            }
             // zstack-ctl colors its error output
             throw new OperationFailureException(operr(ORG_ZSTACK_CORE_PLUGIN_10002, "%s",
                     output.replaceAll("\u001B\\[[;\\d]*m", "").trim()));
