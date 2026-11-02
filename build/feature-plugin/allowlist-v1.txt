@@ -50,6 +50,11 @@ org.zstack.header.core.*Completion$*
 org.zstack.header.core.AsyncBackup
 # SERVICE_ID, to send a message to a host
 org.zstack.header.host.HostConstant
+# reading the platform's host table and a foreign key to it; plugins write only their own tables
+org.zstack.header.host.HostVO
+org.zstack.header.host.HostVO_
+org.zstack.header.host.HostEO
+org.zstack.header.host.HostStatus
 org.zstack.header.core.workflow.*
 org.zstack.header.vo.*
 org.zstack.header.rest.RestRequest

@@ -93,6 +93,16 @@ class TestCheck(CheckCase):
         self.assertIn('disallowed-reference: org.zstack.kvm.KVMAgentCommands$AttachNicCommand',
                       self.run_check(refs=['org.zstack.kvm.KVMAgentCommands$AttachNicCommand']))
 
+    def test_reading_hosts_is_allowed(self):
+        # what javac emits for checking a host with Q/HostVO_ and a foreign key to HostEO
+        refs = ['org.zstack.header.host.HostVO', 'org.zstack.header.host.HostVO_',
+                'org.zstack.header.host.HostEO', 'org.zstack.header.host.HostStatus']
+        self.assertEqual([], self.run_check(refs=refs))
+
+    def test_host_base_class_stays_disallowed(self):
+        self.assertEqual(['disallowed-reference: org.zstack.header.host.HostAO'],
+                         self.run_check(refs=['org.zstack.header.host.HostAO']))
+
     def test_jdk_reference_is_not_checked(self):
         self.assertEqual([], self.run_check())
 
